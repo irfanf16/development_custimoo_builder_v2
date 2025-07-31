@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customizer Widget Demo - Unified Approach</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .demo-section {
+        background: white;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .widget-demo {
+        border: 2px dashed #ccc;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      .info {
+        background: #e3f2fd;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Customizer Widget Demo - Unified Approach</h1>
+
+    <div class="info">
+      <strong>Unified Approach:</strong> Widget mode is primary, SPA mode is
+      fallback. All routing uses hash mode for compatibility.
+    </div>
+
+    <div class="demo-section">
+      <h2>Widget 1: Default Settings (with navigation)</h2>
+      <div class="widget-demo">
+        <customizer-widget></customizer-widget>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>Widget 2: Custom Title (no navigation)</h2>
+      <div class="widget-demo">
+        <customizer-widget
+          title="My Custom Widget"
+          color="#FF6B6B"
+          show-navigation="false"
+        >
+        </customizer-widget>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>Widget 3: Dark Theme</h2>
+      <div class="widget-demo">
+        <customizer-widget
+          title="Dark Mode Widget"
+          theme="dark"
+          color="#4ECDC4"
+        >
+        </customizer-widget>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>Widget 4: Compact Mode</h2>
+      <div class="widget-demo">
+        <customizer-widget
+          title="Compact Widget"
+          mode="compact"
+          color="#FFD93D"
+        >
+        </customizer-widget>
+      </div>
+    </div>
+
+    <!-- Load the widget script -->
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

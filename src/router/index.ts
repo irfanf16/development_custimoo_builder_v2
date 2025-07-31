@@ -1,4 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import {
+  createRouter,
+  createWebHashHistory,
+  createWebHistory
+} from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -61,10 +65,17 @@ const routes: RouteRecordRaw[] = [
   }
 ]
 
+// Determine router mode based on environment
+const isWidgetMode = () => document.querySelector('customizer-widget') !== null
+const isSPAMode = () => document.getElementById('app') !== null
+
+// Use hash mode for widgets (default), history mode for SPA
+const useHashMode = isWidgetMode() || !isSPAMode()
+
 const router = createRouter({
-  history: createWebHistory(),
+  history: useHashMode ? createWebHashHistory() : createWebHistory(),
   routes,
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {
       return savedPosition
     } else {
@@ -74,10 +85,11 @@ const router = createRouter({
 })
 
 // Navigation guard for authentication
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   // Update document title
   if (to.meta.title) {
-    document.title = `${to.meta.title} - Customizer`
+    const mode = isWidgetMode() ? 'Widget' : 'Customizer'
+    document.title = `${to.meta.title} - ${mode}`
   }
 
   // Initialize auth store if not already done

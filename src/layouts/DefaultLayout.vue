@@ -2,11 +2,9 @@
   import { Button } from '@/components/ui/button'
   import {
     NavigationMenu,
-    NavigationMenuContent,
     NavigationMenuItem,
     NavigationMenuLink,
-    NavigationMenuList,
-    NavigationMenuTrigger
+    NavigationMenuList
   } from '@/components/ui/navigation-menu'
   import {
     Sheet,
