@@ -19,7 +19,7 @@
 
     // In SPA mode, we can use router to get current route
     const route = useRoute()
-    const layout = (route.meta?.layout as string) || 'default'
+    const layout = (route?.meta?.layout as string) || 'default'
 
     switch (layout) {
       case 'dashboard':

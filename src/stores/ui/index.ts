@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-export const useUIStore = defineStore('ui', () => {
+export const useUIStore = defineStore('uiStore', () => {
   // State
   const isMobileMenuOpen = ref(false)
   const isLoginDialogOpen = ref(false)
@@ -9,53 +9,50 @@ export const useUIStore = defineStore('ui', () => {
   const isLoading = ref(false)
 
   // Actions
-  const openMobileMenu = () => {
+  function openMobileMenu() {
     isMobileMenuOpen.value = true
   }
 
-  const closeMobileMenu = () => {
+  function closeMobileMenu() {
     isMobileMenuOpen.value = false
   }
 
-  const toggleMobileMenu = () => {
+  function toggleMobileMenu() {
     isMobileMenuOpen.value = !isMobileMenuOpen.value
   }
 
-  const openLoginDialog = () => {
+  function openLoginDialog() {
     isLoginDialogOpen.value = true
     isRegisterDialogOpen.value = false
   }
 
-  const closeLoginDialog = () => {
+  function closeLoginDialog() {
     isLoginDialogOpen.value = false
   }
 
-  const openRegisterDialog = () => {
+  function openRegisterDialog() {
     isRegisterDialogOpen.value = true
     isLoginDialogOpen.value = false
   }
 
-  const closeRegisterDialog = () => {
+  function closeRegisterDialog() {
     isRegisterDialogOpen.value = false
   }
 
-  const closeAllDialogs = () => {
+  function closeAllDialogs() {
     isLoginDialogOpen.value = false
     isRegisterDialogOpen.value = false
   }
 
-  const setLoading = (loading: boolean) => {
+  function setLoading(loading: boolean) {
     isLoading.value = loading
   }
 
   return {
-    // State
     isMobileMenuOpen,
     isLoginDialogOpen,
     isRegisterDialogOpen,
     isLoading,
-
-    // Actions
     openMobileMenu,
     closeMobileMenu,
     toggleMobileMenu,

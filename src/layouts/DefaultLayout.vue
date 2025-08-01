@@ -26,11 +26,13 @@
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAuthStore } from '@/stores/auth'
+  import { useAuthenticationStore } from '@/stores/authentication'
   import { useUIStore } from '@/stores/ui'
 
   const router = useRouter()
   const authStore = useAuthStore()
   const uiStore = useUIStore()
+  const authenticationStore = useAuthenticationStore()
 
   const loginForm = ref({
     email: '',
@@ -45,7 +47,7 @@
   })
 
   const handleLogin = async () => {
-    const result = await authStore.login(loginForm.value)
+    const result = await authenticationStore.dispatchLogin(loginForm.value)
     if (result.success) {
       uiStore.closeLoginDialog()
       loginForm.value = { email: '', password: '' }
@@ -68,7 +70,7 @@
   }
 
   const handleLogout = () => {
-    authStore.logout()
+    authenticationStore.logout()
     router.push('/')
   }
 </script>
