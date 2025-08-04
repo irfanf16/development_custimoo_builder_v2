@@ -1,6 +1,6 @@
 <template>
   <div
-    class="font-sans border border-gray-200 rounded-lg p-4 bg-white shadow-sm max-w-2xl min-h-[400px]"
+    class="font-sans border border-gray-200 rounded-lg p-4 bg-white shadow-sm w-full min-h-[400px]"
     :style="{ '--widget-color': color }"
   >
     <div class="flex flex-col gap-3 h-full">
