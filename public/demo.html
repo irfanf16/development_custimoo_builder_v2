@@ -33,15 +33,26 @@
   </head>
   <body>
     <div class="info">
-      <strong>Unified Approach:</strong> Widget mode is primary, SPA mode is
-      fallback. All routing uses hash mode for compatibility.
+      <strong>Host-Based Themes:</strong> The widget automatically detects the
+      host and applies predefined color themes. Try changing the hostname in the
+      URL to see different themes:
+      <ul style="margin-top: 8px; font-size: 14px">
+        <li><code>localhost</code> - Development Blue theme (Blue + Green)</li>
+        <li>
+          <code>shop.example.com</code> - E-commerce Red theme (Red + Teal)
+        </li>
+        <li>Any other host - Default Gray theme (Gray + Amber)</li>
+      </ul>
+      <p style="margin-top: 8px; font-size: 12px; color: #666">
+        Each theme includes complete color schemes: background, foreground,
+        card, muted, accent, destructive, border, input, and ring colors.
+      </p>
     </div>
 
     <div class="demo-section">
       <div class="widget-demo">
         <customizer-widget
           title="Custom Widget Demo"
-          color="#6bffff"
           theme="light"
           mode="default"
           show-navigation="true"

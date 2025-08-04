@@ -1,6 +1,7 @@
 <template>
   <div
-    class="font-sans border border-gray-200 rounded-lg p-4 bg-white shadow-sm w-full min-h-[400px]"
+    ref="widgetRoot"
+    class="widget-theme font-sans border border-gray-200 rounded-lg p-4 bg-white shadow-sm w-full min-h-[400px]"
     :style="{ '--widget-color': color }"
   >
     <div class="flex flex-col gap-3 h-full">
@@ -47,21 +48,18 @@
         </nav>
       </div>
       <div class="flex-1 overflow-y-auto">
-        <!-- Use the same layout system as SPA mode -->
-        <component :is="currentLayout">
-          <router-view />
-        </component>
+        <!-- Widget content -->
+        <router-view />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import DefaultLayout from '@/layouts/DefaultLayout.vue'
-  import DashboardLayout from '@/layouts/DashboardLayout.vue'
-  import AuthLayout from '@/layouts/AuthLayout.vue'
+  import { useColorScheme } from '@/composables/useColorScheme'
+  import { getHostTheme } from '@/lib/hostThemes'
 
   // Define props for the widget component
   defineProps({
@@ -85,6 +83,11 @@
       required: false,
       default: '#3B82F6'
     },
+    secondaryColor: {
+      type: String,
+      required: false,
+      default: undefined
+    },
     theme: {
       type: String,
       required: false,
@@ -105,21 +108,27 @@
   const router = useRouter()
   const route = useRoute()
 
-  const currentRoute = computed(() => route.path)
+  // Template ref for the widget root element
+  const widgetRoot = ref<HTMLElement>()
 
-  // Use the same layout detection logic as SPA mode
-  const currentLayout = computed(() => {
-    const layout = (route.meta?.layout as string) || 'default'
+  // Get host-based theme
+  const hostTheme = getHostTheme()
 
-    switch (layout) {
-      case 'dashboard':
-        return DashboardLayout
-      case 'auth':
-        return AuthLayout
-      default:
-        return DefaultLayout
+  // Initialize color scheme based on host theme
+  const { applyColorScheme } = useColorScheme()
+
+  // Update colors when component mounts
+  onMounted(() => {
+    // Use the template ref to get the widget container
+    const widgetContainer = widgetRoot.value
+
+    if (widgetContainer) {
+      // Always apply a theme (host theme or default)
+      applyColorScheme(widgetContainer, hostTheme)
     }
   })
+
+  const currentRoute = computed(() => route.path)
 
   const navigateTo = (path: string) => {
     router.push(path)

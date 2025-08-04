@@ -7,11 +7,6 @@ let globalInitializationPromise: Promise<void> | null = null
 let globalIsInitialized = false
 
 export function useAppInitialization() {
-  console.log(
-    'useAppInitialization called - globalIsInitialized:',
-    globalIsInitialized
-  )
-
   const isInitialized = ref(globalIsInitialized)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -42,8 +37,6 @@ export function useAppInitialization() {
     // Create global promise to prevent multiple simultaneous initializations
     globalInitializationPromise = (async () => {
       try {
-        console.log('Starting app initialization...')
-
         // Fetch company and settings in parallel
         const [companyResponse, settingsResponse] = await Promise.all([
           companyService.getCompany(),
@@ -54,12 +47,9 @@ export function useAppInitialization() {
         settings.value = settingsResponse.data
         isInitialized.value = true
         globalIsInitialized = true
-
-        console.log('App initialization completed successfully')
       } catch (err) {
         error.value =
           err instanceof Error ? err.message : 'Failed to initialize app'
-        console.error('App initialization failed:', err)
       } finally {
         isLoading.value = false
         globalInitializationPromise = null

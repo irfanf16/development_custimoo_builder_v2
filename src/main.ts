@@ -1,11 +1,4 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import App from './App.vue'
-import router from './router'
-import './style.css'
 import { bootstrap } from './bootstrap'
-
-// Import CSS for production bundling
 import './style.css'
 
 // Define the custom element for embedded widget (primary mode)
@@ -22,6 +15,7 @@ customElements.define(
         title: this.getAttribute('title'),
         end: this.getAttribute('end'),
         color: this.getAttribute('color'),
+        secondaryColor: this.getAttribute('secondary-color'),
         theme: this.getAttribute('theme'),
         mode: this.getAttribute('mode'),
         showNavigation: this.getAttribute('show-navigation') !== 'false'
@@ -33,15 +27,4 @@ customElements.define(
   }
 )
 
-// SPA mode (fallback) - mount to #app if it exists and no widget is present
-const appElement = document.getElementById('app')
-const hasWidget = document.querySelector('customizer-widget') !== null
 
-if (appElement && !hasWidget) {
-  const app = createApp(App)
-  const pinia = createPinia()
-
-  app.use(pinia)
-  app.use(router)
-  app.mount('#app')
-}

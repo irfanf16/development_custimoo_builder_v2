@@ -154,9 +154,7 @@ export function generateColorScheme(
 ) {
   const background = generateBackgroundColor(primaryColor)
   const foreground = generateForegroundColor(background)
-  const secondaryBackground = secondaryColor
-    ? generateSecondaryBackgroundColor(secondaryColor)
-    : generateBackgroundColor(primaryColor)
+
   const accent = generateAccentColor(primaryColor)
 
   return {
@@ -164,13 +162,21 @@ export function generateColorScheme(
     secondary: secondaryColor || primaryColor,
     background,
     foreground,
-    secondaryBackground,
-    accent,
-    // Generate muted colors
+    card: background,
+    cardForeground: foreground,
+    popover: background,
+    popoverForeground: foreground,
     muted: generateBackgroundColor(primaryColor),
     mutedForeground: generateForegroundColor(
       generateBackgroundColor(primaryColor)
-    )
+    ),
+    accent,
+    accentForeground: foreground,
+    destructive: '#EF4444',
+    destructiveForeground: '#FFFFFF',
+    border: generateBackgroundColor(primaryColor),
+    input: background,
+    ring: primaryColor
   }
 }
 
@@ -179,23 +185,34 @@ export function hexToCssVariable(hex: string, variableName: string): string {
   return `--${variableName}: ${hex};`
 }
 
-// Generate CSS custom properties for a color scheme
-export function generateCssVariables(
-  colorScheme: ReturnType<typeof generateColorScheme>
-): string {
+// Generate CSS custom properties for a host theme
+export function generateCssVariables(hostTheme: any): string {
+  // Helper function to convert hex to HSL string
+  const hexToHslString = (hex: string): string => {
+    const hsl = hexToHsl(hex)
+    // For Tailwind v4, we need the full HSL value
+    return `hsl(${Math.round(hsl.h)} ${Math.round(hsl.s)}% ${Math.round(hsl.l)}%)`
+  }
+
   return `
-    --primary: ${colorScheme.primary};
-    --primary-foreground: ${colorScheme.foreground};
-    --secondary: ${colorScheme.secondary};
-    --secondary-foreground: ${colorScheme.foreground};
-    --background: ${colorScheme.background};
-    --foreground: ${colorScheme.foreground};
-    --muted: ${colorScheme.muted};
-    --muted-foreground: ${colorScheme.mutedForeground};
-    --accent: ${colorScheme.accent};
-    --accent-foreground: ${colorScheme.foreground};
-    --border: ${colorScheme.muted};
-    --input: ${colorScheme.muted};
-    --ring: ${colorScheme.primary};
+    --primary: ${hexToHslString(hostTheme.primary)};
+    --primary-foreground: ${hexToHslString(hostTheme.foreground)};
+    --secondary: ${hexToHslString(hostTheme.secondary || hostTheme.primary)};
+    --secondary-foreground: ${hexToHslString(hostTheme.foreground)};
+    --background: ${hexToHslString(hostTheme.background)};
+    --foreground: ${hexToHslString(hostTheme.foreground)};
+    --card: ${hexToHslString(hostTheme.card)};
+    --card-foreground: ${hexToHslString(hostTheme.cardForeground)};
+    --popover: ${hexToHslString(hostTheme.popover)};
+    --popover-foreground: ${hexToHslString(hostTheme.popoverForeground)};
+    --muted: ${hexToHslString(hostTheme.muted)};
+    --muted-foreground: ${hexToHslString(hostTheme.mutedForeground)};
+    --accent: ${hexToHslString(hostTheme.accent)};
+    --accent-foreground: ${hexToHslString(hostTheme.accentForeground)};
+    --destructive: ${hexToHslString(hostTheme.destructive)};
+    --destructive-foreground: ${hexToHslString(hostTheme.destructiveForeground)};
+    --border: ${hexToHslString(hostTheme.border)};
+    --input: ${hexToHslString(hostTheme.input)};
+    --ring: ${hexToHslString(hostTheme.ring)};
   `.trim()
 }
