@@ -3,6 +3,9 @@
   import WidgetApp from '@/components/WidgetApp.vue'
   import { useAuthStore } from '@/stores/auth'
   import { useAppInitialization } from '@/composables'
+  import { useRouter } from 'vue-router'
+
+  const router = useRouter()
 
   // Initialize app data (company and settings)
   const appInit = useAppInitialization()
@@ -12,7 +15,10 @@
   onMounted(() => {
     try {
       const authStore = useAuthStore()
-      authStore.initializeAuth()
+      authStore.initCustomerAndAccessTokenFromLocalStorage()
+      if (!authStore.isAuthenticated) {
+        router.push('/auth')
+      }
     } catch (error) {
       // Auth store not available
     }

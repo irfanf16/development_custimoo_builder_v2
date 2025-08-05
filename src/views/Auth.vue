@@ -27,22 +27,9 @@
   })
 
   const handleLogin = async () => {
-    const result = await authStore.login(loginForm.value)
+    const result = await authStore.dispatchLogin(loginForm.value)
     if (result.success) {
       loginForm.value = { email: '', password: '' }
-      router.push('/dashboard')
-    }
-  }
-
-  const handleRegister = async () => {
-    const result = await authStore.register(registerForm.value)
-    if (result.success) {
-      registerForm.value = {
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-      }
       router.push('/dashboard')
     }
   }
@@ -159,7 +146,6 @@
           <Button
             variant="outline"
             class="w-full"
-            @click="handleRegister"
             :disabled="authStore.isLoading"
           >
             {{ authStore.isLoading ? 'Creating Account...' : 'Create Account' }}

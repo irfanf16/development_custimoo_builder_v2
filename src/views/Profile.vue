@@ -8,9 +8,35 @@
     CardTitle
   } from '@/components/ui/card'
   import { useAuthStore } from '@/stores/auth'
-  import { ref } from 'vue'
+  import { ref, computed } from 'vue'
 
   const authStore = useAuthStore()
+
+  // Computed properties for user data
+  const userInitials = computed(() => {
+    if (!authStore.customer) return 'U'
+    const firstName = authStore.customer.first_name || ''
+    const lastName = authStore.customer.last_name || ''
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+  })
+
+  const fullName = computed(() => {
+    if (!authStore.customer) return 'User'
+    return `${authStore.customer.first_name} ${authStore.customer.last_name}`
+  })
+
+  const userEmail = computed(() => {
+    return authStore.customer?.email || 'No email provided'
+  })
+
+  const companyName = computed(() => {
+    return authStore.customer?.team_company_name || 'No company'
+  })
+
+  const joinDate = computed(() => {
+    if (!authStore.customer?.created_at) return 'Unknown'
+    return new Date(authStore.customer.created_at).toLocaleDateString()
+  })
 
   const stats = ref([
     { label: 'Projects', value: '12' },
@@ -47,17 +73,15 @@
             <div
               class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
             >
-              <span class="text-2xl font-bold">{{
-                authStore.userInitials
-              }}</span>
+              <span class="text-2xl font-bold">{{ userInitials }}</span>
             </div>
-            <CardTitle>{{ authStore.user?.name }}</CardTitle>
-            <CardDescription>{{ authStore.user?.role }}</CardDescription>
+            <CardTitle>{{ fullName }}</CardTitle>
+            <CardDescription>{{ companyName }}</CardDescription>
           </CardHeader>
           <CardContent class="space-y-4">
             <div class="text-center">
               <p class="text-sm text-muted-foreground">
-                {{ authStore.user?.bio }}
+                Welcome to your profile page
               </p>
             </div>
 
@@ -65,31 +89,25 @@
               <div class="flex items-center space-x-2">
                 <span class="text-sm font-medium">Email:</span>
                 <span class="text-sm text-muted-foreground">{{
-                  authStore.user?.email
+                  userEmail
                 }}</span>
               </div>
               <div class="flex items-center space-x-2">
-                <span class="text-sm font-medium">Location:</span>
+                <span class="text-sm font-medium">Company:</span>
                 <span class="text-sm text-muted-foreground">{{
-                  authStore.user?.location
+                  companyName
                 }}</span>
               </div>
               <div class="flex items-center space-x-2">
-                <span class="text-sm font-medium">Website:</span>
-                <a
-                  v-if="authStore.user?.website"
-                  href="#"
-                  class="text-sm text-primary hover:underline"
-                  >{{ authStore.user.website }}</a
-                >
-                <span v-else class="text-sm text-muted-foreground"
-                  >Not set</span
-                >
+                <span class="text-sm font-medium">Customer ID:</span>
+                <span class="text-sm text-muted-foreground">{{
+                  authStore.customer?.id || 'N/A'
+                }}</span>
               </div>
               <div class="flex items-center space-x-2">
                 <span class="text-sm font-medium">Joined:</span>
                 <span class="text-sm text-muted-foreground">{{
-                  authStore.user?.joined
+                  joinDate
                 }}</span>
               </div>
             </div>

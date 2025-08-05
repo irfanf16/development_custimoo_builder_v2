@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { type Company, type OutputSettings } from '@/services/company/types'
-import { type APIResponse } from '@/services/types'
 import { API } from '../../services'
-import type { AxiosError } from 'axios'
+import { tryCatchApi } from '../utils'
+import type { APIResponse } from '../types'
 
 export const useCompanyStore = defineStore('companyStore', () => {
   // State
@@ -49,80 +49,32 @@ export const useCompanyStore = defineStore('companyStore', () => {
   }
 
   // API Functions
-  async function dispatchGetCompany(): Promise<APIResponse<Company>> {
-    try {
-      setLoading(true)
-      clearError()
-
-      const response = await API.company.getCompany()
-      const { status, data } = response
-
-      if (status === 200 && data?.company) {
-        setCompany(data.company)
-        return {
-          success: true,
-          content: data.company,
-          status: 200
-        }
-      }
-
-      return {
-        success: false,
-        content: null,
-        status: 400
-      }
-    } catch (err) {
-      const _error = err as AxiosError<string>
-      const errorMessage =
-        _error.response?.data || 'Failed to fetch company data'
-      setError(errorMessage)
-
-      return {
-        success: false,
-        status: _error.response?.status,
-        content: null
-      }
-    } finally {
-      setLoading(false)
+  async function dispatchGetCompany(): Promise<
+    APIResponse<{ company: Company }>
+  > {
+    setLoading(true)
+    setError(null)
+    const response = await tryCatchApi(API.company.getCompany())
+    if (response.success) {
+      setCompany(response.content.company)
+    } else {
+      setError('Error getting company')
     }
+    setLoading(false)
+    return response
   }
 
   async function dispatchGetSettings(): Promise<APIResponse<OutputSettings>> {
-    try {
-      setLoading(true)
-      clearError()
-
-      const response = await API.company.getSettings()
-      const { status, data } = response
-
-      if (status === 200 && data) {
-        setSettings(data)
-        return {
-          success: true,
-          content: data,
-          status: 200
-        }
-      }
-
-      return {
-        success: false,
-        content: null,
-        status: 400
-      }
-    } catch (err) {
-      const _error = err as AxiosError<string>
-      const errorMessage =
-        _error.response?.data || 'Failed to fetch settings data'
-      setError(errorMessage)
-
-      return {
-        success: false,
-        status: _error.response?.status,
-        content: null
-      }
-    } finally {
-      setLoading(false)
+    setLoading(true)
+    setError(null)
+    const output = await tryCatchApi(API.company.getSettings())
+    if (output.success) {
+      setSettings(output.content)
+    } else {
+      setError('Error getting settings')
     }
+    setLoading(false)
+    return output
   }
 
   return {

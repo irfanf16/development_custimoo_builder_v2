@@ -95,12 +95,12 @@ router.beforeEach(async (to, _from, next) => {
   // Initialize auth store if not already done
   const authStore = useAuthStore()
   if (!authStore.isAuthenticated) {
-    authStore.initializeAuth()
+    // authStore.initCustomerAndAccessToken()
   }
 
   // Check authentication for protected routes
   if (to.meta.requiresAuth) {
-    if (!authStore.isLoggedIn) {
+    if (!authStore.isAuthenticated) {
       next('/auth')
       return
     }

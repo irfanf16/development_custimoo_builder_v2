@@ -9,43 +9,46 @@
         class="flex justify-between items-center pb-3 border-b border-gray-200"
       >
         <h3 class="text-lg font-semibold text-gray-900 m-0">{{ title }}</h3>
-        <nav v-if="showNavigation" class="flex gap-2">
-          <button
-            @click="navigateTo('/')"
-            :class="{
-              'bg-blue-500 text-white border-blue-500': currentRoute === '/',
-              'bg-white text-gray-700 border-gray-200 hover:bg-gray-50':
-                currentRoute !== '/'
-            }"
-            class="px-2 py-1 text-xs border rounded transition-colors duration-200"
-          >
-            Home
-          </button>
-          <button
-            @click="navigateTo('/about')"
-            :class="{
-              'bg-blue-500 text-white border-blue-500':
-                currentRoute === '/about',
-              'bg-white text-gray-700 border-gray-200 hover:bg-gray-50':
-                currentRoute !== '/about'
-            }"
-            class="px-2 py-1 text-xs border rounded transition-colors duration-200"
-          >
-            About
-          </button>
-          <button
-            @click="navigateTo('/dashboard')"
-            :class="{
-              'bg-blue-500 text-white border-blue-500':
-                currentRoute === '/dashboard',
-              'bg-white text-gray-700 border-gray-200 hover:bg-gray-50':
-                currentRoute !== '/dashboard'
-            }"
-            class="px-2 py-1 text-xs border rounded transition-colors duration-200"
-          >
-            Dashboard
-          </button>
-        </nav>
+        <div class="flex items-center gap-4">
+          <nav v-if="showNavigation" class="flex gap-2">
+            <button
+              @click="navigateTo('/')"
+              :class="{
+                'bg-blue-500 text-white border-blue-500': currentRoute === '/',
+                'bg-white text-gray-700 border-gray-200 hover:bg-gray-50':
+                  currentRoute !== '/'
+              }"
+              class="px-2 py-1 text-xs border rounded transition-colors duration-200"
+            >
+              Home
+            </button>
+            <button
+              @click="navigateTo('/about')"
+              :class="{
+                'bg-blue-500 text-white border-blue-500':
+                  currentRoute === '/about',
+                'bg-white text-gray-700 border-gray-200 hover:bg-gray-50':
+                  currentRoute !== '/about'
+              }"
+              class="px-2 py-1 text-xs border rounded transition-colors duration-200"
+            >
+              About
+            </button>
+            <button
+              @click="navigateTo('/dashboard')"
+              :class="{
+                'bg-blue-500 text-white border-blue-500':
+                  currentRoute === '/dashboard',
+                'bg-white text-gray-700 border-gray-200 hover:bg-gray-50':
+                  currentRoute !== '/dashboard'
+              }"
+              class="px-2 py-1 text-xs border rounded transition-colors duration-200"
+            >
+              Dashboard
+            </button>
+          </nav>
+          <SignInButton />
+        </div>
       </div>
       <div class="flex-1 overflow-y-auto">
         <!-- Widget content -->
@@ -60,6 +63,7 @@
   import { useRouter, useRoute } from 'vue-router'
   import { useColorScheme } from '@/composables/useColorScheme'
   import { getHostTheme } from '@/lib/hostThemes'
+  import SignInButton from './SignInButton.vue'
 
   // Define props for the widget component
   defineProps({
@@ -230,5 +234,22 @@
 
   :deep(.border-blue-500) {
     border-color: var(--widget-color, #3b82f6) !important;
+  }
+
+  /* Ensure dropdown menus work properly in widget context */
+  :deep(.absolute) {
+    position: absolute !important;
+  }
+
+  :deep(.relative) {
+    position: relative !important;
+  }
+
+  :deep(.z-50) {
+    z-index: 50 !important;
+  }
+
+  :deep(.z-60) {
+    z-index: 60 !important;
   }
 </style>
