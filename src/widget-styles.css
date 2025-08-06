@@ -62,6 +62,54 @@
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
   --ring: 222.2 84% 4.9%;
+
+  /* Tailwind CSS 4 internal variables for Shadow DOM compatibility */
+  --tw-border-style: solid;
+  --tw-outline-style: solid;
+  --tw-ring-inset: ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-color: currentcolor;
+  --tw-inset-ring-color: ;
+  --tw-inset-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-color: #0000001a;
+  --tw-shadow-alpha: 100%;
+  --tw-inset-shadow: 0 0 #0000;
+  --tw-inset-shadow-color: ;
+  --tw-inset-shadow-alpha: 100%;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-translate-z: 0;
+  --tw-rotate: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-space-x-reverse: 0;
+  --tw-space-y-reverse: 0;
+  --tw-leading: initial;
+  --tw-font-weight: initial;
+  --tw-tracking: initial;
+  --tw-duration: initial;
+  --tw-ease: initial;
+  --tw-animation-delay: 0s;
+  --tw-animation-direction: normal;
+  --tw-animation-duration: initial;
+  --tw-animation-fill-mode: none;
+  --tw-animation-iteration-count: 1;
+  --tw-enter-opacity: 1;
+  --tw-enter-rotate: 0;
+  --tw-enter-scale: 1;
+  --tw-enter-translate-x: 0;
+  --tw-enter-translate-y: 0;
+  --tw-exit-opacity: 1;
+  --tw-exit-rotate: 0;
+  --tw-exit-scale: 1;
+  --tw-exit-translate-x: 0;
+  --tw-exit-translate-y: 0;
 }
 
 /* ===== BASE STYLES ===== */

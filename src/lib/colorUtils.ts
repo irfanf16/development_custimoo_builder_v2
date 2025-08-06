@@ -187,10 +187,10 @@ export function hexToCssVariable(hex: string, variableName: string): string {
 
 // Generate CSS custom properties for a host theme
 export function generateCssVariables(hostTheme: any): string {
-  // Helper function to convert hex to HSL string
+  // Helper function to convert hex to HSL string (with hsl() wrapper)
   const hexToHslString = (hex: string): string => {
     const hsl = hexToHsl(hex)
-    // For Tailwind v4, we need the full HSL value
+    // For Tailwind v4, we need the HSL values with hsl() wrapper
     return `hsl(${Math.round(hsl.h)} ${Math.round(hsl.s)}% ${Math.round(hsl.l)}%)`
   }
 
