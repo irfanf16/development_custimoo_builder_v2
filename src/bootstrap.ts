@@ -3,6 +3,9 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 
+// Import CSS styles
+import widgetStyles from './widget-styles.css?inline'
+
 // Function to bootstrap and mount the Vue.js application
 export function bootstrap(
   shadowRoot: ShadowRoot,
@@ -15,43 +18,7 @@ export function bootstrap(
 
   // Inject CSS into shadow DOM
   const style = document.createElement('style')
-
-  // In development, use @import
-  if (import.meta.env?.DEV) {
-    style.textContent = `
-      /* Import Tailwind CSS and other styles */
-      @import url('/src/style.css');
-    `
-  } else {
-    // In production, the CSS is bundled with the JavaScript
-    // We'll create a temporary link to load the CSS and extract it
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = '/dist/style.css'
-
-    link.onload = () => {
-      try {
-        // Try to extract CSS from the loaded stylesheet
-        const sheet = link.sheet
-        if (sheet) {
-          let cssText = ''
-          for (let i = 0; i < sheet.cssRules.length; i++) {
-            cssText += sheet.cssRules[i].cssText + '\n'
-          }
-          style.textContent = cssText
-        }
-      } catch (e) {
-        console.warn('Could not extract CSS from stylesheet:', e)
-      }
-    }
-
-    link.onerror = () => {
-      console.warn('Failed to load CSS file')
-    }
-
-    document.head.appendChild(link)
-  }
-
+  style.textContent = widgetStyles
   shadowRoot.appendChild(style)
 
   // Create a new Vue application instance

@@ -1,5 +1,5 @@
 import { bootstrap } from './bootstrap'
-import './style.css'
+import './widget-styles.css'
 
 // Define the custom element for embedded widget (primary mode)
 customElements.define(
@@ -8,6 +8,12 @@ customElements.define(
     connectedCallback() {
       // Create a shadow DOM for encapsulation
       const shadowRoot = this.attachShadow({ mode: 'open' })
+
+      // Load CSS dynamically into shadow DOM
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = '/widget.css'
+      shadowRoot.appendChild(link)
 
       // Fetch widget attributes to pass as properties for App.vue
       const attributes = {
@@ -26,5 +32,3 @@ customElements.define(
     }
   }
 )
-
-

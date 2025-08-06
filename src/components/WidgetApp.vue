@@ -140,104 +140,39 @@
 </script>
 
 <style scoped>
-  /* Override layout styles for widget context */
-  :deep(.min-h-screen) {
-    min-height: auto;
-  }
+  /* Essential widget overrides only */
 
-  :deep(header) {
-    display: none; /* Hide layout header in widget */
+  /* Hide layout elements that shouldn't appear in widget */
+  /* :deep(header) {
+    display: none;
   }
 
   :deep(nav) {
-    display: none; /* Hide layout navigation in widget */
-  }
+    display: none;
+  } */
 
-  :deep(.container) {
+  /* Adjust container for widget context */
+  /* :deep(.container) {
     padding: 0;
     margin: 0;
     max-width: none;
   }
 
-  :deep(.mx-auto) {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  :deep(.px-4) {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  :deep(.py-4) {
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-
-  :deep(.flex) {
-    display: block;
-  }
-
-  :deep(.items-center) {
-    align-items: normal;
-  }
-
-  :deep(.justify-between) {
-    justify-content: normal;
-  }
-
-  :deep(.space-x-2) {
-    margin-left: 0;
-  }
-
-  :deep(.space-x-2 > *) {
-    margin-left: 0;
-  }
-
-  :deep(.space-x-4) {
-    margin-left: 0;
-  }
-
-  :deep(.space-x-4 > *) {
-    margin-left: 0;
-  }
-
-  /* Override some Home.vue styles for widget context */
-  :deep(section) {
-    padding: 12px 0;
-  }
-
-  :deep(h1) {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  :deep(h2) {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  :deep(p) {
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
-  }
-
-  :deep(.grid) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
+  :deep(.min-h-screen) {
+    min-height: auto;
+  } */
 
   /* Dynamic color support */
-  :deep(.bg-blue-500) {
+  /* :deep(.bg-blue-500) {
     background-color: var(--widget-color, #3b82f6) !important;
   }
 
   :deep(.border-blue-500) {
     border-color: var(--widget-color, #3b82f6) !important;
-  }
+  } */
 
-  /* Ensure dropdown menus work properly in widget context */
-  :deep(.absolute) {
+  /* Ensure proper positioning in widget context */
+  /* :deep(.absolute) {
     position: absolute !important;
   }
 
@@ -251,5 +186,5 @@
 
   :deep(.z-60) {
     z-index: 60 !important;
-  }
+  } */
 </style>

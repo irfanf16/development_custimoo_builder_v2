@@ -1,6 +1,12 @@
+/* Widget Styles - All CSS bundled into one file */
+
+/* Import Tailwind CSS */
 @import 'tailwindcss';
+
+/* Import tw-animate-css */
 @import 'tw-animate-css';
 
+/* Custom widget styles */
 @custom-variant dark (&:is(.dark *));
 
 /* ===== WIDGET DESIGN SYSTEM ===== */
@@ -50,4 +56,27 @@
 .widget-theme {
   /* Ensure widget has its own color context */
   color-scheme: light;
+}
+
+/* ===== WIDGET SPECIFIC STYLES ===== */
+customizer-widget {
+  display: block;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* Ensure widget components are properly styled */
+customizer-widget * {
+  box-sizing: border-box;
+}
+
+/* Shadow DOM specific styles */
+customizer-widget::part(content) {
+  all: initial;
+  font-family: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: inherit;
 }

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Preview</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .widget-container {
+        border: 2px dashed #ccc;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        background: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Widget Preview</h1>
+
+    <div class="widget-container">
+      <h2>Default Widget</h2>
+      <customizer-widget></customizer-widget>
+    </div>
+
+    <div class="widget-container">
+      <h2>Custom Widget</h2>
+      <customizer-widget
+        title="Custom Widget"
+        color="#FF6B6B"
+        theme="dark"
+      ></customizer-widget>
+    </div>
+
+    <!-- Load the built widget CSS and JS -->
+    <link rel="stylesheet" href="/widget.css" />
+    <script type="module" src="/widget.js"></script>
+  </body>
+</html>
