@@ -31,8 +31,8 @@ export interface HostTheme {
 export const hostThemes: Record<string, HostTheme> = {
   // Development/Testing
   localhost: {
-    primary: '#FF6B6B',
-    secondary: '#10B981',
+    primary: '#3B82F6',
+    secondary: '#6B7280',
     accent: '#F3F4F6',
     radius: '0.5rem',
     name: 'Development Blue',
