@@ -41,6 +41,8 @@
 :root {
   /* Colors will be set dynamically by JavaScript */
   --radius: 0.625rem;
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-heading: ui-sans-serif, system-ui, sans-serif;
 
   /* Light theme CSS variables */
   --background: hsl(0 0% 100%);
@@ -140,7 +142,7 @@
 /* ===== BASE STYLES ===== */
 @layer base {
   * {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
     @apply border-border outline-ring/50;
   }
 
@@ -157,6 +159,16 @@
   :focus-visible {
     @apply outline-2 outline-ring outline-offset-2;
   }
+
+  /* Heading font utilities */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+  }
 }
 
 /* ===== WIDGET THEME OVERRIDES ===== */
@@ -168,7 +180,7 @@
 /* ===== WIDGET SPECIFIC STYLES ===== */
 customizer-widget {
   display: block;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.5;
   color: var(--foreground);
   background: var(--background);
@@ -177,12 +189,40 @@ customizer-widget {
 /* Ensure widget components are properly styled */
 customizer-widget * {
   box-sizing: border-box;
+  font-family: var(--font-sans) !important;
+}
+
+/* Specific font application for text elements */
+customizer-widget h1,
+customizer-widget h2,
+customizer-widget h3,
+customizer-widget h4,
+customizer-widget h5,
+customizer-widget h6,
+customizer-widget p,
+customizer-widget span,
+customizer-widget div,
+customizer-widget button,
+customizer-widget input,
+customizer-widget textarea,
+customizer-widget label {
+  font-family: var(--font-sans) !important;
+}
+
+/* Heading font application */
+customizer-widget h1,
+customizer-widget h2,
+customizer-widget h3,
+customizer-widget h4,
+customizer-widget h5,
+customizer-widget h6 {
+  font-family: var(--font-heading) !important;
 }
 
 /* Shadow DOM specific styles */
 customizer-widget::part(content) {
   all: initial;
-  font-family: inherit;
+  font-family: var(--font-sans);
   line-height: inherit;
   color: inherit;
   background: inherit;

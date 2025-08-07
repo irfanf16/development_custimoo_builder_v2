@@ -22,6 +22,8 @@ export interface HostTheme {
   // input: string
   // ring: string
   radius?: string
+  fontFamilyDefault?: string
+  fontFamilyHeading?: string
   name: string
   description: string
   allowColorModeSwitch: boolean
@@ -35,6 +37,8 @@ export const hostThemes: Record<string, HostTheme> = {
     secondary: '#6B7280',
     accent: '#F3F4F6',
     radius: '0.5rem',
+    fontFamilyDefault: 'Geist',
+    fontFamilyHeading: 'Poppins',
     name: 'Development Blue',
     description: 'Blue primary with green accent for development',
     allowColorModeSwitch: true,
@@ -47,10 +51,40 @@ export const hostThemes: Record<string, HostTheme> = {
     secondary: '#4ECDC4',
     accent: '#FEF2F2',
     radius: '0.75rem',
+    fontFamilyDefault: 'Geist',
+    fontFamilyHeading: 'Poppins',
     name: 'E-commerce Red',
     description: 'Warm red primary with teal accent for shopping sites',
     allowColorModeSwitch: false,
     defaultColorMode: 'light'
+  },
+
+  // Example: Corporate site
+  'corporate.example.com': {
+    primary: '#1F2937',
+    secondary: '#6B7280',
+    accent: '#F3F4F6',
+    radius: '0.375rem',
+    fontFamilyDefault: 'Geist',
+    fontFamilyHeading: 'Inter',
+    name: 'Corporate Gray',
+    description: 'Professional gray theme for corporate sites',
+    allowColorModeSwitch: true,
+    defaultColorMode: 'light'
+  },
+
+  // Example: Creative agency
+  'creative.example.com': {
+    primary: '#8B5CF6',
+    secondary: '#F59E0B',
+    accent: '#FEF3C7',
+    radius: '1rem',
+    fontFamilyDefault: 'Geist',
+    fontFamilyHeading: 'Montserrat',
+    name: 'Creative Purple',
+    description: 'Creative purple theme for design agencies',
+    allowColorModeSwitch: true,
+    defaultColorMode: 'dark'
   }
 }
 

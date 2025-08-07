@@ -9,6 +9,7 @@
   } from '@/components/ui/dropdown-menu'
   import { useUIStore } from '@/stores/ui'
   import { computed, watch } from 'vue'
+
   const uiStore = useUIStore()
 
   const setTheme = (theme: 'light' | 'dark') => {

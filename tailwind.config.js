@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+  content: [
+    './index.html',
+    './src/**/*.{vue,js,ts,jsx,tsx}',
+    './public/**/*.html'
+  ],
   theme: {
     container: {
       center: true,
@@ -10,6 +14,16 @@ export default {
       }
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-heading)', 'ui-serif', 'Georgia', 'serif'],
+        mono: [
+          'var(--font-sans)',
+          'ui-monospace',
+          'SFMono-Regular',
+          'monospace'
+        ]
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
@@ -31,5 +45,9 @@ export default {
       }
     }
   },
-  plugins: [require('tailwindcss-animate')]
+  plugins: [require('tailwindcss-animate')],
+  // Ensure proper CSS variable handling for Tailwind CSS 4
+  future: {
+    hoverOnlyWhenSupported: true
+  }
 }

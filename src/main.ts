@@ -1,4 +1,27 @@
 import { bootstrap } from './bootstrap'
+import { getHostTheme } from './lib/hostThemes'
+
+// Preload fonts for the current host
+const hostTheme = getHostTheme()
+if (hostTheme?.fontFamilyDefault || hostTheme?.fontFamilyHeading) {
+  const fontsToLoad = []
+  if (hostTheme.fontFamilyDefault) fontsToLoad.push(hostTheme.fontFamilyDefault)
+  if (hostTheme.fontFamilyHeading) fontsToLoad.push(hostTheme.fontFamilyHeading)
+
+  fontsToLoad.forEach(font => {
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'style'
+    link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`
+    document.head.appendChild(link)
+
+    // Also load the actual stylesheet
+    const styleLink = document.createElement('link')
+    styleLink.rel = 'stylesheet'
+    styleLink.href = link.href
+    document.head.appendChild(styleLink)
+  })
+}
 
 // Define the custom element for embedded widget (primary mode)
 customElements.define(

@@ -14,7 +14,7 @@
   <!-- Hero Section -->
   <section class="py-12 text-center">
     <h1 class="text-4xl font-bold tracking-tight lg:text-5xl">
-      Welcome to Customizer -xxx
+      Welcome to Customizer
     </h1>
     <p class="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
       A beautiful and modern component library built with Vue 3 and Tailwind
