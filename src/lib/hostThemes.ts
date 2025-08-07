@@ -38,7 +38,7 @@ export const hostThemes: Record<string, HostTheme> = {
     accent: '#F3F4F6',
     radius: '0.5rem',
     fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Poppins',
+    fontFamilyHeading: 'Gesit',
     name: 'Development Blue',
     description: 'Blue primary with green accent for development',
     allowColorModeSwitch: true,
