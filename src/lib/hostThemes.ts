@@ -6,21 +6,21 @@
 export interface HostTheme {
   primary: string
   secondary?: string
-  background: string
-  foreground: string
-  card: string
-  cardForeground: string
-  popover: string
-  popoverForeground: string
-  muted: string
-  mutedForeground: string
+  // background: string
+  // foreground: string
+  // card: string
+  // cardForeground: string
+  // popover: string
+  // popoverForeground: string
+  // muted: string
+  // mutedForeground: string
   accent: string
-  accentForeground: string
-  destructive: string
-  destructiveForeground: string
-  border: string
-  input: string
-  ring: string
+  // accentForeground: string
+  // destructive: string
+  // destructiveForeground: string
+  // border: string
+  // input: string
+  // ring: string
   radius?: string
   name: string
   description: string
@@ -31,23 +31,9 @@ export interface HostTheme {
 export const hostThemes: Record<string, HostTheme> = {
   // Development/Testing
   localhost: {
-    primary: '#3B82F6',
+    primary: '#FF6B6B',
     secondary: '#10B981',
-    background: '#FFFFFF',
-    foreground: '#1F2937',
-    card: '#FFFFFF',
-    cardForeground: '#1F2937',
-    popover: '#FFFFFF',
-    popoverForeground: '#1F2937',
-    muted: '#F3F4F6',
-    mutedForeground: '#6B7280',
     accent: '#F3F4F6',
-    accentForeground: '#1F2937',
-    destructive: '#EF4444',
-    destructiveForeground: '#FFFFFF',
-    border: '#E5E7EB',
-    input: '#FFFFFF',
-    ring: '#3B82F6',
     radius: '0.5rem',
     name: 'Development Blue',
     description: 'Blue primary with green accent for development',
@@ -59,21 +45,7 @@ export const hostThemes: Record<string, HostTheme> = {
   'shop.example.com': {
     primary: '#FF6B6B',
     secondary: '#4ECDC4',
-    background: '#FFFFFF',
-    foreground: '#1F2937',
-    card: '#FFFFFF',
-    cardForeground: '#1F2937',
-    popover: '#FFFFFF',
-    popoverForeground: '#1F2937',
-    muted: '#FEF2F2',
-    mutedForeground: '#DC2626',
     accent: '#FEF2F2',
-    accentForeground: '#DC2626',
-    destructive: '#EF4444',
-    destructiveForeground: '#FFFFFF',
-    border: '#FECACA',
-    input: '#FFFFFF',
-    ring: '#FF6B6B',
     radius: '0.75rem',
     name: 'E-commerce Red',
     description: 'Warm red primary with teal accent for shopping sites',
@@ -87,37 +59,7 @@ export const hostThemes: Record<string, HostTheme> = {
  */
 export function getHostTheme(): HostTheme | null {
   const host = window.location.hostname
-  return hostThemes[host] || getDefaultTheme()
-}
-
-/**
- * Get default theme for unknown hosts
- */
-export function getDefaultTheme(): HostTheme {
-  return {
-    primary: '#6B7280',
-    secondary: '#F59E0B',
-    background: '#FFFFFF',
-    foreground: '#1F2937',
-    card: '#FFFFFF',
-    cardForeground: '#1F2937',
-    popover: '#FFFFFF',
-    popoverForeground: '#1F2937',
-    muted: '#F9FAFB',
-    mutedForeground: '#6B7280',
-    accent: '#F9FAFB',
-    accentForeground: '#1F2937',
-    destructive: '#EF4444',
-    destructiveForeground: '#FFFFFF',
-    border: '#E5E7EB',
-    input: '#FFFFFF',
-    ring: '#6B7280',
-    radius: '0.625rem',
-    name: 'Default Gray',
-    description: 'Neutral gray with amber accent for unknown hosts',
-    allowColorModeSwitch: true,
-    defaultColorMode: 'light'
-  }
+  return hostThemes[host] || null
 }
 
 /**

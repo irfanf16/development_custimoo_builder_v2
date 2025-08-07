@@ -6,25 +6,27 @@ export function useColorScheme() {
   const applyColorScheme = (container?: HTMLElement, hostTheme?: any) => {
     const target = container || document.documentElement
 
-    // If no host theme provided, use default theme
-    const themeToApply = hostTheme || {
-      primary: '#3B82F6',
-      secondary: '#6B7280',
-      accent: '#F3F4F6',
-      accentForeground: '#1F2937'
+    // If no host theme provided, use CSS defaults
+    if (!hostTheme) {
+      const uiStore = useUIStore()
+      uiStore.setAllowColorModeSwitch(true)
+      uiStore.setDefaultColorMode('light')
+      uiStore.setTheme(uiStore.currentTheme)
+
+      // Add dark class to widget root
+      if (uiStore.currentTheme === 'dark') {
+        uiStore.widgetRoot?.classList.add('dark')
+      } else {
+        uiStore.widgetRoot?.classList.remove('dark')
+      }
+      return
     }
 
     // Generate all CSS variables for the theme
-    const variables = generateLimitedCssVariables(themeToApply)
+    const variables = generateLimitedCssVariables(hostTheme)
 
     // Clear existing variables before applying new ones
-    const limitedVars = [
-      '--primary',
-      '--secondary',
-      '--accent',
-      '--accent-foreground',
-      '--radius'
-    ]
+    const limitedVars = ['--primary', '--secondary', '--accent', '--radius']
 
     limitedVars.forEach(varName => {
       target.style.removeProperty(varName)
@@ -85,7 +87,6 @@ function generateLimitedCssVariables(hostTheme: any): string {
     --primary: ${hexToHslString(hostTheme.primary)};
     --secondary: ${hexToHslString(hostTheme.secondary || hostTheme.primary)};
     --accent: ${hexToHslString(hostTheme.accent)};
-    --accent-foreground: ${hexToHslString(hostTheme.accentForeground)};
     --radius: ${hostTheme.radius || '0.625rem'};
   `.trim()
 }

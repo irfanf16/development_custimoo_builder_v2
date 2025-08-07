@@ -1,3 +1,86 @@
+<script setup lang="ts">
+  import { computed, onMounted, ref } from 'vue'
+  import { useRouter, useRoute } from 'vue-router'
+  import { useColorScheme } from '@/composables/useColorScheme'
+  import { getHostTheme } from '@/lib/hostThemes'
+  import { useUIStore } from '@/stores/ui'
+  import SignInButton from './SignInButton.vue'
+  import ThemeToggle from './ThemeToggle.vue'
+  import { Button } from '@/components/ui/button'
+
+  // Define props for the widget component
+  defineProps({
+    date: {
+      type: String,
+      required: false,
+      default: ''
+    },
+    title: {
+      type: String,
+      required: false,
+      default: 'Customizer Widget'
+    },
+    end: {
+      type: String,
+      required: false,
+      default: 'Widget ended.'
+    },
+    color: {
+      type: String,
+      required: false,
+      default: '#3B82F6'
+    },
+    secondaryColor: {
+      type: String,
+      required: false,
+      default: undefined
+    },
+    theme: {
+      type: String,
+      required: false,
+      default: 'light'
+    },
+    mode: {
+      type: String,
+      required: false,
+      default: 'default'
+    },
+    showNavigation: {
+      type: Boolean,
+      required: false,
+      default: true
+    }
+  })
+
+  const router = useRouter()
+  const route = useRoute()
+  const uiStore = useUIStore()
+
+  // Template ref for the widget root element
+
+  // Get host-based theme
+  const hostTheme = getHostTheme()
+
+  const widgetRootContainer = ref<HTMLElement>()
+
+  // Initialize color scheme based on host theme
+  const { applyColorScheme } = useColorScheme()
+
+  // Update colors when component mounts
+  onMounted(async () => {
+    if (widgetRootContainer.value) {
+      uiStore.setWidgetRoot(widgetRootContainer.value)
+      applyColorScheme(widgetRootContainer.value, hostTheme)
+    }
+  })
+
+  const currentRoute = computed(() => route.path)
+
+  const navigateTo = (path: string) => {
+    router.push(path)
+  }
+</script>
+
 <template>
   <div
     ref="widgetRootContainer"
@@ -62,88 +145,5 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
-  import { useRouter, useRoute } from 'vue-router'
-  import { useColorScheme } from '@/composables/useColorScheme'
-  import { getHostTheme } from '@/lib/hostThemes'
-  import { useUIStore } from '@/stores/ui'
-  import SignInButton from './SignInButton.vue'
-  import ThemeToggle from './ThemeToggle.vue'
-
-  // Define props for the widget component
-  defineProps({
-    date: {
-      type: String,
-      required: false,
-      default: ''
-    },
-    title: {
-      type: String,
-      required: false,
-      default: 'Customizer Widget'
-    },
-    end: {
-      type: String,
-      required: false,
-      default: 'Widget ended.'
-    },
-    color: {
-      type: String,
-      required: false,
-      default: '#3B82F6'
-    },
-    secondaryColor: {
-      type: String,
-      required: false,
-      default: undefined
-    },
-    theme: {
-      type: String,
-      required: false,
-      default: 'light'
-    },
-    mode: {
-      type: String,
-      required: false,
-      default: 'default'
-    },
-    showNavigation: {
-      type: Boolean,
-      required: false,
-      default: true
-    }
-  })
-
-  const router = useRouter()
-  const route = useRoute()
-  const uiStore = useUIStore()
-
-  // Template ref for the widget root element
-
-  // Get host-based theme
-  const hostTheme = getHostTheme()
-
-  const widgetRootContainer = ref<HTMLElement>()
-
-  // Initialize color scheme based on host theme
-  const { applyColorScheme } = useColorScheme()
-
-  // Update colors when component mounts
-  onMounted(async () => {
-    if (widgetRootContainer.value) {
-      console.log('widgetRootContainer', widgetRootContainer.value)
-      uiStore.setWidgetRoot(widgetRootContainer.value)
-      applyColorScheme(widgetRootContainer.value, hostTheme)
-    }
-  })
-
-  const currentRoute = computed(() => route.path)
-
-  const navigateTo = (path: string) => {
-    router.push(path)
-  }
-</script>
 
 <style scoped></style>

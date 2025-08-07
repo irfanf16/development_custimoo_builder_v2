@@ -7,6 +7,7 @@
 export function hexToHsl(hex: string): { h: number; s: number; l: number } {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
   if (!result) {
+    console.log('Invalid hex color:', hex)
     throw new Error('Invalid hex color')
   }
 
@@ -196,23 +197,8 @@ export function generateCssVariables(hostTheme: any): string {
 
   return `
     --primary: ${hexToHslString(hostTheme.primary)};
-    --primary-foreground: ${hexToHslString(hostTheme.foreground)};
     --secondary: ${hexToHslString(hostTheme.secondary || hostTheme.primary)};
-    --secondary-foreground: ${hexToHslString(hostTheme.foreground)};
-    --background: ${hexToHslString(hostTheme.background)};
-    --foreground: ${hexToHslString(hostTheme.foreground)};
-    --card: ${hexToHslString(hostTheme.card)};
-    --card-foreground: ${hexToHslString(hostTheme.cardForeground)};
-    --popover: ${hexToHslString(hostTheme.popover)};
-    --popover-foreground: ${hexToHslString(hostTheme.popoverForeground)};
-    --muted: ${hexToHslString(hostTheme.muted)};
-    --muted-foreground: ${hexToHslString(hostTheme.mutedForeground)};
     --accent: ${hexToHslString(hostTheme.accent)};
-    --accent-foreground: ${hexToHslString(hostTheme.accentForeground)};
-    --destructive: ${hexToHslString(hostTheme.destructive)};
-    --destructive-foreground: ${hexToHslString(hostTheme.destructiveForeground)};
-    --border: ${hexToHslString(hostTheme.border)};
-    --input: ${hexToHslString(hostTheme.input)};
-    --ring: ${hexToHslString(hostTheme.ring)};
+    --radius: ${hostTheme.radius || '0.625rem'};
   `.trim()
 }

@@ -4,7 +4,7 @@
   import { useAuthStore } from '@/stores/auth'
   import { useAppInitialization } from '@/composables'
   import { useRouter } from 'vue-router'
-
+  import { Button } from '@/components/ui/button'
   const router = useRouter()
 
   // Initialize app data (company and settings)
@@ -40,9 +40,13 @@
   <div v-else-if="error" class="flex items-center justify-center min-h-screen">
     <div class="text-center">
       <p class="text-destructive mb-4">{{ error }}</p>
-      <button @click="appInit.initializeApp()" class="btn btn-primary">
+      <Button
+        @click="appInit.initializeApp()"
+        variant="default"
+        class="px-4 py-2"
+      >
         Retry
-      </button>
+      </Button>
     </div>
   </div>
 

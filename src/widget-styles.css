@@ -143,6 +143,20 @@
     @apply bg-background text-foreground;
     @apply border-border outline-ring/50;
   }
+
+  /* Ensure interactive elements have proper cursor */
+  button,
+  [role='button'],
+  [type='button'],
+  [type='submit'],
+  [type='reset'] {
+    @apply cursor-pointer;
+  }
+
+  /* Ensure focus states are visible */
+  :focus-visible {
+    @apply outline-2 outline-ring outline-offset-2;
+  }
 }
 
 /* ===== WIDGET THEME OVERRIDES ===== */
