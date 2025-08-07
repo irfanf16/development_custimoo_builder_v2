@@ -21,8 +21,11 @@ export interface HostTheme {
   border: string
   input: string
   ring: string
+  radius?: string
   name: string
   description: string
+  allowColorModeSwitch: boolean
+  defaultColorMode: 'light' | 'dark'
 }
 
 export const hostThemes: Record<string, HostTheme> = {
@@ -45,8 +48,11 @@ export const hostThemes: Record<string, HostTheme> = {
     border: '#E5E7EB',
     input: '#FFFFFF',
     ring: '#3B82F6',
+    radius: '0.5rem',
     name: 'Development Blue',
-    description: 'Blue primary with green accent for development'
+    description: 'Blue primary with green accent for development',
+    allowColorModeSwitch: true,
+    defaultColorMode: 'light'
   },
 
   // Example: E-commerce site
@@ -68,8 +74,11 @@ export const hostThemes: Record<string, HostTheme> = {
     border: '#FECACA',
     input: '#FFFFFF',
     ring: '#FF6B6B',
+    radius: '0.75rem',
     name: 'E-commerce Red',
-    description: 'Warm red primary with teal accent for shopping sites'
+    description: 'Warm red primary with teal accent for shopping sites',
+    allowColorModeSwitch: false,
+    defaultColorMode: 'light'
   }
 }
 
@@ -103,8 +112,11 @@ export function getDefaultTheme(): HostTheme {
     border: '#E5E7EB',
     input: '#FFFFFF',
     ring: '#6B7280',
+    radius: '0.625rem',
     name: 'Default Gray',
-    description: 'Neutral gray with amber accent for unknown hosts'
+    description: 'Neutral gray with amber accent for unknown hosts',
+    allowColorModeSwitch: true,
+    defaultColorMode: 'light'
   }
 }
 

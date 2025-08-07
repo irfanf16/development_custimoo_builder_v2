@@ -1,4 +1,5 @@
-import { generateCssVariables } from '@/lib/colorUtils'
+import { generateCssVariables, hexToHsl } from '@/lib/colorUtils'
+import { useUIStore } from '@/stores/ui'
 
 export function useColorScheme() {
   // Apply CSS variables to the widget container only
@@ -9,49 +10,23 @@ export function useColorScheme() {
     const themeToApply = hostTheme || {
       primary: '#3B82F6',
       secondary: '#6B7280',
-      background: '#FFFFFF',
-      foreground: '#1F2937',
-      card: '#FFFFFF',
-      cardForeground: '#1F2937',
-      popover: '#FFFFFF',
-      popoverForeground: '#1F2937',
-      muted: '#F3F4F6',
-      mutedForeground: '#6B7280',
       accent: '#F3F4F6',
-      accentForeground: '#1F2937',
-      destructive: '#EF4444',
-      destructiveForeground: '#FFFFFF',
-      border: '#E5E7EB',
-      input: '#FFFFFF',
-      ring: '#3B82F6'
+      accentForeground: '#1F2937'
     }
 
-    const variables = generateCssVariables(themeToApply)
+    // Generate all CSS variables for the theme
+    const variables = generateLimitedCssVariables(themeToApply)
 
-    // Clear any existing variables first
-    const standardVars = [
+    // Clear existing variables before applying new ones
+    const limitedVars = [
       '--primary',
-      '--primary-foreground',
       '--secondary',
-      '--secondary-foreground',
-      '--background',
-      '--foreground',
-      '--card',
-      '--card-foreground',
-      '--popover',
-      '--popover-foreground',
-      '--muted',
-      '--muted-foreground',
       '--accent',
       '--accent-foreground',
-      '--destructive',
-      '--destructive-foreground',
-      '--border',
-      '--input',
-      '--ring'
+      '--radius'
     ]
 
-    standardVars.forEach(varName => {
+    limitedVars.forEach(varName => {
       target.style.removeProperty(varName)
     })
 
@@ -71,9 +46,46 @@ export function useColorScheme() {
         }
       }
     })
+
+    // Set the color mode
+    const uiStore = useUIStore()
+    uiStore.setAllowColorModeSwitch(hostTheme?.allowColorModeSwitch || false)
+    uiStore.setDefaultColorMode(hostTheme?.defaultColorMode || 'light')
+
+    // Apply theme based on configuration
+    if (uiStore.allowColorModeSwitch) {
+      uiStore.setTheme(uiStore.currentTheme)
+    } else {
+      uiStore.setTheme(uiStore.defaultColorMode)
+    }
+
+    // Add dark class to widget root
+    if (uiStore.currentTheme === 'dark') {
+      uiStore.widgetRoot?.classList.add('dark')
+    } else {
+      uiStore.widgetRoot?.classList.remove('dark')
+    }
   }
 
   return {
     applyColorScheme
   }
+}
+
+// Generate only the limited CSS variables we want to override
+function generateLimitedCssVariables(hostTheme: any): string {
+  // Helper function to convert hex to HSL string (with hsl() wrapper)
+  const hexToHslString = (hex: string): string => {
+    const hsl = hexToHsl(hex)
+    // For Tailwind v4, we need the HSL values with hsl() wrapper
+    return `hsl(${Math.round(hsl.h)} ${Math.round(hsl.s)}% ${Math.round(hsl.l)}%)`
+  }
+
+  return `
+    --primary: ${hexToHslString(hostTheme.primary)};
+    --secondary: ${hexToHslString(hostTheme.secondary || hostTheme.primary)};
+    --accent: ${hexToHslString(hostTheme.accent)};
+    --accent-foreground: ${hexToHslString(hostTheme.accentForeground)};
+    --radius: ${hostTheme.radius || '0.625rem'};
+  `.trim()
 }
