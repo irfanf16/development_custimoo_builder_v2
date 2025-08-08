@@ -1,4 +1,4 @@
-import { generateCssVariables, hexToHsl } from '@/lib/colorUtils'
+import { hexToHsl } from '@/lib/colorUtils'
 import { useUIStore } from '@/stores/ui'
 import { loadGoogleFont, getFontFamilyCSS } from '@/lib/utils'
 

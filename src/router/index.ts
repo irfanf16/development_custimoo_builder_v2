@@ -9,11 +9,11 @@ import { useAuthStore } from '@/stores/auth'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'Home',
-    component: () => import('@/views/Home.vue'),
+    name: 'Customizer',
+    component: () => import('@/views/Customizer.vue'),
     meta: {
       layout: 'default',
-      title: 'Home'
+      title: 'Customizer'
     }
   },
   {

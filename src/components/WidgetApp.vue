@@ -4,6 +4,7 @@
   import { useColorScheme } from '@/composables/useColorScheme'
   import { getHostTheme } from '@/lib/hostThemes'
   import { useUIStore } from '@/stores/ui'
+  import { LayoutWrapper } from '@/layouts'
   import SignInButton from './SignInButton.vue'
   import ThemeToggle from './ThemeToggle.vue'
   import { Button } from '@/components/ui/button'
@@ -86,7 +87,7 @@
   <div
     ref="widgetRootContainer"
     :class="[
-      'widget-theme font-sans border border-gray-200 rounded-lg p-4 shadow-sm w-full min-h-[400px]',
+      'widget-theme font-sans border border-gray-200 p-4 shadow-sm w-full min-h-[400px]',
       { dark: uiStore.currentTheme === 'dark' }
     ]"
     :style="{
@@ -94,7 +95,7 @@
       'background-color': 'var(--background)'
     }"
   >
-    <div class="flex flex-col gap-3 h-full">
+    <!-- <div class="flex flex-col gap-3 h-full">
       <div
         class="flex justify-between items-center pb-3 border-b border-gray-200"
       >
@@ -118,6 +119,14 @@
               About
             </Button>
             <Button
+              @click="navigateTo('/customizer')"
+              :variant="currentRoute === '/customizer' ? 'default' : 'outline'"
+              size="sm"
+              class="text-xs px-2 py-1"
+            >
+              Customizer
+            </Button>
+            <Button
               @click="navigateTo('/dashboard')"
               :variant="currentRoute === '/dashboard' ? 'default' : 'outline'"
               size="sm"
@@ -127,7 +136,6 @@
             </Button>
           </nav>
 
-          <!-- Theme Switch -->
           <div
             v-if="hostTheme?.allowColorModeSwitch"
             class="flex items-center gap-2"
@@ -140,10 +148,15 @@
         </div>
       </div>
       <div class="flex-1 overflow-y-auto">
-        <!-- Widget content -->
-        <router-view />
+        <LayoutWrapper>
+          <router-view />
+        </LayoutWrapper>
       </div>
-    </div>
+    </div> -->
+    <!-- Widget content -->
+    <LayoutWrapper>
+      <router-view />
+    </LayoutWrapper>
   </div>
 </template>
 
