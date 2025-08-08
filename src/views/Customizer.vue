@@ -3,7 +3,9 @@
 </script>
 
 <template>
-  <div class="flex">
-    <CustomizerMenu />
+  <div>
+    <div class="flex">
+      <CustomizerMenu />
+    </div>
   </div>
 </template>

@@ -12,21 +12,10 @@
     Table,
     NotepadText
   } from 'lucide-vue-next'
-  import type { FunctionalComponent } from 'vue'
-  import { ref } from 'vue'
+  // import type { FunctionalComponent } from 'vue'
+  // import { ref } from 'vue'
   import { Button } from '@/components/ui/button'
 
-  const props = defineProps<{
-    name: MenuIconName
-    isActive: {
-      type: Boolean
-      default: false
-      required: false
-    }
-  }>()
-
-  const isActive = computed(() => props.isActive)
-  const isModified = ref(false)
   // Define the icon list as a tuple for type safety
   const menuIconsList = [
     Dumbbell,
@@ -43,10 +32,17 @@
   // Extract the icon names as a union type
   type MenuIconName = (typeof menuIconsList)[number]['name']
 
+  const props = defineProps<{
+    name: MenuIconName
+    isActive?: boolean
+  }>()
+
+  const isActive = computed(() => props.isActive || false)
+  //const isModified = ref(false)
   // Map icon names to their components
-  const menuIconsMap = Object.fromEntries(
-    menuIconsList.map(icon => [icon.name, icon])
-  ) as Record<MenuIconName, FunctionalComponent>
+  // const menuIconsMap = Object.fromEntries(
+  //   menuIconsList.map(icon => [icon.name, icon])
+  // ) as Record<MenuIconName, FunctionalComponent>
 
   const iconClass = 'min-w-[1.5rem] min-h-[1.5rem] bg-transparent'
   const variant = computed(() => (isActive.value ? 'default' : 'outline'))

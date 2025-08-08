@@ -1,13 +1,13 @@
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
-  import { useRouter, useRoute } from 'vue-router'
+  import { onMounted, ref } from 'vue'
+  // import { useRouter, useRoute } from 'vue-router'
   import { useColorScheme } from '@/composables/useColorScheme'
   import { getHostTheme } from '@/lib/hostThemes'
   import { useUIStore } from '@/stores/ui'
   import { LayoutWrapper } from '@/layouts'
-  import SignInButton from './SignInButton.vue'
-  import ThemeToggle from './ThemeToggle.vue'
-  import { Button } from '@/components/ui/button'
+  // import SignInButton from './SignInButton.vue'
+  // import ThemeToggle from './ThemeToggle.vue'
+  // import { Button } from '@/components/ui/button'
 
   // Define props for the widget component
   defineProps({
@@ -53,8 +53,8 @@
     }
   })
 
-  const router = useRouter()
-  const route = useRoute()
+  // const router = useRouter()
+  // const route = useRoute()
   const uiStore = useUIStore()
 
   // Template ref for the widget root element
@@ -76,11 +76,11 @@
     }
   })
 
-  const currentRoute = computed(() => route.path)
+  // const currentRoute = computed(() => route.path)
 
-  const navigateTo = (path: string) => {
-    router.push(path)
-  }
+  // const navigateTo = (path: string) => {
+  //   router.push(path)
+  // }
 </script>
 
 <template>
