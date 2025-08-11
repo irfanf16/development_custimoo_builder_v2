@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { Icon } from '@iconify/vue'
   import { Button } from '@/components/ui/button'
+  import type { ButtonVariants } from '@/components/ui/button'
   import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,6 +12,19 @@
   import { computed, watch } from 'vue'
 
   const uiStore = useUIStore()
+
+  const props = withDefaults(
+    defineProps<{
+      variant?: ButtonVariants['variant']
+      size?: ButtonVariants['size']
+      class?: string
+    }>(),
+    {
+      variant: 'ghost',
+      size: 'sm',
+      class: 'rounded-xl'
+    }
+  )
 
   const setTheme = (theme: 'light' | 'dark') => {
     uiStore.setTheme(theme)
@@ -34,7 +48,7 @@
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <Button variant="outline" size="sm">
+      <Button :variant="props.variant" :size="props.size" :class="props.class">
         <Icon
           icon="radix-icons:moon"
           class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
