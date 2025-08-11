@@ -10,6 +10,7 @@
     DialogTitle
   } from '@/components/ui/dialog'
   import { Button } from '@/components/ui/button'
+  import type { ButtonVariants } from '@/components/ui/button'
 
   const authStore = useAuthStore()
 
@@ -46,29 +47,42 @@
   const toggleUserMenu = () => {
     showUserMenu.value = !showUserMenu.value
   }
+
+  // Presentation props for reuse across placements (e.g., topbar)
+  const props = withDefaults(
+    defineProps<{
+      variant?: ButtonVariants['variant']
+      size?: ButtonVariants['size']
+      class?: string
+    }>(),
+    {
+      variant: 'outline',
+      size: 'default',
+      class: 'rounded-lg'
+    }
+  )
 </script>
 
 <template>
   <div class="flex items-center">
     <!-- Sign In Button (when not authenticated) -->
-    <button
+    <Button
       v-if="!isLoggedIn"
       @click="showSignInDialog = true"
-      class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 cursor-pointer"
-      style="
-        background-color: var(--widget-color, #3b82f6);
-        border-color: var(--widget-color, #3b82f6);
-      "
+      :variant="props.variant"
+      :size="props.size"
+      :class="props.class"
     >
       Sign In
-    </button>
+    </Button>
 
     <!-- User Menu (when authenticated) -->
     <div v-else class="relative">
       <Button
         @click="toggleUserMenu"
-        variant="outline"
-        class="flex items-center space-x-2 px-3 py-2"
+        :variant="props.variant"
+        :size="props.size"
+        :class="['flex items-center space-x-2 px-3 py-2', props.class]"
         :title="`Logged in as ${user?.first_name} ${user?.last_name}`"
       >
         <div

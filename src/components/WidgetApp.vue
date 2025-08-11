@@ -87,74 +87,20 @@
   <div
     ref="widgetRootContainer"
     :class="[
-      'widget-theme font-sans border border-gray-200 p-4 shadow-sm w-full min-h-[400px]',
+      'widget-theme shadow-sm w-full min-h-[400px]',
       { dark: uiStore.currentTheme === 'dark' }
     ]"
-    :style="{
+  >
+    <!-- :class="[
+      'widget-theme bg-zinc-50 dark:bg-zinc-800 text-foreground font-sans border border-gray-200 p-4 shadow-sm w-full min-h-[400px]',
+      { dark: uiStore.currentTheme === 'dark' }
+    ]" -->
+    <!-- :style="{
       color: 'var(--foreground)',
       'background-color': 'var(--background)'
-    }"
-  >
-    <!-- <div class="flex flex-col gap-3 h-full">
-      <div
-        class="flex justify-between items-center pb-3 border-b border-gray-200"
-      >
-        <h3 class="text-lg font-semibold text-gray-900 m-0">{{ title }}</h3>
-        <div class="flex items-center gap-4">
-          <nav v-if="showNavigation" class="flex gap-2">
-            <Button
-              @click="navigateTo('/')"
-              :variant="currentRoute === '/' ? 'default' : 'outline'"
-              size="sm"
-              class="text-xs px-2 py-1"
-            >
-              Home
-            </Button>
-            <Button
-              @click="navigateTo('/about')"
-              :variant="currentRoute === '/about' ? 'default' : 'outline'"
-              size="sm"
-              class="text-xs px-2 py-1"
-            >
-              About
-            </Button>
-            <Button
-              @click="navigateTo('/customizer')"
-              :variant="currentRoute === '/customizer' ? 'default' : 'outline'"
-              size="sm"
-              class="text-xs px-2 py-1"
-            >
-              Customizer
-            </Button>
-            <Button
-              @click="navigateTo('/dashboard')"
-              :variant="currentRoute === '/dashboard' ? 'default' : 'outline'"
-              size="sm"
-              class="text-xs px-2 py-1"
-            >
-              Dashboard
-            </Button>
-          </nav>
-
-          <div
-            v-if="hostTheme?.allowColorModeSwitch"
-            class="flex items-center gap-2"
-          >
-            <span class="text-xs text-muted-foreground">Theme:</span>
-            <ThemeToggle />
-          </div>
-
-          <SignInButton />
-        </div>
-      </div>
-      <div class="flex-1 overflow-y-auto">
-        <LayoutWrapper>
-          <router-view />
-        </LayoutWrapper>
-      </div>
-    </div> -->
+    }" -->
     <!-- Widget content -->
-    <LayoutWrapper>
+    <LayoutWrapper class="bg-slate-50 dark:bg-slate-800">
       <router-view />
     </LayoutWrapper>
   </div>

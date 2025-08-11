@@ -10,7 +10,7 @@
 <template>
   <div class="relative w-full min-h-[700px]">
     <!-- Top Right controls -->
-    <div class="absolute right-4 top-3 z-20 hidden md:block">
+    <div class="absolute right-4 top-4 z-20 hidden md:block">
       <CustomizerTopbar />
     </div>
 
@@ -27,12 +27,16 @@
 
       <!-- Canvas area -->
       <div class="relative">
-        <div
-          class="h-[780px] rounded-3xl bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-muted/60 via-background to-background border grid place-items-center"
-        >
-          <!-- Replace with actual product canvas -->
-          <div class="size-[520px] rounded-full bg-muted/50" />
-        </div>
+        <!--<div class="h-[816px] rounded-[32px] grid place-items-center">
+           <div class="w-[715px] flex flex-col items-center z-0">
+            <img
+              class="w-[715px] h-[817px] object-cover select-none pointer-events-none"
+              src="https://placehold.co/715x817"
+              alt="t-shirt"
+            />
+            <div class="w-96 h-4 bg-black/80 rounded-full blur-xl -mt-6"></div>
+          </div>
+        </div> -->
       </div>
 
       <!-- Right toolbar -->
@@ -43,7 +47,7 @@
 
     <!-- Bottom actions + price card -->
     <div
-      class="absolute bottom-4 left-[calc(56px+260px+1rem)] right-4 flex items-end justify-between gap-4"
+      class="absolute bottom-6 left-0 right-0 px-6 flex items-end justify-between gap-4"
     >
       <BottomActions />
       <PriceCard />

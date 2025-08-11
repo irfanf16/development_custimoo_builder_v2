@@ -61,8 +61,8 @@
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem @click="setTheme('light')"> Light </DropdownMenuItem>
-      <DropdownMenuItem @click="setTheme('dark')"> Dark </DropdownMenuItem>
+      <DropdownMenuItem @select="setTheme('light')"> Light </DropdownMenuItem>
+      <DropdownMenuItem @select="setTheme('dark')"> Dark </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

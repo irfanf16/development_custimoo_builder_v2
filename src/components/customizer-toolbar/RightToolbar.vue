@@ -3,35 +3,46 @@
   import {
     Undo2,
     Redo2,
-    Eye,
-    EyeOff,
-    Move,
     ZoomIn,
-    ZoomOut
+    ZoomOut,
+    RotateCcw,
+    RotateCw,
+    Rotate3D,
+    Layers3,
+    Shuffle
   } from 'lucide-vue-next'
 
   const tools = [
-    { id: 'undo', icon: Undo2, label: 'Undo' },
-    { id: 'redo', icon: Redo2, label: 'Redo' },
-    { id: 'show', icon: Eye, label: 'Show' },
-    { id: 'hide', icon: EyeOff, label: 'Hide' },
-    { id: 'move', icon: Move, label: 'Move' },
+    { id: 'rotateCcw', icon: RotateCcw, label: 'Rotate CCW' },
+    { id: 'rotateCw', icon: RotateCw, label: 'Rotate CW' },
     { id: 'zoomIn', icon: ZoomIn, label: 'Zoom in' },
-    { id: 'zoomOut', icon: ZoomOut, label: 'Zoom out' }
+    { id: 'zoomOut', icon: ZoomOut, label: 'Zoom out' },
+    { id: 'rotate3d', icon: Rotate3D, label: 'Rotate 3D' },
+    { id: 'layers', icon: Layers3, label: 'Layers' },
+    { id: 'shuffle', icon: Shuffle, label: 'Shuffle' },
+    { id: 'undo', icon: Undo2, label: 'Undo' },
+    { id: 'redo', icon: Redo2, label: 'Redo' }
   ]
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
+  <!-- Glass toolbar wrapper -->
+  <div
+    class="w-12 p-1 bg-background/20 rounded-full outline outline-border backdrop-blur-sm flex flex-col gap-1"
+  >
     <Button
       v-for="t in tools"
       :key="t.id"
       variant="outline"
-      size="sm"
-      class="rounded-2xl h-10 w-10 p-0"
+      size="icon"
+      class="rounded-full size-10 p-0 bg-card outline outline-border border-0"
       :aria-label="t.label"
     >
-      <component :is="t.icon" class="size-4" :stroke-width="1.75" />
+      <component
+        :is="t.icon"
+        class="size-4 text-primary"
+        :stroke-width="1.75"
+      />
     </Button>
   </div>
 </template>

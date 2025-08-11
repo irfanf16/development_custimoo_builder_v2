@@ -1,28 +1,47 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import { Save, FolderOpen, ShoppingCart, UserRound } from 'lucide-vue-next'
+  import { Save, ShoppingCart } from 'lucide-vue-next'
   import ThemeToggle from '@/components/ThemeToggle.vue'
+  import SignInButton from '@/components/SignInButton.vue'
 </script>
 
 <template>
+  <!-- Right aligned action group. Save is a split button to match figma. -->
   <div class="flex items-center gap-2">
-    <Button variant="ghost" size="sm" class="rounded-xl">
-      <Save class="size-4" />
-      <span class="hidden sm:inline">Save design</span>
+    <div class="flex rounded-lg outline outline-border overflow-hidden">
+      <Button variant="outline" size="default" class="rounded-none border-0">
+        <Save class="size-4" />
+        <span>Save</span>
+      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        class="rounded-none border-0 border-l outline-0"
+        aria-label="Save options"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          class="size-4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </Button>
+    </div>
+
+    <Button variant="outline" size="default" class="rounded-lg">
+      <span>Locker room</span>
     </Button>
-    <Button variant="ghost" size="sm" class="rounded-xl">
-      <FolderOpen class="size-4" />
-      <span class="hidden sm:inline">Locker room</span>
-    </Button>
-    <Button variant="ghost" size="sm" class="rounded-xl">
+    <Button variant="outline" size="default" class="rounded-lg">
       <ShoppingCart class="size-4" />
-      <span class="hidden sm:inline">Cart</span>
+      <span>Cart</span>
     </Button>
-    <Button variant="ghost" size="sm" class="rounded-xl">
-      <UserRound class="size-4" />
-      <span class="hidden sm:inline">My profile</span>
-    </Button>
-    <ThemeToggle variant="ghost" size="sm" class="rounded-xl" />
+    <SignInButton variant="outline" size="default" class="rounded-lg" />
+    <ThemeToggle variant="outline" size="sm" class="rounded-lg" />
   </div>
 </template>
 

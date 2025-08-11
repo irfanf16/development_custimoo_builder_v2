@@ -44,13 +44,17 @@
   //   menuIconsList.map(icon => [icon.name, icon])
   // ) as Record<MenuIconName, FunctionalComponent>
 
-  const iconClass = 'min-w-[1.5rem] min-h-[1.5rem] bg-transparent'
+  const iconClass = computed(() =>
+    isActive.value
+      ? 'min-w-[1.5rem] min-h-[1.5rem] bg-transparent '
+      : 'min-w-[1.5rem] min-h-[1.5rem] bg-transparent'
+  )
   const variant = computed(() => (isActive.value ? 'default' : 'outline'))
 
   const buttonClass = computed(() =>
     isActive.value
-      ? 'p-4 rounded-2xl shadow-none animate h-12 w-12 text-primary-background bg-primary'
-      : 'p-4 rounded-2xl shadow-none animate h-12 w-12 text-primary-foreground bg-transparent'
+      ? 'p-4 rounded-2xl shadow-none animate h-12 w-12 text-primary-foreground'
+      : 'p-4 rounded-2xl shadow-none animate h-12 w-12'
   )
 </script>
 

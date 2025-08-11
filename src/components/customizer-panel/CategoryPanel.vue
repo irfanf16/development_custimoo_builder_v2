@@ -42,45 +42,41 @@
 </script>
 
 <template>
-  <Card class="w-[260px] p-0 shadow-sm border-muted">
-    <CardHeader class="py-4 px-4">
-      <CardTitle class="text-sm font-semibold">Category</CardTitle>
-    </CardHeader>
-    <CardContent class="px-2 pb-3">
-      <div class="flex flex-col gap-1">
-        <Button
-          v-for="item in categories"
-          :key="item.id"
-          variant="ghost"
-          class="justify-between rounded-xl px-2 py-2 h-auto hover:bg-accent/60"
-          @click="setActive(item.id)"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="grid place-items-center size-6 rounded-lg border"
-              :class="
-                activeId === item.id
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-muted-foreground'
-              "
-            >
-              <component :is="item.icon" class="size-3.5" :stroke-width="2" />
+  <!-- <div class="w-[472px] p-1 bg-background/20 rounded-2xl backdrop-blur-[2px]"> -->
+  <div class="w-[472px]">
+    <Card class="w-full p-0 rounded-2xl shadow-none">
+      <CardHeader class="py-6 px-6">
+        <CardTitle class="text-xl font-semibold">Category</CardTitle>
+      </CardHeader>
+      <CardContent class="px-2 pb-2">
+        <div class="flex flex-col">
+          <Button
+            v-for="item in categories"
+            :key="item.id"
+            variant="ghost"
+            class="h-14 px-4 rounded-md justify-between"
+            @click="setActive(item.id)"
+          >
+            <div class="flex items-center gap-3">
+              <div class="grid place-items-center size-6 rounded-lg border">
+                <component :is="item.icon" class="size-3.5" :stroke-width="2" />
+              </div>
+              <span class="text-base font-semibold">{{ item.label }}</span>
             </div>
-            <span class="text-sm">{{ item.label }}</span>
-          </div>
 
-          <div class="flex items-center gap-1">
-            <Check
-              v-if="activeId === item.id"
-              class="size-4 text-emerald-500"
-              :stroke-width="2.5"
-            />
-            <ChevronRight class="size-4 text-muted-foreground" />
-          </div>
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
+            <div class="flex items-center gap-1">
+              <Check
+                v-if="activeId === item.id"
+                class="size-4 text-emerald-500"
+                :stroke-width="2.5"
+              />
+              <ChevronRight class="size-4" />
+            </div>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
 </template>
 
 <style scoped></style>
