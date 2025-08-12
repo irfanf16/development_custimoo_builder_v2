@@ -55,7 +55,7 @@ export const useAuthStore = defineStore('authStore', () => {
 
   function initAccessToken(data: string) {
     setAccessToken(data)
-    localStorage.setItem('jtwToken', data)
+    localStorage.setItem('jwtToken', data)
   }
 
   function setCustomerAndAccessToken(data: OutputLogin) {
@@ -67,10 +67,10 @@ export const useAuthStore = defineStore('authStore', () => {
 
   function initCustomerAndAccessTokenFromLocalStorage() {
     const customerJson = localStorage.getItem('customer')
-    const jtwToken = localStorage.getItem('jtwToken')
-    if (customerJson && jtwToken) {
+    const jwtToken = localStorage.getItem('jwtToken')
+    if (customerJson && jwtToken) {
       initCustomer(JSON.parse(customerJson))
-      initAccessToken(jtwToken)
+      initAccessToken(jwtToken)
     }
   }
 
@@ -78,7 +78,7 @@ export const useAuthStore = defineStore('authStore', () => {
     clearCustomerAndAccessToken()
     // Remove from local storage
     localStorage.removeItem('customer')
-    localStorage.removeItem('jtwToken')
+    localStorage.removeItem('jwtToken')
   }
 
   // API Functions

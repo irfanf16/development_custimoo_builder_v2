@@ -13,8 +13,7 @@
     switch (layout.value) {
       case 'default':
         return DefaultLayout
-      case 'dashboard':
-        return DefaultLayout // For now, using DefaultLayout for dashboard too
+
       case 'auth':
         return DefaultLayout // For now, using DefaultLayout for auth too
       default:

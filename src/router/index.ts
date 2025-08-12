@@ -16,35 +16,7 @@ const routes: RouteRecordRaw[] = [
       title: 'Customizer'
     }
   },
-  {
-    path: '/about',
-    name: 'About',
-    component: () => import('@/views/About.vue'),
-    meta: {
-      layout: 'default',
-      title: 'About'
-    }
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/Dashboard.vue'),
-    meta: {
-      layout: 'dashboard',
-      title: 'Dashboard',
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: () => import('@/views/Profile.vue'),
-    meta: {
-      layout: 'dashboard',
-      title: 'Profile',
-      requiresAuth: true
-    }
-  },
+
   {
     path: '/auth',
     name: 'Auth',

@@ -30,7 +30,7 @@
     const result = await authStore.dispatchLogin(loginForm.value)
     if (result.success) {
       loginForm.value = { email: '', password: '' }
-      router.push('/dashboard')
+      router.push('/')
     }
   }
 </script>
