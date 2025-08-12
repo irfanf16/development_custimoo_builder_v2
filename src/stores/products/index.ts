@@ -10,13 +10,23 @@ import type { APIResponse } from '../types'
 
 export const useProductsStore = defineStore('productsStore', () => {
   // State
-  const categoriesResponse = ref<OutputProductCategories | null>(null)
+  const categories = ref<OutputProductCategories | null>(null)
+  const lastCategoryId = ref<number | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
   // Actions
-  function setCategoriesResponse(data: OutputProductCategories) {
-    categoriesResponse.value = data
+  function setCategories(data: OutputProductCategories) {
+    categories.value = data
+  }
+
+  function setlastCategoryId(id: number) {
+    lastCategoryId.value = id
+    localStorage.setItem('lastCategoryId', id.toString())
+  }
+
+  function clearlastCategoryId() {
+    lastCategoryId.value = null
   }
 
   function setLoading(loading: boolean) {
@@ -28,11 +38,19 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   function clearCategories() {
-    categoriesResponse.value = null
+    categories.value = null
+    clearlastCategoryId()
+  }
+
+  function initLastCategoryIdFromLocalStorage() {
+    const lastCategoryId = localStorage.getItem('lastCategoryId')
+    if (lastCategoryId) {
+      setlastCategoryId(Number(lastCategoryId))
+    }
   }
 
   function reset() {
-    categoriesResponse.value = null
+    categories.value = null
     isLoading.value = false
     error.value = null
   }
@@ -47,7 +65,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       API.products.getProductCategories(params ?? {})
     )
     if (output.success) {
-      setCategoriesResponse(output.content)
+      setCategories(output.content)
     } else {
       setError('Error getting categories')
     }
@@ -55,7 +73,27 @@ export const useProductsStore = defineStore('productsStore', () => {
     return output
   }
 
-  async function dispatchGetProductCategories(
+  async function dispatchGetCategoriesWithNoDefaultCategoryOrProduct(): Promise<APIResponse<OutputProductCategories>> {
+    setLoading(true)
+    setError(null)
+    const output = await tryCatchApi(
+      API.products.getProductCategories({ customized: true })
+    )
+    if (output.success) {
+      setCategories(output.content)
+      if (categories.value?.data?.length && categories.value.data.length > 0) {
+        setlastCategoryId(categories.value.data[0].id)
+      } else {
+        clearlastCategoryId()
+      }
+    } else {
+      setError('Error getting categories')
+    }
+    setLoading(false)
+    return output
+  }
+
+  async function dispatchGetProductCategoriesWithProductId(
     productId: number
   ): Promise<APIResponse<OutputProductCategories>> {
     setLoading(true)
@@ -64,7 +102,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       API.products.getProductCategories({ product_id: productId })
     )
     if (output.success) {
-      setCategoriesResponse(output.content)
+      setCategories(output.content)
     } else {
       setError('Error getting product categories')
     }
@@ -80,7 +118,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     const params: GetProductCategoriesParams = { customized: true }
     const output = await tryCatchApi(API.products.getProductCategories(params))
     if (output.success) {
-      setCategoriesResponse(output.content)
+      setCategories(output.content)
     } else {
       setError('Error getting customized categories')
     }
@@ -90,20 +128,22 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   return {
     // State
-    categoriesResponse,
+    categories,
+    lastCategoryId,
     isLoading,
     error,
 
     // Actions
-    setCategoriesResponse,
+    setCategories,
     setLoading,
     setError,
     clearCategories,
     reset,
-
+    setlastCategoryId,
+    initLastCategoryIdFromLocalStorage,
     // API Functions
-    dispatchGetCategories,
-    dispatchGetProductCategories,
+    dispatchGetCategoriesWithNoDefaultCategoryOrProduct,
+    dispatchGetProductCategoriesWithProductId,
     dispatchGetCustomizedCategories
   }
 })

@@ -1,28 +1,13 @@
 <script setup lang="ts">
-  import { onMounted } from 'vue'
   import WidgetApp from '@/components/WidgetApp.vue'
-  import { useAuthStore } from '@/stores/auth'
   import { useAppInitialization } from '@/composables'
-  import { useRouter } from 'vue-router'
   import { Button } from '@/components/ui/button'
-  const router = useRouter()
 
   // Initialize app data (company and settings)
   const appInit = useAppInitialization()
-  const { isLoading, error, company, settings } = appInit
+  const { isLoading, error } = appInit
 
-  // Initialize auth store on app startup
-  onMounted(() => {
-    try {
-      const authStore = useAuthStore()
-      authStore.initCustomerAndAccessTokenFromLocalStorage()
-      if (!authStore.isAuthenticated) {
-        router.push('/auth')
-      }
-    } catch (error) {
-      // Auth store not available
-    }
-  })
+  // Auth initialization now lives in useAppInitialization
 </script>
 
 <template>
@@ -51,5 +36,5 @@
   </div>
 
   <!-- Widget content -->
-  <WidgetApp v-else v-bind="$attrs" :company="company" :settings="settings" />
+  <WidgetApp v-else v-bind="$attrs" />
 </template>

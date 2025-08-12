@@ -1,6 +1,7 @@
 import { ref, onMounted, readonly } from 'vue'
-import companyService from '@/services/company'
-import type { OutputCompany, OutputSettings } from '@/services/company/types'
+import { useCompanyStore } from '@/stores/company'
+import { useAuthStore } from '@/stores/auth'
+import { useProductsStore } from '@/stores/products'
 
 // Global state to prevent multiple initializations
 let globalInitializationPromise: Promise<void> | null = null
@@ -10,9 +11,6 @@ export function useAppInitialization() {
   const isInitialized = ref(globalIsInitialized)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
-
-  const company = ref<OutputCompany | null>(null)
-  const settings = ref<OutputSettings | null>(null)
 
   const initializeApp = async () => {
     // If already initialized globally, just return
@@ -37,14 +35,28 @@ export function useAppInitialization() {
     // Create global promise to prevent multiple simultaneous initializations
     globalInitializationPromise = (async () => {
       try {
-        // Fetch company and settings in parallel
-        const [companyResponse, settingsResponse] = await Promise.all([
-          companyService.getCompany(),
-          companyService.getSettings()
+        // Initialize authentication from localStorage (non-blocking)
+        try {
+          const authStore = useAuthStore()
+          authStore.initCustomerAndAccessTokenFromLocalStorage()
+        } catch (_err) {
+          // In rare cases the store may not be available; ignore and continue
+        }
+
+        // Initialize products store from localStorage (non-blocking)
+        const productsStore = useProductsStore()
+        productsStore.initLastCategoryIdFromLocalStorage()
+
+        // Fetch company and settings using stores
+        const companyStore = useCompanyStore()
+        await Promise.all([
+          companyStore.dispatchGetCompany(),
+          companyStore.dispatchGetSettings(),
+          productsStore.lastCategoryId
+            ? productsStore.dispatchGetProductCategoriesWithProductId(productsStore.lastCategoryId)
+            : productsStore.dispatchGetCategoriesWithNoDefaultCategoryOrProduct()
         ])
 
-        company.value = companyResponse.data
-        settings.value = settingsResponse.data
         isInitialized.value = true
         globalIsInitialized = true
       } catch (err) {
@@ -67,8 +79,8 @@ export function useAppInitialization() {
     isInitialized: readonly(isInitialized),
     isLoading: readonly(isLoading),
     error: readonly(error),
-    company: readonly(company),
-    settings: readonly(settings),
+    // company: readonly(company),
+    // settings: readonly(settings),
     initializeApp
   }
 }

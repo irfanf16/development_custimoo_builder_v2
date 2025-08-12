@@ -36,3 +36,10 @@ export type GetProductCategoriesParams = {
   sync_id?: number
   share_url?: string
 }
+
+export type GetProductCategoriesByCategoryIdParams = {
+  category_id: number
+  customized: boolean
+  personalized: boolean
+  private: boolean
+}

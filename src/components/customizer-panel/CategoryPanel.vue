@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import {
     Card,
     CardHeader,
@@ -17,6 +17,9 @@
     Droplets,
     Trophy
   } from 'lucide-vue-next'
+  import { useProductsStore } from '@/stores/products'
+
+  const productsStore = useProductsStore()
 
   type Category = {
     id: string
@@ -24,20 +27,22 @@
     icon: any
   }
 
-  const categories = ref<Category[]>([
-    { id: 'hockey', label: 'Hockey', icon: Dumbbell },
-    { id: 'soccer', label: 'Soccer', icon: Trophy },
-    { id: 'basketball', label: 'Basketball', icon: Trophy },
-    { id: 'cycling', label: 'Cycling', icon: Bike },
-    { id: 'running', label: 'Running', icon: Shirt },
-    { id: 'swimming', label: 'Swimming', icon: Droplets },
-    { id: 'volleyball', label: 'Volleyball', icon: Volleyball }
-  ])
+  // const categories = ref<Category[]>([
+  //   { id: 'hockey', label: 'Hockey', icon: Dumbbell },
+  //   { id: 'soccer', label: 'Soccer', icon: Trophy },
+  //   { id: 'basketball', label: 'Basketball', icon: Trophy },
+  //   { id: 'cycling', label: 'Cycling', icon: Bike },
+  //   { id: 'running', label: 'Running', icon: Shirt },
+  //   { id: 'swimming', label: 'Swimming', icon: Droplets },
+  //   { id: 'volleyball', label: 'Volleyball', icon: Volleyball }
+  // ])
 
-  const activeId = ref<string>('soccer')
+  const activeId = computed(() => {
+    return productsStore.lastCategoryId
+  })
 
-  function setActive(id: string) {
-    activeId.value = id
+  function setActive(id: number) {
+    productsStore.setlastCategoryId(id)
   }
 </script>
 
@@ -51,7 +56,7 @@
       <CardContent class="px-2 pb-2">
         <div class="flex flex-col">
           <Button
-            v-for="item in categories"
+            v-for="item in productsStore.categories?.data"
             :key="item.id"
             variant="ghost"
             class="h-14 px-4 rounded-md justify-between"
@@ -59,9 +64,9 @@
           >
             <div class="flex items-center gap-3">
               <div class="grid place-items-center size-6 rounded-lg border">
-                <component :is="item.icon" class="size-3.5" :stroke-width="2" />
+                <component :is="Volleyball" class="size-3.5" :stroke-width="2" />
               </div>
-              <span class="text-base font-semibold">{{ item.label }}</span>
+              <span class="text-base font-semibold">{{ item.category_name }}</span>
             </div>
 
             <div class="flex items-center gap-1">
