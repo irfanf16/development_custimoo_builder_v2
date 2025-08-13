@@ -41,7 +41,7 @@
       <span>Cart</span>
     </Button>
     <SignInButton variant="outline" size="default" class="rounded-lg" />
-    <ThemeToggle variant="outline" size="sm" class="rounded-lg" />
+    <ThemeToggle variant="outline" size="default" class="rounded-lg" />
   </div>
 </template>
 
