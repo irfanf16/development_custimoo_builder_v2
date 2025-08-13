@@ -35,12 +35,12 @@
       :key="t.id"
       variant="outline"
       size="icon"
-      class="rounded-full size-10 p-0 bg-card outline outline-border border-0"
+      class="rounded-full size-10 p-0 bg-card outline outline-border border-0 shadow-none"
       :aria-label="t.label"
     >
       <component
         :is="t.icon"
-        class="size-4 text-primary"
+        class="size-4"
         :stroke-width="1.75"
       />
     </Button>

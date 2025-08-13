@@ -7,6 +7,21 @@ import { getHostTheme } from './lib/hostThemes'
 // Import CSS styles
 import widgetStyles from './widget-styles.css?inline'
 
+// Persist references to style elements across HMR updates
+// so we can live-replace the CSS injected into Shadow DOMs.
+const styleElements: Set<HTMLStyleElement> =
+  (import.meta as any).hot?.data?.styleElements ?? new Set<HTMLStyleElement>()
+
+if ((import.meta as any).hot) {
+  ;(import.meta as any).hot.data.styleElements = styleElements
+  ;(import.meta as any).hot.accept(['./widget-styles.css?inline'], (mods: any[]) => {
+    const nextCss: string = mods?.[0]?.default ?? ''
+    for (const el of styleElements) {
+      el.textContent = nextCss
+    }
+  })
+}
+
 // Function to bootstrap and mount the Vue.js application
 export function bootstrap(
   shadowRoot: ShadowRoot,
@@ -21,6 +36,8 @@ export function bootstrap(
   const style = document.createElement('style')
   style.textContent = widgetStyles
   shadowRoot.appendChild(style)
+  // Track for HMR live updates
+  styleElements.add(style)
 
   // Inject Google Fonts link into shadow DOM if needed
   const hostTheme = getHostTheme()
