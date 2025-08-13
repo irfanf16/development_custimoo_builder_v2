@@ -29,6 +29,11 @@ export const useProductsStore = defineStore('productsStore', () => {
     lastCategoryId.value = null
   }
 
+  // Alias with conventional casing for component usage
+  function clearLastCategoryId() {
+    clearlastCategoryId()
+  }
+
   function setLoading(loading: boolean) {
     isLoading.value = loading
   }
@@ -140,6 +145,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     clearCategories,
     reset,
     setlastCategoryId,
+    clearLastCategoryId,
     initLastCategoryIdFromLocalStorage,
     // API Functions
     dispatchGetCategoriesWithNoDefaultCategoryOrProduct,
