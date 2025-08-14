@@ -28,6 +28,58 @@
         padding: 12px;
         border-radius: 4px;
       }
+      .footer {
+        background: #2c3e50;
+        color: white;
+        padding: 40px 0 20px;
+        margin-top: 40px;
+      }
+      .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+      }
+      .footer-section h3 {
+        color: #ecf0f1;
+        margin-bottom: 15px;
+        font-size: 18px;
+      }
+      .footer-section p,
+      .footer-section a {
+        color: #bdc3c7;
+        text-decoration: none;
+        line-height: 1.6;
+        margin-bottom: 8px;
+        display: block;
+      }
+      .footer-section a:hover {
+        color: #3498db;
+      }
+      .footer-bottom {
+        border-top: 1px solid #34495e;
+        margin-top: 30px;
+        padding-top: 20px;
+        text-align: center;
+        color: #95a5a6;
+      }
+      .social-links {
+        display: flex;
+        gap: 15px;
+        margin-top: 15px;
+      }
+      .social-links a {
+        background: #34495e;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+      }
+      .social-links a:hover {
+        background: #3498db;
+      }
     </style>
   </head>
   <body>
@@ -60,6 +112,61 @@
         ></customizer-widget>
       </div>
     </div>
+
+    <!-- Host Website Footer Example -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>About Our Company</h3>
+          <p>
+            We specialize in creating high-quality custom products that reflect
+            your unique style and preferences.
+          </p>
+          <p>
+            With years of experience in customization, we help bring your vision
+            to life.
+          </p>
+        </div>
+
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <a href="#">Home</a>
+          <a href="#">Products</a>
+          <a href="#">Customization</a>
+          <a href="#">Support</a>
+          <a href="#">Contact</a>
+        </div>
+
+        <div class="footer-section">
+          <h3>Customer Service</h3>
+          <a href="#">Help Center</a>
+          <a href="#">Shipping Info</a>
+          <a href="#">Returns</a>
+          <a href="#">Size Guide</a>
+          <a href="#">FAQ</a>
+        </div>
+
+        <div class="footer-section">
+          <h3>Connect With Us</h3>
+          <p>
+            Follow us on social media for the latest updates and inspiration.
+          </p>
+          <div class="social-links">
+            <a href="#">Facebook</a>
+            <a href="#">Twitter</a>
+            <a href="#">Instagram</a>
+            <a href="#">YouTube</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>
+          &copy; 2024 Customizer Widget Demo. All rights reserved. | Privacy
+          Policy | Terms of Service
+        </p>
+      </div>
+    </footer>
 
     <!-- Load the widget script -->
     <script type="module" src="/src/main.ts"></script>
