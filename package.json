@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite --port 3000 --host --open demo.html",
     "demo": "vite --port 3000 --host --open demo.html",
+    "responsive-height-test": "vite --port 3000 --host --open responsive-height-test.html",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview --port 3001 --host --open preview.html",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {

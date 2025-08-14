@@ -1,7 +1,11 @@
 <script setup lang="ts">
   import { ref } from 'vue'
   import CustomizerMenu from '@/components/customizer-menu/index.vue'
-  import { MenuPanel, CategoryPanel, ProductPanel } from '@/components/customizer-panel'
+  import {
+    MenuPanel,
+    CategoryPanel,
+    ProductPanel
+  } from '@/components/customizer-panel'
   import RightToolbar from '@/components/customizer-toolbar/RightToolbar.vue'
   import BottomActions from '@/components/customizer-bottom-actions/BottomActions.vue'
   import PriceCard from '@/components/customizer-price/PriceCard.vue'
@@ -27,7 +31,9 @@
   const navigateBack = () => {
     if (panelHistory.value.length > 1) {
       panelHistory.value.pop()
-      const previousPanel = panelHistory.value[panelHistory.value.length - 1] as 'category' | 'product'
+      const previousPanel = panelHistory.value[
+        panelHistory.value.length - 1
+      ] as 'category' | 'product'
       if (previousPanel === 'category') {
         productsStore.clearLastCategoryId()
       }
@@ -40,14 +46,16 @@
     if (currentPanel.value === 'category') {
       return [{ label: 'Categories' }]
     } else {
-      const category = productsStore.categories?.data?.find(c => c.id === productsStore.lastCategoryId)
+      const category = productsStore.categories?.data?.find(
+        c => c.id === productsStore.lastCategoryId
+      )
       return [
-        { 
-          label: 'Categories', 
-          action: () => navigateBack() 
+        {
+          label: 'Categories',
+          action: () => navigateBack()
         },
-        { 
-          label: category?.category_name || 'Products' 
+        {
+          label: category?.category_name || 'Products'
         }
       ]
     }
@@ -71,36 +79,37 @@
       <div class="pt-4 relative z-40 h-full">
         <CustomizerMenu />
         <!-- Unified Menu Panel positioned out of flow, next to the menu -->
-      <div class="absolute left-[72px] top-4 w-[360px] min-w-[360px] h-full">
-        <div class="h-full relative">
-          <MenuPanel
-            :content-key="currentPanel"
-            :breadcrumbs="getBreadcrumbs()"
-            :expandable="currentPanel === 'product'"
-            :show-back-button="currentPanel === 'product'"
-            :on-back="navigateBack"
-          >
-            <!-- Category Panel Content -->
-            <CategoryPanel
-              v-if="currentPanel === 'category'"
-              @select-category="handleCategorySelect"
-            />
+        <div class="absolute left-[72px] top-4 w-[360px] min-w-[360px] h-full">
+          <div class="h-full relative">
+            <MenuPanel
+              :content-key="currentPanel"
+              :breadcrumbs="getBreadcrumbs()"
+              :expandable="currentPanel === 'product'"
+              :show-back-button="currentPanel === 'product'"
+              :on-back="navigateBack"
+            >
+              <!-- Category Panel Content -->
+              <CategoryPanel
+                v-if="currentPanel === 'category'"
+                @select-category="handleCategorySelect"
+              />
 
-            <!-- Product Panel Content -->
-            <ProductPanel v-else />
-          </MenuPanel>
+              <!-- Product Panel Content -->
+              <ProductPanel v-else />
+            </MenuPanel>
+          </div>
         </div>
       </div>
-      </div>
 
-      
       <!-- Placeholder div to maintain layout space for the panel column -->
       <div class="w-[360px] pt-4"></div>
 
       <!-- Canvas area -->
       <div class="relative z-0 h-full overflow-hidden flex-1">
         <!-- Preview layer (kept behind toolbars/menus) -->
-        <div class="absolute inset-0 z-0 grid place-items-center pointer-events-none">
+        <div
+          class="absolute inset-0 z-0 grid place-items-center pointer-events-none"
+        >
           <div class="h-[816px] rounded-[32px] grid place-items-center">
             <div class="w-[715px] flex flex-col items-center">
               <img
@@ -108,7 +117,9 @@
                 src="https://placehold.co/715x817"
                 alt="t-shirt"
               />
-              <div class="w-96 h-4 bg-black/80 rounded-full blur-xl -mt-6"></div>
+              <div
+                class="w-96 h-4 bg-black/80 rounded-full blur-xl -mt-6"
+              ></div>
             </div>
           </div>
         </div>
@@ -131,19 +142,19 @@
 </template>
 
 <style>
-/* Breadcrumb item animations (kept here if needed elsewhere) */
-.breadcrumb-item-enter-active,
-.breadcrumb-item-leave-active {
-  transition: all 200ms ease;
-}
+  /* Breadcrumb item animations (kept here if needed elsewhere) */
+  .breadcrumb-item-enter-active,
+  .breadcrumb-item-leave-active {
+    transition: all 200ms ease;
+  }
 
-.breadcrumb-item-enter-from {
-  opacity: 0;
-  transform: translateY(-2px);
-}
+  .breadcrumb-item-enter-from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
 
-.breadcrumb-item-leave-to {
-  opacity: 0;
-  transform: translateY(2px);
-}
+  .breadcrumb-item-leave-to {
+    opacity: 0;
+    transform: translateY(2px);
+  }
 </style>
