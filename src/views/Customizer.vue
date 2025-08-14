@@ -1,15 +1,15 @@
 <script setup lang="ts">
   import { ref } from 'vue'
-  import CustomizerMenu from '@/components/customizer-menu/index.vue'
+  import { CustomizerMenu } from '@/components/customizer-menu'
   import {
     MenuPanel,
     CategoryPanel,
     ProductPanel
   } from '@/components/customizer-panel'
-  import RightToolbar from '@/components/customizer-toolbar/RightToolbar.vue'
+  import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
   import BottomActions from '@/components/customizer-bottom-actions/BottomActions.vue'
   import PriceCard from '@/components/customizer-price/PriceCard.vue'
-  import CustomizerTopbar from '@/components/customizer-topbar/index.vue'
+  import { CustomizerTopbar } from '@/components/customizer-topbar'
   import { useProductsStore } from '@/stores/products'
 
   const productsStore = useProductsStore()

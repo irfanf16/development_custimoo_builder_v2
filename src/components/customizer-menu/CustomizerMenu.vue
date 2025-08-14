@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import CustomizerMenuItem from './item.vue'
+  import CustomizerMenuItem from './MenuItem.vue'
 </script>
 
 <template>

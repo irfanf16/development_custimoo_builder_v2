@@ -1,15 +1,17 @@
 <script setup lang="ts">
-  import CanvasPreview from '@/components/customizer-canvas-preview/canvas-preview.vue'
+  import CanvasPreview from '@/components/customizer-canvas-preview/CanvasPreview.vue'
   import BottomActions from '@/components/customizer-bottom-actions/BottomActions.vue'
   import PriceCard from '@/components/customizer-price/PriceCard.vue'
-  import CustomizerMenu from '@/components/customizer-menu/index.vue'
+  import { CustomizerMenu } from '@/components/customizer-menu'
   import {
     CategoryPanel,
     MenuPanel,
     ProductPanel
   } from '@/components/customizer-panel'
+  import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
   import { ref } from 'vue'
   import { useProductsStore } from '@/stores/products'
+  import { CustomizerTopbar } from '@/components/customizer-topbar'
 
   const productsStore = useProductsStore()
 
@@ -66,8 +68,14 @@
 <template>
   <div>
     <CanvasPreview />
-    <div id="main-content" class="flex-col w-full z-10 border border-red-500">
-      <div id="top-content" class="flex-row border border-blue-500">
+    <div
+      id="main-content"
+      class="flex flex-col w-full z-10 border border-red-500"
+    >
+      <div
+        id="top-content"
+        class="flex flex-row justify-between border border-blue-500"
+      >
         <div id="left-content" class="flex flex-row border border-yellow-500">
           <div
             id="menu-items-container"
@@ -97,7 +105,11 @@
             </MenuPanel>
           </div>
         </div>
-        <div id="right-content" class="flex-row border border-purple-500">
+        <div
+          id="right-content"
+          class="flex flex-col border border-purple-500 justify-between"
+        >
+          <CustomizerTopbar />
           <div
             id="canvas-controls-container"
             class="flex-col borderborder-orange-500"
