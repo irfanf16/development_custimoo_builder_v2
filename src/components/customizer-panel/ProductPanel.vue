@@ -5,24 +5,24 @@
 <template>
   <div
     :class="[
-      'grid gap-6 gap-y-8 overflow-y-auto',
-      'grid-cols-2 max-h-[640px] pr-1'
+      'flex flex-wrap overflow-y-auto max-h-[640px]'
     ]"
   >
     <!-- Mock products for demo -->
     <div
       v-for="i in 24"
       :key="i"
-      class="flex flex-col items-start gap-3"
+      class="flex flex-col items-center flex-shrink-0 gap-6 pl-6 pb-6 pt-6"
     >
-      <div class="w-full aspect-[1/1] bg-muted/20 rounded-xl grid place-items-center">
-        <div class="text-sm text-muted-foreground">
-          {{ ['1000-series', '2000-series', '2500-series', '3000-series'][i % 4] }}
-        </div>
-      </div>
-      <div class="text-base font-semibold">
+      <div class="text-sm font-medium text-left w-full text-foreground">
         {{ ['1000-series', '2000-series', '2500-series', '3000-series'][i % 4] }}
       </div>
+      <img
+        src="https://placehold.co/176x176"
+        alt="Product placeholder"
+        class="bg-muted/20 rounded-xl border border-border/50 hover:border-border transition-colors cursor-pointer hover:bg-muted/30 object-cover"
+      />
+      
     </div>
   </div>
 </template>

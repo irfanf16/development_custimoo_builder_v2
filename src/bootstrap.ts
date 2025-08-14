@@ -30,6 +30,31 @@ export function bootstrap(
   // Create a container element within the shadow root
   const container = document.createElement('div')
   container.id = 'customizer-widget-container'
+  
+  // Set container height with responsive minimum heights
+  const setContainerHeight = () => {
+    const isMobile = window.innerWidth < 768 // Common mobile breakpoint
+    const minHeight = isMobile ? 700 : 800
+    
+    // Use min-height instead of fixed height to allow content to determine actual height
+    container.style.minHeight = `${minHeight}px`
+    container.style.height = 'auto' // Let content determine height
+    
+    console.log('Widget height calculation:', {
+      screenWidth: window.innerWidth,
+      isMobile,
+      minHeight,
+      containerHeight: container.style.height,
+      containerMinHeight: container.style.minHeight
+    })
+  }
+  
+  // Set initial height
+  setContainerHeight()
+  
+  // Update height on window resize
+  window.addEventListener('resize', setContainerHeight)
+  
   shadowRoot.appendChild(container)
 
   // Inject CSS into shadow DOM
@@ -83,4 +108,9 @@ export function bootstrap(
 
   // Mount the Vue application onto the container element within shadow root
   app.mount(container)
+  
+  // Return cleanup function
+  return () => {
+    window.removeEventListener('resize', setContainerHeight)
+  }
 }

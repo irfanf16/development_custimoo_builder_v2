@@ -87,21 +87,13 @@
   <div
     ref="widgetRootContainer"
     :class="[
-      'widget-theme shadow-sm w-full min-h-[400px]',
+      'widget-theme shadow-sm w-full min-h-full flex flex-col',
       { dark: uiStore.currentTheme === 'dark' }
     ]"
   >
-    <!-- :class="[
-      'widget-theme bg-zinc-50 dark:bg-zinc-800 text-foreground font-sans border border-gray-200 p-4 shadow-sm w-full min-h-[400px]',
-      { dark: uiStore.currentTheme === 'dark' }
-    ]" -->
-    <!-- :style="{
-      color: 'var(--foreground)',
-      'background-color': 'var(--background)'
-    }" -->
     <!-- Widget content -->
-    <LayoutWrapper class="bg-slate-50 dark:bg-slate-800">
-      <router-view />
+    <LayoutWrapper class="bg-slate-50 dark:bg-slate-800 flex-1 flex flex-col">
+      <router-view class="flex-1 flex flex-col" />
     </LayoutWrapper>
   </div>
 </template>

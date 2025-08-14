@@ -48,12 +48,13 @@
 
   // Computed width based on expanded state
   const panelWidth = computed(() => {
-    return isExpanded.value ? '1200px' : '360px'
+    return isExpanded.value ? '80%' : '360px'
   })
 
   const handleBreadcrumbClick = (index: number) => {
     if (index < currentBreadcrumbIndex.value && props.breadcrumbs?.[index]?.action) {
       props.breadcrumbs[index].action?.()
+      isExpanded.value = false
     }
   }
 
@@ -70,22 +71,14 @@
 <template>
   <div
     :class="[
-      'relative transition-all duration-300 ease-in-out min-w-[360px] max-w-[360px]',
-      isExpanded ? 'z-50 max-w-none' : ''
+      'relative w-[28rem] h-full',
+      isExpanded ? 'z-20 max-w-none' : ''
     ]"
-    :style="{ 
-      width: panelWidth,
-      minWidth: '360px',
-      ...(isExpanded && { 
-        position: 'fixed',
-        left: '72px', // Position to the right of the menu (56px + 16px gap)
-        top: '16px',
-        zIndex: '50'
-      })
-    }"
   >
-    <Card class="w-full h-full p-0 rounded-2xl shadow-none">
-      <CardHeader class="py-6 px-6 flex flex-row items-center justify-between gap-2">
+    <Card class="w-full p-0 h-auto rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0"
+    :class="isExpanded ? 'w-[95rem]' : 'w-full'"
+    >
+      <CardHeader class="py-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem]">
         <div class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden">
           <!-- <Button 
             v-if="showBackButton" 
@@ -136,10 +129,7 @@
       </CardHeader>
 
       <CardContent
-        :class="[
-          'pb-4',
-          isExpanded ? 'px-6' : 'px-2'
-        ]"
+        class="p-0 pb-4"
       >
         <!-- Content slot for different panel types -->
         <Transition name="panel-slide" mode="out-in" appear>

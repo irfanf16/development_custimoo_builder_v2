@@ -16,7 +16,15 @@ const routes: RouteRecordRaw[] = [
       title: 'Customizer'
     }
   },
-
+  {
+    path: '/customizer-two',
+    name: 'CustomizerTwo',
+    component: () => import('@/views/CustomizerTwo.vue'),
+    meta: {
+      layout: 'default',
+      title: 'Customizer Two'
+    }
+  },
   {
     path: '/auth',
     name: 'Auth',

@@ -53,8 +53,8 @@
 
   const buttonClass = computed(() =>
     isActive.value
-      ? 'w-[56px] h-[56px] p-4 rounded-2xl shadow-none animate text-primary-foreground display'
-      : 'w-[56px] h-[56px] p-4 rounded-2xl shadow-none animate'
+      ? 'w-[56px] h-[56px] p-4 rounded-2xl animate text-primary-foreground display'
+      : 'w-[56px] h-[56px] p-4 rounded-2xl animate'
   )
 </script>
 

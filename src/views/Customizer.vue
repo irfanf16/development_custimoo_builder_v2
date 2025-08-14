@@ -60,43 +60,45 @@
 </script>
 
 <template>
-  <div class="relative w-full min-h-[700px]">
+  <div class="relative w-full h-full flex-1 flex flex-col">
     <!-- Top Right controls -->
     <div class="absolute right-4 top-4 z-20 hidden md:block">
       <CustomizerTopbar />
     </div>
 
-    <div class="relative grid grid-cols-[56px_360px_1fr] gap-4 items-start w-full">
+    <div class="relative flex-row gap-4 w-full h-full flex-1">
       <!-- Mini left icon rail -->
-      <div class="pt-4 relative z-10">
+      <div class="pt-4 relative z-40 h-full">
         <CustomizerMenu />
+        <!-- Unified Menu Panel positioned out of flow, next to the menu -->
+      <div class="absolute left-[72px] top-4 w-[360px] min-w-[360px] h-full">
+        <div class="h-full relative">
+          <MenuPanel
+            :content-key="currentPanel"
+            :breadcrumbs="getBreadcrumbs()"
+            :expandable="currentPanel === 'product'"
+            :show-back-button="currentPanel === 'product'"
+            :on-back="navigateBack"
+          >
+            <!-- Category Panel Content -->
+            <CategoryPanel
+              v-if="currentPanel === 'category'"
+              @select-category="handleCategorySelect"
+            />
+
+            <!-- Product Panel Content -->
+            <ProductPanel v-else />
+          </MenuPanel>
+        </div>
+      </div>
       </div>
 
-      <!-- Unified Menu Panel positioned out of flow, next to the menu -->
-      <div class="absolute left-[72px] top-4 z-30 w-[360px] min-w-[360px]">
-        <MenuPanel
-          :content-key="currentPanel"
-          :breadcrumbs="getBreadcrumbs()"
-          :expandable="currentPanel === 'product'"
-          :show-back-button="currentPanel === 'product'"
-          :on-back="navigateBack"
-        >
-          <!-- Category Panel Content -->
-          <CategoryPanel
-            v-if="currentPanel === 'category'"
-            @select-category="handleCategorySelect"
-          />
-
-          <!-- Product Panel Content -->
-          <ProductPanel v-else />
-        </MenuPanel>
-      </div>
-
+      
       <!-- Placeholder div to maintain layout space for the panel column -->
       <div class="w-[360px] pt-4"></div>
 
       <!-- Canvas area -->
-      <div class="relative z-0 h-full overflow-hidden">
+      <div class="relative z-0 h-full overflow-hidden flex-1">
         <!-- Preview layer (kept behind toolbars/menus) -->
         <div class="absolute inset-0 z-0 grid place-items-center pointer-events-none">
           <div class="h-[816px] rounded-[32px] grid place-items-center">

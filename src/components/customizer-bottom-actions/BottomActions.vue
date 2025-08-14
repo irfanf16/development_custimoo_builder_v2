@@ -4,7 +4,6 @@
 </script>
 
 <template>
-  <div class="w-full flex items-center justify-between">
     <div class="flex items-center gap-2">
       <Button variant="outline" size="default" class="rounded-lg">
         <Ruler class="size-4" />
@@ -23,7 +22,6 @@
         Generate PDF
       </Button>
     </div>
-  </div>
 </template>
 
 <style scoped></style>
