@@ -12,6 +12,7 @@
   import { ref } from 'vue'
   import { useProductsStore } from '@/stores/products'
   import { CustomizerTopbar } from '@/components/customizer-topbar'
+  import SmallPreview from '@/components/customizer-canvas-preview/SmallPreview.vue'
 
   const productsStore = useProductsStore()
 
@@ -107,14 +108,20 @@
         </div>
         <div
           id="right-content"
-          class="flex flex-col border border-purple-500 justify-between"
+          class="flex flex-col grow justify-between items-end gap-9 border border-purple-500"
         >
           <CustomizerTopbar />
           <div
             id="canvas-controls-container"
-            class="flex-col borderborder-orange-500"
+            class="flex flex-col justify-center items-center border border-orange-500"
           >
-            <RightToolbar />
+            <div
+              id="canvas-controls-container-inner"
+              class="flex flex-col gap-9 items-end border border-blue-500"
+            >
+              <RightToolbar />
+              <SmallPreview />
+            </div>
           </div>
         </div>
       </div>
