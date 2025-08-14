@@ -69,25 +69,13 @@
 <template>
   <div>
     <CanvasPreview />
-    <div
-      id="main-content"
-      class="flex flex-col w-full z-10 border border-red-500"
-    >
-      <div
-        id="top-content"
-        class="flex flex-row justify-between border border-blue-500"
-      >
-        <div id="left-content" class="flex flex-row border border-yellow-500">
-          <div
-            id="menu-items-container"
-            class="flex-col border border-pink-500"
-          >
+    <div id="main-content" class="flex flex-col w-full z-10">
+      <div id="top-content" class="flex flex-row justify-between">
+        <div id="left-content" class="flex flex-row">
+          <div id="menu-items-container" class="flex-col">
             <CustomizerMenu />
           </div>
-          <div
-            id="menu-panel-container"
-            class="flex-col border border-green-500"
-          >
+          <div id="menu-panel-container" class="flex-col">
             <MenuPanel
               :content-key="currentPanel"
               :breadcrumbs="getBreadcrumbs()"
@@ -108,16 +96,16 @@
         </div>
         <div
           id="right-content"
-          class="flex flex-col grow justify-between items-end gap-9 border border-purple-500"
+          class="flex flex-col grow justify-between items-end gap-9"
         >
           <CustomizerTopbar />
           <div
             id="canvas-controls-container"
-            class="flex flex-col justify-center items-center w-full border border-orange-500"
+            class="flex flex-col justify-center items-center w-full"
           >
             <div
               id="canvas-controls-container-inner"
-              class="flex flex-col gap-9 items-end border border-blue-500"
+              class="flex flex-col gap-9 items-end"
             >
               <RightToolbar />
               <SmallPreview />
@@ -127,7 +115,7 @@
       </div>
       <div
         id="bottom-content"
-        class="flex flex-row justify-between p-6 border border-green-500 h-[153px]"
+        class="flex flex-row justify-between p-6 h-[153px]"
       >
         <BottomActions />
         <PriceCard />

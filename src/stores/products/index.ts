@@ -61,24 +61,26 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   // API Functions
-  async function dispatchGetCategories(
-    params?: GetProductCategoriesParams
-  ): Promise<APIResponse<OutputProductCategories>> {
-    setLoading(true)
-    setError(null)
-    const output = await tryCatchApi(
-      API.products.getProductCategories(params ?? {})
-    )
-    if (output.success) {
-      setCategories(output.content)
-    } else {
-      setError('Error getting categories')
-    }
-    setLoading(false)
-    return output
-  }
+  // async function dispatchGetCategories(
+  //   params?: GetProductCategoriesParams
+  // ): Promise<APIResponse<OutputProductCategories>> {
+  //   setLoading(true)
+  //   setError(null)
+  //   const output = await tryCatchApi(
+  //     API.products.getProductCategories(params ?? {})
+  //   )
+  //   if (output.success) {
+  //     setCategories(output.content)
+  //   } else {
+  //     setError('Error getting categories')
+  //   }
+  //   setLoading(false)
+  //   return output
+  // }
 
-  async function dispatchGetCategoriesWithNoDefaultCategoryOrProduct(): Promise<APIResponse<OutputProductCategories>> {
+  async function dispatchGetCategoriesWithNoDefaultCategoryOrProduct(): Promise<
+    APIResponse<OutputProductCategories>
+  > {
     setLoading(true)
     setError(null)
     const output = await tryCatchApi(

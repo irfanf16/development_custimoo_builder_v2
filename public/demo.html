@@ -11,6 +11,78 @@
         padding: 0;
         background-color: #f5f5f5;
       }
+      .header {
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .header-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 70px;
+      }
+      .logo {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+        text-decoration: none;
+      }
+      .logo:hover {
+        color: #3498db;
+      }
+      .nav-menu {
+        display: flex;
+        gap: 30px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .nav-menu a {
+        color: #2c3e50;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s;
+      }
+      .nav-menu a:hover {
+        color: #3498db;
+      }
+      .header-actions {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+      }
+      .btn-primary {
+        background: #3498db;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #2980b9;
+      }
+      .btn-outline {
+        background: transparent;
+        color: #3498db;
+        border: 1px solid #3498db;
+      }
+      .btn-outline:hover {
+        background: #3498db;
+        color: white;
+      }
       .demo-section {
         background: white;
         padding: 0;
@@ -22,11 +94,6 @@
         padding: 0;
         margin: 0;
         width: 100%;
-      }
-      .info {
-        background: #e3f2fd;
-        padding: 12px;
-        border-radius: 4px;
       }
       .footer {
         background: #2c3e50;
@@ -83,22 +150,27 @@
     </style>
   </head>
   <body>
-    <div class="info">
-      <strong>Host-Based Themes:</strong> The widget automatically detects the
-      host and applies predefined color themes. Try changing the hostname in the
-      URL to see different themes:
-      <ul style="margin-top: 8px; font-size: 14px">
-        <li><code>localhost</code> - Development Blue theme (Blue + Green)</li>
-        <li>
-          <code>shop.example.com</code> - E-commerce Red theme (Red + Teal)
-        </li>
-        <li>Any other host - Default Gray theme (Gray + Amber)</li>
-      </ul>
-      <p style="margin-top: 8px; font-size: 12px; color: #666">
-        Each theme includes complete color schemes: background, foreground,
-        card, muted, accent, destructive, border, input, and ring colors.
-      </p>
-    </div>
+    <!-- Host Website Header Example -->
+    <header class="header">
+      <div class="header-content">
+        <a href="#" class="logo">CustomizerPro</a>
+
+        <nav>
+          <ul class="nav-menu">
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Products</a></li>
+            <li><a href="#">Customization</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </nav>
+
+        <div class="header-actions">
+          <a href="#" class="btn btn-outline">Sign In</a>
+          <a href="#" class="btn btn-primary">Get Started</a>
+        </div>
+      </div>
+    </header>
 
     <div class="demo-section">
       <div class="widget-demo">

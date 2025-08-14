@@ -1,10 +1,6 @@
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
-  import {
-    Card,
-    CardHeader,
-    CardContent
-  } from '@/components/ui/card'
+  import { ref, watch } from 'vue'
+  import { Card, CardHeader, CardContent } from '@/components/ui/card'
   import { Button } from '@/components/ui/button'
   import { Maximize2, Minimize2 } from 'lucide-vue-next'
   import {
@@ -46,13 +42,11 @@
     }
   }
 
-  // Computed width based on expanded state
-  const panelWidth = computed(() => {
-    return isExpanded.value ? '80%' : '360px'
-  })
-
   const handleBreadcrumbClick = (index: number) => {
-    if (index < currentBreadcrumbIndex.value && props.breadcrumbs?.[index]?.action) {
+    if (
+      index < currentBreadcrumbIndex.value &&
+      props.breadcrumbs?.[index]?.action
+    ) {
       props.breadcrumbs[index].action?.()
       isExpanded.value = false
     }
@@ -61,45 +55,56 @@
   // back handled via breadcrumbs action
 
   // Watch for breadcrumb changes to update active state
-  watch(() => props.breadcrumbs, (newBreadcrumbs) => {
-    if (newBreadcrumbs) {
-      currentBreadcrumbIndex.value = newBreadcrumbs.length - 1
-    }
-  }, { immediate: true })
+  watch(
+    () => props.breadcrumbs,
+    newBreadcrumbs => {
+      if (newBreadcrumbs) {
+        currentBreadcrumbIndex.value = newBreadcrumbs.length - 1
+      }
+    },
+    { immediate: true }
+  )
 </script>
 
 <template>
   <div
-    :class="[
-      'relative w-[28rem] h-full',
-      isExpanded ? 'z-20 max-w-none' : ''
-    ]"
+    :class="['relative w-[28rem] h-full', isExpanded ? 'z-20 max-w-none' : '']"
   >
-    <Card class="w-full p-0 h-auto rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0"
-    :class="isExpanded ? 'w-[95rem]' : 'w-full'"
+    <Card
+      class="w-full p-0 h-auto rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0"
+      :class="isExpanded ? 'w-[95rem]' : 'w-full'"
     >
-      <CardHeader class="py-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem]">
-        <div class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden">
-          <!-- <Button 
-            v-if="showBackButton" 
-            variant="ghost" 
-            size="icon" 
-            class="rounded-lg" 
+      <CardHeader
+        class="py-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem]"
+      >
+        <div
+          class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
+        >
+          <!-- <Button
+            v-if="showBackButton"
+            variant="ghost"
+            size="icon"
+            class="rounded-lg"
             @click="handleBack"
           >
             <ChevronLeft class="size-4" />
           </Button> -->
-          
+
           <!-- Breadcrumb Navigation -->
-          <Breadcrumb v-if="breadcrumbs && breadcrumbs.length > 0" class="min-w-0 overflow-hidden">
+          <Breadcrumb
+            v-if="breadcrumbs && breadcrumbs.length > 0"
+            class="min-w-0 overflow-hidden"
+          >
             <BreadcrumbList>
               <template v-for="(item, index) in breadcrumbs" :key="index">
                 <Transition name="breadcrumb-item" appear>
-                  <BreadcrumbItem 
-                    :class="{ 'cursor-pointer': index < currentBreadcrumbIndex }"
+                  <BreadcrumbItem
+                    :class="{
+                      'cursor-pointer': index < currentBreadcrumbIndex
+                    }"
                     @click="handleBreadcrumbClick(index)"
                   >
-                    <BreadcrumbLink 
+                    <BreadcrumbLink
                       v-if="index < currentBreadcrumbIndex"
                       class="hover:text-primary transition-colors truncate max-w-[280px]"
                     >
@@ -108,8 +113,10 @@
                     <BreadcrumbPage v-else class="truncate max-w-[280px]">
                       {{ item.label }}
                     </BreadcrumbPage>
-                    
-                    <BreadcrumbSeparator v-if="index < breadcrumbs.length - 1" />
+
+                    <BreadcrumbSeparator
+                      v-if="index < breadcrumbs.length - 1"
+                    />
                   </BreadcrumbItem>
                 </Transition>
               </template>
@@ -117,25 +124,23 @@
           </Breadcrumb>
         </div>
 
-        <Button 
-          v-if="expandable" 
-          variant="outline" 
-          size="icon" 
-          class="rounded-lg" 
+        <Button
+          v-if="expandable"
+          variant="outline"
+          size="icon"
+          class="rounded-lg"
           @click="toggleExpanded"
         >
           <component :is="isExpanded ? Minimize2 : Maximize2" class="size-4" />
         </Button>
       </CardHeader>
 
-      <CardContent
-        class="p-0 pb-4"
-      >
+      <CardContent class="p-0 pb-4">
         <!-- Content slot for different panel types -->
         <Transition name="panel-slide" mode="out-in" appear>
           <div :key="props.contentKey">
-            <slot 
-              :is-expanded="isExpanded" 
+            <slot
+              :is-expanded="isExpanded"
               :current-breadcrumb="currentBreadcrumbIndex"
             />
           </div>
@@ -146,35 +151,37 @@
 </template>
 
 <style scoped>
-/* Smooth transitions for breadcrumb items */
-.breadcrumb-item-enter-active,
-.breadcrumb-item-leave-active {
-  transition: all 200ms ease;
-}
+  /* Smooth transitions for breadcrumb items */
+  .breadcrumb-item-enter-active,
+  .breadcrumb-item-leave-active {
+    transition: all 200ms ease;
+  }
 
-.breadcrumb-item-enter-from {
-  opacity: 0;
-  transform: translateY(-4px);
-}
+  .breadcrumb-item-enter-from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 
-.breadcrumb-item-leave-to {
-  opacity: 0;
-  transform: translateY(4px);
-}
+  .breadcrumb-item-leave-to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
 
-/* Content slide/fade transitions */
-.panel-slide-enter-active,
-.panel-slide-leave-active {
-  transition: opacity 200ms ease, transform 200ms ease;
-}
+  /* Content slide/fade transitions */
+  .panel-slide-enter-active,
+  .panel-slide-leave-active {
+    transition:
+      opacity 200ms ease,
+      transform 200ms ease;
+  }
 
-.panel-slide-enter-from {
-  opacity: 0;
-  transform: translateX(12px);
-}
+  .panel-slide-enter-from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
 
-.panel-slide-leave-to {
-  opacity: 0;
-  transform: translateX(-12px);
-}
+  .panel-slide-leave-to {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
 </style>
