@@ -67,11 +67,11 @@
 </script>
 
 <template>
-  <div>
+  <div class="overflow-hidden">
     <CanvasPreview />
     <div id="main-content" class="flex flex-col w-full z-10">
       <div id="top-content" class="flex flex-row justify-between">
-        <div id="left-content" class="flex flex-row">
+        <div id="left-content" class="flex flex-row gap-4">
           <div id="menu-items-container" class="flex-col">
             <CustomizerMenu />
           </div>
@@ -101,11 +101,11 @@
           <CustomizerTopbar />
           <div
             id="canvas-controls-container"
-            class="flex flex-col justify-center items-center w-full"
+            class="flex flex-col grow items-center w-full h-full"
           >
             <div
               id="canvas-controls-container-inner"
-              class="flex flex-col gap-9 items-end"
+              class="flex flex-col gap-9 items-end justify-between h-full"
             >
               <RightToolbar />
               <SmallPreview />
@@ -113,10 +113,7 @@
           </div>
         </div>
       </div>
-      <div
-        id="bottom-content"
-        class="flex flex-row justify-between p-6 h-[153px]"
-      >
+      <div id="bottom-content" class="flex flex-row justify-between items-end">
         <BottomActions />
         <PriceCard />
       </div>
