@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14" id="Pattern--Streamline-Flex" height="14" width="14">
+  <desc>
+    Pattern Streamline Icon: https://streamlinehq.com
+  </desc>
+  <g id="pattern">
+    <path id="Intersect" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" d="M0.654047 7.46437c0.058253 0.51474 0.289615 0.9946 0.656353 1.36135 0.36675 0.36675 0.84724 0.59875 1.36312 0.65816 0.78491 0.0878 1.58962 0.16244 2.4112 0.16244s1.62702 -0.07464 2.41119 -0.16244c0.51589 -0.05941 0.99638 -0.29141 1.36312 -0.65816 0.36674 -0.36675 0.59811 -0.84661 0.65636 -1.36135 0.08362 -0.7778 0.15405 -1.57682 0.15405 -2.39121s-0.07043 -1.61341 -0.15405 -2.39195c-0.05825 -0.51473 -0.28962 -0.9946 -0.65636 -1.36134C8.49229 0.953117 8.0118 0.721121 7.49591 0.661707 6.71101 0.575366 5.9063 0.5 5.08472 0.5s-1.62703 0.074634 -2.4112 0.162439c-0.51588 0.059413 -0.99637 0.291409 -1.36312 0.658161 -0.366738 0.36675 -0.5981 0.84661 -0.656353 1.36135C0.570421 3.45902 0.5 4.25804 0.5 5.07316c0 0.81512 0.070421 1.61341 0.154047 2.39121Z" stroke-width="1"></path>
+    <path id="Subtract" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" d="M4.55273 11.6744c0.10524 0.3778 0.30653 0.7245 0.58701 1.005 0.36674 0.3667 0.84723 0.5987 1.36312 0.6581 0.7849 0.0878 1.58961 0.1625 2.41119 0.1625 0.82159 0 1.62705 -0.0747 2.41115 -0.1625 0.5159 -0.0594 0.9964 -0.2914 1.3632 -0.6581 0.3667 -0.3668 0.5981 -0.8467 0.6563 -1.3614 0.0837 -0.7778 0.1541 -1.57682 0.1541 -2.39121 0 -0.81438 -0.0704 -1.61341 -0.1541 -2.39194 -0.0582 -0.51474 -0.2896 -0.9946 -0.6563 -1.36135 -0.2961 -0.29612 -0.6664 -0.50439 -1.0696 -0.6049" stroke-width="1"></path>
+    <path id="Vector 1162" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" d="M2.61621 5.07324v0.2146" stroke-width="1"></path>
+    <path id="Vector 1165" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" d="M5.81738 5.07324v0.2146" stroke-width="1"></path>
+    <path id="Vector 1163" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" d="M4.35254 2.93481v0.2146" stroke-width="1"></path>
+    <path id="Vector 1166" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" d="M7.55371 2.93481v0.2146" stroke-width="1"></path>
+    <path id="Vector 1164" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" d="M4.35254 6.99683v0.2146" stroke-width="1"></path>
+    <path id="Vector 1167" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" d="M7.55371 6.99683v0.2146" stroke-width="1"></path>
+  </g>
+</svg>
