@@ -72,7 +72,7 @@
   >
     <Card
       class="w-full p-0 h-auto rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0"
-      :class="isExpanded ? 'w-[95rem]' : 'w-full'"
+      :class="isExpanded ? 'w-[80vw]' : 'w-full'"
     >
       <CardHeader
         class="py-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem]"

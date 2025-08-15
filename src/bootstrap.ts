@@ -4,7 +4,6 @@ import router from './router'
 import App from './App.vue'
 import { getHostTheme } from './lib/hostThemes'
 import '@/icons/flex-duo-categories'
-import '@/icons/flex-duo-categories'
 
 // Import CSS styles
 import widgetStyles from './widget-styles.css?inline'
@@ -35,6 +34,7 @@ export function bootstrap(
   // Create a container element within the shadow root
   const container = document.createElement('div')
   container.id = 'customizer-widget-container'
+  // Teleport target for UI portals (e.g., tooltips) inside the widget's Shadow DOM
   ;(window as any).__CUSTOMIZER_CONTAINER__ = container
 
   // Set container height with responsive minimum heights

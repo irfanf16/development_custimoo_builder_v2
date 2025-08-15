@@ -40,21 +40,31 @@ export default defineConfig({
         'flex-duo': FileSystemIconLoader('src/icons/streamline/flex-duo', svg =>
           // Strategy:
           // - Default to primary = currentColor
-          // - Anything with opacity gets treated as secondary
-          //   (works well for most duo icons; adjust if needed)
+          // - Secondary layers use var(--icon-secondary, currentColor)
           svg
             .replace(/<svg([^>]*)>/, '<svg$1 width="1em" height="1em">')
-            .replace(
-              /fill="[^"]*"/g,
-              'fill="var(--icon-primary, currentColor)"'
-            )
+            // Strokes are primary
             .replace(
               /stroke="[^"]*"/g,
               'stroke="var(--icon-primary, currentColor)"'
             )
+            // All non-none fills are secondary; keep fill="none" untouched
             .replace(
-              /opacity="0\.[0-9]+"/g,
+              /fill="(?!none)[^"]*"/g,
+              'fill="var(--icon-secondary, currentColor)"'
+            )
+            // Treat partially opaque layers as secondary color
+            .replace(
+              /opacity="(?:0?\.[0-9]+)"/g,
               'fill="var(--icon-secondary, currentColor)" opacity="1"'
+            )
+            .replace(
+              /fill-opacity="(?:0?\.[0-9]+)"/g,
+              'fill="var(--icon-secondary, currentColor)" fill-opacity="1"'
+            )
+            .replace(
+              /stroke-opacity="(?:0?\.[0-9]+)"/g,
+              'stroke="var(--icon-secondary, currentColor)" stroke-opacity="1"'
             )
         )
       }

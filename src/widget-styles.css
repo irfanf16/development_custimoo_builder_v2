@@ -201,6 +201,13 @@
   }
 }
 
+/* ===== ICON UTILITIES ===== */
+@layer utilities {
+  .icon-secondary-from-primary-50 {
+    --icon-secondary: rgb(from currentColor r g b / 0.5);
+  }
+}
+
 /* ===== WIDGET THEME OVERRIDES ===== */
 .widget-theme {
   /* Ensure widget has its own color context */
@@ -290,7 +297,9 @@ customizer-widget::part(content) {
 /* ===== TRANSITIONS (applies inside Shadow DOM) ===== */
 .panel-slide-enter-active,
 .panel-slide-leave-active {
-  transition: transform 450ms ease, opacity 450ms ease;
+  transition:
+    transform 450ms ease,
+    opacity 450ms ease;
 }
 .panel-slide-enter-from,
 .panel-slide-leave-to {

@@ -61,6 +61,7 @@ declare module 'vue' {
     'IFlexLineTable-StreamlineFlex': typeof import('~icons/flex-line/table--streamline-flex')['default']
     'IFlexLineTextFile-StreamlineFlex': typeof import('~icons/flex-line/text-file--streamline-flex')['default']
     'IFlexLineTextStyle-StreamlineFlex': typeof import('~icons/flex-line/text-style--streamline-flex')['default']
+    ILucideChevronRight: typeof import('~icons/lucide/chevron-right')['default']
     MenuItem: typeof import('./src/components/customizer-menu/MenuItem.vue')['default']
     MenuPanel: typeof import('./src/components/customizer-panel/MenuPanel.vue')['default']
     PriceCard: typeof import('./src/components/customizer-price/PriceCard.vue')['default']
