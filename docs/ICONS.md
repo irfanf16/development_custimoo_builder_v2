@@ -16,10 +16,10 @@ Vite is configured with `unplugin-icons` to load Streamline SVGs as Vue componen
 ### Naming and usage (Streamline → Vue components)
 
 - Components are auto‑generated with the pattern: `i-{collection}-{file-name-without-.svg}`
-- File names are normalized to kebab‑case. Examples:
-  - `src/icons/streamline/flex-line/Paint-Palette--Streamline-Flex.svg` → `<i-flex-line-paint-palette--streamline-flex />`
-  - `src/icons/streamline/flex-line/Landscape1--Streamline-Flex.svg` → `<i-flex-line-landscape1--streamline-flex />`
-  - `src/icons/streamline/flex-duo/Football--Streamline-Flex.svg` → `<i-flex-duo-football--streamline-flex />`
+- File names are normalized to kebab‑case. We removed the `--Streamline-Flex` suffix from all files to avoid inconsistencies. Examples:
+  - `src/icons/streamline/flex-line/Paint-Palette.svg` → `<i-flex-line-paint-palette />`
+  - `src/icons/streamline/flex-line/Landscape1.svg` → `<i-flex-line-landscape1 />`
+  - `src/icons/streamline/flex-duo/Football.svg` → `<i-flex-duo-football />`
 
 ### Coloring and sizing
 
@@ -34,10 +34,10 @@ Examples:
 
 ```vue
 <!-- Flex Line (outline, tree-shaken) -->
-<i-flex-line-paint-palette--streamline-flex class="size-5 text-blue-600" />
+<i-flex-line-paint-palette class="size-5 text-blue-600" />
 
 <!-- Flex Duo (two-tone, fully bundled) -->
-<i-flex-duo-football--streamline-flex
+<i-flex-duo-football
   class="size-6 text-emerald-600"
   style="--icon-secondary:#a7f3d0"
 />
@@ -48,7 +48,7 @@ Examples:
 - Per‑icon (inline):
 
   ```vue
-  <i-flex-duo-tennis--streamline-flex
+  <i-flex-duo-tennis
     class="size-5 text-green-600"
     style="--icon-secondary:#b7f7c2"
   />
@@ -57,7 +57,7 @@ Examples:
 - Derived from the primary color (keeps harmony):
 
   ```vue
-  <i-flex-duo-cycling--streamline-flex
+  <i-flex-duo-cycling
     class="size-5 text-blue-600"
     :style="{
       '--icon-secondary': 'color-mix(in oklab, currentColor 60%, white)'
@@ -104,9 +104,10 @@ Examples:
 
 ### Adding new Streamline icons
 
-1. Save the SVG into the correct folder (`flex-line` or `flex-duo`).
-2. Component name is derived from the file name. Keep the `--Streamline-Flex.svg` suffix as shipped.
-3. Restart the dev server if the new component isn’t recognized immediately.
+1. Save the SVG into the correct folder (`src/icons/streamline/flex-line/` or `src/icons/streamline/flex-duo/`).
+2. Ensure the file name does not contain the `--Streamline-Flex` suffix. If your source SVG includes it, remove it and keep the `.svg` extension, e.g. `Paint-Palette--Streamline-Flex.svg` → `Paint-Palette.svg`.
+3. The component will be available as `i-flex-line-{kebab-file-name}` or `i-flex-duo-{kebab-file-name}` respectively. Example: `Paint-Palette.svg` → `<i-flex-line-paint-palette />`.
+4. If a new Duo icon is added and must always be included, import it in `src/icons/flex-duo-categories.ts` to keep it from being tree‑shaken.
 
 ### Troubleshooting
 
@@ -123,7 +124,7 @@ Examples:
 
 - **Vite error: Icon `flex-line/...` not found:**
   - Check the SVG file exists under `src/icons/streamline/flex-line/`.
-  - Confirm the kebab‑case mapping. Example: `Landscape1--Streamline-Flex.svg` → `landscape1--streamline-flex` (no dash before the number).
+  - Confirm the kebab‑case mapping. Example: `Landscape1.svg` → `landscape1` (no dash before the number).
 
 - **Tooltips/popovers rendering incorrectly in host page:**
   - This widget runs in a Shadow DOM. Portals must teleport into the widget container.

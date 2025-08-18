@@ -68,7 +68,10 @@
 
 <template>
   <div
-    :class="['relative w-[28rem] h-full', isExpanded ? 'z-20 max-w-none' : '']"
+    :class="[
+      'relative w-[28rem] h-[80vh]',
+      isExpanded ? 'z-20 max-w-none' : ''
+    ]"
   >
     <Card
       class="w-full p-0 h-auto rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0"
