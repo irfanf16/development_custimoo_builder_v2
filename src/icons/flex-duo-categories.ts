@@ -39,6 +39,18 @@ import Tennis from 'virtual:icons/flex-duo/tennis'
 import Volleyball from 'virtual:icons/flex-duo/volleyball'
 import WalkingSteps from 'virtual:icons/flex-duo/walking-steps'
 import Whistle from 'virtual:icons/flex-duo/whistle'
+import Hanger from 'virtual:icons/flex-duo/hanger'
+import Backpack from 'virtual:icons/flex-duo/backpack'
+import ShoppingBagHandBag from 'virtual:icons/flex-duo/shopping-bag-hand-bag'
+import ModuleThree from 'virtual:icons/flex-duo/module-three'
+import Boots from 'virtual:icons/flex-duo/boots'
+import CapFrozen from 'virtual:icons/flex-duo/cap-front'
+import CapSide from 'virtual:icons/flex-duo/cap-side'
+import Brightness from 'virtual:icons/flex-duo/brightness'
+import PottedFlowerTulip from 'virtual:icons/flex-duo/potted-flower-tulip'
+import Leaf from 'virtual:icons/flex-duo/leaf'
+import SnowFlake from 'virtual:icons/flex-duo/snow-flake'
+import HolidayVacationBeachUmbrella from 'virtual:icons/flex-duo/holiday-vacation-beach-umbrella'
 
 export const flexDuoCategoryIcons = {
   Ball,
@@ -80,7 +92,19 @@ export const flexDuoCategoryIcons = {
   Tennis,
   Volleyball,
   WalkingSteps,
-  Whistle
+  Whistle,
+  Hanger,
+  Backpack,
+  ShoppingBagHandBag,
+  ModuleThree,
+  Boots,
+  CapFrozen,
+  CapSide,
+  Brightness,
+  PottedFlowerTulip,
+  Leaf,
+  SnowFlake,
+  HolidayVacationBeachUmbrella
 }
 
 // Keep a reference so tree-shaking can't drop them
