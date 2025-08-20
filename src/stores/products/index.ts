@@ -12,6 +12,28 @@ export const useProductsStore = defineStore('productsStore', () => {
   // State
   const categories = ref<OutputProductCategories | null>(null)
   const lastCategoryId = ref<number | null>(null)
+
+  // Full information based on the customization of the product.
+  // This information will be populated once a product, style, or design, etc is selected by the user
+  const product = ref<Object | null>(null)
+  // By default, it will chose the first style of the product
+  const style = ref<Object | null>(null)
+  // By default, it will chose the first design of the style
+  const design = ref<Object | null>(null)
+  // By default, no add-ons will be selected. Add-ons will be populated based on the selected product, style, and design
+  const addOns = ref<Array<Object> | null>(null)
+
+  // List of objects with Partial objects information to be displayed in the Customizer Menu
+  // ProductsList will be populated based on the selected category
+  const productsList = ref<Array<Object> | null>(null)
+  // StylesList will be populated based on the selected product
+  const stylesList = ref<Array<Object> | null>(null)
+  // DesignsList will be populated based on the selected style
+  const designsList = ref<Array<Object> | null>(null)
+  // Add-onsList will be populated based on the selected product, style, and design
+  const addOnsList = ref<Array<Object> | null>(null)
+
+  // Loading state
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -139,6 +161,14 @@ export const useProductsStore = defineStore('productsStore', () => {
     lastCategoryId,
     isLoading,
     error,
+    product,
+    style,
+    design,
+    addOns,
+    productsList,
+    stylesList,
+    designsList,
+    addOnsList,
 
     // Actions
     setCategories,
