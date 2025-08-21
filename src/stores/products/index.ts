@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type {
   OutputProductCategories,
-  GetProductCategoriesParams
+  GetProductCategoriesParams,
+  ProductCustomization
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
@@ -32,6 +33,9 @@ export const useProductsStore = defineStore('productsStore', () => {
   const designsList = ref<Array<Object> | null>(null)
   // Add-onsList will be populated based on the selected product, style, and design
   const addOnsList = ref<Array<Object> | null>(null)
+
+  // Customized Product State
+  const customizedProduct = ref<ProductCustomization | null>(null)
 
   // Loading state
   const isLoading = ref(false)

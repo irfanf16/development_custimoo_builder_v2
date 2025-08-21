@@ -1,40 +1,40 @@
 export type Category = {
-  id: number
-  parent_id: number | null
   category_name: string
-  factory_id: number | null
   company_id: number
+  created_at: string
+  deleted_at: string | null
+  factory_id: number | null
+  id: number
   image_url: string | null
+  parent_id: number | null
   searchable: number
   sort_order: number
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
   subcategories: Category[]
+  updated_at: string
 }
 
 export type OutputProductCategories = {
+  customized: boolean
+  customized_count: number
+  data: Category[]
   no_product_found: boolean
   no_search_product_found: boolean
+  personalized: boolean
+  personalized_count: number
+  private_product: boolean
+  private_product_count: number
   product_category_id: number | null
   product_sub_category_id: number | null
-  data: Category[]
-  customized_count: number
-  personalized_count: number
-  private_product_count: number
-  customized: boolean
-  personalized: boolean
-  private_product: boolean
 }
 
 export type GetProductCategoriesParams = {
-  product_id?: number
   customized?: boolean
-  personalized?: boolean
   private?: boolean
-  title?: string
-  sync_id?: number
+  personalized?: boolean
+  product_id?: number
   share_url?: string
+  sync_id?: number
+  title?: string
 }
 
 export type GetProductCategoriesByCategoryIdParams = {
@@ -44,62 +44,87 @@ export type GetProductCategoriesByCategoryIdParams = {
   private: boolean
 }
 
-export type OutputProduct = {
-  id: number
-  parent_id: number | null
-  factory_id: number | null
-  company_id: number
-  is_default: 1 | 0
-  sku_id: number
-  sync_id: number | null
-  ecommerce_product_id: number | null
-  url_slug: string
-  product_type: string
-  svg_group_color_container: {
-    [key: string]: {
-      name: string
-      json_data: {
-        name: string
-        value: string
-        position: string
-      }[]
-    }
-  }
-  created_by: number
-  measurement_ratio: number
-  is_private: number
-  step_completed: number
+export type OutputProductBase = {
   allowed_logos_count: number
-  is_logo_allowed: number
-  allow_name_number: number
-  preview_custom_texts: number
-  allow_fixed_logo: number
-  is_cap_letter_available: number
-  shareable: number
-  is_3d_product: number
-  deleted_at: string | null
-  product_id: number
-  using_logo_colors: number
-  show_3d: number
+  colors: OutputProductColor[]
   display_name: string
-  sort_order: number
-  sku: {
-    id: number
-    addon_group_id: number | null
-    data_container_id: number | null
-    customized_sku_info: number | null
-    sku_id: string
-    sku_number: number
-    design_customer_approval: number
-    image_url: string | null
-    specs_sheet_url: string | null
-    sizechart_reference: string | null
-    factory_id: number | null
-    asana_task_template_id: number | null
-  }
+  id: number
+  is_logo_allowed: number
+  logos_setting: OutputProductLogosSetting[]
+  measurement_ratio: number
+  product_id: number
+  productnames: OutputProductName[]
 }
 
-// OutputProduct contains company_addons OutputCompanyAddon[], active_addons OutputAddon[], product_addons OutputAddon[], productstyles OutputProductStyle[]
+export type OutputProduct = OutputProductBase & {
+  allow_fixed_logo: number
+  allow_name_number: number
+  company_id: number
+  created_by: number
+  deleted_at: string | null
+  ecommerce_product_id: number | null
+  factory_id: number | null
+  is_3d_product: number
+  is_cap_letter_available: number
+  is_default: 1 | 0
+  is_private: number
+  parent_id: number | null
+  preview_custom_texts: number
+  shareable: number
+  show_3d: number
+  sku: {
+    addon_group_id: number | null
+    asana_task_template_id: number | null
+    customized_sku_info: number | null
+    data_container_id: number | null
+    design_customer_approval: number
+    factory_id: number | null
+    id: number
+    image_url: string | null
+    sizechart_reference: string | null
+    sku_id: string
+    sku_number: number
+    specs_sheet_url: string | null
+  }
+  sku_id: number
+  sort_order: number
+  step_completed: number
+  svg_group_color_container: {
+    [key: string]: {
+      json_data: {
+        name: string
+        position: string
+        value: string
+      }[]
+      name: string
+    }
+  }
+  sync_id: number | null
+  url_slug: string
+  using_logo_colors: number
+}
+
+// OutputProductNames
+export type OutputProductName = {
+  arc_text_allowed: 0 | 1
+  created_at: string
+  deleted_at: string | null
+  following_product_ids: number[] | null
+  height: number
+  id: number
+  is_locked: 0 | 1
+  name_of_placement: string
+  outline_enabled: 0 | 1
+  product_id: number
+  rotation: number
+  side: 'front' | 'back'
+  text_follows_product: 0 | 1
+  type: 'name'
+  updated_at: string
+  width: number | null
+  x_axis: number
+  y_axis: number
+}
 
 // FullOutputProduct
 type CustomizedAddons = {
@@ -107,280 +132,321 @@ type CustomizedAddons = {
   ungrouped_addons: OutputAddon[]
 }
 
-type OutputProductStyleWithDetails = OutputProductStyle & {
-  customized_addons: CustomizedAddons
-  productdesigns: OutputProductStyleDesign[]
+// type OutputProductStyleWithDetails = OutputProductStyle & {
+//   productdesigns: OutputProductStyleDesign[]
+// }
+
+// export type FullOutputProduct = OutputProduct & {
+//   active_addons: OutputAddon[]
+//   product_addons: OutputAddon[]
+//   company_addons: OutputCompanyAddon[] // If company_addons are present, ignore product_addons
+//   productstyles: OutputProductStyleWithDetails[]
+//   logo_technologies: unknown[]
+//   colors: OutputProductColor[]
+//   namefonts: OutputProductNameFont[]
+//   namecolors: OutputProductNameColor[]
+//   sizes: OutputProductSize[]
+//   ecommerceproduct: number | [] | null
+// }
+
+// ************** NEW **************
+// This type is supposed to be used to fetch all data related to this product. This includes default style and default design.
+export type OutputProductConfiguration = {
+  active_addons: OutputAddon[]
+  colors: OutputProductColor[]
+  company_addons: OutputCompanyAddon[] // If company_addons are present, ignore product_addons
+  ecommerceproduct: number | [] | null
+  logo_technologies: unknown[]
+  logos_setting: OutputProductLogosSetting[]
+  namecolors: OutputProductNameColor[]
+  namefonts: OutputProductNameFont[]
+  product_addons: OutputAddon[]
+  productdesign: OutputProductStyleDesign // ***** NEW - This is the default design
+  productdesigns_preview: OutputProductStyleDesign[]
+  productstyle: OutputProductStyle // ***** NEW - This is the default style
+  productstyles_preview: OutputProductStyle[]
+  sizes: OutputProductSize[]
 }
 
-export type FullOutputProduct = OutputProduct & {
-  active_addons: OutputAddon[]
-  product_addons: OutputAddon[]
-  company_addons: OutputCompanyAddon[] // If company_addons are present, ignore product_addons
-  productstyles: OutputProductStyleWithDetails[]
-  logo_technologies: unknown[]
-  colors: OutputProductColor[]
-  namefonts: OutputProductNameFont[]
-  namecolors: OutputProductNameColor[]
-  sizes: OutputProductSize[]
-  ecommerceproduct: number | [] | null
+export type OutputOfPartialProductConfiguration = {
+  productdesigns: Partial<OutputProductStyleDesign>[]
+  productstyles: Partial<OutputProductStyle>[]
 }
 
 // OutputProductStyle
+export type OutputProductStyleBase = {
+  front_models: {
+    composition: 'multiply' | 'screen'
+    file_url: string
+    id: number
+    thumb_sm_url: string
+    type: string
+  }[]
+  id: number
+  logo: unknown[]
+  name: string
+  product_id: number
+}
 
 export type OutputProductStyle = {
-  id: number
-  product_id: number
-  name: string
+  _3d_alpha_map: unknown
+  _3d_ao_map: unknown
+  _3d_metalness_map: unknown
+  _3d_model: {
+    composition: 'multiply' | 'screen' | null
+    file_url: string
+    id: number
+    thumb_sm_url: string | null
+    type: string
+  }
+  _3d_roughness_map: unknown
+  _3d_texture: {
+    composition: 'multiply' | 'screen' | null
+    file_url: string
+    id: number
+    thumb_sm_url: string | null
+    type: string
+  }
   back_enabled: boolean
+  back_models: {
+    composition: 'multiply' | 'screen'
+    file_url: string
+    id: number
+    thumb_sm_url: string
+    type: string
+  }[]
   composition: 'multiply' | 'screen'
-  default_style: number
-  style_icon_id: number | null
-  style_icon: number
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
   container_id: number
-  style_icon_url: string
+  created_at: string
+  customized_addons: CustomizedAddons
+  default_style: number
+  deleted_at: string | null
+  front_models: {
+    composition: 'multiply' | 'screen'
+    file_url: string
+    id: number
+    thumb_sm_url: string
+    type: string
+  }[]
+  id: number
+  is_default: 1 | 0
   is_fixed_logos_all: boolean
   logo: unknown[]
-  front_models: {
-    id: number
-    file_url: string
-    thumb_sm_url: string
-    composition: 'multiply' | 'screen'
-    type: string
-  }[]
-  back_models: {
-    id: number
-    file_url: string
-    thumb_sm_url: string
-    composition: 'multiply' | 'screen'
-    type: string
-  }[]
-  _3d_model: {
-    id: number
-    file_url: string
-    thumb_sm_url: string | null
-    composition: 'multiply' | 'screen' | null
-    type: string
-  }
-  _3d_texture: {
-    id: number
-    file_url: string
-    thumb_sm_url: string | null
-    composition: 'multiply' | 'screen' | null
-    type: string
-  }
-  roughness: number | null
+  logo_technologies: unknown[]
   metalness: number | null
-  _3d_roughness_map: unknown
-  _3d_metalness_map: unknown
-  _3d_ao_map: unknown
-  _3d_alpha_map: unknown
-  is_default: 1 | 0
+  name: string
+  product_id: number
+  roughness: number | null
+  style_icon: number
+  style_icon_id: number | null
+  style_icon_url: string
+  updated_at: string
 }
 
 // Color
 
 export type OutputProductColor = {
-  id: number
+  created_at: string
   created_by: number
+  deleted_at: string | null
+  file_name: string
   file_size: string
+  file_type: string
+  file_url: string
+  id: number
+  is_default: 1 | 0
   json_data: {
     name: string
-    value: string
     position: string
+    value: string
   }[]
-  file_name: string
-  file_type: string
-  is_default: 1 | 0
-  file_url: string
   original_file_url: string | null
-  thumb_sm_url: string | null
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
-  sourceable_type: string
-  sourceable_id: number
   pivot: {
-    product_id: number
-    file_id: number
     created_at: string
+    file_id: number
+    product_id: number
     updated_at: string
   }
+  sourceable_id: number
+  sourceable_type: string
+  thumb_sm_url: string | null
+  updated_at: string
+}
+
+export type OutputProductLogosSetting = {
+  created_at: string
+  height: number
+  id: number
+  is_locked: 0 | 1
+  logo_technologies: string[] | null
+  name_of_placement: string
+  product_id: number
+  product_style_id: number | null
+  rotation: number
+  side: 'front' | 'back'
+  updated_at: string
+  width: number
+  x_axis: number
+  y_axis: number
 }
 
 // Name Fonts
 export type OutputProductNameFont = {
   file_url: string
   json_data: {
+    extension: string
     name: string
     path: string
-    extension: string
   }[]
 }
 
 // Size
 
 export type OutputProductSize = {
-  id: number
+  created_at: string
   created_by: number
+  deleted_at: string | null
+  file_name: string
   file_size: string
+  file_type: string
+  file_url: string
+  id: number
+  is_default: 1 | 0
   json_data: {
     name: string
-    value: string
     position: string
+    value: string
   }[]
-  file_name: string
-  file_type: string
-  is_default: 1 | 0
-  file_url: string
   original_file_url: string | null
-  thumb_sm_url: string | null
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
-  sourceable_type: string
-  sourceable_id: number
   pivot: {
-    product_id: number
-    file_id: number
     created_at: string
+    file_id: number
+    product_id: number
     updated_at: string
   }
+  sourceable_id: number
+  sourceable_type: string
+  thumb_sm_url: string | null
+  updated_at: string
 }
 
 export type OutputProductNameColor = {
-  id: number
+  created_at: string
   created_by: number
+  deleted_at: string | null
+  file_name: string
   file_size: string
+  file_type: string
+  file_url: string
+  id: number
+  is_default: 1 | 0
   json_data: {
     name: string
-    value: string
     position: string
+    value: string
   }[]
-  file_name: string
-  file_type: string
-  is_default: 1 | 0
-  file_url: string
   original_file_url: string | null
-  thumb_sm_url: string | null
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
-  sourceable_type: string
-  sourceable_id: number
   pivot: {
-    product_id: number
-    file_id: number
     created_at: string
+    file_id: number
+    product_id: number
     updated_at: string
   }
+  sourceable_id: number
+  sourceable_type: string
+  thumb_sm_url: string | null
+  updated_at: string
 }
 
 export type OutputProductStyleDesign = {
-  id: number
-  product_style_id: number
-  product_id: number
-  front_design_id: number
+  back_design: {
+    color_group: string | null
+    design_name: string
+    design_position: string
+    file_base_url: string
+    file_extension: string
+    file_thumbnail_url: string
+    file_url: string
+    id: number
+  }
+  backboundary_design: {
+    design_position: string
+    file_base_url: string
+    file_extension: string
+    file_thumbnail_url: string
+    file_url: string
+    id: number
+  }
+  backsafezone_design: {
+    design_position: string
+    file_base_url: string
+    file_extension: string
+    file_thumbnail_url: string
+    file_url: string
+    id: number
+  }
   container_file_id: number
-  back_design_id: number
-  production_design_id: number
-  frontsafezone_design_id: number
-  backsafezone_design_id: number
-  productionsafezone_design_id: number | null
-  frontboundary_design_id: number
-  backboundary_design_id: number
-  design_name: string
-  is_active: number
-  is_default: 1 | 0
-  svg_parts: string
   created_at: string
-  updated_at: string
   deleted_at: string | null
+  design_name: string
   design_show: number
   design_show_on_scroll: number
   front_design: {
-    id: number
+    color_group: string | null
     design_name: string
     design_position: string
-    color_group: string | null
-    file_url: string
-    file_extension: string
     file_base_url: string
+    file_extension: string
     file_thumbnail_url: string
-  }
-  back_design: {
+    file_url: string
     id: number
-    design_name: string
-    design_position: string
-    color_group: string | null
-    file_url: string
-    file_extension: string
-    file_base_url: string
-    file_thumbnail_url: string
-  }
-  frontsafezone_design: {
-    id: number
-    design_position: string
-    file_url: string
-    file_extension: string
-    file_base_url: string
-    file_thumbnail_url: string
-  }
-  backsafezone_design: {
-    id: number
-    design_position: string
-    file_url: string
-    file_extension: string
-    file_base_url: string
-    file_thumbnail_url: string
-  }
-  productionsafezone_design: {
-    id: number
-    design_position: string
-    file_url: string
-    file_extension: string
-    file_base_url: string
-    file_thumbnail_url: string
   }
   frontboundary_design: {
-    id: number
     design_position: string
-    file_url: string
-    file_extension: string
     file_base_url: string
+    file_extension: string
     file_thumbnail_url: string
-  }
-  backboundary_design: {
+    file_url: string
     id: number
-    design_position: string
-    file_url: string
-    file_extension: string
-    file_base_url: string
-    file_thumbnail_url: string
   }
+  frontsafezone_design: {
+    design_position: string
+    file_base_url: string
+    file_extension: string
+    file_thumbnail_url: string
+    file_url: string
+    id: number
+  }
+  front_design_id: number
+  id: number
+  is_active: number
+  is_default: 1 | 0
   production_design: {
-    id: number
     design_position: string
-    file_url: string
-    file_extension: string
     file_base_url: string
+    file_extension: string
     file_thumbnail_url: string
+    file_url: string
+    id: number
   }
+  production_design_id: number
+  productionsafezone_design: {
+    design_position: string
+    file_base_url: string
+    file_extension: string
+    file_thumbnail_url: string
+    file_url: string
+    id: number
+  } | null
+  productionsafezone_design_id: number | null
+  product_id: number
+  product_style_id: number
+  svg_parts: string
+  updated_at: string
 }
 
 export type OutputCompanyAddon = {
-  id: number
-  company_id: number
-  addon_id: number
-  addon_sync_id: number | null
-  addon_ecommerce_product_id: number | null
-  addon_ecommerce_variant_id: number | null
-  addon_ecommerce_modifier_id: number | null
   addon_data: {
-    note: string | null
-    title: string
     currencies: {
       code: string
       name: string
@@ -388,70 +454,77 @@ export type OutputCompanyAddon = {
       symbol: string
     }[]
     description: string
+    note: string | null
+    title: string
   }
+  addon_ecommerce_modifier_id: number | null
+  addon_ecommerce_product_id: number | null
+  addon_ecommerce_variant_id: number | null
+  addon_id: number
+  addon_sync_id: number | null
+  company_id: number
   created_at: string
-  updated_at: string
   deleted_at: string | null
+  updated_at: string
 }
 
 // Also active_addons []
 export type OutputAddon = {
-  addon_group_id: number | null
-  data_container_id: number | null
-  customized_sku_info: number | null
-  addon_id: number
-  title: string
-  description: string
-  note: string | null
-  currencies: {
-    name: string
-    code: string
-    symbol: string
-    price: number
-  }[]
-  selected: boolean
-  published: boolean
+  addon_ecommerce_modifier_id: number | null
   addon_ecommerce_product_id: number | null
   addon_ecommerce_variant_id: number | null
-  addon_ecommerce_modifier_id: number | null
+  addon_group_id: number | null
+  addon_id: number
+  currencies: {
+    code: string
+    name: string
+    price: number
+    symbol: string
+  }[]
+  customized_sku_info: number | null
+  data_container_id: number | null
+  description: string
+  note: string | null
+  published: boolean
+  selected: boolean
+  title: string
 }
 
 type OutputProductCustomLogo = {
-  id: number
-  product_id: number
-  product_style_id: number | null
+  actualHeight: number
+  actualWidth: number
   created_at: string
-  updated_at: string
   deleted_at: string | null
   following_product_ids: number[] | null
-  rotation: number
-  originalWidth: string
-  originalHeight: string
-  actualWidth: number
-  actualHeight: number
-  width: number
+  haveControls: boolean
+  have_controls: boolean
   height: number
-  name_of_placement: string
-  x_axis_3d: number
-  y_axis_3d: number
-  x_axis: number
-  y_axis: number
+  id: number
   is_locked: number
   is_replace_success: boolean
   is_smart_transparent: boolean
-  logo_name: string
-  logo_index: number
-  logo_technologies: null | string[]
-  original_logo: string
-  transparent_logo: string
-  logos_follows_product: 1 | 0
-  smart_transparent_logo: string
-  original_logo_url: string
-  url: string
-  haveControls: boolean
   logo_colors: number[][]
+  logo_index: number
+  logo_name: string
+  logo_technologies: null | string[]
+  name_of_placement: string
+  originalHeight: string
+  originalWidth: string
+  original_logo: string
+  original_logo_url: string
+  product_id: number
+  product_style_id: number | null
+  rotation: number
   side: 'front' | 'back'
-  have_controls: boolean
+  smart_transparent_logo: string
+  transparent_logo: string
+  updated_at: string
+  url: string
+  width: number
+  x_axis: number
+  x_axis_3d: number
+  y_axis: number
+  y_axis_3d: number
 }
 
 /*
@@ -459,17 +532,17 @@ type OutputProductCustomLogo = {
 */
 
 type SvgGroup = {
-  id: string
   color: string
   count: number
-  pantone?: string
+  id: string
   name: string
+  pantone?: string
 }
 
 type ProductPriceObject = {
-  product_price: number
   currency_code: string
   currency_symbol: string
+  product_price: number
   quantity: number
 }
 
@@ -480,145 +553,145 @@ type RosterFieldColor = {
 }
 
 type RosterFieldItem = {
-  label: string
-  placement: string
-  width: string
-  height: string
-  unit: string
-  svg: string
   color: RosterFieldColor[]
-  svg_height: string
-  outline_color: string
-  outline_color_pantone: string
+  height: string
+  height_px: number
+  label: string
   original_height: number
   original_width: number
+  outline_color: string
+  outline_color_pantone: string
   outline_width: string
+  placement: string
   rotation: string
   scaleX: number
   scaleY: number
+  svg: string
+  svg_height: string
+  unit: string
+  width: string
   width_px: number
-  height_px: number
 }
 
 type RosterField = {
-  label: string
-  value: string
   font_family: string
   items: RosterFieldItem[]
+  label: string
+  value: string
 }
 
 type ProductRosterRecord = {
-  size: string
-  quantity: number
   name: RosterField
   number: RosterField
+  quantity: number
+  size: string
 }
 
 type ProductCustomTextItem = {
-  label: string
-  height: number
-  x_axis: string
-  y_axis: string
-  rotation: string
-  is_locked: boolean
-  placement: string
-  outline_enabled: boolean
+  actualHeight: number
+  actualWidth: number
   arc_text_allowed: boolean
-  font_family: string
   color: string
   color_pantone: string
-  outline_width: number | string
-  outline_width_converted: string
   color_tab_index: number
+  font_family: string
+  height: number
+  is_locked: boolean
+  label: string
+  originalHeight: string
+  originalWidth: string
   outline_color: string
   outline_color_pantone: string
-  selected: boolean
+  outline_enabled: boolean
+  outline_width: number | string
+  outline_width_converted: string
+  placement: string
+  rotation: string
   scaleX: number
   scaleY: number
+  selected: boolean
   width: number
-  actualWidth: number
-  actualHeight: number
-  originalWidth: string
-  originalHeight: string
+  x_axis: string
+  y_axis: string
 }
 
 type ProductCustomText = {
-  id: number
-  product_id: number
-  type: string
-  label: string
-  following_products: number[]
-  items: ProductCustomTextItem[]
-  created_at: string | null
-  updated_at: string | null
-  deleted_at: string | null
-  value: string
-  manually_added: boolean
-  font_family: string
-  following_product_ids: number[]
   active_item_index: number
+  created_at: string | null
+  deleted_at: string | null
+  following_product_ids: number[]
+  following_products: number[]
+  font_family: string
+  id: number
   is_first_name?: boolean
   is_first_number?: boolean
+  items: ProductCustomTextItem[]
+  label: string
+  manually_added: boolean
+  product_id: number
+  type: string
+  updated_at: string | null
+  value: string
 }
 
 type ProductCustomTextObjects = {
-  roster: Record<string, ProductRosterRecord>
   common: unknown[]
+  roster: Record<string, ProductRosterRecord>
 }
 
 type ProductRosterDetail = {
-  text: string
-  number: string
-  size: string
-  quantity: number
   information: string
+  number: string
+  quantity: number
+  size: string
+  text: string
 }
 
 export type ProductCustomization = {
+  addons: OutputAddon[]
   back_image: string
-  custom_logos: OutputProductCustomLogo[]
   colors: OutputProductColor[]
-  design_id: number
-  defaultcolors: OutputProductColor[]
-  front_image: string
-  fixed_logo_index: number
-  measurement_ratio: number
+  common?: OutputProductCustomLogo[]
   custom_logo_svgs: unknown[]
-  product_custom_texts: ProductCustomText[]
-  product_custom_text_objects: ProductCustomTextObjects
-  groupcolors: Record<string, { color: string; name: string }>
-  logo_colors: unknown[]
-  sku_number: number
-  sizechart_reference: string
-  minimum_order_quantity: number
-  minimum_order_quantity_type: string
-  product_id: number
+  custom_logos: OutputProductCustomLogo[]
+  defaultcolors: OutputProductColor[]
+  design_id: number
+  ecommerce_cart_id: string | null
+  ecommerce_modifier_id: string
   ecommerce_post_id: string
   ecommerce_variant_id: string
-  ecommerce_modifier_id: string
-  sync_id: string
-  size_variants_mapping: unknown | null
-  product_type: string
-  product_name: string
-  product_display_name: string
+  fixed_logo_index: number
+  fixed_logos: unknown[]
+  front_image: string
+  group_patterns: Record<string, unknown>
+  grouped_addons: Record<string, OutputAddon[]>
+  groupcolors: Record<string, { color: string; name: string }>
+  id: string
+  is_custom_product: boolean
+  logo_colors: unknown[]
+  measurement_ratio: number
+  minimum_order_quantity: number
+  minimum_order_quantity_type: string
   pdf_file: string | null
-  production_url: string
+  product_custom_text_objects: ProductCustomTextObjects
+  product_custom_texts: ProductCustomText[]
+  product_display_name: string
+  product_id: number
+  product_name: string
+  product_price_object: ProductPriceObject
   product_roster_detail: ProductRosterDetail[]
+  product_type: string
+  production_url: string
+  reorder_data: unknown | null
+  shuffle_color_number: number
+  size_variants_mapping: unknown | null
+  sizechart_reference: string
+  sku_number: number
   style_id: number
   style_name: string
-  addons: OutputAddon[]
-  product_price_object: ProductPriceObject
   svg_groups: SvgGroup[]
   svg_parts: string[]
-  shuffle_color_number: number
-  ecommerce_cart_id: string | null
-  reorder_data: unknown | null
-  is_custom_product: boolean
-  grouped_addons: Record<string, OutputAddon[]>
-  ungrouped_addons: OutputAddon[]
-  group_patterns: Record<string, unknown>
-  fixed_logos: unknown[]
-  id: string
   svg_url: string
-  common?: OutputProductCustomLogo[]
+  sync_id: string
+  ungrouped_addons: OutputAddon[]
 }
