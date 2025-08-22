@@ -31,9 +31,7 @@
   const canvasEl = ref<HTMLCanvasElement | null>(null)
   let canvas: Canvas | null = null
 
-  const storageBase =
-    (import.meta.env.VITE_APP_STORAGE_URL as string) ||
-    'https://custimoo-development.s3.us-east-1.amazonaws.com/'
+  const storageBase = import.meta.env.VITE_APP_STORAGE_URL
 
   function fromStorage(path: string): string {
     const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
