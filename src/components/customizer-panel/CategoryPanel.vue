@@ -3,11 +3,25 @@
   import { flexDuoCategoryIcons } from '@/icons/flex-duo-categories'
   import { ChevronRight } from 'lucide-vue-next'
   interface Props {
-    onSelectCategory: (categoryId: number) => void
+    onSelectCategory?: (categoryId: number) => void
   }
 
-  defineProps<Props>()
+  const props = defineProps<Props>()
   const productsStore = useProductsStore()
+
+  async function handleSelectCategory(categoryId: number) {
+    productsStore.setActiveCategory(categoryId)
+    productsStore.setlastCategoryId(categoryId)
+    await productsStore.dispatchGetProductPreviews(categoryId)
+    const firstProductId =
+      productsStore.productPreviews && productsStore.productPreviews.length
+        ? productsStore.productPreviews[0].product.id
+        : null
+    if (firstProductId != null) {
+      await productsStore.dispatchGetActiveProductDetails(firstProductId)
+    }
+    props.onSelectCategory?.(categoryId)
+  }
 
   // Temporary mapping: cycle through Flex Duo icons until API provides icon per category
   const fallbackFlexDuoIcons = [
@@ -65,7 +79,7 @@
       v-for="(item, index) in productsStore.categories?.data"
       :key="item.id"
       class="h-14 px-4 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors"
-      @click="() => onSelectCategory(item.id)"
+      @click="() => handleSelectCategory(item.id)"
     >
       <div class="flex items-center gap-3">
         <component

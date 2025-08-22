@@ -46,6 +46,7 @@ export function useAppInitialization() {
         // Initialize products store from localStorage (non-blocking)
         const productsStore = useProductsStore()
         productsStore.initLastCategoryIdFromLocalStorage()
+        productsStore.initActiveSelectionFromLocalStorage()
 
         // Fetch company and settings using stores
         const companyStore = useCompanyStore()
@@ -56,6 +57,27 @@ export function useAppInitialization() {
             ? productsStore.dispatchGetCustomizedCategories()
             : productsStore.dispatchGetCategoriesWithNoDefaultCategoryOrProduct()
         ])
+
+        // Determine active category
+        const effectiveCategoryId =
+          productsStore.activeCategoryId ||
+          productsStore.lastCategoryId ||
+          productsStore.categories?.data?.[0]?.id ||
+          null
+        productsStore.setActiveCategory(effectiveCategoryId)
+
+        // Load product previews for panel
+        await productsStore.dispatchGetProductPreviews(effectiveCategoryId)
+
+        // Load active product details
+        const activeProductId =
+          productsStore.activeProductId ||
+          (productsStore.productPreviews && productsStore.productPreviews.length
+            ? productsStore.productPreviews[0].product.id
+            : null)
+        if (activeProductId != null) {
+          await productsStore.dispatchGetActiveProductDetails(activeProductId)
+        }
 
         isInitialized.value = true
         globalIsInitialized = true

@@ -458,6 +458,20 @@ export type OutputProductStyleDesign = OutputProductStyleDesignBase & {
   updated_at: string
 }
 
+// Lightweight preview item used for listing products in a category
+export type ProductPreviewItem = {
+  product: OutputProductBase
+  defaultStyle: OutputProductStyleBase
+  defaultDesign: OutputProductStyleDesignBase
+}
+
+// Full details for the currently active product
+export type ActiveProductDetails = {
+  product: OutputProduct
+  productstyle: OutputProductStyle
+  productdesign: OutputProductStyleDesign
+}
+
 export type OutputCompanyAddon = {
   addon_data: {
     currencies: {

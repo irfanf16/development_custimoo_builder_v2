@@ -65,6 +65,7 @@ declare module 'vue' {
     MenuPanel: typeof import('./src/components/customizer-panel/MenuPanel.vue')['default']
     PriceCard: typeof import('./src/components/customizer-price/PriceCard.vue')['default']
     ProductPanel: typeof import('./src/components/customizer-panel/ProductPanel.vue')['default']
+    ProductPreviewCanvas: typeof import('./src/components/customizer-panel/ProductPreviewCanvas.vue')['default']
     RightToolbar: typeof import('./src/components/customizer-canvas-preview/RightToolbar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

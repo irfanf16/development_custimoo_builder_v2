@@ -3,7 +3,9 @@ import { ref } from 'vue'
 import type {
   OutputProductCategories,
   GetProductCategoriesParams,
-  ProductCustomization
+  ProductCustomization,
+  ActiveProductDetails,
+  ProductPreviewItem
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
@@ -36,6 +38,18 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   // Customized Product State
   const customizedProduct = ref<ProductCustomization | null>(null)
+
+  // Active selections
+  const activeCategoryId = ref<number | null>(null)
+  const activeProductId = ref<number | null>(null)
+  const activeStep = ref<string | null>(
+    typeof window !== 'undefined'
+      ? window.localStorage.getItem('activeStep')
+      : null
+  )
+
+  // Lightweight previews for ProductPanel
+  const productPreviews = ref<ProductPreviewItem[] | null>(null)
 
   // Loading state
   const isLoading = ref(false)
@@ -78,6 +92,39 @@ export const useProductsStore = defineStore('productsStore', () => {
     if (lastCategoryId) {
       setlastCategoryId(Number(lastCategoryId))
     }
+  }
+
+  function initActiveSelectionFromLocalStorage() {
+    const cat = localStorage.getItem('activeCategoryId')
+    const pid = localStorage.getItem('activeProductId')
+    const step = localStorage.getItem('activeStep')
+    activeCategoryId.value = cat ? Number(cat) : null
+    activeProductId.value = pid ? Number(pid) : null
+    activeStep.value = step
+  }
+
+  function setActiveCategory(categoryId: number | null) {
+    activeCategoryId.value = categoryId
+    if (categoryId != null) {
+      localStorage.setItem('activeCategoryId', String(categoryId))
+    } else {
+      localStorage.removeItem('activeCategoryId')
+    }
+  }
+
+  function setActiveProduct(productId: number | null) {
+    activeProductId.value = productId
+    if (productId != null) {
+      localStorage.setItem('activeProductId', String(productId))
+    } else {
+      localStorage.removeItem('activeProductId')
+    }
+  }
+
+  function setActiveStep(step: string | null) {
+    activeStep.value = step
+    if (step) localStorage.setItem('activeStep', step)
+    else localStorage.removeItem('activeStep')
   }
 
   function reset() {
@@ -164,16 +211,90 @@ export const useProductsStore = defineStore('productsStore', () => {
   ): Promise<APIResponse<OutputProductCategories>> {
     setLoading(true)
     setError(null)
-    const output = await tryCatchApi(
-      API.products.getProductByCategoryId({ category_id: categoryId })
+    // Fetch previews for the ProductPanel (lightweight)
+    const previews = await tryCatchApi(
+      API.products.getProductPreviewsByCategory(categoryId)
     )
-    if (output.success) {
-      setProducts(output.content)
-    } else {
+    if (previews.success) {
+      productPreviews.value =
+        previews.content as unknown as ProductPreviewItem[]
+    }
+    // Also keep existing products-by-category request if needed elsewhere
+    const output = await tryCatchApi(
+      API.products.getProductByCategoryId({
+        category_id: categoryId,
+        customized: true,
+        personalized: false,
+        private: false
+      })
+    )
+    if (!output.success) {
       setError('Error getting products')
     }
     setLoading(false)
     return output
+  }
+
+  async function dispatchGetProductPreviews(categoryId: number | null) {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(
+      API.products.getProductPreviewsByCategory(categoryId ?? null)
+    )
+    if (resp.success) {
+      productPreviews.value = resp.content as unknown as ProductPreviewItem[]
+      setActiveCategory(categoryId ?? null)
+    } else {
+      setError('Error getting product previews')
+    }
+    setLoading(false)
+    return resp
+  }
+
+  function initCustomizationFromLocalStorage() {
+    const raw = localStorage.getItem('customizedProduct')
+    if (raw) {
+      try {
+        customizedProduct.value = JSON.parse(raw)
+      } catch (_e) {
+        customizedProduct.value = null
+      }
+    }
+  }
+
+  function saveCustomizationToLocalStorage() {
+    if (customizedProduct.value) {
+      localStorage.setItem(
+        'customizedProduct',
+        JSON.stringify(customizedProduct.value)
+      )
+    } else {
+      localStorage.removeItem('customizedProduct')
+    }
+  }
+
+  function resetCustomizationToDefaults() {
+    customizedProduct.value = null
+    saveCustomizationToLocalStorage()
+  }
+
+  async function dispatchGetActiveProductDetails(productId: number) {
+    setLoading(true)
+    setError(null)
+    const result = await tryCatchApi(
+      API.products.getActiveProductDetails(productId)
+    )
+    if (result.success) {
+      const details = result.content as unknown as ActiveProductDetails
+      product.value = details.product
+      style.value = details.productstyle
+      design.value = details.productdesign
+      setActiveProduct(details.product.id)
+    } else {
+      setError('Error getting active product details')
+    }
+    setLoading(false)
+    return result
   }
 
   return {
@@ -200,9 +321,23 @@ export const useProductsStore = defineStore('productsStore', () => {
     setlastCategoryId,
     clearLastCategoryId,
     initLastCategoryIdFromLocalStorage,
+    initActiveSelectionFromLocalStorage,
+    setActiveCategory,
+    setActiveProduct,
+    setActiveStep,
     // API Functions
     dispatchGetCategoriesWithNoDefaultCategoryOrProduct,
     dispatchGetProductCategoriesWithProductId,
-    dispatchGetCustomizedCategories
+    dispatchGetCustomizedCategories,
+    dispatchGetProductsByCategoryId,
+    dispatchGetActiveProductDetails,
+    dispatchGetProductPreviews,
+    productPreviews,
+    activeCategoryId,
+    activeProductId,
+    activeStep,
+    initCustomizationFromLocalStorage,
+    saveCustomizationToLocalStorage,
+    resetCustomizationToDefaults
   }
 })
