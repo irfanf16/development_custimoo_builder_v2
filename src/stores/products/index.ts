@@ -159,6 +159,23 @@ export const useProductsStore = defineStore('productsStore', () => {
     return output
   }
 
+  async function dispatchGetProductsByCategoryId(
+    categoryId: number
+  ): Promise<APIResponse<OutputProductCategories>> {
+    setLoading(true)
+    setError(null)
+    const output = await tryCatchApi(
+      API.products.getProductByCategoryId({ category_id: categoryId })
+    )
+    if (output.success) {
+      setProducts(output.content)
+    } else {
+      setError('Error getting products')
+    }
+    setLoading(false)
+    return output
+  }
+
   return {
     // State
     categories,
