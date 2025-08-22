@@ -188,7 +188,7 @@ export type OutputProductStyleBase = {
   product_id: number
 }
 
-export type OutputProductStyle = {
+export type OutputProductStyle = OutputProductStyleBase & {
   _3d_alpha_map: unknown
   _3d_ao_map: unknown
   _3d_metalness_map: unknown
@@ -358,7 +358,39 @@ export type OutputProductNameColor = {
   updated_at: string
 }
 
-export type OutputProductStyleDesign = {
+export type OutputProductStyleDesignBase = {
+  id: number
+  is_default: 1 | 0
+  front_design: {
+    color_group: string | null
+    design_name: string
+    design_position: string
+    file_base_url: string
+    file_extension: string
+    file_thumbnail_url: string
+    file_url: string
+    id: number
+  }
+  frontsafezone_design: {
+    design_position: string
+    file_base_url: string
+    file_extension: string
+    file_thumbnail_url: string
+    file_url: string
+    id: number
+  }
+  frontboundary_design: {
+    design_position: string
+    file_base_url: string
+    file_extension: string
+    file_thumbnail_url: string
+    file_url: string
+    id: number
+  }
+  svg_parts: string[]
+}
+
+export type OutputProductStyleDesign = OutputProductStyleDesignBase & {
   back_design: {
     color_group: string | null
     design_name: string
@@ -401,26 +433,8 @@ export type OutputProductStyleDesign = {
     file_url: string
     id: number
   }
-  frontboundary_design: {
-    design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
-    file_url: string
-    id: number
-  }
-  frontsafezone_design: {
-    design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
-    file_url: string
-    id: number
-  }
   front_design_id: number
-  id: number
   is_active: number
-  is_default: 1 | 0
   production_design: {
     design_position: string
     file_base_url: string
@@ -441,7 +455,6 @@ export type OutputProductStyleDesign = {
   productionsafezone_design_id: number | null
   product_id: number
   product_style_id: number
-  svg_parts: string
   updated_at: string
 }
 
