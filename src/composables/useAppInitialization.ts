@@ -53,7 +53,7 @@ export function useAppInitialization() {
           companyStore.dispatchGetCompany(),
           companyStore.dispatchGetSettings(),
           productsStore.lastCategoryId
-            ? productsStore.dispatchGetProductCategoriesWithProductId(productsStore.lastCategoryId)
+            ? productsStore.dispatchGetCustomizedCategories()
             : productsStore.dispatchGetCategoriesWithNoDefaultCategoryOrProduct()
         ])
 

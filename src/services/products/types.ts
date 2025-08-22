@@ -37,7 +37,7 @@ export type GetProductCategoriesParams = {
   title?: string
 }
 
-export type GetProductCategoriesByCategoryIdParams = {
+export type getProductByCategoryIdParams = {
   category_id: number
   customized: boolean
   personalized: boolean
