@@ -149,6 +149,17 @@ export const mockActiveProductDetails: ActiveProductDetails = {
         'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
       id: 129633
     },
+    backsafezone_design: {
+      design_position: 'backsafezone',
+      file_base_url:
+        'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
+      file_extension: 'svg',
+      file_thumbnail_url:
+        'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
+      file_url:
+        'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
+      id: 129636
+    },
     backboundary_design: {
       design_position: 'backboundary',
       file_base_url:
