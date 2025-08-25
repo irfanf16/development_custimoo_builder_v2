@@ -13,6 +13,8 @@
     text?: string
   }>()
 
+  const emit = defineEmits<{ (e: 'click'): void }>()
+
   const isActive = computed(() => props.isActive || false)
 
   const variant = computed(() => (isActive.value ? 'default' : 'outline'))
@@ -28,7 +30,7 @@
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger as-child>
-        <Button :variant="variant" :class="buttonClass">
+        <Button :variant="variant" :class="buttonClass" @click="emit('click')">
           <slot name="icon" />
         </Button>
       </TooltipTrigger>

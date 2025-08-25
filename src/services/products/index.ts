@@ -3,14 +3,16 @@ import http from '../api'
 import {
   mockActiveProductDetails,
   mockProductPreviews,
-  mockResponse
+  mockResponse,
+  mockDesignPreviewsByStyleId
 } from './mocks'
 import type {
   OutputProductCategories,
   GetProductCategoriesParams,
   getProductByCategoryIdParams,
   ActiveProductDetails,
-  ProductPreviewItem
+  ProductPreviewItem,
+  OutputProductStyleDesignBase
 } from '@/services/products/types'
 
 async function getProductCategories(params: GetProductCategoriesParams) {
@@ -47,9 +49,27 @@ async function getProductPreviewsByCategory(categoryId: number | null) {
   })
 }
 
+async function getDesignPreviewsByStyleId(styleId: number) {
+  const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
+  if (useMocks) {
+    return Promise.resolve(
+      mockResponse<OutputProductStyleDesignBase[]>(
+        mockDesignPreviewsByStyleId(styleId)
+      )
+    )
+  }
+  return await http.get<OutputProductStyleDesignBase[]>(
+    `list/design-previews`,
+    {
+      params: { product_style_id: styleId }
+    }
+  )
+}
+
 export default {
   getProductCategories,
   getProductByCategoryId,
   getActiveProductDetails,
-  getProductPreviewsByCategory
+  getProductPreviewsByCategory,
+  getDesignPreviewsByStyleId
 }

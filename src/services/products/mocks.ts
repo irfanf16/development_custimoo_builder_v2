@@ -51,7 +51,805 @@ export const mockActiveProductDetails: ActiveProductDetails = {
     svg_group_color_container: {},
     sync_id: null,
     url_slug: 'ninja_2000_hockey_jersey',
-    using_logo_colors: 0
+    using_logo_colors: 0,
+    product_addons: [
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 313,
+        title: 'Fight strap',
+        description: '<p>Fight strap<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 3
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 314,
+        title: 'Sublimated name patch',
+        description: '<p>Sublimated velcro name patch<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 6
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 315,
+        title: 'Sublimated velcro name patch',
+        description: '<p>Sublimated velcro name patch<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 6
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 316,
+        title: 'Sublimated sponsor patches',
+        description: '<p>Sublimated sponsor patches<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 4
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 317,
+        title: 'Sublimated logo patch',
+        description: '<p>Sublimated logo patch<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 4
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 319,
+        title: 'Tackle twill nameplates',
+        description: '<p>Tackle twill nameplates<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 11.29
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 320,
+        title: 'Double shoulders',
+        description: '<p>Double shoulders<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 2
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 321,
+        title: 'Double elbows',
+        description: '<p>Double elbows<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 2
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      }
+    ],
+    company_addons: [
+      {
+        id: 17,
+        company_id: 6,
+        addon_id: 313,
+        addon_sync_id: null,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null,
+        addon_data: {
+          note: null,
+          title: 'Fight strap',
+          currencies: [
+            {
+              code: 'DKK',
+              name: 'Danish Krone',
+              price: 0,
+              symbol: 'Kr.'
+            },
+            {
+              code: 'SEK',
+              name: 'Swedish Krona',
+              price: 0,
+              symbol: 'kr'
+            },
+            {
+              code: 'GBP',
+              name: 'Pound Sterling',
+              price: 0,
+              symbol: '\u00a3'
+            },
+            {
+              code: 'EUR',
+              name: 'Euro',
+              price: 0,
+              symbol: '\u20ac'
+            },
+            {
+              code: 'CAD',
+              name: 'Canadian Dollar',
+              price: 3.99,
+              symbol: 'C$'
+            },
+            {
+              code: 'USD',
+              name: 'United States Dollar',
+              price: 5,
+              symbol: '$'
+            }
+          ],
+          description: '<p>Fight strap<\/p>'
+        },
+        created_at: '2023-11-22T08:44:39.000000Z',
+        updated_at: '2023-11-24T10:13:05.000000Z',
+        deleted_at: null
+      },
+      {
+        id: 222,
+        company_id: 6,
+        addon_id: 314,
+        addon_sync_id: null,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null,
+        addon_data: {
+          note: null,
+          title: 'Sublimated name patch',
+          currencies: [
+            {
+              code: 'DKK',
+              name: 'Danish Krone',
+              price: 0,
+              symbol: 'Kr.'
+            },
+            {
+              code: 'SEK',
+              name: 'Swedish Krona',
+              price: 0,
+              symbol: 'kr'
+            },
+            {
+              code: 'GBP',
+              name: 'Pound Sterling',
+              price: 0,
+              symbol: '\u00a3'
+            },
+            {
+              code: 'EUR',
+              name: 'Euro',
+              price: 0,
+              symbol: '\u20ac'
+            },
+            {
+              code: 'CAD',
+              name: 'Canadian Dollar',
+              price: 4.66,
+              symbol: 'C$'
+            },
+            {
+              code: 'USD',
+              name: 'United States Dollar',
+              price: 3.5,
+              symbol: '$'
+            }
+          ],
+          description: '<p>Sublimated velcro name patch<\/p>'
+        },
+        created_at: '2023-11-24T09:13:32.000000Z',
+        updated_at: '2023-11-24T10:13:05.000000Z',
+        deleted_at: null
+      },
+      {
+        id: 223,
+        company_id: 6,
+        addon_id: 315,
+        addon_sync_id: null,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null,
+        addon_data: {
+          note: null,
+          title: 'Sublimated velcro name patch',
+          currencies: [
+            {
+              code: 'DKK',
+              name: 'Danish Krone',
+              price: 0,
+              symbol: 'Kr.'
+            },
+            {
+              code: 'SEK',
+              name: 'Swedish Krona',
+              price: 0,
+              symbol: 'kr'
+            },
+            {
+              code: 'GBP',
+              name: 'Pound Sterling',
+              price: 0,
+              symbol: '\u00a3'
+            },
+            {
+              code: 'EUR',
+              name: 'Euro',
+              price: 0,
+              symbol: '\u20ac'
+            },
+            {
+              code: 'CAD',
+              name: 'Canadian Dollar',
+              price: 6.65,
+              symbol: 'C$'
+            },
+            {
+              code: 'USD',
+              name: 'United States Dollar',
+              price: 5,
+              symbol: '$'
+            }
+          ],
+          description: '<p>Sublimated velcro name patch<\/p>'
+        },
+        created_at: '2023-11-24T09:13:32.000000Z',
+        updated_at: '2023-11-24T10:13:05.000000Z',
+        deleted_at: null
+      },
+      {
+        id: 224,
+        company_id: 6,
+        addon_id: 316,
+        addon_sync_id: null,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null,
+        addon_data: {
+          note: null,
+          title: 'Sublimated sponsor patches',
+          currencies: [
+            {
+              code: 'DKK',
+              name: 'Danish Krone',
+              price: 0,
+              symbol: 'Kr.'
+            },
+            {
+              code: 'SEK',
+              name: 'Swedish Krona',
+              price: 0,
+              symbol: 'kr'
+            },
+            {
+              code: 'GBP',
+              name: 'Pound Sterling',
+              price: 0,
+              symbol: '\u00a3'
+            },
+            {
+              code: 'EUR',
+              name: 'Euro',
+              price: 0,
+              symbol: '\u20ac'
+            },
+            {
+              code: 'CAD',
+              name: 'Canadian Dollar',
+              price: 5.32,
+              symbol: 'C$'
+            },
+            {
+              code: 'USD',
+              name: 'United States Dollar',
+              price: 4,
+              symbol: '$'
+            }
+          ],
+          description: '<p>Sublimated sponsor patches<\/p>'
+        },
+        created_at: '2023-11-24T09:13:32.000000Z',
+        updated_at: '2023-11-24T10:13:05.000000Z',
+        deleted_at: null
+      },
+      {
+        id: 225,
+        company_id: 6,
+        addon_id: 317,
+        addon_sync_id: null,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null,
+        addon_data: {
+          note: null,
+          title: 'Sublimated logo patch',
+          currencies: [
+            {
+              code: 'DKK',
+              name: 'Danish Krone',
+              price: 0,
+              symbol: 'Kr.'
+            },
+            {
+              code: 'SEK',
+              name: 'Swedish Krona',
+              price: 0,
+              symbol: 'kr'
+            },
+            {
+              code: 'GBP',
+              name: 'Pound Sterling',
+              price: 0,
+              symbol: '\u00a3'
+            },
+            {
+              code: 'EUR',
+              name: 'Euro',
+              price: 0,
+              symbol: '\u20ac'
+            },
+            {
+              code: 'CAD',
+              name: 'Canadian Dollar',
+              price: 5.32,
+              symbol: 'C$'
+            },
+            {
+              code: 'USD',
+              name: 'United States Dollar',
+              price: 4,
+              symbol: '$'
+            }
+          ],
+          description: '<p>Sublimated logo patch<\/p>'
+        },
+        created_at: '2023-11-24T09:13:32.000000Z',
+        updated_at: '2023-11-24T10:13:05.000000Z',
+        deleted_at: null
+      },
+      {
+        id: 292,
+        company_id: 6,
+        addon_id: 319,
+        addon_sync_id: null,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null,
+        addon_data: {
+          note: null,
+          title: 'Tackle twill nameplates',
+          currencies: [
+            {
+              code: 'DKK',
+              name: 'Danish Krone',
+              price: 47,
+              symbol: 'Kr.'
+            },
+            {
+              code: 'SEK',
+              name: 'Swedish Krona',
+              price: 0,
+              symbol: 'kr'
+            },
+            {
+              code: 'GBP',
+              name: 'Pound Sterling',
+              price: 0,
+              symbol: '\u00a3'
+            },
+            {
+              code: 'EUR',
+              name: 'Euro',
+              price: 0,
+              symbol: '\u20ac'
+            },
+            {
+              code: 'CAD',
+              name: 'Canadian Dollar',
+              price: 9.12,
+              symbol: 'C$'
+            },
+            {
+              code: 'USD',
+              name: 'United States Dollar',
+              price: 6.75,
+              symbol: '$'
+            }
+          ],
+          description: '<p>Tackle twill nameplates<\/p>'
+        },
+        created_at: '2023-11-24T09:16:26.000000Z',
+        updated_at: '2023-11-24T10:13:05.000000Z',
+        deleted_at: null
+      },
+      {
+        id: 380,
+        company_id: 6,
+        addon_id: 320,
+        addon_sync_id: null,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null,
+        addon_data: {
+          note: null,
+          title: 'Double shoulders',
+          currencies: [
+            {
+              code: 'DKK',
+              name: 'Danish Krone',
+              price: 30,
+              symbol: 'Kr.'
+            },
+            {
+              code: 'SEK',
+              name: 'Swedish Krona',
+              price: 0,
+              symbol: 'kr'
+            },
+            {
+              code: 'GBP',
+              name: 'Pound Sterling',
+              price: 0,
+              symbol: '\u00a3'
+            },
+            {
+              code: 'EUR',
+              name: 'Euro',
+              price: 0,
+              symbol: '\u20ac'
+            },
+            {
+              code: 'CAD',
+              name: 'Canadian Dollar',
+              price: 5.4,
+              symbol: 'C$'
+            },
+            {
+              code: 'USD',
+              name: 'United States Dollar',
+              price: 4,
+              symbol: '$'
+            }
+          ],
+          description: '<p>Double shoulders<\/p>'
+        },
+        created_at: '2023-11-24T09:21:03.000000Z',
+        updated_at: '2023-11-24T10:13:05.000000Z',
+        deleted_at: null
+      },
+      {
+        id: 381,
+        company_id: 6,
+        addon_id: 321,
+        addon_sync_id: null,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null,
+        addon_data: {
+          note: null,
+          title: 'Double elbows',
+          currencies: [
+            {
+              code: 'DKK',
+              name: 'Danish Krone',
+              price: 15,
+              symbol: 'Kr.'
+            },
+            {
+              code: 'SEK',
+              name: 'Swedish Krona',
+              price: 0,
+              symbol: 'kr'
+            },
+            {
+              code: 'GBP',
+              name: 'Pound Sterling',
+              price: 0,
+              symbol: '\u00a3'
+            },
+            {
+              code: 'EUR',
+              name: 'Euro',
+              price: 0,
+              symbol: '\u20ac'
+            },
+            {
+              code: 'CAD',
+              name: 'Canadian Dollar',
+              price: 2.7,
+              symbol: 'C$'
+            },
+            {
+              code: 'USD',
+              name: 'United States Dollar',
+              price: 2,
+              symbol: '$'
+            }
+          ],
+          description: '<p>Double elbows<\/p>'
+        },
+        created_at: '2023-11-24T09:21:03.000000Z',
+        updated_at: '2023-11-24T10:13:05.000000Z',
+        deleted_at: null
+      }
+    ],
+    active_addons: [
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 313,
+        title: 'Fight strap',
+        description: '<p>Fight strap<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 3
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 314,
+        title: 'Sublimated name patch',
+        description: '<p>Sublimated velcro name patch<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 6
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 315,
+        title: 'Sublimated velcro name patch',
+        description: '<p>Sublimated velcro name patch<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 6
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 316,
+        title: 'Sublimated sponsor patches',
+        description: '<p>Sublimated sponsor patches<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 4
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 317,
+        title: 'Sublimated logo patch',
+        description: '<p>Sublimated logo patch<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 4
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 319,
+        title: 'Tackle twill nameplates',
+        description: '<p>Tackle twill nameplates<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 11.29
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 320,
+        title: 'Double shoulders',
+        description: '<p>Double shoulders<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 2
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      },
+      {
+        addon_group_id: null,
+        data_container_id: null,
+        customized_sku_info: null,
+        addon_id: 321,
+        title: 'Double elbows',
+        description: '<p>Double elbows<\/p>',
+        note: null,
+        currencies: [
+          {
+            name: 'United States Dollar',
+            code: 'USD',
+            symbol: '$',
+            price: 2
+          }
+        ],
+        selected: false,
+        published: true,
+        addon_ecommerce_product_id: null,
+        addon_ecommerce_variant_id: null,
+        addon_ecommerce_modifier_id: null
+      }
+    ]
   },
   productstyle: {
     _3d_alpha_map: null,
@@ -2030,4 +2828,55 @@ export const mockProductConfiguration1000Series = {
 
 export function mockResponse<T>(data: T): AxiosResponse<T> {
   return { status: 200, data } as AxiosResponse<T>
+}
+
+export function mockDesignPreviewsByStyleId(_styleId: number) {
+  // Reuse pieces from mockProductPreviews[0].defaultDesign and invent more
+  const base = mockProductPreviews[0].defaultDesign
+  const variants = [
+    base,
+    {
+      ...base,
+      id: base.id + 1,
+      front_design: {
+        ...base.front_design,
+        design_name: 'Anaheim',
+        file_base_url: base.front_design.file_base_url.replace(
+          'Alberta',
+          'Anaheim'
+        ),
+        file_thumbnail_url: base.front_design.file_thumbnail_url.replace(
+          'Alberta',
+          'Anaheim'
+        ),
+        file_url: base.front_design.file_url.replace('Alberta', 'Anaheim'),
+        id: base.front_design.id + 100
+      },
+      frontsafezone_design: { ...base.frontsafezone_design },
+      frontboundary_design: { ...base.frontboundary_design },
+      svg_parts: base.svg_parts
+    },
+    {
+      ...base,
+      id: base.id + 2,
+      front_design: {
+        ...base.front_design,
+        design_name: 'Apache',
+        file_base_url: base.front_design.file_base_url.replace(
+          'Alberta',
+          'apache'
+        ),
+        file_thumbnail_url: base.front_design.file_thumbnail_url.replace(
+          'Alberta',
+          'apache'
+        ),
+        file_url: base.front_design.file_url.replace('Alberta', 'apache'),
+        id: base.front_design.id + 200
+      },
+      frontsafezone_design: { ...base.frontsafezone_design },
+      frontboundary_design: { ...base.frontboundary_design },
+      svg_parts: base.svg_parts
+    }
+  ]
+  return variants
 }

@@ -5,7 +5,8 @@ import type {
   GetProductCategoriesParams,
   ProductCustomization,
   ActiveProductDetails,
-  ProductPreviewItem
+  ProductPreviewItem,
+  OutputProductStyleDesignBase
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
@@ -42,6 +43,8 @@ export const useProductsStore = defineStore('productsStore', () => {
   // Active selections
   const activeCategoryId = ref<number | null>(null)
   const activeProductId = ref<number | null>(null)
+  const activeStyleId = ref<number | null>(null)
+  const activeDesignId = ref<number | null>(null)
   const activeStep = ref<string | null>(
     typeof window !== 'undefined'
       ? window.localStorage.getItem('activeStep')
@@ -50,6 +53,7 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   // Lightweight previews for ProductPanel
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
+  const designPreviews = ref<OutputProductStyleDesignBase[] | null>(null)
 
   // Loading state
   const isLoading = ref(false)
@@ -97,9 +101,13 @@ export const useProductsStore = defineStore('productsStore', () => {
   function initActiveSelectionFromLocalStorage() {
     const cat = localStorage.getItem('activeCategoryId')
     const pid = localStorage.getItem('activeProductId')
+    const sid = localStorage.getItem('activeStyleId')
+    const did = localStorage.getItem('activeDesignId')
     const step = localStorage.getItem('activeStep')
     activeCategoryId.value = cat ? Number(cat) : null
     activeProductId.value = pid ? Number(pid) : null
+    activeStyleId.value = sid ? Number(sid) : null
+    activeDesignId.value = did ? Number(did) : null
     activeStep.value = step
   }
 
@@ -119,6 +127,19 @@ export const useProductsStore = defineStore('productsStore', () => {
     } else {
       localStorage.removeItem('activeProductId')
     }
+  }
+
+  function setActiveStyle(styleId: number | null) {
+    activeStyleId.value = styleId
+    if (styleId != null) localStorage.setItem('activeStyleId', String(styleId))
+    else localStorage.removeItem('activeStyleId')
+  }
+
+  function setActiveDesign(designId: number | null) {
+    activeDesignId.value = designId
+    if (designId != null)
+      localStorage.setItem('activeDesignId', String(designId))
+    else localStorage.removeItem('activeDesignId')
   }
 
   function setActiveStep(step: string | null) {
@@ -289,12 +310,81 @@ export const useProductsStore = defineStore('productsStore', () => {
       product.value = details.product
       style.value = details.productstyle
       design.value = details.productdesign
+      setActiveStyle(details.productstyle.id)
+      setActiveDesign(details.productdesign.id)
       setActiveProduct(details.product.id)
     } else {
       setError('Error getting active product details')
     }
     setLoading(false)
     return result
+  }
+
+  // Defaults snapshot for reset
+  const defaultActiveDetails = ref<{
+    product: any
+    style: any
+    design: any
+    customization: ProductCustomization | null
+  } | null>(null)
+
+  function captureDefaultsSnapshot() {
+    defaultActiveDetails.value = {
+      product: product.value ? JSON.parse(JSON.stringify(product.value)) : null,
+      style: style.value ? JSON.parse(JSON.stringify(style.value)) : null,
+      design: design.value ? JSON.parse(JSON.stringify(design.value)) : null,
+      customization: customizedProduct.value
+        ? (JSON.parse(
+            JSON.stringify(customizedProduct.value)
+          ) as ProductCustomization)
+        : null
+    }
+  }
+
+  function resetToDefaultsSnapshot() {
+    if (defaultActiveDetails.value) {
+      product.value = defaultActiveDetails.value.product
+      style.value = defaultActiveDetails.value.style
+      design.value = defaultActiveDetails.value.design
+      customizedProduct.value = defaultActiveDetails.value.customization
+      setActiveStyle((style.value as any)?.id ?? null)
+      setActiveDesign((design.value as any)?.id ?? null)
+    }
+  }
+
+  // Apply a design preview: update current design id and minimal customization fields
+  function applyDesignPreview(preview: OutputProductStyleDesignBase) {
+    // Update selected design id
+    setActiveDesign(preview.id)
+    // Update current design ref minimally (front design preview info)
+    design.value = Object.assign({}, design.value || {}, {
+      id: preview.id,
+      front_design: preview.front_design,
+      frontsafezone_design: preview.frontsafezone_design,
+      frontboundary_design: preview.frontboundary_design,
+      svg_parts: preview.svg_parts
+    })
+    // Update customization svg parts if present
+    if (customizedProduct.value) {
+      customizedProduct.value.svg_parts = preview.svg_parts
+      saveCustomizationToLocalStorage()
+    }
+  }
+
+  async function dispatchGetDesignPreviewsByStyleId(styleId: number) {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(
+      API.products.getDesignPreviewsByStyleId(styleId)
+    )
+    if (resp.success) {
+      designPreviews.value =
+        resp.content as unknown as OutputProductStyleDesignBase[]
+    } else {
+      setError('Error getting design previews')
+    }
+    setLoading(false)
+    return resp
   }
 
   return {
@@ -324,6 +414,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     initActiveSelectionFromLocalStorage,
     setActiveCategory,
     setActiveProduct,
+    setActiveStyle,
+    setActiveDesign,
     setActiveStep,
     // API Functions
     dispatchGetCategoriesWithNoDefaultCategoryOrProduct,
@@ -331,11 +423,18 @@ export const useProductsStore = defineStore('productsStore', () => {
     dispatchGetCustomizedCategories,
     dispatchGetProductsByCategoryId,
     dispatchGetActiveProductDetails,
+    dispatchGetDesignPreviewsByStyleId,
     dispatchGetProductPreviews,
     productPreviews,
+    designPreviews,
     activeCategoryId,
     activeProductId,
+    activeStyleId,
+    activeDesignId,
     activeStep,
+    applyDesignPreview,
+    captureDefaultsSnapshot,
+    resetToDefaultsSnapshot,
     initCustomizationFromLocalStorage,
     saveCustomizationToLocalStorage,
     resetCustomizationToDefaults

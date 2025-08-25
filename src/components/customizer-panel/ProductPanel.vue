@@ -20,6 +20,13 @@
   async function handleSelectProduct(productId: number) {
     productsStore.setActiveProduct(productId)
     await productsStore.dispatchGetActiveProductDetails(productId)
+    // Load design previews for the selected product's default style
+    const styleId = (productsStore.style as any)?.id
+    if (styleId) {
+      await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
+    }
+    // Move step to Designs
+    productsStore.setActiveStep('Designs')
   }
 </script>
 

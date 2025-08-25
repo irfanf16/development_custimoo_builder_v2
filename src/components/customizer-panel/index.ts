@@ -1,3 +1,4 @@
 export { default as MenuPanel } from './MenuPanel.vue'
 export { default as CategoryPanel } from './CategoryPanel.vue'
 export { default as ProductPanel } from './ProductPanel.vue'
+export { default as DesignsPanel } from './DesignsPanel.vue'

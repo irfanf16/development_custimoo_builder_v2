@@ -74,7 +74,7 @@
     ]"
   >
     <Card
-      class="w-full p-0 h-auto rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0"
+      class="w-full p-0 h-auto rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 overflow-hidden"
       :class="isExpanded ? 'w-[80vw]' : 'w-full'"
     >
       <CardHeader

@@ -102,6 +102,9 @@ export type OutputProduct = OutputProductBase & {
   sync_id: number | null
   url_slug: string
   using_logo_colors: number
+  product_addons: OutputAddon[]
+  company_addons: OutputCompanyAddon[]
+  active_addons: OutputAddon[]
 }
 
 // OutputProductNames
@@ -473,6 +476,7 @@ export type ActiveProductDetails = {
 }
 
 export type OutputCompanyAddon = {
+  id: number
   addon_data: {
     currencies: {
       code: string

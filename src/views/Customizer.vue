@@ -6,21 +6,22 @@
   import {
     CategoryPanel,
     MenuPanel,
-    ProductPanel
+    ProductPanel,
+    DesignsPanel
   } from '@/components/customizer-panel'
   import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
   import { useProductsStore } from '@/stores/products'
   import { CustomizerTopbar } from '@/components/customizer-topbar'
   import SmallPreview from '@/components/customizer-canvas-preview/SmallPreview.vue'
 
   const productsStore = useProductsStore()
 
-  const currentPanel = ref<'category' | 'product'>('category')
+  const currentPanel = ref<'category' | 'product' | 'designs'>('category')
 
   const panelHistory = ref<string[]>(['category'])
 
-  const navigateToPanel = (panel: 'category' | 'product') => {
+  const navigateToPanel = (panel: 'category' | 'product' | 'designs') => {
     if (panel !== currentPanel.value) {
       panelHistory.value.push(panel)
       currentPanel.value = panel
@@ -32,7 +33,7 @@
       panelHistory.value.pop()
       const previousPanel = panelHistory.value[
         panelHistory.value.length - 1
-      ] as 'category' | 'product'
+      ] as 'category' | 'product' | 'designs'
       if (previousPanel === 'category') {
         productsStore.clearLastCategoryId()
       }
@@ -45,24 +46,60 @@
     navigateToPanel('product')
   }
 
+  // React to step changes from the menu/store
+  watch(
+    () => productsStore.activeStep,
+    async step => {
+      if (step === 'Categories' && currentPanel.value !== 'category') {
+        // When returning to categories, snapshot defaults for potential reset later
+        productsStore.captureDefaultsSnapshot()
+      }
+      if (step === 'Designs') {
+        // Ensure design previews are available after a reload
+        const styleId =
+          (productsStore.style as any)?.id || productsStore.activeStyleId
+        const needsPreviews = !(
+          Array.isArray(productsStore.designPreviews) &&
+          productsStore.designPreviews.length > 0
+        )
+        if (needsPreviews && styleId) {
+          await productsStore.dispatchGetDesignPreviewsByStyleId(
+            styleId as number
+          )
+        }
+        navigateToPanel('designs')
+      } else if (step === 'Categories') {
+        navigateToPanel('category')
+      } else if (currentPanel.value === 'category') {
+        // default after leaving categories is product panel
+        navigateToPanel('product')
+      }
+    },
+    { immediate: true }
+  )
+
   // Breadcrumb configuration
   const getBreadcrumbs = () => {
-    if (currentPanel.value === 'category') {
-      return [{ label: 'Categories' }]
-    } else {
+    const step = productsStore.activeStep || 'Categories'
+    if (step === 'Categories') {
+      if (currentPanel.value === 'category') {
+        return [{ label: 'Categories' }]
+      }
       const category = productsStore.categories?.data?.find(
         c => c.id === productsStore.lastCategoryId
       )
       return [
-        {
-          label: 'Categories',
-          action: () => navigateBack()
-        },
-        {
-          label: category?.category_name || 'Products'
-        }
+        { label: 'Categories', action: () => navigateBack() },
+        { label: category?.category_name || 'Products' }
       ]
     }
+
+    if (step === 'Designs') {
+      return [{ label: 'Designs' }]
+    }
+
+    // Fallback for future steps: single-level breadcrumb
+    return [{ label: step }]
   }
 </script>
 
@@ -79,8 +116,8 @@
             <MenuPanel
               :content-key="currentPanel"
               :breadcrumbs="getBreadcrumbs()"
-              :expandable="currentPanel === 'product'"
-              :show-back-button="currentPanel === 'product'"
+              :expandable="currentPanel !== 'category'"
+              :show-back-button="currentPanel !== 'category'"
               :on-back="navigateBack"
             >
               <!-- Category Panel Content -->
@@ -90,7 +127,10 @@
               />
 
               <!-- Product Panel Content -->
-              <ProductPanel v-else />
+              <ProductPanel v-else-if="currentPanel === 'product'" />
+
+              <!-- Designs Panel Content -->
+              <DesignsPanel v-else-if="currentPanel === 'designs'" />
             </MenuPanel>
           </div>
         </div>

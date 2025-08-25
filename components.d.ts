@@ -28,6 +28,7 @@ declare module 'vue' {
     CategoryPanel: typeof import('./src/components/customizer-panel/CategoryPanel.vue')['default']
     CustomizerMenu: typeof import('./src/components/customizer-menu/CustomizerMenu.vue')['default']
     CustomizerTopbar: typeof import('./src/components/customizer-topbar/CustomizerTopbar.vue')['default']
+    DesignsPanel: typeof import('./src/components/customizer-panel/DesignsPanel.vue')['default']
     Dialog: typeof import('./src/components/ui/dialog/Dialog.vue')['default']
     DialogClose: typeof import('./src/components/ui/dialog/DialogClose.vue')['default']
     DialogContent: typeof import('./src/components/ui/dialog/DialogContent.vue')['default']
