@@ -27,6 +27,16 @@
       if (!hasPreviews && styleId) {
         await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
       }
+    } else if (label === 'Styles') {
+      const pid =
+        (productsStore.product as any)?.id || productsStore.activeProductId
+      if (pid) {
+        if (!productsStore.stylePreviews) {
+          await productsStore.dispatchGetStylePreviews(pid as number)
+        }
+        // Ensure addons are present
+        await productsStore.dispatchGetProductAddons(pid as number)
+      }
     }
     productsStore.setActiveStep(label)
   }

@@ -85,6 +85,7 @@ export type OutputProduct = OutputProductBase & {
     sku_id: string
     sku_number: number
     specs_sheet_url: string | null
+    description?: string | null
   }
   sku_id: number
   sort_order: number
@@ -189,6 +190,7 @@ export type OutputProductStyleBase = {
   logo: unknown[]
   name: string
   product_id: number
+  style_icon_url?: string
 }
 
 export type OutputProductStyle = OutputProductStyleBase & {

@@ -6,7 +6,10 @@ import type {
   ProductCustomization,
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputProductStyleDesignBase
+  OutputProductStyleDesignBase,
+  OutputProductStyleBase,
+  OutputAddon,
+  OutputCompanyAddon
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
@@ -32,10 +35,14 @@ export const useProductsStore = defineStore('productsStore', () => {
   const productsList = ref<Array<Object> | null>(null)
   // StylesList will be populated based on the selected product
   const stylesList = ref<Array<Object> | null>(null)
+  const stylePreviews = ref<OutputProductStyleBase[] | null>(null)
   // DesignsList will be populated based on the selected style
   const designsList = ref<Array<Object> | null>(null)
   // Add-onsList will be populated based on the selected product, style, and design
   const addOnsList = ref<Array<Object> | null>(null)
+  const activeAddons = ref<OutputAddon[] | null>(null)
+  const productAddons = ref<OutputAddon[] | null>(null)
+  const companyAddons = ref<OutputCompanyAddon[] | null>(null)
 
   // Customized Product State
   const customizedProduct = ref<ProductCustomization | null>(null)
@@ -272,6 +279,62 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
+  async function dispatchGetStylePreviews(productId: number) {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(
+      API.products.getStylePreviewsByProduct(productId)
+    )
+    if (resp.success) {
+      stylePreviews.value = resp.content as unknown as OutputProductStyleBase[]
+    }
+    setLoading(false)
+    return resp
+  }
+
+  async function dispatchGetActiveStyleDetails(styleId: number) {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.getActiveStyleDetails(styleId))
+    if (resp.success) {
+      const payload = resp.content as unknown as {
+        productstyle: any
+        productdesign: any
+      }
+      style.value = payload.productstyle
+      design.value = payload.productdesign
+      setActiveStyle(payload.productstyle.id)
+      setActiveDesign(payload.productdesign.id)
+    } else {
+      setError('Error getting active style details')
+    }
+    setLoading(false)
+    return resp
+  }
+
+  async function dispatchGetProductAddons(productId: number) {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.getProductAddons(productId))
+    if (resp.success) {
+      const content = resp.content as unknown as {
+        active_addons: OutputAddon[]
+        product_addons: OutputAddon[]
+        company_addons: OutputCompanyAddon[]
+      }
+      activeAddons.value = content.active_addons
+      productAddons.value = content.product_addons
+      companyAddons.value = content.company_addons
+      // Resolve default vs company addons
+      addOnsList.value =
+        companyAddons.value && companyAddons.value.length > 0
+          ? (companyAddons.value as unknown as Array<Object>)
+          : (productAddons.value as unknown as Array<Object>)
+    }
+    setLoading(false)
+    return resp
+  }
+
   function initCustomizationFromLocalStorage() {
     const raw = localStorage.getItem('customizedProduct')
     if (raw) {
@@ -423,10 +486,17 @@ export const useProductsStore = defineStore('productsStore', () => {
     dispatchGetCustomizedCategories,
     dispatchGetProductsByCategoryId,
     dispatchGetActiveProductDetails,
+    dispatchGetStylePreviews,
+    dispatchGetActiveStyleDetails,
+    dispatchGetProductAddons,
     dispatchGetDesignPreviewsByStyleId,
     dispatchGetProductPreviews,
     productPreviews,
     designPreviews,
+    stylePreviews,
+    activeAddons,
+    productAddons,
+    companyAddons,
     activeCategoryId,
     activeProductId,
     activeStyleId,

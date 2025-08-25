@@ -4,7 +4,10 @@ import {
   mockActiveProductDetails,
   mockProductPreviews,
   mockResponse,
-  mockDesignPreviewsByStyleId
+  mockDesignPreviewsByStyleId,
+  mockStylePreviewsByProduct,
+  mockActiveStyleDetails,
+  mockProductAddons
 } from './mocks'
 import type {
   OutputProductCategories,
@@ -12,7 +15,12 @@ import type {
   getProductByCategoryIdParams,
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputProductStyleDesignBase
+  OutputProductStyleDesignBase,
+  OutputProductStyleBase,
+  OutputProductStyle,
+  OutputProductStyleDesign,
+  OutputAddon,
+  OutputCompanyAddon
 } from '@/services/products/types'
 
 async function getProductCategories(params: GetProductCategoriesParams) {
@@ -66,10 +74,66 @@ async function getDesignPreviewsByStyleId(styleId: number) {
   )
 }
 
+// Preview styles for a product
+async function getStylePreviewsByProduct(productId: number) {
+  const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
+  if (useMocks) {
+    return Promise.resolve(
+      mockResponse<OutputProductStyleBase[]>(
+        mockStylePreviewsByProduct(productId)
+      )
+    )
+  }
+  return await http.get<OutputProductStyleBase[]>(`list/style-previews`, {
+    params: { product_id: productId }
+  })
+}
+
+// Active style details for a style id (style + default design)
+async function getActiveStyleDetails(styleId: number) {
+  const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
+  if (useMocks) {
+    const mock = mockActiveStyleDetails(styleId)
+    return Promise.resolve(
+      mockResponse<{
+        productstyle: OutputProductStyle
+        productdesign: OutputProductStyleDesign
+      }>(mock)
+    )
+  }
+  return await http.get<{
+    productstyle: OutputProductStyle
+    productdesign: OutputProductStyleDesign
+  }>(`list/active-style-details`, { params: { product_style_id: styleId } })
+}
+
+// Product addons bundle
+async function getProductAddons(productId: number) {
+  const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
+  if (useMocks) {
+    const mock = mockProductAddons(productId)
+    return Promise.resolve(
+      mockResponse<{
+        active_addons: OutputAddon[]
+        product_addons: OutputAddon[]
+        company_addons: OutputCompanyAddon[]
+      }>(mock)
+    )
+  }
+  return await http.get<{
+    active_addons: OutputAddon[]
+    product_addons: OutputAddon[]
+    company_addons: OutputCompanyAddon[]
+  }>(`list/product-addons`, { params: { product_id: productId } })
+}
+
 export default {
   getProductCategories,
   getProductByCategoryId,
   getActiveProductDetails,
   getProductPreviewsByCategory,
-  getDesignPreviewsByStyleId
+  getDesignPreviewsByStyleId,
+  getStylePreviewsByProduct,
+  getActiveStyleDetails,
+  getProductAddons
 }

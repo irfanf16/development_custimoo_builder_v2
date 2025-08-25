@@ -12,7 +12,7 @@
 </script>
 
 <template>
-  <div class="flex flex-wrap overflow-y-auto max-h-[640px]">
+  <div class="flex flex-wrap overflow-y-auto max-h-[640px] pb-2">
     <div
       v-for="item in previews"
       :key="item.id"

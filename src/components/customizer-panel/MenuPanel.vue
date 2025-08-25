@@ -1,6 +1,11 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
-  import { Card, CardHeader, CardContent } from '@/components/ui/card'
+  import {
+    Card,
+    CardHeader,
+    CardContent,
+    CardFooter
+  } from '@/components/ui/card'
   import { Button } from '@/components/ui/button'
   import { Maximize2, Minimize2 } from 'lucide-vue-next'
   import {
@@ -63,6 +68,14 @@
       }
     },
     { immediate: true }
+  )
+
+  // Collapse panel when switching to a different content key (panel)
+  watch(
+    () => props.contentKey,
+    () => {
+      isExpanded.value = false
+    }
   )
 </script>
 
@@ -149,6 +162,11 @@
           </div>
         </Transition>
       </CardContent>
+
+      <!-- Footer actions -->
+      <CardFooter class="px-6 py-4 pt-0">
+        <slot name="footer" />
+      </CardFooter>
     </Card>
   </div>
 </template>

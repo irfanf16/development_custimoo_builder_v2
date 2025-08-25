@@ -1,7 +1,8 @@
 import type { AxiosResponse } from 'axios'
 import type {
   ActiveProductDetails,
-  ProductPreviewItem
+  ProductPreviewItem,
+  OutputProductStyleBase
 } from '@/services/products/types'
 
 export const mockActiveProductDetails: ActiveProductDetails = {
@@ -43,7 +44,9 @@ export const mockActiveProductDetails: ActiveProductDetails = {
       sizechart_reference: 'Hockey jerseys',
       sku_id: '2000-series hockey jersey',
       sku_number: 1072,
-      specs_sheet_url: null
+      specs_sheet_url: null,
+      description:
+        '<p>Our most popular and <strong>best value <\/strong>jersey model!<\/p><p>Fully sublimated - unlimited design possibilities<\/p><p>Standard weight (220 g\/m2 textile)<\/p><p>5 different collars to choose from.<\/p>'
     },
     sku_id: 163,
     sort_order: 1,
@@ -2116,6 +2119,9 @@ export const mockActiveProductDetails1000Series: ActiveProductDetails = {
     preview_custom_texts: 1,
     shareable: 0,
     show_3d: 0,
+    product_addons: [],
+    company_addons: [],
+    active_addons: [],
     sku: {
       addon_group_id: null,
       asana_task_template_id: null,
@@ -2879,4 +2885,87 @@ export function mockDesignPreviewsByStyleId(_styleId: number) {
     }
   ]
   return variants
+}
+
+// Styles: previews by product (style bases)
+export function mockStylePreviewsByProduct(
+  _productId: number
+): OutputProductStyleBase[] {
+  const s1 = mockActiveProductDetails.productstyle
+  const pid = mockActiveProductDetails.product.id
+  const baseIcon = 'factory_10/files/10/product/style_icon/V-neck2.png'
+  const bases: OutputProductStyleBase[] = [
+    {
+      id: s1.id,
+      name: 'V-neck',
+      product_id: pid,
+      logo: [],
+      front_models: s1.front_models
+    },
+    {
+      id: s1.id + 1,
+      name: 'Back middle',
+      product_id: pid,
+      logo: [],
+      front_models: s1.front_models
+    },
+    {
+      id: s1.id + 2,
+      name: 'Laces',
+      product_id: pid,
+      logo: [],
+      front_models: s1.front_models
+    },
+    {
+      id: s1.id + 3,
+      name: 'Standard',
+      product_id: pid,
+      logo: [],
+      front_models: s1.front_models
+    }
+  ]
+  return bases
+}
+
+// Active style details (style + its default design)
+export function mockActiveStyleDetails(styleId: number) {
+  const style = { ...mockActiveProductDetails.productstyle, id: styleId }
+  const design = {
+    ...mockActiveProductDetails.productdesign,
+    id: 56000 + styleId
+  }
+  return { productstyle: style, productdesign: design }
+}
+
+// Product addons bundle
+export function mockProductAddons(_productId: number) {
+  const active_addons = [
+    {
+      addon_group_id: null,
+      data_container_id: null,
+      customized_sku_info: null,
+      addon_id: 313,
+      title: 'Fight strap',
+      description: '<p>Fight strap</p>',
+      note: null,
+      currencies: [
+        { name: 'United States Dollar', code: 'USD', symbol: '$', price: 5 }
+      ],
+      selected: true,
+      published: true,
+      addon_ecommerce_product_id: null,
+      addon_ecommerce_variant_id: null,
+      addon_ecommerce_modifier_id: null
+    }
+  ]
+  const product_addons = [
+    {
+      ...active_addons[0],
+      selected: false,
+      addon_id: 314,
+      title: 'Sublimated name patch'
+    }
+  ]
+  const company_addons: any[] = []
+  return { active_addons, product_addons, company_addons }
 }

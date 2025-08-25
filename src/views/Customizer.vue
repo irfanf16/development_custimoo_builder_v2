@@ -7,8 +7,10 @@
     CategoryPanel,
     MenuPanel,
     ProductPanel,
-    DesignsPanel
+    DesignsPanel,
+    StylesPanel
   } from '@/components/customizer-panel'
+  import { Button } from '@/components/ui/button'
   import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
   import { ref, watch } from 'vue'
   import { useProductsStore } from '@/stores/products'
@@ -17,11 +19,15 @@
 
   const productsStore = useProductsStore()
 
-  const currentPanel = ref<'category' | 'product' | 'designs'>('category')
+  const currentPanel = ref<'category' | 'product' | 'designs' | 'styles'>(
+    'category'
+  )
 
   const panelHistory = ref<string[]>(['category'])
 
-  const navigateToPanel = (panel: 'category' | 'product' | 'designs') => {
+  const navigateToPanel = (
+    panel: 'category' | 'product' | 'designs' | 'styles'
+  ) => {
     if (panel !== currentPanel.value) {
       panelHistory.value.push(panel)
       currentPanel.value = panel
@@ -33,7 +39,7 @@
       panelHistory.value.pop()
       const previousPanel = panelHistory.value[
         panelHistory.value.length - 1
-      ] as 'category' | 'product' | 'designs'
+      ] as 'category' | 'product' | 'designs' | 'styles'
       if (previousPanel === 'category') {
         productsStore.clearLastCategoryId()
       }
@@ -68,6 +74,14 @@
           )
         }
         navigateToPanel('designs')
+      } else if (step === 'Styles') {
+        const pid =
+          (productsStore.product as any)?.id || productsStore.activeProductId
+        if (pid && !productsStore.stylePreviews) {
+          await productsStore.dispatchGetStylePreviews(pid as number)
+          await productsStore.dispatchGetProductAddons(pid as number)
+        }
+        navigateToPanel('styles')
       } else if (step === 'Categories') {
         navigateToPanel('category')
       } else if (currentPanel.value === 'category') {
@@ -98,6 +112,12 @@
       return [{ label: 'Designs' }]
     }
 
+    if (step === 'Styles') {
+      const title =
+        ((productsStore.product as any)?.display_name as string) || 'Styles'
+      return [{ label: title }]
+    }
+
     // Fallback for future steps: single-level breadcrumb
     return [{ label: step }]
   }
@@ -116,7 +136,9 @@
             <MenuPanel
               :content-key="currentPanel"
               :breadcrumbs="getBreadcrumbs()"
-              :expandable="currentPanel !== 'category'"
+              :expandable="
+                currentPanel !== 'category' && currentPanel !== 'styles'
+              "
               :show-back-button="currentPanel !== 'category'"
               :on-back="navigateBack"
             >
@@ -131,6 +153,20 @@
 
               <!-- Designs Panel Content -->
               <DesignsPanel v-else-if="currentPanel === 'designs'" />
+
+              <!-- Styles Panel Content -->
+              <StylesPanel v-else-if="currentPanel === 'styles'" />
+
+              <template #footer>
+                <div class="flex justify-end gap-3 w-full">
+                  <Button variant="outline" size="default" class="rounded-lg"
+                    >Previous</Button
+                  >
+                  <Button variant="default" size="default" class="rounded-lg"
+                    >Next</Button
+                  >
+                </div>
+              </template>
             </MenuPanel>
           </div>
         </div>
