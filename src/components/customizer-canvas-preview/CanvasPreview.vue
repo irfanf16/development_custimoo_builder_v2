@@ -1,16 +1,3 @@
-<template>
-  <div class="relative z-0">
-    <div class="absolute inset-0 z-0 pointer-events-none max-w-full max-h-full">
-      <div class="w-full h-full grid place-items-center">
-        <canvas
-          ref="canvasEl"
-          class="rounded-[32px] transition-opacity duration-300"
-        />
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
   import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
   import { useProductsStore } from '@/stores/products'
@@ -199,3 +186,16 @@
     }
   )
 </script>
+
+<template>
+  <div class="relative z-0">
+    <div class="absolute inset-0 z-0 pointer-events-none max-w-full max-h-full">
+      <div class="w-full h-full grid place-items-center">
+        <canvas
+          ref="canvasEl"
+          class="rounded-[32px] transition-opacity duration-300"
+        />
+      </div>
+    </div>
+  </div>
+</template>

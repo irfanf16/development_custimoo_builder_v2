@@ -431,6 +431,11 @@ export type OutputProductStyleDesign = OutputProductStyleDesignBase & {
   design_show: number
   design_show_on_scroll: number
   front_design_id: number
+  back_design_id?: number
+  frontsafezone_design_id?: number
+  frontboundary_design_id?: number
+  backsafezone_design_id?: number
+  backboundary_design_id?: number
   is_active: number
   production_design: {
     design_position: string

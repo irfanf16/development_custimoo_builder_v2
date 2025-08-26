@@ -557,6 +557,11 @@ export const useProductsStore = defineStore('productsStore', () => {
       setActiveStyle(details.productstyle.id)
       setActiveDesign(details.productdesign.id)
       setActiveProduct(details.product.id)
+      // Initialize customized product defaults on first load for this product
+      if (!customizedProduct.value) {
+        ensureCustomization()
+        saveCustomizationToLocalStorage()
+      }
     } else {
       setError('Error getting active product details')
     }
