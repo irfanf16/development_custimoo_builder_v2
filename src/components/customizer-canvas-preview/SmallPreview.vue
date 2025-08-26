@@ -23,6 +23,27 @@
     return base + clean
   }
 
+  async function addModelLayer(
+    url: string,
+    composition: GlobalCompositeOperation
+  ) {
+    if (!canvas) return
+    const img = await FabricImage.fromURL(fromStorage(url), {
+      crossOrigin: 'anonymous'
+    })
+    fitObject(img)
+    img.set({
+      selectable: false,
+      evented: false,
+      originX: 'center',
+      originY: 'center',
+      globalCompositeOperation: composition
+    })
+    canvas.add(img)
+    canvas.viewportCenterObject(img)
+    img.setCoords()
+  }
+
   function fitObject(obj: any) {
     if (!canvas) return
     const targetW = (canvas.getWidth?.() || 132) - 4
@@ -68,18 +89,31 @@
     if (!canvas) return
     canvas.clear()
     const design: any = productsStore.design
+    const style: any = productsStore.style
     const side = productsStore.activeCanvasSide === 'front' ? 'back' : 'front'
-    if (!design) return
+    if (!design || !style) return
     if (side === 'back' && design.back_design) {
       await addDesignLayer(
         design.back_design.file_url,
         design.back_design.file_extension
       )
+      for (const m of style.back_models || []) {
+        const comp = (
+          m.composition === 'multiply' ? 'multiply' : 'screen'
+        ) as GlobalCompositeOperation
+        await addModelLayer(m.file_url, comp)
+      }
     } else if (design.front_design) {
       await addDesignLayer(
         design.front_design.file_url,
         design.front_design.file_extension
       )
+      for (const m of style.front_models || []) {
+        const comp = (
+          m.composition === 'multiply' ? 'multiply' : 'screen'
+        ) as GlobalCompositeOperation
+        await addModelLayer(m.file_url, comp)
+      }
     }
     canvas.requestRenderAll()
   }
@@ -107,7 +141,11 @@
   })
 
   watch(
-    () => [productsStore.activeCanvasSide, (productsStore.design as any)?.id],
+    () => [
+      productsStore.activeCanvasSide,
+      (productsStore.design as any)?.id,
+      (productsStore.style as any)?.id
+    ],
     () => renderPreview()
   )
 </script>

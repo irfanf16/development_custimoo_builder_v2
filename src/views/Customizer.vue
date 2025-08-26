@@ -156,9 +156,9 @@
 </script>
 
 <template>
-  <div class="overflow-hidden">
+  <div class="">
     <CanvasPreview />
-    <div id="main-content" class="flex flex-col w-full z-10">
+    <div id="main-content overflow-hidden" class="flex flex-col w-full z-10">
       <div id="top-content" class="flex flex-row justify-between">
         <div id="left-content" class="flex flex-row gap-4">
           <div id="menu-items-container" class="flex-col">

@@ -1,7 +1,9 @@
 <template>
-  <div class="absolute inset-0 z-0 pointer-events-none">
-    <div class="w-full h-full grid place-items-center">
-      <canvas ref="canvasEl" class="rounded-[32px]" />
+  <div class="relative z-0">
+    <div class="absolute inset-0 z-0 pointer-events-none max-w-full max-h-full">
+      <div class="w-full h-full grid place-items-center">
+        <canvas ref="canvasEl" class="rounded-[32px]" />
+      </div>
     </div>
   </div>
 </template>
