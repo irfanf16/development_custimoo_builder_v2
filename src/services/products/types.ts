@@ -477,6 +477,24 @@ export type ActiveProductDetails = {
   productdesign: OutputProductStyleDesign
 }
 
+// Recently uploaded logos
+export type OutputRecentLogo = {
+  id: number
+  company_id: number
+  product_id: number
+  is_vector: boolean
+  logo_name: string
+  logo_url: string
+  transparent_logo_url: string
+  smart_transparent_logo_url: string
+  original_logo_url: string
+  original_png: string
+  browser_key: string
+  logo_colors: number[][]
+  recent_delete: number
+  url: string
+}
+
 export type OutputCompanyAddon = {
   id: number
   addon_data: {

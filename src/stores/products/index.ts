@@ -9,7 +9,8 @@ import type {
   OutputProductStyleDesignBase,
   OutputProductStyleBase,
   OutputAddon,
-  OutputCompanyAddon
+  OutputCompanyAddon,
+  OutputRecentLogo
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
@@ -33,8 +34,6 @@ export const useProductsStore = defineStore('productsStore', () => {
   // List of objects with Partial objects information to be displayed in the Customizer Menu
   // ProductsList will be populated based on the selected category
   const productsList = ref<Array<Object> | null>(null)
-  // StylesList will be populated based on the selected product
-  const stylesList = ref<Array<Object> | null>(null)
   const stylePreviews = ref<OutputProductStyleBase[] | null>(null)
   // DesignsList will be populated based on the selected style
   const designsList = ref<Array<Object> | null>(null)
@@ -61,7 +60,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   // Lightweight previews for ProductPanel
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
   const designPreviews = ref<OutputProductStyleDesignBase[] | null>(null)
-
+  const recentLogos = ref<OutputRecentLogo[] | null>(null)
   // Loading state
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -461,7 +460,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     design,
     addOns,
     productsList,
-    stylesList,
     designsList,
     addOnsList,
 

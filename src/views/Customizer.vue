@@ -157,12 +157,21 @@
               <!-- Styles Panel Content -->
               <StylesPanel v-else-if="currentPanel === 'styles'" />
 
-              <template #footer>
-                <div class="flex justify-end gap-3 w-full">
-                  <Button variant="outline" size="default" class="rounded-lg"
+              <template #footer="{ isExpanded }">
+                <div
+                  class="flex gap-3 w-full"
+                  :class="isExpanded ? 'justify-end' : 'justify-between'"
+                >
+                  <Button
+                    variant="outline"
+                    size="default"
+                    class="rounded-lg w-[12.5rem]"
                     >Previous</Button
                   >
-                  <Button variant="default" size="default" class="rounded-lg"
+                  <Button
+                    variant="default"
+                    size="default"
+                    class="rounded-lg w-[12.5rem]"
                     >Next</Button
                   >
                 </div>
