@@ -2,7 +2,8 @@ import type { AxiosResponse } from 'axios'
 import type {
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputProductStyleBase
+  OutputProductStyleBase,
+  OutputRecentLogo
 } from '@/services/products/types'
 
 export const mockActiveProductDetails: ActiveProductDetails = {
@@ -1046,106 +1047,168 @@ export const mockActiveProductDetails: ActiveProductDetails = {
   productdesign: {
     id: 56073,
     is_default: 1,
-    back_design: {
-      color_group: null,
-      design_name: 'Alberta',
-      design_position: 'back',
-      file_base_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
-      file_extension: 'svg',
-      file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
-      file_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
-      id: 129633
-    },
-    backsafezone_design: {
-      design_position: 'backsafezone',
-      file_base_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
-      file_extension: 'svg',
-      file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
-      file_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
-      id: 129636
-    },
-    backboundary_design: {
-      design_position: 'backboundary',
-      file_base_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-backboundary.svg',
-      file_extension: 'svg',
-      file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-backboundary.svg',
-      file_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-backboundary.svg',
-      id: 129638
-    },
+    // back_design: {
+    //   color_group: null,
+    //   design_name: 'Alberta',
+    //   design_position: 'back',
+    //   file_base_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
+    //   file_extension: 'svg',
+    //   file_thumbnail_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
+    //   file_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
+    //   id: 129633
+    // },
+    // backsafezone_design: {
+    //   design_position: 'backsafezone',
+    //   file_base_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
+    //   file_extension: 'svg',
+    //   file_thumbnail_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
+    //   file_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
+    //   id: 129636
+    // },
+    // backboundary_design: {
+    //   design_position: 'backboundary',
+    //   file_base_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-backboundary.svg',
+    //   file_extension: 'svg',
+    //   file_thumbnail_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-backboundary.svg',
+    //   file_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-backboundary.svg',
+    //   id: 129638
+    // },
     container_file_id: 307,
     created_at: '2024-11-28T11:54:15.000000Z',
     deleted_at: null,
     design_name: 'Alberta',
     design_show: 0,
     design_show_on_scroll: 1,
-    frontsafezone_design: {
-      design_position: 'frontsafezone',
-      file_base_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-FrontSafeZones.svg',
-      file_extension: 'svg',
-      file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-FrontSafeZones.svg',
-      file_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-FrontSafeZones.svg',
-      id: 129635
-    },
-    frontboundary_design: {
-      design_position: 'frontboundary',
-      file_base_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-frontboundary.svg',
-      file_extension: 'svg',
-      file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-frontboundary.svg',
-      file_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-frontboundary.svg',
-      id: 129637
-    },
-    front_design: {
-      color_group: null,
-      design_name: 'Alberta',
-      design_position: 'front',
-      file_base_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-front.svg',
-      file_extension: 'svg',
-      file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-front.svg',
-      file_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-front.svg',
-      id: 129632
-    },
+    // frontboundary_design: {
+    //   design_position: 'frontboundary',
+    //   file_base_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-frontboundary.svg',
+    //   file_extension: 'svg',
+    //   file_thumbnail_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-frontboundary.svg',
+    //   file_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-frontboundary.svg',
+    //   id: 129637
+    // },
+    // front_design: {
+    //   color_group: null,
+    //   design_name: 'Alberta',
+    //   design_position: 'front',
+    //   file_base_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-front.svg',
+    //   file_extension: 'svg',
+    //   file_thumbnail_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-front.svg',
+    //   file_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-front.svg',
+    //   id: 129632
+    // },
     front_design_id: 129632,
     is_active: 1,
-    production_design: {
-      design_position: 'production',
-      file_base_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-production.svg',
-      file_extension: 'svg',
-      file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-production.svg',
-      file_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-production.svg',
-      id: 129634
-    },
+    // production_design: {
+    //   design_position: 'production',
+    //   file_base_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-production.svg',
+    //   file_extension: 'svg',
+    //   file_thumbnail_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-production.svg',
+    //   file_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-production.svg',
+    //   id: 129634
+    // },
     production_design_id: 129634,
-    productionsafezone_design: {
-      design_position: 'productionsafezone',
-      file_base_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-ProductionSafeZones.svg',
+    // productionsafezone_design: {
+    //   design_position: 'productionsafezone',
+    //   file_base_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-ProductionSafeZones.svg',
+    //   file_extension: 'svg',
+    //   file_thumbnail_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-ProductionSafeZones.svg',
+    //   file_url:
+    //     'super_admin/files/container/307/307/Alberta/1755592473-ProductionSafeZones.svg',
+    //   id: 129639
+    // },
+    front_design: {
+      id: 129632,
+      design_name: 'Alberta',
+      design_position: 'front',
+      color_group: '{}',
+      file_url: 'super_admin/files/container/307/307/Alberta/1752317259-Front',
       file_extension: 'svg',
+      file_base_url:
+        'super_admin/files/container/307/307/Alberta/1752317259-Front.svg',
       file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-ProductionSafeZones.svg',
+        'super_admin/files/container/307/307/Alberta/1752317259-Front.svg'
+    },
+    back_design: {
+      id: 129633,
+      design_name: 'Alberta',
+      design_position: 'back',
+      color_group: '{}',
+      file_url: 'super_admin/files/container/307/307/Alberta/1752317259-Back',
+      file_extension: 'svg',
+      file_base_url:
+        'super_admin/files/container/307/307/Alberta/1752317259-Back.svg',
+      file_thumbnail_url:
+        'super_admin/files/container/307/307/Alberta/1752317259-Back.svg'
+    },
+    frontsafezone_design: {
+      id: 129635,
+      design_position: 'frontsafezone',
       file_url:
-        'super_admin/files/container/307/307/Alberta/1755592473-ProductionSafeZones.svg',
-      id: 129639
+        'super_admin/files/container/307/307/Alberta/1752317259-FrontSafeZones.svg'
+    },
+    backsafezone_design: {
+      id: 129636,
+      design_position: 'backsafezone',
+      file_url:
+        'super_admin/files/container/307/307/Alberta/1752317260-BackSafeZones.svg'
+    },
+    productionsafezone_design: null,
+    frontboundary_design: {
+      id: 129637,
+      design_position: 'frontboundary',
+      file_url:
+        'super_admin/files/container/307/307/Alberta/1752317260-frontboundary.svg'
+    },
+    backboundary_design: {
+      id: 129638,
+      design_position: 'backboundary',
+      file_url:
+        'super_admin/files/container/307/307/Alberta/1752317260-backboundary.svg'
+    },
+    production_design: {
+      id: 129634,
+      file_id: 307,
+      container_id: 307,
+      design_name: 'Alberta',
+      design_position: 'production',
+      color_group: '{}',
+      file_name: '1752317259-Production',
+      file_url:
+        'super_admin/files/container/307/307/Alberta/1752317259-Production',
+      file_extension: 'svg',
+      svg_parts: [
+        'diamond',
+        'collar-2',
+        'collar-1',
+        'shoulders',
+        'shoulder-stripe',
+        'base',
+        'cuffs',
+        'stripe-3',
+        'stripe-1',
+        'stripe-2'
+      ]
     },
     productionsafezone_design_id: 129639,
     product_id: 146,
@@ -2990,7 +3053,6 @@ export function mockStylePreviewsByProduct(
 ): OutputProductStyleBase[] {
   const s1 = mockActiveProductDetails.productstyle
   const pid = mockActiveProductDetails.product.id
-  const baseIcon = 'factory_10/files/10/product/style_icon/V-neck2.png'
   const bases: OutputProductStyleBase[] = [
     {
       id: s1.id,
@@ -3065,4 +3127,59 @@ export function mockProductAddons(_productId: number) {
   ]
   const company_addons: any[] = []
   return { active_addons, product_addons, company_addons }
+}
+
+// Recently uploaded logos (mocked from logos-recent-downloads.json)
+export function mockRecentLogos(_companyId?: number): OutputRecentLogo[] {
+  return [
+    {
+      id: 156848,
+      company_id: 6,
+      product_id: 146,
+      is_vector: false,
+      logo_name: 'logo-example.png',
+      logo_url: '6/20724/logos/logoexample1756191636WeKHxUl1Jf_png.png',
+      transparent_logo_url:
+        '6/20724/logos/logoexample1756191636WeKHxUl1Jf_transparent.png',
+      smart_transparent_logo_url:
+        '6/20724/logos/logoexample1756191636WeKHxUl1Jf_smart_transparent.png',
+      original_logo_url: '6/20724/logos/logoexample1756191636WeKHxUl1Jf.png',
+      original_png: '6/20724/logos/logoexample1756191636WeKHxUl1Jf_png.png',
+      browser_key: 'dd7875380e368841a0c8a9712338176e',
+      logo_colors: [
+        [41, 189, 249],
+        [255, 176, 0],
+        [239, 177, 26]
+      ],
+      recent_delete: 0,
+      url: '6/20724/logos/logoexample1756191636WeKHxUl1Jf_png.png'
+    },
+    {
+      id: 155434,
+      company_id: 6,
+      product_id: 147,
+      is_vector: false,
+      logo_name: 'Screenshot 2025-08-14 at 12.48.10.png',
+      logo_url:
+        '6/20724/logos/Screenshot20250814at12.48.101755610946W3QJR9tRPt_png.png',
+      transparent_logo_url:
+        '6/20724/logos/Screenshot20250814at12.48.101755610946W3QJR9tRPt_transparent.png',
+      smart_transparent_logo_url:
+        '6/20724/logos/Screenshot20250814at12.48.101755610946W3QJR9tRPt_smart_transparent.png',
+      original_logo_url:
+        '6/20724/logos/Screenshot20250814at12.48.101755610946W3QJR9tRPt.png',
+      original_png:
+        '6/20724/logos/Screenshot20250814at12.48.101755610946W3QJR9tRPt_png.png',
+      browser_key: 'ef981ad8874fe2283b4f1ef509284ed8',
+      logo_colors: [
+        [250, 250, 250],
+        [204, 229, 152],
+        [149, 196, 141],
+        [55, 55, 55],
+        [30, 30, 30]
+      ],
+      recent_delete: 0,
+      url: '6/20724/logos/Screenshot20250814at12.48.101755610946W3QJR9tRPt_png.png'
+    }
+  ]
 }

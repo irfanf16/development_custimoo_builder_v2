@@ -380,17 +380,17 @@ export type OutputProductStyleDesignBase = {
   }
   frontsafezone_design: {
     design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
+    file_base_url?: string
+    file_extension?: string
+    file_thumbnail_url?: string
     file_url: string
     id: number
   }
   frontboundary_design: {
     design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
+    file_base_url?: string
+    file_extension?: string
+    file_thumbnail_url?: string
     file_url: string
     id: number
   }
@@ -410,17 +410,17 @@ export type OutputProductStyleDesign = OutputProductStyleDesignBase & {
   }
   backboundary_design: {
     design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
+    file_base_url?: string
+    file_extension?: string
+    file_thumbnail_url?: string
     file_url: string
     id: number
   }
   backsafezone_design: {
     design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
+    file_base_url?: string
+    file_extension?: string
+    file_thumbnail_url?: string
     file_url: string
     id: number
   }
@@ -430,24 +430,20 @@ export type OutputProductStyleDesign = OutputProductStyleDesignBase & {
   design_name: string
   design_show: number
   design_show_on_scroll: number
-  front_design: {
-    color_group: string | null
-    design_name: string
-    design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
-    file_url: string
-    id: number
-  }
   front_design_id: number
   is_active: number
   production_design: {
     design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
+    file_base_url?: string
+    file_extension?: string
+    file_thumbnail_url?: string
     file_url: string
+    file_id?: number
+    container_id?: number
+    design_name?: string
+    color_group?: string
+    file_name?: string
+    svg_parts?: string[]
     id: number
   }
   production_design_id: number
@@ -543,7 +539,7 @@ export type OutputAddon = {
   title: string
 }
 
-type OutputProductCustomLogo = {
+export type OutputProductCustomLogo = {
   actualHeight: number
   actualWidth: number
   created_at: string

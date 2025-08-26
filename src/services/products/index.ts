@@ -7,7 +7,8 @@ import {
   mockDesignPreviewsByStyleId,
   mockStylePreviewsByProduct,
   mockActiveStyleDetails,
-  mockProductAddons
+  mockProductAddons,
+  mockRecentLogos
 } from './mocks'
 import type {
   OutputProductCategories,
@@ -22,6 +23,7 @@ import type {
   OutputAddon,
   OutputCompanyAddon
 } from '@/services/products/types'
+import type { OutputRecentLogo } from '@/services/products/types'
 
 async function getProductCategories(params: GetProductCategoriesParams) {
   return await http.get<OutputProductCategories>('product/categories', {
@@ -127,6 +129,19 @@ async function getProductAddons(productId: number) {
   }>(`list/product-addons`, { params: { product_id: productId } })
 }
 
+// Recently uploaded logos
+async function getRecentLogos(companyId?: number) {
+  const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
+  if (useMocks) {
+    return Promise.resolve(
+      mockResponse<OutputRecentLogo[]>(mockRecentLogos(companyId))
+    )
+  }
+  return await http.get<OutputRecentLogo[]>(`logos/recent`, {
+    params: { company_id: companyId }
+  })
+}
+
 export default {
   getProductCategories,
   getProductByCategoryId,
@@ -135,5 +150,6 @@ export default {
   getDesignPreviewsByStyleId,
   getStylePreviewsByProduct,
   getActiveStyleDetails,
-  getProductAddons
+  getProductAddons,
+  getRecentLogos
 }

@@ -8,7 +8,8 @@
     MenuPanel,
     ProductPanel,
     DesignsPanel,
-    StylesPanel
+    StylesPanel,
+    LogosPanel
   } from '@/components/customizer-panel'
   import { Button } from '@/components/ui/button'
   import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
@@ -19,14 +20,14 @@
 
   const productsStore = useProductsStore()
 
-  const currentPanel = ref<'category' | 'product' | 'designs' | 'styles'>(
-    'category'
-  )
+  const currentPanel = ref<
+    'category' | 'product' | 'designs' | 'styles' | 'logos'
+  >('category')
 
   const panelHistory = ref<string[]>(['category'])
 
   const navigateToPanel = (
-    panel: 'category' | 'product' | 'designs' | 'styles'
+    panel: 'category' | 'product' | 'designs' | 'styles' | 'logos'
   ) => {
     if (panel !== currentPanel.value) {
       panelHistory.value.push(panel)
@@ -39,7 +40,7 @@
       panelHistory.value.pop()
       const previousPanel = panelHistory.value[
         panelHistory.value.length - 1
-      ] as 'category' | 'product' | 'designs' | 'styles'
+      ] as 'category' | 'product' | 'designs' | 'styles' | 'logos'
       if (previousPanel === 'category') {
         productsStore.clearLastCategoryId()
       }
@@ -82,6 +83,12 @@
           await productsStore.dispatchGetProductAddons(pid as number)
         }
         navigateToPanel('styles')
+      } else if (step === 'Logos') {
+        // Ensure recent logos are loaded
+        if (!productsStore.recentLogos) {
+          await productsStore.dispatchGetRecentLogos()
+        }
+        navigateToPanel('logos')
       } else if (step === 'Categories') {
         navigateToPanel('category')
       } else if (currentPanel.value === 'category') {
@@ -116,6 +123,23 @@
       const title =
         ((productsStore.product as any)?.display_name as string) || 'Styles'
       return [{ label: title }]
+    }
+
+    if (step === 'Logos') {
+      const sub = (productsStore as any).logosSubStep as
+        | 'list'
+        | 'placement'
+        | 'controls'
+        | 'editor'
+      const map: Record<string, string> = {
+        list: 'Logos',
+        placement: 'Placement',
+        controls: 'Controls',
+        editor: 'Editor'
+      }
+      const trail = [{ label: 'Logos' }]
+      if (sub && sub !== 'list') trail.push({ label: map[sub] || 'Logos' })
+      return trail
     }
 
     // Fallback for future steps: single-level breadcrumb
@@ -156,6 +180,9 @@
 
               <!-- Styles Panel Content -->
               <StylesPanel v-else-if="currentPanel === 'styles'" />
+
+              <!-- Logos Panel Content -->
+              <LogosPanel v-else-if="currentPanel === 'logos'" />
 
               <template #footer="{ isExpanded }">
                 <div

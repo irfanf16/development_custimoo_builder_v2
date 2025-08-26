@@ -6,6 +6,7 @@
     Group,
     loadSVGFromURL,
     util,
+    Rect,
     type FabricObject
   } from 'fabric'
   import type {
@@ -25,7 +26,21 @@
       required: true
     },
     width: { type: Number, default: 176 },
-    height: { type: Number, default: 176 }
+    height: { type: Number, default: 176 },
+    side: { type: String as PropType<'front' | 'back'>, default: 'front' },
+    overlayRect: {
+      type: Object as PropType<
+        | {
+            x: number
+            y: number
+            width: number
+            height: number
+            color?: string
+          }
+        | undefined
+      >,
+      default: undefined
+    }
   })
 
   const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -112,17 +127,49 @@
     if (!canvas) return
     canvas.clear()
 
-    await addDesignLayer(
-      props.designBase.front_design.file_url,
-      props.designBase.front_design.file_extension
-    )
+    if (props.side === 'back' && (props.designBase as any).back_design) {
+      const back = (props.designBase as any).back_design
+      await addDesignLayer(back.file_url, back.file_extension)
+      const backModels = (props.styleBase as any).back_models || []
+      for (const m of backModels) {
+        const comp =
+          (m.composition as 'multiply' | 'screen') === 'multiply'
+            ? 'multiply'
+            : 'screen'
+        await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
+      }
+    } else {
+      await addDesignLayer(
+        props.designBase.front_design.file_url,
+        props.designBase.front_design.file_extension
+      )
+      for (const m of props.styleBase.front_models || []) {
+        const comp =
+          (m.composition as 'multiply' | 'screen') === 'multiply'
+            ? 'multiply'
+            : 'screen'
+        await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
+      }
+    }
 
-    for (const m of props.styleBase.front_models || []) {
-      const comp =
-        (m.composition as 'multiply' | 'screen') === 'multiply'
-          ? 'multiply'
-          : 'screen'
-      await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
+    // Overlay rectangle for logo placement preview
+    if (props.overlayRect) {
+      const { x, y, width, height, color } = props.overlayRect
+      const rect = new Rect({
+        left: x,
+        top: y,
+        width,
+        height,
+        fill: color || 'rgba(107,114,128,0.35)',
+        stroke: 'rgba(107,114,128,0.6)',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        originX: 'left',
+        originY: 'top'
+      })
+      canvas.add(rect)
+      rect.setCoords()
     }
 
     canvas.requestRenderAll()
@@ -140,7 +187,20 @@
   })
 
   watch(
-    () => [props.product.id, props.styleBase.id, props.designBase.id],
+    () => [
+      props.product.id,
+      props.styleBase.id,
+      props.designBase.id,
+      props.side,
+      props.overlayRect &&
+        props.overlayRect.x +
+          '-' +
+          props.overlayRect.y +
+          '-' +
+          props.overlayRect.width +
+          '-' +
+          props.overlayRect.height
+    ],
     () => {
       renderPreview()
     }

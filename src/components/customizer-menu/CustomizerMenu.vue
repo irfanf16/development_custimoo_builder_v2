@@ -37,6 +37,11 @@
         // Ensure addons are present
         await productsStore.dispatchGetProductAddons(pid as number)
       }
+    } else if (label === 'Logos') {
+      // Prefetch recent logos
+      if (!productsStore.recentLogos) {
+        await productsStore.dispatchGetRecentLogos()
+      }
     }
     productsStore.setActiveStep(label)
   }

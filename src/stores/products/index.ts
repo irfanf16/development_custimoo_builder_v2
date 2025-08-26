@@ -10,7 +10,9 @@ import type {
   OutputProductStyleBase,
   OutputAddon,
   OutputCompanyAddon,
-  OutputRecentLogo
+  OutputRecentLogo,
+  OutputProductLogosSetting,
+  OutputProductCustomLogo
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
@@ -61,6 +63,8 @@ export const useProductsStore = defineStore('productsStore', () => {
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
   const designPreviews = ref<OutputProductStyleDesignBase[] | null>(null)
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
+  const selectedCustomLogoIdx = ref<number | null>(null)
+  const logosSubStep = ref<'list' | 'placement' | 'controls' | 'editor'>('list')
   // Loading state
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -158,6 +162,10 @@ export const useProductsStore = defineStore('productsStore', () => {
     categories.value = null
     isLoading.value = false
     error.value = null
+  }
+
+  function setLogosSubStep(step: 'list' | 'placement' | 'controls' | 'editor') {
+    logosSubStep.value = step
   }
 
   // API Functions
@@ -361,6 +369,176 @@ export const useProductsStore = defineStore('productsStore', () => {
     saveCustomizationToLocalStorage()
   }
 
+  function ensureCustomization() {
+    if (customizedProduct.value) return
+    const productId = (product.value as any)?.id ?? 0
+    const productName = (product.value as any)?.display_name ?? ''
+    const styleId = (style.value as any)?.id ?? 0
+    const styleName = (style.value as any)?.name ?? ''
+    const designId = (design.value as any)?.id ?? 0
+    const svgParts = (design.value as any)?.svg_parts ?? []
+    const measurementRatio = (product.value as any)?.measurement_ratio ?? 1
+    const sizechartRef = (product.value as any)?.sku?.sizechart_reference ?? ''
+    const skuNumber = (product.value as any)?.sku?.sku_number ?? 0
+
+    customizedProduct.value = {
+      addons: [],
+      back_image: '',
+      colors: [],
+      custom_logo_svgs: [],
+      custom_logos: [],
+      defaultcolors: [],
+      design_id: designId,
+      ecommerce_cart_id: null,
+      ecommerce_modifier_id: '',
+      ecommerce_post_id: '',
+      ecommerce_variant_id: '',
+      fixed_logo_index: 0,
+      fixed_logos: [],
+      front_image: '',
+      group_patterns: {},
+      grouped_addons: {},
+      groupcolors: {},
+      id: '',
+      is_custom_product: true,
+      logo_colors: [],
+      measurement_ratio: measurementRatio,
+      minimum_order_quantity: 0,
+      minimum_order_quantity_type: '',
+      pdf_file: null,
+      product_custom_text_objects: { common: [], roster: {} as any },
+      product_custom_texts: [],
+      product_display_name: productName,
+      product_id: productId,
+      product_name: productName,
+      product_price_object: {} as any,
+      product_roster_detail: [],
+      product_type: '',
+      production_url: '',
+      reorder_data: null,
+      shuffle_color_number: 0,
+      size_variants_mapping: null,
+      sizechart_reference: sizechartRef,
+      sku_number: skuNumber,
+      style_id: styleId,
+      style_name: styleName,
+      svg_groups: [],
+      svg_parts: svgParts,
+      svg_url: '',
+      sync_id: '',
+      ungrouped_addons: []
+    } as unknown as ProductCustomization
+  }
+
+  function addCustomLogoFromRecent(recent: OutputRecentLogo) {
+    ensureCustomization()
+    if (!customizedProduct.value) return
+    const newLogo: OutputProductCustomLogo = {
+      actualHeight: 0,
+      actualWidth: 0,
+      created_at: new Date().toISOString(),
+      deleted_at: null,
+      following_product_ids: null,
+      haveControls: false,
+      have_controls: false,
+      height: 100,
+      id: Date.now(),
+      is_locked: 0,
+      is_replace_success: false,
+      is_smart_transparent: !!recent.transparent_logo_url,
+      logo_colors: recent.logo_colors,
+      logo_index: (customizedProduct.value.custom_logos?.length || 0) + 1,
+      logo_name: recent.logo_name,
+      logo_technologies: null,
+      name_of_placement: '',
+      originalHeight: '0',
+      originalWidth: '0',
+      original_logo: recent.original_png,
+      original_logo_url: recent.original_logo_url,
+      product_id: (product.value as any)?.id ?? 0,
+      product_style_id: (style.value as any)?.id ?? 0,
+      rotation: 0,
+      side: 'front',
+      smart_transparent_logo: recent.smart_transparent_logo_url,
+      transparent_logo: recent.transparent_logo_url,
+      updated_at: new Date().toISOString(),
+      url: recent.url,
+      width: 100,
+      x_axis: 300,
+      x_axis_3d: 0,
+      y_axis: 300,
+      y_axis_3d: 0
+    }
+    customizedProduct.value.custom_logos.push(newLogo)
+    selectedCustomLogoIdx.value =
+      customizedProduct.value.custom_logos.length - 1
+    saveCustomizationToLocalStorage()
+  }
+
+  function setSelectedCustomLogoIndex(idx: number | null) {
+    selectedCustomLogoIdx.value = idx
+  }
+
+  function applyLogoPlacementToSelected(setting: OutputProductLogosSetting) {
+    if (!customizedProduct.value || selectedCustomLogoIdx.value == null) return
+    const logo =
+      customizedProduct.value.custom_logos[selectedCustomLogoIdx.value]
+    if (!logo) return
+    logo.x_axis = setting.x_axis
+    logo.y_axis = setting.y_axis
+    logo.height = setting.height
+    logo.width = setting.width
+    logo.side = setting.side
+    logo.name_of_placement = setting.name_of_placement
+    logo.updated_at = new Date().toISOString()
+    saveCustomizationToLocalStorage()
+  }
+
+  function addCustomLogoFromUpload(file: File, fileUrl: string) {
+    ensureCustomization()
+    if (!customizedProduct.value) return
+    const newLogo: OutputProductCustomLogo = {
+      actualHeight: 0,
+      actualWidth: 0,
+      created_at: new Date().toISOString(),
+      deleted_at: null,
+      following_product_ids: null,
+      haveControls: false,
+      have_controls: false,
+      height: 100,
+      id: Date.now(),
+      is_locked: 0,
+      is_replace_success: false,
+      is_smart_transparent: false,
+      logo_colors: [],
+      logo_index: (customizedProduct.value.custom_logos?.length || 0) + 1,
+      logo_name: file.name,
+      logo_technologies: null,
+      name_of_placement: '',
+      originalHeight: '0',
+      originalWidth: '0',
+      original_logo: file.name,
+      original_logo_url: fileUrl,
+      product_id: (product.value as any)?.id ?? 0,
+      product_style_id: (style.value as any)?.id ?? 0,
+      rotation: 0,
+      side: 'front',
+      smart_transparent_logo: '',
+      transparent_logo: '',
+      updated_at: new Date().toISOString(),
+      url: fileUrl,
+      width: 100,
+      x_axis: 300,
+      x_axis_3d: 0,
+      y_axis: 300,
+      y_axis_3d: 0
+    }
+    customizedProduct.value.custom_logos.push(newLogo)
+    selectedCustomLogoIdx.value =
+      customizedProduct.value.custom_logos.length - 1
+    saveCustomizationToLocalStorage()
+  }
+
   async function dispatchGetActiveProductDetails(productId: number) {
     setLoading(true)
     setError(null)
@@ -449,6 +627,19 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
+  async function dispatchGetRecentLogos(companyId?: number) {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.getRecentLogos(companyId))
+    if (resp.success) {
+      recentLogos.value = resp.content as unknown as OutputRecentLogo[]
+    } else {
+      setError('Error getting recent logos')
+    }
+    setLoading(false)
+    return resp
+  }
+
   return {
     // State
     categories,
@@ -489,9 +680,13 @@ export const useProductsStore = defineStore('productsStore', () => {
     dispatchGetProductAddons,
     dispatchGetDesignPreviewsByStyleId,
     dispatchGetProductPreviews,
+    dispatchGetRecentLogos,
     productPreviews,
     designPreviews,
     stylePreviews,
+    recentLogos,
+    customizedProduct,
+    selectedCustomLogoIdx,
     activeAddons,
     productAddons,
     companyAddons,
@@ -505,6 +700,13 @@ export const useProductsStore = defineStore('productsStore', () => {
     resetToDefaultsSnapshot,
     initCustomizationFromLocalStorage,
     saveCustomizationToLocalStorage,
-    resetCustomizationToDefaults
+    resetCustomizationToDefaults,
+    // Logos
+    addCustomLogoFromRecent,
+    setSelectedCustomLogoIndex,
+    applyLogoPlacementToSelected,
+    addCustomLogoFromUpload,
+    logosSubStep,
+    setLogosSubStep
   }
 })

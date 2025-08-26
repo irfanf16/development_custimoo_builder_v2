@@ -8,6 +8,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    Accordion: typeof import('./src/components/ui/accordion/Accordion.vue')['default']
+    AccordionItem: typeof import('./src/components/ui/accordion/AccordionItem.vue')['default']
     BottomActions: typeof import('./src/components/customizer-bottom-actions/BottomActions.vue')['default']
     Breadcrumb: typeof import('./src/components/ui/breadcrumb/Breadcrumb.vue')['default']
     BreadcrumbEllipsis: typeof import('./src/components/ui/breadcrumb/BreadcrumbEllipsis.vue')['default']
@@ -64,6 +66,8 @@ declare module 'vue' {
     IFlexLineTextFile: typeof import('~icons/flex-line/text-file')['default']
     IFlexLineTextStyle: typeof import('~icons/flex-line/text-style')['default']
     Label: typeof import('./src/components/ui/label/Label.vue')['default']
+    LogoPlacementThumb: typeof import('./src/components/customizer-panel/logos/LogoPlacementThumb.vue')['default']
+    LogosPanel: typeof import('./src/components/customizer-panel/logos/LogosPanel.vue')['default']
     MenuItem: typeof import('./src/components/customizer-menu/MenuItem.vue')['default']
     MenuPanel: typeof import('./src/components/customizer-panel/MenuPanel.vue')['default']
     PriceCard: typeof import('./src/components/customizer-price/PriceCard.vue')['default']
