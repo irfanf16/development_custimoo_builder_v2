@@ -1045,157 +1045,101 @@ export const mockActiveProductDetails: ActiveProductDetails = {
     updated_at: '2023-12-07T11:50:01.000000Z'
   },
   productdesign: {
-    id: 56073,
-    is_default: 1,
-    // back_design: {
-    //   color_group: null,
-    //   design_name: 'Alberta',
-    //   design_position: 'back',
-    //   file_base_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
-    //   file_extension: 'svg',
-    //   file_thumbnail_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
-    //   file_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-back.svg',
-    //   id: 129633
-    // },
-    // backsafezone_design: {
-    //   design_position: 'backsafezone',
-    //   file_base_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
-    //   file_extension: 'svg',
-    //   file_thumbnail_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
-    //   file_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-BackSafeZones.svg',
-    //   id: 129636
-    // },
-    // backboundary_design: {
-    //   design_position: 'backboundary',
-    //   file_base_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-backboundary.svg',
-    //   file_extension: 'svg',
-    //   file_thumbnail_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-backboundary.svg',
-    //   file_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-backboundary.svg',
-    //   id: 129638
-    // },
+    id: 41953,
+    product_style_id: 211,
+    product_id: 146,
+    front_design_id: 53606,
     container_file_id: 307,
-    created_at: '2024-11-28T11:54:15.000000Z',
-    deleted_at: null,
-    design_name: 'Alberta',
-    design_show: 0,
-    design_show_on_scroll: 1,
-    // frontboundary_design: {
-    //   design_position: 'frontboundary',
-    //   file_base_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-frontboundary.svg',
-    //   file_extension: 'svg',
-    //   file_thumbnail_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-frontboundary.svg',
-    //   file_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-frontboundary.svg',
-    //   id: 129637
-    // },
-    // front_design: {
-    //   color_group: null,
-    //   design_name: 'Alberta',
-    //   design_position: 'front',
-    //   file_base_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-front.svg',
-    //   file_extension: 'svg',
-    //   file_thumbnail_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-front.svg',
-    //   file_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-front.svg',
-    //   id: 129632
-    // },
-    front_design_id: 129632,
+    back_design_id: 53607,
+    production_design_id: 53608,
+    frontsafezone_design_id: 53609,
+    backsafezone_design_id: 126261,
+    productionsafezone_design_id: null,
+    frontboundary_design_id: 85537,
+    backboundary_design_id: 126289,
+    design_name: 'skargarden',
     is_active: 1,
-    // production_design: {
-    //   design_position: 'production',
-    //   file_base_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-production.svg',
-    //   file_extension: 'svg',
-    //   file_thumbnail_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-production.svg',
-    //   file_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-production.svg',
-    //   id: 129634
-    // },
-    production_design_id: 129634,
-    // productionsafezone_design: {
-    //   design_position: 'productionsafezone',
-    //   file_base_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-ProductionSafeZones.svg',
-    //   file_extension: 'svg',
-    //   file_thumbnail_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-ProductionSafeZones.svg',
-    //   file_url:
-    //     'super_admin/files/container/307/307/Alberta/1755592473-ProductionSafeZones.svg',
-    //   id: 129639
-    // },
+    is_default: 1,
+    svg_parts: [
+      'base',
+      'shoulders',
+      'collar-1',
+      'v',
+      'collar-2',
+      'stripe-1',
+      'stripe-2',
+      'stripe-3',
+      'sleeve-detail',
+      'cuffs',
+      'diamond',
+      'shoulder-stripe'
+    ],
+    created_at: '2023-10-03T13:24:59.000000Z',
+    updated_at: '2025-06-30T10:04:01.000000Z',
+    deleted_at: null,
+    design_show: 1,
+    design_show_on_scroll: 0,
     front_design: {
-      id: 129632,
-      design_name: 'Alberta',
+      id: 53606,
+      design_name: 'skargarden',
       design_position: 'front',
       color_group: '{}',
-      file_url: 'super_admin/files/container/307/307/Alberta/1752317259-Front',
+      file_url:
+        'super_admin/files/container/307/307/skargarden/1752317264-Front.svg',
       file_extension: 'svg',
       file_base_url:
-        'super_admin/files/container/307/307/Alberta/1752317259-Front.svg',
+        'super_admin/files/container/307/307/skargarden/1752317264-Front.svg',
       file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1752317259-Front.svg'
+        'super_admin/files/container/307/307/skargarden/1752317264-Front.svg'
     },
     back_design: {
-      id: 129633,
-      design_name: 'Alberta',
+      id: 53607,
+      design_name: 'skargarden',
       design_position: 'back',
       color_group: '{}',
-      file_url: 'super_admin/files/container/307/307/Alberta/1752317259-Back',
+      file_url:
+        'super_admin/files/container/307/307/skargarden/1752317264-Back.svg',
       file_extension: 'svg',
       file_base_url:
-        'super_admin/files/container/307/307/Alberta/1752317259-Back.svg',
+        'super_admin/files/container/307/307/skargarden/1752317264-Back.svg',
       file_thumbnail_url:
-        'super_admin/files/container/307/307/Alberta/1752317259-Back.svg'
+        'super_admin/files/container/307/307/skargarden/1752317264-Back.svg'
     },
     frontsafezone_design: {
-      id: 129635,
+      id: 53609,
       design_position: 'frontsafezone',
       file_url:
-        'super_admin/files/container/307/307/Alberta/1752317259-FrontSafeZones.svg'
+        'super_admin/files/container/307/307/skargarden/1752317264-FrontSafeZones.svg'
     },
     backsafezone_design: {
-      id: 129636,
+      id: 126261,
       design_position: 'backsafezone',
       file_url:
-        'super_admin/files/container/307/307/Alberta/1752317260-BackSafeZones.svg'
+        'super_admin/files/container/307/307/skargarden/1752317264-BackSafeZones.svg'
     },
     productionsafezone_design: null,
     frontboundary_design: {
-      id: 129637,
+      id: 85537,
       design_position: 'frontboundary',
       file_url:
-        'super_admin/files/container/307/307/Alberta/1752317260-frontboundary.svg'
+        'super_admin/files/container/307/307/skargarden/1752317264-frontboundary.svg'
     },
     backboundary_design: {
-      id: 129638,
+      id: 126289,
       design_position: 'backboundary',
       file_url:
-        'super_admin/files/container/307/307/Alberta/1752317260-backboundary.svg'
+        'super_admin/files/container/307/307/skargarden/1752317264-backboundary.svg'
     },
     production_design: {
-      id: 129634,
+      id: 53608,
       file_id: 307,
       container_id: 307,
-      design_name: 'Alberta',
+      design_name: 'skargarden',
       design_position: 'production',
       color_group: '{}',
-      file_name: '1752317259-Production',
+      file_name: '1752317264-Production',
       file_url:
-        'super_admin/files/container/307/307/Alberta/1752317259-Production',
+        'super_admin/files/container/307/307/skargarden/1752317264-Production',
       file_extension: 'svg',
       svg_parts: [
         'diamond',
@@ -1209,12 +1153,7 @@ export const mockActiveProductDetails: ActiveProductDetails = {
         'stripe-1',
         'stripe-2'
       ]
-    },
-    productionsafezone_design_id: 129639,
-    product_id: 146,
-    product_style_id: 211,
-    updated_at: '2025-08-06T09:25:29.000000Z',
-    svg_parts: ['base', 'sleeves', 'shoulder']
+    }
   }
 }
 
