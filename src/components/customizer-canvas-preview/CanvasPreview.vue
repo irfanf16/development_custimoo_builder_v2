@@ -2,7 +2,10 @@
   <div class="relative z-0">
     <div class="absolute inset-0 z-0 pointer-events-none max-w-full max-h-full">
       <div class="w-full h-full grid place-items-center">
-        <canvas ref="canvasEl" class="rounded-[32px]" />
+        <canvas
+          ref="canvasEl"
+          class="rounded-[32px] transition-opacity duration-300"
+        />
       </div>
     </div>
   </div>
@@ -97,6 +100,15 @@
 
   async function renderPreview() {
     if (!canvas) return
+
+    // Fade out canvas element
+    if (canvasEl.value) {
+      canvasEl.value.style.opacity = '0'
+    }
+
+    // Wait for fade out
+    await new Promise(resolve => setTimeout(resolve, 150))
+
     canvas.clear()
     const side = productsStore.activeCanvasSide
     const design: any = productsStore.design
@@ -128,6 +140,12 @@
     }
 
     canvas.setZoom(productsStore.canvasZoom)
+
+    // Fade in canvas element
+    if (canvasEl.value) {
+      canvasEl.value.style.opacity = '1'
+    }
+
     canvas.requestRenderAll()
   }
 

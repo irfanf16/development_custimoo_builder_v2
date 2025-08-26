@@ -87,6 +87,15 @@
 
   async function renderPreview() {
     if (!canvas) return
+
+    // Fade out canvas element
+    if (canvasEl.value) {
+      canvasEl.value.style.opacity = '0'
+    }
+
+    // Wait for fade out
+    await new Promise(resolve => setTimeout(resolve, 150))
+
     canvas.clear()
     const design: any = productsStore.design
     const style: any = productsStore.style
@@ -115,6 +124,12 @@
         await addModelLayer(m.file_url, comp)
       }
     }
+
+    // Fade in canvas element
+    if (canvasEl.value) {
+      canvasEl.value.style.opacity = '1'
+    }
+
     canvas.requestRenderAll()
   }
 
@@ -126,7 +141,8 @@
     if (!canvasEl.value) return
     canvas = new Canvas(canvasEl.value, {
       selection: false,
-      enableRetinaScaling: true
+      enableRetinaScaling: true,
+      hoverCursor: 'pointer'
     })
     canvas.setWidth(132)
     canvas.setHeight(132)
@@ -151,9 +167,12 @@
 </script>
 
 <template>
-  <Card class="w-fit h-fit p-0" @click="handleClick">
+  <Card class="w-fit h-fit p-0 cursor-pointer" @click="handleClick">
     <CardContent class="p-3">
-      <canvas ref="canvasEl" class="w-[8.25rem] h-[8.25rem] rounded-lg" />
+      <canvas
+        ref="canvasEl"
+        class="w-[8.25rem] h-[8.25rem] rounded-lg transition-opacity duration-300 cursor-pointer"
+      />
     </CardContent>
   </Card>
 </template>
