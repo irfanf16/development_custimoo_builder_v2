@@ -137,8 +137,16 @@
         controls: 'Controls',
         editor: 'Editor'
       }
-      const trail = [{ label: 'Logos' }]
-      if (sub && sub !== 'list') trail.push({ label: map[sub] || 'Logos' })
+      const trail = [
+        {
+          label: 'Logos',
+          action: () => {
+            productsStore.setLogosSubStep('list')
+          }
+        }
+      ]
+      if (sub && sub !== 'list')
+        trail.push({ label: map[sub] || 'Logos', action: () => {} })
       return trail
     }
 
@@ -158,10 +166,16 @@
           </div>
           <div id="menu-panel-container" class="flex-col">
             <MenuPanel
-              :content-key="currentPanel"
+              :content-key="
+                currentPanel === 'logos'
+                  ? `logos-${(productsStore as any).logosSubStep || 'list'}`
+                  : currentPanel
+              "
               :breadcrumbs="getBreadcrumbs()"
               :expandable="
-                currentPanel !== 'category' && currentPanel !== 'styles'
+                currentPanel !== 'category' &&
+                currentPanel !== 'styles' &&
+                currentPanel !== 'logos'
               "
               :show-back-button="currentPanel !== 'category'"
               :on-back="navigateBack"

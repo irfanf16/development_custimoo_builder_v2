@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
+  import { useProductsStore } from '@/stores/products'
   import {
     Undo2,
     Redo2,
@@ -11,6 +12,8 @@
     Layers3,
     Shuffle
   } from 'lucide-vue-next'
+
+  const productsStore = useProductsStore()
 
   const tools = [
     { id: 'rotateCcw', icon: RotateCcw, label: 'Rotate CCW' },
@@ -37,12 +40,15 @@
       size="icon"
       class="rounded-full size-10 p-0 bg-card outline outline-border border-0 shadow-none"
       :aria-label="t.label"
+      @click="
+        t.id === 'zoomIn'
+          ? productsStore.zoomIn()
+          : t.id === 'zoomOut'
+            ? productsStore.zoomOut()
+            : null
+      "
     >
-      <component
-        :is="t.icon"
-        class="size-4"
-        :stroke-width="1.75"
-      />
+      <component :is="t.icon" class="size-4" :stroke-width="1.75" />
     </Button>
   </div>
 </template>

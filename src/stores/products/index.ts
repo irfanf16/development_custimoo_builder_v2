@@ -65,6 +65,9 @@ export const useProductsStore = defineStore('productsStore', () => {
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
   const selectedCustomLogoIdx = ref<number | null>(null)
   const logosSubStep = ref<'list' | 'placement' | 'controls' | 'editor'>('list')
+  // Canvas state
+  const activeCanvasSide = ref<'front' | 'back'>('front')
+  const canvasZoom = ref<number>(1)
   // Loading state
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -167,24 +170,6 @@ export const useProductsStore = defineStore('productsStore', () => {
   function setLogosSubStep(step: 'list' | 'placement' | 'controls' | 'editor') {
     logosSubStep.value = step
   }
-
-  // API Functions
-  // async function dispatchGetCategories(
-  //   params?: GetProductCategoriesParams
-  // ): Promise<APIResponse<OutputProductCategories>> {
-  //   setLoading(true)
-  //   setError(null)
-  //   const output = await tryCatchApi(
-  //     API.products.getProductCategories(params ?? {})
-  //   )
-  //   if (output.success) {
-  //     setCategories(output.content)
-  //   } else {
-  //     setError('Error getting categories')
-  //   }
-  //   setLoading(false)
-  //   return output
-  // }
 
   async function dispatchGetCategoriesWithNoDefaultCategoryOrProduct(): Promise<
     APIResponse<OutputProductCategories>
@@ -539,6 +524,25 @@ export const useProductsStore = defineStore('productsStore', () => {
     saveCustomizationToLocalStorage()
   }
 
+  // Canvas actions
+  function setActiveCanvasSide(side: 'front' | 'back') {
+    activeCanvasSide.value = side
+  }
+  function toggleActiveCanvasSide() {
+    activeCanvasSide.value =
+      activeCanvasSide.value === 'front' ? 'back' : 'front'
+  }
+  function setCanvasZoom(zoom: number) {
+    const clamped = Math.max(0.25, Math.min(4, zoom))
+    canvasZoom.value = clamped
+  }
+  function zoomIn(step = 0.1) {
+    setCanvasZoom(canvasZoom.value + step)
+  }
+  function zoomOut(step = 0.1) {
+    setCanvasZoom(canvasZoom.value - step)
+  }
+
   async function dispatchGetActiveProductDetails(productId: number) {
     setLoading(true)
     setError(null)
@@ -687,6 +691,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     recentLogos,
     customizedProduct,
     selectedCustomLogoIdx,
+    activeCanvasSide,
+    canvasZoom,
     activeAddons,
     productAddons,
     companyAddons,
@@ -707,6 +713,11 @@ export const useProductsStore = defineStore('productsStore', () => {
     applyLogoPlacementToSelected,
     addCustomLogoFromUpload,
     logosSubStep,
-    setLogosSubStep
+    setLogosSubStep,
+    setActiveCanvasSide,
+    toggleActiveCanvasSide,
+    setCanvasZoom,
+    zoomIn,
+    zoomOut
   }
 })
