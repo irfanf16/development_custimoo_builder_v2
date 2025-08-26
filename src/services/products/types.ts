@@ -50,7 +50,6 @@ export type OutputProductBase = {
   display_name: string
   id: number
   is_logo_allowed: number
-  logos_setting: OutputProductLogosSetting[]
   measurement_ratio: number
   product_id: number
   productnames: OutputProductName[]
@@ -106,6 +105,7 @@ export type OutputProduct = OutputProductBase & {
   product_addons: OutputAddon[]
   company_addons: OutputCompanyAddon[]
   active_addons: OutputAddon[]
+  logos_setting: OutputProductLogosSetting[]
 }
 
 // OutputProductNames
@@ -282,6 +282,8 @@ export type OutputProductLogosSetting = {
   created_at: string
   height: number
   id: number
+  logos_follows_product: 0 | 1
+  following_product_ids: number[] | null
   is_locked: 0 | 1
   logo_technologies: string[] | null
   name_of_placement: string

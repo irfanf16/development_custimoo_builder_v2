@@ -69,31 +69,32 @@
         v-html="headerDescription"
       ></div>
     </div>
-
-    <div class="grid grid-cols-2 gap-x-16 gap-y-8 px-6">
-      <div
-        v-for="s in previews"
-        :key="s.id"
-        class="flex flex-col gap-3 items-start"
-      >
-        <div class="text-base font-semibold">{{ s.name }}</div>
-        <img
-          :src="
-            fromStorage(
-              (s as any).style_icon_url ||
-                (productsStore.style as any)?.style_icon_url ||
-                ''
-            )
-          "
-          class="w-full aspect-square object-contain rounded-xl border border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/30 hover:border-border transition-colors"
-          @click="selectStyle(s.id)"
-          alt="Style icon"
-        />
+    <div class="flex flex-col gap-3 pt-6 px-6 pb-2">
+      <div class="text-lg font-semibold">Styles</div>
+      <div class="grid grid-cols-2 gap-x-16 gap-y-8 px-6">
+        <div
+          v-for="s in previews"
+          :key="s.id"
+          class="flex flex-col gap-3 items-start"
+        >
+          <div class="text-base font-semibold">{{ s.name }}</div>
+          <img
+            :src="
+              fromStorage(
+                (s as any).style_icon_url ||
+                  (productsStore.style as any)?.style_icon_url ||
+                  ''
+              )
+            "
+            class="w-full aspect-square object-contain rounded-xl border border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/30 hover:border-border transition-colors"
+            @click="selectStyle(s.id)"
+            alt="Style icon"
+          />
+        </div>
       </div>
     </div>
-
     <div class="flex flex-col gap-3 pt-6 px-6 pb-2">
-      <div class="text-xl font-semibold">Addons</div>
+      <div class="text-lg font-semibold">Addons</div>
       <div class="flex flex-col gap-2">
         <div
           v-for="addon in visibleAddons"
