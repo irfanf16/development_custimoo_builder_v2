@@ -1,13 +1,67 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+
+  "topbar_save": "Save",
+  "topbar_save_options": "Save options",
+  "topbar_locker_room": "Locker room",
+  "topbar_cart": "Cart",
+
+  "nav_categories": "Categories",
+  "nav_designs": "Designs",
+  "nav_styles": "Styles",
+  "nav_logos": "Logos",
+  "nav_colors": "Colors",
+  "nav_patterns": "Patterns",
+  "nav_texts": "Texts",
+  "nav_roster": "Roster",
+  "nav_summary": "Summary",
+  "nav_products": "Products",
+
+  "logos_empty_drag_drop": "Drag and drop or",
+  "logos_empty_click_to_upload": "click to upload",
+  "logos_supported_formats": "Supported formats: JPG, PNG, PDF. Max size: 10MB.",
+  "logos_add_logo": "Add logo",
+  "logos_recent": "Recent logos",
+  "logos_choose_placement": "Choose placement",
+  "logos_back_to_logos": "Back to logos",
+  "logos_save_placement": "Save placement",
+  "logos_controls": "Controls",
+  "logos_back": "Back",
+  "logos_editor": "Editor",
+  "logos_recolor_logo": "Recolor logo",
+  "logos_primary": "Primary",
+  "logos_more_options": "More options",
+  "logos_back_to_controls": "Back to controls",
+
+  "styles_title": "Styles",
+  "addons_title": "Addons",
+  "styles_alt_icon": "Style icon",
+
+  "actions_size_guide": "Size guide",
+  "actions_reset_customization": "Reset customization",
+  "actions_save_design": "Save design",
+  "actions_share_design": "Share design",
+  "actions_generate_pdf": "Generate PDF",
+
+  "price_line": "for {qty} pcs · Delivered by {eta}",
+  "price_add_to_cart": "Add to cart",
+
+  "theme_toggle_sr": "Toggle theme",
+  "theme_light": "Light",
+  "theme_dark": "Dark",
+
+  "ui_close": "Close",
+  "breadcrumb_more": "More",
+
+  "auth_sign_in": "Sign In",
+  "auth_signing_in": "Signing in...",
+  "auth_cancel": "Cancel",
+  "auth_dialog_title": "Sign In",
+
+  "notfound_go_back": "Go Back",
+
   "save": "Save",
-  "locker_room": "Locker room",
-  "cart": "Cart",
-  "language": "Language",
-  "theme": "Theme",
-  "sign_in": "Sign In",
   "save_options": "Save options",
-  "welcome_message": "Welcome to the Customizer",
-  "select_language": "Select Language",
-  "current_language": "Current Language"
+  "locker_room": "Locker room",
+  "cart": "Cart"
 }

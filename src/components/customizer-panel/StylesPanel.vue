@@ -4,8 +4,15 @@
   // Style previews use static icons (PNG) from style_icon_url, so no canvas is needed
   import { Checkbox } from '@/components/ui/checkbox'
   import { Label } from '@/components/ui/label'
+  import {
+    styles_title,
+    addons_title,
+    styles_alt_icon
+  } from '@/paraglide/messages'
+  import { useLocaleStore } from '@/stores/locale'
 
   const productsStore = useProductsStore()
+  const localeStore = useLocaleStore()
 
   const productId = computed(
     () => (productsStore.product as any)?.id || productsStore.activeProductId
@@ -67,7 +74,9 @@
       ></div>
     </div>
     <div class="flex flex-col gap-3 pt-6 px-6 pb-2">
-      <div class="text-lg font-semibold">Styles</div>
+      <div class="text-lg font-semibold">
+        {{ styles_title({}, { locale: localeStore.currentLocale }) }}
+      </div>
       <div class="grid grid-cols-2 gap-x-16 gap-y-8 px-6">
         <div
           v-for="s in previews"
@@ -85,13 +94,15 @@
             "
             class="w-full aspect-square object-contain rounded-xl border border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/30 hover:border-border transition-colors"
             @click="selectStyle(s.id)"
-            alt="Style icon"
+            :alt="styles_alt_icon({}, { locale: localeStore.currentLocale })"
           />
         </div>
       </div>
     </div>
     <div class="flex flex-col gap-3 pt-6 px-6 pb-2">
-      <div class="text-lg font-semibold">Addons</div>
+      <div class="text-lg font-semibold">
+        {{ addons_title({}, { locale: localeStore.currentLocale }) }}
+      </div>
       <div class="flex flex-col gap-2">
         <div
           v-for="addon in visibleAddons"

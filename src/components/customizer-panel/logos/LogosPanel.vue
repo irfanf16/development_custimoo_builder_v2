@@ -5,8 +5,27 @@
   import LogoPlacementThumb from './LogoPlacementThumb.vue'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
+  import {
+    logos_empty_drag_drop,
+    logos_empty_click_to_upload,
+    logos_supported_formats,
+    logos_add_logo,
+    logos_recent,
+    logos_choose_placement,
+    logos_back_to_logos,
+    logos_save_placement,
+    logos_controls,
+    logos_back,
+    logos_editor,
+    logos_recolor_logo,
+    logos_primary,
+    logos_more_options,
+    logos_back_to_controls
+  } from '@/paraglide/messages'
+  import { useLocaleStore } from '@/stores/locale'
 
   const productsStore = useProductsStore()
+  const localeStore = useLocaleStore()
 
   type SubPanel = 'list' | 'placement' | 'controls' | 'editor'
   const subPanel = ref<SubPanel>('list')
@@ -72,13 +91,25 @@
               </svg>
             </div>
             <div class="text-sm font-medium">
-              Drag and drop or
+              {{
+                logos_empty_drag_drop({}, { locale: localeStore.currentLocale })
+              }}
               <button class="text-primary underline underline-offset-2">
-                click to upload
+                {{
+                  logos_empty_click_to_upload(
+                    {},
+                    { locale: localeStore.currentLocale }
+                  )
+                }}
               </button>
             </div>
             <div class="text-xs text-muted-foreground">
-              Supported formats: JPG, PNG, PDF. Max size: 10MB.
+              {{
+                logos_supported_formats(
+                  {},
+                  { locale: localeStore.currentLocale }
+                )
+              }}
             </div>
           </div>
 
@@ -101,14 +132,16 @@
                 alt="active logo"
               />
             </div>
-            <Button variant="outline" class="rounded-lg w-full"
-              >Add logo</Button
-            >
+            <Button variant="outline" class="rounded-lg w-full">{{
+              logos_add_logo({}, { locale: localeStore.currentLocale })
+            }}</Button>
           </div>
 
           <!-- Recent logos -->
           <div class="flex flex-col gap-2">
-            <div class="text-lg font-semibold">Recent logos</div>
+            <div class="text-lg font-semibold">
+              {{ logos_recent({}, { locale: localeStore.currentLocale }) }}
+            </div>
             <div class="grid grid-cols-4 gap-2">
               <button
                 v-for="logo in productsStore.recentLogos || []"
@@ -126,8 +159,16 @@
           </div>
 
           <div class="flex gap-3">
-            <Button variant="outline" class="rounded-lg" @click="goToPlacement"
-              >Choose placement</Button
+            <Button
+              variant="outline"
+              class="rounded-lg"
+              @click="goToPlacement"
+              >{{
+                logos_choose_placement(
+                  {},
+                  { locale: localeStore.currentLocale }
+                )
+              }}</Button
             >
           </div>
         </div>
@@ -154,36 +195,51 @@
             </div>
           </div>
           <div class="flex gap-3">
-            <Button variant="outline" class="rounded-lg" @click="goToList"
-              >Back to logos</Button
-            >
-            <Button variant="default" class="rounded-lg" @click="goToList"
-              >Save placement</Button
-            >
+            <Button variant="outline" class="rounded-lg" @click="goToList">{{
+              logos_back_to_logos({}, { locale: localeStore.currentLocale })
+            }}</Button>
+            <Button variant="default" class="rounded-lg" @click="goToList">{{
+              logos_save_placement({}, { locale: localeStore.currentLocale })
+            }}</Button>
           </div>
         </div>
 
         <div v-else-if="subPanel === 'controls'" class="flex flex-col gap-4">
-          <div class="text-sm">Controls</div>
+          <div class="text-sm">
+            {{ logos_controls({}, { locale: localeStore.currentLocale }) }}
+          </div>
           <div class="flex gap-3">
-            <Button variant="outline" class="rounded-lg" @click="goToList"
-              >Back</Button
-            >
-            <Button variant="default" class="rounded-lg" @click="goToEditor"
-              >Editor</Button
-            >
+            <Button variant="outline" class="rounded-lg" @click="goToList">{{
+              logos_back({}, { locale: localeStore.currentLocale })
+            }}</Button>
+            <Button variant="default" class="rounded-lg" @click="goToEditor">{{
+              logos_editor({}, { locale: localeStore.currentLocale })
+            }}</Button>
           </div>
         </div>
 
         <div v-else class="flex flex-col gap-4">
-          <div class="text-sm">Editor</div>
+          <div class="text-sm">
+            {{ logos_editor({}, { locale: localeStore.currentLocale }) }}
+          </div>
           <Accordion type="single" collapsible>
             <AccordionItem value="recolor">
-              <template #trigger>Recolour logo</template>
+              <template #trigger>{{
+                logos_recolor_logo({}, { locale: localeStore.currentLocale })
+              }}</template>
               <div class="flex flex-col gap-2">
-                <div class="text-xs">Primary</div>
+                <div class="text-xs">
+                  {{ logos_primary({}, { locale: localeStore.currentLocale }) }}
+                </div>
                 <div class="h-8 bg-muted rounded" />
-                <div class="text-xs">More options</div>
+                <div class="text-xs">
+                  {{
+                    logos_more_options(
+                      {},
+                      { locale: localeStore.currentLocale }
+                    )
+                  }}
+                </div>
                 <div class="grid grid-cols-8 gap-1">
                   <div v-for="i in 16" :key="i" class="h-6 bg-muted rounded" />
                 </div>
@@ -191,8 +247,16 @@
             </AccordionItem>
           </Accordion>
           <div class="flex gap-3">
-            <Button variant="outline" class="rounded-lg" @click="goToControls"
-              >Back to controls</Button
+            <Button
+              variant="outline"
+              class="rounded-lg"
+              @click="goToControls"
+              >{{
+                logos_back_to_controls(
+                  {},
+                  { locale: localeStore.currentLocale }
+                )
+              }}</Button
             >
           </div>
         </div>

@@ -10,8 +10,15 @@
   } from '@/components/ui/dropdown-menu'
   import { useUIStore } from '@/stores/ui'
   import { computed, watch } from 'vue'
+  import {
+    theme_toggle_sr,
+    theme_light,
+    theme_dark
+  } from '@/paraglide/messages'
+  import { useLocaleStore } from '@/stores/locale'
 
   const uiStore = useUIStore()
+  const localeStore = useLocaleStore()
 
   const props = withDefaults(
     defineProps<{
@@ -57,12 +64,18 @@
           icon="radix-icons:sun"
           class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
         />
-        <span class="sr-only">Toggle theme</span>
+        <span class="sr-only">{{
+          theme_toggle_sr({}, { locale: localeStore.currentLocale })
+        }}</span>
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem @select="setTheme('light')"> Light </DropdownMenuItem>
-      <DropdownMenuItem @select="setTheme('dark')"> Dark </DropdownMenuItem>
+      <DropdownMenuItem @select="setTheme('light')">{{
+        theme_light({}, { locale: localeStore.currentLocale })
+      }}</DropdownMenuItem>
+      <DropdownMenuItem @select="setTheme('dark')">{{
+        theme_dark({}, { locale: localeStore.currentLocale })
+      }}</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

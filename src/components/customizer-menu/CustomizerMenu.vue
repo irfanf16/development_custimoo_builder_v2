@@ -2,7 +2,35 @@
   import { computed } from 'vue'
   import CustomizerMenuItem from './MenuItem.vue'
   import { useProductsStore } from '@/stores/products'
+  import {
+    nav_categories,
+    nav_designs,
+    nav_styles,
+    nav_logos,
+    nav_colors,
+    nav_patterns,
+    nav_texts,
+    nav_roster,
+    nav_summary
+  } from '@/paraglide/messages'
+  import { useLocaleStore } from '@/stores/locale'
+
   const productsStore = useProductsStore()
+  const localeStore = useLocaleStore()
+
+  // Navigation constants - these should not be translated
+  const NAV_STEPS = {
+    CATEGORIES: 'Categories',
+    DESIGNS: 'Designs',
+    STYLES: 'Styles',
+    LOGOS: 'Logos',
+    COLORS: 'Colors',
+    PATTERNS: 'Patterns',
+    TEXTS: 'Texts',
+    ROSTER: 'Roster',
+    SUMMARY: 'Summary'
+  } as const
+
   // Determine if we should show Categories step based on available categories
   const shouldShowCategories = computed(() => {
     return (
@@ -12,27 +40,29 @@
 
   function isActive(label: string) {
     // Handle the case when no categories are available
-    if (!shouldShowCategories.value && label === 'Categories') {
+    if (!shouldShowCategories.value && label === NAV_STEPS.CATEGORIES) {
       return false
     }
     if (
       !shouldShowCategories.value &&
-      (productsStore.activeStep || 'Categories') === 'Categories'
+      (productsStore.activeStep || NAV_STEPS.CATEGORIES) ===
+        NAV_STEPS.CATEGORIES
     ) {
-      // If no categories but step is 'Categories', treat it as 'Products' step
-      return label === 'Designs'
+      // If no categories but step is 'Categories', treat it as 'Designs' step
+      return label === NAV_STEPS.DESIGNS
     }
-    return (productsStore.activeStep || 'Categories') === label
+    return (productsStore.activeStep || NAV_STEPS.CATEGORIES) === label
   }
+
   async function goTo(label: string) {
     console.log('goTo', label)
 
-    // If no categories are available and trying to go to Categories, go to Products instead
-    if (label === 'Categories' && !shouldShowCategories.value) {
-      label = 'Products'
+    // If no categories are available and trying to go to Categories, go to Designs instead
+    if (label === NAV_STEPS.CATEGORIES && !shouldShowCategories.value) {
+      label = NAV_STEPS.DESIGNS
     }
 
-    if (label === 'Designs') {
+    if (label === NAV_STEPS.DESIGNS) {
       const styleId = (productsStore.style as any)?.id
       const hasPreviews =
         Array.isArray(productsStore.designPreviews) &&
@@ -40,7 +70,7 @@
       if (!hasPreviews && styleId) {
         await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
       }
-    } else if (label === 'Styles') {
+    } else if (label === NAV_STEPS.STYLES) {
       const pid =
         (productsStore.product as any)?.id || productsStore.activeProductId
       if (pid) {
@@ -50,13 +80,39 @@
         // Ensure addons are present
         await productsStore.dispatchGetProductAddons(pid as number)
       }
-    } else if (label === 'Logos') {
+    } else if (label === NAV_STEPS.LOGOS) {
       // Prefetch recent logos
       if (!productsStore.recentLogos) {
         await productsStore.dispatchGetRecentLogos()
       }
     }
     productsStore.setActiveStep(label)
+  }
+
+  // Helper function to get translated text for a navigation step
+  function getNavText(step: string) {
+    switch (step) {
+      case NAV_STEPS.CATEGORIES:
+        return nav_categories({}, { locale: localeStore.currentLocale })
+      case NAV_STEPS.DESIGNS:
+        return nav_designs({}, { locale: localeStore.currentLocale })
+      case NAV_STEPS.STYLES:
+        return nav_styles({}, { locale: localeStore.currentLocale })
+      case NAV_STEPS.LOGOS:
+        return nav_logos({}, { locale: localeStore.currentLocale })
+      case NAV_STEPS.COLORS:
+        return nav_colors({}, { locale: localeStore.currentLocale })
+      case NAV_STEPS.PATTERNS:
+        return nav_patterns({}, { locale: localeStore.currentLocale })
+      case NAV_STEPS.TEXTS:
+        return nav_texts({}, { locale: localeStore.currentLocale })
+      case NAV_STEPS.ROSTER:
+        return nav_roster({}, { locale: localeStore.currentLocale })
+      case NAV_STEPS.SUMMARY:
+        return nav_summary({}, { locale: localeStore.currentLocale })
+      default:
+        return step
+    }
   }
 </script>
 
@@ -65,81 +121,81 @@
     <!-- Only show Categories step when categories are available -->
     <CustomizerMenuItem
       v-if="shouldShowCategories"
-      :isActive="isActive('Categories')"
-      :text="'Categories'"
-      @click="goTo('Categories')"
+      :isActive="isActive(NAV_STEPS.CATEGORIES)"
+      :text="getNavText(NAV_STEPS.CATEGORIES)"
+      @click="goTo(NAV_STEPS.CATEGORIES)"
     >
       <template #icon>
         <i-flex-line-categories class="size-[1.5rem] bg-transparent" />
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive('Designs')"
-      :text="'Designs'"
-      @click="goTo('Designs')"
+      :isActive="isActive(NAV_STEPS.DESIGNS)"
+      :text="getNavText(NAV_STEPS.DESIGNS)"
+      @click="goTo(NAV_STEPS.DESIGNS)"
     >
       <template #icon>
         <i-flex-line-ai-edit-spark class="size-[1.5rem] bg-transparent" />
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive('Styles')"
-      :text="'Styles'"
-      @click="goTo('Styles')"
+      :isActive="isActive(NAV_STEPS.STYLES)"
+      :text="getNavText(NAV_STEPS.STYLES)"
+      @click="goTo(NAV_STEPS.STYLES)"
     >
       <template #icon>
         <i-flex-line-ai-sparkles class="size-[1.5rem] bg-transparent" />
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive('Logos')"
-      :text="'Logos'"
-      @click="goTo('Logos')"
+      :isActive="isActive(NAV_STEPS.LOGOS)"
+      :text="getNavText(NAV_STEPS.LOGOS)"
+      @click="goTo(NAV_STEPS.LOGOS)"
     >
       <template #icon>
         <i-flex-line-landscape1 class="size-[1.5rem] bg-transparent" />
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive('Colors')"
-      :text="'Colors'"
-      @click="goTo('Colors')"
+      :isActive="isActive(NAV_STEPS.COLORS)"
+      :text="getNavText(NAV_STEPS.COLORS)"
+      @click="goTo(NAV_STEPS.COLORS)"
     >
       <template #icon>
         <i-flex-line-paint-palette class="size-[1.5rem] bg-transparent" />
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive('Patterns')"
-      :text="'Patterns'"
-      @click="goTo('Patterns')"
+      :isActive="isActive(NAV_STEPS.PATTERNS)"
+      :text="getNavText(NAV_STEPS.PATTERNS)"
+      @click="goTo(NAV_STEPS.PATTERNS)"
     >
       <template #icon>
         <i-flex-line-pattern class="size-[1.5rem] bg-transparent" />
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive('Texts')"
-      :text="'Texts'"
-      @click="goTo('Texts')"
+      :isActive="isActive(NAV_STEPS.TEXTS)"
+      :text="getNavText(NAV_STEPS.TEXTS)"
+      @click="goTo(NAV_STEPS.TEXTS)"
     >
       <template #icon>
         <i-flex-line-text-style class="size-[1.5rem] bg-transparent" />
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive('Roster')"
-      :text="'Roster'"
-      @click="goTo('Roster')"
+      :isActive="isActive(NAV_STEPS.ROSTER)"
+      :text="getNavText(NAV_STEPS.ROSTER)"
+      @click="goTo(NAV_STEPS.ROSTER)"
     >
       <template #icon>
         <i-flex-line-table class="size-[1.5rem] bg-transparent" />
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive('Summary')"
-      :text="'Summary'"
-      @click="goTo('Summary')"
+      :isActive="isActive(NAV_STEPS.SUMMARY)"
+      :text="getNavText(NAV_STEPS.SUMMARY)"
+      @click="goTo(NAV_STEPS.SUMMARY)"
     >
       <template #icon>
         <i-flex-line-text-file class="size-[1.5rem] bg-transparent" />

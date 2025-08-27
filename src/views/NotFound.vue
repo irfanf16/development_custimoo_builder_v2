@@ -1,8 +1,11 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
   import { useRouter } from 'vue-router'
+  import { notfound_go_back } from '@/paraglide/messages'
+  import { useLocaleStore } from '@/stores/locale'
 
   const router = useRouter()
+  const localeStore = useLocaleStore()
 
   const goHome = () => {
     router.push('/')
@@ -24,7 +27,9 @@
       </p>
       <div class="flex justify-center space-x-4">
         <Button @click="goHome">Go Home</Button>
-        <Button variant="outline" @click="goBack">Go Back</Button>
+        <Button variant="outline" @click="goBack">{{
+          notfound_go_back({}, { locale: localeStore.currentLocale })
+        }}</Button>
       </div>
     </div>
   </div>

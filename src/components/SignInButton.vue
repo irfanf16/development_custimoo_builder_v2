@@ -11,8 +11,16 @@
   } from '@/components/ui/dialog'
   import { Button } from '@/components/ui/button'
   import type { ButtonVariants } from '@/components/ui/button'
+  import {
+    auth_sign_in,
+    auth_signing_in,
+    auth_cancel,
+    auth_dialog_title
+  } from '@/paraglide/messages'
+  import { useLocaleStore } from '@/stores/locale'
 
   const authStore = useAuthStore()
+  const localeStore = useLocaleStore()
 
   // Reactive state
   const showSignInDialog = ref(false)
@@ -73,7 +81,7 @@
       :size="props.size"
       :class="props.class"
     >
-      Sign In
+      {{ auth_sign_in({}, { locale: localeStore.currentLocale }) }}
     </Button>
 
     <!-- User Menu (when authenticated) -->
@@ -134,7 +142,9 @@
     <Dialog v-model:open="showSignInDialog">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Sign In</DialogTitle>
+          <DialogTitle>{{
+            auth_dialog_title({}, { locale: localeStore.currentLocale })
+          }}</DialogTitle>
           <DialogDescription>
             Enter your credentials to access your account.
           </DialogDescription>
@@ -178,7 +188,7 @@
               @click="showSignInDialog = false"
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
             >
-              Cancel
+              {{ auth_cancel({}, { locale: localeStore.currentLocale }) }}
             </button>
             <button
               type="submit"
@@ -186,8 +196,12 @@
               class="px-4 py-2 text-sm font-medium text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               style="background-color: var(--widget-color, #3b82f6)"
             >
-              <span v-if="isLoading">Signing in...</span>
-              <span v-else>Sign In</span>
+              <span v-if="isLoading">{{
+                auth_signing_in({}, { locale: localeStore.currentLocale })
+              }}</span>
+              <span v-else>{{
+                auth_sign_in({}, { locale: localeStore.currentLocale })
+              }}</span>
             </button>
           </DialogFooter>
         </form>

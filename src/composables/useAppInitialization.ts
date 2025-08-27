@@ -2,6 +2,7 @@ import { ref, onMounted, readonly } from 'vue'
 import { useCompanyStore } from '@/stores/company'
 import { useAuthStore } from '@/stores/auth'
 import { useProductsStore } from '@/stores/products'
+import { useLocaleStore } from '@/stores/locale'
 
 // Global state to prevent multiple initializations
 let globalInitializationPromise: Promise<void> | null = null
@@ -60,6 +61,10 @@ export function useAppInitialization() {
             ? productsStore.dispatchGetCustomizedCategories()
             : productsStore.dispatchGetCategoriesWithNoDefaultCategoryOrProduct()
         ])
+
+        // Initialize locale store after company data is loaded
+        const localeStore = useLocaleStore()
+        localeStore.initializeLocale()
 
         // Determine effective category for loading products
         const effectiveCategoryId =

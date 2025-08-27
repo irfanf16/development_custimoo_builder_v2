@@ -4,7 +4,12 @@
   import ThemeToggle from '@/components/ThemeToggle.vue'
   import SignInButton from '@/components/SignInButton.vue'
   import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
-  import { save, locker_room, cart, save_options } from '@/paraglide/messages'
+  import {
+    topbar_save,
+    topbar_locker_room,
+    topbar_cart,
+    topbar_save_options
+  } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale'
 
   const localeStore = useLocaleStore()
@@ -16,13 +21,17 @@
     <div class="flex rounded-lg outline outline-border overflow-hidden">
       <Button variant="outline" size="default" class="rounded-none border-0">
         <Save class="size-4" />
-        <span>{{ save({}, { locale: localeStore.currentLocale }) }}</span>
+        <span>{{
+          topbar_save({}, { locale: localeStore.currentLocale })
+        }}</span>
       </Button>
       <Button
         variant="outline"
         size="icon"
         class="rounded-none border-0 border-l outline-0"
-        :aria-label="save_options({}, { locale: localeStore.currentLocale })"
+        :aria-label="
+          topbar_save_options({}, { locale: localeStore.currentLocale })
+        "
       >
         <svg
           viewBox="0 0 24 24"
@@ -39,11 +48,13 @@
     </div>
 
     <Button variant="outline" size="default" class="rounded-lg">
-      <span>{{ locker_room({}, { locale: localeStore.currentLocale }) }}</span>
+      <span>{{
+        topbar_locker_room({}, { locale: localeStore.currentLocale })
+      }}</span>
     </Button>
     <Button variant="outline" size="default" class="rounded-lg">
       <ShoppingCart class="size-4" />
-      <span>{{ cart({}, { locale: localeStore.currentLocale }) }}</span>
+      <span>{{ topbar_cart({}, { locale: localeStore.currentLocale }) }}</span>
     </Button>
     <LanguageSwitcher />
     <SignInButton variant="outline" size="default" class="rounded-lg" />

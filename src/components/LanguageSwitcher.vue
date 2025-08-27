@@ -35,6 +35,20 @@
       flag: currentCode === 'en' ? '🇺🇸' : currentCode === 'fr' ? '🇫🇷' : '🇩🇰'
     }
   })
+
+  // Helper function to get language name
+  function getLanguageName(locale: ParaglideLocale): string {
+    switch (locale) {
+      case 'en':
+        return 'English'
+      case 'fr':
+        return 'Français'
+      case 'da':
+        return 'Dansk'
+      default:
+        return locale
+    }
+  }
 </script>
 
 <template>
@@ -58,9 +72,7 @@
           {{ locale === 'en' ? '🇺🇸' : locale === 'fr' ? '🇫🇷' : '🇩🇰' }}
         </span>
         <span>
-          {{
-            locale === 'en' ? 'English' : locale === 'fr' ? 'Français' : 'Dansk'
-          }}
+          {{ getLanguageName(locale) }}
         </span>
       </DropdownMenuItem>
     </DropdownMenuContent>
