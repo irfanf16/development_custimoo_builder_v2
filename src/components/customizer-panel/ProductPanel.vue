@@ -10,7 +10,7 @@
   onMounted(() => {
     if (!productsStore.productPreviews) {
       const categoryId =
-        productsStore.lastCategoryId ||
+        productsStore.activeCategoryId ||
         productsStore.categories?.data?.[0]?.id ||
         null
       productsStore.dispatchGetProductPreviews(categoryId)
@@ -18,7 +18,6 @@
   })
 
   async function handleSelectProduct(productId: number) {
-    productsStore.setActiveProduct(productId)
     await productsStore.dispatchGetActiveProductDetails(productId)
     // Load design previews for the selected product's default style
     const styleId = (productsStore.style as any)?.id

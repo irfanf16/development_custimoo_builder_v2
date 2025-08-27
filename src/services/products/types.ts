@@ -664,6 +664,7 @@ type ProductRosterDetail = {
 export type ActiveProductCustomization = {
   addons: OutputAddon[]
   back_image: string
+  category_id: number | null
   colors: OutputProductColor[]
   common?: OutputProductCustomLogo[]
   custom_logo_svgs: unknown[]

@@ -45,7 +45,6 @@ export function useAppInitialization() {
 
         // Initialize products store from localStorage (non-blocking)
         const productsStore = useProductsStore()
-        productsStore.initLastCategoryIdFromLocalStorage()
         productsStore.initActiveSelectionFromLocalStorage()
 
         // Check if we have active customization to restore
@@ -57,21 +56,29 @@ export function useAppInitialization() {
         await Promise.all([
           companyStore.dispatchGetCompany(),
           companyStore.dispatchGetSettings(),
-          productsStore.lastCategoryId
+          productsStore.activeCategoryId
             ? productsStore.dispatchGetCustomizedCategories()
             : productsStore.dispatchGetCategoriesWithNoDefaultCategoryOrProduct()
         ])
 
-        // Determine active category
+        // Determine effective category for loading products
         const effectiveCategoryId =
           productsStore.activeCategoryId ||
-          productsStore.lastCategoryId ||
           productsStore.categories?.data?.[0]?.id ||
           null
-        productsStore.setActiveCategory(effectiveCategoryId)
+
+        // Set the active category in customization if we have one
+        if (effectiveCategoryId) {
+          productsStore.setActiveCategory(effectiveCategoryId)
+        }
 
         // Load product previews for panel
         await productsStore.dispatchGetProductPreviews(effectiveCategoryId)
+
+        // If no categories are available, skip directly to Products step
+        if (!effectiveCategoryId) {
+          productsStore.setActiveStep('Products')
+        }
 
         // Load active product details
         if (hasActiveCustomization) {

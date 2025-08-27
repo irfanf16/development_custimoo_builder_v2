@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type {
   OutputProductCategories,
   GetProductCategoriesParams,
@@ -24,7 +24,6 @@ import type { APIResponse } from '../types'
 export const useProductsStore = defineStore('productsStore', () => {
   // State
   const categories = ref<OutputProductCategories | null>(null)
-  const lastCategoryId = ref<number | null>(null)
 
   // Full information based on the customization of the product.
   // This information will be populated once a product, style, or design, etc is selected by the user
@@ -44,15 +43,25 @@ export const useProductsStore = defineStore('productsStore', () => {
     null
   )
 
-  // Active selections
-  const activeCategoryId = ref<number | null>(null)
-  const activeProductId = ref<number | null>(null)
-  const activeStyleId = ref<number | null>(null)
-  const activeDesignId = ref<number | null>(null)
+  // Active step (separate from customization since it's UI state)
   const activeStep = ref<string | null>(
     typeof window !== 'undefined'
       ? window.localStorage.getItem('activeStep')
       : null
+  )
+
+  // Computed getters for IDs from activeProductCustomization
+  const activeProductId = computed(
+    () => activeProductCustomization.value?.product_id ?? null
+  )
+  const activeStyleId = computed(
+    () => activeProductCustomization.value?.style_id ?? null
+  )
+  const activeDesignId = computed(
+    () => activeProductCustomization.value?.design_id ?? null
+  )
+  const activeCategoryId = computed(
+    () => activeProductCustomization.value?.category_id ?? null
   )
 
   // Lightweight previews for ProductPanel
@@ -74,20 +83,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     categories.value = data
   }
 
-  function setlastCategoryId(id: number) {
-    lastCategoryId.value = id
-    localStorage.setItem('lastCategoryId', id.toString())
-  }
-
-  function clearlastCategoryId() {
-    lastCategoryId.value = null
-  }
-
-  // Alias with conventional casing for component usage
-  function clearLastCategoryId() {
-    clearlastCategoryId()
-  }
-
   function setLoading(loading: boolean) {
     isLoading.value = loading
   }
@@ -96,66 +91,26 @@ export const useProductsStore = defineStore('productsStore', () => {
     error.value = errorMessage
   }
 
-  function clearCategories() {
-    categories.value = null
-    clearlastCategoryId()
-  }
-
-  function initLastCategoryIdFromLocalStorage() {
-    const lastCategoryId = localStorage.getItem('lastCategoryId')
-    if (lastCategoryId) {
-      setlastCategoryId(Number(lastCategoryId))
-    }
-  }
-
   function initActiveSelectionFromLocalStorage() {
-    const cat = localStorage.getItem('activeCategoryId')
-    const pid = localStorage.getItem('activeProductId')
-    const sid = localStorage.getItem('activeStyleId')
-    const did = localStorage.getItem('activeDesignId')
+    // Only load activeStep since other IDs are now part of activeProductCustomization
     const step = localStorage.getItem('activeStep')
-    activeCategoryId.value = cat ? Number(cat) : null
-    activeProductId.value = pid ? Number(pid) : null
-    activeStyleId.value = sid ? Number(sid) : null
-    activeDesignId.value = did ? Number(did) : null
     activeStep.value = step
-  }
-
-  function setActiveCategory(categoryId: number | null) {
-    activeCategoryId.value = categoryId
-    if (categoryId != null) {
-      localStorage.setItem('activeCategoryId', String(categoryId))
-    } else {
-      localStorage.removeItem('activeCategoryId')
-    }
-  }
-
-  function setActiveProduct(productId: number | null) {
-    activeProductId.value = productId
-    if (productId != null) {
-      localStorage.setItem('activeProductId', String(productId))
-    } else {
-      localStorage.removeItem('activeProductId')
-    }
-  }
-
-  function setActiveStyle(styleId: number | null) {
-    activeStyleId.value = styleId
-    if (styleId != null) localStorage.setItem('activeStyleId', String(styleId))
-    else localStorage.removeItem('activeStyleId')
-  }
-
-  function setActiveDesign(designId: number | null) {
-    activeDesignId.value = designId
-    if (designId != null)
-      localStorage.setItem('activeDesignId', String(designId))
-    else localStorage.removeItem('activeDesignId')
   }
 
   function setActiveStep(step: string | null) {
     activeStep.value = step
     if (step) localStorage.setItem('activeStep', step)
     else localStorage.removeItem('activeStep')
+  }
+
+  function setActiveCategory(categoryId: number | null) {
+    if (!activeProductCustomization.value) {
+      ensureCustomization()
+    }
+    if (activeProductCustomization.value) {
+      activeProductCustomization.value.category_id = categoryId
+      saveCustomizationToLocalStorage()
+    }
   }
 
   function reset() {
@@ -178,11 +133,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     )
     if (output.success) {
       setCategories(output.content)
-      if (categories.value?.data?.length && categories.value.data.length > 0) {
-        setlastCategoryId(categories.value.data[0].id)
-      } else {
-        clearlastCategoryId()
-      }
+      // Category selection is now handled through activeProductCustomizationca
     } else {
       setError('Error getting categories')
     }
@@ -260,7 +211,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     )
     if (resp.success) {
       productPreviews.value = resp.content as unknown as ProductPreviewItem[]
-      setActiveCategory(categoryId ?? null)
+      // Category selection is now handled through activeProductCustomization
     } else {
       setError('Error getting product previews')
     }
@@ -293,8 +244,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       }
       style.value = payload.productstyle
       design.value = payload.productdesign
-      setActiveStyle(payload.productstyle.id)
-      setActiveDesign(payload.productdesign.id)
+      // Style and design IDs are now stored in activeProductCustomization
     } else {
       setError('Error getting active style details')
     }
@@ -366,14 +316,11 @@ export const useProductsStore = defineStore('productsStore', () => {
       if (result.success) {
         design.value =
           result.content as unknown as OutputProductStyleDesignDetails
-        setActiveDesign(apc.design_id)
+        // Design ID is now stored in activeProductCustomization
       }
     }
 
-    // Step 4: Update active IDs to match APC
-    setActiveProduct(apc.product_id)
-    setActiveStyle(apc.style_id)
-    setActiveDesign(apc.design_id)
+    // Step 4: activeProductCustomization already contains the correct IDs
   }
 
   function saveCustomizationToLocalStorage() {
@@ -407,6 +354,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     activeProductCustomization.value = {
       addons: [],
       back_image: '',
+      category_id: null,
       colors: [],
       custom_logo_svgs: [],
       custom_logos: [],
@@ -598,9 +546,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       product.value = details.product
       style.value = details.productstyle
       design.value = details.productdesign
-      setActiveStyle(details.productstyle.id)
-      setActiveDesign(details.productdesign.id)
-      setActiveProduct(details.product.id)
+      // Product, style, and design IDs are now stored in activeProductCustomization
       // Initialize customized product defaults on first load for this product
       if (!activeProductCustomization.value) {
         ensureCustomization()
@@ -641,15 +587,13 @@ export const useProductsStore = defineStore('productsStore', () => {
       design.value = defaultActiveDetails.value.design
       activeProductCustomization.value =
         defaultActiveDetails.value.customization
-      setActiveStyle((style.value as any)?.id ?? null)
-      setActiveDesign((design.value as any)?.id ?? null)
+      // Style and design IDs are now stored in activeProductCustomization
     }
   }
 
   // Apply a design preview: update current design id and minimal customization fields
   function applyDesignPreview(preview: OutputProductStyleDesignPreview) {
-    // Update selected design id
-    setActiveDesign(preview.id)
+    // Update selected design id in activeProductCustomization
     // For now, we'll need to fetch the full design details to update the design ref
     // This is a temporary solution until we have a proper design details endpoint
     if (activeProductCustomization.value) {
@@ -690,7 +634,6 @@ export const useProductsStore = defineStore('productsStore', () => {
   return {
     // State
     categories,
-    lastCategoryId,
     isLoading,
     error,
     product,
@@ -701,16 +644,10 @@ export const useProductsStore = defineStore('productsStore', () => {
     setCategories,
     setLoading,
     setError,
-    clearCategories,
     reset,
-    setlastCategoryId,
-    clearLastCategoryId,
-    initLastCategoryIdFromLocalStorage,
-    initActiveSelectionFromLocalStorage,
     setActiveCategory,
-    setActiveProduct,
-    setActiveStyle,
-    setActiveDesign,
+    initActiveSelectionFromLocalStorage,
+
     setActiveStep,
     // API Functions
     dispatchGetCategoriesWithNoDefaultCategoryOrProduct,
@@ -735,11 +672,12 @@ export const useProductsStore = defineStore('productsStore', () => {
     activeAddons,
     productAddons,
     companyAddons,
+
+    activeStep,
     activeCategoryId,
     activeProductId,
     activeStyleId,
     activeDesignId,
-    activeStep,
     applyDesignPreview,
     captureDefaultsSnapshot,
     resetToDefaultsSnapshot,

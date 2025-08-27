@@ -1,24 +1,37 @@
 <script setup lang="ts">
+  import { computed } from 'vue'
   import CustomizerMenuItem from './MenuItem.vue'
   import { useProductsStore } from '@/stores/products'
   const productsStore = useProductsStore()
-  const steps = [
-    'Categories',
-    'Designs',
-    'Styles',
-    'Logos',
-    'Colors',
-    'Patterns',
-    'Texts',
-    'Roster',
-    'Summary'
-  ]
+  // Determine if we should show Categories step based on available categories
+  const shouldShowCategories = computed(() => {
+    return (
+      productsStore.categories?.data && productsStore.categories.data.length > 0
+    )
+  })
+
   function isActive(label: string) {
-    console.log('isActive', label, productsStore.activeStep)
+    // Handle the case when no categories are available
+    if (!shouldShowCategories.value && label === 'Categories') {
+      return false
+    }
+    if (
+      !shouldShowCategories.value &&
+      (productsStore.activeStep || 'Categories') === 'Categories'
+    ) {
+      // If no categories but step is 'Categories', treat it as 'Products' step
+      return label === 'Designs'
+    }
     return (productsStore.activeStep || 'Categories') === label
   }
   async function goTo(label: string) {
     console.log('goTo', label)
+
+    // If no categories are available and trying to go to Categories, go to Products instead
+    if (label === 'Categories' && !shouldShowCategories.value) {
+      label = 'Products'
+    }
+
     if (label === 'Designs') {
       const styleId = (productsStore.style as any)?.id
       const hasPreviews =
@@ -49,7 +62,9 @@
 
 <template>
   <div class="flex flex-col gap-1 p-1">
+    <!-- Only show Categories step when categories are available -->
     <CustomizerMenuItem
+      v-if="shouldShowCategories"
       :isActive="isActive('Categories')"
       :text="'Categories'"
       @click="goTo('Categories')"

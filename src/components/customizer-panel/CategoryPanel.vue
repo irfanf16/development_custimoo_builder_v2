@@ -11,7 +11,6 @@
 
   async function handleSelectCategory(categoryId: number) {
     productsStore.setActiveCategory(categoryId)
-    productsStore.setlastCategoryId(categoryId)
     await productsStore.dispatchGetProductPreviews(categoryId)
     const firstProductId =
       productsStore.productPreviews && productsStore.productPreviews.length
@@ -75,6 +74,7 @@
 
 <template>
   <div class="flex flex-col">
+    {{ productsStore.exampleOfChangeInapp }}
     <button
       v-for="(item, index) in productsStore.categories?.data"
       :key="item.id"

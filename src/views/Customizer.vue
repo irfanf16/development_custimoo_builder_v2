@@ -42,14 +42,14 @@
         panelHistory.value.length - 1
       ] as 'category' | 'product' | 'designs' | 'styles' | 'logos'
       if (previousPanel === 'category') {
-        productsStore.clearLastCategoryId()
+        // Category state is now handled through activeProductCustomization
       }
       currentPanel.value = previousPanel
     }
   }
 
   const handleCategorySelect = (categoryId: number) => {
-    productsStore.setlastCategoryId(categoryId)
+    productsStore.setActiveCategory(categoryId)
     navigateToPanel('product')
   }
 
@@ -89,6 +89,9 @@
           await productsStore.dispatchGetRecentLogos()
         }
         navigateToPanel('logos')
+      } else if (step === 'Products') {
+        // When no categories are available, go directly to product panel
+        navigateToPanel('product')
       } else if (step === 'Categories') {
         navigateToPanel('category')
       } else if (currentPanel.value === 'category') {
@@ -102,12 +105,16 @@
   // Breadcrumb configuration
   const getBreadcrumbs = () => {
     const step = productsStore.activeStep || 'Categories'
+    if (step === 'Products') {
+      // When no categories are available, show just "Products"
+      return [{ label: 'Products' }]
+    }
     if (step === 'Categories') {
       if (currentPanel.value === 'category') {
         return [{ label: 'Categories' }]
       }
       const category = productsStore.categories?.data?.find(
-        c => c.id === productsStore.lastCategoryId
+        c => c.id === productsStore.activeCategoryId
       )
       return [
         { label: 'Categories', action: () => navigateBack() },
