@@ -48,6 +48,10 @@ export function useAppInitialization() {
         productsStore.initLastCategoryIdFromLocalStorage()
         productsStore.initActiveSelectionFromLocalStorage()
 
+        // Check if we have active customization to restore
+        const hasActiveCustomization =
+          productsStore.initActiveCustomizationFromLocalStorage()
+
         // Fetch company and settings using stores
         const companyStore = useCompanyStore()
         await Promise.all([
@@ -70,13 +74,20 @@ export function useAppInitialization() {
         await productsStore.dispatchGetProductPreviews(effectiveCategoryId)
 
         // Load active product details
-        const activeProductId =
-          productsStore.activeProductId ||
-          (productsStore.productPreviews && productsStore.productPreviews.length
-            ? productsStore.productPreviews[0].product.id
-            : null)
-        if (activeProductId != null) {
-          await productsStore.dispatchGetActiveProductDetails(activeProductId)
+        if (hasActiveCustomization) {
+          // Hydrate from stored customization
+          await productsStore.hydrateFromActiveCustomization()
+        } else {
+          // Default flow: load first product
+          const activeProductId =
+            productsStore.activeProductId ||
+            (productsStore.productPreviews &&
+            productsStore.productPreviews.length
+              ? productsStore.productPreviews[0].product.id
+              : null)
+          if (activeProductId != null) {
+            await productsStore.dispatchGetActiveProductDetails(activeProductId)
+          }
         }
 
         isInitialized.value = true

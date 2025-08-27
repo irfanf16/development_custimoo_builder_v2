@@ -8,7 +8,8 @@ import {
   mockStylePreviewsByProduct,
   mockActiveStyleDetails,
   mockProductAddons,
-  mockRecentLogos
+  mockRecentLogos,
+  mockDesignDetailsById
 } from './mocks'
 import type {
   OutputProductCategories,
@@ -142,6 +143,20 @@ async function getRecentLogos(companyId?: number) {
   })
 }
 
+// Get design details by ID
+async function getDesignDetailsById(designId: number) {
+  const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
+  if (useMocks) {
+    return Promise.resolve(mockResponse(mockDesignDetailsById(designId)))
+  }
+  return await http.get<OutputProductStyleDesignDetails>(
+    `list/design-details`,
+    {
+      params: { design_id: designId }
+    }
+  )
+}
+
 export default {
   getProductCategories,
   getProductByCategoryId,
@@ -151,5 +166,6 @@ export default {
   getStylePreviewsByProduct,
   getActiveStyleDetails,
   getProductAddons,
-  getRecentLogos
+  getRecentLogos,
+  getDesignDetailsById
 }

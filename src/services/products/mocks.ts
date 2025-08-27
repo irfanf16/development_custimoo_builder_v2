@@ -3,6 +3,7 @@ import type {
   ActiveProductDetails,
   ProductPreviewItem,
   OutputProductStylePreview,
+  OutputProductStyleDesignDetails,
   OutputRecentLogo
 } from '@/services/products/types'
 
@@ -3066,6 +3067,103 @@ export function mockProductAddons(_productId: number) {
   ]
   const company_addons: any[] = []
   return { active_addons, product_addons, company_addons }
+}
+
+// Mock design details by ID
+export function mockDesignDetailsById(
+  designId: number
+): OutputProductStyleDesignDetails {
+  return {
+    id: designId,
+    is_default: 1,
+    front_design: {
+      color_group: null,
+      design_name: 'Mock Design',
+      design_position: 'front',
+      file_base_url: '/mock/designs',
+      file_extension: 'svg',
+      file_thumbnail_url: '/mock/designs/thumb.svg',
+      file_url: '/mock/designs/front.svg',
+      id: 1
+    },
+    back_design: {
+      color_group: null,
+      design_name: 'Mock Back Design',
+      design_position: 'back',
+      file_base_url: '/mock/designs',
+      file_extension: 'svg',
+      file_thumbnail_url: '/mock/designs/thumb.svg',
+      file_url: '/mock/designs/back.svg',
+      id: 2
+    },
+    frontboundary_design: {
+      design_position: 'front',
+      file_base_url: '/mock/designs',
+      file_extension: 'svg',
+      file_thumbnail_url: '/mock/designs/thumb.svg',
+      file_url: '/mock/designs/frontboundary.svg',
+      id: 3
+    },
+    backboundary_design: {
+      design_position: 'back',
+      file_base_url: '/mock/designs',
+      file_extension: 'svg',
+      file_thumbnail_url: '/mock/designs/thumb.svg',
+      file_url: '/mock/designs/backboundary.svg',
+      id: 4
+    },
+    frontsafezone_design: {
+      design_position: 'front',
+      file_base_url: '/mock/designs',
+      file_extension: 'svg',
+      file_thumbnail_url: '/mock/designs/thumb.svg',
+      file_url: '/mock/designs/frontsafezone.svg',
+      id: 5
+    },
+    backsafezone_design: {
+      design_position: 'back',
+      file_base_url: '/mock/designs',
+      file_extension: 'svg',
+      file_thumbnail_url: '/mock/designs/thumb.svg',
+      file_url: '/mock/designs/backsafezone.svg',
+      id: 6
+    },
+    container_file_id: 1,
+    created_at: new Date().toISOString(),
+    deleted_at: null,
+    design_name: 'Mock Design',
+    design_show: 1,
+    design_show_on_scroll: 1,
+    front_design_id: 1,
+    back_design_id: 2,
+    frontsafezone_design_id: 3,
+    frontboundary_design_id: 4,
+    backsafezone_design_id: 5,
+    backboundary_design_id: 6,
+    is_active: 1,
+    production_design: {
+      design_position: 'front',
+      file_base_url: '/mock/designs',
+      file_extension: 'svg',
+      file_thumbnail_url: '/mock/designs/thumb.svg',
+      file_url: '/mock/designs/production.svg',
+      id: 1
+    },
+    production_design_id: 1,
+    productionsafezone_design: {
+      design_position: 'front',
+      file_base_url: '/mock/designs',
+      file_extension: 'svg',
+      file_thumbnail_url: '/mock/designs/thumb.svg',
+      file_url: '/mock/designs/productionsafezone.svg',
+      id: 1
+    },
+    productionsafezone_design_id: 1,
+    product_id: 1,
+    product_style_id: 1,
+    updated_at: new Date().toISOString(),
+    svg_parts: ['mock-svg-part-1', 'mock-svg-part-2']
+  }
 }
 
 // Recently uploaded logos (mocked from logos-recent-downloads.json)

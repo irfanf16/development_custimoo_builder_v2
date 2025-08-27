@@ -8,11 +8,14 @@ import type {
   ProductPreviewItem,
   OutputProductStyleDesignPreview,
   OutputProductStylePreview,
+  OutputProductStyleDetails,
+  OutputProductStyleDesignDetails,
   OutputAddon,
   OutputCompanyAddon,
   OutputRecentLogo,
   OutputProductLogosSetting,
-  OutputProductCustomLogo
+  OutputProductCustomLogo,
+  OutputProductDetails
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
@@ -25,11 +28,11 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   // Full information based on the customization of the product.
   // This information will be populated once a product, style, or design, etc is selected by the user
-  const product = ref<Object | null>(null)
+  const product = ref<OutputProductDetails | null>(null)
   // By default, it will chose the first style of the product
-  const style = ref<Object | null>(null)
+  const style = ref<OutputProductStyleDetails | null>(null)
   // By default, it will chose the first design of the style
-  const design = ref<Object | null>(null)
+  const design = ref<OutputProductStyleDesignDetails | null>(null)
   // By default, no add-ons will be selected. Add-ons will be populated based on the selected product, style, and design
 
   const activeAddons = ref<OutputAddon[] | null>(null)
@@ -317,15 +320,60 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  function initCustomizationFromLocalStorage() {
+  function initActiveCustomizationFromLocalStorage(): boolean {
     const raw = localStorage.getItem('customizedProduct')
     if (raw) {
       try {
-        activeProductCustomization.value = JSON.parse(raw)
+        const parsed = JSON.parse(raw)
+        // Basic validation - check if required fields exist
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          typeof parsed.product_id === 'number' &&
+          typeof parsed.style_id === 'number' &&
+          typeof parsed.design_id === 'number'
+        ) {
+          activeProductCustomization.value = parsed
+          return true
+        }
       } catch (_e) {
-        activeProductCustomization.value = null
+        // Invalid JSON, discard
       }
     }
+    activeProductCustomization.value = null
+    return false
+  }
+
+  async function hydrateFromActiveCustomization(): Promise<void> {
+    if (!activeProductCustomization.value) return
+
+    const apc = activeProductCustomization.value
+
+    // Step 1: Load product details (this loads default style + design)
+    await dispatchGetActiveProductDetails(apc.product_id)
+
+    // Step 2: If APC has a different style than the default, load that style
+    if (style.value && apc.style_id !== style.value.id) {
+      await dispatchGetActiveStyleDetails(apc.style_id)
+    }
+
+    // Step 3: If APC has a different design than the current style's default, load that design
+    if (design.value && apc.design_id !== design.value.id) {
+      // Fetch design details by ID
+      const result = await tryCatchApi(
+        API.products.getDesignDetailsById(apc.design_id)
+      )
+      if (result.success) {
+        design.value =
+          result.content as unknown as OutputProductStyleDesignDetails
+        setActiveDesign(apc.design_id)
+      }
+    }
+
+    // Step 4: Update active IDs to match APC
+    setActiveProduct(apc.product_id)
+    setActiveStyle(apc.style_id)
+    setActiveDesign(apc.design_id)
   }
 
   function saveCustomizationToLocalStorage() {
@@ -602,15 +650,8 @@ export const useProductsStore = defineStore('productsStore', () => {
   function applyDesignPreview(preview: OutputProductStyleDesignPreview) {
     // Update selected design id
     setActiveDesign(preview.id)
-    // Update current design ref minimally (front design preview info)
-    design.value = Object.assign({}, design.value || {}, {
-      id: preview.id,
-      front_design: preview.front_design,
-      frontsafezone_design: preview.frontsafezone_design,
-      frontboundary_design: preview.frontboundary_design,
-      svg_parts: preview.svg_parts
-    })
-    // Update customization svg parts if present
+    // For now, we'll need to fetch the full design details to update the design ref
+    // This is a temporary solution until we have a proper design details endpoint
     if (activeProductCustomization.value) {
       activeProductCustomization.value.svg_parts = preview.svg_parts
       saveCustomizationToLocalStorage()
@@ -702,7 +743,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     applyDesignPreview,
     captureDefaultsSnapshot,
     resetToDefaultsSnapshot,
-    initCustomizationFromLocalStorage,
+    initActiveCustomizationFromLocalStorage,
+    hydrateFromActiveCustomization,
     saveCustomizationToLocalStorage,
     resetCustomizationToDefaults,
     // Logos

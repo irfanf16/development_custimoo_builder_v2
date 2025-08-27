@@ -97,8 +97,8 @@
     await new Promise(resolve => setTimeout(resolve, 150))
 
     canvas.clear()
-    const design: any = productsStore.design
-    const style: any = productsStore.style
+    const design = productsStore.design
+    const style = productsStore.style
     const side = productsStore.activeCanvasSide === 'front' ? 'back' : 'front'
     if (!design || !style) return
     if (side === 'back' && design.back_design) {
@@ -159,8 +159,8 @@
   watch(
     () => [
       productsStore.activeCanvasSide,
-      (productsStore.design as any)?.id,
-      (productsStore.style as any)?.id
+      productsStore.design?.id,
+      productsStore.style?.id
     ],
     () => renderPreview()
   )
