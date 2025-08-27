@@ -74,7 +74,6 @@
 
 <template>
   <div class="flex flex-col">
-    {{ productsStore.exampleOfChangeInapp }}
     <button
       v-for="(item, index) in productsStore.categories?.data"
       :key="item.id"

@@ -11,9 +11,6 @@
     () => (productsStore.product as any)?.id || productsStore.activeProductId
   )
   const previews = computed(() => productsStore.stylePreviews || [])
-  const headerTitle = computed(
-    () => ((productsStore.product as any)?.display_name as string) || ''
-  )
   const headerDescription = computed(() => {
     const p = productsStore.product as any
     return p?.sku?.description || p?.description || ''
