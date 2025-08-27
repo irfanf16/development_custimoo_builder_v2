@@ -5,10 +5,58 @@ import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '../types'
 
+// Language configuration types
+export interface LanguageConfig {
+  code: string
+  name: string
+  flag?: string
+}
+
+export interface DateTimeConfig {
+  locale: string
+  timeZone: string
+  dateFormat: string
+  timeFormat: string
+}
+
+export interface CurrencyConfig {
+  code: string
+  symbol: string
+  position: 'before' | 'after'
+  decimalPlaces: number
+}
+
+export interface CompanyLocalization {
+  availableLanguages: LanguageConfig[]
+  defaultLanguage: string
+  datetime: DateTimeConfig
+  currency: CurrencyConfig
+}
+
 export const useCompanyStore = defineStore('companyStore', () => {
   // State
   const company = ref<Company | null>(null)
   const settings = ref<OutputSettings | null>(null)
+  const localization = ref<CompanyLocalization>({
+    availableLanguages: [
+      { code: 'en', name: 'English', flag: '🇺🇸' },
+      { code: 'fr', name: 'Français', flag: '🇫🇷' },
+      { code: 'da', name: 'Dansk', flag: '🇩🇰' }
+    ],
+    defaultLanguage: 'en',
+    datetime: {
+      locale: 'en-US',
+      timeZone: 'UTC',
+      dateFormat: 'MM/DD/YYYY',
+      timeFormat: 'HH:mm'
+    },
+    currency: {
+      code: 'USD',
+      symbol: '$',
+      position: 'before',
+      decimalPlaces: 2
+    }
+  })
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -19,6 +67,10 @@ export const useCompanyStore = defineStore('companyStore', () => {
 
   function setSettings(data: OutputSettings) {
     settings.value = data
+  }
+
+  function setLocalization(data: CompanyLocalization) {
+    localization.value = data
   }
 
   function setLoading(loading: boolean) {
@@ -81,12 +133,14 @@ export const useCompanyStore = defineStore('companyStore', () => {
     // State
     company,
     settings,
+    localization,
     isLoading,
     error,
 
     // Actions
     setCompany,
     setSettings,
+    setLocalization,
     setLoading,
     setError,
     clearCompany,

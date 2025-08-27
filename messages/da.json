@@ -1,0 +1,13 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "save": "Gem",
+  "locker_room": "Omklædningsrum",
+  "cart": "Indkøbskurv",
+  "language": "Sprog",
+  "theme": "Tema",
+  "sign_in": "Log ind",
+  "save_options": "Gem muligheder",
+  "welcome_message": "Velkommen til Tilpasseren",
+  "select_language": "Vælg Sprog",
+  "current_language": "Nuværende Sprog"
+}

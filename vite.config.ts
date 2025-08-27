@@ -1,3 +1,4 @@
+import { paraglideVitePlugin } from '@inlang/paraglide-js'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
@@ -8,7 +9,7 @@ import Icons from 'unplugin-icons/vite'
 import { FileSystemIconLoader } from 'unplugin-icons/loaders'
 
 export default defineConfig({
-  plugins: [
+  plugins: [paraglideVitePlugin({ project: './project.inlang', outdir: './src/paraglide' }),
     vue(),
     tailwindcss(),
     Components({

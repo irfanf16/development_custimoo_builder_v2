@@ -66,6 +66,7 @@ declare module 'vue' {
     IFlexLineTextFile: typeof import('~icons/flex-line/text-file')['default']
     IFlexLineTextStyle: typeof import('~icons/flex-line/text-style')['default']
     Label: typeof import('./src/components/ui/label/Label.vue')['default']
+    LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
     LogoPlacementThumb: typeof import('./src/components/customizer-panel/logos/LogoPlacementThumb.vue')['default']
     LogosPanel: typeof import('./src/components/customizer-panel/logos/LogosPanel.vue')['default']
     MenuItem: typeof import('./src/components/customizer-menu/MenuItem.vue')['default']

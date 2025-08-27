@@ -1,0 +1,13 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "save": "Save",
+  "locker_room": "Locker room",
+  "cart": "Cart",
+  "language": "Language",
+  "theme": "Theme",
+  "sign_in": "Sign In",
+  "save_options": "Save options",
+  "welcome_message": "Welcome to the Customizer",
+  "select_language": "Select Language",
+  "current_language": "Current Language"
+}
