@@ -10,19 +10,19 @@
     type FabricObject
   } from 'fabric'
   import type {
-    OutputProductBase,
-    OutputProductStyleBase,
-    OutputProductStyleDesignBase
+    OutputProductPreview,
+    OutputProductStylePreview,
+    OutputProductStyleDesignPreview
   } from '@/services/products/types'
 
   const props = defineProps({
-    product: { type: Object as PropType<OutputProductBase>, required: true },
+    product: { type: Object as PropType<OutputProductPreview>, required: true },
     styleBase: {
-      type: Object as PropType<OutputProductStyleBase>,
+      type: Object as PropType<OutputProductStylePreview>,
       required: true
     },
     designBase: {
-      type: Object as PropType<OutputProductStyleDesignBase>,
+      type: Object as PropType<OutputProductStyleDesignPreview>,
       required: true
     },
     width: { type: Number, default: 176 },

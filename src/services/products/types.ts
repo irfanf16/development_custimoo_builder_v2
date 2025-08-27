@@ -44,7 +44,7 @@ export type getProductByCategoryIdParams = {
   private: boolean
 }
 
-export type OutputProductBase = {
+export type OutputProductPreview = {
   allowed_logos_count: number
   colors: OutputProductColor[]
   display_name: string
@@ -55,7 +55,7 @@ export type OutputProductBase = {
   productnames: OutputProductName[]
 }
 
-export type OutputProduct = OutputProductBase & {
+export type OutputProductDetails = OutputProductPreview & {
   allow_fixed_logo: number
   allow_name_number: number
   company_id: number
@@ -136,49 +136,8 @@ type CustomizedAddons = {
   ungrouped_addons: OutputAddon[]
 }
 
-// type OutputProductStyleWithDetails = OutputProductStyle & {
-//   productdesigns: OutputProductStyleDesign[]
-// }
-
-// export type FullOutputProduct = OutputProduct & {
-//   active_addons: OutputAddon[]
-//   product_addons: OutputAddon[]
-//   company_addons: OutputCompanyAddon[] // If company_addons are present, ignore product_addons
-//   productstyles: OutputProductStyleWithDetails[]
-//   logo_technologies: unknown[]
-//   colors: OutputProductColor[]
-//   namefonts: OutputProductNameFont[]
-//   namecolors: OutputProductNameColor[]
-//   sizes: OutputProductSize[]
-//   ecommerceproduct: number | [] | null
-// }
-
-// ************** NEW **************
-// This type is supposed to be used to fetch all data related to this product. This includes default style and default design.
-export type OutputProductConfiguration = {
-  active_addons: OutputAddon[]
-  colors: OutputProductColor[]
-  company_addons: OutputCompanyAddon[] // If company_addons are present, ignore product_addons
-  ecommerceproduct: number | [] | null
-  logo_technologies: unknown[]
-  logos_setting: OutputProductLogosSetting[]
-  namecolors: OutputProductNameColor[]
-  namefonts: OutputProductNameFont[]
-  product_addons: OutputAddon[]
-  productdesign: OutputProductStyleDesign // ***** NEW - This is the default design
-  productdesigns_preview: OutputProductStyleDesign[]
-  productstyle: OutputProductStyle // ***** NEW - This is the default style
-  productstyles_preview: OutputProductStyle[]
-  sizes: OutputProductSize[]
-}
-
-export type OutputOfPartialProductConfiguration = {
-  productdesigns: Partial<OutputProductStyleDesign>[]
-  productstyles: Partial<OutputProductStyle>[]
-}
-
 // OutputProductStyle
-export type OutputProductStyleBase = {
+export type OutputProductStylePreview = {
   front_models: {
     composition: 'multiply' | 'screen'
     file_url: string
@@ -193,7 +152,7 @@ export type OutputProductStyleBase = {
   style_icon_url?: string
 }
 
-export type OutputProductStyle = OutputProductStyleBase & {
+export type OutputProductStyleDetails = OutputProductStylePreview & {
   _3d_alpha_map: unknown
   _3d_ao_map: unknown
   _3d_metalness_map: unknown
@@ -365,7 +324,7 @@ export type OutputProductNameColor = {
   updated_at: string
 }
 
-export type OutputProductStyleDesignBase = {
+export type OutputProductStyleDesignPreview = {
   id: number
   is_default: 1 | 0
   front_design: {
@@ -397,87 +356,88 @@ export type OutputProductStyleDesignBase = {
   svg_parts: string[]
 }
 
-export type OutputProductStyleDesign = OutputProductStyleDesignBase & {
-  back_design: {
-    color_group: string | null
+export type OutputProductStyleDesignDetails =
+  OutputProductStyleDesignPreview & {
+    back_design: {
+      color_group: string | null
+      design_name: string
+      design_position: string
+      file_base_url: string
+      file_extension: string
+      file_thumbnail_url: string
+      file_url: string
+      id: number
+    }
+    backboundary_design: {
+      design_position: string
+      file_base_url?: string
+      file_extension?: string
+      file_thumbnail_url?: string
+      file_url: string
+      id: number
+    }
+    backsafezone_design: {
+      design_position: string
+      file_base_url?: string
+      file_extension?: string
+      file_thumbnail_url?: string
+      file_url: string
+      id: number
+    }
+    container_file_id: number
+    created_at: string
+    deleted_at: string | null
     design_name: string
-    design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
-    file_url: string
-    id: number
+    design_show: number
+    design_show_on_scroll: number
+    front_design_id: number
+    back_design_id?: number
+    frontsafezone_design_id?: number
+    frontboundary_design_id?: number
+    backsafezone_design_id?: number
+    backboundary_design_id?: number
+    is_active: number
+    production_design: {
+      design_position: string
+      file_base_url?: string
+      file_extension?: string
+      file_thumbnail_url?: string
+      file_url: string
+      file_id?: number
+      container_id?: number
+      design_name?: string
+      color_group?: string
+      file_name?: string
+      svg_parts?: string[]
+      id: number
+    }
+    production_design_id: number
+    productionsafezone_design: {
+      design_position: string
+      file_base_url: string
+      file_extension: string
+      file_thumbnail_url: string
+      file_url: string
+      id: number
+    } | null
+    productionsafezone_design_id: number | null
+    product_id: number
+    product_style_id: number
+    updated_at: string
   }
-  backboundary_design: {
-    design_position: string
-    file_base_url?: string
-    file_extension?: string
-    file_thumbnail_url?: string
-    file_url: string
-    id: number
-  }
-  backsafezone_design: {
-    design_position: string
-    file_base_url?: string
-    file_extension?: string
-    file_thumbnail_url?: string
-    file_url: string
-    id: number
-  }
-  container_file_id: number
-  created_at: string
-  deleted_at: string | null
-  design_name: string
-  design_show: number
-  design_show_on_scroll: number
-  front_design_id: number
-  back_design_id?: number
-  frontsafezone_design_id?: number
-  frontboundary_design_id?: number
-  backsafezone_design_id?: number
-  backboundary_design_id?: number
-  is_active: number
-  production_design: {
-    design_position: string
-    file_base_url?: string
-    file_extension?: string
-    file_thumbnail_url?: string
-    file_url: string
-    file_id?: number
-    container_id?: number
-    design_name?: string
-    color_group?: string
-    file_name?: string
-    svg_parts?: string[]
-    id: number
-  }
-  production_design_id: number
-  productionsafezone_design: {
-    design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
-    file_url: string
-    id: number
-  } | null
-  productionsafezone_design_id: number | null
-  product_id: number
-  product_style_id: number
-  updated_at: string
-}
 
 // Lightweight preview item used for listing products in a category
 export type ProductPreviewItem = {
-  product: OutputProductBase
-  defaultStyle: OutputProductStyleBase
-  defaultDesign: OutputProductStyleDesignBase
+  product: OutputProductPreview
+  defaultStyle: OutputProductStylePreview
+  defaultDesign: OutputProductStyleDesignPreview
 }
 
 // Full details for the currently active product
 export type ActiveProductDetails = {
-  product: OutputProduct
-  productstyle: OutputProductStyle
-  productdesign: OutputProductStyleDesign
+  product: OutputProductDetails
+  productstyle: OutputProductStyleDetails
+  productdesign: OutputProductStyleDesignDetails
 }
 
 // Recently uploaded logos
@@ -701,7 +661,7 @@ type ProductRosterDetail = {
   text: string
 }
 
-export type ProductCustomization = {
+export type ActiveProductCustomization = {
   addons: OutputAddon[]
   back_image: string
   colors: OutputProductColor[]

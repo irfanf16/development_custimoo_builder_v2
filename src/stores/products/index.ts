@@ -3,11 +3,11 @@ import { ref } from 'vue'
 import type {
   OutputProductCategories,
   GetProductCategoriesParams,
-  ProductCustomization,
+  ActiveProductCustomization,
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputProductStyleDesignBase,
-  OutputProductStyleBase,
+  OutputProductStyleDesignPreview,
+  OutputProductStylePreview,
   OutputAddon,
   OutputCompanyAddon,
   OutputRecentLogo,
@@ -31,22 +31,15 @@ export const useProductsStore = defineStore('productsStore', () => {
   // By default, it will chose the first design of the style
   const design = ref<Object | null>(null)
   // By default, no add-ons will be selected. Add-ons will be populated based on the selected product, style, and design
-  const addOns = ref<Array<Object> | null>(null)
 
-  // List of objects with Partial objects information to be displayed in the Customizer Menu
-  // ProductsList will be populated based on the selected category
-  const productsList = ref<Array<Object> | null>(null)
-  const stylePreviews = ref<OutputProductStyleBase[] | null>(null)
-  // DesignsList will be populated based on the selected style
-  const designsList = ref<Array<Object> | null>(null)
-  // Add-onsList will be populated based on the selected product, style, and design
-  const addOnsList = ref<Array<Object> | null>(null)
   const activeAddons = ref<OutputAddon[] | null>(null)
   const productAddons = ref<OutputAddon[] | null>(null)
   const companyAddons = ref<OutputCompanyAddon[] | null>(null)
 
   // Customized Product State
-  const customizedProduct = ref<ProductCustomization | null>(null)
+  const activeProductCustomization = ref<ActiveProductCustomization | null>(
+    null
+  )
 
   // Active selections
   const activeCategoryId = ref<number | null>(null)
@@ -61,7 +54,8 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   // Lightweight previews for ProductPanel
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
-  const designPreviews = ref<OutputProductStyleDesignBase[] | null>(null)
+  const stylePreviews = ref<OutputProductStylePreview[] | null>(null)
+  const designPreviews = ref<OutputProductStyleDesignPreview[] | null>(null)
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
   const selectedCustomLogoIdx = ref<number | null>(null)
   const logosSubStep = ref<'list' | 'placement' | 'controls' | 'editor'>('list')
@@ -278,7 +272,8 @@ export const useProductsStore = defineStore('productsStore', () => {
       API.products.getStylePreviewsByProduct(productId)
     )
     if (resp.success) {
-      stylePreviews.value = resp.content as unknown as OutputProductStyleBase[]
+      stylePreviews.value =
+        resp.content as unknown as OutputProductStylePreview[]
     }
     setLoading(false)
     return resp
@@ -317,11 +312,6 @@ export const useProductsStore = defineStore('productsStore', () => {
       activeAddons.value = content.active_addons
       productAddons.value = content.product_addons
       companyAddons.value = content.company_addons
-      // Resolve default vs company addons
-      addOnsList.value =
-        companyAddons.value && companyAddons.value.length > 0
-          ? (companyAddons.value as unknown as Array<Object>)
-          : (productAddons.value as unknown as Array<Object>)
     }
     setLoading(false)
     return resp
@@ -331,18 +321,18 @@ export const useProductsStore = defineStore('productsStore', () => {
     const raw = localStorage.getItem('customizedProduct')
     if (raw) {
       try {
-        customizedProduct.value = JSON.parse(raw)
+        activeProductCustomization.value = JSON.parse(raw)
       } catch (_e) {
-        customizedProduct.value = null
+        activeProductCustomization.value = null
       }
     }
   }
 
   function saveCustomizationToLocalStorage() {
-    if (customizedProduct.value) {
+    if (activeProductCustomization.value) {
       localStorage.setItem(
         'customizedProduct',
-        JSON.stringify(customizedProduct.value)
+        JSON.stringify(activeProductCustomization.value)
       )
     } else {
       localStorage.removeItem('customizedProduct')
@@ -350,12 +340,12 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   function resetCustomizationToDefaults() {
-    customizedProduct.value = null
+    activeProductCustomization.value = null
     saveCustomizationToLocalStorage()
   }
 
   function ensureCustomization() {
-    if (customizedProduct.value) return
+    if (activeProductCustomization.value) return
     const productId = (product.value as any)?.id ?? 0
     const productName = (product.value as any)?.display_name ?? ''
     const styleId = (style.value as any)?.id ?? 0
@@ -366,7 +356,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     const sizechartRef = (product.value as any)?.sku?.sizechart_reference ?? ''
     const skuNumber = (product.value as any)?.sku?.sku_number ?? 0
 
-    customizedProduct.value = {
+    activeProductCustomization.value = {
       addons: [],
       back_image: '',
       colors: [],
@@ -412,12 +402,12 @@ export const useProductsStore = defineStore('productsStore', () => {
       svg_url: '',
       sync_id: '',
       ungrouped_addons: []
-    } as unknown as ProductCustomization
+    } as unknown as ActiveProductCustomization
   }
 
   function addCustomLogoFromRecent(recent: OutputRecentLogo) {
     ensureCustomization()
-    if (!customizedProduct.value) return
+    if (!activeProductCustomization.value) return
     const newLogo: OutputProductCustomLogo = {
       actualHeight: 0,
       actualWidth: 0,
@@ -432,7 +422,8 @@ export const useProductsStore = defineStore('productsStore', () => {
       is_replace_success: false,
       is_smart_transparent: !!recent.transparent_logo_url,
       logo_colors: recent.logo_colors,
-      logo_index: (customizedProduct.value.custom_logos?.length || 0) + 1,
+      logo_index:
+        (activeProductCustomization.value.custom_logos?.length || 0) + 1,
       logo_name: recent.logo_name,
       logo_technologies: null,
       name_of_placement: '',
@@ -454,9 +445,9 @@ export const useProductsStore = defineStore('productsStore', () => {
       y_axis: 300,
       y_axis_3d: 0
     }
-    customizedProduct.value.custom_logos.push(newLogo)
+    activeProductCustomization.value.custom_logos.push(newLogo)
     selectedCustomLogoIdx.value =
-      customizedProduct.value.custom_logos.length - 1
+      activeProductCustomization.value.custom_logos.length - 1
     saveCustomizationToLocalStorage()
   }
 
@@ -465,9 +456,13 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   function applyLogoPlacementToSelected(setting: OutputProductLogosSetting) {
-    if (!customizedProduct.value || selectedCustomLogoIdx.value == null) return
+    if (
+      !activeProductCustomization.value ||
+      selectedCustomLogoIdx.value == null
+    )
+      return
     const logo =
-      customizedProduct.value.custom_logos[selectedCustomLogoIdx.value]
+      activeProductCustomization.value.custom_logos[selectedCustomLogoIdx.value]
     if (!logo) return
     logo.x_axis = setting.x_axis
     logo.y_axis = setting.y_axis
@@ -481,7 +476,7 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function addCustomLogoFromUpload(file: File, fileUrl: string) {
     ensureCustomization()
-    if (!customizedProduct.value) return
+    if (!activeProductCustomization.value) return
     const newLogo: OutputProductCustomLogo = {
       actualHeight: 0,
       actualWidth: 0,
@@ -496,7 +491,8 @@ export const useProductsStore = defineStore('productsStore', () => {
       is_replace_success: false,
       is_smart_transparent: false,
       logo_colors: [],
-      logo_index: (customizedProduct.value.custom_logos?.length || 0) + 1,
+      logo_index:
+        (activeProductCustomization.value.custom_logos?.length || 0) + 1,
       logo_name: file.name,
       logo_technologies: null,
       name_of_placement: '',
@@ -518,9 +514,9 @@ export const useProductsStore = defineStore('productsStore', () => {
       y_axis: 300,
       y_axis_3d: 0
     }
-    customizedProduct.value.custom_logos.push(newLogo)
+    activeProductCustomization.value.custom_logos.push(newLogo)
     selectedCustomLogoIdx.value =
-      customizedProduct.value.custom_logos.length - 1
+      activeProductCustomization.value.custom_logos.length - 1
     saveCustomizationToLocalStorage()
   }
 
@@ -550,7 +546,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       API.products.getActiveProductDetails(productId)
     )
     if (result.success) {
-      const details = result.content as unknown as ActiveProductDetails
+      const details = result.content as ActiveProductDetails
       product.value = details.product
       style.value = details.productstyle
       design.value = details.productdesign
@@ -558,7 +554,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       setActiveDesign(details.productdesign.id)
       setActiveProduct(details.product.id)
       // Initialize customized product defaults on first load for this product
-      if (!customizedProduct.value) {
+      if (!activeProductCustomization.value) {
         ensureCustomization()
         saveCustomizationToLocalStorage()
       }
@@ -574,7 +570,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     product: any
     style: any
     design: any
-    customization: ProductCustomization | null
+    customization: ActiveProductCustomization | null
   } | null>(null)
 
   function captureDefaultsSnapshot() {
@@ -582,10 +578,10 @@ export const useProductsStore = defineStore('productsStore', () => {
       product: product.value ? JSON.parse(JSON.stringify(product.value)) : null,
       style: style.value ? JSON.parse(JSON.stringify(style.value)) : null,
       design: design.value ? JSON.parse(JSON.stringify(design.value)) : null,
-      customization: customizedProduct.value
+      customization: activeProductCustomization.value
         ? (JSON.parse(
-            JSON.stringify(customizedProduct.value)
-          ) as ProductCustomization)
+            JSON.stringify(activeProductCustomization.value)
+          ) as ActiveProductCustomization)
         : null
     }
   }
@@ -595,14 +591,15 @@ export const useProductsStore = defineStore('productsStore', () => {
       product.value = defaultActiveDetails.value.product
       style.value = defaultActiveDetails.value.style
       design.value = defaultActiveDetails.value.design
-      customizedProduct.value = defaultActiveDetails.value.customization
+      activeProductCustomization.value =
+        defaultActiveDetails.value.customization
       setActiveStyle((style.value as any)?.id ?? null)
       setActiveDesign((design.value as any)?.id ?? null)
     }
   }
 
   // Apply a design preview: update current design id and minimal customization fields
-  function applyDesignPreview(preview: OutputProductStyleDesignBase) {
+  function applyDesignPreview(preview: OutputProductStyleDesignPreview) {
     // Update selected design id
     setActiveDesign(preview.id)
     // Update current design ref minimally (front design preview info)
@@ -614,8 +611,8 @@ export const useProductsStore = defineStore('productsStore', () => {
       svg_parts: preview.svg_parts
     })
     // Update customization svg parts if present
-    if (customizedProduct.value) {
-      customizedProduct.value.svg_parts = preview.svg_parts
+    if (activeProductCustomization.value) {
+      activeProductCustomization.value.svg_parts = preview.svg_parts
       saveCustomizationToLocalStorage()
     }
   }
@@ -628,7 +625,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     )
     if (resp.success) {
       designPreviews.value =
-        resp.content as unknown as OutputProductStyleDesignBase[]
+        resp.content as unknown as OutputProductStyleDesignPreview[]
     } else {
       setError('Error getting design previews')
     }
@@ -658,10 +655,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     product,
     style,
     design,
-    addOns,
-    productsList,
-    designsList,
-    addOnsList,
 
     // Actions
     setCategories,
@@ -694,7 +687,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     designPreviews,
     stylePreviews,
     recentLogos,
-    customizedProduct,
+    customizedProduct: activeProductCustomization,
     selectedCustomLogoIdx,
     activeCanvasSide,
     canvasZoom,

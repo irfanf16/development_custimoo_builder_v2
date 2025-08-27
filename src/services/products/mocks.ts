@@ -2,7 +2,7 @@ import type { AxiosResponse } from 'axios'
 import type {
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputProductStyleBase,
+  OutputProductStylePreview,
   OutputRecentLogo
 } from '@/services/products/types'
 
@@ -2989,10 +2989,10 @@ export function mockDesignPreviewsByStyleId(_styleId: number) {
 // Styles: previews by product (style bases)
 export function mockStylePreviewsByProduct(
   _productId: number
-): OutputProductStyleBase[] {
+): OutputProductStylePreview[] {
   const s1 = mockActiveProductDetails.productstyle
   const pid = mockActiveProductDetails.product.id
-  const bases: OutputProductStyleBase[] = [
+  const bases: OutputProductStylePreview[] = [
     {
       id: s1.id,
       name: 'V-neck',

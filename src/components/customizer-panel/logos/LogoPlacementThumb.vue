@@ -1,17 +1,17 @@
 <script setup lang="ts">
   import ProductPreviewCanvas from '@/components/customizer-panel/ProductPreviewCanvas.vue'
   import type {
-    OutputProductBase,
-    OutputProductStyleBase,
-    OutputProductStyleDesignBase,
+    OutputProductPreview,
+    OutputProductStylePreview,
+    OutputProductStyleDesignPreview,
     OutputProductLogosSetting
   } from '@/services/products/types'
   import { computed } from 'vue'
 
   const props = defineProps<{
-    product: OutputProductBase
-    styleBase: OutputProductStyleBase
-    designBase: OutputProductStyleDesignBase
+    product: OutputProductPreview
+    styleBase: OutputProductStylePreview
+    designBase: OutputProductStyleDesignPreview
     setting: OutputProductLogosSetting
     width?: number
     height?: number

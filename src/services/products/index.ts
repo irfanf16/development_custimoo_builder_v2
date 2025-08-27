@@ -16,10 +16,10 @@ import type {
   getProductByCategoryIdParams,
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputProductStyleDesignBase,
-  OutputProductStyleBase,
-  OutputProductStyle,
-  OutputProductStyleDesign,
+  OutputProductStyleDesignPreview,
+  OutputProductStylePreview,
+  OutputProductStyleDetails,
+  OutputProductStyleDesignDetails,
   OutputAddon,
   OutputCompanyAddon
 } from '@/services/products/types'
@@ -63,12 +63,12 @@ async function getDesignPreviewsByStyleId(styleId: number) {
   const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
   if (useMocks) {
     return Promise.resolve(
-      mockResponse<OutputProductStyleDesignBase[]>(
+      mockResponse<OutputProductStyleDesignPreview[]>(
         mockDesignPreviewsByStyleId(styleId)
       )
     )
   }
-  return await http.get<OutputProductStyleDesignBase[]>(
+  return await http.get<OutputProductStyleDesignPreview[]>(
     `list/design-previews`,
     {
       params: { product_style_id: styleId }
@@ -81,12 +81,12 @@ async function getStylePreviewsByProduct(productId: number) {
   const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
   if (useMocks) {
     return Promise.resolve(
-      mockResponse<OutputProductStyleBase[]>(
+      mockResponse<OutputProductStylePreview[]>(
         mockStylePreviewsByProduct(productId)
       )
     )
   }
-  return await http.get<OutputProductStyleBase[]>(`list/style-previews`, {
+  return await http.get<OutputProductStylePreview[]>(`list/style-previews`, {
     params: { product_id: productId }
   })
 }
@@ -98,14 +98,14 @@ async function getActiveStyleDetails(styleId: number) {
     const mock = mockActiveStyleDetails(styleId)
     return Promise.resolve(
       mockResponse<{
-        productstyle: OutputProductStyle
-        productdesign: OutputProductStyleDesign
+        productstyle: OutputProductStyleDetails
+        productdesign: OutputProductStyleDesignDetails
       }>(mock)
     )
   }
   return await http.get<{
-    productstyle: OutputProductStyle
-    productdesign: OutputProductStyleDesign
+    productstyle: OutputProductStyleDetails
+    productdesign: OutputProductStyleDesignDetails
   }>(`list/active-style-details`, { params: { product_style_id: styleId } })
 }
 
