@@ -1,11 +1,9 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-
   "topbar_save": "Sauvegarder",
   "topbar_save_options": "Options de sauvegarde",
   "topbar_locker_room": "Vestiaire",
   "topbar_cart": "Panier",
-
   "nav_categories": "Catégories",
   "nav_designs": "Designs",
   "nav_styles": "Styles",
@@ -16,7 +14,6 @@
   "nav_roster": "Effectif",
   "nav_summary": "Résumé",
   "nav_products": "Produits",
-
   "logos_empty_drag_drop": "Glissez-déposez ou",
   "logos_empty_click_to_upload": "cliquez pour télécharger",
   "logos_supported_formats": "Formats supportés : JPG, PNG, PDF. Taille max : 10 Mo.",
@@ -32,34 +29,26 @@
   "logos_primary": "Primaire",
   "logos_more_options": "Plus d'options",
   "logos_back_to_controls": "Retour aux contrôles",
-
   "styles_title": "Styles",
   "addons_title": "Add-ons",
   "styles_alt_icon": "Icône de style",
-
   "actions_size_guide": "Guide des tailles",
   "actions_reset_customization": "Réinitialiser la personnalisation",
   "actions_save_design": "Sauvegarder le design",
   "actions_share_design": "Partager le design",
   "actions_generate_pdf": "Générer PDF",
-
   "price_line": "pour {qty} pièces · Livré le {eta}",
   "price_add_to_cart": "Ajouter au panier",
-
   "theme_toggle_sr": "Basculer le thème",
   "theme_light": "Clair",
   "theme_dark": "Sombre",
-
   "ui_close": "Fermer",
   "breadcrumb_more": "Plus",
-
   "auth_sign_in": "Se connecter",
   "auth_signing_in": "Connexion en cours...",
   "auth_cancel": "Annuler",
   "auth_dialog_title": "Se connecter",
-
   "notfound_go_back": "Retour",
-
   "save": "Sauvegarder",
   "save_options": "Options de sauvegarde",
   "locker_room": "Vestiaire",

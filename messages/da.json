@@ -1,11 +1,9 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-
   "topbar_save": "Gem",
   "topbar_save_options": "Gem muligheder",
   "topbar_locker_room": "Omklædningsrum",
   "topbar_cart": "Indkøbskurv",
-
   "nav_categories": "Kategorier",
   "nav_designs": "Designs",
   "nav_styles": "Styles",
@@ -16,7 +14,6 @@
   "nav_roster": "Roster",
   "nav_summary": "Resumé",
   "nav_products": "Produkter",
-
   "logos_empty_drag_drop": "Træk og slip eller",
   "logos_empty_click_to_upload": "klik for at uploade",
   "logos_supported_formats": "Understøttede formater: JPG, PNG, PDF. Maks størrelse: 10 MB.",
@@ -32,34 +29,26 @@
   "logos_primary": "Primær",
   "logos_more_options": "Flere muligheder",
   "logos_back_to_controls": "Tilbage til kontroller",
-
   "styles_title": "Styles",
   "addons_title": "Tilføjelser",
   "styles_alt_icon": "Style ikon",
-
   "actions_size_guide": "Størrelsesguide",
   "actions_reset_customization": "Nulstil tilpasning",
   "actions_save_design": "Gem design",
   "actions_share_design": "Del design",
   "actions_generate_pdf": "Generer PDF",
-
   "price_line": "for {qty} stk · Leveres {eta}",
   "price_add_to_cart": "Tilføj til kurv",
-
   "theme_toggle_sr": "Skift tema",
   "theme_light": "Lys",
   "theme_dark": "Mørk",
-
   "ui_close": "Luk",
   "breadcrumb_more": "Mere",
-
   "auth_sign_in": "Log ind",
   "auth_signing_in": "Logger ind...",
   "auth_cancel": "Annuller",
   "auth_dialog_title": "Log ind",
-
   "notfound_go_back": "Gå tilbage",
-
   "save": "Gem",
   "save_options": "Gem muligheder",
   "locker_room": "Omklædningsrum",
