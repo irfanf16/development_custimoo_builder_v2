@@ -64,6 +64,50 @@ export const useProductsStore = defineStore('productsStore', () => {
     () => activeProductCustomization.value?.category_id ?? null
   )
 
+  // Computed getters for effective details that combine customization with defaults
+  const effectiveStyleDetails = computed(() => {
+    if (
+      !activeProductCustomization.value?.style_id ||
+      !activeStyleDetails.value
+    ) {
+      return activeStyleDetails.value
+    }
+
+    // If customization has a different style than the current activeStyleDetails,
+    // we need to return the style that matches the customization
+    if (
+      activeProductCustomization.value.style_id === activeStyleDetails.value.id
+    ) {
+      return activeStyleDetails.value
+    }
+
+    // For now, return the active style details, but in the future this could
+    // fetch the specific style details if needed
+    return activeStyleDetails.value
+  })
+
+  const effectiveDesignDetails = computed(() => {
+    if (
+      !activeProductCustomization.value?.design_id ||
+      !activeDesignDetails.value
+    ) {
+      return activeDesignDetails.value
+    }
+
+    // If customization has a different design than the current activeDesignDetails,
+    // we need to return the design that matches the customization
+    if (
+      activeProductCustomization.value.design_id ===
+      activeDesignDetails.value.id
+    ) {
+      return activeDesignDetails.value
+    }
+
+    // For now, return the active design details, but in the future this could
+    // fetch the specific design details if needed
+    return activeDesignDetails.value
+  })
+
   // Lightweight previews for ProductPanel
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
   const stylePreviews = ref<OutputProductStylePreview[] | null>(null)
@@ -109,6 +153,55 @@ export const useProductsStore = defineStore('productsStore', () => {
     }
     if (activeProductCustomization.value) {
       activeProductCustomization.value.category_id = categoryId
+      saveCustomizationToLocalStorage()
+    }
+  }
+
+  // New function to update product selection in customization
+  function setActiveProduct(productId: number) {
+    if (!activeProductCustomization.value) {
+      ensureCustomization()
+    }
+    if (activeProductCustomization.value) {
+      activeProductCustomization.value.product_id = productId
+      // Reset style and design to defaults when product changes
+      activeProductCustomization.value.style_id = 0
+      activeProductCustomization.value.design_id = 0
+      saveCustomizationToLocalStorage()
+    }
+  }
+
+  // New function to update style selection in customization
+  function setActiveStyle(styleId: number) {
+    if (!activeProductCustomization.value) {
+      ensureCustomization()
+    }
+    if (activeProductCustomization.value) {
+      activeProductCustomization.value.style_id = styleId
+      // Reset design to default when style changes
+      activeProductCustomization.value.design_id = 0
+      saveCustomizationToLocalStorage()
+    }
+  }
+
+  // New function to update design selection in customization
+  function setActiveDesign(designId: number) {
+    if (!activeProductCustomization.value) {
+      ensureCustomization()
+    }
+    if (activeProductCustomization.value) {
+      activeProductCustomization.value.design_id = designId
+      saveCustomizationToLocalStorage()
+    }
+  }
+
+  // New function to update addon selection in customization
+  function setActiveAddons(addons: OutputAddon[]) {
+    if (!activeProductCustomization.value) {
+      ensureCustomization()
+    }
+    if (activeProductCustomization.value) {
+      activeProductCustomization.value.addons = addons
       saveCustomizationToLocalStorage()
     }
   }
@@ -244,7 +337,9 @@ export const useProductsStore = defineStore('productsStore', () => {
       }
       activeStyleDetails.value = payload.productstyle
       activeDesignDetails.value = payload.productdesign
-      // Style and design IDs are now stored in activeProductCustomization
+
+      // Update customization state with the new style selection
+      setActiveStyle(styleId)
     } else {
       setError('Error getting active style details')
     }
@@ -271,7 +366,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   function initActiveCustomizationFromLocalStorage(): boolean {
-    const raw = localStorage.getItem('customizedProduct')
+    const raw = localStorage.getItem('activeProductCustomization')
     if (raw) {
       try {
         const parsed = JSON.parse(raw)
@@ -332,16 +427,84 @@ export const useProductsStore = defineStore('productsStore', () => {
   function saveCustomizationToLocalStorage() {
     if (activeProductCustomization.value) {
       localStorage.setItem(
-        'customizedProduct',
+        'activeProductCustomization',
         JSON.stringify(activeProductCustomization.value)
       )
     } else {
-      localStorage.removeItem('customizedProduct')
+      localStorage.removeItem('activeProductCustomization')
     }
   }
 
   function resetCustomizationToDefaults() {
     activeProductCustomization.value = null
+    saveCustomizationToLocalStorage()
+  }
+
+  // New function to set default customization values for the current product
+  function resetCustomizationToCurrentProductDefaults() {
+    if (!activeProductDetails.value) return
+
+    const productId = (activeProductDetails.value as any)?.id ?? 0
+    const productName = (activeProductDetails.value as any)?.display_name ?? ''
+    const styleId = (activeStyleDetails.value as any)?.id ?? 0
+    const styleName = (activeStyleDetails.value as any)?.name ?? ''
+    const designId = (activeDesignDetails.value as any)?.id ?? 0
+    const svgParts = (activeDesignDetails.value as any)?.svg_parts ?? []
+    const measurementRatio =
+      (activeProductDetails.value as any)?.measurement_ratio ?? 1
+    const sizechartRef =
+      (activeProductDetails.value as any)?.sku?.sizechart_reference ?? ''
+    const skuNumber = (activeProductDetails.value as any)?.sku?.sku_number ?? 0
+
+    activeProductCustomization.value = {
+      addons: [],
+      back_image: '',
+      category_id: activeProductCustomization.value?.category_id ?? null,
+      colors: [],
+      custom_logo_svgs: [],
+      custom_logos: [],
+      defaultcolors: [],
+      design_id: designId,
+      ecommerce_cart_id: null,
+      ecommerce_modifier_id: '',
+      ecommerce_post_id: '',
+      ecommerce_variant_id: '',
+      fixed_logo_index: 0,
+      fixed_logos: [],
+      front_image: '',
+      group_patterns: {},
+      grouped_addons: {},
+      groupcolors: {},
+      id: '',
+      is_custom_product: true,
+      logo_colors: [],
+      measurement_ratio: measurementRatio,
+      minimum_order_quantity: 0,
+      minimum_order_quantity_type: '',
+      pdf_file: null,
+      product_custom_text_objects: { common: [], roster: {} as any },
+      product_custom_texts: [],
+      product_display_name: productName,
+      product_id: productId,
+      product_name: productName,
+      product_price_object: {} as any,
+      product_roster_detail: [],
+      product_type: '',
+      production_url: '',
+      reorder_data: null,
+      shuffle_color_number: 0,
+      size_variants_mapping: null,
+      sizechart_reference: sizechartRef,
+      sku_number: skuNumber,
+      style_id: styleId,
+      style_name: styleName,
+      svg_groups: [],
+      svg_parts: svgParts,
+      svg_url: '',
+      sync_id: '',
+      ungrouped_addons: []
+    } as unknown as ActiveProductCustomization
+
     saveCustomizationToLocalStorage()
   }
 
@@ -554,7 +717,10 @@ export const useProductsStore = defineStore('productsStore', () => {
       activeProductDetails.value = details.product
       activeStyleDetails.value = details.productstyle
       activeDesignDetails.value = details.productdesign
-      // Product, style, and design IDs are now stored in activeProductCustomization
+
+      // Update customization state with the new product selection
+      setActiveProduct(productId)
+
       // Initialize customized product defaults on first load for this product
       if (!activeProductCustomization.value) {
         ensureCustomization()
@@ -608,9 +774,8 @@ export const useProductsStore = defineStore('productsStore', () => {
   // Apply a design preview: update current design id and minimal customization fields
   function applyDesignPreview(preview: OutputProductStyleDesignPreview) {
     // Update selected design id in activeProductCustomization
-    // For now, we'll need to fetch the full design details to update the design ref
-    // This is a temporary solution until we have a proper design details endpoint
     if (activeProductCustomization.value) {
+      activeProductCustomization.value.design_id = preview.id
       activeProductCustomization.value.svg_parts = preview.svg_parts
       saveCustomizationToLocalStorage()
     }
@@ -679,7 +844,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     designPreviews,
     stylePreviews,
     recentLogos,
-    customizedProduct: activeProductCustomization,
+    activeProductCustomization,
     selectedCustomLogoIdx,
     activeCanvasSide,
     canvasZoom,
@@ -699,6 +864,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     hydrateFromActiveCustomization,
     saveCustomizationToLocalStorage,
     resetCustomizationToDefaults,
+    resetCustomizationToCurrentProductDefaults,
+    ensureCustomization,
     // Logos
     addCustomLogoFromRecent,
     setSelectedCustomLogoIndex,
@@ -710,6 +877,12 @@ export const useProductsStore = defineStore('productsStore', () => {
     toggleActiveCanvasSide,
     setCanvasZoom,
     zoomIn,
-    zoomOut
+    zoomOut,
+    setActiveProduct,
+    setActiveStyle,
+    setActiveDesign,
+    setActiveAddons,
+    effectiveStyleDetails,
+    effectiveDesignDetails
   }
 })

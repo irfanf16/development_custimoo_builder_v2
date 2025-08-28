@@ -82,7 +82,8 @@
           <!-- Empty state uploader -->
           <div
             v-if="
-              (productsStore.customizedProduct?.custom_logos?.length || 0) === 0
+              (productsStore.activeProductCustomization?.custom_logos?.length ||
+                0) === 0
             "
             class="rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center gap-2 text-center"
           >
@@ -129,10 +130,11 @@
             >
               <img
                 :src="
-                  productsStore.customizedProduct?.custom_logos?.[
+                  productsStore.activeProductCustomization?.custom_logos?.[
                     productsStore.selectedCustomLogoIdx ?? 0
                   ]?.url ||
-                  productsStore.customizedProduct?.custom_logos?.[0]?.url
+                  productsStore.activeProductCustomization?.custom_logos?.[0]
+                    ?.url
                 "
                 class="max-h-full object-contain"
                 alt="active logo"

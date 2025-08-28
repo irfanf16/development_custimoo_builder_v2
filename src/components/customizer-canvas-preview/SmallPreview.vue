@@ -97,8 +97,9 @@
     await new Promise(resolve => setTimeout(resolve, 150))
 
     canvas.clear()
-    const design = productsStore.activeDesignDetails
-    const style = productsStore.activeStyleDetails
+    // Use effective details that combine customization state with defaults
+    const design = productsStore.effectiveDesignDetails
+    const style = productsStore.effectiveStyleDetails
     const side = productsStore.activeCanvasSide === 'front' ? 'back' : 'front'
     if (!design || !style) return
     if (side === 'back' && design.back_design) {
@@ -159,8 +160,8 @@
   watch(
     () => [
       productsStore.activeCanvasSide,
-      productsStore.activeDesignDetails?.id,
-      productsStore.activeStyleDetails?.id
+      productsStore.effectiveDesignDetails?.id,
+      productsStore.effectiveStyleDetails?.id
     ],
     () => renderPreview()
   )

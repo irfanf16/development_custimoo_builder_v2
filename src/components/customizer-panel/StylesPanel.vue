@@ -56,6 +56,9 @@
     if (idx >= 0) {
       const next = !productsStore.activeAddons[idx].selected
       productsStore.activeAddons[idx].selected = next
+
+      // Update customization state with the new addon selection
+      productsStore.setActiveAddons([...productsStore.activeAddons])
     }
   }
 
