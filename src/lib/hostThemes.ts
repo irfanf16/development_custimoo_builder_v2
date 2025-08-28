@@ -6,21 +6,7 @@
 export interface HostTheme {
   primary: string
   secondary?: string
-  // background: string
-  // foreground: string
-  // card: string
-  // cardForeground: string
-  // popover: string
-  // popoverForeground: string
-  // muted: string
-  // mutedForeground: string
   accent: string
-  // accentForeground: string
-  // destructive: string
-  // destructiveForeground: string
-  // border: string
-  // input: string
-  // ring: string
   radius?: string
   fontFamilyDefault?: string
   fontFamilyHeading?: string
@@ -49,7 +35,7 @@ export const hostThemes: Record<string, HostTheme> = {
   'shop.example.com': {
     primary: '#FF6B6B',
     secondary: '#4ECDC4',
-    accent: '#FEF2F2',
+    accent: '#FF6B6B',
     radius: '0.75rem',
     fontFamilyDefault: 'Geist',
     fontFamilyHeading: 'Poppins',

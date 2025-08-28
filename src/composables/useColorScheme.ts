@@ -44,8 +44,30 @@ export function useColorScheme() {
       }
     }
 
+    // Set the color mode FIRST
+    const uiStore = useUIStore()
+    uiStore.setAllowColorModeSwitch(hostTheme?.allowColorModeSwitch || false)
+    uiStore.setDefaultColorMode(hostTheme?.defaultColorMode || 'light')
+
+    // Apply theme based on configuration
+    if (uiStore.allowColorModeSwitch) {
+      uiStore.setTheme(uiStore.currentTheme)
+    } else {
+      uiStore.setTheme(uiStore.defaultColorMode)
+    }
+
+    // Add dark class to widget root BEFORE setting CSS variables
+    if (uiStore.currentTheme === 'dark') {
+      uiStore.widgetRoot?.classList.add('dark')
+    } else {
+      uiStore.widgetRoot?.classList.remove('dark')
+    }
+
     // Generate all CSS variables for the theme
-    const variables = generateLimitedCssVariables(hostTheme)
+    const variables = generateLimitedCssVariables(
+      hostTheme,
+      uiStore.currentTheme
+    )
 
     // Clear existing variables before applying new ones
     const limitedVars = [
@@ -77,25 +99,6 @@ export function useColorScheme() {
         }
       }
     })
-
-    // Set the color mode
-    const uiStore = useUIStore()
-    uiStore.setAllowColorModeSwitch(hostTheme?.allowColorModeSwitch || false)
-    uiStore.setDefaultColorMode(hostTheme?.defaultColorMode || 'light')
-
-    // Apply theme based on configuration
-    if (uiStore.allowColorModeSwitch) {
-      uiStore.setTheme(uiStore.currentTheme)
-    } else {
-      uiStore.setTheme(uiStore.defaultColorMode)
-    }
-
-    // Add dark class to widget root
-    if (uiStore.currentTheme === 'dark') {
-      uiStore.widgetRoot?.classList.add('dark')
-    } else {
-      uiStore.widgetRoot?.classList.remove('dark')
-    }
   }
 
   return {
@@ -104,7 +107,10 @@ export function useColorScheme() {
 }
 
 // Generate only the limited CSS variables we want to override
-function generateLimitedCssVariables(hostTheme: any): string {
+function generateLimitedCssVariables(
+  hostTheme: any,
+  currentTheme: string
+): string {
   // Helper function to convert hex to HSL string (with hsl() wrapper)
   const hexToHslString = (hex: string): string => {
     const hsl = hexToHsl(hex)
@@ -120,6 +126,32 @@ function generateLimitedCssVariables(hostTheme: any): string {
     ? getFontFamilyCSS(hostTheme.fontFamilyHeading)
     : defaultFontCSS
 
+  // Generate both light and dark mode variables
+  const primaryHsl = hexToHsl(hostTheme.primary)
+  const secondaryHsl = hexToHsl(hostTheme.secondary || hostTheme.primary)
+  const accentHsl = hexToHsl(hostTheme.accent)
+
+  // Create darker variants for dark mode
+  const darkPrimaryHsl = { ...primaryHsl, l: Math.max(primaryHsl.l * 0.8, 0.1) }
+  const darkSecondaryHsl = {
+    ...secondaryHsl,
+    l: Math.max(secondaryHsl.l * 0.7, 0.1)
+  }
+  const darkAccentHsl = { ...accentHsl, l: Math.max(accentHsl.l * 0.6, 0.1) }
+
+  // Use dark variants if current theme is dark
+  if (currentTheme === 'dark') {
+    return `
+      --primary: hsl(${Math.round(darkPrimaryHsl.h)} ${Math.round(darkPrimaryHsl.s)}% ${Math.round(darkPrimaryHsl.l)}%);
+      --secondary: hsl(${Math.round(darkSecondaryHsl.h)} ${Math.round(darkSecondaryHsl.s)}% ${Math.round(darkSecondaryHsl.l)}%);
+      --accent: hsl(${Math.round(darkAccentHsl.h)} ${Math.round(darkAccentHsl.s)}% ${Math.round(darkAccentHsl.l)}%);
+      --radius: ${hostTheme.radius || '0.625rem'};
+      --font-sans: ${defaultFontCSS};
+      --font-heading: ${headingFontCSS};
+    `.trim()
+  }
+
+  // Use light variants for light theme
   return `
     --primary: ${hexToHslString(hostTheme.primary)};
     --secondary: ${hexToHslString(hostTheme.secondary || hostTheme.primary)};
