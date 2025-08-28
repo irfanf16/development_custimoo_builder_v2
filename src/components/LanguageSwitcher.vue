@@ -52,6 +52,7 @@
 </script>
 
 <template>
+  <!-- Only show language switcher when multiple languages are available -->
   <DropdownMenu v-if="shouldShowSwitcher">
     <DropdownMenuTrigger as-child>
       <Button variant="outline" size="default" class="rounded-lg">

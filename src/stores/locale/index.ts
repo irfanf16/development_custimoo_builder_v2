@@ -27,6 +27,17 @@ export const useLocaleStore = defineStore('localeStore', () => {
   function initializeLocale() {
     if (isInitialized.value) return
 
+    // If there's only one available language, automatically use it
+    if (availableLocales.value.length === 1) {
+      const singleLocale = availableLocales.value[0]
+      console.log(
+        `Only one language available (${singleLocale}), automatically applying it`
+      )
+      setCurrentLocale(singleLocale)
+      isInitialized.value = true
+      return
+    }
+
     // Try to restore from localStorage
     const savedLocale = localStorage.getItem(
       'customizer_locale'
@@ -76,6 +87,17 @@ export const useLocaleStore = defineStore('localeStore', () => {
 
   // Watch for changes in available languages
   watch(availableLocales, newLocales => {
+    // If there's only one language available, automatically use it
+    if (newLocales.length === 1) {
+      const singleLocale = newLocales[0]
+      console.log(
+        `Only one language available (${singleLocale}), automatically applying it`
+      )
+      setCurrentLocale(singleLocale)
+      return
+    }
+
+    // If current locale is no longer available, reset to default
     if (newLocales.length > 0 && !isValidLocale(currentLocale.value)) {
       console.warn(
         'Current locale is no longer available, resetting to default'
