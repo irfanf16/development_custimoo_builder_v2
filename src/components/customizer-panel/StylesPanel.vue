@@ -15,11 +15,13 @@
   const localeStore = useLocaleStore()
 
   const productId = computed(
-    () => (productsStore.product as any)?.id || productsStore.activeProductId
+    () =>
+      (productsStore.activeProductDetails as any)?.id ||
+      productsStore.activeProductId
   )
   const previews = computed(() => productsStore.stylePreviews || [])
   const headerDescription = computed(() => {
-    const p = productsStore.product as any
+    const p = productsStore.activeProductDetails as any
     return p?.sku?.description || p?.description || ''
   })
 
@@ -88,7 +90,7 @@
             :src="
               fromStorage(
                 (s as any).style_icon_url ||
-                  (productsStore.style as any)?.style_icon_url ||
+                  (productsStore.activeStyleDetails as any)?.style_icon_url ||
                   ''
               )
             "

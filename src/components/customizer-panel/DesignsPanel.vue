@@ -24,8 +24,10 @@
         {{ item.front_design.design_name }}
       </div>
       <ProductPreviewCanvas
-        :product="{ ...productsStore.product, display_name: '' } as any"
-        :style-base="productsStore.style as any"
+        :product="
+          { ...productsStore.activeProductDetails, display_name: '' } as any
+        "
+        :style-base="productsStore.activeStyleDetails as any"
         :design-base="item"
         class="bg-muted/20 rounded-xl border border-border/50 hover:border-border transition-colors cursor-pointer hover:bg-muted/30"
         @click="selectDesign(item)"

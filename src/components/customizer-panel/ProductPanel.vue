@@ -20,7 +20,7 @@
   async function handleSelectProduct(productId: number) {
     await productsStore.dispatchGetActiveProductDetails(productId)
     // Load design previews for the selected product's default style
-    const styleId = (productsStore.style as any)?.id
+    const styleId = (productsStore.activeStyleDetails as any)?.id
     if (styleId) {
       await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
     }

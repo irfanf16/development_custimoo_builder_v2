@@ -38,9 +38,15 @@
     { immediate: true }
   )
 
-  const product = computed(() => (productsStore.product as any) || null)
-  const styleBase = computed(() => (productsStore.style as any) || null)
-  const designBase = computed(() => (productsStore.design as any) || null)
+  const product = computed(
+    () => (productsStore.activeProductDetails as any) || null
+  )
+  const styleBase = computed(
+    () => (productsStore.activeStyleDetails as any) || null
+  )
+  const designBase = computed(
+    () => (productsStore.activeDesignDetails as any) || null
+  )
   const placements = computed(
     () => (product.value?.logos_setting as any[]) || []
   )

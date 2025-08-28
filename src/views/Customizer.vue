@@ -64,7 +64,8 @@
       if (step === 'Designs') {
         // Ensure design previews are available after a reload
         const styleId =
-          (productsStore.style as any)?.id || productsStore.activeStyleId
+          (productsStore.activeStyleDetails as any)?.id ||
+          productsStore.activeStyleId
         const needsPreviews = !(
           Array.isArray(productsStore.designPreviews) &&
           productsStore.designPreviews.length > 0
@@ -77,7 +78,8 @@
         navigateToPanel('designs')
       } else if (step === 'Styles') {
         const pid =
-          (productsStore.product as any)?.id || productsStore.activeProductId
+          (productsStore.activeProductDetails as any)?.id ||
+          productsStore.activeProductId
         if (pid && !productsStore.stylePreviews) {
           await productsStore.dispatchGetStylePreviews(pid as number)
           await productsStore.dispatchGetProductAddons(pid as number)
@@ -128,7 +130,8 @@
 
     if (step === 'Styles') {
       const title =
-        ((productsStore.product as any)?.display_name as string) || 'Styles'
+        ((productsStore.activeProductDetails as any)?.display_name as string) ||
+        'Styles'
       return [{ label: title }]
     }
 

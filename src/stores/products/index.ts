@@ -27,11 +27,11 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   // Full information based on the customization of the product.
   // This information will be populated once a product, style, or design, etc is selected by the user
-  const product = ref<OutputProductDetails | null>(null)
+  const activeProductDetails = ref<OutputProductDetails | null>(null)
   // By default, it will chose the first style of the product
-  const style = ref<OutputProductStyleDetails | null>(null)
+  const activeStyleDetails = ref<OutputProductStyleDetails | null>(null)
   // By default, it will chose the first design of the style
-  const design = ref<OutputProductStyleDesignDetails | null>(null)
+  const activeDesignDetails = ref<OutputProductStyleDesignDetails | null>(null)
   // By default, no add-ons will be selected. Add-ons will be populated based on the selected product, style, and design
 
   const activeAddons = ref<OutputAddon[] | null>(null)
@@ -242,8 +242,8 @@ export const useProductsStore = defineStore('productsStore', () => {
         productstyle: any
         productdesign: any
       }
-      style.value = payload.productstyle
-      design.value = payload.productdesign
+      activeStyleDetails.value = payload.productstyle
+      activeDesignDetails.value = payload.productdesign
       // Style and design IDs are now stored in activeProductCustomization
     } else {
       setError('Error getting active style details')
@@ -303,18 +303,24 @@ export const useProductsStore = defineStore('productsStore', () => {
     await dispatchGetActiveProductDetails(apc.product_id)
 
     // Step 2: If APC has a different style than the default, load that style
-    if (style.value && apc.style_id !== style.value.id) {
+    if (
+      activeStyleDetails.value &&
+      apc.style_id !== activeStyleDetails.value.id
+    ) {
       await dispatchGetActiveStyleDetails(apc.style_id)
     }
 
     // Step 3: If APC has a different design than the current style's default, load that design
-    if (design.value && apc.design_id !== design.value.id) {
+    if (
+      activeDesignDetails.value &&
+      apc.design_id !== activeDesignDetails.value.id
+    ) {
       // Fetch design details by ID
       const result = await tryCatchApi(
         API.products.getDesignDetailsById(apc.design_id)
       )
       if (result.success) {
-        design.value =
+        activeDesignDetails.value =
           result.content as unknown as OutputProductStyleDesignDetails
         // Design ID is now stored in activeProductCustomization
       }
@@ -341,15 +347,17 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function ensureCustomization() {
     if (activeProductCustomization.value) return
-    const productId = (product.value as any)?.id ?? 0
-    const productName = (product.value as any)?.display_name ?? ''
-    const styleId = (style.value as any)?.id ?? 0
-    const styleName = (style.value as any)?.name ?? ''
-    const designId = (design.value as any)?.id ?? 0
-    const svgParts = (design.value as any)?.svg_parts ?? []
-    const measurementRatio = (product.value as any)?.measurement_ratio ?? 1
-    const sizechartRef = (product.value as any)?.sku?.sizechart_reference ?? ''
-    const skuNumber = (product.value as any)?.sku?.sku_number ?? 0
+    const productId = (activeProductDetails.value as any)?.id ?? 0
+    const productName = (activeProductDetails.value as any)?.display_name ?? ''
+    const styleId = (activeStyleDetails.value as any)?.id ?? 0
+    const styleName = (activeStyleDetails.value as any)?.name ?? ''
+    const designId = (activeDesignDetails.value as any)?.id ?? 0
+    const svgParts = (activeDesignDetails.value as any)?.svg_parts ?? []
+    const measurementRatio =
+      (activeProductDetails.value as any)?.measurement_ratio ?? 1
+    const sizechartRef =
+      (activeProductDetails.value as any)?.sku?.sizechart_reference ?? ''
+    const skuNumber = (activeProductDetails.value as any)?.sku?.sku_number ?? 0
 
     activeProductCustomization.value = {
       addons: [],
@@ -427,8 +435,8 @@ export const useProductsStore = defineStore('productsStore', () => {
       originalWidth: '0',
       original_logo: recent.original_png,
       original_logo_url: recent.original_logo_url,
-      product_id: (product.value as any)?.id ?? 0,
-      product_style_id: (style.value as any)?.id ?? 0,
+      product_id: (activeProductDetails.value as any)?.id ?? 0,
+      product_style_id: (activeStyleDetails.value as any)?.id ?? 0,
       rotation: 0,
       side: 'front',
       smart_transparent_logo: recent.smart_transparent_logo_url,
@@ -496,8 +504,8 @@ export const useProductsStore = defineStore('productsStore', () => {
       originalWidth: '0',
       original_logo: file.name,
       original_logo_url: fileUrl,
-      product_id: (product.value as any)?.id ?? 0,
-      product_style_id: (style.value as any)?.id ?? 0,
+      product_id: (activeProductDetails.value as any)?.id ?? 0,
+      product_style_id: (activeStyleDetails.value as any)?.id ?? 0,
       rotation: 0,
       side: 'front',
       smart_transparent_logo: '',
@@ -543,9 +551,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     )
     if (result.success) {
       const details = result.content as ActiveProductDetails
-      product.value = details.product
-      style.value = details.productstyle
-      design.value = details.productdesign
+      activeProductDetails.value = details.product
+      activeStyleDetails.value = details.productstyle
+      activeDesignDetails.value = details.productdesign
       // Product, style, and design IDs are now stored in activeProductCustomization
       // Initialize customized product defaults on first load for this product
       if (!activeProductCustomization.value) {
@@ -569,9 +577,15 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function captureDefaultsSnapshot() {
     defaultActiveDetails.value = {
-      product: product.value ? JSON.parse(JSON.stringify(product.value)) : null,
-      style: style.value ? JSON.parse(JSON.stringify(style.value)) : null,
-      design: design.value ? JSON.parse(JSON.stringify(design.value)) : null,
+      product: activeProductDetails.value
+        ? JSON.parse(JSON.stringify(activeProductDetails.value))
+        : null,
+      style: activeStyleDetails.value
+        ? JSON.parse(JSON.stringify(activeStyleDetails.value))
+        : null,
+      design: activeDesignDetails.value
+        ? JSON.parse(JSON.stringify(activeDesignDetails.value))
+        : null,
       customization: activeProductCustomization.value
         ? (JSON.parse(
             JSON.stringify(activeProductCustomization.value)
@@ -582,9 +596,9 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function resetToDefaultsSnapshot() {
     if (defaultActiveDetails.value) {
-      product.value = defaultActiveDetails.value.product
-      style.value = defaultActiveDetails.value.style
-      design.value = defaultActiveDetails.value.design
+      activeProductDetails.value = defaultActiveDetails.value.product
+      activeStyleDetails.value = defaultActiveDetails.value.style
+      activeDesignDetails.value = defaultActiveDetails.value.design
       activeProductCustomization.value =
         defaultActiveDetails.value.customization
       // Style and design IDs are now stored in activeProductCustomization
@@ -636,9 +650,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     categories,
     isLoading,
     error,
-    product,
-    style,
-    design,
+    activeProductDetails,
+    activeStyleDetails,
+    activeDesignDetails,
 
     // Actions
     setCategories,

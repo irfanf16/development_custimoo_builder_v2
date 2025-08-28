@@ -63,7 +63,7 @@
     }
 
     if (label === NAV_STEPS.DESIGNS) {
-      const styleId = (productsStore.style as any)?.id
+      const styleId = (productsStore.activeStyleDetails as any)?.id
       const hasPreviews =
         Array.isArray(productsStore.designPreviews) &&
         productsStore.designPreviews.length > 0
@@ -72,7 +72,8 @@
       }
     } else if (label === NAV_STEPS.STYLES) {
       const pid =
-        (productsStore.product as any)?.id || productsStore.activeProductId
+        (productsStore.activeProductDetails as any)?.id ||
+        productsStore.activeProductId
       if (pid) {
         if (!productsStore.stylePreviews) {
           await productsStore.dispatchGetStylePreviews(pid as number)
