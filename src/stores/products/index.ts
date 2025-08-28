@@ -234,23 +234,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     return output
   }
 
-  async function dispatchGetProductCategoriesWithProductId(
-    productId: number
-  ): Promise<APIResponse<OutputProductCategories>> {
-    setLoading(true)
-    setError(null)
-    const output = await tryCatchApi(
-      API.products.getProductCategories({ product_id: productId })
-    )
-    if (output.success) {
-      setCategories(output.content)
-    } else {
-      setError('Error getting product categories')
-    }
-    setLoading(false)
-    return output
-  }
-
   async function dispatchGetCustomizedCategories(): Promise<
     APIResponse<OutputProductCategories>
   > {
@@ -262,35 +245,6 @@ export const useProductsStore = defineStore('productsStore', () => {
       setCategories(output.content)
     } else {
       setError('Error getting customized categories')
-    }
-    setLoading(false)
-    return output
-  }
-
-  async function dispatchGetProductsByCategoryId(
-    categoryId: number
-  ): Promise<APIResponse<OutputProductCategories>> {
-    setLoading(true)
-    setError(null)
-    // Fetch previews for the ProductPanel (lightweight)
-    const previews = await tryCatchApi(
-      API.products.getProductPreviewsByCategory(categoryId)
-    )
-    if (previews.success) {
-      productPreviews.value =
-        previews.content as unknown as ProductPreviewItem[]
-    }
-    // Also keep existing products-by-category request if needed elsewhere
-    const output = await tryCatchApi(
-      API.products.getProductByCategoryId({
-        category_id: categoryId,
-        customized: true,
-        personalized: false,
-        private: false
-      })
-    )
-    if (!output.success) {
-      setError('Error getting products')
     }
     setLoading(false)
     return output
@@ -830,15 +784,13 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveStep,
     // API Functions
     dispatchGetCategoriesWithNoDefaultCategoryOrProduct,
-    dispatchGetProductCategoriesWithProductId,
     dispatchGetCustomizedCategories,
-    dispatchGetProductsByCategoryId,
-    dispatchGetActiveProductDetails,
+    dispatchGetProductPreviews,
     dispatchGetStylePreviews,
+    dispatchGetActiveProductDetails,
     dispatchGetActiveStyleDetails,
     dispatchGetProductAddons,
     dispatchGetDesignPreviewsByStyleId,
-    dispatchGetProductPreviews,
     dispatchGetRecentLogos,
     productPreviews,
     designPreviews,

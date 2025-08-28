@@ -69,10 +69,6 @@ export const useCompanyStore = defineStore('companyStore', () => {
     settings.value = data
   }
 
-  function setLocalization(data: CompanyLocalization) {
-    localization.value = data
-  }
-
   function setLoading(loading: boolean) {
     isLoading.value = loading
   }
@@ -81,18 +77,7 @@ export const useCompanyStore = defineStore('companyStore', () => {
     error.value = errorMessage
   }
 
-  function clearCompany() {
-    company.value = null
-  }
-
-  function clearSettings() {
-    settings.value = null
-  }
-
-  function clearError() {
-    error.value = null
-  }
-
+  // Consolidated reset function
   function reset() {
     company.value = null
     settings.value = null
@@ -140,12 +125,8 @@ export const useCompanyStore = defineStore('companyStore', () => {
     // Actions
     setCompany,
     setSettings,
-    setLocalization,
     setLoading,
     setError,
-    clearCompany,
-    clearSettings,
-    clearError,
     reset,
 
     // API Functions

@@ -23,60 +23,56 @@ export const useAuthStore = defineStore('authStore', () => {
   function setLoading(loading: boolean) {
     isLoading.value = loading
   }
+
   function setError(errorMessage: string | null) {
     error.value = errorMessage
   }
+
   function setCustomer(data: Customer) {
     customer.value = data
   }
+
   function setAccessToken(data: string) {
     accessToken.value = data
     isAuthenticated.value = true
   }
 
-  function clearCustomer() {
+  // Consolidated clear function
+  function clearAuth() {
     customer.value = null
-  }
-  function clearAccessToken() {
     accessToken.value = null
     isAuthenticated.value = false
   }
 
-  function clearCustomerAndAccessToken() {
-    clearCustomer()
-    clearAccessToken()
-  }
-
-  function initCustomer(data: Customer) {
-    setCustomer(data)
-    const customerJson = JSON.stringify(customer.value)
-    localStorage.setItem('customer', customerJson)
-  }
-
-  function initAccessToken(data: string) {
-    setAccessToken(data)
-    localStorage.setItem('jwtToken', data)
-  }
-
-  function setCustomerAndAccessToken(data: OutputLogin) {
+  // Initialize customer and token from data
+  function initCustomerAndAccessToken(data: OutputLogin) {
     if (data.user && data.access_token) {
-      initCustomer(data.user)
-      initAccessToken(data.access_token)
+      setCustomer(data.user)
+      setAccessToken(data.access_token)
+      // Persist to localStorage
+      localStorage.setItem('customer', JSON.stringify(data.user))
+      localStorage.setItem('jwtToken', data.access_token)
     }
   }
 
+  // Initialize from localStorage
   function initCustomerAndAccessTokenFromLocalStorage() {
     const customerJson = localStorage.getItem('customer')
     const jwtToken = localStorage.getItem('jwtToken')
     if (customerJson && jwtToken) {
-      initCustomer(JSON.parse(customerJson))
-      initAccessToken(jwtToken)
+      try {
+        setCustomer(JSON.parse(customerJson))
+        setAccessToken(jwtToken)
+      } catch (error) {
+        console.error('Failed to parse stored customer data:', error)
+        clearAuth()
+      }
     }
   }
 
   function logout() {
-    clearCustomerAndAccessToken()
-    // Remove from local storage
+    clearAuth()
+    // Remove from localStorage
     localStorage.removeItem('customer')
     localStorage.removeItem('jwtToken')
   }
@@ -89,7 +85,7 @@ export const useAuthStore = defineStore('authStore', () => {
     setError(null)
     const output = await tryCatchApi(API.authentication.postLogin(input))
     if (output.success) {
-      setCustomerAndAccessToken(output.content)
+      initCustomerAndAccessToken(output.content)
     } else {
       setError('Login error')
     }

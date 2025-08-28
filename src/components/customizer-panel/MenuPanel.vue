@@ -96,16 +96,6 @@
         <div
           class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
         >
-          <!-- <Button
-            v-if="showBackButton"
-            variant="ghost"
-            size="icon"
-            class="rounded-lg"
-            @click="handleBack"
-          >
-            <ChevronLeft class="size-4" />
-          </Button> -->
-
           <!-- Breadcrumb Navigation -->
           <Breadcrumb
             v-if="breadcrumbs && breadcrumbs.length > 0"
