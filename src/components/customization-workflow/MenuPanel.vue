@@ -57,8 +57,6 @@
     }
   }
 
-  // back handled via breadcrumbs action
-
   // Watch for breadcrumb changes to update active state
   watch(
     () => props.breadcrumbs,
@@ -141,7 +139,7 @@
         </Button>
       </CardHeader>
 
-      <CardContent class="p-0 pb-4">
+      <CardContent class="p-0 pb-4 px-6">
         <!-- Content slot for different panel types -->
         <Transition name="panel-slide" mode="out-in" appear>
           <div :key="props.contentKey">

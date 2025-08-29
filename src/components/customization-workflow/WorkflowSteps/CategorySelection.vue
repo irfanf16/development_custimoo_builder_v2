@@ -77,7 +77,7 @@
     <button
       v-for="(item, index) in productsStore.categories?.data"
       :key="item.id"
-      class="h-14 px-4 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors"
+      class="h-14 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors"
       @click="() => handleSelectCategory(item.id)"
     >
       <div class="flex items-center gap-3">

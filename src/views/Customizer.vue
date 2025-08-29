@@ -4,165 +4,34 @@
   import PriceCard from '@/components/customizer-price/PriceCard.vue'
   import { CustomizerMenu } from '@/components/customizer-menu'
   import {
-    CategoryPanel,
-    MenuPanel,
-    ProductPanel,
-    DesignsPanel,
-    StylesPanel,
-    LogosPanel
-  } from '@/components/customizer-panel'
-  import { Button } from '@/components/ui/button'
+    WorkflowManager,
+    WorkflowNavigation,
+    WorkflowLayout
+  } from '@/components/customization-workflow'
   import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
-  import { ref, watch } from 'vue'
-  import { useProductsStore } from '@/stores/products'
+  import { ref, computed } from 'vue'
   import { CustomizerTopbar } from '@/components/customizer-topbar'
   import SmallPreview from '@/components/customizer-canvas-preview/SmallPreview.vue'
 
-  const productsStore = useProductsStore()
+  // Workflow management logic is now handled by WorkflowManager
+  const workflowManager = ref<InstanceType<typeof WorkflowManager> | null>(null)
+  const workflowNavigation = ref<InstanceType<
+    typeof WorkflowNavigation
+  > | null>(null)
 
-  const currentPanel = ref<
-    'category' | 'product' | 'designs' | 'styles' | 'logos'
-  >('category')
-
-  const panelHistory = ref<string[]>(['category'])
-
-  const navigateToPanel = (
-    panel: 'category' | 'product' | 'designs' | 'styles' | 'logos'
-  ) => {
-    if (panel !== currentPanel.value) {
-      panelHistory.value.push(panel)
-      currentPanel.value = panel
-    }
-  }
-
-  const navigateBack = () => {
-    if (panelHistory.value.length > 1) {
-      panelHistory.value.pop()
-      const previousPanel = panelHistory.value[
-        panelHistory.value.length - 1
-      ] as 'category' | 'product' | 'designs' | 'styles' | 'logos'
-      if (previousPanel === 'category') {
-        // Category state is now handled through activeProductCustomization
-      }
-      currentPanel.value = previousPanel
-    }
-  }
-
-  const handleCategorySelect = (categoryId: number) => {
-    productsStore.setActiveCategory(categoryId)
-    navigateToPanel('product')
-  }
-
-  // React to step changes from the menu/store
-  watch(
-    () => productsStore.activeStep,
-    async step => {
-      if (step === 'Categories' && currentPanel.value !== 'category') {
-        // When returning to categories, snapshot defaults for potential reset later
-        productsStore.captureDefaultsSnapshot()
-      }
-      if (step === 'Designs') {
-        // Ensure design previews are available after a reload
-        const styleId =
-          (productsStore.activeStyleDetails as any)?.id ||
-          productsStore.activeStyleId
-        const needsPreviews = !(
-          Array.isArray(productsStore.designPreviews) &&
-          productsStore.designPreviews.length > 0
-        )
-        if (needsPreviews && styleId) {
-          await productsStore.dispatchGetDesignPreviewsByStyleId(
-            styleId as number
-          )
-        }
-        navigateToPanel('designs')
-      } else if (step === 'Styles') {
-        const pid =
-          (productsStore.activeProductDetails as any)?.id ||
-          productsStore.activeProductId
-        if (pid && !productsStore.stylePreviews) {
-          await productsStore.dispatchGetStylePreviews(pid as number)
-          await productsStore.dispatchGetProductAddons(pid as number)
-        }
-        navigateToPanel('styles')
-      } else if (step === 'Logos') {
-        // Ensure recent logos are loaded
-        if (!productsStore.recentLogos) {
-          await productsStore.dispatchGetRecentLogos()
-        }
-        navigateToPanel('logos')
-      } else if (step === 'Products') {
-        // When no categories are available, go directly to product panel
-        navigateToPanel('product')
-      } else if (step === 'Categories') {
-        navigateToPanel('category')
-      } else if (currentPanel.value === 'category') {
-        // default after leaving categories is product panel
-        navigateToPanel('product')
-      }
-    },
-    { immediate: true }
+  // Computed properties for reactive access to workflow manager methods
+  const currentStep = computed(
+    () => workflowManager.value?.currentStep || 'category'
   )
-
-  // Breadcrumb configuration
-  const getBreadcrumbs = () => {
-    const step = productsStore.activeStep || 'Categories'
-    if (step === 'Products') {
-      // When no categories are available, show just "Products"
-      return [{ label: 'Products' }]
-    }
-    if (step === 'Categories') {
-      if (currentPanel.value === 'category') {
-        return [{ label: 'Categories' }]
-      }
-      const category = productsStore.categories?.data?.find(
-        c => c.id === productsStore.activeCategoryId
-      )
-      return [
-        { label: 'Categories', action: () => navigateBack() },
-        { label: category?.category_name || 'Products' }
-      ]
-    }
-
-    if (step === 'Designs') {
-      return [{ label: 'Designs' }]
-    }
-
-    if (step === 'Styles') {
-      const title =
-        ((productsStore.activeProductDetails as any)?.display_name as string) ||
-        'Styles'
-      return [{ label: title }]
-    }
-
-    if (step === 'Logos') {
-      const sub = (productsStore as any).logosSubStep as
-        | 'list'
-        | 'placement'
-        | 'controls'
-        | 'editor'
-      const map: Record<string, string> = {
-        list: 'Logos',
-        placement: 'Placement',
-        controls: 'Controls',
-        editor: 'Editor'
-      }
-      const trail = [
-        {
-          label: 'Logos',
-          action: () => {
-            productsStore.setLogosSubStep('list')
-          }
-        }
-      ]
-      if (sub && sub !== 'list')
-        trail.push({ label: map[sub] || 'Logos', action: () => {} })
-      return trail
-    }
-
-    // Fallback for future steps: single-level breadcrumb
-    return [{ label: step }]
-  }
+  const navigateBack = computed(
+    () => workflowManager.value?.navigateBack || (() => {})
+  )
+  const handleCategorySelect = computed(
+    () => workflowManager.value?.handleCategorySelect || (() => {})
+  )
+  const navigationItems = computed(
+    () => workflowNavigation.value?.navigationItems || []
+  )
 </script>
 
 <template>
@@ -174,62 +43,23 @@
           <div id="menu-items-container" class="flex-col">
             <CustomizerMenu />
           </div>
-          <div id="menu-panel-container" class="flex-col">
-            <MenuPanel
-              :content-key="
-                currentPanel === 'logos'
-                  ? `logos-${(productsStore as any).logosSubStep || 'list'}`
-                  : currentPanel
-              "
-              :breadcrumbs="getBreadcrumbs()"
-              :expandable="
-                currentPanel !== 'category' &&
-                currentPanel !== 'styles' &&
-                currentPanel !== 'logos'
-              "
-              :show-back-button="currentPanel !== 'category'"
-              :on-back="navigateBack"
-            >
-              <!-- Category Panel Content -->
-              <CategoryPanel
-                v-if="currentPanel === 'category'"
-                @select-category="handleCategorySelect"
-              />
 
-              <!-- Product Panel Content -->
-              <ProductPanel v-else-if="currentPanel === 'product'" />
-
-              <!-- Designs Panel Content -->
-              <DesignsPanel v-else-if="currentPanel === 'designs'" />
-
-              <!-- Styles Panel Content -->
-              <StylesPanel v-else-if="currentPanel === 'styles'" />
-
-              <!-- Logos Panel Content -->
-              <LogosPanel v-else-if="currentPanel === 'logos'" />
-
-              <template #footer="{ isExpanded }">
-                <div
-                  class="flex gap-3 w-full"
-                  :class="isExpanded ? 'justify-end' : 'justify-between'"
-                >
-                  <Button
-                    variant="outline"
-                    size="default"
-                    class="rounded-lg w-[12.5rem]"
-                    >Previous</Button
-                  >
-                  <Button
-                    variant="default"
-                    size="default"
-                    class="rounded-lg w-[12.5rem]"
-                    >Next</Button
-                  >
-                </div>
-              </template>
-            </MenuPanel>
-          </div>
+          <!-- Workflow management and layout handled by extracted components -->
+          <WorkflowManager ref="workflowManager" />
+          <WorkflowNavigation
+            ref="workflowNavigation"
+            :current-step="currentStep"
+            :on-navigate-back="navigateBack"
+          />
+          <WorkflowLayout
+            v-if="workflowManager && workflowNavigation"
+            :current-step="currentStep"
+            :navigation-items="navigationItems"
+            :on-navigate-back="navigateBack"
+            :on-category-select="handleCategorySelect"
+          />
         </div>
+
         <div
           id="right-content"
           class="flex flex-col grow justify-between items-end gap-9"

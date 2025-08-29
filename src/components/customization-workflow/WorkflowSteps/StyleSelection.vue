@@ -72,13 +72,13 @@
 
 <template>
   <div class="flex flex-col gap-6 max-h-[640px] overflow-y-auto pr-4">
-    <div class="flex flex-col gap-2 px-6">
+    <div class="flex flex-col gap-2">
       <div
         class="text-muted-foreground text-base leading-relaxed"
         v-html="headerDescription"
       ></div>
     </div>
-    <div class="flex flex-col gap-3 pt-6 px-6 pb-2">
+    <div class="flex flex-col gap-3 pt-6 pb-2">
       <div class="text-lg font-semibold">
         {{ styles_title({}, { locale: localeStore.currentLocale }) }}
       </div>
@@ -104,7 +104,7 @@
         </div>
       </div>
     </div>
-    <div class="flex flex-col gap-3 pt-6 px-6 pb-2">
+    <div class="flex flex-col gap-3 pt-6 pb-2">
       <div class="text-lg font-semibold">
         {{ addons_title({}, { locale: localeStore.currentLocale }) }}
       </div>

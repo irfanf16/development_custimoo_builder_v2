@@ -28,6 +28,7 @@
     width: { type: Number, default: 176 },
     height: { type: Number, default: 176 },
     side: { type: String as PropType<'front' | 'back'>, default: 'front' },
+    class: { type: String, default: '' },
     overlayRect: {
       type: Object as PropType<
         | {
@@ -215,5 +216,14 @@
 </script>
 
 <template>
-  <canvas ref="canvasEl" :width="width" :height="height" class="rounded-xl" />
+  <canvas
+    ref="canvasEl"
+    :width="width"
+    :height="height"
+    :class="['rounded-xl', props.class || '']"
+    :style="{
+      width: `${width / 16}rem`,
+      height: `${height / 16}rem`
+    }"
+  />
 </template>
