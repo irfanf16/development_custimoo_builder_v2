@@ -14,7 +14,7 @@
     await productsStore.dispatchGetProductPreviews(categoryId)
     const firstProductId =
       productsStore.productPreviews && productsStore.productPreviews.length
-        ? productsStore.productPreviews[0].product.id
+        ? productsStore.productPreviews[0].productPreview.id
         : null
     if (firstProductId != null) {
       await productsStore.dispatchGetActiveProductDetails(firstProductId)

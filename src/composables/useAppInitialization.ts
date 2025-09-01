@@ -131,7 +131,7 @@ export function useAppInitialization() {
             productsStore.activeProductId ||
             (productsStore.productPreviews &&
             productsStore.productPreviews.length
-              ? productsStore.productPreviews[0].product.id
+              ? productsStore.productPreviews[0].productPreview.id
               : null)
 
           if (activeProductId != null) {

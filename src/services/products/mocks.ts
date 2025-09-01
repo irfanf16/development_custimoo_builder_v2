@@ -2,13 +2,13 @@ import type { AxiosResponse } from 'axios'
 import type {
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputProductStylePreview,
-  OutputProductStyleDesignDetails,
+  OutputStylePreview,
+  OutputDesignDetails,
   OutputRecentLogo
 } from '@/services/products/types'
 
 export const mockActiveProductDetails: ActiveProductDetails = {
-  product: {
+  productDetails: {
     allowed_logos_count: 0,
     colors: [],
     display_name: '2000-series hockey jersey',
@@ -965,7 +965,7 @@ export const mockActiveProductDetails: ActiveProductDetails = {
       }
     ]
   },
-  productstyle: {
+  styleDetails: {
     _3d_alpha_map: null,
     _3d_ao_map: null,
     _3d_metalness_map: null,
@@ -1045,7 +1045,7 @@ export const mockActiveProductDetails: ActiveProductDetails = {
     style_icon_url: 'factory_10/files/10/product/style_icon/V-neck2.png',
     updated_at: '2023-12-07T11:50:01.000000Z'
   },
-  productdesign: {
+  designDetails: {
     id: 41953,
     product_style_id: 211,
     product_id: 146,
@@ -1160,7 +1160,7 @@ export const mockActiveProductDetails: ActiveProductDetails = {
 
 export const mockProductPreviews: ProductPreviewItem[] = [
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: '2000-series hockey jersey',
@@ -1170,7 +1170,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 146,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1196,7 +1196,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'V-neck',
       product_id: 146
     },
-    defaultDesign: {
+    designPreview: {
       id: 56073,
       is_default: 1,
       front_design: {
@@ -1238,7 +1238,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: '1000-series hockey jersey',
@@ -1248,7 +1248,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 144,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1274,7 +1274,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'V-neck',
       product_id: 144
     },
-    defaultDesign: {
+    designPreview: {
       id: 56072,
       is_default: 0,
       front_design: {
@@ -1340,7 +1340,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: '3000-series hockey jersey',
@@ -1350,7 +1350,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 145,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1376,7 +1376,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'Crew neck',
       product_id: 145
     },
-    defaultDesign: {
+    designPreview: {
       id: 56074,
       is_default: 1,
       front_design: {
@@ -1426,7 +1426,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: '4000-series hockey jersey',
@@ -1436,7 +1436,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 147,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1462,7 +1462,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'V-neck',
       product_id: 147
     },
-    defaultDesign: {
+    designPreview: {
       id: 56075,
       is_default: 1,
       front_design: {
@@ -1511,7 +1511,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: '5000-series hockey jersey',
@@ -1521,7 +1521,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 148,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1547,7 +1547,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'Crew neck',
       product_id: 148
     },
-    defaultDesign: {
+    designPreview: {
       id: 56076,
       is_default: 1,
       front_design: {
@@ -1596,7 +1596,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: '6000-series hockey jersey',
@@ -1606,7 +1606,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 149,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1632,7 +1632,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'V-neck',
       product_id: 149
     },
-    defaultDesign: {
+    designPreview: {
       id: 56077,
       is_default: 1,
       front_design: {
@@ -1681,7 +1681,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: '7000-series hockey jersey',
@@ -1691,7 +1691,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 150,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1717,7 +1717,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'Crew neck',
       product_id: 150
     },
-    defaultDesign: {
+    designPreview: {
       id: 56078,
       is_default: 1,
       front_design: {
@@ -1766,7 +1766,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: '8000-series hockey jersey',
@@ -1776,7 +1776,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 151,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1802,7 +1802,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'V-neck',
       product_id: 151
     },
-    defaultDesign: {
+    designPreview: {
       id: 56079,
       is_default: 1,
       front_design: {
@@ -1851,7 +1851,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: '9000-series hockey jersey',
@@ -1861,7 +1861,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 152,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1887,7 +1887,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'Crew neck',
       product_id: 152
     },
-    defaultDesign: {
+    designPreview: {
       id: 56080,
       is_default: 1,
       front_design: {
@@ -1936,7 +1936,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: 'Elite-series hockey jersey',
@@ -1946,7 +1946,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 153,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -1972,7 +1972,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'V-neck',
       product_id: 153
     },
-    defaultDesign: {
+    designPreview: {
       id: 56081,
       is_default: 1,
       front_design: {
@@ -2021,7 +2021,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: 'Pro-series hockey jersey',
@@ -2031,7 +2031,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 154,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -2057,7 +2057,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'Crew neck',
       product_id: 154
     },
-    defaultDesign: {
+    designPreview: {
       id: 56082,
       is_default: 1,
       front_design: {
@@ -2106,7 +2106,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
     }
   },
   {
-    product: {
+    productPreview: {
       allowed_logos_count: 0,
       colors: [],
       display_name: 'Champion-series hockey jersey',
@@ -2116,7 +2116,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       product_id: 155,
       productnames: []
     },
-    defaultStyle: {
+    stylePreview: {
       front_models: [
         {
           composition: 'screen',
@@ -2142,7 +2142,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
       name: 'V-neck',
       product_id: 155
     },
-    defaultDesign: {
+    designPreview: {
       id: 56083,
       is_default: 1,
       front_design: {
@@ -2194,7 +2194,7 @@ export const mockProductPreviews: ProductPreviewItem[] = [
 
 // New mock data for 1000-series hockey jersey based on provided JSON
 export const mockActiveProductDetails1000Series: ActiveProductDetails = {
-  product: {
+  productDetails: {
     allowed_logos_count: 0,
     colors: [],
     display_name: '1000-series hockey jersey',
@@ -2245,7 +2245,7 @@ export const mockActiveProductDetails1000Series: ActiveProductDetails = {
     url_slug: 'ninja_1000_hockey_jersey',
     using_logo_colors: 0
   },
-  productstyle: {
+  styleDetails: {
     _3d_alpha_map: null,
     _3d_ao_map: null,
     _3d_metalness_map: null,
@@ -2325,7 +2325,7 @@ export const mockActiveProductDetails1000Series: ActiveProductDetails = {
     style_icon_url: 'factory_10/files/10/product/style_icon/V-neck2.png',
     updated_at: '2023-10-31T13:46:43.000000Z'
   },
-  productdesign: {
+  designDetails: {
     id: 56072,
     is_default: 0,
     back_design: {
@@ -2922,13 +2922,13 @@ export const mockProductConfiguration1000Series = {
   namecolors: [],
   namefonts: [],
   product_addons: mockActiveAddons,
-  productdesign: mockActiveProductDetails1000Series.productdesign,
+  productdesign: mockActiveProductDetails1000Series.designDetails,
   productdesigns_preview: [
-    mockActiveProductDetails1000Series.productdesign,
+    mockActiveProductDetails1000Series.designDetails,
     mockAnaheimDesign
   ],
-  productstyle: mockActiveProductDetails1000Series.productstyle,
-  productstyles_preview: [mockActiveProductDetails1000Series.productstyle],
+  productstyle: mockActiveProductDetails1000Series.styleDetails,
+  productstyles_preview: [mockActiveProductDetails1000Series.styleDetails],
   sizes: []
 }
 
@@ -2938,7 +2938,7 @@ export function mockResponse<T>(data: T): AxiosResponse<T> {
 
 export function mockDesignPreviewsByStyleId(_styleId: number) {
   // Reuse pieces from mockProductPreviews[0].defaultDesign and invent more
-  const base = mockProductPreviews[0].defaultDesign
+  const base = mockProductPreviews[0].designPreview
   const variants = [
     base,
     {
@@ -2990,10 +2990,10 @@ export function mockDesignPreviewsByStyleId(_styleId: number) {
 // Styles: previews by product (style bases)
 export function mockStylePreviewsByProduct(
   _productId: number
-): OutputProductStylePreview[] {
-  const s1 = mockActiveProductDetails.productstyle
-  const pid = mockActiveProductDetails.product.id
-  const bases: OutputProductStylePreview[] = [
+): OutputStylePreview[] {
+  const s1 = mockActiveProductDetails.styleDetails
+  const pid = mockActiveProductDetails.productDetails.id
+  const bases: OutputStylePreview[] = [
     {
       id: s1.id,
       name: 'V-neck',
@@ -3028,9 +3028,9 @@ export function mockStylePreviewsByProduct(
 
 // Active style details (style + its default design)
 export function mockActiveStyleDetails(styleId: number) {
-  const style = { ...mockActiveProductDetails.productstyle, id: styleId }
+  const style = { ...mockActiveProductDetails.styleDetails, id: styleId }
   const design = {
-    ...mockActiveProductDetails.productdesign,
+    ...mockActiveProductDetails.designDetails,
     id: 56000 + styleId
   }
   return { productstyle: style, productdesign: design }
@@ -3070,9 +3070,7 @@ export function mockProductAddons(_productId: number) {
 }
 
 // Mock design details by ID
-export function mockDesignDetailsById(
-  designId: number
-): OutputProductStyleDesignDetails {
+export function mockDesignDetailsById(designId: number): OutputDesignDetails {
   return {
     id: designId,
     is_default: 1,

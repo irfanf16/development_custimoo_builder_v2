@@ -17,10 +17,10 @@ import type {
   getProductByCategoryIdParams,
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputProductStyleDesignPreview,
-  OutputProductStylePreview,
-  OutputProductStyleDetails,
-  OutputProductStyleDesignDetails,
+  OutputDesignPreview,
+  OutputStylePreview,
+  OutputStyleDetails,
+  OutputDesignDetails,
   OutputAddon,
   OutputCompanyAddon
 } from '@/services/products/types'
@@ -64,17 +64,12 @@ async function getDesignPreviewsByStyleId(styleId: number) {
   const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
   if (useMocks) {
     return Promise.resolve(
-      mockResponse<OutputProductStyleDesignPreview[]>(
-        mockDesignPreviewsByStyleId(styleId)
-      )
+      mockResponse<OutputDesignPreview[]>(mockDesignPreviewsByStyleId(styleId))
     )
   }
-  return await http.get<OutputProductStyleDesignPreview[]>(
-    `list/design-previews`,
-    {
-      params: { product_style_id: styleId }
-    }
-  )
+  return await http.get<OutputDesignPreview[]>(`list/design-previews`, {
+    params: { product_style_id: styleId }
+  })
 }
 
 // Preview styles for a product
@@ -82,12 +77,10 @@ async function getStylePreviewsByProduct(productId: number) {
   const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
   if (useMocks) {
     return Promise.resolve(
-      mockResponse<OutputProductStylePreview[]>(
-        mockStylePreviewsByProduct(productId)
-      )
+      mockResponse<OutputStylePreview[]>(mockStylePreviewsByProduct(productId))
     )
   }
-  return await http.get<OutputProductStylePreview[]>(`list/style-previews`, {
+  return await http.get<OutputStylePreview[]>(`list/style-previews`, {
     params: { product_id: productId }
   })
 }
@@ -99,14 +92,14 @@ async function getActiveStyleDetails(styleId: number) {
     const mock = mockActiveStyleDetails(styleId)
     return Promise.resolve(
       mockResponse<{
-        productstyle: OutputProductStyleDetails
-        productdesign: OutputProductStyleDesignDetails
+        productstyle: OutputStyleDetails
+        productdesign: OutputDesignDetails
       }>(mock)
     )
   }
   return await http.get<{
-    productstyle: OutputProductStyleDetails
-    productdesign: OutputProductStyleDesignDetails
+    productstyle: OutputStyleDetails
+    productdesign: OutputDesignDetails
   }>(`list/active-style-details`, { params: { product_style_id: styleId } })
 }
 
@@ -149,12 +142,9 @@ async function getDesignDetailsById(designId: number) {
   if (useMocks) {
     return Promise.resolve(mockResponse(mockDesignDetailsById(designId)))
   }
-  return await http.get<OutputProductStyleDesignDetails>(
-    `list/design-details`,
-    {
-      params: { design_id: designId }
-    }
-  )
+  return await http.get<OutputDesignDetails>(`list/design-details`, {
+    params: { design_id: designId }
+  })
 }
 
 export default {

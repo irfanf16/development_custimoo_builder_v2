@@ -33,22 +33,22 @@
   <div class="flex flex-wrap overflow-y-auto max-h-[640px] gap-6">
     <div
       v-for="item in previews"
-      :key="item.product.id"
+      :key="item.productPreview.id"
       class="flex flex-col items-center flex-shrink-0 gap-3 py-0"
     >
       <div
         class="text-base font-medium text-left w-full text-foreground truncate max-w-[176px] overflow-ellipsis"
       >
-        {{ item.product.display_name }}
+        {{ item.productPreview.display_name }}
       </div>
       <ProductPreviewCanvas
-        :product="item.product"
-        :style-base="item.defaultStyle"
-        :design-base="item.defaultDesign"
+        :product="item.productPreview"
+        :style-base="item.stylePreview"
+        :design-base="item.designPreview"
         :width="176"
         :height="176"
         class="bg-muted/20 rounded-xl border border-border/50 hover:border-border transition-colors cursor-pointer hover:bg-muted/30"
-        @click="handleSelectProduct(item.product.id)"
+        @click="handleSelectProduct(item.productPreview.id)"
       />
     </div>
   </div>

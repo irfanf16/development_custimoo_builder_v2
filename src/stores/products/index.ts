@@ -6,10 +6,10 @@ import type {
   ActiveProductCustomization,
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputProductStyleDesignPreview,
-  OutputProductStylePreview,
-  OutputProductStyleDetails,
-  OutputProductStyleDesignDetails,
+  OutputDesignPreview,
+  OutputStylePreview,
+  OutputStyleDetails,
+  OutputDesignDetails,
   OutputAddon,
   OutputCompanyAddon,
   OutputRecentLogo,
@@ -29,9 +29,9 @@ export const useProductsStore = defineStore('productsStore', () => {
   // This information will be populated once a product, style, or design, etc is selected by the user
   const activeProductDetails = ref<OutputProductDetails | null>(null)
   // By default, it will chose the first style of the product
-  const activeStyleDetails = ref<OutputProductStyleDetails | null>(null)
+  const activeStyleDetails = ref<OutputStyleDetails | null>(null)
   // By default, it will chose the first design of the style
-  const activeDesignDetails = ref<OutputProductStyleDesignDetails | null>(null)
+  const activeDesignDetails = ref<OutputDesignDetails | null>(null)
   // By default, no add-ons will be selected. Add-ons will be populated based on the selected product, style, and design
 
   const activeAddons = ref<OutputAddon[] | null>(null)
@@ -110,8 +110,8 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   // Lightweight previews for ProductPanel
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
-  const stylePreviews = ref<OutputProductStylePreview[] | null>(null)
-  const designPreviews = ref<OutputProductStyleDesignPreview[] | null>(null)
+  const stylePreviews = ref<OutputStylePreview[] | null>(null)
+  const designPreviews = ref<OutputDesignPreview[] | null>(null)
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
   const selectedCustomLogoIdx = ref<number | null>(null)
   const logosSubStep = ref<'list' | 'placement' | 'controls' | 'editor'>('list')
@@ -273,8 +273,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       API.products.getStylePreviewsByProduct(productId)
     )
     if (resp.success) {
-      stylePreviews.value =
-        resp.content as unknown as OutputProductStylePreview[]
+      stylePreviews.value = resp.content as unknown as OutputStylePreview[]
     }
     setLoading(false)
     return resp
@@ -370,7 +369,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       )
       if (result.success) {
         activeDesignDetails.value =
-          result.content as unknown as OutputProductStyleDesignDetails
+          result.content as unknown as OutputDesignDetails
         // Design ID is now stored in activeProductCustomization
       }
     }
@@ -668,9 +667,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     )
     if (result.success) {
       const details = result.content as ActiveProductDetails
-      activeProductDetails.value = details.product
-      activeStyleDetails.value = details.productstyle
-      activeDesignDetails.value = details.productdesign
+      activeProductDetails.value = details.productDetails
+      activeStyleDetails.value = details.styleDetails
+      activeDesignDetails.value = details.designDetails
 
       // Update customization state with the new product selection
       setActiveProduct(productId)
@@ -726,7 +725,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   // Apply a design preview: update current design id and minimal customization fields
-  function applyDesignPreview(preview: OutputProductStyleDesignPreview) {
+  function applyDesignPreview(preview: OutputDesignPreview) {
     // Update selected design id in activeProductCustomization
     if (activeProductCustomization.value) {
       activeProductCustomization.value.design_id = preview.id
@@ -742,8 +741,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       API.products.getDesignPreviewsByStyleId(styleId)
     )
     if (resp.success) {
-      designPreviews.value =
-        resp.content as unknown as OutputProductStyleDesignPreview[]
+      designPreviews.value = resp.content as unknown as OutputDesignPreview[]
     } else {
       setError('Error getting design previews')
     }
