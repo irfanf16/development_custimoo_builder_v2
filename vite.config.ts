@@ -9,7 +9,11 @@ import Icons from 'unplugin-icons/vite'
 import { FileSystemIconLoader } from 'unplugin-icons/loaders'
 
 export default defineConfig({
-  plugins: [paraglideVitePlugin({ project: './project.inlang', outdir: './src/paraglide' }),
+  plugins: [
+    paraglideVitePlugin({
+      project: './project.inlang',
+      outdir: './src/paraglide'
+    }),
     vue(),
     tailwindcss(),
     Components({

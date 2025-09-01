@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bundle Prod Customizer Preview</title>
+    <title>Customizer Widget Demo - Unified Approach</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -83,36 +83,17 @@
         background: #3498db;
         color: white;
       }
-      .preview-section {
+      .demo-section {
         background: white;
-        padding: 40px 20px;
+        padding: 0;
         margin: 0;
         width: 100%;
-        box-sizing: border-box;
       }
-      .preview-content {
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-      .preview-title {
-        text-align: center;
-        color: #2c3e50;
-        margin-bottom: 40px;
-        font-size: 32px;
-        font-weight: 600;
-      }
-      .widget-container {
-        border: 2px dashed #ccc;
-        padding: 20px;
-        margin: 20px 0;
-        border-radius: 8px;
-        background: white;
-      }
-      .widget-container h2 {
-        color: #34495e;
-        margin-top: 0;
-        margin-bottom: 20px;
-        font-size: 20px;
+      .widget-demo {
+        border: none;
+        padding: 0;
+        margin: 0;
+        width: 100%;
       }
       .footer {
         background: #2c3e50;
@@ -172,7 +153,7 @@
     <!-- Host Website Header Example -->
     <header class="header">
       <div class="header-content">
-        <a href="#" class="logo">CustomizerPro Prod Bundle Preview</a>
+        <a href="#" class="logo">CustomizerPro</a>
 
         <nav>
           <ul class="nav-menu">
@@ -191,11 +172,18 @@
       </div>
     </header>
 
-    <customizer-widget
-      title="Custom Widget"
-      color="#FF6B6B"
-      theme="dark"
-    ></customizer-widget>
+    <div class="demo-section">
+      <div class="widget-demo">
+        <customizer-widget
+          title="Custom Widget Demo 2"
+          theme="dark"
+          mode="default"
+          show-navigation="true"
+          date="2024-01-15"
+          end="Widget session ended"
+        ></customizer-widget>
+      </div>
+    </div>
 
     <!-- Host Website Footer Example -->
     <footer class="footer">
@@ -252,7 +240,7 @@
       </div>
     </footer>
 
-    <!-- Load the built widget (CSS is bundled in JS) -->
+    <!-- Load the widget script -->
     <script type="module" src="/widget.js"></script>
   </body>
 </html>
