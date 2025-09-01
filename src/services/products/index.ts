@@ -11,7 +11,7 @@ import {
   buildRecentLogos,
   buildProductCategories,
   buildProductsByCategoryId
-} from './seed'
+} from './mock-seed'
 //
 import type {
   OutputProductCategories,
