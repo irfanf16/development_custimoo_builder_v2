@@ -439,6 +439,15 @@ export type ActiveProductDetails = {
   designDetails: OutputDesignDetails
 }
 
+export type ActiveStyleDetails = {
+  styleDetails: OutputStyleDetails
+  designDetails: OutputDesignDetails
+}
+
+export type ActiveDesignDetails = {
+  designDetails: OutputDesignDetails
+}
+
 // Recently uploaded logos
 export type OutputRecentLogo = {
   id: number
