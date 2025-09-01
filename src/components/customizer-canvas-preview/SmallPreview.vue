@@ -55,6 +55,10 @@
   async function addDesignLayer(url: string, ext: string) {
     if (!canvas) return
     if (ext?.toLowerCase() === 'svg') {
+      // Make sure url contains .svg
+      if (!url.toLowerCase().endsWith('.svg')) {
+        url += '.svg'
+      }
       const { objects } = await loadSVGFromURL(fromStorage(url))
       const safe = (objects || []).filter(Boolean) as FabricObject[]
       const group = util.groupSVGElements(safe) as Group
