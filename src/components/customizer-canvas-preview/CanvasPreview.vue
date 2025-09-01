@@ -142,7 +142,7 @@
 
   function updateCanvasSize() {
     if (!canvas) return
-    const w = window.innerWidth || 1200
+    const w = window.innerWidth - 65 || 1200
     const h = window.innerHeight || 800
     canvas.setWidth(w)
     canvas.setHeight(h)
