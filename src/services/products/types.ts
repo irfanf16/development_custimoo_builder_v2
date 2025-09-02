@@ -512,209 +512,167 @@ export type OutputAddon = {
   title: string
 }
 
-export type OutputProductCustomLogo = {
-  actualHeight: number
-  actualWidth: number
-  created_at: string
-  deleted_at: string | null
-  following_product_ids: number[] | null
-  haveControls: boolean
-  have_controls: boolean
-  height: number
-  id: number
-  is_locked: number
-  is_replace_success: boolean
-  is_smart_transparent: boolean
-  logo_colors: number[][]
-  logo_index: number
-  logo_name: string
-  logo_technologies: null | string[]
-  name_of_placement: string
-  originalHeight: string
-  originalWidth: string
-  original_logo: string
-  original_logo_url: string
-  product_id: number
-  product_style_id: number | null
-  rotation: number
-  side: 'front' | 'back'
-  smart_transparent_logo: string
-  transparent_logo: string
-  updated_at: string
-  url: string
-  width: number
-  x_axis: number
-  x_axis_3d: number
-  y_axis: number
-  y_axis_3d: number
-}
-
 /*
-  ProductCustomization
+  Product Customization (updated to match last-active-product-data.json)
 */
 
-type SvgGroup = {
-  color: string
-  count: number
-  id: string
-  name: string
-  pantone?: string
-}
-
-type ProductPriceObject = {
-  currency_code: string
-  currency_symbol: string
-  product_price: number
-  quantity: number
-}
-
-type RosterFieldColor = {
-  hex: string
-  name: string
-  pantone: string
-}
-
-type RosterFieldItem = {
-  color: RosterFieldColor[]
-  height: string
-  height_px: number
+export type APCustomizationTextItem = {
   label: string
-  original_height: number
-  original_width: number
-  outline_color: string
-  outline_color_pantone: string
-  outline_width: string
-  placement: string
-  rotation: string
-  scaleX: number
-  scaleY: number
-  svg: string
-  svg_height: string
-  unit: string
-  width: string
-  width_px: number
-}
-
-type RosterField = {
-  font_family: string
-  items: RosterFieldItem[]
-  label: string
-  value: string
-}
-
-type ProductRosterRecord = {
-  name: RosterField
-  number: RosterField
-  quantity: number
-  size: string
-}
-
-type ProductCustomTextItem = {
-  actualHeight: number
-  actualWidth: number
-  arc_text_allowed: boolean
-  color: string
-  color_pantone: string
-  color_tab_index: number
-  font_family: string
-  height: number
+  height: number | string
+  x_axis: number | string
+  y_axis: number | string
+  rotation: number | string
   is_locked: boolean
-  label: string
-  originalHeight: string
-  originalWidth: string
-  outline_color: string
-  outline_color_pantone: string
-  outline_enabled: boolean
-  outline_width: number | string
-  outline_width_converted: string
   placement: string
-  rotation: string
+  outline_enabled: boolean | number
+  arc_text_allowed: boolean | number
+  font_family: string
+  color: string | null
+  color_pantone: string
+  outline_width: number
+  outline_width_converted: number | string
+  color_tab_index: number
+  outline_color: string | null
+  outline_color_pantone: string
+  selected: boolean
   scaleX: number
   scaleY: number
-  selected: boolean
-  width: number
-  x_axis: string
-  y_axis: string
+  width?: number
+  actualWidth?: number
+  actualHeight?: number
+  originalWidth?: string | number
+  originalHeight?: string | number
+  x_axis_3d?: number
+  y_axis_3d?: number
 }
 
-type ProductCustomText = {
-  active_item_index: number
-  created_at: string | null
-  deleted_at: string | null
-  following_product_ids: number[]
-  following_products: number[]
-  font_family: string
-  id: number
-  is_first_name?: boolean
-  is_first_number?: boolean
-  items: ProductCustomTextItem[]
-  label: string
-  manually_added: boolean
+export type APCustomizationText = {
+  id: number | null
   product_id: number
   type: string
+  label: string
+  following_products: unknown[]
+  items: APCustomizationTextItem[]
+  created_at: string | null
   updated_at: string | null
+  deleted_at: string | null
   value: string
+  manually_added: boolean
+  font_family: string
+  following_product_ids: number[]
+  active_item_index: number
+  is_first_name?: boolean
+  is_first_number?: boolean
 }
 
-type ProductCustomTextObjects = {
-  common: unknown[]
-  roster: Record<string, ProductRosterRecord>
+export type APCustomizationTextsMap = Record<string, APCustomizationText[]>
+
+export type APCustomizationLogoColor =
+  | number[]
+  | { hex: string | null; pantone: string | null; name: string | null }
+
+export type APCustomizationLogo = {
+  id: number
+  product_id: number
+  product_style_id: number | null
+  following_product_ids: number[] | null
+  rotation: number
+  originalWidth: number | string
+  originalHeight: number | string
+  width: number
+  height: number
+  name_of_placement: string
+  side: 'front' | 'back'
+  x_axis: number
+  y_axis: number
+  x_axis_3d: number
+  y_axis_3d: number
+  is_locked: number
+  logo_name: string
+  original_logo?: string
+  transparent_logo?: string
+  smart_transparent_logo?: string
+  original_logo_url?: string
+  is_smart_transparent: boolean
+  url: string
+  haveControls: boolean
+  logo_colors: APCustomizationLogoColor[]
+  is_replace_success: boolean
+  logo_index: number
+  is_vector?: boolean
+  logos_follows_product?: number
+  logo_technologies?: null | string[]
+  created_at?: string
+  updated_at?: string
+  is_recent_logo?: boolean
+  actualWidth?: number
+  actualHeight?: number
+  scaleX?: number
+  scaleY?: number
 }
 
-type ProductRosterDetail = {
-  information: string
-  number: string
-  quantity: number
-  size: string
+export type APCustomizationLogosMap = Record<string, APCustomizationLogo[]>
+
+export type APCustomizationDefaultColor = {
+  color: string | null
+  pantone: string | null
+  name: string | null
+}
+
+export type APCustomizationGroupColor = {
+  color: string | null
+  name: string | null
+}
+
+export type APCustomizationRosterEntry = {
   text: string
+  number: string
+  size: string
+  quantity: number
+  information: string
 }
+
+export type APCustomizationProductsRosters = Record<
+  string,
+  APCustomizationRosterEntry[]
+>
+
+export type APCustomizationAddonsInfoEntry = {
+  grouped_addons: Record<string, unknown>
+  ungrouped_addons: unknown[]
+  simple_addons: number[]
+}
+
+export type APCustomizationAddonsInfo = Record<
+  string,
+  APCustomizationAddonsInfoEntry
+>
 
 export type ActiveProductCustomization = {
-  addons: OutputAddon[]
-  back_image: string
-  category_id: number | null
-  colors: OutputProductColor[]
-  common?: OutputProductCustomLogo[]
-  custom_logo_svgs: unknown[]
-  custom_logos: OutputProductCustomLogo[]
-  defaultcolors: OutputProductColor[]
-  design_id: number
-  ecommerce_cart_id: string | null
-  ecommerce_modifier_id: string
-  ecommerce_post_id: string
-  ecommerce_variant_id: string
   fixed_logo_index: number
-  fixed_logos: unknown[]
-  front_image: string
-  group_patterns: Record<string, unknown>
-  grouped_addons: Record<string, OutputAddon[]>
-  groupcolors: Record<string, { color: string; name: string }>
-  id: string
-  is_custom_product: boolean
-  logo_colors: unknown[]
-  measurement_ratio: number
-  minimum_order_quantity: number
-  minimum_order_quantity_type: string
-  pdf_file: string | null
-  product_custom_text_objects: ProductCustomTextObjects
-  product_custom_texts: ProductCustomText[]
-  product_display_name: string
-  product_id: number
-  product_name: string
-  product_price_object: ProductPriceObject
-  product_roster_detail: ProductRosterDetail[]
-  product_type: string
-  production_url: string
-  reorder_data: unknown | null
-  shuffle_color_number: number
-  size_variants_mapping: unknown | null
-  sizechart_reference: string
-  sku_number: number
+  category_index: number
+  category_id: number
+  design_index: number
+  design_id: number
+  product_index: number
+  product_id: string
+  search_products: string
+  style_index: number
   style_id: number
-  style_name: string
-  svg_groups: SvgGroup[]
-  svg_parts: string[]
-  svg_url: string
-  sync_id: string
-  ungrouped_addons: OutputAddon[]
+  page_no: number
+  customized: boolean
+  personalized: boolean
+  private_product: boolean
+  product_custom_texts: APCustomizationTextsMap
+  custom_logos: APCustomizationLogosMap
+  default_colors: APCustomizationDefaultColor[]
+  group_colors: Record<string, APCustomizationGroupColor>
+  logo_colors: unknown[]
+  roster_detail: APCustomizationRosterEntry[]
+  products_rosters: APCustomizationProductsRosters
+  shuffle_color_number: number
+  addons_info: APCustomizationAddonsInfo
+  group_patterns: Record<string, unknown>
+  sub_category_id: number | null
+  sub_category_index: number | null
 }

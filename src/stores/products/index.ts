@@ -14,7 +14,6 @@ import type {
   OutputCompanyAddon,
   OutputRecentLogo,
   OutputProductLogosSetting,
-  OutputProductCustomLogo,
   OutputProductDetails
 } from '@/services/products/types'
 import { API } from '../../services'
@@ -51,8 +50,10 @@ export const useProductsStore = defineStore('productsStore', () => {
   )
 
   // Computed getters for IDs from activeProductCustomization
-  const activeProductId = computed(
-    () => activeProductCustomization.value?.product_id ?? null
+  const activeProductId = computed(() =>
+    activeProductCustomization.value
+      ? Number(activeProductCustomization.value.product_id)
+      : null
   )
   const activeStyleId = computed(
     () => activeProductCustomization.value?.style_id ?? null
@@ -152,7 +153,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       ensureCustomization()
     }
     if (activeProductCustomization.value) {
-      activeProductCustomization.value.category_id = categoryId
+      activeProductCustomization.value.category_id = categoryId ?? 0
       saveCustomizationToLocalStorage()
     }
   }
@@ -163,7 +164,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       ensureCustomization()
     }
     if (activeProductCustomization.value) {
-      activeProductCustomization.value.product_id = productId
+      activeProductCustomization.value.product_id = String(productId)
       // Reset style and design to defaults when product changes
       activeProductCustomization.value.style_id = 0
       activeProductCustomization.value.design_id = 0
@@ -201,7 +202,15 @@ export const useProductsStore = defineStore('productsStore', () => {
       ensureCustomization()
     }
     if (activeProductCustomization.value) {
-      activeProductCustomization.value.addons = addons
+      const key = activeProductCustomization.value.product_id
+      if (!activeProductCustomization.value.addons_info) {
+        activeProductCustomization.value.addons_info = {} as any
+      }
+      activeProductCustomization.value.addons_info[key] = {
+        grouped_addons: {},
+        ungrouped_addons: [],
+        simple_addons: addons.map(a => a.addon_id)
+      }
       saveCustomizationToLocalStorage()
     }
   }
@@ -327,7 +336,7 @@ export const useProductsStore = defineStore('productsStore', () => {
         if (
           parsed &&
           typeof parsed === 'object' &&
-          typeof parsed.product_id === 'number' &&
+          typeof parsed.product_id === 'string' &&
           typeof parsed.style_id === 'number' &&
           typeof parsed.design_id === 'number'
         ) {
@@ -348,7 +357,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     const apc = activeProductCustomization.value
 
     // Step 1: Load product details (this loads default style + design)
-    await dispatchGetActiveProductDetails(apc.product_id)
+    await dispatchGetActiveProductDetails(Number(apc.product_id))
 
     // Step 2: If APC has a different style than the default, load that style
     if (
@@ -398,65 +407,50 @@ export const useProductsStore = defineStore('productsStore', () => {
     if (!activeProductDetails.value) return
 
     const productId = (activeProductDetails.value as any)?.id ?? 0
-    const productName = (activeProductDetails.value as any)?.display_name ?? ''
+    // const productName = (activeProductDetails.value as any)?.display_name ?? ''
     const styleId = (activeStyleDetails.value as any)?.id ?? 0
-    const styleName = (activeStyleDetails.value as any)?.name ?? ''
+    // const styleName = (activeStyleDetails.value as any)?.name ?? ''
     const designId = (activeDesignDetails.value as any)?.id ?? 0
-    const svgParts = (activeDesignDetails.value as any)?.svg_parts ?? []
-    const measurementRatio =
-      (activeProductDetails.value as any)?.measurement_ratio ?? 1
-    const sizechartRef =
-      (activeProductDetails.value as any)?.sku?.sizechart_reference ?? ''
-    const skuNumber = (activeProductDetails.value as any)?.sku?.sku_number ?? 0
+    // const svgParts = (activeDesignDetails.value as any)?.svg_parts ?? []
+    // const measurementRatio =
+    //   (activeProductDetails.value as any)?.measurement_ratio ?? 1
+    // const sizechartRef =
+    //   (activeProductDetails.value as any)?.sku?.sizechart_reference ?? ''
+    // const skuNumber = (activeProductDetails.value as any)?.sku?.sku_number ?? 0
 
     activeProductCustomization.value = {
-      addons: [],
-      back_image: '',
-      category_id: activeProductCustomization.value?.category_id ?? null,
-      colors: [],
-      custom_logo_svgs: [],
-      custom_logos: [],
-      defaultcolors: [],
-      design_id: designId,
-      ecommerce_cart_id: null,
-      ecommerce_modifier_id: '',
-      ecommerce_post_id: '',
-      ecommerce_variant_id: '',
       fixed_logo_index: 0,
-      fixed_logos: [],
-      front_image: '',
-      group_patterns: {},
-      grouped_addons: {},
-      groupcolors: {},
-      id: '',
-      is_custom_product: true,
-      logo_colors: [],
-      measurement_ratio: measurementRatio,
-      minimum_order_quantity: 0,
-      minimum_order_quantity_type: '',
-      pdf_file: null,
-      product_custom_text_objects: { common: [], roster: {} as any },
-      product_custom_texts: [],
-      product_display_name: productName,
-      product_id: productId,
-      product_name: productName,
-      product_price_object: {} as any,
-      product_roster_detail: [],
-      product_type: '',
-      production_url: '',
-      reorder_data: null,
-      shuffle_color_number: 0,
-      size_variants_mapping: null,
-      sizechart_reference: sizechartRef,
-      sku_number: skuNumber,
+      category_index: 0,
+      category_id: activeProductCustomization.value?.category_id ?? 0,
+      design_index: 0,
+      design_id: designId,
+      product_index: 0,
+      product_id: String(productId),
+      search_products: '',
+      style_index: 0,
       style_id: styleId,
-      style_name: styleName,
-      svg_groups: [],
-      svg_parts: svgParts,
-      svg_url: '',
-      sync_id: '',
-      ungrouped_addons: []
-    } as unknown as ActiveProductCustomization
+      page_no: 1,
+      customized: true,
+      personalized: false,
+      private_product: false,
+      product_custom_texts: {},
+      custom_logos: {},
+      default_colors: [
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null }
+      ],
+      group_colors: {},
+      logo_colors: [],
+      roster_detail: [],
+      products_rosters: {},
+      shuffle_color_number: 0,
+      addons_info: {},
+      group_patterns: {},
+      sub_category_id: null,
+      sub_category_index: null
+    } as ActiveProductCustomization
 
     saveCustomizationToLocalStorage()
   }
@@ -464,110 +458,85 @@ export const useProductsStore = defineStore('productsStore', () => {
   function ensureCustomization() {
     if (activeProductCustomization.value) return
     const productId = (activeProductDetails.value as any)?.id ?? 0
-    const productName = (activeProductDetails.value as any)?.display_name ?? ''
+    // const productName = (activeProductDetails.value as any)?.display_name ?? ''
     const styleId = (activeStyleDetails.value as any)?.id ?? 0
-    const styleName = (activeStyleDetails.value as any)?.name ?? ''
+    // const styleName = (activeStyleDetails.value as any)?.name ?? ''
     const designId = (activeDesignDetails.value as any)?.id ?? 0
-    const svgParts = (activeDesignDetails.value as any)?.svg_parts ?? []
-    const measurementRatio =
-      (activeProductDetails.value as any)?.measurement_ratio ?? 1
-    const sizechartRef =
-      (activeProductDetails.value as any)?.sku?.sizechart_reference ?? ''
-    const skuNumber = (activeProductDetails.value as any)?.sku?.sku_number ?? 0
-
     activeProductCustomization.value = {
-      addons: [],
-      back_image: '',
-      category_id: null,
-      colors: [],
-      custom_logo_svgs: [],
-      custom_logos: [],
-      defaultcolors: [],
-      design_id: designId,
-      ecommerce_cart_id: null,
-      ecommerce_modifier_id: '',
-      ecommerce_post_id: '',
-      ecommerce_variant_id: '',
       fixed_logo_index: 0,
-      fixed_logos: [],
-      front_image: '',
-      group_patterns: {},
-      grouped_addons: {},
-      groupcolors: {},
-      id: '',
-      is_custom_product: true,
-      logo_colors: [],
-      measurement_ratio: measurementRatio,
-      minimum_order_quantity: 0,
-      minimum_order_quantity_type: '',
-      pdf_file: null,
-      product_custom_text_objects: { common: [], roster: {} as any },
-      product_custom_texts: [],
-      product_display_name: productName,
-      product_id: productId,
-      product_name: productName,
-      product_price_object: {} as any,
-      product_roster_detail: [],
-      product_type: '',
-      production_url: '',
-      reorder_data: null,
-      shuffle_color_number: 0,
-      size_variants_mapping: null,
-      sizechart_reference: sizechartRef,
-      sku_number: skuNumber,
+      category_index: 0,
+      category_id: 0,
+      design_index: 0,
+      design_id: designId,
+      product_index: 0,
+      product_id: String(productId),
+      search_products: '',
+      style_index: 0,
       style_id: styleId,
-      style_name: styleName,
-      svg_groups: [],
-      svg_parts: svgParts,
-      svg_url: '',
-      sync_id: '',
-      ungrouped_addons: []
-    } as unknown as ActiveProductCustomization
+      page_no: 1,
+      customized: true,
+      personalized: false,
+      private_product: false,
+      product_custom_texts: {},
+      custom_logos: {},
+      default_colors: [
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null }
+      ],
+      group_colors: {},
+      logo_colors: [],
+      roster_detail: [],
+      products_rosters: {},
+      shuffle_color_number: 0,
+      addons_info: {},
+      group_patterns: {},
+      sub_category_id: null,
+      sub_category_index: null
+    } as ActiveProductCustomization
   }
 
   function addCustomLogoFromRecent(recent: OutputRecentLogo) {
     ensureCustomization()
     if (!activeProductCustomization.value) return
-    const newLogo: OutputProductCustomLogo = {
-      actualHeight: 0,
-      actualWidth: 0,
-      created_at: new Date().toISOString(),
-      deleted_at: null,
-      following_product_ids: null,
-      haveControls: false,
-      have_controls: false,
-      height: 100,
-      id: Date.now(),
-      is_locked: 0,
-      is_replace_success: false,
-      is_smart_transparent: !!recent.transparent_logo_url,
-      logo_colors: recent.logo_colors,
-      logo_index:
-        (activeProductCustomization.value.custom_logos?.length || 0) + 1,
-      logo_name: recent.logo_name,
-      logo_technologies: null,
-      name_of_placement: '',
-      originalHeight: '0',
-      originalWidth: '0',
-      original_logo: recent.original_png,
-      original_logo_url: recent.original_logo_url,
-      product_id: (activeProductDetails.value as any)?.id ?? 0,
-      product_style_id: (activeStyleDetails.value as any)?.id ?? 0,
-      rotation: 0,
-      side: 'front',
-      smart_transparent_logo: recent.smart_transparent_logo_url,
-      transparent_logo: recent.transparent_logo_url,
-      updated_at: new Date().toISOString(),
-      url: recent.url,
-      width: 100,
-      x_axis: 300,
-      x_axis_3d: 0,
-      y_axis: 300,
-      y_axis_3d: 0
+    const pid = String((activeProductDetails.value as any)?.id ?? 0)
+    if (!activeProductCustomization.value.custom_logos[pid]) {
+      activeProductCustomization.value.custom_logos[pid] = [] as any
     }
-    activeProductCustomization.value.custom_logos.push(newLogo)
+    const newLogo = {
+      id: Date.now(),
+      product_id: Number(pid),
+      product_style_id: (activeStyleDetails.value as any)?.id ?? 0,
+      following_product_ids: null,
+      rotation: 0,
+      originalWidth: '0',
+      originalHeight: '0',
+      width: 100,
+      height: 100,
+      name_of_placement: '',
+      side: 'front' as const,
+      x_axis: 300,
+      y_axis: 300,
+      x_axis_3d: 0,
+      y_axis_3d: 0,
+      is_locked: 0,
+      logo_name: recent.logo_name,
+      original_logo: recent.original_png,
+      transparent_logo: recent.transparent_logo_url,
+      smart_transparent_logo: recent.smart_transparent_logo_url,
+      original_logo_url: recent.original_logo_url,
+      is_smart_transparent: !!recent.transparent_logo_url,
+      url: recent.url,
+      haveControls: false,
+      logo_colors: recent.logo_colors as any,
+      is_replace_success: false,
+      logo_index:
+        (activeProductCustomization.value.custom_logos[pid]?.length || 0) + 1
+    }
+    ;(activeProductCustomization.value.custom_logos[pid] as any).push(newLogo)
     selectedCustomLogoIdx.value =
-      activeProductCustomization.value.custom_logos.length - 1
+      (activeProductCustomization.value.custom_logos[pid] as any).length - 1
     saveCustomizationToLocalStorage()
   }
 
@@ -581,8 +550,9 @@ export const useProductsStore = defineStore('productsStore', () => {
       selectedCustomLogoIdx.value == null
     )
       return
-    const logo =
-      activeProductCustomization.value.custom_logos[selectedCustomLogoIdx.value]
+    const pid = String((activeProductDetails.value as any)?.id ?? 0)
+    const list = activeProductCustomization.value.custom_logos[pid] as any[]
+    const logo = list?.[selectedCustomLogoIdx.value]
     if (!logo) return
     logo.x_axis = setting.x_axis
     logo.y_axis = setting.y_axis
@@ -590,53 +560,49 @@ export const useProductsStore = defineStore('productsStore', () => {
     logo.width = setting.width
     logo.side = setting.side
     logo.name_of_placement = setting.name_of_placement
-    logo.updated_at = new Date().toISOString()
     saveCustomizationToLocalStorage()
   }
 
   function addCustomLogoFromUpload(file: File, fileUrl: string) {
     ensureCustomization()
     if (!activeProductCustomization.value) return
-    const newLogo: OutputProductCustomLogo = {
-      actualHeight: 0,
-      actualWidth: 0,
-      created_at: new Date().toISOString(),
-      deleted_at: null,
-      following_product_ids: null,
-      haveControls: false,
-      have_controls: false,
-      height: 100,
-      id: Date.now(),
-      is_locked: 0,
-      is_replace_success: false,
-      is_smart_transparent: false,
-      logo_colors: [],
-      logo_index:
-        (activeProductCustomization.value.custom_logos?.length || 0) + 1,
-      logo_name: file.name,
-      logo_technologies: null,
-      name_of_placement: '',
-      originalHeight: '0',
-      originalWidth: '0',
-      original_logo: file.name,
-      original_logo_url: fileUrl,
-      product_id: (activeProductDetails.value as any)?.id ?? 0,
-      product_style_id: (activeStyleDetails.value as any)?.id ?? 0,
-      rotation: 0,
-      side: 'front',
-      smart_transparent_logo: '',
-      transparent_logo: '',
-      updated_at: new Date().toISOString(),
-      url: fileUrl,
-      width: 100,
-      x_axis: 300,
-      x_axis_3d: 0,
-      y_axis: 300,
-      y_axis_3d: 0
+    const pid = String((activeProductDetails.value as any)?.id ?? 0)
+    if (!activeProductCustomization.value.custom_logos[pid]) {
+      activeProductCustomization.value.custom_logos[pid] = [] as any
     }
-    activeProductCustomization.value.custom_logos.push(newLogo)
+    const newLogo = {
+      id: Date.now(),
+      product_id: Number(pid),
+      product_style_id: (activeStyleDetails.value as any)?.id ?? 0,
+      following_product_ids: null,
+      rotation: 0,
+      originalWidth: '0',
+      originalHeight: '0',
+      width: 100,
+      height: 100,
+      name_of_placement: '',
+      side: 'front' as const,
+      x_axis: 300,
+      y_axis: 300,
+      x_axis_3d: 0,
+      y_axis_3d: 0,
+      is_locked: 0,
+      logo_name: file.name,
+      original_logo: file.name,
+      transparent_logo: '',
+      smart_transparent_logo: '',
+      original_logo_url: fileUrl,
+      is_smart_transparent: false,
+      url: fileUrl,
+      haveControls: false,
+      logo_colors: [],
+      is_replace_success: false,
+      logo_index:
+        (activeProductCustomization.value.custom_logos[pid]?.length || 0) + 1
+    }
+    ;(activeProductCustomization.value.custom_logos[pid] as any).push(newLogo)
     selectedCustomLogoIdx.value =
-      activeProductCustomization.value.custom_logos.length - 1
+      (activeProductCustomization.value.custom_logos[pid] as any).length - 1
     saveCustomizationToLocalStorage()
   }
 
@@ -729,7 +695,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     // Update selected design id in activeProductCustomization
     if (activeProductCustomization.value) {
       activeProductCustomization.value.design_id = preview.id
-      activeProductCustomization.value.svg_parts = preview.svg_parts
       saveCustomizationToLocalStorage()
     }
   }
