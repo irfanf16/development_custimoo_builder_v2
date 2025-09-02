@@ -17,14 +17,15 @@
 
   // Temporary mapping: cycle through Flex Duo icons until API provides icon per category
   const fallbackFlexDuoIcons = [
+    flexDuoCategoryIcons.Hockey,
+    flexDuoCategoryIcons.Baseball,
+    flexDuoCategoryIcons.Soccer,
     flexDuoCategoryIcons.Football,
     flexDuoCategoryIcons.Brightness,
     flexDuoCategoryIcons.PottedFlowerTulip,
     flexDuoCategoryIcons.Leaf,
     flexDuoCategoryIcons.SnowFlake,
     flexDuoCategoryIcons.HolidayVacationBeachUmbrella,
-    flexDuoCategoryIcons.Soccer,
-    flexDuoCategoryIcons.Baseball,
     flexDuoCategoryIcons.Shorts,
     flexDuoCategoryIcons.Hanger,
     flexDuoCategoryIcons.Backpack,
@@ -34,7 +35,6 @@
     flexDuoCategoryIcons.CapFrozen,
     flexDuoCategoryIcons.CapSide,
     flexDuoCategoryIcons.Cricket,
-    flexDuoCategoryIcons.Hockey,
     flexDuoCategoryIcons.Tennis,
     flexDuoCategoryIcons.Volleyball,
     flexDuoCategoryIcons.Cycling,
