@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted } from 'vue'
+  import { computed, onMounted, watch } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from './ProductPreviewCanvas.vue'
 
@@ -7,17 +7,25 @@
 
   const previews = computed(() => productsStore.productPreviews || [])
 
+  function loadPreviewsForCurrentCategory() {
+    const categoryId = productsStore.effectiveCategoryId
+    productsStore.dispatchGetProductPreviews(categoryId)
+  }
+
   onMounted(() => {
-    if (!productsStore.productPreviews) {
-      const categoryId =
-        productsStore.activeCategoryId ||
-        productsStore.categories?.data?.[0]?.id ||
-        null
-      productsStore.dispatchGetProductPreviews(categoryId)
-    }
+    loadPreviewsForCurrentCategory()
   })
 
+  watch(
+    () => productsStore.effectiveCategoryId,
+    () => {
+      loadPreviewsForCurrentCategory()
+    }
+  )
+
   async function handleSelectProduct(productId: number) {
+    // Commit the selected category at the moment the product is chosen
+    productsStore.commitSelectedCategory()
     await productsStore.dispatchGetActiveProductDetails(productId)
     // Load design previews for the selected product's default style
     const styleId = (productsStore.activeStyleDetails as any)?.id

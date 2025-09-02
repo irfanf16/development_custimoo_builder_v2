@@ -36,7 +36,7 @@
   }
 
   const handleCategorySelect = (categoryId: number) => {
-    productsStore.setActiveCategory(categoryId)
+    productsStore.setSelectedCategoryForPreview(categoryId)
     navigateToStep('product')
   }
 

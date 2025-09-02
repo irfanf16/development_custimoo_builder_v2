@@ -29,6 +29,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   const activeAddons = ref<OutputAddon[] | null>(null)
   const productAddons = ref<OutputAddon[] | null>(null)
   const companyAddons = ref<OutputCompanyAddon[] | null>(null)
+  const selectedCategoryId = ref<number | null>(null)
 
   const selection = useSelectionStore()
   const activeProductCustomization =
@@ -49,6 +50,9 @@ export const useProductsStore = defineStore('productsStore', () => {
   const activeCategoryId = computed(
     () => activeProductCustomization.value?.category_id ?? null
   )
+  const effectiveCategoryId = computed<number | null>(() => {
+    return selectedCategoryId.value ?? activeCategoryId.value ?? null
+  })
 
   const effectiveStyleDetails = computed(() => {
     if (
@@ -110,6 +114,15 @@ export const useProductsStore = defineStore('productsStore', () => {
   function setActiveCategory(categoryId: number | null) {
     if (categoryId == null) return
     selection.setCategory(categoryId)
+  }
+  function setSelectedCategoryForPreview(categoryId: number | null) {
+    selectedCategoryId.value = categoryId
+  }
+  function commitSelectedCategory() {
+    if (selectedCategoryId.value != null) {
+      setActiveCategory(selectedCategoryId.value)
+      selectedCategoryId.value = null
+    }
   }
   function setActiveProduct(productId: number) {
     selection.setProduct(productId)
@@ -489,6 +502,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     companyAddons,
     activeStep,
     activeCategoryId,
+    selectedCategoryId,
+    effectiveCategoryId,
     activeProductId,
     activeStyleId,
     activeDesignId,
@@ -514,6 +529,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveStyle,
     setActiveDesign,
     setActiveAddons,
+    setSelectedCategoryForPreview,
+    commitSelectedCategory,
     effectiveStyleDetails,
     effectiveDesignDetails
   }

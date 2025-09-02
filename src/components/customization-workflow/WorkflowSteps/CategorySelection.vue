@@ -10,15 +10,8 @@
   const productsStore = useProductsStore()
 
   async function handleSelectCategory(categoryId: number) {
-    productsStore.setActiveCategory(categoryId)
-    await productsStore.dispatchGetProductPreviews(categoryId)
-    const firstProductId =
-      productsStore.productPreviews && productsStore.productPreviews.length
-        ? productsStore.productPreviews[0].productPreview.id
-        : null
-    if (firstProductId != null) {
-      await productsStore.dispatchGetActiveProductDetails(firstProductId)
-    }
+    productsStore.setSelectedCategoryForPreview(categoryId)
+    // Do not commit category or preload products here; ProductSelection will handle fetching
     props.onSelectCategory?.(categoryId)
   }
 
