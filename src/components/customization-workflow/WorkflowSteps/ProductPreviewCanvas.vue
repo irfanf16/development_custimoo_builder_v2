@@ -1,19 +1,12 @@
 <script setup lang="ts">
-  import { onMounted, onBeforeUnmount, ref, watch, type PropType } from 'vue'
-  import {
-    Canvas,
-    FabricImage,
-    Group,
-    loadSVGFromURL,
-    util,
-    Rect,
-    type FabricObject
-  } from 'fabric'
+  import { onMounted, onBeforeUnmount, watch, type PropType } from 'vue'
+  import { Rect } from 'fabric'
   import type {
     OutputProductPreview,
     OutputStylePreview,
     OutputDesignPreview
   } from '@/services/products/types'
+  import { useFabricPreview } from '@/composables/useFabricPreview'
 
   const props = defineProps({
     product: { type: Object as PropType<OutputProductPreview>, required: true },
@@ -44,93 +37,21 @@
     }
   })
 
-  const canvasEl = ref<HTMLCanvasElement | null>(null)
-  let canvas: Canvas | null = null
-
-  const storageBase = import.meta.env.VITE_APP_STORAGE_URL
-
-  function fromStorage(path: string): string {
-    const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
-    const clean = path.startsWith('/') ? path.slice(1) : path
-    return base + clean
-  }
-
-  async function addModelLayer(
-    url: string,
-    composition: GlobalCompositeOperation
-  ) {
-    if (!canvas) return
-    const img = await FabricImage.fromURL(fromStorage(url), {
-      crossOrigin: 'anonymous'
-    })
-    if ((img.width || 0) > (img.height || 0)) {
-      img.scaleToWidth(props.width - 8)
-    } else {
-      img.scaleToHeight(props.height - 8)
-    }
-    img.set({
-      hasControls: false,
-      selectable: false,
-      evented: false,
-      originX: 'center',
-      originY: 'center',
-      globalCompositeOperation: composition
-    })
-    canvas.add(img)
-    canvas.viewportCenterObject(img)
-    img.setCoords()
-  }
-
-  async function addDesignLayer(url: string, ext: string) {
-    if (!canvas) return
-    if (ext.toLowerCase() === 'svg') {
-      // Make sure url contains .svg
-      if (!url.toLowerCase().endsWith('.svg')) {
-        url += '.svg'
-      }
-      const { objects } = await loadSVGFromURL(fromStorage(url))
-      const safeObjects = (objects || []).filter(Boolean) as FabricObject[]
-      const group = util.groupSVGElements(safeObjects) as Group
-      if ((group.width || 0) > (group.height || 0)) {
-        group.scaleToWidth(props.width - 8)
-      } else {
-        group.scaleToHeight(props.height - 8)
-      }
-      group.set({
-        hasControls: false,
-        selectable: false,
-        evented: false,
-        originX: 'center',
-        originY: 'center'
-      })
-      canvas.add(group)
-      canvas.viewportCenterObject(group)
-      group.setCoords()
-    } else {
-      const img = await FabricImage.fromURL(fromStorage(url), {
-        crossOrigin: 'anonymous'
-      })
-      if ((img.width || 0) > (img.height || 0)) {
-        img.scaleToWidth(props.width - 8)
-      } else {
-        img.scaleToHeight(props.height - 8)
-      }
-      img.set({
-        hasControls: false,
-        selectable: false,
-        evented: false,
-        originX: 'center',
-        originY: 'center'
-      })
-      canvas.add(img)
-      canvas.viewportCenterObject(img)
-      img.setCoords()
-    }
-  }
+  const {
+    canvasEl,
+    canvas,
+    initCanvas,
+    setCanvasSize,
+    disposeCanvas,
+    clearCanvas,
+    requestRender,
+    addModelLayer,
+    addDesignLayer
+  } = useFabricPreview()
 
   async function renderPreview() {
-    if (!canvas) return
-    canvas.clear()
+    if (!canvas.value) return
+    clearCanvas()
 
     if (props.side === 'back' && (props.designBase as any).back_design) {
       const back = (props.designBase as any).back_design
@@ -173,21 +94,16 @@
         originX: 'left',
         originY: 'top'
       })
-      canvas.add(rect)
+      canvas.value.add(rect)
       rect.setCoords()
     }
-
-    canvas.requestRenderAll()
+    requestRender()
   }
 
   onMounted(() => {
     if (!canvasEl.value) return
-    canvas = new Canvas(canvasEl.value, {
-      enableRetinaScaling: true,
-      selection: false
-    })
-    canvas.setWidth(props.width)
-    canvas.setHeight(props.height)
+    initCanvas({ enableRetinaScaling: true, selection: false })
+    setCanvasSize({ width: props.width, height: props.height })
     renderPreview()
   })
 
@@ -212,10 +128,7 @@
   )
 
   onBeforeUnmount(() => {
-    if (canvas) {
-      canvas.dispose()
-      canvas = null
-    }
+    disposeCanvas()
   })
 </script>
 
