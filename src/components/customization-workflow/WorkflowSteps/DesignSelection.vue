@@ -23,25 +23,24 @@
 </script>
 
 <template>
-  <div class="flex flex-wrap overflow-y-auto max-h-[640px] pb-2 gap-6">
+  <div class="flex flex-wrap overflow-y-auto max-h-[640px] mb-6">
     <div
       v-for="item in previews"
       :key="item.id"
-      class="group relative flex flex-col items-center flex-shrink-0 gap-3 py-6"
+      class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"
+      :class="[
+        'relative rounded-xl transition-colors cursor-pointer',
+        'hover:border-border hover:bg-primary/10 hover:outline-ring',
+        selectedDesignId === item.id ? 'bg-primary/20' : ''
+      ]"
+      @click="selectDesign(item)"
     >
       <div
-        class="text-sm font-medium text-left w-full text-foreground truncate"
+        class="text-base font-medium text-left w-full text-foreground truncate max-w-[176px] overflow-ellipsis leading-none"
       >
         {{ item.front_design.design_name }}
       </div>
-      <div
-        :class="[
-          'relative rounded-xl border transition-colors cursor-pointer',
-          'bg-muted/20 border-border/50 hover:border-border hover:bg-muted/30',
-          selectedDesignId === item.id ? 'ring-2 ring-ring/50 bg-muted/40' : ''
-        ]"
-        @click="selectDesign(item)"
-      >
+      <div>
         <ProductPreviewCanvas
           :product="productsStore.activeProductDetails as any"
           :style-base="productsStore.activeStyleDetails as any"
