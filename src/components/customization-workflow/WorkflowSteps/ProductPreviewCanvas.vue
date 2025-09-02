@@ -108,19 +108,14 @@
   })
 
   watch(
-    () => [
-      props.product.id,
-      props.styleBase.id,
-      props.designBase.id,
-      props.side,
-      props.overlayRect &&
-        props.overlayRect.x +
-          '-' +
-          props.overlayRect.y +
-          '-' +
-          props.overlayRect.width +
-          '-' +
-          props.overlayRect.height
+    [
+      () => props.product?.id,
+      () => props.styleBase?.id,
+      () => props.designBase?.id,
+      () => props.side,
+      () =>
+        props.overlayRect &&
+        `${props.overlayRect.x}-${props.overlayRect.y}-${props.overlayRect.width}-${props.overlayRect.height}`
     ],
     () => {
       renderPreview()
