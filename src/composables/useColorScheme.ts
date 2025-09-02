@@ -1,4 +1,4 @@
-import { hexToHsl } from '@/lib/colorUtils'
+import { generateCssVariables, hexToHsl } from '@/lib/colorUtils'
 import { useUIStore } from '@/stores/ui'
 import { loadGoogleFont, getFontFamilyCSS } from '@/lib/utils'
 
@@ -63,42 +63,60 @@ export function useColorScheme() {
       uiStore.widgetRoot?.classList.remove('dark')
     }
 
-    // Generate all CSS variables for the theme
-    const variables = generateLimitedCssVariables(
-      hostTheme,
-      uiStore.currentTheme
-    )
+    // Generate color CSS variables for the theme
+    const variables = generateCssVariables(hostTheme)
 
     // Clear existing variables before applying new ones
-    const limitedVars = [
-      '--primary',
-      '--secondary',
-      '--accent',
-      '--radius',
-      '--font-sans',
-      '--font-heading'
-    ]
+    const limitedVars = ['--primary', '--secondary', '--accent', '--radius']
 
     limitedVars.forEach(varName => {
       target.style.removeProperty(varName)
     })
 
-    // Parse and apply each CSS variable
+    // Apply color variables
     variables.split('\n').forEach((line: string) => {
       const trimmed = line.trim()
-
       if (trimmed && trimmed.includes(':')) {
         const [property, value] = trimmed
           .split(':')
           .map((s: string) => s.trim())
-
         if (property && value) {
-          // Remove semicolon from value if present
           const cleanValue = value.replace(/;$/, '')
           target.style.setProperty(property, cleanValue)
         }
       }
     })
+
+    // Override for dark theme directly to avoid cascade conflicts with inline vars
+    if (uiStore.currentTheme === 'dark') {
+      const primaryHsl = hexToHsl(hostTheme.primary)
+      const secondaryHsl = hexToHsl(hostTheme.secondary || hostTheme.primary)
+      const accentHsl = hexToHsl(hostTheme.accent)
+
+      const darkPrimary = `hsl(${Math.round(primaryHsl.h)} ${Math.round(
+        primaryHsl.s
+      )}% ${Math.round(Math.max(primaryHsl.l * 0.8, 10))}%)`
+      const darkSecondary = `hsl(${Math.round(secondaryHsl.h)} ${Math.round(
+        secondaryHsl.s
+      )}% ${Math.round(Math.max(secondaryHsl.l * 0.7, 10))}%)`
+      const darkAccent = `hsl(${Math.round(accentHsl.h)} ${Math.round(
+        accentHsl.s
+      )}% ${Math.round(Math.max(accentHsl.l * 0.6, 10))}%)`
+
+      target.style.setProperty('--primary', darkPrimary)
+      target.style.setProperty('--secondary', darkSecondary)
+      target.style.setProperty('--accent', darkAccent)
+    }
+
+    // Apply font variables
+    const defaultFontCSS = hostTheme.fontFamilyDefault
+      ? getFontFamilyCSS(hostTheme.fontFamilyDefault)
+      : 'ui-sans-serif, system-ui, sans-serif'
+    const headingFontCSS = hostTheme.fontFamilyHeading
+      ? getFontFamilyCSS(hostTheme.fontFamilyHeading)
+      : defaultFontCSS
+    target.style.setProperty('--font-sans', defaultFontCSS)
+    target.style.setProperty('--font-heading', headingFontCSS)
   }
 
   return {
@@ -106,58 +124,4 @@ export function useColorScheme() {
   }
 }
 
-// Generate only the limited CSS variables we want to override
-function generateLimitedCssVariables(
-  hostTheme: any,
-  currentTheme: string
-): string {
-  // Helper function to convert hex to HSL string (with hsl() wrapper)
-  const hexToHslString = (hex: string): string => {
-    const hsl = hexToHsl(hex)
-    // For Tailwind v4, we need the HSL values with hsl() wrapper
-    return `hsl(${Math.round(hsl.h)} ${Math.round(hsl.s)}% ${Math.round(hsl.l)}%)`
-  }
-
-  const defaultFontCSS = hostTheme.fontFamilyDefault
-    ? getFontFamilyCSS(hostTheme.fontFamilyDefault)
-    : 'ui-sans-serif, system-ui, sans-serif'
-
-  const headingFontCSS = hostTheme.fontFamilyHeading
-    ? getFontFamilyCSS(hostTheme.fontFamilyHeading)
-    : defaultFontCSS
-
-  // Generate both light and dark mode variables
-  const primaryHsl = hexToHsl(hostTheme.primary)
-  const secondaryHsl = hexToHsl(hostTheme.secondary || hostTheme.primary)
-  const accentHsl = hexToHsl(hostTheme.accent)
-
-  // Create darker variants for dark mode
-  const darkPrimaryHsl = { ...primaryHsl, l: Math.max(primaryHsl.l * 0.8, 0.1) }
-  const darkSecondaryHsl = {
-    ...secondaryHsl,
-    l: Math.max(secondaryHsl.l * 0.7, 0.1)
-  }
-  const darkAccentHsl = { ...accentHsl, l: Math.max(accentHsl.l * 0.6, 0.1) }
-
-  // Use dark variants if current theme is dark
-  if (currentTheme === 'dark') {
-    return `
-      --primary: hsl(${Math.round(darkPrimaryHsl.h)} ${Math.round(darkPrimaryHsl.s)}% ${Math.round(darkPrimaryHsl.l)}%);
-      --secondary: hsl(${Math.round(darkSecondaryHsl.h)} ${Math.round(darkSecondaryHsl.s)}% ${Math.round(darkSecondaryHsl.l)}%);
-      --accent: hsl(${Math.round(darkAccentHsl.h)} ${Math.round(darkAccentHsl.s)}% ${Math.round(darkAccentHsl.l)}%);
-      --radius: ${hostTheme.radius || '0.625rem'};
-      --font-sans: ${defaultFontCSS};
-      --font-heading: ${headingFontCSS};
-    `.trim()
-  }
-
-  // Use light variants for light theme
-  return `
-    --primary: ${hexToHslString(hostTheme.primary)};
-    --secondary: ${hexToHslString(hostTheme.secondary || hostTheme.primary)};
-    --accent: ${hexToHslString(hostTheme.accent)};
-    --radius: ${hostTheme.radius || '0.625rem'};
-    --font-sans: ${defaultFontCSS};
-    --font-heading: ${headingFontCSS};
-  `.trim()
-}
+// Dark variants handled via CSS; no per-theme JS variables needed

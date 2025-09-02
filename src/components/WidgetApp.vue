@@ -92,7 +92,7 @@
     ]"
   >
     <!-- Widget content -->
-    <LayoutWrapper class="bg-slate-50 dark:bg-slate-800 flex-1 flex flex-col">
+    <LayoutWrapper class="bg-background text-foreground flex-1 flex flex-col">
       <router-view class="flex-1 flex flex-col" />
     </LayoutWrapper>
   </div>

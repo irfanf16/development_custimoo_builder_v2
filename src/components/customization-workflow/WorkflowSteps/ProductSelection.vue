@@ -51,7 +51,15 @@
     <div
       v-for="item in previews"
       :key="item.productPreview.id"
-      class="group relative flex flex-col items-center flex-shrink-0 gap-3 py-0"
+      class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"
+      :class="[
+        'relative rounded-xl border transition-colors cursor-pointer',
+        'bg-muted/20 border-border/50 hover:border-border hover:bg-muted/30',
+        selectedProductId === item.productPreview.id
+          ? 'ring-2 ring-ring/50 bg-muted/40'
+          : ''
+      ]"
+      @click="handleSelectProduct(item.productPreview.id)"
     >
       <div
         class="text-base font-medium text-left w-full text-foreground truncate max-w-[176px] overflow-ellipsis"
@@ -59,7 +67,7 @@
         {{ item.productPreview.display_name }}
       </div>
 
-      <div
+      <!-- <div
         :class="[
           'relative rounded-xl border transition-colors cursor-pointer',
           'bg-muted/20 border-border/50 hover:border-border hover:bg-muted/30',
@@ -68,7 +76,8 @@
             : ''
         ]"
         @click="handleSelectProduct(item.productPreview.id)"
-      >
+      > -->
+      <div>
         <ProductPreviewCanvas
           :product="item.productPreview"
           :style-base="item.stylePreview"
@@ -80,7 +89,7 @@
 
         <!-- Hover actions -->
         <div
-          class="absolute -bottom-5 left-1/2 -translate-x-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity"
+          class="absolute -bottom-[-1rem] left-1/2 -translate-x-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity"
         >
           <Button
             variant="secondary"

@@ -2,30 +2,12 @@
  * Widget-specific utility functions
  */
 
-import { generateColorScheme, generateCssVariables } from './colorUtils'
+// import { generateColorScheme } from './colorUtils'
 
 /**
  * Apply widget color scheme to a container element
  */
-export function applyWidgetColors(
-  container: HTMLElement,
-  primaryColor: string,
-  secondaryColor?: string
-) {
-  const colorScheme = generateColorScheme(primaryColor, secondaryColor)
-  const cssVariables = generateCssVariables(colorScheme)
-
-  // Apply CSS variables to the container
-  cssVariables.split('\n').forEach(line => {
-    const trimmed = line.trim()
-    if (trimmed && trimmed.includes(':')) {
-      const [property, value] = trimmed.split(':').map(s => s.trim())
-      if (property && value) {
-        container.style.setProperty(property, value)
-      }
-    }
-  })
-}
+// applyWidgetColors is deprecated in favor of useColorScheme.applyColorScheme
 
 /**
  * Get widget container element

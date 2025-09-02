@@ -3,8 +3,7 @@
 /* Import Tailwind CSS */
 @import 'tailwindcss';
 
-/* Import tw-animate-css */
-@import 'tw-animate-css';
+/* Using tailwindcss-animate via plugin */
 
 /* Custom widget styles */
 @custom-variant dark (&:is(.dark *));
@@ -41,12 +40,15 @@
 :host,
 :root {
   /* Colors will be set dynamically by JavaScript */
-  --radius: 0.625rem;
+  /* --radius is defined below in light theme */
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-heading: ui-sans-serif, system-ui, sans-serif;
+  /* Base color references for dark-mode derivations */
+  --primary-base: var(--primary);
+  --secondary-base: var(--secondary);
+  --accent-base: var(--accent);
 
   /* Light theme CSS variables */
-  --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
@@ -88,13 +90,22 @@
     --card-foreground: oklch(0.984 0.003 247.858);
     --popover: oklch(0.208 0.042 265.755);
     --popover-foreground: oklch(0.984 0.003 247.858);
-    --primary: var(--primary-dark, oklch(0.929 0.013 255.508));
+    --primary: var(
+      --primary-dark,
+      color-mix(in oklch, var(--primary-base), black 25%)
+    );
     --primary-foreground: oklch(0.208 0.042 265.755);
-    --secondary: var(--secondary-dark, oklch(0.279 0.041 260.031));
+    --secondary: var(
+      --secondary-dark,
+      color-mix(in oklch, var(--secondary-base), black 30%)
+    );
     --secondary-foreground: oklch(0.984 0.003 247.858);
     --muted: oklch(0.279 0.041 260.031);
     --muted-foreground: oklch(0.704 0.04 256.788);
-    --accent: var(--accent-dark, oklch(0.279 0.041 260.031));
+    --accent: var(
+      --accent-dark,
+      color-mix(in oklch, var(--accent-base), black 35%)
+    );
     --accent-foreground: oklch(0.984 0.003 247.858);
     --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
@@ -211,7 +222,10 @@
 /* ===== WIDGET THEME OVERRIDES ===== */
 .widget-theme {
   /* Ensure widget has its own color context */
-  color-scheme: light;
+  color-scheme: light dark;
+}
+.widget-theme.dark {
+  color-scheme: dark;
 }
 
 /* ===== WIDGET SPECIFIC STYLES ===== */
