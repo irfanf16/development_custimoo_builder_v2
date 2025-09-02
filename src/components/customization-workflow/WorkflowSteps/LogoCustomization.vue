@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
-  import { useProductsStore } from '@/stores/products'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
   import { Button } from '@/components/ui/button'
   import LogoPlacementThumb from './LogoPlacementThumb.vue'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
@@ -22,7 +22,7 @@
     logos_more_options,
     logos_back_to_controls
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
   const localeStore = useLocaleStore()

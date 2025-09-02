@@ -1,45 +1,49 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useProductsStore } from '@/stores/products'
-import { Button } from '@/components/ui/button'
-import {
-  CategorySelection,
-  ProductSelection,
-  DesignSelection,
-  StyleSelection,
-  LogoCustomization
-} from '@/components/customization-workflow/WorkflowSteps'
-import MenuPanel from './MenuPanel.vue'
+  import { computed } from 'vue'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { Button } from '@/components/ui/button'
+  import {
+    CategorySelection,
+    ProductSelection,
+    DesignSelection,
+    StyleSelection,
+    LogoCustomization
+  } from '@/components/customization-workflow/WorkflowSteps'
+  import MenuPanel from './MenuPanel.vue'
 
-interface Props {
-  currentStep: 'category' | 'product' | 'designs' | 'styles' | 'logos'
-  navigationItems: Array<{ label: string; action?: () => void; isActive?: boolean }>
-  onNavigateBack: () => void
-  onCategorySelect: (categoryId: number) => void
-}
+  interface Props {
+    currentStep: 'category' | 'product' | 'designs' | 'styles' | 'logos'
+    navigationItems: Array<{
+      label: string
+      action?: () => void
+      isActive?: boolean
+    }>
+    onNavigateBack: () => void
+    onCategorySelect: (categoryId: number) => void
+  }
 
-const props = defineProps<Props>()
+  const props = defineProps<Props>()
 
-const productsStore = useProductsStore()
+  const productsStore = useProductsStore()
 
-// Computed properties for workflow step configuration
-const contentKey = computed(() => {
-  return props.currentStep === 'logos'
-    ? `logos-${(productsStore as any).logosSubStep || 'list'}`
-    : props.currentStep
-})
+  // Computed properties for workflow step configuration
+  const contentKey = computed(() => {
+    return props.currentStep === 'logos'
+      ? `logos-${(productsStore as any).logosSubStep || 'list'}`
+      : props.currentStep
+  })
 
-const isExpandable = computed(() => {
-  return (
-    props.currentStep !== 'category' &&
-    props.currentStep !== 'styles' &&
-    props.currentStep !== 'logos'
-  )
-})
+  const isExpandable = computed(() => {
+    return (
+      props.currentStep !== 'category' &&
+      props.currentStep !== 'styles' &&
+      props.currentStep !== 'logos'
+    )
+  })
 
-const showBackButton = computed(() => {
-  return props.currentStep !== 'category'
-})
+  const showBackButton = computed(() => {
+    return props.currentStep !== 'category'
+  })
 </script>
 
 <template>

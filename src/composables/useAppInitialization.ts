@@ -1,8 +1,10 @@
 import { ref, onMounted, readonly } from 'vue'
-import { useCompanyStore } from '@/stores/company'
-import { useAuthStore } from '@/stores/auth'
-import { useProductsStore } from '@/stores/products'
-import { useLocaleStore } from '@/stores/locale'
+import { useCompanyStore } from '@/stores/company/company.store'
+import { useAuthStore } from '@/stores/auth/auth.store'
+import { useProductsStore } from '@/stores/products/products.store.ts'
+import { useSelectionStore } from '@/stores/selection.store'
+import { API } from '@/services'
+import { useLocaleStore } from '@/stores/locale/locale.store'
 
 // Global state to prevent multiple initializations
 // This prevents race conditions when multiple components try to initialize the app simultaneously
@@ -54,15 +56,10 @@ export function useAppInitialization() {
           // This prevents authentication issues from blocking app initialization
         }
 
-        // Initialize products store from localStorage
-        // This loads any previously saved step selection (e.g., "Products", "Designs")
+        // Initialize selection/customization from localStorage
         const productsStore = useProductsStore()
-        productsStore.initActiveSelectionFromLocalStorage()
-
-        // Check if we have active customization to restore from localStorage
-        // This determines whether we need to restore a previous customization or create defaults
-        const hasActiveCustomization =
-          productsStore.initActiveCustomizationFromLocalStorage()
+        const selectionStore = useSelectionStore()
+        const hasActiveCustomization = selectionStore.load()
 
         // PHASE 2: Fetch essential data from API (blocking operations)
         // These operations must complete before we can proceed with customization setup
@@ -118,9 +115,35 @@ export function useAppInitialization() {
         // This is the core of the initialization process - ensuring we have a valid product selection
 
         if (hasActiveCustomization) {
-          // SCENARIO A: Restore from stored customization
-          // User has previously customized a product, restore their selections
-          await productsStore.hydrateFromActiveCustomization()
+          // SCENARIO A: Restore from stored customization by fetching dependent details
+          const apc = selectionStore.customization
+          if (apc) {
+            // Step 1: Load product details (loads default style + design)
+            await productsStore.dispatchGetActiveProductDetails(
+              Number(apc.product_id)
+            )
+
+            // Step 2: Load explicit style if different from default
+            if (
+              productsStore.activeStyleId &&
+              apc.style_id !== productsStore.activeStyleId
+            ) {
+              await productsStore.dispatchGetActiveStyleDetails(apc.style_id)
+            }
+
+            // Step 3: Load explicit design if different from current
+            if (
+              productsStore.activeDesignId &&
+              apc.design_id !== productsStore.activeDesignId
+            ) {
+              const result = await API.products.getDesignDetailsById(
+                apc.design_id
+              )
+              if ('data' in result) {
+                productsStore.activeDesignDetails = result.data as any
+              }
+            }
+          }
         } else {
           // SCENARIO B: Create default customization
           // User is new or has no saved customization, set up sensible defaults

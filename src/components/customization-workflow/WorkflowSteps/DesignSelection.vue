@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, onMounted } from 'vue'
-  import { useProductsStore } from '@/stores/products'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from './ProductPreviewCanvas.vue'
 
   const productsStore = useProductsStore()

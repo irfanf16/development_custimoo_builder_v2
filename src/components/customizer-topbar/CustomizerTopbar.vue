@@ -10,7 +10,7 @@
     topbar_cart,
     topbar_save_options
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const localeStore = useLocaleStore()
 </script>

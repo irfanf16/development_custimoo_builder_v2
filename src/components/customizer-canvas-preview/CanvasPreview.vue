@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
-  import { useProductsStore } from '@/stores/products'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
   import {
     Canvas,
     FabricImage,

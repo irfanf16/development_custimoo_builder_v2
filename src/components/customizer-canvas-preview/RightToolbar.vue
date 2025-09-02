@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import { useProductsStore } from '@/stores/products'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
   import {
     Undo2,
     Redo2,

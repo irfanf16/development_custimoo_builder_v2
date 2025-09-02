@@ -2,7 +2,7 @@
   import { Button } from '@/components/ui/button'
   import { useRouter } from 'vue-router'
   import { notfound_go_back } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const router = useRouter()
   const localeStore = useLocaleStore()

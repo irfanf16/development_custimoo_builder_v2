@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { useProductsStore } from '@/stores/products'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
   import { flexDuoCategoryIcons } from '@/icons/flex-duo-categories'
   import { ChevronRight } from 'lucide-vue-next'
   interface Props {

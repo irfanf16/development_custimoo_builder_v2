@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
-  import { useAuthStore } from '@/stores/auth'
+  import { useAuthStore } from '@/stores/auth/auth.store'
   import {
     Dialog,
     DialogContent,
@@ -17,7 +17,7 @@
     auth_cancel,
     auth_dialog_title
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const authStore = useAuthStore()
   const localeStore = useLocaleStore()

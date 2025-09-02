@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { setLocale } from '@/paraglide/runtime'
-import { useCompanyStore } from '@/stores/company'
+import { useCompanyStore } from '@/stores/company/company.store'
 
 export type ParaglideLocale = 'en' | 'fr' | 'da'
 

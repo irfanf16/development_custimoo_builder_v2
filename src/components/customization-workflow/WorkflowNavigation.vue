@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { useProductsStore } from '@/stores/products'
-  import { useLocaleStore } from '@/stores/locale'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
   import { m } from '@/paraglide/messages'
 
   interface NavigationItem {

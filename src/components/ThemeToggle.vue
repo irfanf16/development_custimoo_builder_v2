@@ -15,7 +15,7 @@
     theme_light,
     theme_dark
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const uiStore = useUIStore()
   const localeStore = useLocaleStore()

@@ -1,9 +1,9 @@
-import authenticationController from './authentication'
-import companyController from './company'
-import productsController from './products'
+import authenticationService from './authentication/authentication.service'
+import companyService from './company/company.service'
+import productsService from './products/products.service'
 
 export const API = {
-  authentication: authenticationController,
-  company: companyController,
-  products: productsController
+  authentication: authenticationService,
+  company: companyService,
+  products: productsService
 }

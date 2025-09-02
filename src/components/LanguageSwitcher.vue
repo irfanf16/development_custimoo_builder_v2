@@ -7,7 +7,10 @@
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import { ChevronDown, Globe } from 'lucide-vue-next'
-  import { useLocaleStore, type ParaglideLocale } from '@/stores/locale'
+  import {
+    useLocaleStore,
+    type ParaglideLocale
+  } from '@/stores/locale/locale.store'
   import { computed } from 'vue'
 
   const localeStore = useLocaleStore()

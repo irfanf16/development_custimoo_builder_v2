@@ -1,4 +1,4 @@
-import { useLocaleStore } from '@/stores/locale'
+import { useLocaleStore } from '@/stores/locale/locale.store'
 
 export function useParaglideLocale() {
   const localeStore = useLocaleStore()

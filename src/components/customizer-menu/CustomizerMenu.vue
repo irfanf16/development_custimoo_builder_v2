@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import CustomizerMenuItem from './MenuItem.vue'
-  import { useProductsStore } from '@/stores/products'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
   import {
     nav_categories,
     nav_designs,
@@ -13,7 +13,7 @@
     nav_roster,
     nav_summary
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
   const localeStore = useLocaleStore()

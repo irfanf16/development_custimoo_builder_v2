@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
   import { Ruler, Save, Share2, FileText, RotateCcw } from 'lucide-vue-next'
-  import { useProductsStore } from '@/stores/products'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
   import {
     actions_size_guide,
     actions_reset_customization,
@@ -9,7 +9,7 @@
     actions_share_design,
     actions_generate_pdf
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
   const localeStore = useLocaleStore()

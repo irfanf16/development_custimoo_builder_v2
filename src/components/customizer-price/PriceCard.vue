@@ -2,7 +2,7 @@
   import { Card, CardContent } from '@/components/ui/card'
   import { Button } from '@/components/ui/button'
   import { price_line, price_add_to_cart } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
 
   defineProps<{ price?: number; qty?: number; eta?: string }>()
   const localeStore = useLocaleStore()

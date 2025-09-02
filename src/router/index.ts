@@ -4,7 +4,7 @@ import {
   createWebHistory
 } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth/auth.store'
 
 const routes: RouteRecordRaw[] = [
   {
