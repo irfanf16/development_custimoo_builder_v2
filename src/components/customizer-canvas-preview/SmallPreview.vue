@@ -1,117 +1,46 @@
 <script setup lang="ts">
-  import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+  import { onMounted, onBeforeUnmount, watch } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import {
-    Canvas,
-    FabricImage,
-    Group,
-    loadSVGFromURL,
-    util,
-    type FabricObject
-  } from 'fabric'
+  import { useFabricPreview } from '@/composables/useFabricPreview'
+  import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
   import { Card, CardContent } from '../ui/card'
 
   const productsStore = useProductsStore()
-
-  const canvasEl = ref<HTMLCanvasElement | null>(null)
-  let canvas: Canvas | null = null
-
-  const storageBase = import.meta.env.VITE_APP_STORAGE_URL
-  function fromStorage(path: string): string {
-    const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
-    const clean = path?.startsWith('/') ? path.slice(1) : path
-    return base + clean
-  }
-
-  async function addModelLayer(
-    url: string,
-    composition: GlobalCompositeOperation
-  ) {
-    if (!canvas) return
-    const img = await FabricImage.fromURL(fromStorage(url), {
-      crossOrigin: 'anonymous'
-    })
-    fitObject(img)
-    img.set({
-      selectable: false,
-      evented: false,
-      originX: 'center',
-      originY: 'center',
-      globalCompositeOperation: composition
-    })
-    canvas.add(img)
-    canvas.viewportCenterObject(img)
-    img.setCoords()
-  }
-
-  function fitObject(obj: any) {
-    if (!canvas) return
-    const targetW = (canvas.getWidth?.() || 132) - 4
-    const targetH = (canvas.getHeight?.() || 132) - 4
-    if ((obj.width || 0) > (obj.height || 0)) obj.scaleToWidth(targetW)
-    else obj.scaleToHeight(targetH)
-  }
-
-  async function addDesignLayer(url: string, ext: string) {
-    if (!canvas) return
-    if (ext?.toLowerCase() === 'svg') {
-      // Make sure url contains .svg
-      if (!url.toLowerCase().endsWith('.svg')) {
-        url += '.svg'
-      }
-      const { objects } = await loadSVGFromURL(fromStorage(url))
-      const safe = (objects || []).filter(Boolean) as FabricObject[]
-      const group = util.groupSVGElements(safe) as Group
-      fitObject(group)
-      group.set({
-        selectable: false,
-        evented: false,
-        originX: 'center',
-        originY: 'center'
-      })
-      canvas.add(group)
-      canvas.viewportCenterObject(group)
-      group.setCoords()
-    } else {
-      const img = await FabricImage.fromURL(fromStorage(url), {
-        crossOrigin: 'anonymous'
-      })
-      fitObject(img)
-      img.set({
-        selectable: false,
-        evented: false,
-        originX: 'center',
-        originY: 'center'
-      })
-      canvas.add(img)
-      canvas.viewportCenterObject(img)
-      img.setCoords()
-    }
-  }
+  const {
+    canvasEl,
+    canvas,
+    initCanvas,
+    setCanvasSize,
+    disposeCanvas,
+    clearCanvas,
+    requestRender,
+    addModelLayer,
+    addDesignLayer,
+    fadeOut,
+    fadeIn
+  } = useFabricPreview()
+  const { effectiveDesignDetails, effectiveStyleDetails } = useEffectiveDetails(
+    { autoFetch: true }
+  )
 
   async function renderPreview() {
-    if (!canvas) return
+    if (!canvas.value) return
 
-    // Fade out canvas element
-    if (canvasEl.value) {
-      canvasEl.value.style.opacity = '0'
-    }
+    await fadeOut(150)
 
-    // Wait for fade out
-    await new Promise(resolve => setTimeout(resolve, 150))
-
-    canvas.clear()
-    // Use effective details that combine customization state with defaults
-    const design = productsStore.effectiveDesignDetails
-    const style = productsStore.effectiveStyleDetails
-    const side = productsStore.activeCanvasSide === 'front' ? 'back' : 'front'
+    clearCanvas()
+    const design = effectiveDesignDetails.value
+    const style = effectiveStyleDetails.value
+    const side = (
+      productsStore.activeCanvasSide === 'front' ? 'back' : 'front'
+    ) as 'front' | 'back'
     if (!design || !style) return
     if (side === 'back' && design.back_design) {
       await addDesignLayer(
         design.back_design.file_url,
         design.back_design.file_extension
       )
-      for (const m of style.back_models || []) {
+      for (const m of (style as any).back_models || []) {
         const comp = (
           m.composition === 'multiply' ? 'multiply' : 'screen'
         ) as GlobalCompositeOperation
@@ -122,7 +51,7 @@
         design.front_design.file_url,
         design.front_design.file_extension
       )
-      for (const m of style.front_models || []) {
+      for (const m of (style as any).front_models || []) {
         const comp = (
           m.composition === 'multiply' ? 'multiply' : 'screen'
         ) as GlobalCompositeOperation
@@ -130,12 +59,8 @@
       }
     }
 
-    // Fade in canvas element
-    if (canvasEl.value) {
-      canvasEl.value.style.opacity = '1'
-    }
-
-    canvas.requestRenderAll()
+    fadeIn()
+    requestRender()
   }
 
   function handleClick() {
@@ -144,28 +69,24 @@
 
   onMounted(() => {
     if (!canvasEl.value) return
-    canvas = new Canvas(canvasEl.value, {
+    initCanvas({
       selection: false,
       enableRetinaScaling: true,
       hoverCursor: 'pointer'
     })
-    canvas.setWidth(132)
-    canvas.setHeight(132)
+    setCanvasSize({ width: 132, height: 132 })
     renderPreview()
   })
 
   onBeforeUnmount(() => {
-    if (canvas) {
-      canvas.dispose()
-      canvas = null
-    }
+    disposeCanvas()
   })
 
   watch(
     () => [
       productsStore.activeCanvasSide,
-      productsStore.effectiveDesignDetails?.id,
-      productsStore.effectiveStyleDetails?.id
+      effectiveDesignDetails.value?.id,
+      effectiveStyleDetails.value?.id
     ],
     () => renderPreview()
   )
