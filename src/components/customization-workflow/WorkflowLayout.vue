@@ -8,7 +8,15 @@
     ProductSelection,
     DesignSelection,
     StyleSelection,
-    LogoCustomization
+    LogoCustomization,
+    ColorSelection,
+    PatternSelection,
+    PatternGroupSelection,
+    TextsSelection,
+    TextPlacement,
+    RosterEntry,
+    RosterEdit,
+    SummaryPanel
   } from '@/components/customization-workflow/WorkflowSteps'
   import MenuPanel from './MenuPanel.vue'
 
@@ -20,6 +28,14 @@
       | 'designs'
       | 'styles'
       | 'logos'
+      | 'colors'
+      | 'patterns'
+      | 'patterns-group'
+      | 'texts'
+      | 'texts-placement'
+      | 'roster'
+      | 'roster-edit'
+      | 'summary'
     navigationItems: Array<{
       label: string
       action?: () => void
@@ -83,6 +99,24 @@
 
       <!-- Logo Customization Step -->
       <LogoCustomization v-else-if="currentStep === 'logos'" />
+
+      <!-- Colors -->
+      <ColorSelection v-else-if="currentStep === 'colors'" />
+
+      <!-- Patterns -->
+      <PatternSelection v-else-if="currentStep === 'patterns'" />
+      <PatternGroupSelection v-else-if="currentStep === 'patterns-group'" />
+
+      <!-- Texts -->
+      <TextsSelection v-else-if="currentStep === 'texts'" />
+      <TextPlacement v-else-if="currentStep === 'texts-placement'" />
+
+      <!-- Roster -->
+      <RosterEntry v-else-if="currentStep === 'roster'" />
+      <RosterEdit v-else-if="currentStep === 'roster-edit'" />
+
+      <!-- Summary -->
+      <SummaryPanel v-else-if="currentStep === 'summary'" />
 
       <template #footer="{ isExpanded }">
         <div

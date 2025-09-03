@@ -97,7 +97,8 @@
         // When no categories are available, go directly to product step
         navigateToStep('product')
       } else if (step === 'Categories') {
-        navigateToStep('category')
+        const sub = (productsStore as any).productsSubStep || 'category'
+        navigateToStep(sub as 'category' | 'subcategory' | 'product')
       } else if (currentStep.value === 'category') {
         // default after leaving categories is product step
         navigateToStep('product')

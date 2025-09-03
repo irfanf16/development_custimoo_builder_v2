@@ -102,6 +102,8 @@ export const useProductsStore = defineStore('productsStore', () => {
   const productsSubStep = ref<'category' | 'subcategory' | 'product'>(
     'category'
   )
+  const patternsSubStep = ref<'list' | 'group'>('list')
+  const activePatternGroupName = ref<string | null>(null)
   const activeCanvasSide = ref<'front' | 'back'>('front')
   const canvasZoom = ref<number>(1)
   const isLoading = ref(false)
@@ -176,6 +178,18 @@ export const useProductsStore = defineStore('productsStore', () => {
     productsSubStep.value = step
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('workflow.productsSubStep', step)
+    }
+  }
+  function setPatternsSubStep(step: 'list' | 'group') {
+    patternsSubStep.value = step
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('workflow.patternsSubStep', step)
+    }
+  }
+  function setActivePatternGroup(name: string | null) {
+    activePatternGroupName.value = name
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('workflow.patternsGroupName', name || '')
     }
   }
 
@@ -292,8 +306,14 @@ export const useProductsStore = defineStore('productsStore', () => {
       const products = window.localStorage.getItem(
         'workflow.productsSubStep'
       ) as 'category' | 'subcategory' | 'product' | null
+      const patterns = window.localStorage.getItem(
+        'workflow.patternsSubStep'
+      ) as 'list' | 'group' | null
+      const group = window.localStorage.getItem('workflow.patternsGroupName')
       if (logos) logosSubStep.value = logos
       if (products) productsSubStep.value = products
+      if (patterns) patternsSubStep.value = patterns
+      if (group) activePatternGroupName.value = group
     } catch (_) {}
   }
 

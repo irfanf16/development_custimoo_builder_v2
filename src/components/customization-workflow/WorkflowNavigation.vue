@@ -2,7 +2,6 @@
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useLocaleStore } from '@/stores/locale/locale.store'
-  import { m } from '@/paraglide/messages'
 
   interface NavigationItem {
     label: string
@@ -18,57 +17,103 @@
       | 'designs'
       | 'styles'
       | 'logos'
+      | 'colors'
+      | 'patterns'
+      | 'patterns-group'
+      | 'texts'
+      | 'texts-placement'
+      | 'roster'
+      | 'roster-edit'
+      | 'summary'
     onNavigateBack: () => void
   }
 
   const props = defineProps<Props>()
 
   const productsStore = useProductsStore()
-  const localeStore = useLocaleStore()
+  useLocaleStore()
 
   // Navigation configuration for the customization workflow
   const navigationItems = computed((): NavigationItem[] => {
     const step = productsStore.activeStep || 'Categories'
+    const hasCategories = !!(
+      productsStore.categories?.data && productsStore.categories.data.length
+    )
+    // If categories exist but step is "Products", normalize to "Categories"
+    const normalizedStep =
+      step === 'Products' && hasCategories ? 'Categories' : step
 
-    if (step === 'Products') {
-      // When no categories are available, show just "Products"
+    if (!hasCategories && step === 'Products') {
+      // No categories available at all
       return [{ label: 'Products' }]
     }
 
-    if (step === 'Categories') {
+    if (normalizedStep === 'Categories') {
+      // Category selection view
       if (props.currentStep === 'category') {
-        return [
-          { label: m.nav_categories({}, { locale: localeStore.currentLocale }) }
-        ]
+        return [{ label: 'Category' }]
       }
+      const categoryIdForTrail =
+        (productsStore as any).selectedCategoryId ??
+        (productsStore as any).activeCategoryId
       const category = productsStore.categories?.data?.find(
-        c => c.id === productsStore.activeCategoryId
+        c => c.id === categoryIdForTrail
       )
+      const subId =
+        ((productsStore as any).selectedSubCategoryId as number | null) ??
+        ((productsStore as any).activeSubCategoryId as number | null)
+
+      // Subcategory list view
       if (props.currentStep === 'subcategory') {
         return [
-          { label: 'Products', action: props.onNavigateBack },
-          { label: category?.category_name || 'Products' },
-          { label: 'Sub category' }
+          { label: 'Category', action: props.onNavigateBack },
+          { label: category?.category_name || '—' }
         ]
       }
-      return [
-        { label: 'Products', action: props.onNavigateBack },
-        { label: category?.category_name || 'Products' }
+
+      // Product selection view
+      const hasSubs = !!(
+        category &&
+        category.subcategories &&
+        category.subcategories.length
+      )
+      const trail: NavigationItem[] = [
+        {
+          label: 'Category',
+          action: () => {
+            ;(productsStore as any).setProductsSubStep?.('category')
+            productsStore.setActiveStep('Categories')
+          }
+        },
+        {
+          label: category?.category_name || '—',
+          action: hasSubs
+            ? () => {
+                ;(productsStore as any).setProductsSubStep?.('subcategory')
+                productsStore.setActiveStep('Categories')
+              }
+            : undefined
+        }
       ]
+      if (category && subId) {
+        const sub = category.subcategories?.find(s => s.id === subId)
+        if (sub) trail.push({ label: sub.category_name })
+      }
+      return trail
     }
 
-    if (step === 'Designs') {
+    if (normalizedStep === 'Designs') {
       return [{ label: 'Designs' }]
     }
 
-    if (step === 'Styles') {
+    if (normalizedStep === 'Styles') {
       const title =
         ((productsStore.activeProductDetails as any)?.display_name as string) ||
         'Styles'
       return [{ label: title }]
     }
 
-    if (step === 'Logos') {
+    if (normalizedStep === 'Logos') {
       const sub = (productsStore as any).logosSubStep as
         | 'list'
         | 'placement'
@@ -89,6 +134,42 @@
       if (sub && sub !== 'list')
         trail.push({ label: map[sub] || 'Logos', action: () => {} })
       return trail
+    }
+
+    if (normalizedStep === 'Colors') {
+      return [{ label: 'Color' }]
+    }
+
+    if (normalizedStep === 'Patterns') {
+      const items = [
+        { label: 'Pattern', action: props.onNavigateBack }
+      ] as NavigationItem[]
+      if ((productsStore as any).patternsSubStep === 'group') {
+        items.push({
+          label: (productsStore as any).activePatternGroupName || 'Base'
+        })
+      }
+      return items
+    }
+
+    if (normalizedStep === 'Texts') {
+      const items = [{ label: 'Texts' }] as NavigationItem[]
+      if ((productsStore as any).textsSubStep === 'placement') {
+        items.push({ label: 'Placement' })
+      }
+      return items
+    }
+
+    if (normalizedStep === 'Roster') {
+      const items = [{ label: 'Roster' }] as NavigationItem[]
+      if ((productsStore as any).rosterSubStep === 'edit') {
+        items.push({ label: 'Edit' })
+      }
+      return items
+    }
+
+    if (normalizedStep === 'Summary') {
+      return [{ label: 'Summary' }]
     }
 
     // Fallback for future steps: single-level navigation

@@ -95,6 +95,15 @@
       if (!productsStore.recentLogos) {
         await productsStore.dispatchGetRecentLogos()
       }
+    } else if (label === NAV_STEPS.COLORS) {
+      // Set step directly; colors lives inside product details
+    } else if (label === NAV_STEPS.PATTERNS) {
+      // Ensure we start at the patterns list
+      ;(productsStore as any).setPatternsSubStep?.('list')
+    } else if (label === NAV_STEPS.TEXTS) {
+      ;(productsStore as any).setTextsSubStep?.('list')
+    } else if (label === NAV_STEPS.ROSTER) {
+      ;(productsStore as any).setRosterSubStep?.('list')
     }
     productsStore.setActiveStep(label)
   }
