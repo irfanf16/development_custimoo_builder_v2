@@ -21,22 +21,16 @@
 
   const buttonClass = computed(() =>
     isActive.value
-      ? 'w-[56px] h-[56px] p-4 rounded-2xl animate text-primary-foreground display'
-      : 'w-[56px] h-[56px] p-4 rounded-2xl animate'
+      ? 'w-[4.5rem] h-[4.5rem] p-4 rounded-2xl animate text-primary-foreground display'
+      : 'w-[4.5rem] h-[4.5rem] p-4 rounded-2xl animate'
   )
 </script>
 
 <template>
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger as-child>
-        <Button :variant="variant" :class="buttonClass" @click="emit('click')">
-          <slot name="icon" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{{ text }}</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
+  <Button :variant="variant" :class="buttonClass" @click="emit('click')">
+    <div class="flex flex-col items-center gap-1">
+      <slot name="icon" />
+      <p class="text-xs">{{ text }}</p>
+    </div>
+  </Button>
 </template>

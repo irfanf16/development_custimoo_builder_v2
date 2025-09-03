@@ -20,7 +20,7 @@
 
   // Navigation constants - these should not be translated
   const NAV_STEPS = {
-    CATEGORIES: 'Categories',
+    PRODUCTS: 'Products',
     DESIGNS: 'Designs',
     STYLES: 'Styles',
     LOGOS: 'Logos',
@@ -40,25 +40,24 @@
 
   function isActive(label: string) {
     // Handle the case when no categories are available
-    if (!shouldShowCategories.value && label === NAV_STEPS.CATEGORIES) {
+    if (!shouldShowCategories.value && label === NAV_STEPS.PRODUCTS) {
       return false
     }
     if (
       !shouldShowCategories.value &&
-      (productsStore.activeStep || NAV_STEPS.CATEGORIES) ===
-        NAV_STEPS.CATEGORIES
+      (productsStore.activeStep || NAV_STEPS.PRODUCTS) === NAV_STEPS.PRODUCTS
     ) {
       // If no categories but step is 'Categories', treat it as 'Designs' step
       return label === NAV_STEPS.DESIGNS
     }
-    return (productsStore.activeStep || NAV_STEPS.CATEGORIES) === label
+    return (productsStore.activeStep || NAV_STEPS.PRODUCTS) === label
   }
 
   async function goTo(label: string) {
     console.log('goTo', label)
 
     // If no categories are available and trying to go to Categories, go to Designs instead
-    if (label === NAV_STEPS.CATEGORIES && !shouldShowCategories.value) {
+    if (label === NAV_STEPS.PRODUCTS && !shouldShowCategories.value) {
       label = NAV_STEPS.DESIGNS
     }
 
@@ -93,7 +92,7 @@
   // Helper function to get translated text for a navigation step
   function getNavText(step: string) {
     switch (step) {
-      case NAV_STEPS.CATEGORIES:
+      case NAV_STEPS.PRODUCTS:
         return nav_categories({}, { locale: localeStore.currentLocale })
       case NAV_STEPS.DESIGNS:
         return nav_designs({}, { locale: localeStore.currentLocale })
@@ -122,9 +121,9 @@
     <!-- Only show Categories step when categories are available -->
     <CustomizerMenuItem
       v-if="shouldShowCategories"
-      :isActive="isActive(NAV_STEPS.CATEGORIES)"
-      :text="getNavText(NAV_STEPS.CATEGORIES)"
-      @click="goTo(NAV_STEPS.CATEGORIES)"
+      :isActive="isActive(NAV_STEPS.PRODUCTS)"
+      :text="getNavText(NAV_STEPS.PRODUCTS)"
+      @click="goTo(NAV_STEPS.PRODUCTS)"
     >
       <template #icon>
         <i-flex-line-categories class="size-[1.5rem] bg-transparent" />
