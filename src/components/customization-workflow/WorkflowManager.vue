@@ -5,7 +5,20 @@
   const productsStore = useProductsStore()
 
   const currentStep = ref<
-    'category' | 'subcategory' | 'product' | 'designs' | 'styles' | 'logos'
+    | 'category'
+    | 'subcategory'
+    | 'product'
+    | 'designs'
+    | 'styles'
+    | 'logos'
+    | 'colors'
+    | 'patterns'
+    | 'patterns-group'
+    | 'texts'
+    | 'texts-placement'
+    | 'roster'
+    | 'roster-edit'
+    | 'summary'
   >('category')
 
   const stepHistory = ref<string[]>(['category'])
@@ -18,6 +31,14 @@
       | 'designs'
       | 'styles'
       | 'logos'
+      | 'colors'
+      | 'patterns'
+      | 'patterns-group'
+      | 'texts'
+      | 'texts-placement'
+      | 'roster'
+      | 'roster-edit'
+      | 'summary'
   ) => {
     if (step !== currentStep.value) {
       stepHistory.value.push(step)
@@ -34,6 +55,14 @@
         | 'designs'
         | 'styles'
         | 'logos'
+        | 'colors'
+        | 'patterns'
+        | 'patterns-group'
+        | 'texts'
+        | 'texts-placement'
+        | 'roster'
+        | 'roster-edit'
+        | 'summary'
       if (previousStep === 'category') {
         // Category state is now handled through activeProductCustomization
       }
@@ -93,6 +122,21 @@
           await productsStore.dispatchGetRecentLogos()
         }
         navigateToStep('logos')
+      } else if (step === 'Colors') {
+        navigateToStep('colors')
+      } else if (step === 'Patterns') {
+        const patternsSubStep = (productsStore as any).patternsSubStep || 'list'
+        navigateToStep(
+          patternsSubStep === 'list' ? 'patterns' : 'patterns-group'
+        )
+      } else if (step === 'Texts') {
+        const textsSubStep = (productsStore as any).textsSubStep || 'list'
+        navigateToStep(textsSubStep === 'list' ? 'texts' : 'texts-placement')
+      } else if (step === 'Roster') {
+        const rosterSubStep = (productsStore as any).rosterSubStep || 'list'
+        navigateToStep(rosterSubStep === 'list' ? 'roster' : 'roster-edit')
+      } else if (step === 'Summary') {
+        navigateToStep('summary')
       } else if (step === 'Products') {
         // When no categories are available, go directly to product step
         navigateToStep('product')

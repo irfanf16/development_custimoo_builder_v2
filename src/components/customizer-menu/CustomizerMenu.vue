@@ -60,6 +60,48 @@
       // If no categories but step is 'Categories', treat it as 'Designs' step
       return label === NAV_STEPS.DESIGNS
     }
+
+    // Check if we're in Products-related substeps
+    if (label === NAV_STEPS.PRODUCTS) {
+      const currentStep = productsStore.activeStep || NAV_STEPS.PRODUCTS
+      const productsSubStep = (productsStore as any).productsSubStep
+
+      // Highlight Products if we're in Categories step or any Products substep
+      return (
+        currentStep === 'Categories' ||
+        currentStep === NAV_STEPS.PRODUCTS ||
+        (currentStep === 'Categories' &&
+          productsSubStep &&
+          ['category', 'subcategory', 'product'].includes(productsSubStep))
+      )
+    }
+
+    // Check if we're in Logos-related substeps
+    if (label === NAV_STEPS.LOGOS) {
+      const currentStep = productsStore.activeStep || NAV_STEPS.PRODUCTS
+      const logosSubStep = (productsStore as any).logosSubStep
+
+      // Highlight Logos if we're in Logos step and have a substep
+      return (
+        currentStep === NAV_STEPS.LOGOS &&
+        logosSubStep &&
+        ['list', 'placement', 'edit'].includes(logosSubStep)
+      )
+    }
+
+    // Check if we're in Patterns-related substeps
+    if (label === NAV_STEPS.PATTERNS) {
+      const currentStep = productsStore.activeStep || NAV_STEPS.PRODUCTS
+      const patternsSubStep = (productsStore as any).patternsSubStep
+
+      // Highlight Patterns if we're in Patterns step and have a substep
+      return (
+        currentStep === NAV_STEPS.PATTERNS &&
+        patternsSubStep &&
+        ['list', 'group'].includes(patternsSubStep)
+      )
+    }
+
     return (productsStore.activeStep || NAV_STEPS.PRODUCTS) === label
   }
 

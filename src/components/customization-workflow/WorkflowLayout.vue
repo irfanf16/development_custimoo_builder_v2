@@ -57,12 +57,7 @@
   })
 
   const isExpandable = computed(() => {
-    return (
-      props.currentStep !== 'category' &&
-      props.currentStep !== 'subcategory' &&
-      props.currentStep !== 'styles' &&
-      props.currentStep !== 'logos'
-    )
+    return props.currentStep === 'product' || props.currentStep === 'designs'
   })
 
   const showBackButton = computed(() => {
