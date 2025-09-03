@@ -102,7 +102,12 @@
 
   onMounted(() => {
     if (!canvasEl.value) return
-    initCanvas({ enableRetinaScaling: true, selection: false })
+    initCanvas({
+      enableRetinaScaling: true,
+      selection: false,
+      hoverCursor: 'pointer',
+      defaultCursor: 'pointer'
+    })
     setCanvasSize({ width: props.width, height: props.height })
     renderPreview()
   })

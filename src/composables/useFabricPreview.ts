@@ -12,6 +12,7 @@ type InitOptions = {
   selection?: boolean
   enableRetinaScaling?: boolean
   hoverCursor?: string
+  defaultCursor?: string
 }
 
 type SizeOptions = {
@@ -40,7 +41,8 @@ export function useFabricPreview() {
     canvas.value = new Canvas(canvasEl.value, {
       selection: options?.selection ?? false,
       enableRetinaScaling: options?.enableRetinaScaling ?? true,
-      hoverCursor: options?.hoverCursor
+      hoverCursor: options?.hoverCursor,
+      defaultCursor: options?.defaultCursor
     })
   }
 
