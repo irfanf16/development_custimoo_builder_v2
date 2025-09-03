@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onMounted, onBeforeUnmount, watch, type PropType } from 'vue'
+  import { onMounted, onBeforeUnmount, watch, ref, type PropType } from 'vue'
   import { Rect } from 'fabric'
   import type {
     OutputProductPreview,
@@ -49,8 +49,14 @@
     addDesignLayer
   } = useFabricPreview()
 
+  const containerEl = ref<HTMLElement | null>(null)
+  const isVisible = ref(false)
+  const isRendering = ref(false)
+  let io: IntersectionObserver | null = null
+
   async function renderPreview() {
     if (!canvas.value) return
+    isRendering.value = true
     clearCanvas()
 
     if (props.side === 'back' && (props.designBase as any).back_design) {
@@ -98,18 +104,46 @@
       rect.setCoords()
     }
     requestRender()
+    isRendering.value = false
+  }
+
+  function ensureInitializedAndRender() {
+    if (!isVisible.value) return
+    if (!canvas.value && canvasEl.value) {
+      initCanvas({
+        enableRetinaScaling: true,
+        selection: false,
+        hoverCursor: 'pointer',
+        defaultCursor: 'pointer'
+      })
+      setCanvasSize({ width: props.width, height: props.height })
+    }
+    if (canvas.value) renderPreview()
   }
 
   onMounted(() => {
-    if (!canvasEl.value) return
-    initCanvas({
-      enableRetinaScaling: true,
-      selection: false,
-      hoverCursor: 'pointer',
-      defaultCursor: 'pointer'
-    })
-    setCanvasSize({ width: props.width, height: props.height })
-    renderPreview()
+    if (
+      typeof window !== 'undefined' &&
+      'IntersectionObserver' in window &&
+      containerEl.value
+    ) {
+      io = new IntersectionObserver(
+        entries => {
+          const entry = entries[0]
+          const nowVisible = !!entry?.isIntersecting
+          isVisible.value = nowVisible
+          if (nowVisible) {
+            ensureInitializedAndRender()
+          }
+        },
+        { root: null, rootMargin: '100px 0px', threshold: 0.01 }
+      )
+      io.observe(containerEl.value)
+    } else {
+      // Fallback: assume visible and render immediately
+      isVisible.value = true
+      ensureInitializedAndRender()
+    }
   })
 
   watch(
@@ -123,24 +157,42 @@
         `${props.overlayRect.x}-${props.overlayRect.y}-${props.overlayRect.width}-${props.overlayRect.height}`
     ],
     () => {
-      renderPreview()
+      if (isVisible.value && canvas.value) {
+        renderPreview()
+      }
     }
   )
 
+  watch([() => props.width, () => props.height], ([w, h]) => {
+    if (canvas.value) setCanvasSize({ width: w, height: h })
+    if (isVisible.value && canvas.value) renderPreview()
+  })
+
   onBeforeUnmount(() => {
+    if (io && containerEl.value) io.unobserve(containerEl.value)
+    if (io) io.disconnect()
     disposeCanvas()
   })
 </script>
 
 <template>
-  <canvas
-    ref="canvasEl"
-    :width="width"
-    :height="height"
-    :class="['rounded-xl', props.class || '']"
-    :style="{
-      width: `${width / 16}rem`,
-      height: `${height / 16}rem`
-    }"
-  />
+  <div
+    ref="containerEl"
+    :class="['relative rounded-xl', props.class || '']"
+    :style="{ width: `${width / 16}rem`, height: `${height / 16}rem` }"
+  >
+    <canvas
+      ref="canvasEl"
+      v-show="isVisible"
+      :width="width"
+      :height="height"
+      class="rounded-xl"
+      style="width: 100%; height: 100%"
+    />
+
+    <div
+      v-if="!isVisible || isRendering"
+      class="absolute inset-0 rounded-xl animate-pulse bg-secondary/30"
+    />
+  </div>
 </template>
