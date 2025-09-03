@@ -35,11 +35,12 @@
     if (styleId) {
       // Persist chosen style in customization
       productsStore.setActiveStyle(styleId)
-      await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
+      await productsStore.dispatchGetStylePreviews(productId)
     }
     if (designId) {
       // Persist chosen design in customization
       productsStore.setActiveDesign(designId)
+      await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs
     productsStore.setActiveStep('Designs')
