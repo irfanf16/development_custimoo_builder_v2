@@ -106,7 +106,10 @@ export type OutputProductDetails = OutputProductPreview & {
   company_addons: OutputCompanyAddon[]
   active_addons: OutputAddon[]
   logos_setting: OutputProductLogosSetting[]
+  patterns: OutputProductPattern[]
 }
+
+export type OutputProductPattern = Object
 
 // OutputProductNames
 export type OutputProductName = {
