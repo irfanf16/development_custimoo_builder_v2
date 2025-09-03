@@ -9,6 +9,7 @@ import { API } from '@/services'
 
 type SelectionKey =
   | 'category_id'
+  | 'sub_category_id'
   | 'product_id'
   | 'style_id'
   | 'design_id'
@@ -142,6 +143,29 @@ export const useSelectionStore = defineStore('selectionStore', () => {
     save()
   }
 
+  async function setSubCategory(
+    subCategoryId: number,
+    meta?: { activeStep?: string }
+  ) {
+    if (!customization.value) return
+    const prev = customization.value.sub_category_id
+    if (prev === subCategoryId) return
+    customization.value.sub_category_id = subCategoryId
+    if (meta?.activeStep) setActiveStep(meta.activeStep)
+    pushCommand({
+      key: 'sub_category_id',
+      prev,
+      next: subCategoryId,
+      activeStep: activeStep.value,
+      timestamp: Date.now()
+    })
+    // Optionally preload product previews for this subcategory
+    try {
+      await API.products.getProductPreviewsByCategory(subCategoryId)
+    } catch (_) {}
+    save()
+  }
+
   async function setStyle(styleId: number, meta?: { activeStep?: string }) {
     if (!customization.value) return
     const prev = customization.value.style_id
@@ -215,6 +239,9 @@ export const useSelectionStore = defineStore('selectionStore', () => {
       case 'category_id':
         customization.value!.category_id = cmd.next as number
         break
+      case 'sub_category_id':
+        customization.value!.sub_category_id = cmd.next as number
+        break
       case 'product_id':
         customization.value!.product_id = cmd.next as string
         break
@@ -276,6 +303,7 @@ export const useSelectionStore = defineStore('selectionStore', () => {
     setActiveStep,
     setCustomization,
     setCategory,
+    setSubCategory,
     setProduct,
     setStyle,
     setDesign,

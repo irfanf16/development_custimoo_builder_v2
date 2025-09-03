@@ -38,6 +38,16 @@
     )
   })
 
+  // Styles visibility: show if more than one style OR addons available
+  const shouldShowStyles = computed(() => {
+    const stylesCount = (productsStore.stylePreviews || []).length
+    const hasAddons = !!(
+      (productsStore.companyAddons && productsStore.companyAddons.length) ||
+      (productsStore.productAddons && productsStore.productAddons.length)
+    )
+    return stylesCount > 1 || hasAddons
+  })
+
   function isActive(label: string) {
     // Handle the case when no categories are available
     if (!shouldShowCategories.value && label === NAV_STEPS.PRODUCTS) {
@@ -139,6 +149,7 @@
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
+      v-if="shouldShowStyles"
       :isActive="isActive(NAV_STEPS.STYLES)"
       :text="getNavText(NAV_STEPS.STYLES)"
       @click="goTo(NAV_STEPS.STYLES)"

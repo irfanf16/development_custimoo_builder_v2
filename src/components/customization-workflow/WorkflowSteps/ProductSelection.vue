@@ -26,8 +26,11 @@
   )
 
   async function handleSelectProduct(productId: number) {
-    // Commit the selected category at the moment the product is chosen
+    // Commit the selected category/subcategory at the moment the product is chosen
     productsStore.commitSelectedCategory()
+    if ((productsStore as any).commitSelectedSubCategory) {
+      ;(productsStore as any).commitSelectedSubCategory()
+    }
     await productsStore.dispatchGetActiveProductDetails(productId)
     // After loading active details, ensure customization contains product, style and design ids
     const styleId = (productsStore.activeStyleDetails as any)?.id

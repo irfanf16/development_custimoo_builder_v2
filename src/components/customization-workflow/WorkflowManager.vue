@@ -5,13 +5,19 @@
   const productsStore = useProductsStore()
 
   const currentStep = ref<
-    'category' | 'product' | 'designs' | 'styles' | 'logos'
+    'category' | 'subcategory' | 'product' | 'designs' | 'styles' | 'logos'
   >('category')
 
   const stepHistory = ref<string[]>(['category'])
 
   const navigateToStep = (
-    step: 'category' | 'product' | 'designs' | 'styles' | 'logos'
+    step:
+      | 'category'
+      | 'subcategory'
+      | 'product'
+      | 'designs'
+      | 'styles'
+      | 'logos'
   ) => {
     if (step !== currentStep.value) {
       stepHistory.value.push(step)
@@ -37,6 +43,15 @@
 
   const handleCategorySelect = (categoryId: number) => {
     productsStore.setSelectedCategoryForPreview(categoryId)
+    // If category has subcategories, go to subcategory step, otherwise products
+    const hasSubcategories = !!productsStore.categories?.data?.find(
+      c => c.id === categoryId && c.subcategories && c.subcategories.length
+    )
+    navigateToStep(hasSubcategories ? 'subcategory' : 'product')
+  }
+
+  const handleSubcategorySelect = (subcategoryId: number) => {
+    productsStore.setSelectedSubCategoryForPreview(subcategoryId)
     navigateToStep('product')
   }
 
@@ -97,7 +112,8 @@
     stepHistory,
     navigateToStep,
     navigateBack,
-    handleCategorySelect
+    handleCategorySelect,
+    handleSubcategorySelect
   })
 </script>
 

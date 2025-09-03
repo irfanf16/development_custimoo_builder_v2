@@ -80,6 +80,7 @@ declare module 'vue' {
     SignInButton: typeof import('./src/components/SignInButton.vue')['default']
     SmallPreview: typeof import('./src/components/customizer-canvas-preview/SmallPreview.vue')['default']
     StyleSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/StyleSelection.vue')['default']
+    SubcategorySelection: typeof import('./src/components/customization-workflow/WorkflowSteps/SubcategorySelection.vue')['default']
     Switch: typeof import('./src/components/ui/switch/Switch.vue')['default']
     ThemeToggle: typeof import('./src/components/ThemeToggle.vue')['default']
     Tooltip: typeof import('./src/components/ui/tooltip/Tooltip.vue')['default']

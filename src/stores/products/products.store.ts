@@ -50,8 +50,16 @@ export const useProductsStore = defineStore('productsStore', () => {
   const activeCategoryId = computed(
     () => activeProductCustomization.value?.category_id ?? null
   )
+  const activeSubCategoryId = computed(
+    () => activeProductCustomization.value?.sub_category_id ?? null
+  )
   const effectiveCategoryId = computed<number | null>(() => {
-    return selectedCategoryId.value ?? activeCategoryId.value ?? null
+    return (
+      selectedCategoryId.value ??
+      activeSubCategoryId.value ??
+      activeCategoryId.value ??
+      null
+    )
   })
 
   const effectiveStyleDetails = computed(() => {
@@ -90,7 +98,10 @@ export const useProductsStore = defineStore('productsStore', () => {
   const designPreviews = ref<OutputDesignPreview[] | null>(null)
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
   const selectedCustomLogoIdx = ref<number | null>(null)
-  const logosSubStep = ref<'list' | 'placement' | 'controls' | 'editor'>('list')
+  const logosSubStep = ref<'list' | 'placement' | 'edit'>('list')
+  const productsSubStep = ref<'category' | 'subcategory' | 'product'>(
+    'category'
+  )
   const activeCanvasSide = ref<'front' | 'back'>('front')
   const canvasZoom = ref<number>(1)
   const isLoading = ref(false)
@@ -118,10 +129,24 @@ export const useProductsStore = defineStore('productsStore', () => {
   function setSelectedCategoryForPreview(categoryId: number | null) {
     selectedCategoryId.value = categoryId
   }
+  const selectedSubCategoryId = ref<number | null>(null)
+  function setSelectedSubCategoryForPreview(subCategoryId: number | null) {
+    selectedSubCategoryId.value = subCategoryId
+  }
+  function setActiveSubCategory(subCategoryId: number | null) {
+    if (subCategoryId == null) return
+    selection.setSubCategory(subCategoryId)
+  }
   function commitSelectedCategory() {
     if (selectedCategoryId.value != null) {
       setActiveCategory(selectedCategoryId.value)
       selectedCategoryId.value = null
+    }
+  }
+  function commitSelectedSubCategory() {
+    if (selectedSubCategoryId.value != null) {
+      setActiveSubCategory(selectedSubCategoryId.value)
+      selectedSubCategoryId.value = null
     }
   }
   function setActiveProduct(productId: number) {
@@ -141,8 +166,17 @@ export const useProductsStore = defineStore('productsStore', () => {
     isLoading.value = false
     error.value = null
   }
-  function setLogosSubStep(step: 'list' | 'placement' | 'controls' | 'editor') {
+  function setLogosSubStep(step: 'list' | 'placement' | 'edit') {
     logosSubStep.value = step
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('workflow.logosSubStep', step)
+    }
+  }
+  function setProductsSubStep(step: 'category' | 'subcategory' | 'product') {
+    productsSubStep.value = step
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('workflow.productsSubStep', step)
+    }
   }
 
   async function dispatchGetCategoriesWithNoDefaultCategoryOrProduct(): Promise<
@@ -245,6 +279,22 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function saveCustomizationToLocalStorage() {
     selection.save()
+  }
+
+  function loadWorkflowSubStepsFromLocalStorage() {
+    if (typeof window === 'undefined') return
+    try {
+      const logos = window.localStorage.getItem('workflow.logosSubStep') as
+        | 'list'
+        | 'placement'
+        | 'edit'
+        | null
+      const products = window.localStorage.getItem(
+        'workflow.productsSubStep'
+      ) as 'category' | 'subcategory' | 'product' | null
+      if (logos) logosSubStep.value = logos
+      if (products) productsSubStep.value = products
+    } catch (_) {}
   }
 
   function resetCustomizationToDefaults() {
@@ -497,12 +547,17 @@ export const useProductsStore = defineStore('productsStore', () => {
     selectedCustomLogoIdx,
     activeCanvasSide,
     canvasZoom,
+    // sub-step states
+    logosSubStep,
+    productsSubStep,
     activeAddons,
     productAddons,
     companyAddons,
     activeStep,
     activeCategoryId,
+    activeSubCategoryId,
     selectedCategoryId,
+    selectedSubCategoryId,
     effectiveCategoryId,
     activeProductId,
     activeStyleId,
@@ -518,8 +573,11 @@ export const useProductsStore = defineStore('productsStore', () => {
     setSelectedCustomLogoIndex,
     applyLogoPlacementToSelected,
     addCustomLogoFromUpload,
-    logosSubStep,
     setLogosSubStep,
+    setProductsSubStep,
+    setSelectedSubCategoryForPreview,
+    setActiveSubCategory,
+    commitSelectedSubCategory,
     setActiveCanvasSide,
     toggleActiveCanvasSide,
     setCanvasZoom,
@@ -531,6 +589,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveAddons,
     setSelectedCategoryForPreview,
     commitSelectedCategory,
+    loadWorkflowSubStepsFromLocalStorage,
     effectiveStyleDetails,
     effectiveDesignDetails
   }

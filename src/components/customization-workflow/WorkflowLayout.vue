@@ -4,6 +4,7 @@
   import { Button } from '@/components/ui/button'
   import {
     CategorySelection,
+    SubcategorySelection,
     ProductSelection,
     DesignSelection,
     StyleSelection,
@@ -12,7 +13,13 @@
   import MenuPanel from './MenuPanel.vue'
 
   interface Props {
-    currentStep: 'category' | 'product' | 'designs' | 'styles' | 'logos'
+    currentStep:
+      | 'category'
+      | 'subcategory'
+      | 'product'
+      | 'designs'
+      | 'styles'
+      | 'logos'
     navigationItems: Array<{
       label: string
       action?: () => void
@@ -36,6 +43,7 @@
   const isExpandable = computed(() => {
     return (
       props.currentStep !== 'category' &&
+      props.currentStep !== 'subcategory' &&
       props.currentStep !== 'styles' &&
       props.currentStep !== 'logos'
     )
@@ -60,6 +68,9 @@
         v-if="currentStep === 'category'"
         @select-category="onCategorySelect"
       />
+
+      <!-- Subcategory Selection Step -->
+      <SubcategorySelection v-else-if="currentStep === 'subcategory'" />
 
       <!-- Product Selection Step -->
       <ProductSelection v-else-if="currentStep === 'product'" />

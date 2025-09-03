@@ -1,4 +1,5 @@
 export { default as CategorySelection } from './CategorySelection.vue'
+export { default as SubcategorySelection } from './SubcategorySelection.vue'
 export { default as ProductSelection } from './ProductSelection.vue'
 export { default as DesignSelection } from './DesignSelection.vue'
 export { default as StyleSelection } from './StyleSelection.vue'

@@ -14,20 +14,18 @@
     logos_choose_placement,
     logos_back_to_logos,
     logos_save_placement,
-    logos_controls,
     logos_back,
     logos_editor,
     logos_recolor_logo,
     logos_primary,
-    logos_more_options,
-    logos_back_to_controls
+    logos_more_options
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
   const localeStore = useLocaleStore()
 
-  type SubPanel = 'list' | 'placement' | 'controls' | 'editor'
+  type SubPanel = 'list' | 'placement' | 'edit'
   const subPanel = ref<SubPanel>('list')
   // Keep in sync with store-driven breadcrumbs
   watch(
@@ -61,12 +59,8 @@
     productsStore.setLogosSubStep('placement')
   }
   function goToControls() {
-    subPanel.value = 'controls'
-    productsStore.setLogosSubStep('controls')
-  }
-  function goToEditor() {
-    subPanel.value = 'editor'
-    productsStore.setLogosSubStep('editor')
+    subPanel.value = 'edit'
+    productsStore.setLogosSubStep('edit')
   }
   function goToList() {
     subPanel.value = 'list'
@@ -130,11 +124,11 @@
             >
               <img
                 :src="
-                  productsStore.activeProductCustomization?.custom_logos?.[
-                    productsStore.selectedCustomLogoIdx ?? 0
-                  ]?.url ||
-                  productsStore.activeProductCustomization?.custom_logos?.[0]
-                    ?.url
+                  (productsStore.activeProductCustomization as any)
+                    ?.custom_logos?.[productsStore.selectedCustomLogoIdx ?? 0]
+                    ?.url ||
+                  (productsStore.activeProductCustomization as any)
+                    ?.custom_logos?.[0]?.url
                 "
                 class="max-h-full object-contain"
                 alt="active logo"
@@ -212,15 +206,15 @@
           </div>
         </div>
 
-        <div v-else-if="subPanel === 'controls'" class="flex flex-col gap-4">
+        <div v-else-if="subPanel === 'edit'" class="flex flex-col gap-4">
           <div class="text-sm">
-            {{ logos_controls({}, { locale: localeStore.currentLocale }) }}
+            {{ logos_editor({}, { locale: localeStore.currentLocale }) }}
           </div>
           <div class="flex gap-3">
             <Button variant="outline" class="rounded-lg" @click="goToList">{{
               logos_back({}, { locale: localeStore.currentLocale })
             }}</Button>
-            <Button variant="default" class="rounded-lg" @click="goToEditor">{{
+            <Button variant="default" class="rounded-lg" disabled>{{
               logos_editor({}, { locale: localeStore.currentLocale })
             }}</Button>
           </div>
@@ -260,10 +254,7 @@
               class="rounded-lg"
               @click="goToControls"
               >{{
-                logos_back_to_controls(
-                  {},
-                  { locale: localeStore.currentLocale }
-                )
+                logos_back({}, { locale: localeStore.currentLocale })
               }}</Button
             >
           </div>

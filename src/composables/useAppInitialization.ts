@@ -60,6 +60,8 @@ export function useAppInitialization() {
         const productsStore = useProductsStore()
         const selectionStore = useSelectionStore()
         const hasActiveCustomization = selectionStore.load()
+        // restore saved workflow sub-steps
+        productsStore.loadWorkflowSubStepsFromLocalStorage()
 
         // PHASE 2: Fetch essential data from API (blocking operations)
         // These operations must complete before we can proceed with customization setup

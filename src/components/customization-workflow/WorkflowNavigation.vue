@@ -11,7 +11,13 @@
   }
 
   interface Props {
-    currentStep: 'category' | 'product' | 'designs' | 'styles' | 'logos'
+    currentStep:
+      | 'category'
+      | 'subcategory'
+      | 'product'
+      | 'designs'
+      | 'styles'
+      | 'logos'
     onNavigateBack: () => void
   }
 
@@ -38,8 +44,15 @@
       const category = productsStore.categories?.data?.find(
         c => c.id === productsStore.activeCategoryId
       )
+      if (props.currentStep === 'subcategory') {
+        return [
+          { label: 'Products', action: props.onNavigateBack },
+          { label: category?.category_name || 'Products' },
+          { label: 'Sub category' }
+        ]
+      }
       return [
-        { label: 'Categories', action: props.onNavigateBack },
+        { label: 'Products', action: props.onNavigateBack },
         { label: category?.category_name || 'Products' }
       ]
     }
@@ -59,13 +72,11 @@
       const sub = (productsStore as any).logosSubStep as
         | 'list'
         | 'placement'
-        | 'controls'
-        | 'editor'
+        | 'edit'
       const map: Record<string, string> = {
         list: 'Logos',
         placement: 'Placement',
-        controls: 'Controls',
-        editor: 'Editor'
+        edit: 'Edit'
       }
       const trail = [
         {
