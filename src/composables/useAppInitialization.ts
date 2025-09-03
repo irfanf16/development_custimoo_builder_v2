@@ -107,12 +107,6 @@ export function useAppInitialization() {
         // These are lightweight previews that show available products in the selected category
         await productsStore.dispatchGetProductPreviews(effectiveCategoryId)
 
-        // If no categories are available, skip directly to Products step
-        // This handles edge cases where the company has no product categories
-        if (!effectiveCategoryId) {
-          productsStore.setActiveStep('Products')
-        }
-
         // PHASE 5: Set up product customization state
         // This is the core of the initialization process - ensuring we have a valid product selection
 
@@ -147,7 +141,7 @@ export function useAppInitialization() {
             }
           }
         } else {
-          // SCENARIO B: Create default customization
+          // SCENARIO B: Create default customization but navigate to category selection
           // User is new or has no saved customization, set up sensible defaults
 
           // Determine which product to load as default
@@ -169,6 +163,15 @@ export function useAppInitialization() {
               productsStore.ensureCustomization()
               productsStore.saveCustomizationToLocalStorage()
             }
+          }
+
+          // Set the active step to Categories if categories are available
+          // This ensures the user starts at the category selection screen even with default customization
+          if (effectiveCategoryId && productsStore.categories?.data?.length) {
+            productsStore.setActiveStep('Categories')
+          } else {
+            // If no categories available, go directly to Products step
+            productsStore.setActiveStep('Products')
           }
         }
 

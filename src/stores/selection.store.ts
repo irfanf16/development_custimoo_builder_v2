@@ -134,7 +134,7 @@ export const useSelectionStore = defineStore('selectionStore', () => {
       timestamp: Date.now()
     })
     const resp = await API.products.getActiveProductDetails(productId)
-    if ('data' in resp) {
+    if ('data' in resp && resp.data) {
       const details = resp.data
       productsStore.activeProductDetails = details.productDetails
       productsStore.activeStyleDetails = details.styleDetails

@@ -446,7 +446,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     const result = await tryCatchApi(
       API.products.getActiveProductDetails(productId)
     )
-    if (result.success) {
+    if (result.success && result.content) {
       const details = result.content as ActiveProductDetails
       activeProductDetails.value = details.productDetails
       activeStyleDetails.value = details.styleDetails
