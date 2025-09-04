@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, watch } from 'vue'
+  import { computed, onMounted, watch, nextTick } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from './ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
@@ -9,6 +9,16 @@
   const previews = computed(() => productsStore.productPreviews || [])
   const selectedProductId = computed(() => productsStore.activeProductId)
 
+  interface Emits {
+    (
+      e: 'scroll-to-element',
+      elementId: string,
+      behavior?: 'smooth' | 'auto'
+    ): void
+  }
+
+  const emit = defineEmits<Emits>()
+
   function loadPreviewsForCurrentCategory() {
     const categoryId = productsStore.effectiveCategoryId
     productsStore.dispatchGetProductPreviews(categoryId)
@@ -16,6 +26,17 @@
 
   onMounted(() => {
     loadPreviewsForCurrentCategory()
+
+    // Scroll to active product if it exists
+    nextTick(() => {
+      const activeProductId = productsStore.activeProductId
+      if (activeProductId) {
+        // Add a small delay to ensure MenuPanel is fully mounted
+        setTimeout(() => {
+          emit('scroll-to-element', `product-${activeProductId}`, 'auto')
+        }, 500)
+      }
+    })
   })
 
   watch(
@@ -55,6 +76,7 @@
     <div
       v-for="item in previews"
       :key="item.productPreview.id"
+      :id="`product-${item.productPreview.id}`"
       class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"
       :class="[
         'relative rounded-xl transition-colors cursor-pointer',

@@ -50,6 +50,9 @@
   const productsStore = useProductsStore()
 
   const isExpanded = ref(false)
+  const menuPanelRef = ref<{
+    scrollToElement: (elementId: string, behavior?: 'smooth' | 'auto') => void
+  } | null>(null)
 
   // Computed properties for workflow step configuration
   const contentKey = computed(() => {
@@ -66,15 +69,20 @@
     return props.currentStep !== 'category'
   })
 
-  const testEmitUpdateIsExpanded = (value: boolean) => {
-    console.log('testEmitUpdateIsExpanded', value)
-    isExpanded.value = value
+  const handleScrollToElement = (
+    elementId: string,
+    behavior: 'smooth' | 'auto' = 'auto'
+  ) => {
+    if (menuPanelRef.value) {
+      menuPanelRef.value.scrollToElement(elementId, behavior)
+    }
   }
 </script>
 
 <template>
   <div id="workflow-panel-container" class="flex-col">
     <MenuPanel
+      ref="menuPanelRef"
       :content-key="contentKey"
       :breadcrumbs="navigationItems"
       :expandable="isExpandable"
@@ -93,12 +101,16 @@
       <SubcategorySelection v-else-if="currentStep === 'subcategory'" />
 
       <!-- Product Selection Step -->
-      <ProductSelection v-else-if="currentStep === 'product'" />
+      <ProductSelection
+        v-else-if="currentStep === 'product'"
+        @scroll-to-element="handleScrollToElement"
+      />
 
       <!-- Design Selection Step -->
       <DesignSelection
         v-else-if="currentStep === 'designs'"
-        @update:is-expanded="testEmitUpdateIsExpanded"
+        @scroll-to-element="handleScrollToElement"
+        @update:is-expanded="isExpanded = $event"
       />
 
       <!-- Style Selection Step -->

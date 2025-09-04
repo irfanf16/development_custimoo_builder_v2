@@ -1,24 +1,45 @@
 <script setup lang="ts">
-  import { computed, onMounted } from 'vue'
+  import { computed, nextTick, onMounted, ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from './ProductPreviewCanvas.vue'
+  import { useSelectionStore } from '@/stores/selection.store'
+
+  const selectionStore = useSelectionStore()
 
   const productsStore = useProductsStore()
 
   const previews = computed(() => productsStore.designPreviews || [])
   const selectedDesignId = computed(() => productsStore.activeDesignId)
 
-  onMounted(() => {
+  const designSelectionContainer = ref<HTMLElement | null>(null)
+
+  onMounted(async () => {
     if (!productsStore.designPreviews) {
       const styleId = (productsStore.activeStyleDetails as any)?.id
       if (styleId) {
-        productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
+        await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
       }
     }
+    // Scroll to active design in next tick
+    nextTick(() => {
+      const activeDesignId = selectionStore.customization?.design_id
+      console.log('activeDesignId', activeDesignId)
+      if (activeDesignId) {
+        // Add a small delay to ensure MenuPanel is fully mounted
+        setTimeout(() => {
+          emit('scroll-to-element', `design-${activeDesignId}`, 'auto')
+        }, 500)
+      }
+    })
   })
 
   interface Emits {
     (e: 'update:isExpanded', value: boolean): void
+    (
+      e: 'scroll-to-element',
+      elementId: string,
+      behavior?: 'smooth' | 'auto'
+    ): void
   }
 
   const emit = defineEmits<Emits>()
@@ -26,14 +47,19 @@
   function selectDesign(item: any) {
     emit('update:isExpanded', false)
     productsStore.applyDesignPreview(item)
+    // Apply design preview after a small delay to ensure MenuPanel is fully mounted
+    setTimeout(() => {
+      emit('scroll-to-element', `design-${item.id}`, 'smooth')
+    }, 300)
   }
 </script>
 
 <template>
-  <div class="flex flex-wrap mb-6">
+  <div ref="designSelectionContainer" class="flex flex-wrap mb-6">
     <div
       v-for="item in previews"
       :key="item.id"
+      :id="`design-${item.id}`"
       class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"
       :class="[
         'relative rounded-xl transition-colors cursor-pointer',
