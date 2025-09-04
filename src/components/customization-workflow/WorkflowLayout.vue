@@ -141,7 +141,7 @@
       <!-- Summary -->
       <SummaryPanel v-else-if="currentStep === 'summary'" />
 
-      <template #footer="{ isExpanded }">
+      <template v-if="currentStep === 'designs'" #footer="{ isExpanded }">
         <div
           class="flex gap-3 w-full"
           :class="isExpanded ? 'justify-end' : 'justify-between'"

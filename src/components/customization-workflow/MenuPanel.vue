@@ -191,11 +191,11 @@
     ]"
   >
     <Card
-      class="h-full max-h-[80vh] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 overflow-hidden flex flex-col"
+      class="h-full max-h-[80vh] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 overflow-hidden flex flex-col py-0"
       :class="isExpanded ? 'w-[75vw]' : 'w-[470px]'"
     >
       <CardHeader
-        class="pb-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem] flex-shrink-0"
+        class="py-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem] flex-shrink-0"
       >
         <div
           class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
@@ -245,7 +245,7 @@
         </Button>
       </CardHeader>
 
-      <CardContent class="p-0 pb-4 flex-1 min-h-0">
+      <CardContent class="p-0 flex-1 min-h-0">
         <!-- Content slot for different panel types -->
         <Transition name="panel-slide" mode="out-in" appear>
           <div
@@ -262,9 +262,11 @@
       </CardContent>
 
       <!-- Footer actions -->
-      <CardFooter class="px-6 flex-shrink-0 pt-6 border-t">
-        <slot name="footer" :is-expanded="isExpanded" />
-      </CardFooter>
+      <template v-if="$slots.footer">
+        <CardFooter class="px-6 flex-shrink-0 py-6 border-t">
+          <slot name="footer" :is-expanded="isExpanded" />
+        </CardFooter>
+      </template>
     </Card>
   </div>
 </template>

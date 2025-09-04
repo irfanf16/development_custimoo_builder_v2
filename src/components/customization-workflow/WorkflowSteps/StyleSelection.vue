@@ -71,7 +71,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 pr-4">
+  <div class="flex flex-col gap-6 pr-4 mx-6">
     <div class="flex flex-col gap-2">
       <div
         class="text-muted-foreground text-base leading-relaxed"
