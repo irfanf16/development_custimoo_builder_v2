@@ -85,7 +85,11 @@
     }
   )
 
-  // Scroll functionality
+  /**
+   * Scrolls to a specific element within the scrollable container
+   * @param elementId - The ID of the element to scroll to
+   * @param behavior - Scroll behavior: 'auto' for instant, 'smooth' for animated
+   */
   function scrollToElement(
     elementId: string,
     behavior: 'smooth' | 'auto' = 'auto'
@@ -98,74 +102,62 @@
       const container = cardContentRef.value
       const targetElement = container.querySelector(`#${elementId}`)
 
-      if (targetElement) {
-        const containerHeight = container.clientHeight
-        const elementHeight = (targetElement as HTMLElement).offsetHeight
+      if (!targetElement) return
 
-        if (behavior === 'auto') {
-          // Auto behavior: instant scroll to center the element
-          // Calculate element position relative to container content
-          const elementRect = targetElement.getBoundingClientRect()
-          const containerRect = container.getBoundingClientRect()
+      const containerHeight = container.clientHeight
+      const elementHeight = (targetElement as HTMLElement).offsetHeight
 
-          // Get the element's position relative to the container's scrollable content
-          const elementTop =
-            elementRect.top - containerRect.top + container.scrollTop
-          const scrollTop = elementTop - containerHeight / 2 + elementHeight / 2
+      // Calculate element position relative to container's scrollable content
+      const elementRect = targetElement.getBoundingClientRect()
+      const containerRect = container.getBoundingClientRect()
+      const elementTop =
+        elementRect.top - containerRect.top + container.scrollTop
+      const scrollTop = elementTop - containerHeight / 2 + elementHeight / 2
 
-          // Scroll instantly within our container only
+      if (behavior === 'auto') {
+        // Instant scroll to center the element
+        container.scrollTo({
+          top: Math.max(0, scrollTop),
+          behavior: 'auto'
+        })
+      } else {
+        // Smooth scroll with visibility optimization
+        const isElementVisible =
+          elementRect.top >= containerRect.top &&
+          elementRect.bottom <= containerRect.bottom
+
+        if (!isElementVisible) {
+          // Element not visible: scroll to bring it into view
           container.scrollTo({
             top: Math.max(0, scrollTop),
-            behavior: 'auto'
+            behavior: 'smooth'
           })
         } else {
-          // Smooth behavior: two-phase scrolling for better UX
-          // First, scroll to bring the element into view without affecting parents
-          const elementRect = targetElement.getBoundingClientRect()
-          const containerRect = container.getBoundingClientRect()
+          // Element visible: just center it smoothly
+          const elementCenter = elementRect.top + elementHeight / 2
+          const containerCenter = containerRect.top + containerHeight / 2
+          const scrollAdjustment = elementCenter - containerCenter
 
-          // Calculate if element is visible in container
-          const isElementVisible =
-            elementRect.top >= containerRect.top &&
-            elementRect.bottom <= containerRect.bottom
-
-          if (!isElementVisible) {
-            // Element is not visible, scroll to bring it into view
-            const elementTop =
-              elementRect.top - containerRect.top + container.scrollTop
-            const scrollTop =
-              elementTop - containerHeight / 2 + elementHeight / 2
-
-            container.scrollTo({
-              top: Math.max(0, scrollTop),
-              behavior: 'smooth'
-            })
-          } else {
-            // Element is visible, just center it
-            const elementCenter = elementRect.top + elementHeight / 2
-            const containerCenter = containerRect.top + containerHeight / 2
-            const scrollAdjustment = elementCenter - containerCenter
-
-            container.scrollBy({
-              top: scrollAdjustment,
-              behavior: 'smooth'
-            })
-          }
+          container.scrollBy({
+            top: scrollAdjustment,
+            behavior: 'smooth'
+          })
         }
       }
     })
   }
 
+  /**
+   * Prevents scroll events from bubbling up to parent containers
+   */
   function handleScroll(event: Event) {
-    // Prevent scroll from bubbling up beyond the CardContent
     if (cardContentRef.value && event.target === cardContentRef.value) {
       event.stopPropagation()
     }
   }
 
   onMounted(() => {
-    // Add scroll event listener to the CardContent container
-    // Use nextTick to ensure the template ref is available
+    // Add scroll event listener to prevent bubbling
     nextTick(() => {
       if (cardContentRef.value) {
         cardContentRef.value.addEventListener('scroll', handleScroll, {
@@ -174,11 +166,6 @@
       }
     })
   })
-
-  // Listen for scroll events from child components
-  function handleScrollEvent(elementId: string) {
-    scrollToElement(elementId)
-  }
 
   onUnmounted(() => {
     // Clean up event listener
@@ -258,13 +245,12 @@
         </Button>
       </CardHeader>
 
-      <CardContent class="p-0 pb-4 flex-1 overflow-y-auto min-h-0">
+      <CardContent class="p-0 pb-4 flex-1 min-h-0">
         <!-- Content slot for different panel types -->
         <Transition name="panel-slide" mode="out-in" appear>
           <div
             ref="cardContentRef"
             :key="props.contentKey"
-            @scroll-to-element="handleScrollEvent"
             class="h-full overflow-y-auto max-h-[60vh]"
           >
             <slot

@@ -31,10 +31,10 @@
     nextTick(() => {
       const activeProductId = productsStore.activeProductId
       if (activeProductId) {
-        // Add a small delay to ensure MenuPanel is fully mounted
+        // Small delay to ensure MenuPanel is fully mounted
         setTimeout(() => {
           emit('scroll-to-element', `product-${activeProductId}`, 'auto')
-        }, 500)
+        }, 100)
       }
     })
   })

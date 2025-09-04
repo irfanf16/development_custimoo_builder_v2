@@ -69,6 +69,10 @@
     return props.currentStep !== 'category'
   })
 
+  /**
+   * Handles scroll-to-element events from child components
+   * Delegates to the MenuPanel's scrollToElement method
+   */
   const handleScrollToElement = (
     elementId: string,
     behavior: 'smooth' | 'auto' = 'auto'

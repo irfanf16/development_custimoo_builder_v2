@@ -20,15 +20,14 @@
         await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
       }
     }
-    // Scroll to active design in next tick
+    // Scroll to active design when component mounts
     nextTick(() => {
       const activeDesignId = selectionStore.customization?.design_id
-      console.log('activeDesignId', activeDesignId)
       if (activeDesignId) {
-        // Add a small delay to ensure MenuPanel is fully mounted
+        // Small delay to ensure MenuPanel is fully mounted
         setTimeout(() => {
           emit('scroll-to-element', `design-${activeDesignId}`, 'auto')
-        }, 500)
+        }, 100)
       }
     })
   })
@@ -47,7 +46,7 @@
   function selectDesign(item: any) {
     emit('update:isExpanded', false)
     productsStore.applyDesignPreview(item)
-    // Apply design preview after a small delay to ensure MenuPanel is fully mounted
+    // Scroll to selected design with smooth animation
     setTimeout(() => {
       emit('scroll-to-element', `design-${item.id}`, 'smooth')
     }, 300)
