@@ -46,10 +46,10 @@
   "locker_room": "Locker room",
   "cart": "Cart",
   "nav_product": "Product",
-  "nav_design": "Designs",
-  "nav_style": "Styles",
-  "nav_logo": "Logos",
+  "nav_design": "Design",
+  "nav_style": "Style",
+  "nav_logo": "Logo",
   "nav_color": "Color",
-  "nav_pattern": "Patterns",
-  "nav_text": "Texts"
+  "nav_pattern": "Pattern",
+  "nav_text": "Text"
 }

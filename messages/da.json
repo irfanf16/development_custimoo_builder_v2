@@ -46,11 +46,11 @@
   "save_options": "Gem muligheder",
   "locker_room": "Omklædningsrum",
   "cart": "Indkøbskurv",
-  "nav_product": "Produkter",
-  "nav_design": "Designs",
-  "nav_style": "Styles",
-  "nav_logo": "Logoer",
-  "nav_color": "Farver",
-  "nav_pattern": "Mønstre",
-  "nav_text": "Tekster"
+  "nav_product": "Produkt",
+  "nav_design": "Design",
+  "nav_style": "Stil",
+  "nav_logo": "Logo",
+  "nav_color": "Farve",
+  "nav_pattern": "Mønster",
+  "nav_text": "Tekst"
 }
