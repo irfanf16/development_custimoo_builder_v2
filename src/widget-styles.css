@@ -34,6 +34,24 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  @keyframes accordion-down {
+  from {
+    height: 0;
+    }
+  to {
+    height: var(--reka-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+  from {
+    height: var(--reka-accordion-content-height);
+    }
+  to {
+    height: 0;
+    }
+  }
 }
 
 /* ===== WIDGET CSS VARIABLES ===== */
@@ -324,4 +342,13 @@ customizer-widget::part(content) {
 .panel-slide-enter-to {
   transform: translateX(0);
   opacity: 1;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

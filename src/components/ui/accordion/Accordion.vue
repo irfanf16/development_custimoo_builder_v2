@@ -1,67 +1,19 @@
 <script setup lang="ts">
-  import { provide, ref, computed, watch, type Ref } from 'vue'
+import type { AccordionRootEmits, AccordionRootProps } from "reka-ui"
+import {
+  AccordionRoot,
 
-  type AccordionType = 'single' | 'multiple'
+  useForwardPropsEmits,
+} from "reka-ui"
 
-  const props = defineProps<{
-    type?: AccordionType
-    collapsible?: boolean
-    modelValue?: string | string[]
-  }>()
+const props = defineProps<AccordionRootProps>()
+const emits = defineEmits<AccordionRootEmits>()
 
-  const emit = defineEmits<{
-    (e: 'update:modelValue', v: string | string[]): void
-  }>()
-
-  const type = computed(() => props.type ?? 'single')
-  const collapsible = computed(() => props.collapsible ?? true)
-
-  const internal: Ref<string[]> = ref(
-    Array.isArray(props.modelValue)
-      ? [...props.modelValue]
-      : props.modelValue
-        ? [props.modelValue]
-        : []
-  )
-
-  watch(
-    () => props.modelValue,
-    v => {
-      if (Array.isArray(v)) internal.value = [...v]
-      else internal.value = v ? [v] : []
-    }
-  )
-
-  function isOpen(id: string): boolean {
-    return internal.value.includes(id)
-  }
-
-  function toggle(id: string) {
-    const open = isOpen(id)
-    if (type.value === 'single') {
-      if (open) {
-        if (collapsible.value) internal.value = []
-      } else {
-        internal.value = [id]
-      }
-    } else {
-      if (open) internal.value = internal.value.filter(x => x !== id)
-      else internal.value = [...internal.value, id]
-    }
-    emit(
-      'update:modelValue',
-      type.value === 'single' ? (internal.value[0] ?? '') : internal.value
-    )
-  }
-
-  provide('accordionCtx', {
-    isOpen,
-    toggle
-  })
+const forwarded = useForwardPropsEmits(props, emits)
 </script>
 
 <template>
-  <div class="w-full">
+  <AccordionRoot data-slot="accordion" v-bind="forwarded">
     <slot />
-  </div>
+  </AccordionRoot>
 </template>

@@ -3,6 +3,8 @@
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
+  import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
+  import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
   import { Button } from '@/components/ui/button'
 
   // Store (kept in case we want to wire real data later)
@@ -144,87 +146,90 @@
         :value="String(idx)"
         class="px-6"
       >
-        <template #trigger>
-          <div class="flex items-center gap-3">
-            <span
-              class="inline-block size-4 rounded-full border border-border"
-              :style="{ background: slotValues[idx] }"
-            />
-            <span>{{ label }}</span>
+        <AccordionTrigger>
+          <div class="flex justify-between gap-3 w-full group">
+            <div class="flex items-center gap-3 w-full">
+              <span
+                class="inline-block size-7 rounded-full border border-border"
+                :style="{ background: slotValues[idx] }"
+              />
+              <span class="text-base">{{ label }}</span>
+            </div>
+            <div
+              class="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-hover:no-underline transition-opacity"
+            >
+              <Button size="sm" variant="outline" @click.stop="copyFrom(idx)"
+                ><span class="no-underline">Copy</span></Button
+              >
+              <Button
+                size="sm"
+                variant="outline"
+                :disabled="!clipboardHex"
+                @click.stop="pasteTo(idx)"
+                ><span class="no-underline">Paste</span>
+              </Button>
+            </div>
           </div>
-        </template>
+        </AccordionTrigger>
+        <AccordionContent>
+          <!-- Controls row -->
+          <div class="flex items-center justify-between gap-3">
+            <div
+              class="inline-flex rounded-lg border border-border bg-muted p-1 text-sm"
+            >
+              <button
+                class="px-3 h-9 rounded-md transition-colors"
+                :class="[
+                  slotMode[idx] === 'colors'
+                    ? 'bg-card text-foreground shadow'
+                    : 'text-muted-foreground'
+                ]"
+                @click="slotMode[idx] = 'colors'"
+              >
+                Colors
+              </button>
+              <button
+                class="px-3 h-9 rounded-md transition-colors"
+                :class="[
+                  slotMode[idx] === 'pantone'
+                    ? 'bg-card text-foreground shadow'
+                    : 'text-muted-foreground'
+                ]"
+                @click="slotMode[idx] = 'pantone'"
+              >
+                Pantone
+              </button>
+            </div>
+          </div>
 
-        <!-- Controls row -->
-        <div class="flex items-center justify-between gap-3">
-          <div
-            class="inline-flex rounded-lg border border-border bg-muted p-1 text-sm"
-          >
+          <!-- Palette select -->
+          <div class="mt-3">
+            <select
+              v-model="currentPaletteName"
+              class="h-9 w-full rounded-md border border-input bg-card px-3 text-sm"
+            >
+              <option v-for="p in palettes" :key="p.name" :value="p.name">
+                {{ p.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Swatches grid -->
+          <div class="mt-4 grid grid-cols-8 gap-3">
             <button
-              class="px-3 h-9 rounded-md transition-colors"
-              :class="[
-                slotMode[idx] === 'colors'
-                  ? 'bg-card text-foreground shadow'
-                  : 'text-muted-foreground'
-              ]"
-              @click="slotMode[idx] = 'colors'"
+              v-for="hex in currentPalette.colors"
+              :key="hex + idx"
+              class="relative h-8 w-8 rounded-full border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+              :style="{ background: hex }"
+              @click="setSlotColor(idx, hex)"
             >
-              Colors
-            </button>
-            <button
-              class="px-3 h-9 rounded-md transition-colors"
-              :class="[
-                slotMode[idx] === 'pantone'
-                  ? 'bg-card text-foreground shadow'
-                  : 'text-muted-foreground'
-              ]"
-              @click="slotMode[idx] = 'pantone'"
-            >
-              Pantone
+              <span
+                v-if="slotValues[idx] === hex"
+                class="absolute inset-0 rounded-full ring-2 ring-primary"
+              />
             </button>
           </div>
-
-          <div class="flex items-center gap-2">
-            <Button size="sm" variant="outline" @click="copyFrom(idx)"
-              >Copy</Button
-            >
-            <Button
-              size="sm"
-              variant="outline"
-              :disabled="!clipboardHex"
-              @click="pasteTo(idx)"
-            >
-              Paste
-            </Button>
-          </div>
-        </div>
-
-        <!-- Palette select -->
-        <div class="mt-3">
-          <select
-            v-model="currentPaletteName"
-            class="h-9 w-full rounded-md border border-input bg-card px-3 text-sm"
-          >
-            <option v-for="p in palettes" :key="p.name" :value="p.name">
-              {{ p.name }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Swatches grid -->
-        <div class="mt-4 grid grid-cols-8 gap-3">
-          <button
-            v-for="hex in currentPalette.colors"
-            :key="hex + idx"
-            class="relative h-8 w-8 rounded-full border border-border focus:outline-none focus:ring-2 focus:ring-ring"
-            :style="{ background: hex }"
-            @click="setSlotColor(idx, hex)"
-          >
-            <span
-              v-if="slotValues[idx] === hex"
-              class="absolute inset-0 rounded-full ring-2 ring-primary"
-            />
-          </button>
-        </div>
+        </AccordionContent>
       </AccordionItem>
     </Accordion>
   </div>
