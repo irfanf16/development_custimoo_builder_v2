@@ -4,7 +4,7 @@
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="p-6">
     <Accordion type="multiple" :collapsible="true">
       <AccordionItem value="product"
         ><template #trigger>Product</template>

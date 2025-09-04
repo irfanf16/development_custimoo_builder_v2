@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="p-4 flex flex-col gap-3">
+  <div class="p-6 flex flex-col gap-3">
     <div
       class="h-40 border border-dashed rounded-lg flex items-center justify-center text-sm text-muted-foreground"
     >

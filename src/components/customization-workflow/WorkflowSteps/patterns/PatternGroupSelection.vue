@@ -16,7 +16,7 @@
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="p-6">
     <div class="text-sm text-muted-foreground mb-2">{{ groupName }}</div>
     <div class="grid grid-cols-3 gap-3">
       <div

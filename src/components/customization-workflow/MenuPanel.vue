@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { ref, watch, computed } from 'vue'
   import {
     Card,
     CardHeader,
@@ -26,24 +26,32 @@
   interface Props {
     breadcrumbs?: BreadcrumbItem[]
     expandable?: boolean
-    defaultExpanded?: boolean
+    isExpanded?: boolean
     showBackButton?: boolean
     onBack?: () => void
     contentKey?: string | number
   }
 
+  interface Emits {
+    (e: 'update:isExpanded', value: boolean): void
+  }
+
   const props = withDefaults(defineProps<Props>(), {
     expandable: false,
-    defaultExpanded: false,
+    isExpanded: false,
     showBackButton: false
   })
 
-  const isExpanded = ref(props.defaultExpanded)
+  const emit = defineEmits<Emits>()
+
+  // Use computed to get the current expanded state from props
+  const isExpanded = computed(() => props.isExpanded)
+
   const currentBreadcrumbIndex = ref(0)
 
   const toggleExpanded = () => {
     if (props.expandable) {
-      isExpanded.value = !isExpanded.value
+      emit('update:isExpanded', !props.isExpanded)
     }
   }
 
@@ -53,7 +61,7 @@
       props.breadcrumbs?.[index]?.action
     ) {
       props.breadcrumbs[index].action?.()
-      isExpanded.value = false
+      emit('update:isExpanded', false)
     }
   }
 
@@ -72,7 +80,7 @@
   watch(
     () => props.contentKey,
     () => {
-      isExpanded.value = false
+      emit('update:isExpanded', false)
     }
   )
 </script>
@@ -80,16 +88,16 @@
 <template>
   <div
     :class="[
-      'relative w-[28rem] h-[80vh]',
+      'relative w-[28rem] max-h-[80vh]',
       isExpanded ? 'z-20 max-w-none' : ''
     ]"
   >
     <Card
-      class="h-[auto] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 overflow-hidden"
-      :class="isExpanded ? 'w-[80vw]' : 'w-[520px]'"
+      class="h-full max-h-[80vh] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 overflow-hidden flex flex-col"
+      :class="isExpanded ? 'w-[75vw]' : 'w-[470px]'"
     >
       <CardHeader
-        class="pb-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem]"
+        class="pb-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem] flex-shrink-0"
       >
         <div
           class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
@@ -139,7 +147,7 @@
         </Button>
       </CardHeader>
 
-      <CardContent class="p-0 pb-4 px-6">
+      <CardContent class="p-0 pb-4 flex-1 overflow-y-auto min-h-0">
         <!-- Content slot for different panel types -->
         <Transition name="panel-slide" mode="out-in" appear>
           <div :key="props.contentKey">
@@ -152,7 +160,7 @@
       </CardContent>
 
       <!-- Footer actions -->
-      <CardFooter class="px-6 py-4 pt-0">
+      <CardFooter class="px-6 flex-shrink-0 pt-6 border-t">
         <slot name="footer" :is-expanded="isExpanded" />
       </CardFooter>
     </Card>

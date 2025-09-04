@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="p-6">
     <div class="flex flex-col gap-3">
       <div
         v-for="i in 10"

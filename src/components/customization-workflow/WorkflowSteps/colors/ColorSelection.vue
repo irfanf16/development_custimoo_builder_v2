@@ -16,7 +16,7 @@
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="p-6">
     <Accordion type="single" collapsible>
       <AccordionItem v-for="g in colorGroups" :key="g.name" :value="g.name">
         <template #trigger>{{ g.name }}</template>

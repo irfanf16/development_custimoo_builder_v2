@@ -11,7 +11,7 @@
 </script>
 
 <template>
-  <div class="p-4 flex flex-col gap-4">
+  <div class="p-6 flex flex-col gap-4">
     <div
       v-for="t in texts"
       :key="t.id"

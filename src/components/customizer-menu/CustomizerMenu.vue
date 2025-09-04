@@ -3,13 +3,13 @@
   import CustomizerMenuItem from './MenuItem.vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import {
-    nav_categories,
-    nav_designs,
-    nav_styles,
-    nav_logos,
-    nav_colors,
-    nav_patterns,
-    nav_texts,
+    nav_product,
+    nav_design,
+    nav_style,
+    nav_logo,
+    nav_color,
+    nav_pattern,
+    nav_text,
     nav_roster,
     nav_summary
   } from '@/paraglide/messages'
@@ -154,19 +154,19 @@
   function getNavText(step: string) {
     switch (step) {
       case NAV_STEPS.PRODUCTS:
-        return nav_categories({}, { locale: localeStore.currentLocale })
+        return nav_product({}, { locale: localeStore.currentLocale })
       case NAV_STEPS.DESIGNS:
-        return nav_designs({}, { locale: localeStore.currentLocale })
+        return nav_design({}, { locale: localeStore.currentLocale })
       case NAV_STEPS.STYLES:
-        return nav_styles({}, { locale: localeStore.currentLocale })
+        return nav_style({}, { locale: localeStore.currentLocale })
       case NAV_STEPS.LOGOS:
-        return nav_logos({}, { locale: localeStore.currentLocale })
+        return nav_logo({}, { locale: localeStore.currentLocale })
       case NAV_STEPS.COLORS:
-        return nav_colors({}, { locale: localeStore.currentLocale })
+        return nav_color({}, { locale: localeStore.currentLocale })
       case NAV_STEPS.PATTERNS:
-        return nav_patterns({}, { locale: localeStore.currentLocale })
+        return nav_pattern({}, { locale: localeStore.currentLocale })
       case NAV_STEPS.TEXTS:
-        return nav_texts({}, { locale: localeStore.currentLocale })
+        return nav_text({}, { locale: localeStore.currentLocale })
       case NAV_STEPS.ROSTER:
         return nav_roster({}, { locale: localeStore.currentLocale })
       case NAV_STEPS.SUMMARY:

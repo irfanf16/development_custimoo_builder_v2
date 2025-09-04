@@ -13,7 +13,7 @@
 </script>
 
 <template>
-  <div class="p-4 grid grid-cols-2 gap-3">
+  <div class="p-6 grid grid-cols-2 gap-3">
     <button
       v-for="(group, idx) in patterns"
       :key="idx"

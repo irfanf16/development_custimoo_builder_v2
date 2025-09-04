@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { Button } from '@/components/ui/button'
   import {
@@ -49,6 +49,8 @@
 
   const productsStore = useProductsStore()
 
+  const isExpanded = ref(false)
+
   // Computed properties for workflow step configuration
   const contentKey = computed(() => {
     return props.currentStep === 'logos'
@@ -63,6 +65,11 @@
   const showBackButton = computed(() => {
     return props.currentStep !== 'category'
   })
+
+  const testEmitUpdateIsExpanded = (value: boolean) => {
+    console.log('testEmitUpdateIsExpanded', value)
+    isExpanded.value = value
+  }
 </script>
 
 <template>
@@ -71,8 +78,10 @@
       :content-key="contentKey"
       :breadcrumbs="navigationItems"
       :expandable="isExpandable"
+      :is-expanded="isExpanded"
       :show-back-button="showBackButton"
       :on-back="onNavigateBack"
+      @update:is-expanded="isExpanded = $event"
     >
       <!-- Category Selection Step -->
       <CategorySelection
@@ -87,7 +96,10 @@
       <ProductSelection v-else-if="currentStep === 'product'" />
 
       <!-- Design Selection Step -->
-      <DesignSelection v-else-if="currentStep === 'designs'" />
+      <DesignSelection
+        v-else-if="currentStep === 'designs'"
+        @update:is-expanded="testEmitUpdateIsExpanded"
+      />
 
       <!-- Style Selection Step -->
       <StyleSelection v-else-if="currentStep === 'styles'" />

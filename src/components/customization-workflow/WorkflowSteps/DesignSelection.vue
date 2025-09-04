@@ -17,13 +17,20 @@
     }
   })
 
+  interface Emits {
+    (e: 'update:isExpanded', value: boolean): void
+  }
+
+  const emit = defineEmits<Emits>()
+
   function selectDesign(item: any) {
+    emit('update:isExpanded', false)
     productsStore.applyDesignPreview(item)
   }
 </script>
 
 <template>
-  <div class="flex flex-wrap overflow-y-auto max-h-[640px] mb-6">
+  <div class="flex flex-wrap mb-6">
     <div
       v-for="item in previews"
       :key="item.id"

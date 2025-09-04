@@ -51,7 +51,7 @@
 </script>
 
 <template>
-  <div class="flex flex-wrap overflow-y-auto max-h-[640px] mb-6">
+  <div class="flex flex-wrap mb-6">
     <div
       v-for="item in previews"
       :key="item.productPreview.id"

@@ -35,7 +35,7 @@
     <button
       v-for="item in subcategories"
       :key="item.id"
-      class="h-14 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors"
+      class="h-14 px-6 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors"
       @click="() => handleSelectSubcategory(item.id)"
     >
       <div class="flex items-center gap-3">

@@ -69,7 +69,7 @@
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="p-6">
     <Transition name="logos-slide" mode="out-in" appear>
       <div :key="`logos-${subPanel}`">
         <div v-if="subPanel === 'list'" class="flex flex-col gap-4">

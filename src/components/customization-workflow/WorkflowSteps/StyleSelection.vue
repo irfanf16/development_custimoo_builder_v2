@@ -71,7 +71,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 max-h-[640px] overflow-y-auto pr-4">
+  <div class="flex flex-col gap-6 pr-4">
     <div class="flex flex-col gap-2">
       <div
         class="text-muted-foreground text-base leading-relaxed"
