@@ -1,12 +1,14 @@
 <script setup lang="ts">
   import { computed, onMounted, watch, nextTick } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useSelectionStore } from '@/stores/selection.store.ts'
+  import { useCustomizationStore } from '@/stores/customization.store'
+  import { useWorkflowStore } from '@/stores/workflow.store'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
 
   const productsStore = useProductsStore()
-  const selectionStore = useSelectionStore()
+  const selectionStore = useCustomizationStore()
+  const workflowStore = useWorkflowStore()
   const previews = computed(() => productsStore.productPreviews || [])
   const selectedProductId = computed(() => selectionStore.activeProductId)
 
@@ -21,8 +23,10 @@
   const emit = defineEmits<Emits>()
 
   function loadPreviewsForCurrentCategory() {
-    const categoryId = selectionStore.effectiveCategoryId
-    productsStore.dispatchGetProductPreviews(categoryId)
+    const categoryId =
+      (workflowStore as any).selectedCategoryId ??
+      selectionStore.activeCategoryId
+    productsStore.fetchProductPreviews(categoryId)
   }
 
   onMounted(() => {
@@ -41,7 +45,7 @@
   })
 
   watch(
-    () => selectionStore.effectiveCategoryId,
+    () => (workflowStore as any).selectedCategoryId,
     () => {
       loadPreviewsForCurrentCategory()
     }
@@ -49,24 +53,24 @@
 
   async function handleSelectProduct(productId: number) {
     // Commit the selected category/subcategory at the moment the product is chosen
-    selectionStore.commitSelectedCategory()
-    selectionStore.commitSelectedSubCategory()
-    await productsStore.dispatchGetActiveProductDetails(productId)
+    ;(workflowStore as any).commitSelectedCategory()
+    ;(workflowStore as any).commitSelectedSubCategory()
+    await productsStore.fetchActiveProductDetails(productId)
     // After loading active details, ensure customization contains product, style and design ids
     const styleId = (productsStore.activeStyleDetails as any)?.id
     const designId = (productsStore.activeDesignDetails as any)?.id
     if (styleId) {
       // Persist chosen style in customization
       selectionStore.setStyle(styleId)
-      await productsStore.dispatchGetStylePreviews(productId)
+      await productsStore.fetchStylePreviews(productId)
     }
     if (designId) {
       // Persist chosen design in customization
       selectionStore.setDesign(designId)
-      await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
+      await productsStore.fetchDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs
-    selectionStore.setActiveStep('Designs')
+    ;(workflowStore as any).setActiveStep('Designs')
   }
 </script>
 

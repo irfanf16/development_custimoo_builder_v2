@@ -19,7 +19,7 @@ import type {
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '../types'
-import { useSelectionStore } from '../selection.store'
+import { useCustomizationStore } from '../customization.store'
 import { useFabricPreview } from '@/composables/useFabricPreview'
 
 const { getSvgGroup } = useFabricPreview()
@@ -35,7 +35,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   const productAddons = ref<OutputAddon[] | null>(null)
   const companyAddons = ref<OutputCompanyAddon[] | null>(null)
 
-  const selection = useSelectionStore()
+  const customization = useCustomizationStore()
 
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
   const stylePreviews = ref<OutputStylePreview[] | null>(null)
@@ -54,11 +54,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     error.value = errorMessage
   }
   function initActiveSelectionFromLocalStorage() {
-    ;(selection as any).load()
+    customization.load()
   }
-  function setActiveStep(step: string | null) {
-    ;(selection as any).setActiveStep(step)
-  }
+  function setActiveStep(_: string | null) {}
   async function setSvgGroups(): Promise<void> {
     console.log('setSvgGroups')
     const frontDesignUrl = activeDesignDetails.value?.front_design.file_url
@@ -106,7 +104,33 @@ export const useProductsStore = defineStore('productsStore', () => {
     error.value = null
   }
 
-  async function dispatchGetCategoriesWithNoDefaultCategoryOrProduct(): Promise<
+  // Strongly-typed setters to mutate internal state
+  function setActiveProductDetailsState(payload: OutputProductDetails | null) {
+    activeProductDetails.value = payload
+  }
+  function setActiveStyleDetailsState(payload: OutputStyleDetails | null) {
+    activeStyleDetails.value = payload
+  }
+  function setActiveDesignDetailsState(payload: OutputDesignDetails | null) {
+    activeDesignDetails.value = payload
+  }
+
+  // Addons setters to avoid direct mutations from components
+  function setActiveAddonsList(addons: OutputAddon[]) {
+    activeAddons.value = addons
+  }
+
+  function updateActiveAddonSelected(addonId: number, selected: boolean) {
+    if (!activeAddons.value) return
+    const idx = activeAddons.value.findIndex(
+      a => (a as any).addon_id === addonId
+    )
+    if (idx >= 0) {
+      ;(activeAddons.value[idx] as any).selected = selected
+    }
+  }
+
+  async function fetchCategoriesWithNoDefaultCategoryOrProduct(): Promise<
     APIResponse<OutputProductCategories>
   > {
     setLoading(true)
@@ -123,7 +147,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     return output
   }
 
-  async function dispatchGetCustomizedCategories(): Promise<
+  async function fetchCustomizedCategories(): Promise<
     APIResponse<OutputProductCategories>
   > {
     setLoading(true)
@@ -139,7 +163,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     return output
   }
 
-  async function dispatchGetProductPreviews(categoryId: number | null) {
+  async function fetchProductPreviews(categoryId: number | null) {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(
@@ -154,7 +178,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  async function dispatchGetStylePreviews(productId: number) {
+  async function fetchStylePreviews(productId: number) {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(
@@ -167,7 +191,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  async function dispatchGetActiveStyleDetails(styleId: number) {
+  async function fetchActiveStyleDetails(styleId: number) {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(API.products.getActiveStyleDetails(styleId))
@@ -176,10 +200,11 @@ export const useProductsStore = defineStore('productsStore', () => {
         productstyle: any
         productdesign: any
       }
-      activeStyleDetails.value = payload.productstyle
-      activeDesignDetails.value = payload
-        .productdesign(selection as any)
-        .setStyle(styleId)
+      setActiveStyleDetailsState(payload.productstyle)
+      setActiveDesignDetailsState(
+        (payload as any).productdesign as OutputDesignDetails
+      )
+      customization.setStyle(styleId)
       setSvgGroups()
     } else {
       setError('Error getting active style details')
@@ -188,7 +213,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  async function dispatchGetProductAddons(productId: number) {
+  async function fetchProductAddons(productId: number) {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(API.products.getProductAddons(productId))
@@ -207,10 +232,10 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   function saveCustomizationToLocalStorage() {
-    ;(selection as any).save()
+    customization.save()
   }
 
-  async function dispatchGetActiveProductDetails(productId: number) {
+  async function fetchActiveProductDetails(productId: number) {
     setLoading(true)
     setError(null)
     const result = await tryCatchApi(
@@ -218,13 +243,13 @@ export const useProductsStore = defineStore('productsStore', () => {
     )
     if (result.success && result.content) {
       const details = result.content as ActiveProductDetails
-      activeProductDetails.value = details.productDetails
-      activeStyleDetails.value = details.styleDetails
-      activeDesignDetails.value = details.designDetails as OutputDesignDetails
-      ;(selection as any).setProduct(productId)
+      setActiveProductDetailsState(details.productDetails)
+      setActiveStyleDetailsState(details.styleDetails)
+      setActiveDesignDetailsState(details.designDetails as OutputDesignDetails)
+      customization.setProduct(productId)
       await setSvgGroups()
-      if (!(selection as any).customization) {
-        ;(selection as any).ensureCustomization()
+      if (!customization.customization) {
+        customization.ensureCustomization()
         saveCustomizationToLocalStorage()
       }
     } else {
@@ -252,9 +277,9 @@ export const useProductsStore = defineStore('productsStore', () => {
       design: activeDesignDetails.value
         ? JSON.parse(JSON.stringify(activeDesignDetails.value))
         : null,
-      customization: (selection as any).customization
+      customization: customization.customization
         ? (JSON.parse(
-            JSON.stringify((selection as any).customization)
+            JSON.stringify(customization.customization)
           ) as ActiveProductCustomization)
         : null
     }
@@ -265,7 +290,8 @@ export const useProductsStore = defineStore('productsStore', () => {
       activeProductDetails.value = defaultActiveDetails.value.product
       activeStyleDetails.value = defaultActiveDetails.value.style
       activeDesignDetails.value = defaultActiveDetails.value.design
-      await (setSvgGroups as any)()(selection as any).setCustomization(
+      await (setSvgGroups as any)()
+      customization.setCustomization(
         (defaultActiveDetails.value.customization ||
           (null as unknown)) as ActiveProductCustomization
       )
@@ -273,13 +299,13 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   function applyDesignPreview(designPreview: OutputDesignPreview) {
-    if ((selection as any).customization) {
-      ;(selection as any).setDesign(designPreview.id)
+    if (customization.customization) {
+      customization.setDesign(designPreview.id)
       saveCustomizationToLocalStorage()
     }
   }
 
-  async function dispatchGetDesignPreviewsByStyleId(styleId: number) {
+  async function fetchDesignPreviewsByStyleId(styleId: number) {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(
@@ -294,7 +320,20 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  async function dispatchGetRecentLogos(companyId?: number) {
+  async function fetchDesignDetailsById(designId: number) {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.getDesignDetailsById(designId))
+    if (resp.success) {
+      activeDesignDetails.value = resp.content as unknown as OutputDesignDetails
+    } else {
+      setError('Error getting design details')
+    }
+    setLoading(false)
+    return resp
+  }
+
+  async function fetchRecentLogos(companyId?: number) {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(API.products.getRecentLogos(companyId))
@@ -318,17 +357,23 @@ export const useProductsStore = defineStore('productsStore', () => {
     setLoading,
     setError,
     reset,
+    setActiveProductDetailsState,
+    setActiveStyleDetailsState,
+    setActiveDesignDetailsState,
+    setActiveAddonsList,
+    updateActiveAddonSelected,
     initActiveSelectionFromLocalStorage,
     setActiveStep,
-    dispatchGetCategoriesWithNoDefaultCategoryOrProduct,
-    dispatchGetCustomizedCategories,
-    dispatchGetProductPreviews,
-    dispatchGetStylePreviews,
-    dispatchGetActiveProductDetails,
-    dispatchGetActiveStyleDetails,
-    dispatchGetProductAddons,
-    dispatchGetDesignPreviewsByStyleId,
-    dispatchGetRecentLogos,
+    fetchCategoriesWithNoDefaultCategoryOrProduct,
+    fetchCustomizedCategories,
+    fetchProductPreviews,
+    fetchStylePreviews,
+    fetchActiveProductDetails,
+    fetchActiveStyleDetails,
+    fetchProductAddons,
+    fetchDesignPreviewsByStyleId,
+    fetchDesignDetailsById,
+    fetchRecentLogos,
     productPreviews,
     designPreviews,
     stylePreviews,

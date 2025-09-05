@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useSelectionStore } from '@/stores/selection.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow.store'
   import { ChevronRight } from 'lucide-vue-next'
 
   interface Props {
@@ -10,7 +10,7 @@
 
   const props = defineProps<Props>()
   const productsStore = useProductsStore()
-  const selectionStore = useSelectionStore()
+  const selectionStore = useWorkflowStore()
 
   const selectedCategoryId = computed(
     () =>

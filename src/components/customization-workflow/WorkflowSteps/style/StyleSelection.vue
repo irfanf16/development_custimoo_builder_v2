@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, onMounted } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useSelectionStore } from '@/stores/selection.store.ts'
+  import { useCustomizationStore } from '@/stores/customization.store'
   // Style previews use static icons (PNG) from style_icon_url, so no canvas is needed
   import { Checkbox } from '@/components/ui/checkbox'
   import { Label } from '@/components/ui/label'
@@ -13,7 +13,7 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
-  const selectionStore = useSelectionStore()
+  const selectionStore = useCustomizationStore()
   const localeStore = useLocaleStore()
 
   const productId = computed(
@@ -36,17 +36,17 @@
 
   onMounted(() => {
     if (!productsStore.stylePreviews && productId.value) {
-      productsStore.dispatchGetStylePreviews(productId.value as number)
+      productsStore.fetchStylePreviews(productId.value as number)
     }
     // Ensure addons are loaded when product changes
     if (productId.value) {
-      productsStore.dispatchGetProductAddons(productId.value as number)
+      productsStore.fetchProductAddons(productId.value as number)
     }
   })
 
   async function selectStyle(styleId: number) {
-    await productsStore.dispatchGetActiveStyleDetails(styleId)
-    await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
+    await productsStore.fetchActiveStyleDetails(styleId)
+    await productsStore.fetchDesignPreviewsByStyleId(styleId)
     // keep user on Styles; breadcrumbs will show updated style name
   }
 
@@ -57,8 +57,12 @@
     )
     if (idx >= 0) {
       const next = !productsStore.activeAddons[idx].selected
-      productsStore.activeAddons[idx].selected = next
-
+      // Use a setter to update store state
+      if ((productsStore as any).updateActiveAddonSelected) {
+        ;(productsStore as any).updateActiveAddonSelected(addonId, next)
+      } else {
+        productsStore.activeAddons[idx].selected = next
+      }
       // Update customization state with the new addon selection
       ;(selectionStore as any).setAddons([...productsStore.activeAddons])
     }

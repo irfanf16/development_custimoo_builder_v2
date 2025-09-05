@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
-  import { useSelectionStore } from '@/stores/selection.store.ts'
+  import { useCustomizationStore } from '@/stores/customization.store'
   import { Button } from '@/components/ui/button'
   import LogoPlacementThumb from './LogoPlacementThumb.vue'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
@@ -22,7 +22,7 @@
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
-  const selectionStore = useSelectionStore()
+  const selectionStore = useCustomizationStore()
   const localeStore = useLocaleStore()
 
   type SubPanel = 'list' | 'placement' | 'edit'

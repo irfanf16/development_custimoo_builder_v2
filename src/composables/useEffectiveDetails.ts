@@ -1,7 +1,6 @@
 import { computed, watch, ref, type Ref } from 'vue'
 import { useProductsStore } from '@/stores/products/products.store'
-import { useSelectionStore } from '@/stores/selection.store'
-import { API } from '@/services'
+import { useCustomizationStore } from '@/stores/customization.store'
 import { storeToRefs } from 'pinia'
 import type {
   OutputProductDetails,
@@ -30,26 +29,26 @@ export function useEffectiveDetails(
   options?: Options
 ): UseEffectiveDetailsReturn {
   const productsStore = useProductsStore()
-  const selectionStore = useSelectionStore()
+  const selectionStore = useCustomizationStore()
 
   const isFetching = ref(false)
 
   const effectiveProductId = computed(() => {
-    const fromCustomization = (selectionStore as any).customization?.product_id
+    const fromCustomization = selectionStore.customization?.product_id
     if (fromCustomization) return Number(fromCustomization)
     const active = productsStore.activeProductDetails as any
     return active?.id ?? null
   })
 
   const effectiveStyleId = computed(() => {
-    const fromCustomization = (selectionStore as any).customization?.style_id
+    const fromCustomization = selectionStore.customization?.style_id
     if (fromCustomization && fromCustomization > 0) return fromCustomization
     const active = productsStore.activeStyleDetails as any
     return active?.id ?? null
   })
 
   const effectiveDesignId = computed(() => {
-    const fromCustomization = (selectionStore as any).customization?.design_id
+    const fromCustomization = selectionStore.customization?.design_id
     if (fromCustomization && fromCustomization > 0) return fromCustomization
     const active = productsStore.activeDesignDetails as any
     return active?.id ?? null
@@ -61,10 +60,9 @@ export function useEffectiveDetails(
     activeDesignDetails: activeDesignDetailsRef
   } = storeToRefs(productsStore)
 
-  const activeCanvasSide = computed(
-    () => (selectionStore as any).activeCanvasSide
-  )
-  const canvasZoom = computed(() => (selectionStore as any).canvasZoom)
+  // Canvas state now lives in workflow store; keep placeholders as null defaults
+  const activeCanvasSide = ref<'front' | 'back'>('front')
+  const canvasZoom = ref<number>(1)
 
   const effectiveProductDetails = activeProductDetailsRef
   const effectiveStyleDetails = activeStyleDetailsRef
@@ -83,7 +81,7 @@ export function useEffectiveDetails(
         (!productsStore.activeProductDetails ||
           (productsStore.activeProductDetails as any).id !== pid)
       ) {
-        const resp = await productsStore.dispatchGetActiveProductDetails(pid)
+        const resp = await productsStore.fetchActiveProductDetails(pid)
         if (!resp.success) return
       }
       if (
@@ -91,7 +89,7 @@ export function useEffectiveDetails(
         (!productsStore.activeStyleDetails ||
           (productsStore.activeStyleDetails as any).id !== sid)
       ) {
-        const resp = await productsStore.dispatchGetActiveStyleDetails(sid)
+        const resp = await productsStore.fetchActiveStyleDetails(sid)
         if (!resp.success) return
       }
       if (
@@ -99,10 +97,7 @@ export function useEffectiveDetails(
         (!productsStore.activeDesignDetails ||
           (productsStore.activeDesignDetails as any).id !== did)
       ) {
-        const resp = await API.products.getDesignDetailsById(did)
-        if ('data' in resp) {
-          productsStore.activeDesignDetails = resp.data as any
-        }
+        await productsStore.fetchDesignDetailsById(did)
       }
     } finally {
       isFetching.value = false
@@ -112,9 +107,9 @@ export function useEffectiveDetails(
   if (options?.autoFetch) {
     watch(
       () => [
-        (selectionStore as any).customization?.product_id,
-        (selectionStore as any).customization?.style_id,
-        (selectionStore as any).customization?.design_id
+        selectionStore.customization?.product_id,
+        selectionStore.customization?.style_id,
+        selectionStore.customization?.design_id
       ],
       () => {
         ensureActiveDetails()

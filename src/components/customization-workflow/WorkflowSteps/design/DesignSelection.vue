@@ -2,9 +2,9 @@
   import { computed, nextTick, onMounted, ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
-  import { useSelectionStore } from '@/stores/selection.store'
+  import { useCustomizationStore } from '@/stores/customization.store'
 
-  const selectionStore = useSelectionStore()
+  const selectionStore = useCustomizationStore()
 
   const productsStore = useProductsStore()
 
@@ -19,7 +19,7 @@
     if (!productsStore.designPreviews) {
       const styleId = (productsStore.activeStyleDetails as any)?.id
       if (styleId) {
-        await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
+        await productsStore.fetchDesignPreviewsByStyleId(styleId)
       }
     }
     // Scroll to active design when component mounts

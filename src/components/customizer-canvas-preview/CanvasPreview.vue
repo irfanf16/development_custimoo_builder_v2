@@ -1,10 +1,10 @@
 <script setup lang="ts">
   import { onMounted, onBeforeUnmount, watch } from 'vue'
-  import { useSelectionStore } from '@/stores/selection.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow.store'
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
 
-  const selectionStore = useSelectionStore()
+  const selectionStore = useWorkflowStore()
   const {
     canvasEl,
     canvas,

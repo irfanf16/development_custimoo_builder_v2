@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import { useSelectionStore } from '@/stores/selection.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow.store'
   import {
     Undo2,
     Redo2,
@@ -13,7 +13,7 @@
     Shuffle
   } from 'lucide-vue-next'
 
-  const selectionStore = useSelectionStore()
+  const selectionStore = useWorkflowStore()
 
   const tools = [
     { id: 'rotateCcw', icon: RotateCcw, label: 'Rotate CCW' },

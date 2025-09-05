@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useSelectionStore } from '@/stores/selection.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow.store'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   interface NavigationItem {
@@ -32,12 +32,12 @@
   const props = defineProps<Props>()
 
   const productsStore = useProductsStore()
-  const selectionStore = useSelectionStore()
+  const workflowStore = useWorkflowStore()
   useLocaleStore()
 
   // Navigation configuration for the customization workflow
   const navigationItems = computed((): NavigationItem[] => {
-    const step = selectionStore.activeStep || 'Categories'
+    const step = workflowStore.activeStep || 'Categories'
     const hasCategories = !!(
       productsStore.categories?.data && productsStore.categories.data.length
     )
@@ -55,14 +55,11 @@
       if (props.currentStep === 'category') {
         return [{ label: 'Category' }]
       }
-      const categoryIdForTrail =
-        selectionStore.selectedCategoryId ?? selectionStore.activeCategoryId
+      const categoryIdForTrail = workflowStore.selectedCategoryId ?? null
       const category = productsStore.categories?.data?.find(
         c => c.id === categoryIdForTrail
       )
-      const subId =
-        selectionStore.selectedSubCategoryId ??
-        selectionStore.activeSubCategoryId
+      const subId = workflowStore.selectedSubCategoryId ?? null
 
       // Subcategory list view
       if (props.currentStep === 'subcategory') {
@@ -82,16 +79,16 @@
         {
           label: 'Category',
           action: () => {
-            selectionStore.setProductsSubStep('category')
-            selectionStore.setActiveStep('Categories')
+            workflowStore.setProductsSubStep('category')
+            workflowStore.setActiveStep('Categories')
           }
         },
         {
           label: category?.category_name || '—',
           action: hasSubs
             ? () => {
-                selectionStore.setProductsSubStep('subcategory')
-                selectionStore.setActiveStep('Categories')
+                workflowStore.setProductsSubStep('subcategory')
+                workflowStore.setActiveStep('Categories')
               }
             : undefined
         }
@@ -128,7 +125,7 @@
         {
           label: 'Logos',
           action: () => {
-            selectionStore.setLogosSubStep('list')
+            workflowStore.setLogosSubStep('list')
           }
         }
       ]

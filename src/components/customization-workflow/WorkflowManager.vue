@@ -1,10 +1,12 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useSelectionStore } from '@/stores/selection.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow.store'
+  import { useCustomizationStore } from '@/stores/customization.store'
 
   const productsStore = useProductsStore()
-  const selectionStore = useSelectionStore()
+  const workflowStore = useWorkflowStore()
+  const customizationStore = useCustomizationStore()
 
   const currentStep = ref<
     | 'category'
@@ -73,7 +75,7 @@
   }
 
   const handleCategorySelect = (categoryId: number) => {
-    ;(selectionStore as any).setSelectedCategoryForPreview(categoryId)
+    workflowStore.setSelectedCategoryForPreview(categoryId)
     // If category has subcategories, go to subcategory step, otherwise products
     const hasSubcategories = !!productsStore.categories?.data?.find(
       c => c.id === categoryId && c.subcategories && c.subcategories.length
@@ -82,13 +84,13 @@
   }
 
   const handleSubcategorySelect = (subcategoryId: number) => {
-    ;(selectionStore as any).setSelectedSubCategoryForPreview(subcategoryId)
+    workflowStore.setSelectedSubCategoryForPreview(subcategoryId)
     navigateToStep('product')
   }
 
   // React to step changes from the menu/store
   watch(
-    () => (selectionStore as any).activeStep,
+    () => workflowStore.activeStep,
     async step => {
       if (step === 'Categories' && currentStep.value !== 'category') {
         // When returning to categories, snapshot defaults for potential reset later
@@ -97,31 +99,29 @@
       if (step === 'Designs') {
         // Ensure design previews are available after a reload
         const styleId =
-          (productsStore.activeStyleDetails as any)?.id ||
-          (selectionStore as any).activeStyleId
+          productsStore.activeStyleDetails?.id ||
+          customizationStore.activeStyleId
         const needsPreviews = !(
           Array.isArray(productsStore.designPreviews) &&
           productsStore.designPreviews.length > 0
         )
         if (needsPreviews && styleId) {
-          await productsStore.dispatchGetDesignPreviewsByStyleId(
-            styleId as number
-          )
+          await productsStore.fetchDesignPreviewsByStyleId(styleId as number)
         }
         navigateToStep('designs')
       } else if (step === 'Styles') {
         const pid =
-          (productsStore.activeProductDetails as any)?.id ||
-          (selectionStore as any).activeProductId
+          productsStore.activeProductDetails?.id ||
+          customizationStore.activeProductId
         if (pid && !productsStore.stylePreviews) {
-          await productsStore.dispatchGetStylePreviews(pid as number)
-          await productsStore.dispatchGetProductAddons(pid as number)
+          await productsStore.fetchStylePreviews(pid as number)
+          await productsStore.fetchProductAddons(pid as number)
         }
         navigateToStep('styles')
       } else if (step === 'Logos') {
         // Ensure recent logos are loaded
         if (!productsStore.recentLogos) {
-          await productsStore.dispatchGetRecentLogos()
+          await productsStore.fetchRecentLogos()
         }
         navigateToStep('logos')
       } else if (step === 'Colors') {

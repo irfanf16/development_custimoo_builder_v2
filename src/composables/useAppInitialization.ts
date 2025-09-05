@@ -2,8 +2,7 @@ import { ref, onMounted, readonly } from 'vue'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { useProductsStore } from '@/stores/products/products.store.ts'
-import { useSelectionStore } from '@/stores/selection.store'
-import { API } from '@/services'
+import { useCustomizationStore } from '@/stores/customization.store'
 import { useLocaleStore } from '@/stores/locale/locale.store'
 
 // Global state to prevent multiple initializations
@@ -58,10 +57,12 @@ export function useAppInitialization() {
 
         // Initialize selection/customization from localStorage
         const productsStore = useProductsStore()
-        const selectionStore = useSelectionStore()
-        const hasActiveCustomization = (selectionStore as any).load()
+        const selectionStore = useCustomizationStore()
+        const hasActiveCustomization = selectionStore.load()
         // restore saved workflow sub-steps
-        ;(selectionStore as any).loadWorkflowSubStepsFromLocalStorage()
+        const { useWorkflowStore } = await import('@/stores/workflow.store')
+        const wf = useWorkflowStore()
+        wf.loadWorkflowSubStepsFromLocalStorage()
 
         // PHASE 2: Fetch essential data from API (blocking operations)
         // These operations must complete before we can proceed with customization setup
@@ -75,9 +76,9 @@ export function useAppInitialization() {
           // Conditionally fetch categories based on whether we have an active category
           // If we have a stored category, fetch products for that category
           // Otherwise, fetch all available categories
-          (selectionStore as any).activeCategoryId
-            ? productsStore.dispatchGetCustomizedCategories()
-            : productsStore.dispatchGetCategoriesWithNoDefaultCategoryOrProduct()
+          selectionStore.activeCategoryId
+            ? productsStore.fetchCustomizedCategories()
+            : productsStore.fetchCategoriesWithNoDefaultCategoryOrProduct()
         ])
 
         // PHASE 3: Initialize localization and determine effective category
@@ -91,53 +92,48 @@ export function useAppInitialization() {
         // Determine the effective category ID for loading products
         // Priority order: stored category > first available category > null
         const effectiveCategoryId =
-          (selectionStore as any).activeCategoryId ||
+          selectionStore.activeCategoryId ||
           productsStore.categories?.data?.[0]?.id ||
           null
 
         // Set the active category in customization state if we have one
         // This ensures the customization state reflects the current category selection
         if (effectiveCategoryId) {
-          ;(selectionStore as any).setCategory(effectiveCategoryId)
+          selectionStore.setCategory(effectiveCategoryId)
         }
 
         // PHASE 4: Load product data and set up customization state
 
         // Load product previews for the ProductPanel
         // These are lightweight previews that show available products in the selected category
-        await productsStore.dispatchGetProductPreviews(effectiveCategoryId)
+        await productsStore.fetchProductPreviews(effectiveCategoryId)
 
         // PHASE 5: Set up product customization state
         // This is the core of the initialization process - ensuring we have a valid product selection
 
         if (hasActiveCustomization) {
           // SCENARIO A: Restore from stored customization by fetching dependent details
-          const apc = (selectionStore as any).customization
+          const apc = selectionStore.customization
           if (apc) {
             // Step 1: Load product details (loads default style + design)
-            await productsStore.dispatchGetActiveProductDetails(
+            await productsStore.fetchActiveProductDetails(
               Number(apc.product_id)
             )
 
             // Step 2: Load explicit style if different from default
             if (
-              (selectionStore as any).activeStyleId &&
-              apc.style_id !== (selectionStore as any).activeStyleId
+              selectionStore.activeStyleId &&
+              apc.style_id !== selectionStore.activeStyleId
             ) {
-              await productsStore.dispatchGetActiveStyleDetails(apc.style_id)
+              await productsStore.fetchActiveStyleDetails(apc.style_id)
             }
 
             // Step 3: Load explicit design if different from current
             if (
-              (selectionStore as any).activeDesignId &&
-              apc.design_id !== (selectionStore as any).activeDesignId
+              selectionStore.activeDesignId &&
+              apc.design_id !== selectionStore.activeDesignId
             ) {
-              const result = await API.products.getDesignDetailsById(
-                apc.design_id
-              )
-              if ('data' in result) {
-                productsStore.activeDesignDetails = result.data as any
-              }
+              await productsStore.fetchDesignDetailsById(apc.design_id)
             }
           }
         } else {
@@ -147,7 +143,7 @@ export function useAppInitialization() {
           // Determine which product to load as default
           // Priority order: stored product ID > first product in category > null
           const activeProductId =
-            (selectionStore as any).activeProductId ||
+            selectionStore.activeProductId ||
             (productsStore.productPreviews &&
             productsStore.productPreviews.length
               ? productsStore.productPreviews[0].productPreview.id
@@ -155,13 +151,13 @@ export function useAppInitialization() {
 
           if (activeProductId != null) {
             // Load the default product details (includes default style and design)
-            await productsStore.dispatchGetActiveProductDetails(activeProductId)
+            await productsStore.fetchActiveProductDetails(activeProductId)
 
             // Ensure we have a default customization set up
             // This creates a customization object with the default product, style, and design
-            if (!(selectionStore as any).customization) {
-              ;(selectionStore as any).ensureCustomization()
-              ;(selectionStore as any).save()
+            if (!selectionStore.customization) {
+              selectionStore.ensureCustomization()
+              selectionStore.save()
             }
           }
 

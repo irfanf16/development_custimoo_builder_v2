@@ -2,7 +2,7 @@
   import { computed } from 'vue'
   import CustomizerMenuItem from './MenuItem.vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useSelectionStore } from '@/stores/selection.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow.store'
   import {
     nav_product,
     nav_design,
@@ -17,7 +17,7 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
-  const selectionStore = useSelectionStore()
+  const selectionStore = useWorkflowStore()
   const localeStore = useLocaleStore()
 
   // Navigation constants - these should not be translated
@@ -125,7 +125,7 @@
         Array.isArray(productsStore.designPreviews) &&
         productsStore.designPreviews.length > 0
       if (!hasPreviews && styleId) {
-        await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
+        await productsStore.fetchDesignPreviewsByStyleId(styleId)
       }
     } else if (label === NAV_STEPS.STYLES) {
       const pid =
@@ -133,15 +133,15 @@
         (selectionStore as any).activeProductId
       if (pid) {
         if (!productsStore.stylePreviews) {
-          await productsStore.dispatchGetStylePreviews(pid as number)
+          await productsStore.fetchStylePreviews(pid as number)
         }
         // Ensure addons are present
-        await productsStore.dispatchGetProductAddons(pid as number)
+        await productsStore.fetchProductAddons(pid as number)
       }
     } else if (label === NAV_STEPS.LOGOS) {
       // Prefetch recent logos
       if (!productsStore.recentLogos) {
-        await productsStore.dispatchGetRecentLogos()
+        await productsStore.fetchRecentLogos()
       }
     } else if (label === NAV_STEPS.COLORS) {
       // Set step directly; colors lives inside product details
