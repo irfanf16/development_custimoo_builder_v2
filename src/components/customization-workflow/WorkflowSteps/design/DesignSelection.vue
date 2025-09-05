@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, nextTick, onMounted, ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import ProductPreviewCanvas from './ProductPreviewCanvas.vue'
+  import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useSelectionStore } from '@/stores/selection.store'
 
   const selectionStore = useSelectionStore()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import ProductPreviewCanvas from './ProductPreviewCanvas.vue'
+  import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
 
   interface Props {
     product: any
