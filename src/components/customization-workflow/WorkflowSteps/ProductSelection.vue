@@ -1,13 +1,16 @@
 <script setup lang="ts">
   import { computed, onMounted, watch, nextTick } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import ProductPreviewCanvas from './ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
 
   const productsStore = useProductsStore()
-
+  const selectionStore = useSelectionStore()
   const previews = computed(() => productsStore.productPreviews || [])
-  const selectedProductId = computed(() => productsStore.activeProductId)
+  const selectedProductId = computed(
+    () => (selectionStore as any).activeProductId
+  )
 
   interface Emits {
     (
@@ -20,7 +23,7 @@
   const emit = defineEmits<Emits>()
 
   function loadPreviewsForCurrentCategory() {
-    const categoryId = productsStore.effectiveCategoryId
+    const categoryId = (selectionStore as any).effectiveCategoryId
     productsStore.dispatchGetProductPreviews(categoryId)
   }
 
@@ -29,7 +32,7 @@
 
     // Scroll to active product if it exists
     nextTick(() => {
-      const activeProductId = productsStore.activeProductId
+      const activeProductId = (selectionStore as any).activeProductId
       if (activeProductId) {
         // Small delay to ensure MenuPanel is fully mounted
         setTimeout(() => {
@@ -40,7 +43,7 @@
   })
 
   watch(
-    () => productsStore.effectiveCategoryId,
+    () => (selectionStore as any).effectiveCategoryId,
     () => {
       loadPreviewsForCurrentCategory()
     }
@@ -48,26 +51,24 @@
 
   async function handleSelectProduct(productId: number) {
     // Commit the selected category/subcategory at the moment the product is chosen
-    productsStore.commitSelectedCategory()
-    if ((productsStore as any).commitSelectedSubCategory) {
-      ;(productsStore as any).commitSelectedSubCategory()
-    }
+    ;(selectionStore as any).commitSelectedCategory()
+    ;(selectionStore as any).commitSelectedSubCategory()
     await productsStore.dispatchGetActiveProductDetails(productId)
     // After loading active details, ensure customization contains product, style and design ids
     const styleId = (productsStore.activeStyleDetails as any)?.id
     const designId = (productsStore.activeDesignDetails as any)?.id
     if (styleId) {
       // Persist chosen style in customization
-      productsStore.setActiveStyle(styleId)
+      ;(selectionStore as any).setStyle(styleId)
       await productsStore.dispatchGetStylePreviews(productId)
     }
     if (designId) {
       // Persist chosen design in customization
-      productsStore.setActiveDesign(designId)
+      ;(selectionStore as any).setDesign(designId)
       await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs
-    productsStore.setActiveStep('Designs')
+    ;(selectionStore as any).setActiveStep('Designs')
   }
 </script>
 

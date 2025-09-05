@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   interface NavigationItem {
@@ -31,11 +32,12 @@
   const props = defineProps<Props>()
 
   const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
   useLocaleStore()
 
   // Navigation configuration for the customization workflow
   const navigationItems = computed((): NavigationItem[] => {
-    const step = productsStore.activeStep || 'Categories'
+    const step = (selectionStore as any).activeStep || 'Categories'
     const hasCategories = !!(
       productsStore.categories?.data && productsStore.categories.data.length
     )
@@ -54,14 +56,14 @@
         return [{ label: 'Category' }]
       }
       const categoryIdForTrail =
-        (productsStore as any).selectedCategoryId ??
-        (productsStore as any).activeCategoryId
+        (selectionStore as any).selectedCategoryId ??
+        (selectionStore as any).activeCategoryId
       const category = productsStore.categories?.data?.find(
         c => c.id === categoryIdForTrail
       )
       const subId =
-        ((productsStore as any).selectedSubCategoryId as number | null) ??
-        ((productsStore as any).activeSubCategoryId as number | null)
+        ((selectionStore as any).selectedSubCategoryId as number | null) ??
+        ((selectionStore as any).activeSubCategoryId as number | null)
 
       // Subcategory list view
       if (props.currentStep === 'subcategory') {
@@ -81,16 +83,16 @@
         {
           label: 'Category',
           action: () => {
-            ;(productsStore as any).setProductsSubStep?.('category')
-            productsStore.setActiveStep('Categories')
+            ;(selectionStore as any).setProductsSubStep?.('category')
+            ;(selectionStore as any).setActiveStep('Categories')
           }
         },
         {
           label: category?.category_name || '—',
           action: hasSubs
             ? () => {
-                ;(productsStore as any).setProductsSubStep?.('subcategory')
-                productsStore.setActiveStep('Categories')
+                ;(selectionStore as any).setProductsSubStep?.('subcategory')
+                ;(selectionStore as any).setActiveStep('Categories')
               }
             : undefined
         }
@@ -127,7 +129,7 @@
         {
           label: 'Logos',
           action: () => {
-            productsStore.setLogosSubStep('list')
+            ;(selectionStore as any).setLogosSubStep('list')
           }
         }
       ]

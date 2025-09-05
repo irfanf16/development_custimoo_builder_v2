@@ -35,21 +35,21 @@ export function useEffectiveDetails(
   const isFetching = ref(false)
 
   const effectiveProductId = computed(() => {
-    const fromCustomization = selectionStore.customization?.product_id
+    const fromCustomization = (selectionStore as any).customization?.product_id
     if (fromCustomization) return Number(fromCustomization)
     const active = productsStore.activeProductDetails as any
     return active?.id ?? null
   })
 
   const effectiveStyleId = computed(() => {
-    const fromCustomization = selectionStore.customization?.style_id
+    const fromCustomization = (selectionStore as any).customization?.style_id
     if (fromCustomization && fromCustomization > 0) return fromCustomization
     const active = productsStore.activeStyleDetails as any
     return active?.id ?? null
   })
 
   const effectiveDesignId = computed(() => {
-    const fromCustomization = selectionStore.customization?.design_id
+    const fromCustomization = (selectionStore as any).customization?.design_id
     if (fromCustomization && fromCustomization > 0) return fromCustomization
     const active = productsStore.activeDesignDetails as any
     return active?.id ?? null
@@ -58,10 +58,13 @@ export function useEffectiveDetails(
   const {
     activeProductDetails: activeProductDetailsRef,
     activeStyleDetails: activeStyleDetailsRef,
-    activeDesignDetails: activeDesignDetailsRef,
-    activeCanvasSide,
-    canvasZoom
+    activeDesignDetails: activeDesignDetailsRef
   } = storeToRefs(productsStore)
+
+  const activeCanvasSide = computed(
+    () => (selectionStore as any).activeCanvasSide
+  )
+  const canvasZoom = computed(() => (selectionStore as any).canvasZoom)
 
   const effectiveProductDetails = activeProductDetailsRef
   const effectiveStyleDetails = activeStyleDetailsRef
@@ -109,9 +112,9 @@ export function useEffectiveDetails(
   if (options?.autoFetch) {
     watch(
       () => [
-        selectionStore.customization?.product_id,
-        selectionStore.customization?.style_id,
-        selectionStore.customization?.design_id
+        (selectionStore as any).customization?.product_id,
+        (selectionStore as any).customization?.style_id,
+        (selectionStore as any).customization?.design_id
       ],
       () => {
         ensureActiveDetails()

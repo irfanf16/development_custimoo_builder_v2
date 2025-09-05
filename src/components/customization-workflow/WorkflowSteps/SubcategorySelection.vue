@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import { ChevronRight } from 'lucide-vue-next'
 
   interface Props {
@@ -9,9 +10,12 @@
 
   const props = defineProps<Props>()
   const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
 
   const selectedCategoryId = computed(
-    () => productsStore.selectedCategoryId ?? productsStore.activeCategoryId
+    () =>
+      (selectionStore as any).selectedCategoryId ??
+      (selectionStore as any).activeCategoryId
   )
 
   const selectedCategory = computed(() => {
@@ -25,7 +29,7 @@
   )
 
   function handleSelectSubcategory(subcategoryId: number) {
-    productsStore.setSelectedSubCategoryForPreview(subcategoryId)
+    ;(selectionStore as any).setSelectedSubCategoryForPreview(subcategoryId)
     props.onSelectSubcategory?.(subcategoryId)
   }
 </script>

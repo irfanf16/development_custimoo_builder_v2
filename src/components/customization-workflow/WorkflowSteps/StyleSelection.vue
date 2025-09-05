@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed, onMounted } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   // Style previews use static icons (PNG) from style_icon_url, so no canvas is needed
   import { Checkbox } from '@/components/ui/checkbox'
   import { Label } from '@/components/ui/label'
@@ -12,12 +13,13 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
   const localeStore = useLocaleStore()
 
   const productId = computed(
     () =>
       (productsStore.activeProductDetails as any)?.id ||
-      productsStore.activeProductId
+      (selectionStore as any).activeProductId
   )
   const previews = computed(() => productsStore.stylePreviews || [])
   const headerDescription = computed(() => {
@@ -58,7 +60,7 @@
       productsStore.activeAddons[idx].selected = next
 
       // Update customization state with the new addon selection
-      productsStore.setActiveAddons([...productsStore.activeAddons])
+      ;(selectionStore as any).setAddons([...productsStore.activeAddons])
     }
   }
 

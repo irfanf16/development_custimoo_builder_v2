@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
   import { Ruler, Save, Share2, FileText, RotateCcw } from 'lucide-vue-next'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import {
     actions_size_guide,
     actions_reset_customization,
@@ -11,11 +11,11 @@
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
-  const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
   const localeStore = useLocaleStore()
 
   function handleResetCustomization() {
-    productsStore.resetCustomizationToCurrentProductDefaults()
+    ;(selectionStore as any).resetCustomizationToCurrentProductDefaults()
   }
 </script>
 

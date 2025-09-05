@@ -7,8 +7,9 @@
   const patterns = computed(() => product.value?.patterns || [])
 
   function openGroup(name: string) {
-    productsStore.setActivePatternGroup(name)
-    productsStore.setPatternsSubStep('group')
+    console.log('openGroup', name)
+    // productsStore.setActivePatternGroup(name)
+    // productsStore.setPatternsSubStep('group')
   }
 </script>
 

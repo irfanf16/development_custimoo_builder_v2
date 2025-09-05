@@ -679,3 +679,18 @@ export type ActiveProductCustomization = {
   sub_category_id: number | null
   sub_category_index: number | null
 }
+
+export type OutputSvgGroup = {
+  id: number
+  name: string
+  svg_parts: string[]
+}
+
+export type OutputSvgGroupColor = {
+  id: string // SVG element ID (e.g., 'base', 'collar')
+  color: string // Hex color value
+  pantone: string // Pantone color code
+  name: string // Color name
+  count: number // Priority/order
+  gradient_colors?: Array<{ color: string; pantone: string; name: string }> // For gradient elements
+}

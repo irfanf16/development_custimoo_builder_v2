@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type {
   ActiveProductCustomization,
   OutputAddon
@@ -23,7 +23,7 @@ type SelectionCommand = {
   timestamp: number
 }
 
-export const useSelectionStore = defineStore('selectionStore', () => {
+export const useSelectionStore = defineStore('selectionStore', (): any => {
   const productsStore = useProductsStore()
 
   const customization = ref<ActiveProductCustomization | null>(null)
@@ -36,6 +36,23 @@ export const useSelectionStore = defineStore('selectionStore', () => {
   const undoStack = ref<SelectionCommand[]>([])
   const redoStack = ref<SelectionCommand[]>([])
   const isApplying = ref(false)
+
+  // Workflow UI state
+  const logosSubStep = ref<'list' | 'placement' | 'edit'>('list')
+  const productsSubStep = ref<'category' | 'subcategory' | 'product'>(
+    'category'
+  )
+  const patternsSubStep = ref<'list' | 'group'>('list')
+  const activePatternGroupName = ref<string | null>(null)
+  const selectedCustomLogoIdx = ref<number | null>(null)
+
+  // Canvas state
+  const activeCanvasSide = ref<'front' | 'back'>('front')
+  const canvasZoom = ref<number>(1)
+
+  // Preview selection state
+  const selectedCategoryId = ref<number | null>(null)
+  const selectedSubCategoryId = ref<number | null>(null)
 
   function save() {
     if (typeof window === 'undefined') return
@@ -293,11 +310,266 @@ export const useSelectionStore = defineStore('selectionStore', () => {
     save()
   }
 
+  // Computed properties for active selections
+  const activeProductId = computed(() =>
+    customization.value ? Number(customization.value.product_id) : null
+  )
+  const activeStyleId = computed(() => customization.value?.style_id ?? null)
+  const activeDesignId = computed(() => customization.value?.design_id ?? null)
+  const activeCategoryId = computed(
+    () => customization.value?.category_id ?? null
+  )
+  const activeSubCategoryId = computed(
+    () => customization.value?.sub_category_id ?? null
+  )
+  const effectiveCategoryId = computed<number | null>(() => {
+    return (
+      selectedCategoryId.value ??
+      activeSubCategoryId.value ??
+      activeCategoryId.value ??
+      null
+    )
+  })
+
+  const effectiveStyleDetails = computed((): any => {
+    if (!customization.value?.style_id || !productsStore.activeStyleDetails) {
+      return productsStore.activeStyleDetails
+    }
+    if (customization.value.style_id === productsStore.activeStyleDetails.id) {
+      return productsStore.activeStyleDetails
+    }
+    return productsStore.activeStyleDetails
+  })
+
+  const effectiveDesignDetails = computed((): any => {
+    if (!customization.value?.design_id || !productsStore.activeDesignDetails) {
+      return productsStore.activeDesignDetails
+    }
+    if (
+      customization.value.design_id === productsStore.activeDesignDetails.id
+    ) {
+      return productsStore.activeDesignDetails
+    }
+    return productsStore.activeDesignDetails
+  })
+
+  // Workflow sub-step management
+  function setLogosSubStep(step: 'list' | 'placement' | 'edit') {
+    logosSubStep.value = step
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('workflow.logosSubStep', step)
+    }
+  }
+
+  function setProductsSubStep(step: 'category' | 'subcategory' | 'product') {
+    productsSubStep.value = step
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('workflow.productsSubStep', step)
+    }
+  }
+
+  function setPatternsSubStep(step: 'list' | 'group') {
+    patternsSubStep.value = step
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('workflow.patternsSubStep', step)
+    }
+  }
+
+  function setActivePatternGroup(name: string | null) {
+    activePatternGroupName.value = name
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('workflow.patternsGroupName', name || '')
+    }
+  }
+
+  function loadWorkflowSubStepsFromLocalStorage() {
+    if (typeof window === 'undefined') return
+    try {
+      const logos = window.localStorage.getItem('workflow.logosSubStep') as
+        | 'list'
+        | 'placement'
+        | 'edit'
+        | null
+      const products = window.localStorage.getItem(
+        'workflow.productsSubStep'
+      ) as 'category' | 'subcategory' | 'product' | null
+      const patterns = window.localStorage.getItem(
+        'workflow.patternsSubStep'
+      ) as 'list' | 'group' | null
+      const group = window.localStorage.getItem('workflow.patternsGroupName')
+      if (logos) logosSubStep.value = logos
+      if (products) productsSubStep.value = products
+      if (patterns) patternsSubStep.value = patterns
+      if (group) activePatternGroupName.value = group
+    } catch (_) {}
+  }
+
+  // Preview selection management
+  function setSelectedCategoryForPreview(categoryId: number | null) {
+    selectedCategoryId.value = categoryId
+  }
+
+  function setSelectedSubCategoryForPreview(subCategoryId: number | null) {
+    selectedSubCategoryId.value = subCategoryId
+  }
+
+  function commitSelectedCategory() {
+    if (selectedCategoryId.value != null) {
+      setCategory(selectedCategoryId.value)
+      selectedCategoryId.value = null
+    }
+  }
+
+  function commitSelectedSubCategory() {
+    if (selectedSubCategoryId.value != null) {
+      setSubCategory(selectedSubCategoryId.value)
+      selectedSubCategoryId.value = null
+    }
+  }
+
+  // Canvas management
+  function setActiveCanvasSide(side: 'front' | 'back') {
+    activeCanvasSide.value = side
+  }
+
+  function toggleActiveCanvasSide() {
+    activeCanvasSide.value =
+      activeCanvasSide.value === 'front' ? 'back' : 'front'
+  }
+
+  function setCanvasZoom(zoom: number) {
+    const clamped = Math.max(0.25, Math.min(4, zoom))
+    canvasZoom.value = clamped
+  }
+
+  function zoomIn(step = 0.1) {
+    setCanvasZoom(canvasZoom.value + step)
+  }
+
+  function zoomOut(step = 0.1) {
+    setCanvasZoom(canvasZoom.value - step)
+  }
+
+  // Logo management
+  function setSelectedCustomLogoIndex(idx: number | null) {
+    selectedCustomLogoIdx.value = idx
+  }
+
+  // Customization management
+  function ensureCustomization() {
+    if (customization.value) return
+    resetCustomizationToDefaults()
+  }
+
+  function resetCustomizationToDefaults() {
+    setCustomization({
+      fixed_logo_index: 0,
+      category_index: 0,
+      category_id: 0,
+      design_index: 0,
+      design_id: 0,
+      product_index: 0,
+      product_id: '0',
+      search_products: '',
+      style_index: 0,
+      style_id: 0,
+      page_no: 1,
+      customized: true,
+      personalized: false,
+      private_product: false,
+      product_custom_texts: {},
+      custom_logos: {},
+      default_colors: [
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null }
+      ],
+      group_colors: {},
+      logo_colors: [],
+      roster_detail: [],
+      products_rosters: {},
+      shuffle_color_number: 0,
+      addons_info: {},
+      group_patterns: {},
+      sub_category_id: null,
+      sub_category_index: null
+    } as ActiveProductCustomization)
+  }
+
+  function resetCustomizationToCurrentProductDefaults() {
+    if (!productsStore.activeProductDetails) return
+    const productId = (productsStore.activeProductDetails as any)?.id ?? 0
+    const styleId = (productsStore.activeStyleDetails as any)?.id ?? 0
+    const designId = (productsStore.activeDesignDetails as any)?.id ?? 0
+    setCustomization({
+      fixed_logo_index: 0,
+      category_index: 0,
+      category_id: customization.value?.category_id ?? 0,
+      design_index: 0,
+      design_id: designId,
+      product_index: 0,
+      product_id: String(productId),
+      search_products: '',
+      style_index: 0,
+      style_id: styleId,
+      page_no: 1,
+      customized: true,
+      personalized: false,
+      private_product: false,
+      product_custom_texts: {},
+      custom_logos: {},
+      default_colors: [
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null }
+      ],
+      group_colors: {},
+      logo_colors: [],
+      roster_detail: [],
+      products_rosters: {},
+      shuffle_color_number: 0,
+      addons_info: {},
+      group_patterns: {},
+      sub_category_id: null,
+      sub_category_index: null
+    } as ActiveProductCustomization)
+  }
+
   return {
+    // Core state
     customization,
     activeStep,
     undoStack,
     redoStack,
+
+    // Workflow UI state
+    logosSubStep,
+    productsSubStep,
+    patternsSubStep,
+    activePatternGroupName,
+    selectedCustomLogoIdx,
+
+    // Canvas state
+    activeCanvasSide,
+    canvasZoom,
+
+    // Preview selection state
+    selectedCategoryId,
+    selectedSubCategoryId,
+
+    // Computed properties
+    activeProductId,
+    activeStyleId,
+    activeDesignId,
+    activeCategoryId,
+    activeSubCategoryId,
+    effectiveCategoryId,
+    effectiveStyleDetails,
+    effectiveDesignDetails,
+
+    // Core methods
     load,
     save,
     setActiveStep,
@@ -309,6 +581,34 @@ export const useSelectionStore = defineStore('selectionStore', () => {
     setDesign,
     setAddons,
     undo,
-    redo
+    redo,
+
+    // Workflow sub-step methods
+    setLogosSubStep,
+    setProductsSubStep,
+    setPatternsSubStep,
+    setActivePatternGroup,
+    loadWorkflowSubStepsFromLocalStorage,
+
+    // Preview selection methods
+    setSelectedCategoryForPreview,
+    setSelectedSubCategoryForPreview,
+    commitSelectedCategory,
+    commitSelectedSubCategory,
+
+    // Canvas methods
+    setActiveCanvasSide,
+    toggleActiveCanvasSide,
+    setCanvasZoom,
+    zoomIn,
+    zoomOut,
+
+    // Logo methods
+    setSelectedCustomLogoIndex,
+
+    // Customization management
+    ensureCustomization,
+    resetCustomizationToDefaults,
+    resetCustomizationToCurrentProductDefaults
   }
 })

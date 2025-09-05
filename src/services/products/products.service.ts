@@ -52,10 +52,6 @@ async function getActiveStyleDetailsByStyleId(styleId: number) {
   return getActiveStyleDetails(styleId)
 }
 
-async function getActiveDesignDetailsByDesignId(designId: number) {
-  return getDesignDetailsById(designId)
-}
-
 async function getProductByCategoryId(params: getProductByCategoryIdParams) {
   const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
   if (useMocks) {
@@ -213,6 +209,5 @@ export default {
   getActiveStyleDetailsByStyleId,
   getProductAddons,
   getRecentLogos,
-  getDesignDetailsById,
-  getActiveDesignDetailsByDesignId
+  getDesignDetailsById
 }

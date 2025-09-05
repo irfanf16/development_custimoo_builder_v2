@@ -9,7 +9,7 @@
 
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
-  const product = computed(() => productsStore.activeProductDetails as any)
+  // const product = computed(() => productsStore.activeProductDetails as any)
 
   // Dummy palettes – replace with real data later
   type Palette = { name: string; colors: string[] }
@@ -63,7 +63,9 @@
   ]
 
   // Three color slots shown in the UI
-  const slotLabels = ['Color 1', 'Color 2', 'Color 3']
+  const slotLabels = computed(
+    () => productsStore.svgGroups?.map(group => group.id) || []
+  )
   const slotValues = ref<string[]>(['#F9C80E', '#E5E7EB', '#111827'])
 
   // Local clipboard for copy/paste between slots

@@ -104,15 +104,27 @@ export function useFabricPreview() {
     img.setCoords()
   }
 
-  async function addDesignLayer(url: string, ext: string) {
-    if (!canvas.value || !url) return
+  type CustomFabricGroup = Group & {
+    _objects: FabricObject & { id: string }[]
+  }
+
+  async function getSvgGroup(url: string, ext: string) {
     if (ext?.toLowerCase() === 'svg') {
       if (!url.toLowerCase().endsWith('.svg')) {
         url += '.svg'
       }
-      const { objects } = await loadSVGFromURL(fromStorage(url))
-      const safeObjects = (objects || []).filter(Boolean) as FabricObject[]
-      const group = util.groupSVGElements(safeObjects) as Group
+    }
+    const { objects } = await loadSVGFromURL(fromStorage(url))
+    const safeObjects = (objects || []).filter(Boolean) as FabricObject[]
+    return util.groupSVGElements(safeObjects) as CustomFabricGroup
+  }
+
+  async function addDesignLayer(url: string, ext: string) {
+    if (!canvas.value || !url) return
+    if (ext?.toLowerCase() === 'svg') {
+      if (!canvas.value || !url) return
+      const group = await getSvgGroup(url, ext)
+      if (!group) return
       fitObject(group)
       group.set({
         selectable: false,
@@ -164,6 +176,7 @@ export function useFabricPreview() {
     addModelLayer,
     addDesignLayer,
     fadeOut,
-    fadeIn
+    fadeIn,
+    getSvgGroup
   }
 }

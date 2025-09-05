@@ -1,11 +1,11 @@
 <script setup lang="ts">
   import { onMounted, onBeforeUnmount, watch } from 'vue'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
   import { Card, CardContent } from '../ui/card'
 
-  const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
   const {
     canvasEl,
     canvas,
@@ -32,7 +32,7 @@
     const design = effectiveDesignDetails.value
     const style = effectiveStyleDetails.value
     const side = (
-      productsStore.activeCanvasSide === 'front' ? 'back' : 'front'
+      (selectionStore as any).activeCanvasSide === 'front' ? 'back' : 'front'
     ) as 'front' | 'back'
     if (!design || !style) return
     if (side === 'back' && design.back_design) {
@@ -64,7 +64,7 @@
   }
 
   function handleClick() {
-    productsStore.toggleActiveCanvasSide()
+    ;(selectionStore as any).toggleActiveCanvasSide()
   }
 
   onMounted(() => {
@@ -84,7 +84,7 @@
 
   watch(
     () => [
-      productsStore.activeCanvasSide,
+      (selectionStore as any).activeCanvasSide,
       effectiveDesignDetails.value?.id,
       effectiveStyleDetails.value?.id
     ],

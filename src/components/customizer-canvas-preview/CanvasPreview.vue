@@ -1,10 +1,10 @@
 <script setup lang="ts">
   import { onMounted, onBeforeUnmount, watch } from 'vue'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
 
-  const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
   const {
     canvasEl,
     canvas,
@@ -29,7 +29,7 @@
     await fadeOut(150)
 
     clearCanvas()
-    const side = productsStore.activeCanvasSide
+    const side = (selectionStore as any).activeCanvasSide
     const design = effectiveDesignDetails.value
     const style = effectiveStyleDetails.value
     if (!design || !style) return
@@ -58,7 +58,7 @@
       }
     }
 
-    setZoom(productsStore.canvasZoom)
+    setZoom((selectionStore as any).canvasZoom)
 
     fadeIn()
     requestRender()
@@ -90,7 +90,7 @@
 
   watch(
     () => [
-      productsStore.activeCanvasSide,
+      (selectionStore as any).activeCanvasSide,
       effectiveDesignDetails.value?.id,
       effectiveStyleDetails.value?.id
     ],
@@ -98,7 +98,7 @@
   )
 
   watch(
-    () => productsStore.canvasZoom,
+    () => (selectionStore as any).canvasZoom,
     z => {
       if (!canvas.value) return
       setZoom(z)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import {
     Undo2,
     Redo2,
@@ -13,7 +13,7 @@
     Shuffle
   } from 'lucide-vue-next'
 
-  const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
 
   const tools = [
     { id: 'rotateCcw', icon: RotateCcw, label: 'Rotate CCW' },
@@ -42,9 +42,9 @@
       :aria-label="t.label"
       @click="
         t.id === 'zoomIn'
-          ? productsStore.zoomIn()
+          ? (selectionStore as any).zoomIn()
           : t.id === 'zoomOut'
-            ? productsStore.zoomOut()
+            ? (selectionStore as any).zoomOut()
             : null
       "
     >

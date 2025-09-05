@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import { Button } from '@/components/ui/button'
   import LogoPlacementThumb from './LogoPlacementThumb.vue'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
@@ -22,14 +22,14 @@
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
-  const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
   const localeStore = useLocaleStore()
 
   type SubPanel = 'list' | 'placement' | 'edit'
   const subPanel = ref<SubPanel>('list')
   // Keep in sync with store-driven breadcrumbs
   watch(
-    () => (productsStore as any).logosSubStep,
+    () => (selectionStore as any).logosSubStep,
     step => {
       if (step && step !== subPanel.value) subPanel.value = step as SubPanel
     },
@@ -37,34 +37,34 @@
   )
 
   const product = computed(
-    () => (productsStore.activeProductDetails as any) || null
+    () => (selectionStore as any).activeProductDetails || null
   )
   const styleBase = computed(
-    () => (productsStore.activeStyleDetails as any) || null
+    () => (selectionStore as any).activeStyleDetails || null
   )
   const designBase = computed(
-    () => (productsStore.activeDesignDetails as any) || null
+    () => (selectionStore as any).activeDesignDetails || null
   )
   const placements = computed(
     () => (product.value?.logos_setting as any[]) || []
   )
 
   function handleSelectRecentLogo(logo: any) {
-    productsStore.addCustomLogoFromRecent(logo)
+    ;(selectionStore as any).addCustomLogoFromRecent(logo)
     goToControls()
   }
 
   function goToPlacement() {
     subPanel.value = 'placement'
-    productsStore.setLogosSubStep('placement')
+    ;(selectionStore as any).setLogosSubStep('placement')
   }
   function goToControls() {
     subPanel.value = 'edit'
-    productsStore.setLogosSubStep('edit')
+    ;(selectionStore as any).setLogosSubStep('edit')
   }
   function goToList() {
     subPanel.value = 'list'
-    productsStore.setLogosSubStep('list')
+    ;(selectionStore as any).setLogosSubStep('list')
   }
 </script>
 
@@ -76,7 +76,7 @@
           <!-- Empty state uploader -->
           <div
             v-if="
-              (productsStore.activeProductCustomization?.custom_logos?.length ||
+              ((selectionStore as any).customization?.custom_logos?.length ||
                 0) === 0
             "
             class="rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center gap-2 text-center"
@@ -124,10 +124,11 @@
             >
               <img
                 :src="
-                  (productsStore.activeProductCustomization as any)
-                    ?.custom_logos?.[productsStore.selectedCustomLogoIdx ?? 0]
-                    ?.url ||
-                  (productsStore.activeProductCustomization as any)
+                  ((selectionStore as any).customization as any)
+                    ?.custom_logos?.[
+                    (selectionStore as any).selectedCustomLogoIdx ?? 0
+                  ]?.url ||
+                  ((selectionStore as any).customization as any)
                     ?.custom_logos?.[0]?.url
                 "
                 class="max-h-full object-contain"
@@ -146,7 +147,7 @@
             </div>
             <div class="grid grid-cols-4 gap-2">
               <button
-                v-for="logo in productsStore.recentLogos || []"
+                v-for="logo in (selectionStore as any).recentLogos || []"
                 :key="logo.id"
                 class="aspect-square rounded-lg border border-border overflow-hidden"
                 @click="handleSelectRecentLogo(logo)"

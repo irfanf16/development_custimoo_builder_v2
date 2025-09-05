@@ -255,7 +255,8 @@ function toOutputProductDetails(p: SeedProduct): OutputProductDetails {
     product_addons: p.product_addons || [],
     company_addons: p.company_addons || [],
     active_addons: p.active_addons || [],
-    logos_setting: p.logos_setting || []
+    logos_setting: p.logos_setting || [],
+    patterns: (p as any).patterns || []
   }
 }
 

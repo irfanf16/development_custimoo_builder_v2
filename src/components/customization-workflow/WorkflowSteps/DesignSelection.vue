@@ -9,7 +9,9 @@
   const productsStore = useProductsStore()
 
   const previews = computed(() => productsStore.designPreviews || [])
-  const selectedDesignId = computed(() => productsStore.activeDesignId)
+  const selectedDesignId = computed(
+    () => (selectionStore as any).activeDesignId
+  )
 
   const designSelectionContainer = ref<HTMLElement | null>(null)
 
@@ -22,7 +24,7 @@
     }
     // Scroll to active design when component mounts
     nextTick(() => {
-      const activeDesignId = selectionStore.customization?.design_id
+      const activeDesignId = (selectionStore as any).customization?.design_id
       if (activeDesignId) {
         // Small delay to ensure MenuPanel is fully mounted
         setTimeout(() => {
@@ -43,7 +45,8 @@
 
   const emit = defineEmits<Emits>()
 
-  function selectDesign(item: any) {
+  async function selectDesign(item: any) {
+    console.log('selectDesign', item)
     emit('update:isExpanded', false)
     productsStore.applyDesignPreview(item)
     // Scroll to selected design with smooth animation

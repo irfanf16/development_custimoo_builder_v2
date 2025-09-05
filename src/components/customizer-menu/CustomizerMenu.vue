@@ -2,6 +2,7 @@
   import { computed } from 'vue'
   import CustomizerMenuItem from './MenuItem.vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import {
     nav_product,
     nav_design,
@@ -16,6 +17,7 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
   const localeStore = useLocaleStore()
 
   // Navigation constants - these should not be translated
@@ -55,7 +57,8 @@
     }
     if (
       !shouldShowCategories.value &&
-      (productsStore.activeStep || NAV_STEPS.PRODUCTS) === NAV_STEPS.PRODUCTS
+      ((selectionStore as any).activeStep || NAV_STEPS.PRODUCTS) ===
+        NAV_STEPS.PRODUCTS
     ) {
       // If no categories but step is 'Categories', treat it as 'Designs' step
       return label === NAV_STEPS.DESIGNS
@@ -63,8 +66,9 @@
 
     // Check if we're in Products-related substeps
     if (label === NAV_STEPS.PRODUCTS) {
-      const currentStep = productsStore.activeStep || NAV_STEPS.PRODUCTS
-      const productsSubStep = (productsStore as any).productsSubStep
+      const currentStep =
+        (selectionStore as any).activeStep || NAV_STEPS.PRODUCTS
+      const productsSubStep = (selectionStore as any).productsSubStep
 
       // Highlight Products if we're in Categories step or any Products substep
       return (
@@ -78,8 +82,9 @@
 
     // Check if we're in Logos-related substeps
     if (label === NAV_STEPS.LOGOS) {
-      const currentStep = productsStore.activeStep || NAV_STEPS.PRODUCTS
-      const logosSubStep = (productsStore as any).logosSubStep
+      const currentStep =
+        (selectionStore as any).activeStep || NAV_STEPS.PRODUCTS
+      const logosSubStep = (selectionStore as any).logosSubStep
 
       // Highlight Logos if we're in Logos step and have a substep
       return (
@@ -91,8 +96,9 @@
 
     // Check if we're in Patterns-related substeps
     if (label === NAV_STEPS.PATTERNS) {
-      const currentStep = productsStore.activeStep || NAV_STEPS.PRODUCTS
-      const patternsSubStep = (productsStore as any).patternsSubStep
+      const currentStep =
+        (selectionStore as any).activeStep || NAV_STEPS.PRODUCTS
+      const patternsSubStep = (selectionStore as any).patternsSubStep
 
       // Highlight Patterns if we're in Patterns step and have a substep
       return (
@@ -102,7 +108,7 @@
       )
     }
 
-    return (productsStore.activeStep || NAV_STEPS.PRODUCTS) === label
+    return ((selectionStore as any).activeStep || NAV_STEPS.PRODUCTS) === label
   }
 
   async function goTo(label: string) {
@@ -124,7 +130,7 @@
     } else if (label === NAV_STEPS.STYLES) {
       const pid =
         (productsStore.activeProductDetails as any)?.id ||
-        productsStore.activeProductId
+        (selectionStore as any).activeProductId
       if (pid) {
         if (!productsStore.stylePreviews) {
           await productsStore.dispatchGetStylePreviews(pid as number)
@@ -141,13 +147,13 @@
       // Set step directly; colors lives inside product details
     } else if (label === NAV_STEPS.PATTERNS) {
       // Ensure we start at the patterns list
-      ;(productsStore as any).setPatternsSubStep?.('list')
+      ;(selectionStore as any).setPatternsSubStep('list')
     } else if (label === NAV_STEPS.TEXTS) {
-      ;(productsStore as any).setTextsSubStep?.('list')
+      // Text substep management would go here if implemented
     } else if (label === NAV_STEPS.ROSTER) {
-      ;(productsStore as any).setRosterSubStep?.('list')
+      // Roster substep management would go here if implemented
     }
-    productsStore.setActiveStep(label)
+    ;(selectionStore as any).setActiveStep(label)
   }
 
   // Helper function to get translated text for a navigation step

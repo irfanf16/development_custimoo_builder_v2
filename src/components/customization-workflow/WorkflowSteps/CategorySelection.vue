@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useSelectionStore } from '@/stores/selection.store.ts'
   import { flexDuoCategoryIcons } from '@/icons/flex-duo-categories'
   import { ChevronRight } from 'lucide-vue-next'
   interface Props {
@@ -8,9 +9,10 @@
 
   const props = defineProps<Props>()
   const productsStore = useProductsStore()
+  const selectionStore = useSelectionStore()
 
   async function handleSelectCategory(categoryId: number) {
-    productsStore.setSelectedCategoryForPreview(categoryId)
+    ;(selectionStore as any).setSelectedCategoryForPreview(categoryId)
     // Do not commit category or preload products here; ProductSelection will handle fetching
     props.onSelectCategory?.(categoryId)
   }
