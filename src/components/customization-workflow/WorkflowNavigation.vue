@@ -37,7 +37,7 @@
 
   // Navigation configuration for the customization workflow
   const navigationItems = computed((): NavigationItem[] => {
-    const step = (selectionStore as any).activeStep || 'Categories'
+    const step = selectionStore.activeStep || 'Categories'
     const hasCategories = !!(
       productsStore.categories?.data && productsStore.categories.data.length
     )
@@ -56,14 +56,13 @@
         return [{ label: 'Category' }]
       }
       const categoryIdForTrail =
-        (selectionStore as any).selectedCategoryId ??
-        (selectionStore as any).activeCategoryId
+        selectionStore.selectedCategoryId ?? selectionStore.activeCategoryId
       const category = productsStore.categories?.data?.find(
         c => c.id === categoryIdForTrail
       )
       const subId =
-        ((selectionStore as any).selectedSubCategoryId as number | null) ??
-        ((selectionStore as any).activeSubCategoryId as number | null)
+        selectionStore.selectedSubCategoryId ??
+        selectionStore.activeSubCategoryId
 
       // Subcategory list view
       if (props.currentStep === 'subcategory') {
@@ -83,16 +82,16 @@
         {
           label: 'Category',
           action: () => {
-            ;(selectionStore as any).setProductsSubStep?.('category')
-            ;(selectionStore as any).setActiveStep('Categories')
+            selectionStore.setProductsSubStep('category')
+            selectionStore.setActiveStep('Categories')
           }
         },
         {
           label: category?.category_name || '—',
           action: hasSubs
             ? () => {
-                ;(selectionStore as any).setProductsSubStep?.('subcategory')
-                ;(selectionStore as any).setActiveStep('Categories')
+                selectionStore.setProductsSubStep('subcategory')
+                selectionStore.setActiveStep('Categories')
               }
             : undefined
         }
@@ -129,7 +128,7 @@
         {
           label: 'Logos',
           action: () => {
-            ;(selectionStore as any).setLogosSubStep('list')
+            selectionStore.setLogosSubStep('list')
           }
         }
       ]

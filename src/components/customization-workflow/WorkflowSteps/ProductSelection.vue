@@ -8,9 +8,7 @@
   const productsStore = useProductsStore()
   const selectionStore = useSelectionStore()
   const previews = computed(() => productsStore.productPreviews || [])
-  const selectedProductId = computed(
-    () => (selectionStore as any).activeProductId
-  )
+  const selectedProductId = computed(() => selectionStore.activeProductId)
 
   interface Emits {
     (
@@ -23,7 +21,7 @@
   const emit = defineEmits<Emits>()
 
   function loadPreviewsForCurrentCategory() {
-    const categoryId = (selectionStore as any).effectiveCategoryId
+    const categoryId = selectionStore.effectiveCategoryId
     productsStore.dispatchGetProductPreviews(categoryId)
   }
 
@@ -32,7 +30,7 @@
 
     // Scroll to active product if it exists
     nextTick(() => {
-      const activeProductId = (selectionStore as any).activeProductId
+      const activeProductId = selectionStore.activeProductId
       if (activeProductId) {
         // Small delay to ensure MenuPanel is fully mounted
         setTimeout(() => {
@@ -43,7 +41,7 @@
   })
 
   watch(
-    () => (selectionStore as any).effectiveCategoryId,
+    () => selectionStore.effectiveCategoryId,
     () => {
       loadPreviewsForCurrentCategory()
     }
@@ -51,24 +49,24 @@
 
   async function handleSelectProduct(productId: number) {
     // Commit the selected category/subcategory at the moment the product is chosen
-    ;(selectionStore as any).commitSelectedCategory()
-    ;(selectionStore as any).commitSelectedSubCategory()
+    selectionStore.commitSelectedCategory()
+    selectionStore.commitSelectedSubCategory()
     await productsStore.dispatchGetActiveProductDetails(productId)
     // After loading active details, ensure customization contains product, style and design ids
     const styleId = (productsStore.activeStyleDetails as any)?.id
     const designId = (productsStore.activeDesignDetails as any)?.id
     if (styleId) {
       // Persist chosen style in customization
-      ;(selectionStore as any).setStyle(styleId)
+      selectionStore.setStyle(styleId)
       await productsStore.dispatchGetStylePreviews(productId)
     }
     if (designId) {
       // Persist chosen design in customization
-      ;(selectionStore as any).setDesign(designId)
+      selectionStore.setDesign(designId)
       await productsStore.dispatchGetDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs
-    ;(selectionStore as any).setActiveStep('Designs')
+    selectionStore.setActiveStep('Designs')
   }
 </script>
 

@@ -23,7 +23,12 @@ type SelectionCommand = {
   timestamp: number
 }
 
-export const useSelectionStore = defineStore('selectionStore', (): any => {
+type LogosSubStep = 'list' | 'placement' | 'edit'
+type ProductsSubStep = 'category' | 'subcategory' | 'product'
+type PatternsSubStep = 'list' | 'group'
+type CanvasSide = 'front' | 'back'
+
+export const useSelectionStore = defineStore('selectionStore', () => {
   const productsStore = useProductsStore()
 
   const customization = ref<ActiveProductCustomization | null>(null)
@@ -38,16 +43,14 @@ export const useSelectionStore = defineStore('selectionStore', (): any => {
   const isApplying = ref(false)
 
   // Workflow UI state
-  const logosSubStep = ref<'list' | 'placement' | 'edit'>('list')
-  const productsSubStep = ref<'category' | 'subcategory' | 'product'>(
-    'category'
-  )
-  const patternsSubStep = ref<'list' | 'group'>('list')
+  const logosSubStep = ref<LogosSubStep>('list')
+  const productsSubStep = ref<ProductsSubStep>('category')
+  const patternsSubStep = ref<PatternsSubStep>('list')
   const activePatternGroupName = ref<string | null>(null)
   const selectedCustomLogoIdx = ref<number | null>(null)
 
   // Canvas state
-  const activeCanvasSide = ref<'front' | 'back'>('front')
+  const activeCanvasSide = ref<CanvasSide>('front')
   const canvasZoom = ref<number>(1)
 
   // Preview selection state
@@ -354,21 +357,21 @@ export const useSelectionStore = defineStore('selectionStore', (): any => {
   })
 
   // Workflow sub-step management
-  function setLogosSubStep(step: 'list' | 'placement' | 'edit') {
+  function setLogosSubStep(step: LogosSubStep) {
     logosSubStep.value = step
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('workflow.logosSubStep', step)
     }
   }
 
-  function setProductsSubStep(step: 'category' | 'subcategory' | 'product') {
+  function setProductsSubStep(step: ProductsSubStep) {
     productsSubStep.value = step
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('workflow.productsSubStep', step)
     }
   }
 
-  function setPatternsSubStep(step: 'list' | 'group') {
+  function setPatternsSubStep(step: PatternsSubStep) {
     patternsSubStep.value = step
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('workflow.patternsSubStep', step)
@@ -428,7 +431,7 @@ export const useSelectionStore = defineStore('selectionStore', (): any => {
   }
 
   // Canvas management
-  function setActiveCanvasSide(side: 'front' | 'back') {
+  function setActiveCanvasSide(side: CanvasSide) {
     activeCanvasSide.value = side
   }
 
