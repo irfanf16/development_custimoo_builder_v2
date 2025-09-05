@@ -1,5 +1,5 @@
 import type { AxiosError, AxiosResponse } from 'axios'
-import type { APIResponse } from './types'
+import type { APIResponse } from '@/services/types'
 
 export async function tryCatchApi<T>(
   promise: Promise<AxiosResponse<T>>

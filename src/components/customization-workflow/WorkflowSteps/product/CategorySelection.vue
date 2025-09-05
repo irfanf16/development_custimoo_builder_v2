@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useWorkflowStore } from '@/stores/workflow.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { flexDuoCategoryIcons } from '@/icons/flex-duo-categories'
   import { ChevronRight } from 'lucide-vue-next'
   interface Props {

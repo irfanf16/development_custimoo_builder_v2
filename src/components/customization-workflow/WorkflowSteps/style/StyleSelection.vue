@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, onMounted } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useCustomizationStore } from '@/stores/customization.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
   // Style previews use static icons (PNG) from style_icon_url, so no canvas is needed
   import { Checkbox } from '@/components/ui/checkbox'
   import { Label } from '@/components/ui/label'

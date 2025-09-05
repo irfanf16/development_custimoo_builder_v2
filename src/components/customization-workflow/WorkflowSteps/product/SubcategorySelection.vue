@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useWorkflowStore } from '@/stores/workflow.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { ChevronRight } from 'lucide-vue-next'
 
   interface Props {

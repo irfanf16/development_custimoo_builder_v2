@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { type Company, type OutputSettings } from '@/services/company/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
-import type { APIResponse } from '../types'
+import type { APIResponse } from '@/services/types'
 
 // Language configuration types
 export interface LanguageConfig {

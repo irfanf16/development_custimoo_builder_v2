@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { useCustomizationStore } from './customization.store'
-
-type LogosSubStep = 'list' | 'placement' | 'edit'
-type ProductsSubStep = 'category' | 'subcategory' | 'product'
-type PatternsSubStep = 'list' | 'group'
-type TextsSubStep = 'list' | 'placement'
-type RosterSubStep = 'list' | 'edit'
-type CanvasSide = 'front' | 'back'
+import { useCustomizationStore } from '../customization/customization.store'
+import type {
+  LogosSubStep,
+  ProductsSubStep,
+  PatternsSubStep,
+  TextsSubStep,
+  RosterSubStep,
+  CanvasSide
+} from './workflow.store.types'
 
 export const useWorkflowStore = defineStore('workflowStore', () => {
   const activeStep = ref<string | null>(

@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
   import { Ruler, Save, Share2, FileText, RotateCcw } from 'lucide-vue-next'
-  import { useCustomizationStore } from '@/stores/customization.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
   import {
     actions_size_guide,
     actions_reset_customization,

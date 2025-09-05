@@ -7,7 +7,7 @@ import {
 } from '@/services/authentication/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
-import type { APIResponse } from '../types'
+import type { APIResponse } from '@/services/types'
 
 export const useAuthStore = defineStore('authStore', () => {
   const customer = ref<Customer | null>(null)

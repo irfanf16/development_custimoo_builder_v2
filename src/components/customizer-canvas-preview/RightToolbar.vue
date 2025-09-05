@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import { useWorkflowStore } from '@/stores/workflow.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import {
     Undo2,
     Redo2,

@@ -1,8 +1,8 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { useCustomizationStore } from '@/stores/customization.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useProductsStore } from '@/stores/products/products.store'
-  import { useWorkflowStore } from '@/stores/workflow.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import type {
     OutputProductDetails,
     OutputStyleDetails,

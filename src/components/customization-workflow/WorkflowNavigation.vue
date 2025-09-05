@@ -1,8 +1,8 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useWorkflowStore } from '@/stores/workflow.store'
-  import { useCustomizationStore } from '@/stores/customization.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   interface NavigationItem {
@@ -11,22 +11,9 @@
     isActive?: boolean
   }
 
+  import type { WorkflowRouteStep } from './types'
   interface Props {
-    currentStep:
-      | 'category'
-      | 'subcategory'
-      | 'product'
-      | 'designs'
-      | 'styles'
-      | 'logos'
-      | 'colors'
-      | 'patterns'
-      | 'patterns-group'
-      | 'texts'
-      | 'texts-placement'
-      | 'roster'
-      | 'roster-edit'
-      | 'summary'
+    currentStep: WorkflowRouteStep
     onNavigateBack: () => void
   }
 

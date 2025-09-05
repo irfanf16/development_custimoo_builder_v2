@@ -1,8 +1,8 @@
 <script setup lang="ts">
   import { computed, onMounted, watch, nextTick } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useCustomizationStore } from '@/stores/customization.store'
-  import { useWorkflowStore } from '@/stores/workflow.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
 

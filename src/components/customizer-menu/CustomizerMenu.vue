@@ -2,7 +2,7 @@
   import { computed } from 'vue'
   import CustomizerMenuItem from './MenuItem.vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useWorkflowStore } from '@/stores/workflow.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import {
     nav_product,
     nav_design,

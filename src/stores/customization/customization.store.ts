@@ -5,7 +5,7 @@ import type {
   OutputAddon
 } from '@/services/products/types'
 import { API } from '@/services'
-import { useProductsStore } from './products/products.store'
+import { useProductsStore } from '../products/products.store'
 
 type SelectionKey =
   | 'category_id'

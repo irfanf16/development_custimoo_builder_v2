@@ -1,49 +1,19 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useWorkflowStore } from '@/stores/workflow.store'
-  import { useCustomizationStore } from '@/stores/customization.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
 
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
 
-  const currentStep = ref<
-    | 'category'
-    | 'subcategory'
-    | 'product'
-    | 'designs'
-    | 'styles'
-    | 'logos'
-    | 'colors'
-    | 'patterns'
-    | 'patterns-group'
-    | 'texts'
-    | 'texts-placement'
-    | 'roster'
-    | 'roster-edit'
-    | 'summary'
-  >('category')
+  import type { WorkflowRouteStep } from './types'
+  const currentStep = ref<WorkflowRouteStep>('category')
 
   const stepHistory = ref<string[]>(['category'])
 
-  const navigateToStep = (
-    step:
-      | 'category'
-      | 'subcategory'
-      | 'product'
-      | 'designs'
-      | 'styles'
-      | 'logos'
-      | 'colors'
-      | 'patterns'
-      | 'patterns-group'
-      | 'texts'
-      | 'texts-placement'
-      | 'roster'
-      | 'roster-edit'
-      | 'summary'
-  ) => {
+  const navigateToStep = (step: WorkflowRouteStep) => {
     if (step !== currentStep.value) {
       stepHistory.value.push(step)
       currentStep.value = step
@@ -53,20 +23,9 @@
   const navigateBack = () => {
     if (stepHistory.value.length > 1) {
       stepHistory.value.pop()
-      const previousStep = stepHistory.value[stepHistory.value.length - 1] as
-        | 'category'
-        | 'product'
-        | 'designs'
-        | 'styles'
-        | 'logos'
-        | 'colors'
-        | 'patterns'
-        | 'patterns-group'
-        | 'texts'
-        | 'texts-placement'
-        | 'roster'
-        | 'roster-edit'
-        | 'summary'
+      const previousStep = stepHistory.value[
+        stepHistory.value.length - 1
+      ] as WorkflowRouteStep
       if (previousStep === 'category') {
         // Category state is now handled through activeProductCustomization
       }

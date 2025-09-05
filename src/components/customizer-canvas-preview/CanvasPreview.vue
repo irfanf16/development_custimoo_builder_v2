@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { onMounted, onBeforeUnmount, watch } from 'vue'
-  import { useWorkflowStore } from '@/stores/workflow.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
 

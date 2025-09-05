@@ -1,6 +1,6 @@
 import { computed, watch, ref, type Ref } from 'vue'
 import { useProductsStore } from '@/stores/products/products.store'
-import { useCustomizationStore } from '@/stores/customization.store'
+import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { storeToRefs } from 'pinia'
 import type {
   OutputProductDetails,

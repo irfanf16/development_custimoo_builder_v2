@@ -18,8 +18,8 @@ import type {
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
-import type { APIResponse } from '../types'
-import { useCustomizationStore } from '../customization.store'
+import type { APIResponse } from '@/services/types'
+import { useCustomizationStore } from '../customization/customization.store'
 import { useFabricPreview } from '@/composables/useFabricPreview'
 
 const { getSvgGroup } = useFabricPreview()

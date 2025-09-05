@@ -2,7 +2,7 @@ import { ref, onMounted, readonly } from 'vue'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { useProductsStore } from '@/stores/products/products.store.ts'
-import { useCustomizationStore } from '@/stores/customization.store'
+import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useLocaleStore } from '@/stores/locale/locale.store'
 
 // Global state to prevent multiple initializations
@@ -60,7 +60,9 @@ export function useAppInitialization() {
         const selectionStore = useCustomizationStore()
         const hasActiveCustomization = selectionStore.load()
         // restore saved workflow sub-steps
-        const { useWorkflowStore } = await import('@/stores/workflow.store')
+        const { useWorkflowStore } = await import(
+          '@/stores/workflow/workflow.store'
+        )
         const wf = useWorkflowStore()
         wf.loadWorkflowSubStepsFromLocalStorage()
 

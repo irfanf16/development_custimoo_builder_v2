@@ -99,8 +99,8 @@ export function useFabricPreview() {
       originY: 'center',
       globalCompositeOperation: composition
     })
-    canvas.value.add(img)
-    canvas.value.viewportCenterObject(img)
+    canvas.value.add(img as unknown as FabricObject)
+    canvas.value.viewportCenterObject(img as unknown as FabricObject)
     img.setCoords()
   }
 
@@ -146,8 +146,8 @@ export function useFabricPreview() {
         originX: 'center',
         originY: 'center'
       })
-      canvas.value.add(img)
-      canvas.value.viewportCenterObject(img)
+      canvas.value.add(img as unknown as FabricObject)
+      canvas.value.viewportCenterObject(img as unknown as FabricObject)
       img.setCoords()
     }
   }

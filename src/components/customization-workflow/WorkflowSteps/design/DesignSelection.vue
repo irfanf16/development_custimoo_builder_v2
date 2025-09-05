@@ -2,7 +2,7 @@
   import { computed, nextTick, onMounted, ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
-  import { useCustomizationStore } from '@/stores/customization.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
 
   const selectionStore = useCustomizationStore()
 
