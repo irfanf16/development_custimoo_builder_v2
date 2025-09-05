@@ -67,33 +67,39 @@ export const useProductsStore = defineStore('productsStore', () => {
     const group = await getSvgGroup(frontDesignUrl, fileExtension)
     console.log('group', group)
     if (!group?._objects) return
+    type FillWithToHex = { toHex: () => string }
+    type FillWithColor = { color: string }
+    const getColorString = (fill: unknown): string => {
+      if (typeof fill === 'string') return fill
+      if (fill && typeof (fill as FillWithToHex).toHex === 'function')
+        return (fill as FillWithToHex).toHex()
+      if (fill && typeof (fill as FillWithColor).color === 'string')
+        return (fill as FillWithColor).color
+      return '#000000'
+    }
+
     svgGroups.value = group._objects
-      .filter(
-        obj =>
-          !(obj as any).id?.toLowerCase().includes('noncustomizable') &&
-          !(obj as any).id?.toLowerCase().includes('inside') &&
-          !(obj as any).id?.toLowerCase().includes('anchor')
-      )
+      .filter(obj => {
+        const id = (obj as { id?: string }).id?.toLowerCase() || ''
+        return (
+          !id.includes('noncustomizable') &&
+          !id.includes('inside') &&
+          !id.includes('anchor')
+        )
+      })
       .map(obj => {
-        // Extract color as string from Fabric.js fill property
-        const getColorString = (fill: any): string => {
-          if (typeof fill === 'string') return fill
-          if (fill && typeof fill === 'object' && fill.toHex)
-            return fill.toHex()
-          if (fill && typeof fill === 'object' && fill.color) return fill.color
-          return '#000000' // fallback color
-        }
-
-        // Access id property with proper type assertion since CustomFabricGroup guarantees it exists
-        const id = (obj as any).id || 'unknown'
-
+        const id = (obj as { id?: string }).id || 'unknown'
         return {
           id,
-          color: getColorString(obj.fill),
+          color: getColorString((obj as { fill?: unknown }).fill),
           pantone: '',
           name: '',
           count: id === 'base' ? 10000 : 1,
-          gradient_colors: []
+          gradient_colors: [] as Array<{
+            color: string
+            pantone: string
+            name: string
+          }>
         }
       })
     console.log('svgGroups', svgGroups.value)
@@ -122,11 +128,9 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function updateActiveAddonSelected(addonId: number, selected: boolean) {
     if (!activeAddons.value) return
-    const idx = activeAddons.value.findIndex(
-      a => (a as any).addon_id === addonId
-    )
+    const idx = activeAddons.value.findIndex(a => a.addon_id === addonId)
     if (idx >= 0) {
-      ;(activeAddons.value[idx] as any).selected = selected
+      activeAddons.value[idx].selected = selected
     }
   }
 
@@ -197,13 +201,11 @@ export const useProductsStore = defineStore('productsStore', () => {
     const resp = await tryCatchApi(API.products.getActiveStyleDetails(styleId))
     if (resp.success) {
       const payload = resp.content as unknown as {
-        productstyle: any
-        productdesign: any
+        productstyle: OutputStyleDetails
+        productdesign: OutputDesignDetails
       }
       setActiveStyleDetailsState(payload.productstyle)
-      setActiveDesignDetailsState(
-        (payload as any).productdesign as OutputDesignDetails
-      )
+      setActiveDesignDetailsState(payload.productdesign)
       customization.setStyle(styleId)
       setSvgGroups()
     } else {
@@ -290,7 +292,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       activeProductDetails.value = defaultActiveDetails.value.product
       activeStyleDetails.value = defaultActiveDetails.value.style
       activeDesignDetails.value = defaultActiveDetails.value.design
-      await (setSvgGroups as any)()
+      await setSvgGroups()
       customization.setCustomization(
         (defaultActiveDetails.value.customization ||
           (null as unknown)) as ActiveProductCustomization

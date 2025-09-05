@@ -2,6 +2,7 @@
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useWorkflowStore } from '@/stores/workflow.store'
+  import { useCustomizationStore } from '@/stores/customization.store'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   interface NavigationItem {
@@ -33,6 +34,7 @@
 
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
+  const customizationStore = useCustomizationStore()
   useLocaleStore()
 
   // Navigation configuration for the customization workflow
@@ -55,11 +57,14 @@
       if (props.currentStep === 'category') {
         return [{ label: 'Category' }]
       }
-      const categoryIdForTrail = workflowStore.selectedCategoryId ?? null
+      const categoryIdForTrail =
+        workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
       const category = productsStore.categories?.data?.find(
         c => c.id === categoryIdForTrail
       )
-      const subId = workflowStore.selectedSubCategoryId ?? null
+      const subId =
+        workflowStore.selectedSubCategoryId ??
+        customizationStore.activeSubCategoryId
 
       // Subcategory list view
       if (props.currentStep === 'subcategory') {
@@ -105,17 +110,12 @@
     }
 
     if (normalizedStep === 'Styles') {
-      const title =
-        ((productsStore.activeProductDetails as any)?.display_name as string) ||
-        'Styles'
+      const title = productsStore.activeProductDetails?.display_name || 'Styles'
       return [{ label: title }]
     }
 
     if (normalizedStep === 'Logos') {
-      const sub = (productsStore as any).logosSubStep as
-        | 'list'
-        | 'placement'
-        | 'edit'
+      const sub = workflowStore.logosSubStep as 'list' | 'placement' | 'edit'
       const map: Record<string, string> = {
         list: 'Logos',
         placement: 'Placement',
@@ -142,28 +142,20 @@
       const items = [
         { label: 'Pattern', action: props.onNavigateBack }
       ] as NavigationItem[]
-      if ((productsStore as any).patternsSubStep === 'group') {
+      if (workflowStore.patternsSubStep === 'group') {
         items.push({
-          label: (productsStore as any).activePatternGroupName || 'Base'
+          label: workflowStore.activePatternGroupName || 'Base'
         })
       }
       return items
     }
 
     if (normalizedStep === 'Texts') {
-      const items = [{ label: 'Texts' }] as NavigationItem[]
-      if ((productsStore as any).textsSubStep === 'placement') {
-        items.push({ label: 'Placement' })
-      }
-      return items
+      return [{ label: 'Texts' }]
     }
 
     if (normalizedStep === 'Roster') {
-      const items = [{ label: 'Roster' }] as NavigationItem[]
-      if ((productsStore as any).rosterSubStep === 'edit') {
-        items.push({ label: 'Edit' })
-      }
-      return items
+      return [{ label: 'Roster' }]
     }
 
     if (normalizedStep === 'Summary') {

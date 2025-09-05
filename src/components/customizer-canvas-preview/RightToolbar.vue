@@ -42,9 +42,9 @@
       :aria-label="t.label"
       @click="
         t.id === 'zoomIn'
-          ? (selectionStore as any).zoomIn()
+          ? selectionStore.zoomIn()
           : t.id === 'zoomOut'
-            ? (selectionStore as any).zoomOut()
+            ? selectionStore.zoomOut()
             : null
       "
     >

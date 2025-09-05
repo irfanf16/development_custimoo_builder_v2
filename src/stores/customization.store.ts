@@ -116,11 +116,25 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const resp = await API.products.getActiveProductDetails(productId)
     if ('data' in resp && resp.data) {
       const details = resp.data
-      ;(productsStore as any).setActiveProductDetailsState(
-        details.productDetails
+      ;(
+        productsStore as unknown as {
+          setActiveProductDetailsState: (
+            p: import('@/services/products/types').OutputProductDetails
+          ) => void
+          setActiveStyleDetailsState: (
+            s: import('@/services/products/types').OutputStyleDetails
+          ) => void
+          setActiveDesignDetailsState: (
+            d: import('@/services/products/types').OutputDesignDetails
+          ) => void
+        }
+      ).setActiveProductDetailsState(details.productDetails)
+      ;(productsStore as unknown as any).setActiveStyleDetailsState(
+        details.styleDetails
       )
-      ;(productsStore as any).setActiveStyleDetailsState(details.styleDetails)
-      ;(productsStore as any).setActiveDesignDetailsState(details.designDetails)
+      ;(productsStore as unknown as any).setActiveDesignDetailsState(
+        details.designDetails
+      )
     }
     save()
   }
@@ -156,9 +170,16 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     })
     const resp = await API.products.getActiveStyleDetails(styleId)
     if ('data' in resp) {
-      const { productstyle, productdesign } = resp.data as any
-      ;(productsStore as any).setActiveStyleDetailsState(productstyle)
-      ;(productsStore as any).setActiveDesignDetailsState(productdesign)
+      const { productstyle, productdesign } = resp.data as {
+        productstyle: import('@/services/products/types').OutputStyleDetails
+        productdesign: import('@/services/products/types').OutputDesignDetails
+      }
+      ;(productsStore as unknown as any).setActiveStyleDetailsState(
+        productstyle
+      )
+      ;(productsStore as unknown as any).setActiveDesignDetailsState(
+        productdesign
+      )
     }
     save()
   }
@@ -176,7 +197,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     })
     const resp = await API.products.getDesignDetailsById(designId)
     if ('data' in resp) {
-      ;(productsStore as any).setActiveDesignDetailsState(resp.data)
+      ;(productsStore as unknown as any).setActiveDesignDetailsState(resp.data)
     }
     save()
   }
@@ -186,7 +207,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const key = customization.value.product_id
     const prev = customization.value.addons_info?.[key]?.simple_addons ?? []
     if (!customization.value.addons_info)
-      customization.value.addons_info = {} as any
+      customization.value.addons_info =
+        {} as import('@/services/products/types').APCustomizationAddonsInfo
     customization.value.addons_info[key] = {
       grouped_addons: {},
       ungrouped_addons: [],
@@ -221,7 +243,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       case 'addons': {
         const key = customization.value!.product_id
         if (!customization.value!.addons_info)
-          customization.value!.addons_info = {} as any
+          customization.value!.addons_info =
+            {} as import('@/services/products/types').APCustomizationAddonsInfo
         customization.value!.addons_info[key] = {
           grouped_addons: {},
           ungrouped_addons: [],
@@ -311,9 +334,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
   function resetCustomizationToCurrentProductDefaults() {
     if (!productsStore.activeProductDetails) return
-    const productId = (productsStore.activeProductDetails as any)?.id ?? 0
-    const styleId = (productsStore.activeStyleDetails as any)?.id ?? 0
-    const designId = (productsStore.activeDesignDetails as any)?.id ?? 0
+    const productId = productsStore.activeProductDetails?.id ?? 0
+    const styleId = productsStore.activeStyleDetails?.id ?? 0
+    const designId = productsStore.activeDesignDetails?.id ?? 0
     setCustomization({
       fixed_logo_index: 0,
       category_index: 0,

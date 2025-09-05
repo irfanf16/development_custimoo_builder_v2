@@ -12,7 +12,7 @@
   const selectionStore = useWorkflowStore()
 
   async function handleSelectCategory(categoryId: number) {
-    ;(selectionStore as any).setSelectedCategoryForPreview(categoryId)
+    selectionStore.setSelectedCategoryForPreview(categoryId)
     // Do not commit category or preload products here; ProductSelection will handle fetching
     props.onSelectCategory?.(categoryId)
   }

@@ -24,8 +24,7 @@
 
   function loadPreviewsForCurrentCategory() {
     const categoryId =
-      (workflowStore as any).selectedCategoryId ??
-      selectionStore.activeCategoryId
+      workflowStore.selectedCategoryId ?? selectionStore.activeCategoryId
     productsStore.fetchProductPreviews(categoryId)
   }
 
@@ -45,7 +44,7 @@
   })
 
   watch(
-    () => (workflowStore as any).selectedCategoryId,
+    () => workflowStore.selectedCategoryId,
     () => {
       loadPreviewsForCurrentCategory()
     }
@@ -53,24 +52,24 @@
 
   async function handleSelectProduct(productId: number) {
     // Commit the selected category/subcategory at the moment the product is chosen
-    ;(workflowStore as any).commitSelectedCategory()
-    ;(workflowStore as any).commitSelectedSubCategory()
+    workflowStore.commitSelectedCategory()
+    workflowStore.commitSelectedSubCategory()
     await productsStore.fetchActiveProductDetails(productId)
     // After loading active details, ensure customization contains product, style and design ids
-    const styleId = (productsStore.activeStyleDetails as any)?.id
-    const designId = (productsStore.activeDesignDetails as any)?.id
+    const styleId = productsStore.activeStyleDetails?.id
+    const designId = productsStore.activeDesignDetails?.id
     if (styleId) {
       // Persist chosen style in customization
       selectionStore.setStyle(styleId)
       await productsStore.fetchStylePreviews(productId)
     }
-    if (designId) {
+    if (designId && styleId) {
       // Persist chosen design in customization
       selectionStore.setDesign(designId)
       await productsStore.fetchDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs
-    ;(workflowStore as any).setActiveStep('Designs')
+    workflowStore.setActiveStep('Designs')
   }
 </script>
 

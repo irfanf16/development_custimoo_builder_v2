@@ -9,22 +9,20 @@
   const productsStore = useProductsStore()
 
   const previews = computed(() => productsStore.designPreviews || [])
-  const selectedDesignId = computed(
-    () => (selectionStore as any).activeDesignId
-  )
+  const selectedDesignId = computed(() => selectionStore.activeDesignId)
 
   const designSelectionContainer = ref<HTMLElement | null>(null)
 
   onMounted(async () => {
     if (!productsStore.designPreviews) {
-      const styleId = (productsStore.activeStyleDetails as any)?.id
+      const styleId = productsStore.activeStyleDetails?.id
       if (styleId) {
         await productsStore.fetchDesignPreviewsByStyleId(styleId)
       }
     }
     // Scroll to active design when component mounts
     nextTick(() => {
-      const activeDesignId = (selectionStore as any).customization?.design_id
+      const activeDesignId = selectionStore.customization?.design_id
       if (activeDesignId) {
         // Small delay to ensure MenuPanel is fully mounted
         setTimeout(() => {
@@ -45,7 +43,9 @@
 
   const emit = defineEmits<Emits>()
 
-  async function selectDesign(item: any) {
+  async function selectDesign(
+    item: import('@/services/products/types').OutputDesignPreview
+  ) {
     console.log('selectDesign', item)
     emit('update:isExpanded', false)
     productsStore.applyDesignPreview(item)
@@ -77,8 +77,13 @@
       </div>
       <div>
         <ProductPreviewCanvas
-          :product="productsStore.activeProductDetails as any"
-          :style-base="productsStore.activeStyleDetails as any"
+          v-if="
+            productsStore.activeProductDetails &&
+            productsStore.activeStyleDetails &&
+            productsStore.activeDesignDetails
+          "
+          :product="productsStore.activeProductDetails!"
+          :style-base="productsStore.activeStyleDetails!"
           :design-base="item"
           :width="176"
           :height="176"

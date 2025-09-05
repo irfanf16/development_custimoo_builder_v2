@@ -59,30 +59,30 @@
     isRendering.value = true
     clearCanvas()
 
-    if (props.side === 'back' && (props.designBase as any).back_design) {
-      const back = (props.designBase as any).back_design
-      await addDesignLayer(back.file_url, back.file_extension)
-      const backModels = (props.styleBase as any).back_models || []
-      for (const m of backModels) {
-        const comp =
-          (m.composition as 'multiply' | 'screen') === 'multiply'
-            ? 'multiply'
-            : 'screen'
-        await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
-      }
-    } else {
-      await addDesignLayer(
-        props.designBase.front_design.file_url,
-        props.designBase.front_design.file_extension
-      )
-      for (const m of props.styleBase.front_models || []) {
-        const comp =
-          (m.composition as 'multiply' | 'screen') === 'multiply'
-            ? 'multiply'
-            : 'screen'
-        await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
-      }
+    // if (props.side === 'back' && props.designBase.back_design) {
+    //   const back = props.designBase.back_design
+    //   await addDesignLayer(back.file_url, back.file_extension)
+    //   const backModels = props.styleBase.back_models || []
+    //   for (const m of backModels) {
+    //     const comp =
+    //       (m.composition as 'multiply' | 'screen') === 'multiply'
+    //         ? 'multiply'
+    //         : 'screen'
+    //     await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
+    //   }
+    // } else {
+    await addDesignLayer(
+      props.designBase.front_design.file_url,
+      props.designBase.front_design.file_extension
+    )
+    for (const m of props.styleBase.front_models || []) {
+      const comp =
+        (m.composition as 'multiply' | 'screen') === 'multiply'
+          ? 'multiply'
+          : 'screen'
+      await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
     }
+    //}
 
     // Overlay rectangle for logo placement preview
     if (props.overlayRect) {

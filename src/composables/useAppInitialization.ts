@@ -164,10 +164,10 @@ export function useAppInitialization() {
           // Set the active step to Categories if categories are available
           // This ensures the user starts at the category selection screen even with default customization
           if (effectiveCategoryId && productsStore.categories?.data?.length) {
-            productsStore.setActiveStep('Categories')
+            wf.setActiveStep('Categories')
           } else {
             // If no categories available, go directly to Products step
-            productsStore.setActiveStep('Products')
+            wf.setActiveStep('Products')
           }
         }
 

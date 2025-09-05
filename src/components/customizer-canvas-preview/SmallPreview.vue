@@ -32,7 +32,7 @@
     const design = effectiveDesignDetails.value
     const style = effectiveStyleDetails.value
     const side = (
-      (selectionStore as any).activeCanvasSide === 'front' ? 'back' : 'front'
+      selectionStore.activeCanvasSide === 'front' ? 'back' : 'front'
     ) as 'front' | 'back'
     if (!design || !style) return
     if (side === 'back' && design.back_design) {
@@ -64,7 +64,7 @@
   }
 
   function handleClick() {
-    ;(selectionStore as any).toggleActiveCanvasSide()
+    selectionStore.toggleActiveCanvasSide()
   }
 
   onMounted(() => {
@@ -84,7 +84,7 @@
 
   watch(
     () => [
-      (selectionStore as any).activeCanvasSide,
+      selectionStore.activeCanvasSide,
       effectiveDesignDetails.value?.id,
       effectiveStyleDetails.value?.id
     ],

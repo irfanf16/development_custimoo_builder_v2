@@ -127,7 +127,7 @@
       } else if (step === 'Colors') {
         navigateToStep('colors')
       } else if (step === 'Patterns') {
-        const patternsSubStep = (productsStore as any).patternsSubStep || 'list'
+        const patternsSubStep = workflowStore.patternsSubStep || 'list'
         navigateToStep(
           patternsSubStep === 'list' ? 'patterns' : 'patterns-group'
         )
@@ -143,7 +143,7 @@
         // When no categories are available, go directly to product step
         navigateToStep('product')
       } else if (step === 'Categories') {
-        const sub = (productsStore as any).productsSubStep || 'category'
+        const sub = workflowStore.productsSubStep || 'category'
         navigateToStep(sub as 'category' | 'subcategory' | 'product')
       } else if (currentStep.value === 'category') {
         // default after leaving categories is product step

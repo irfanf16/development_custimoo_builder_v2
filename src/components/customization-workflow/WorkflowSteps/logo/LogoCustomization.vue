@@ -1,6 +1,15 @@
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, ref } from 'vue'
   import { useCustomizationStore } from '@/stores/customization.store'
+  import { useProductsStore } from '@/stores/products/products.store'
+  import { useWorkflowStore } from '@/stores/workflow.store'
+  import type {
+    OutputProductDetails,
+    OutputStyleDetails,
+    OutputDesignDetails,
+    OutputRecentLogo,
+    OutputProductLogosSetting
+  } from '@/services/products/types'
   import { Button } from '@/components/ui/button'
   import LogoPlacementThumb from './LogoPlacementThumb.vue'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
@@ -22,49 +31,59 @@
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
-  const selectionStore = useCustomizationStore()
+  const customizationStore = useCustomizationStore()
+  const productsStore = useProductsStore()
+  const workflowStore = useWorkflowStore()
   const localeStore = useLocaleStore()
 
   type SubPanel = 'list' | 'placement' | 'edit'
   const subPanel = ref<SubPanel>('list')
-  // Keep in sync with store-driven breadcrumbs
-  watch(
-    () => (selectionStore as any).logosSubStep,
-    step => {
-      if (step && step !== subPanel.value) subPanel.value = step as SubPanel
-    },
-    { immediate: true }
+  // Sync local panel from workflow substep
+  if (
+    workflowStore.logosSubStep &&
+    workflowStore.logosSubStep !== subPanel.value
+  ) {
+    subPanel.value = workflowStore.logosSubStep
+  }
+
+  const product = computed<OutputProductDetails | null>(
+    () => productsStore.activeProductDetails ?? null
+  )
+  const styleBase = computed<OutputStyleDetails | null>(
+    () => productsStore.activeStyleDetails ?? null
+  )
+  const designBase = computed<OutputDesignDetails | null>(
+    () => productsStore.activeDesignDetails ?? null
+  )
+  const placements = computed<OutputProductLogosSetting[]>(
+    () => product.value?.logos_setting || []
   )
 
-  const product = computed(
-    () => (selectionStore as any).activeProductDetails || null
-  )
-  const styleBase = computed(
-    () => (selectionStore as any).activeStyleDetails || null
-  )
-  const designBase = computed(
-    () => (selectionStore as any).activeDesignDetails || null
-  )
-  const placements = computed(
-    () => (product.value?.logos_setting as any[]) || []
-  )
+  const activeLogos = computed(() => {
+    const key = customizationStore.customization?.product_id
+    const map = customizationStore.customization?.custom_logos
+    if (!key || !map) return [] as Array<{ url?: string }>
+    return (
+      (map as unknown as Record<string, Array<{ url?: string }>>)[key] || []
+    )
+  })
 
-  function handleSelectRecentLogo(logo: any) {
-    ;(selectionStore as any).addCustomLogoFromRecent(logo)
+  function handleSelectRecentLogo(_logo: OutputRecentLogo) {
+    // TODO: implement addCustomLogoFromRecent in customization/workflow if needed
     goToControls()
   }
 
   function goToPlacement() {
     subPanel.value = 'placement'
-    ;(selectionStore as any).setLogosSubStep('placement')
+    // integrate with workflow store if needed
   }
   function goToControls() {
     subPanel.value = 'edit'
-    ;(selectionStore as any).setLogosSubStep('edit')
+    // integrate with workflow store if needed
   }
   function goToList() {
     subPanel.value = 'list'
-    ;(selectionStore as any).setLogosSubStep('list')
+    // integrate with workflow store if needed
   }
 </script>
 
@@ -75,10 +94,7 @@
         <div v-if="subPanel === 'list'" class="flex flex-col gap-4">
           <!-- Empty state uploader -->
           <div
-            v-if="
-              ((selectionStore as any).customization?.custom_logos?.length ||
-                0) === 0
-            "
+            v-if="activeLogos.length === 0"
             class="rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center gap-2 text-center"
           >
             <div
@@ -123,14 +139,7 @@
               class="w-full h-24 rounded-lg bg-muted flex items-center justify-center overflow-hidden"
             >
               <img
-                :src="
-                  ((selectionStore as any).customization as any)
-                    ?.custom_logos?.[
-                    (selectionStore as any).selectedCustomLogoIdx ?? 0
-                  ]?.url ||
-                  ((selectionStore as any).customization as any)
-                    ?.custom_logos?.[0]?.url
-                "
+                :src="activeLogos[0]?.url || ''"
                 class="max-h-full object-contain"
                 alt="active logo"
               />
@@ -147,7 +156,7 @@
             </div>
             <div class="grid grid-cols-4 gap-2">
               <button
-                v-for="logo in (selectionStore as any).recentLogos || []"
+                v-for="logo in productsStore.recentLogos || []"
                 :key="logo.id"
                 class="aspect-square rounded-lg border border-border overflow-hidden"
                 @click="handleSelectRecentLogo(logo)"

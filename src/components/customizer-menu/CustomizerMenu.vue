@@ -57,8 +57,7 @@
     }
     if (
       !shouldShowCategories.value &&
-      ((selectionStore as any).activeStep || NAV_STEPS.PRODUCTS) ===
-        NAV_STEPS.PRODUCTS
+      (selectionStore.activeStep || NAV_STEPS.PRODUCTS) === NAV_STEPS.PRODUCTS
     ) {
       // If no categories but step is 'Categories', treat it as 'Designs' step
       return label === NAV_STEPS.DESIGNS
@@ -66,9 +65,8 @@
 
     // Check if we're in Products-related substeps
     if (label === NAV_STEPS.PRODUCTS) {
-      const currentStep =
-        (selectionStore as any).activeStep || NAV_STEPS.PRODUCTS
-      const productsSubStep = (selectionStore as any).productsSubStep
+      const currentStep = selectionStore.activeStep || NAV_STEPS.PRODUCTS
+      const productsSubStep = selectionStore.productsSubStep
 
       // Highlight Products if we're in Categories step or any Products substep
       return (
@@ -82,9 +80,8 @@
 
     // Check if we're in Logos-related substeps
     if (label === NAV_STEPS.LOGOS) {
-      const currentStep =
-        (selectionStore as any).activeStep || NAV_STEPS.PRODUCTS
-      const logosSubStep = (selectionStore as any).logosSubStep
+      const currentStep = selectionStore.activeStep || NAV_STEPS.PRODUCTS
+      const logosSubStep = selectionStore.logosSubStep
 
       // Highlight Logos if we're in Logos step and have a substep
       return (
@@ -96,9 +93,8 @@
 
     // Check if we're in Patterns-related substeps
     if (label === NAV_STEPS.PATTERNS) {
-      const currentStep =
-        (selectionStore as any).activeStep || NAV_STEPS.PRODUCTS
-      const patternsSubStep = (selectionStore as any).patternsSubStep
+      const currentStep = selectionStore.activeStep || NAV_STEPS.PRODUCTS
+      const patternsSubStep = selectionStore.patternsSubStep
 
       // Highlight Patterns if we're in Patterns step and have a substep
       return (
@@ -108,7 +104,7 @@
       )
     }
 
-    return ((selectionStore as any).activeStep || NAV_STEPS.PRODUCTS) === label
+    return (selectionStore.activeStep || NAV_STEPS.PRODUCTS) === label
   }
 
   async function goTo(label: string) {
@@ -120,7 +116,7 @@
     }
 
     if (label === NAV_STEPS.DESIGNS) {
-      const styleId = (productsStore.activeStyleDetails as any)?.id
+      const styleId = productsStore.activeStyleDetails?.id
       const hasPreviews =
         Array.isArray(productsStore.designPreviews) &&
         productsStore.designPreviews.length > 0
@@ -128,9 +124,7 @@
         await productsStore.fetchDesignPreviewsByStyleId(styleId)
       }
     } else if (label === NAV_STEPS.STYLES) {
-      const pid =
-        (productsStore.activeProductDetails as any)?.id ||
-        (selectionStore as any).activeProductId
+      const pid = productsStore.activeProductDetails?.id || null
       if (pid) {
         if (!productsStore.stylePreviews) {
           await productsStore.fetchStylePreviews(pid as number)
@@ -147,13 +141,13 @@
       // Set step directly; colors lives inside product details
     } else if (label === NAV_STEPS.PATTERNS) {
       // Ensure we start at the patterns list
-      ;(selectionStore as any).setPatternsSubStep('list')
+      selectionStore.setPatternsSubStep('list')
     } else if (label === NAV_STEPS.TEXTS) {
       // Text substep management would go here if implemented
     } else if (label === NAV_STEPS.ROSTER) {
       // Roster substep management would go here if implemented
     }
-    ;(selectionStore as any).setActiveStep(label)
+    selectionStore.setActiveStep(label)
   }
 
   // Helper function to get translated text for a navigation step

@@ -15,7 +15,7 @@
   const localeStore = useLocaleStore()
 
   function handleResetCustomization() {
-    ;(selectionStore as any).resetCustomizationToCurrentProductDefaults()
+    selectionStore.resetCustomizationToCurrentProductDefaults()
   }
 </script>
 

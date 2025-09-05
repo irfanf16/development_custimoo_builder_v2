@@ -36,22 +36,19 @@ export function useEffectiveDetails(
   const effectiveProductId = computed(() => {
     const fromCustomization = selectionStore.customization?.product_id
     if (fromCustomization) return Number(fromCustomization)
-    const active = productsStore.activeProductDetails as any
-    return active?.id ?? null
+    return productsStore.activeProductDetails?.id ?? null
   })
 
   const effectiveStyleId = computed(() => {
     const fromCustomization = selectionStore.customization?.style_id
     if (fromCustomization && fromCustomization > 0) return fromCustomization
-    const active = productsStore.activeStyleDetails as any
-    return active?.id ?? null
+    return productsStore.activeStyleDetails?.id ?? null
   })
 
   const effectiveDesignId = computed(() => {
     const fromCustomization = selectionStore.customization?.design_id
     if (fromCustomization && fromCustomization > 0) return fromCustomization
-    const active = productsStore.activeDesignDetails as any
-    return active?.id ?? null
+    return productsStore.activeDesignDetails?.id ?? null
   })
 
   const {
@@ -79,7 +76,7 @@ export function useEffectiveDetails(
       if (
         pid &&
         (!productsStore.activeProductDetails ||
-          (productsStore.activeProductDetails as any).id !== pid)
+          productsStore.activeProductDetails.id !== pid)
       ) {
         const resp = await productsStore.fetchActiveProductDetails(pid)
         if (!resp.success) return
@@ -87,7 +84,7 @@ export function useEffectiveDetails(
       if (
         sid &&
         (!productsStore.activeStyleDetails ||
-          (productsStore.activeStyleDetails as any).id !== sid)
+          productsStore.activeStyleDetails.id !== sid)
       ) {
         const resp = await productsStore.fetchActiveStyleDetails(sid)
         if (!resp.success) return
@@ -95,7 +92,7 @@ export function useEffectiveDetails(
       if (
         did &&
         (!productsStore.activeDesignDetails ||
-          (productsStore.activeDesignDetails as any).id !== did)
+          productsStore.activeDesignDetails.id !== did)
       ) {
         await productsStore.fetchDesignDetailsById(did)
       }

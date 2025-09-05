@@ -13,9 +13,7 @@
   const selectionStore = useWorkflowStore()
 
   const selectedCategoryId = computed(
-    () =>
-      (selectionStore as any).selectedCategoryId ??
-      (selectionStore as any).activeCategoryId
+    () => selectionStore.selectedCategoryId ?? null
   )
 
   const selectedCategory = computed(() => {
@@ -29,7 +27,7 @@
   )
 
   function handleSelectSubcategory(subcategoryId: number) {
-    ;(selectionStore as any).setSelectedSubCategoryForPreview(subcategoryId)
+    selectionStore.setSelectedSubCategoryForPreview(subcategoryId)
     props.onSelectSubcategory?.(subcategoryId)
   }
 </script>

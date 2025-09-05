@@ -18,13 +18,12 @@
 
   const productId = computed(
     () =>
-      (productsStore.activeProductDetails as any)?.id ||
-      (selectionStore as any).activeProductId
+      productsStore.activeProductDetails?.id || selectionStore.activeProductId
   )
   const previews = computed(() => productsStore.stylePreviews || [])
   const headerDescription = computed(() => {
-    const p = productsStore.activeProductDetails as any
-    return p?.sku?.description || p?.description || ''
+    const p = productsStore.activeProductDetails
+    return p?.sku?.description || ''
   })
 
   const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
@@ -58,13 +57,9 @@
     if (idx >= 0) {
       const next = !productsStore.activeAddons[idx].selected
       // Use a setter to update store state
-      if ((productsStore as any).updateActiveAddonSelected) {
-        ;(productsStore as any).updateActiveAddonSelected(addonId, next)
-      } else {
-        productsStore.activeAddons[idx].selected = next
-      }
+      productsStore.updateActiveAddonSelected(addonId, next)
       // Update customization state with the new addon selection
-      ;(selectionStore as any).setAddons([...productsStore.activeAddons])
+      selectionStore.setAddons([...productsStore.activeAddons])
     }
   }
 
@@ -117,7 +112,7 @@
       <div class="flex flex-col gap-2">
         <div
           v-for="addon in visibleAddons"
-          :key="(addon as any).addon_id || (addon as any).addon_id"
+          :key="addon.addon_id"
           class="flex items-center gap-2"
         >
           <Checkbox

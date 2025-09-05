@@ -29,7 +29,7 @@
     await fadeOut(150)
 
     clearCanvas()
-    const side = (selectionStore as any).activeCanvasSide
+    const side = selectionStore.activeCanvasSide
     const design = effectiveDesignDetails.value
     const style = effectiveStyleDetails.value
     if (!design || !style) return
@@ -58,7 +58,7 @@
       }
     }
 
-    setZoom((selectionStore as any).canvasZoom)
+    setZoom(selectionStore.canvasZoom)
 
     fadeIn()
     requestRender()
@@ -90,7 +90,7 @@
 
   watch(
     () => [
-      (selectionStore as any).activeCanvasSide,
+      selectionStore.activeCanvasSide,
       effectiveDesignDetails.value?.id,
       effectiveStyleDetails.value?.id
     ],
@@ -98,7 +98,7 @@
   )
 
   watch(
-    () => (selectionStore as any).canvasZoom,
+    () => selectionStore.canvasZoom,
     z => {
       if (!canvas.value) return
       setZoom(z)
