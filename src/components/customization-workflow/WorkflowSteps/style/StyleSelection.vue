@@ -65,9 +65,15 @@
 
   const visibleAddons = computed(() => {
     if (productsStore.companyAddons && productsStore.companyAddons.length) {
-      return productsStore.companyAddons as unknown as Array<any>
+      return (productsStore.companyAddons || []).map(a => ({
+        addon_id: a.addon_id,
+        title: a.addon_data.title
+      })) as Array<{ addon_id: number; title: string }>
     }
-    return productsStore.productAddons as unknown as Array<any>
+    return (productsStore.productAddons || []).map(a => ({
+      addon_id: a.addon_id,
+      title: a.title
+    })) as Array<{ addon_id: number; title: string }>
   })
 </script>
 

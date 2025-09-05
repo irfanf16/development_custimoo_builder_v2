@@ -76,9 +76,7 @@ export function useAppInitialization() {
           // Conditionally fetch categories based on whether we have an active category
           // If we have a stored category, fetch products for that category
           // Otherwise, fetch all available categories
-          selectionStore.activeCategoryId
-            ? productsStore.fetchCustomizedCategories()
-            : productsStore.fetchCategoriesWithNoDefaultCategoryOrProduct()
+          productsStore.fetchCustomizedCategories()
         ])
 
         // PHASE 3: Initialize localization and determine effective category

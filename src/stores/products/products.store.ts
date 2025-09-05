@@ -134,23 +134,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     }
   }
 
-  async function fetchCategoriesWithNoDefaultCategoryOrProduct(): Promise<
-    APIResponse<OutputProductCategories>
-  > {
-    setLoading(true)
-    setError(null)
-    const output = await tryCatchApi(
-      API.products.getProductCategories({ customized: true })
-    )
-    if (output.success) {
-      setCategories(output.content)
-    } else {
-      setError('Error getting categories')
-    }
-    setLoading(false)
-    return output
-  }
-
   async function fetchCustomizedCategories(): Promise<
     APIResponse<OutputProductCategories>
   > {
@@ -366,7 +349,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     updateActiveAddonSelected,
     initActiveSelectionFromLocalStorage,
     setActiveStep,
-    fetchCategoriesWithNoDefaultCategoryOrProduct,
     fetchCustomizedCategories,
     fetchProductPreviews,
     fetchStylePreviews,

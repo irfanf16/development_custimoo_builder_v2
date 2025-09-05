@@ -132,10 +132,10 @@
           patternsSubStep === 'list' ? 'patterns' : 'patterns-group'
         )
       } else if (step === 'Texts') {
-        const textsSubStep = (productsStore as any).textsSubStep || 'list'
+        const textsSubStep = workflowStore.textsSubStep || 'list'
         navigateToStep(textsSubStep === 'list' ? 'texts' : 'texts-placement')
       } else if (step === 'Roster') {
-        const rosterSubStep = (productsStore as any).rosterSubStep || 'list'
+        const rosterSubStep = workflowStore.rosterSubStep || 'list'
         navigateToStep(rosterSubStep === 'list' ? 'roster' : 'roster-edit')
       } else if (step === 'Summary') {
         navigateToStep('summary')
