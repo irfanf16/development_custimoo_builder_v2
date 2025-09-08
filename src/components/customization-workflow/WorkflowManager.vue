@@ -40,10 +40,18 @@
       c => c.id === categoryId && c.subcategories && c.subcategories.length
     )
     navigateToStep(hasSubcategories ? 'subcategory' : 'product')
+    // Keep products sub-step in sync so breadcrumb actions can react
+    workflowStore.setProductsSubStep(
+      (hasSubcategories ? 'subcategory' : 'product') as
+        | 'subcategory'
+        | 'product'
+    )
   }
 
   const handleSubcategorySelect = (subcategoryId: number) => {
     workflowStore.setSelectedSubCategoryForPreview(subcategoryId)
+    // Entering product list within Categories flow
+    workflowStore.setProductsSubStep('product')
     navigateToStep('product')
   }
 
@@ -104,12 +112,19 @@
       } else if (step === 'Categories') {
         const sub = workflowStore.productsSubStep || 'category'
         navigateToStep(sub as 'category' | 'subcategory' | 'product')
-      } else if (currentStep.value === 'category') {
-        // default after leaving categories is product step
-        navigateToStep('product')
       }
     },
     { immediate: true }
+  )
+
+  // React to products sub-step changes while in Categories flow
+  watch(
+    () => workflowStore.productsSubStep,
+    sub => {
+      if (workflowStore.activeStep === 'Categories') {
+        navigateToStep(sub as 'category' | 'subcategory' | 'product')
+      }
+    }
   )
 
   // Expose reactive state and methods
