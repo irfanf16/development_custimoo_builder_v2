@@ -10,10 +10,10 @@
 
   const props = defineProps<Props>()
   const productsStore = useProductsStore()
-  const selectionStore = useWorkflowStore()
+  const workflowStore = useWorkflowStore()
 
   const selectedCategoryId = computed(
-    () => selectionStore.selectedCategoryId ?? null
+    () => workflowStore.selectedCategoryId ?? null
   )
 
   const selectedCategory = computed(() => {
@@ -27,7 +27,7 @@
   )
 
   function handleSelectSubcategory(subcategoryId: number) {
-    selectionStore.setSelectedSubCategoryForPreview(subcategoryId)
+    workflowStore.setSelectedSubCategoryForPreview(subcategoryId)
     props.onSelectSubcategory?.(subcategoryId)
   }
 </script>

@@ -102,7 +102,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   async function setProduct(productId: number) {
     if (!customization.value) return
     const prev = customization.value.product_id
-    const next = String(productId)
+    const next = productId
     if (prev === next) return
     customization.value.product_id = next
     customization.value.style_id = 0
@@ -232,7 +232,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
         customization.value!.sub_category_id = cmd.next as number
         break
       case 'product_id':
-        customization.value!.product_id = cmd.next as string
+        customization.value!.product_id = cmd.next as number
         break
       case 'style_id':
         customization.value!.style_id = cmd.next as number

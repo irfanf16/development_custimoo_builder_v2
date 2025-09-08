@@ -7,10 +7,10 @@
   import { Button } from '@/components/ui/button'
 
   const productsStore = useProductsStore()
-  const selectionStore = useCustomizationStore()
+  const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
   const previews = computed(() => productsStore.productPreviews || [])
-  const selectedProductId = computed(() => selectionStore.activeProductId)
+  const selectedProductId = computed(() => customizationStore.activeProductId)
 
   interface Emits {
     (
@@ -24,7 +24,7 @@
 
   function loadPreviewsForCurrentCategory() {
     const categoryId =
-      workflowStore.selectedCategoryId ?? selectionStore.activeCategoryId
+      workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
     productsStore.fetchProductPreviews(categoryId)
   }
 
@@ -33,7 +33,7 @@
 
     // Scroll to active product if it exists
     nextTick(() => {
-      const activeProductId = selectionStore.activeProductId
+      const activeProductId = customizationStore.activeProductId
       if (activeProductId) {
         // Small delay to ensure MenuPanel is fully mounted
         setTimeout(() => {
@@ -60,12 +60,12 @@
     const designId = productsStore.activeDesignDetails?.id
     if (styleId) {
       // Persist chosen style in customization
-      selectionStore.setStyle(styleId)
+      customizationStore.setStyle(styleId)
       await productsStore.fetchStylePreviews(productId)
     }
     if (designId && styleId) {
       // Persist chosen design in customization
-      selectionStore.setDesign(designId)
+      customizationStore.setDesign(designId)
       await productsStore.fetchDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs

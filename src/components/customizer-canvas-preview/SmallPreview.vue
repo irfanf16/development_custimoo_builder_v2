@@ -5,7 +5,7 @@
   import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
   import { Card, CardContent } from '../ui/card'
 
-  const selectionStore = useWorkflowStore()
+  const workflowStore = useWorkflowStore()
   const {
     canvasEl,
     canvas,
@@ -32,7 +32,7 @@
     const design = effectiveDesignDetails.value
     const style = effectiveStyleDetails.value
     const side = (
-      selectionStore.activeCanvasSide === 'front' ? 'back' : 'front'
+      workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'
     ) as 'front' | 'back'
     if (!design || !style) return
     if (side === 'back' && design.back_design) {
@@ -64,7 +64,7 @@
   }
 
   function handleClick() {
-    selectionStore.toggleActiveCanvasSide()
+    workflowStore.toggleActiveCanvasSide()
   }
 
   onMounted(() => {
@@ -84,7 +84,7 @@
 
   watch(
     () => [
-      selectionStore.activeCanvasSide,
+      workflowStore.activeCanvasSide,
       effectiveDesignDetails.value?.id,
       effectiveStyleDetails.value?.id
     ],

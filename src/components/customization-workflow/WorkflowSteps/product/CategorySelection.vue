@@ -9,10 +9,10 @@
 
   const props = defineProps<Props>()
   const productsStore = useProductsStore()
-  const selectionStore = useWorkflowStore()
+  const workflowStore = useWorkflowStore()
 
   async function handleSelectCategory(categoryId: number) {
-    selectionStore.setSelectedCategoryForPreview(categoryId)
+    workflowStore.setSelectedCategoryForPreview(categoryId)
     // Do not commit category or preload products here; ProductSelection will handle fetching
     props.onSelectCategory?.(categoryId)
   }

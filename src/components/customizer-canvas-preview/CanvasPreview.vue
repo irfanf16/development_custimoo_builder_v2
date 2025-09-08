@@ -4,7 +4,7 @@
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
 
-  const selectionStore = useWorkflowStore()
+  const workflowStore = useWorkflowStore()
   const {
     canvasEl,
     canvas,
@@ -29,7 +29,7 @@
     await fadeOut(150)
 
     clearCanvas()
-    const side = selectionStore.activeCanvasSide
+    const side = workflowStore.activeCanvasSide
     const design = effectiveDesignDetails.value
     const style = effectiveStyleDetails.value
     if (!design || !style) return
@@ -58,7 +58,7 @@
       }
     }
 
-    setZoom(selectionStore.canvasZoom)
+    setZoom(workflowStore.canvasZoom)
 
     fadeIn()
     requestRender()
@@ -90,7 +90,7 @@
 
   watch(
     () => [
-      selectionStore.activeCanvasSide,
+      workflowStore.activeCanvasSide,
       effectiveDesignDetails.value?.id,
       effectiveStyleDetails.value?.id
     ],
@@ -98,7 +98,7 @@
   )
 
   watch(
-    () => selectionStore.canvasZoom,
+    () => workflowStore.canvasZoom,
     z => {
       if (!canvas.value) return
       setZoom(z)

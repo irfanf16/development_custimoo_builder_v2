@@ -11,11 +11,11 @@
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
-  const selectionStore = useCustomizationStore()
+  const customizationStore = useCustomizationStore()
   const localeStore = useLocaleStore()
 
   function handleResetCustomization() {
-    selectionStore.resetCustomizationToCurrentProductDefaults()
+    customizationStore.resetCustomizationToCurrentProductDefaults()
   }
 </script>
 

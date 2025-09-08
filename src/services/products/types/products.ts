@@ -6,7 +6,6 @@ import type { OutputProductPattern } from './patterns'
 
 export type OutputProductPreview = {
   allowed_logos_count: number
-  colors: OutputProductColor[]
   display_name: string
   id: number
   is_logo_allowed: number
@@ -67,6 +66,8 @@ export type OutputProductDetails = OutputProductPreview & {
   active_addons: OutputAddon[]
   logos_setting: OutputProductLogosSetting[]
   patterns: OutputProductPattern[]
+  colors: OutputProductColor[]
+  namecolors: OutputProductColor[]
 }
 
 export type ProductPreviewItem = {

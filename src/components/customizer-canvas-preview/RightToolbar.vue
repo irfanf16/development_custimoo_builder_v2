@@ -13,7 +13,7 @@
     Shuffle
   } from 'lucide-vue-next'
 
-  const selectionStore = useWorkflowStore()
+  const workflowStore = useWorkflowStore()
 
   const tools = [
     { id: 'rotateCcw', icon: RotateCcw, label: 'Rotate CCW' },
@@ -42,9 +42,9 @@
       :aria-label="t.label"
       @click="
         t.id === 'zoomIn'
-          ? selectionStore.zoomIn()
+          ? workflowStore.zoomIn()
           : t.id === 'zoomOut'
-            ? selectionStore.zoomOut()
+            ? workflowStore.zoomOut()
             : null
       "
     >

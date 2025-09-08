@@ -6,61 +6,84 @@
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
   import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
   import { Button } from '@/components/ui/button'
-
+  import {
+    Select,
+    SelectTrigger,
+    SelectContent,
+    SelectItem,
+    SelectGroup,
+    SelectLabel
+  } from '@/components/ui/select'
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
   // const product = computed(() => productsStore.activeProductDetails as any)
 
   // Dummy palettes – replace with real data later
-  type Palette = { name: string; colors: string[] }
-  const palettes: Palette[] = [
-    {
-      name: 'NHL',
-      colors: [
-        '#F9C80E',
-        '#F86624',
-        '#EA3546',
-        '#662E9B',
-        '#43BCCD',
-        '#0EA5E9',
-        '#2563EB',
-        '#0F172A',
-        '#0EA5A0',
-        '#0891B2',
-        '#F43F5E',
-        '#FB923C',
-        '#94A3B8',
-        '#64748B',
-        '#111827',
-        '#F59E0B',
-        '#EF4444',
-        '#22C55E',
-        '#10B981',
-        '#14B8A6',
-        '#06B6D4',
-        '#3B82F6',
-        '#6366F1',
-        '#A78BFA'
-      ]
-    },
-    {
-      name: 'Pantone',
-      colors: [
-        '#FFB703',
-        '#FB8500',
-        '#FF006E',
-        '#8338EC',
-        '#3A86FF',
-        '#2DD4BF',
-        '#22D3EE',
-        '#0EA5E9',
-        '#64748B',
-        '#94A3B8',
-        '#1F2937',
-        '#111827'
-      ]
-    }
-  ]
+  type Palette = {
+    id: number
+    name: string
+    colors: {
+      name: string
+      position: string
+      value: string
+    }[]
+  }
+  const computedPalettes = computed<Palette[] | undefined>(() => {
+    return productsStore.activeProductDetails?.namecolors.map(colorGroup => ({
+      id: colorGroup.id,
+      name: colorGroup.file_name,
+      colors: colorGroup.json_data
+    }))
+  })
+  console.log('computedPalettes', computedPalettes.value)
+  // const palettes: Palette[] = [
+  //   {
+  //     name: 'NHL',
+  //     colors: [
+  //       '#F9C80E',
+  //       '#F86624',
+  //       '#EA3546',
+  //       '#662E9B',
+  //       '#43BCCD',
+  //       '#0EA5E9',
+  //       '#2563EB',
+  //       '#0F172A',
+  //       '#0EA5A0',
+  //       '#0891B2',
+  //       '#F43F5E',
+  //       '#FB923C',
+  //       '#94A3B8',
+  //       '#64748B',
+  //       '#111827',
+  //       '#F59E0B',
+  //       '#EF4444',
+  //       '#22C55E',
+  //       '#10B981',
+  //       '#14B8A6',
+  //       '#06B6D4',
+  //       '#3B82F6',
+  //       '#6366F1',
+  //       '#A78BFA'
+  //     ]
+  //   },
+  //   {
+  //     name: 'Pantone',
+  //     colors: [
+  //       '#FFB703',
+  //       '#FB8500',
+  //       '#FF006E',
+  //       '#8338EC',
+  //       '#3A86FF',
+  //       '#2DD4BF',
+  //       '#22D3EE',
+  //       '#0EA5E9',
+  //       '#64748B',
+  //       '#94A3B8',
+  //       '#1F2937',
+  //       '#111827'
+  //     ]
+  //   }
+  // ]
 
   // Three color slots shown in the UI
   const slotLabels = computed(
@@ -78,12 +101,25 @@
     2: 'colors'
   })
 
-  const currentPaletteName = ref<string>('NHL')
-  const currentPalette = computed<Palette>(() => {
+  // List of palette options for the select dropdown
+  const paletteOptions = computed(
+    () =>
+      computedPalettes.value?.map(palette => ({
+        label: palette.name,
+        value: palette.id
+      })) ?? []
+  )
+
+  // The currently selected palette object
+  const currentPalette = computed(() => {
     return (
-      palettes.find(p => p.name === currentPaletteName.value) || palettes[0]
+      computedPalettes.value?.find(p => p.id === currentPaletteId.value) ||
+      computedPalettes.value?.[0]
     )
   })
+
+  // Model for shadcn/vue select: stores the palette name (string)
+  const currentPaletteId = ref<number>(computedPalettes.value?.[0]?.id || 0)
 
   function setSlotColor(slotIndex: number, hex: string) {
     const next = [...slotValues.value]
@@ -101,10 +137,10 @@
   }
 
   function shuffleAll() {
-    const colors = currentPalette.value.colors
-    if (!colors.length) return
+    const colors = currentPalette.value?.colors
+    if (!colors?.length) return
     slotValues.value = slotValues.value.map(
-      () => colors[Math.floor(Math.random() * colors.length)]
+      () => colors?.[Math.floor(Math.random() * colors.length)]?.value || ''
     )
   }
 </script>
@@ -206,30 +242,39 @@
 
           <!-- Palette select -->
           <div class="mt-3">
-            <select
-              v-model="currentPaletteName"
-              class="h-9 w-full rounded-md border border-input bg-card px-3 text-sm"
-            >
-              <option v-for="p in palettes" :key="p.name" :value="p.name">
-                {{ p.name }}
-              </option>
-            </select>
+            <Select v-model="currentPaletteId">
+              <SelectTrigger class="h-9 w-full">
+                <SelectValue :value="currentPalette?.name" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Palettes</SelectLabel>
+                  <SelectItem
+                    v-for="p in paletteOptions"
+                    :key="p.value"
+                    :value="p.value"
+                  >
+                    {{ p.label }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- Swatches grid -->
           <div class="mt-4 grid grid-cols-8 gap-3">
-            <button
-              v-for="hex in currentPalette.colors"
-              :key="hex + idx"
+            <Button
+              v-for="hex in currentPalette?.colors"
+              :key="hex.value + idx"
               class="relative h-8 w-8 rounded-full border border-border focus:outline-none focus:ring-2 focus:ring-ring"
               :style="{ background: hex }"
-              @click="setSlotColor(idx, hex)"
+              @click="setSlotColor(idx, hex.value)"
             >
               <span
-                v-if="slotValues[idx] === hex"
+                v-if="slotValues[idx] === hex.value"
                 class="absolute inset-0 rounded-full ring-2 ring-primary"
               />
-            </button>
+            </Button>
           </div>
         </AccordionContent>
       </AccordionItem>

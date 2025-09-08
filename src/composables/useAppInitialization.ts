@@ -57,8 +57,8 @@ export function useAppInitialization() {
 
         // Initialize selection/customization from localStorage
         const productsStore = useProductsStore()
-        const selectionStore = useCustomizationStore()
-        const hasActiveCustomization = selectionStore.load()
+        const customizationStore = useCustomizationStore()
+        const hasActiveCustomization = customizationStore.load()
         // restore saved workflow sub-steps
         const { useWorkflowStore } = await import(
           '@/stores/workflow/workflow.store'
@@ -92,14 +92,14 @@ export function useAppInitialization() {
         // Determine the effective category ID for loading products
         // Priority order: stored category > first available category > null
         const effectiveCategoryId =
-          selectionStore.activeCategoryId ||
+          customizationStore.activeCategoryId ||
           productsStore.categories?.data?.[0]?.id ||
           null
 
         // Set the active category in customization state if we have one
         // This ensures the customization state reflects the current category selection
         // if (effectiveCategoryId) {
-        //   selectionStore.setCategory(effectiveCategoryId)
+        //   customizationStore.setCategory(effectiveCategoryId)
         // }
 
         // PHASE 4: Load product data and set up customization state
@@ -113,7 +113,7 @@ export function useAppInitialization() {
 
         if (hasActiveCustomization) {
           // SCENARIO A: Restore from stored customization by fetching dependent details
-          const apc = selectionStore.customization
+          const apc = customizationStore.customization
           if (apc) {
             // Step 0: Load style previews
             await productsStore.fetchStylePreviews(apc.product_id)
@@ -125,16 +125,16 @@ export function useAppInitialization() {
 
             // Step 2: Load explicit style if different from default
             if (
-              selectionStore.activeStyleId &&
-              apc.style_id !== selectionStore.activeStyleId
+              customizationStore.activeStyleId &&
+              apc.style_id !== customizationStore.activeStyleId
             ) {
               await productsStore.fetchActiveStyleDetails(apc.style_id)
             }
 
             // Step 3: Load explicit design if different from current
             if (
-              selectionStore.activeDesignId &&
-              apc.design_id !== selectionStore.activeDesignId
+              customizationStore.activeDesignId &&
+              apc.design_id !== customizationStore.activeDesignId
             ) {
               await productsStore.fetchDesignDetailsById(apc.design_id)
             }
@@ -146,7 +146,7 @@ export function useAppInitialization() {
           // Determine which product to load as default
           // Priority order: stored product ID > first product in category > null
           const activeProductId =
-            selectionStore.activeProductId ||
+            customizationStore.activeProductId ||
             (productsStore.productPreviews &&
             productsStore.productPreviews.length
               ? productsStore.productPreviews[0].productPreview.id
@@ -162,9 +162,9 @@ export function useAppInitialization() {
 
             // Ensure we have a default customization set up
             // This creates a customization object with the default product, style, and design
-            if (!selectionStore.customization) {
-              selectionStore.ensureCustomization()
-              selectionStore.save()
+            if (!customizationStore.customization) {
+              customizationStore.ensureCustomization()
+              customizationStore.save()
             }
           }
 

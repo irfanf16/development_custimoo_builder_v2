@@ -29,24 +29,24 @@ export function useEffectiveDetails(
   options?: Options
 ): UseEffectiveDetailsReturn {
   const productsStore = useProductsStore()
-  const selectionStore = useCustomizationStore()
+  const customizationStore = useCustomizationStore()
 
   const isFetching = ref(false)
 
   const effectiveProductId = computed(() => {
-    const fromCustomization = selectionStore.customization?.product_id
+    const fromCustomization = customizationStore.customization?.product_id
     if (fromCustomization) return Number(fromCustomization)
     return productsStore.activeProductDetails?.id ?? null
   })
 
   const effectiveStyleId = computed(() => {
-    const fromCustomization = selectionStore.customization?.style_id
+    const fromCustomization = customizationStore.customization?.style_id
     if (fromCustomization && fromCustomization > 0) return fromCustomization
     return productsStore.activeStyleDetails?.id ?? null
   })
 
   const effectiveDesignId = computed(() => {
-    const fromCustomization = selectionStore.customization?.design_id
+    const fromCustomization = customizationStore.customization?.design_id
     if (fromCustomization && fromCustomization > 0) return fromCustomization
     return productsStore.activeDesignDetails?.id ?? null
   })
@@ -104,9 +104,9 @@ export function useEffectiveDetails(
   if (options?.autoFetch) {
     watch(
       () => [
-        selectionStore.customization?.product_id,
-        selectionStore.customization?.style_id,
-        selectionStore.customization?.design_id
+        customizationStore.customization?.product_id,
+        customizationStore.customization?.style_id,
+        customizationStore.customization?.design_id
       ],
       () => {
         ensureActiveDetails()

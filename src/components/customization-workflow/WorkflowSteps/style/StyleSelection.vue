@@ -13,12 +13,13 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
-  const selectionStore = useCustomizationStore()
+  const customizationStore = useCustomizationStore()
   const localeStore = useLocaleStore()
 
   const productId = computed(
     () =>
-      productsStore.activeProductDetails?.id || selectionStore.activeProductId
+      productsStore.activeProductDetails?.id ||
+      customizationStore.activeProductId
   )
   const previews = computed(() => productsStore.stylePreviews || [])
   const headerDescription = computed(() => {
@@ -59,7 +60,7 @@
       // Use a setter to update store state
       productsStore.updateActiveAddonSelected(addonId, next)
       // Update customization state with the new addon selection
-      selectionStore.setAddons([...productsStore.activeAddons])
+      customizationStore.setAddons([...productsStore.activeAddons])
     }
   }
 

@@ -17,7 +17,7 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const productsStore = useProductsStore()
-  const selectionStore = useWorkflowStore()
+  const workflowStore = useWorkflowStore()
   const localeStore = useLocaleStore()
 
   // Navigation constants - these should not be translated
@@ -57,7 +57,7 @@
     }
     if (
       !shouldShowCategories.value &&
-      (selectionStore.activeStep || NAV_STEPS.PRODUCTS) === NAV_STEPS.PRODUCTS
+      (workflowStore.activeStep || NAV_STEPS.PRODUCTS) === NAV_STEPS.PRODUCTS
     ) {
       // If no categories but step is 'Categories', treat it as 'Designs' step
       return label === NAV_STEPS.DESIGNS
@@ -65,8 +65,8 @@
 
     // Check if we're in Products-related substeps
     if (label === NAV_STEPS.PRODUCTS) {
-      const currentStep = selectionStore.activeStep || NAV_STEPS.PRODUCTS
-      const productsSubStep = selectionStore.productsSubStep
+      const currentStep = workflowStore.activeStep || NAV_STEPS.PRODUCTS
+      const productsSubStep = workflowStore.productsSubStep
 
       // Highlight Products if we're in Categories step or any Products substep
       return (
@@ -80,8 +80,8 @@
 
     // Check if we're in Logos-related substeps
     if (label === NAV_STEPS.LOGOS) {
-      const currentStep = selectionStore.activeStep || NAV_STEPS.PRODUCTS
-      const logosSubStep = selectionStore.logosSubStep
+      const currentStep = workflowStore.activeStep || NAV_STEPS.PRODUCTS
+      const logosSubStep = workflowStore.logosSubStep
 
       // Highlight Logos if we're in Logos step and have a substep
       return (
@@ -93,8 +93,8 @@
 
     // Check if we're in Patterns-related substeps
     if (label === NAV_STEPS.PATTERNS) {
-      const currentStep = selectionStore.activeStep || NAV_STEPS.PRODUCTS
-      const patternsSubStep = selectionStore.patternsSubStep
+      const currentStep = workflowStore.activeStep || NAV_STEPS.PRODUCTS
+      const patternsSubStep = workflowStore.patternsSubStep
 
       // Highlight Patterns if we're in Patterns step and have a substep
       return (
@@ -104,7 +104,7 @@
       )
     }
 
-    return (selectionStore.activeStep || NAV_STEPS.PRODUCTS) === label
+    return (workflowStore.activeStep || NAV_STEPS.PRODUCTS) === label
   }
 
   async function goTo(label: string) {
@@ -141,13 +141,13 @@
       // Set step directly; colors lives inside product details
     } else if (label === NAV_STEPS.PATTERNS) {
       // Ensure we start at the patterns list
-      selectionStore.setPatternsSubStep('list')
+      workflowStore.setPatternsSubStep('list')
     } else if (label === NAV_STEPS.TEXTS) {
       // Text substep management would go here if implemented
     } else if (label === NAV_STEPS.ROSTER) {
       // Roster substep management would go here if implemented
     }
-    selectionStore.setActiveStep(label)
+    workflowStore.setActiveStep(label)
   }
 
   // Helper function to get translated text for a navigation step

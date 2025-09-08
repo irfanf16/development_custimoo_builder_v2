@@ -4,12 +4,12 @@
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
 
-  const selectionStore = useCustomizationStore()
+  const customizationStore = useCustomizationStore()
 
   const productsStore = useProductsStore()
 
   const previews = computed(() => productsStore.designPreviews || [])
-  const selectedDesignId = computed(() => selectionStore.activeDesignId)
+  const selectedDesignId = computed(() => customizationStore.activeDesignId)
 
   const designSelectionContainer = ref<HTMLElement | null>(null)
 
@@ -22,7 +22,7 @@
     }
     // Scroll to active design when component mounts
     nextTick(() => {
-      const activeDesignId = selectionStore.customization?.design_id
+      const activeDesignId = customizationStore.customization?.design_id
       if (activeDesignId) {
         // Small delay to ensure MenuPanel is fully mounted
         setTimeout(() => {

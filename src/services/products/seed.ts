@@ -201,7 +201,6 @@ function getDefaultDesign(seedStyle: SeedStyle): SeedDesign | null {
 function toOutputProductPreview(p: SeedProduct): OutputProductPreview {
   return {
     allowed_logos_count: p.allowed_logos_count ?? 0,
-    colors: (p.colors as any[]) || [],
     display_name: p.display_name,
     id: p.id,
     is_logo_allowed: p.is_logo_allowed,
@@ -256,7 +255,9 @@ function toOutputProductDetails(p: SeedProduct): OutputProductDetails {
     company_addons: p.company_addons || [],
     active_addons: p.active_addons || [],
     logos_setting: p.logos_setting || [],
-    patterns: (p as any).patterns || []
+    patterns: (p as any).patterns || [],
+    colors: (p.colors as any[]) || [],
+    namecolors: (p.namecolors as any[]) || []
   }
 }
 
