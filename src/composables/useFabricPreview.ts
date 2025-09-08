@@ -7,6 +7,7 @@ import {
   util,
   type FabricObject
 } from 'fabric'
+import { useEffectiveDetails } from './useEffectiveDetails'
 
 type InitOptions = {
   selection?: boolean
@@ -125,6 +126,20 @@ export function useFabricPreview() {
       if (!canvas.value || !url) return
       const group = await getSvgGroup(url, ext)
       if (!group) return
+
+      // Check group objects and see if the id matches the effectiveSvgGroups, if the color is different, change it
+      const effectiveSvgGroups = useEffectiveDetails().effectiveSvgGroups.value
+      if (effectiveSvgGroups) {
+        effectiveSvgGroups?.forEach(effectiveGroup => {
+          const object = group._objects.find(
+            (o: any) => o.id === effectiveGroup.id
+          )
+          if (object && object.fill !== effectiveGroup.color) {
+            object.fill = effectiveGroup.color
+          }
+        })
+      }
+
       fitObject(group)
       group.set({
         selectable: false,

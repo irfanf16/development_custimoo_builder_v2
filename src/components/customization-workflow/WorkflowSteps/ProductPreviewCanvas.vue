@@ -7,6 +7,7 @@
     OutputDesignPreview
   } from '@/services/products/types'
   import { useFabricPreview } from '@/composables/useFabricPreview'
+  import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
 
   const props = defineProps({
     product: { type: Object as PropType<OutputProductPreview>, required: true },
@@ -154,7 +155,8 @@
       () => props.side,
       () =>
         props.overlayRect &&
-        `${props.overlayRect.x}-${props.overlayRect.y}-${props.overlayRect.width}-${props.overlayRect.height}`
+        `${props.overlayRect.x}-${props.overlayRect.y}-${props.overlayRect.width}-${props.overlayRect.height}`,
+      () => useEffectiveDetails().effectiveSvgGroups.value
     ],
     () => {
       if (isVisible.value && canvas.value) {

@@ -73,7 +73,7 @@ export const useProductsStore = defineStore('productsStore', () => {
         return (fill as FillWithColor).color
       return '#000000'
     }
-
+    console.log('group._objects', group._objects)
     svgGroups.value = group._objects
       .filter(obj => {
         const id = (obj as { id?: string }).id?.toLowerCase() || ''
@@ -98,6 +98,7 @@ export const useProductsStore = defineStore('productsStore', () => {
           }>
         }
       })
+    console.log('svgGroups', svgGroups.value)
   }
   function reset() {
     categories.value = null
@@ -270,6 +271,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       activeProductDetails.value = defaultActiveDetails.value.product
       activeStyleDetails.value = defaultActiveDetails.value.style
       activeDesignDetails.value = defaultActiveDetails.value.design
+      svgGroups.value = []
       await setSvgGroups()
       customization.setCustomization(
         (defaultActiveDetails.value.customization ||

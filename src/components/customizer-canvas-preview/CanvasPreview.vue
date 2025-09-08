@@ -19,9 +19,8 @@
     fadeOut,
     fadeIn
   } = useFabricPreview()
-  const { effectiveDesignDetails, effectiveStyleDetails } = useEffectiveDetails(
-    { autoFetch: true }
-  )
+  const { effectiveDesignDetails, effectiveStyleDetails, effectiveSvgGroups } =
+    useEffectiveDetails({ autoFetch: true })
 
   async function renderPreview() {
     if (!canvas.value) return
@@ -92,7 +91,8 @@
     () => [
       workflowStore.activeCanvasSide,
       effectiveDesignDetails.value?.id,
-      effectiveStyleDetails.value?.id
+      effectiveStyleDetails.value?.id,
+      effectiveSvgGroups.value
     ],
     () => renderPreview()
   )

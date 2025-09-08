@@ -1,6 +1,8 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
+  import type { APCustomizationGroupColor } from '@/services/products/types'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
@@ -14,19 +16,18 @@
     SelectGroup,
     SelectLabel
   } from '@/components/ui/select'
+  import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
+  import type { OutputColor } from '@/services/products/types'
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
-  // const product = computed(() => productsStore.activeProductDetails as any)
+  const customizationStore = useCustomizationStore()
+  const { effectiveSvgGroups } = useEffectiveDetails()
 
   // Dummy palettes – replace with real data later
   type Palette = {
     id: number
     name: string
-    colors: {
-      name: string
-      position: string
-      value: string
-    }[]
+    colors: OutputColor[]
   }
   const computedPalettes = computed<Palette[] | undefined>(() => {
     return productsStore.activeProductDetails?.namecolors.map(colorGroup => ({
@@ -36,61 +37,18 @@
     }))
   })
   console.log('computedPalettes', computedPalettes.value)
-  // const palettes: Palette[] = [
-  //   {
-  //     name: 'NHL',
-  //     colors: [
-  //       '#F9C80E',
-  //       '#F86624',
-  //       '#EA3546',
-  //       '#662E9B',
-  //       '#43BCCD',
-  //       '#0EA5E9',
-  //       '#2563EB',
-  //       '#0F172A',
-  //       '#0EA5A0',
-  //       '#0891B2',
-  //       '#F43F5E',
-  //       '#FB923C',
-  //       '#94A3B8',
-  //       '#64748B',
-  //       '#111827',
-  //       '#F59E0B',
-  //       '#EF4444',
-  //       '#22C55E',
-  //       '#10B981',
-  //       '#14B8A6',
-  //       '#06B6D4',
-  //       '#3B82F6',
-  //       '#6366F1',
-  //       '#A78BFA'
-  //     ]
-  //   },
-  //   {
-  //     name: 'Pantone',
-  //     colors: [
-  //       '#FFB703',
-  //       '#FB8500',
-  //       '#FF006E',
-  //       '#8338EC',
-  //       '#3A86FF',
-  //       '#2DD4BF',
-  //       '#22D3EE',
-  //       '#0EA5E9',
-  //       '#64748B',
-  //       '#94A3B8',
-  //       '#1F2937',
-  //       '#111827'
-  //     ]
-  //   }
-  // ]
 
   // Three color slots shown in the UI
-  const slotLabels = computed(
-    () => productsStore.svgGroups?.map(group => group.id) || []
-  )
-  const slotValues = ref<string[]>(['#F9C80E', '#E5E7EB', '#111827'])
+  // const slotLabels = computed(
+  //   () => productsStore.svgGroups?.map(group => group.id) || []
+  // )
+  // const slotValues = ref<string[]>(['#F9C80E', '#E5E7EB', '#111827'])
 
+  // const customizedColorGroups = computed<
+  //   Record<string, APCustomizationGroupColor>
+  // >(() => {
+  //   return customizationStore.customization?.group_colors || {}
+  // })
   // Local clipboard for copy/paste between slots
   const clipboardHex = ref<string | null>(null)
 
@@ -112,6 +70,10 @@
 
   // The currently selected palette object
   const currentPalette = computed(() => {
+    console.log(
+      'currentPalette',
+      computedPalettes.value?.find(p => p.id === currentPaletteId.value)
+    )
     return (
       computedPalettes.value?.find(p => p.id === currentPaletteId.value) ||
       computedPalettes.value?.[0]
@@ -121,27 +83,32 @@
   // Model for shadcn/vue select: stores the palette name (string)
   const currentPaletteId = ref<number>(computedPalettes.value?.[0]?.id || 0)
 
-  function setSlotColor(slotIndex: number, hex: string) {
-    const next = [...slotValues.value]
-    next[slotIndex] = hex
-    slotValues.value = next
+  function setGroupColor(colorGroupId: string, color: OutputColor) {
+    customizationStore.setGroupColor(colorGroupId, color)
   }
 
-  function copyFrom(slotIndex: number) {
-    clipboardHex.value = slotValues.value[slotIndex]
+  function copyFrom(groupId: string) {
+    // Find the color value for the given groupId from effectiveSvgGroups
+    const group = effectiveSvgGroups.value?.find(g => g.id === groupId)
+    clipboardHex.value = group?.color ?? null
   }
 
-  function pasteTo(slotIndex: number) {
+  function pasteTo(groupId: string) {
     if (!clipboardHex.value) return
-    setSlotColor(slotIndex, clipboardHex.value)
+    // Use setGroupColor to update the color for the group
+    setGroupColor(groupId, { name: '', value: clipboardHex.value, position: 0 })
   }
 
   function shuffleAll() {
     const colors = currentPalette.value?.colors
-    if (!colors?.length) return
-    slotValues.value = slotValues.value.map(
-      () => colors?.[Math.floor(Math.random() * colors.length)]?.value || ''
-    )
+    if (!colors?.length || !effectiveSvgGroups.value) return
+    // For each group, assign a random color from the palette using setGroupColor
+    effectiveSvgGroups.value.forEach(group => {
+      const randomColor = colors[Math.floor(Math.random() * colors.length)]
+      if (randomColor) {
+        setGroupColor(group.id, randomColor)
+      }
+    })
   }
 </script>
 
@@ -179,8 +146,8 @@
     <!-- Color slots -->
     <Accordion type="single" collapsible>
       <AccordionItem
-        v-for="(label, idx) in slotLabels"
-        :key="label"
+        v-for="(svgGroup, idx) in effectiveSvgGroups"
+        :key="svgGroup.id"
         :value="String(idx)"
         class="px-6"
       >
@@ -189,21 +156,24 @@
             <div class="flex items-center gap-3 w-full">
               <span
                 class="inline-block size-7 rounded-full border border-border"
-                :style="{ background: slotValues[idx] }"
+                :style="{ background: svgGroup.color ?? '' }"
               />
-              <span class="text-base">{{ label }}</span>
+              <span class="text-base">{{ svgGroup.id }}</span>
             </div>
             <div
               class="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-hover:no-underline transition-opacity"
             >
-              <Button size="sm" variant="outline" @click.stop="copyFrom(idx)"
+              <Button
+                size="sm"
+                variant="outline"
+                @click.stop="copyFrom(svgGroup.id)"
                 ><span class="no-underline">Copy</span></Button
               >
               <Button
                 size="sm"
                 variant="outline"
                 :disabled="!clipboardHex"
-                @click.stop="pasteTo(idx)"
+                @click.stop="pasteTo(svgGroup.id)"
                 ><span class="no-underline">Paste</span>
               </Button>
             </div>
@@ -264,14 +234,14 @@
           <!-- Swatches grid -->
           <div class="mt-4 grid grid-cols-8 gap-3">
             <Button
-              v-for="hex in currentPalette?.colors"
-              :key="hex.value + idx"
-              class="relative h-8 w-8 rounded-full border border-border focus:outline-none focus:ring-2 focus:ring-ring"
-              :style="{ background: hex }"
-              @click="setSlotColor(idx, hex.value)"
+              v-for="color in currentPalette?.colors"
+              :key="color.value + idx"
+              :class="'relative h-8 w-8 rounded-full border border-border focus:outline-none focus:ring-2 focus:ring-ring '"
+              :style="{ background: color.value }"
+              @click="setGroupColor(svgGroup.id, color)"
             >
               <span
-                v-if="slotValues[idx] === hex.value"
+                v-if="svgGroup.color === color.value"
                 class="absolute inset-0 rounded-full ring-2 ring-primary"
               />
             </Button>

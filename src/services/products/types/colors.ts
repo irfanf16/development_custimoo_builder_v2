@@ -8,11 +8,7 @@ export type OutputProductColor = {
   file_url: string
   id: number
   is_default: 1 | 0
-  json_data: {
-    name: string
-    position: string
-    value: string
-  }[]
+  json_data: OutputColor[]
   original_file_url: string | null
   pivot: {
     created_at: string
@@ -24,4 +20,10 @@ export type OutputProductColor = {
   sourceable_type: string
   thumb_sm_url: string | null
   updated_at: string
+}
+
+export type OutputColor = {
+  position: number
+  name: string
+  value: string
 }

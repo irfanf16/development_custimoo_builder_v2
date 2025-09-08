@@ -1,33 +1,14 @@
-import { computed, watch, ref, type Ref } from 'vue'
+import { computed, watch, ref } from 'vue'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { storeToRefs } from 'pinia'
-import type {
-  OutputProductDetails,
-  OutputStyleDetails,
-  OutputDesignDetails
-} from '@/services/products/types'
+import type { OutputSvgGroupColor } from '@/services/products/types'
 
 type Options = {
   autoFetch?: boolean
 }
 
-type UseEffectiveDetailsReturn = {
-  isFetching: Ref<boolean>
-  effectiveProductId: Ref<number | null>
-  effectiveStyleId: Ref<number | null>
-  effectiveDesignId: Ref<number | null>
-  effectiveProductDetails: Ref<OutputProductDetails | null>
-  effectiveStyleDetails: Ref<OutputStyleDetails | null>
-  effectiveDesignDetails: Ref<OutputDesignDetails | null>
-  activeCanvasSide: Ref<'front' | 'back'>
-  canvasZoom: Ref<number>
-  ensureActiveDetails: () => Promise<void> | void
-}
-
-export function useEffectiveDetails(
-  options?: Options
-): UseEffectiveDetailsReturn {
+export function useEffectiveDetails(options?: Options) {
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
 
@@ -49,6 +30,26 @@ export function useEffectiveDetails(
     const fromCustomization = customizationStore.customization?.design_id
     if (fromCustomization && fromCustomization > 0) return fromCustomization
     return productsStore.activeDesignDetails?.id ?? null
+  })
+
+  const effectiveSvgGroups = computed<OutputSvgGroupColor[] | undefined>(() => {
+    const response = productsStore.svgGroups?.map(svgGroup => {
+      // check if customization is made on this svg group
+      if (customizationStore.customization?.group_colors[svgGroup.id]) {
+        const customizedGroupColor =
+          customizationStore.customization?.group_colors[svgGroup.id]
+        return {
+          id: svgGroup.id,
+          name: customizedGroupColor.name ?? '',
+          color: customizedGroupColor.color ?? '',
+          pantone: '',
+          count: 0
+        }
+      }
+      return svgGroup
+    })
+    console.log('effectiveSvgGroups', response)
+    return response
   })
 
   const {
@@ -123,6 +124,7 @@ export function useEffectiveDetails(
     effectiveProductDetails,
     effectiveStyleDetails,
     effectiveDesignDetails,
+    effectiveSvgGroups,
     activeCanvasSide,
     canvasZoom,
     ensureActiveDetails

@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type {
   ActiveProductCustomization,
-  OutputAddon
+  OutputAddon,
+  OutputColor
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
@@ -14,6 +15,7 @@ type SelectionKey =
   | 'style_id'
   | 'design_id'
   | 'addons'
+  | 'group_colors'
 
 type SelectionCommand = {
   key: SelectionKey
@@ -223,6 +225,27 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     save()
   }
 
+  function setGroupColor(groupName: string, groupColor: OutputColor) {
+    if (!customization.value) return
+    const prev = customization.value.group_colors[groupName]
+    customization.value.group_colors[groupName] = {
+      color: groupColor.value,
+      name: groupColor.name
+    }
+    console.log(
+      'setGroupColor',
+      prev,
+      customization.value.group_colors[groupName]
+    )
+    pushCommand({
+      key: 'group_colors',
+      prev,
+      next: customization.value.group_colors[groupName],
+      timestamp: Date.now()
+    })
+    save()
+  }
+
   function applyCommand(cmd: SelectionCommand) {
     switch (cmd.key) {
       case 'category_id':
@@ -344,7 +367,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       design_index: 0,
       design_id: designId,
       product_index: 0,
-      product_id: String(productId),
+      product_id: productId,
       search_products: '',
       style_index: 0,
       style_id: styleId,
@@ -395,6 +418,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     undo,
     redo,
     ensureCustomization,
-    resetCustomizationToCurrentProductDefaults
+    resetCustomizationToCurrentProductDefaults,
+    setGroupColor
   }
 })
