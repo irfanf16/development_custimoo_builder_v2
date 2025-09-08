@@ -137,7 +137,7 @@ export type ActiveProductCustomization = {
   design_index: number
   design_id: number
   product_index: number
-  product_id: string
+  product_id: number
   search_products: string
   style_index: number
   style_id: number

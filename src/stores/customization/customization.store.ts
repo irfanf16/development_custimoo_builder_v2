@@ -304,7 +304,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       design_index: 0,
       design_id: 0,
       product_index: 0,
-      product_id: '0',
+      product_id: 0,
       search_products: '',
       style_index: 0,
       style_id: 0,

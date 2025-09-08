@@ -98,9 +98,9 @@ export function useAppInitialization() {
 
         // Set the active category in customization state if we have one
         // This ensures the customization state reflects the current category selection
-        if (effectiveCategoryId) {
-          selectionStore.setCategory(effectiveCategoryId)
-        }
+        // if (effectiveCategoryId) {
+        //   selectionStore.setCategory(effectiveCategoryId)
+        // }
 
         // PHASE 4: Load product data and set up customization state
 
@@ -115,6 +115,9 @@ export function useAppInitialization() {
           // SCENARIO A: Restore from stored customization by fetching dependent details
           const apc = selectionStore.customization
           if (apc) {
+            // Step 0: Load style previews
+            await productsStore.fetchStylePreviews(apc.product_id)
+
             // Step 1: Load product details (loads default style + design)
             await productsStore.fetchActiveProductDetails(
               Number(apc.product_id)
@@ -151,6 +154,10 @@ export function useAppInitialization() {
 
           if (activeProductId != null) {
             // Load the default product details (includes default style and design)
+            // Step 0: Load style previews
+            await productsStore.fetchStylePreviews(activeProductId)
+
+            // Step 1: Load product details (loads default style + design)
             await productsStore.fetchActiveProductDetails(activeProductId)
 
             // Ensure we have a default customization set up
