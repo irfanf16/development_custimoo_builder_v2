@@ -98,9 +98,9 @@ export function useAppInitialization() {
 
         // Set the active category in customization state if we have one
         // This ensures the customization state reflects the current category selection
-        // if (effectiveCategoryId) {
-        //   customizationStore.setCategory(effectiveCategoryId)
-        // }
+        if (effectiveCategoryId) {
+          customizationStore.setCategory(effectiveCategoryId)
+        }
 
         // PHASE 4: Load product data and set up customization state
 
@@ -168,12 +168,17 @@ export function useAppInitialization() {
             }
           }
 
-          // Set the active step to Categories if categories are available
-          // This ensures the user starts at the category selection screen even with default customization
-          if (effectiveCategoryId && productsStore.categories?.data?.length) {
+          // On initialization, check for activeStep in localStorage and set the active step accordingly.
+          // If not found, fall back to Categories (if available) or Products.
+          const storedActiveStep = localStorage.getItem('activeStep')
+          if (storedActiveStep) {
+            wf.setActiveStep(storedActiveStep)
+          } else if (
+            effectiveCategoryId &&
+            productsStore.categories?.data?.length
+          ) {
             wf.setActiveStep('Categories')
           } else {
-            // If no categories available, go directly to Products step
             wf.setActiveStep('Products')
           }
         }
