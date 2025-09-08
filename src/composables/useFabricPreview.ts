@@ -7,7 +7,7 @@ import {
   util,
   type FabricObject
 } from 'fabric'
-import { useEffectiveSelectors } from '@/stores/selectors/effective'
+import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
 
 type InitOptions = {
   selection?: boolean

@@ -2,7 +2,7 @@
   import { onMounted, onBeforeUnmount, watch } from 'vue'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useFabricPreview } from '@/composables/useFabricPreview'
-  import { useEffectiveSelectors } from '@/stores/selectors/effective'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { Card, CardContent } from '../ui/card'
 
   const workflowStore = useWorkflowStore()

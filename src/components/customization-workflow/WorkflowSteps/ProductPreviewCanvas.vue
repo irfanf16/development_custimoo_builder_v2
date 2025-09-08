@@ -7,7 +7,7 @@
     OutputDesignPreview
   } from '@/services/products/types'
   import { useFabricPreview } from '@/composables/useFabricPreview'
-  import { useEffectiveSelectors } from '@/stores/selectors/effective'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
 
   const props = defineProps({
     product: { type: Object as PropType<OutputProductPreview>, required: true },

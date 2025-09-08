@@ -16,7 +16,7 @@
     SelectGroup,
     SelectLabel
   } from '@/components/ui/select'
-  import { useEffectiveSelectors } from '@/stores/selectors/effective'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import type { OutputColor } from '@/services/products/types'
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
