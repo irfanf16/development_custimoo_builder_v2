@@ -7,7 +7,7 @@ import {
   util,
   type FabricObject
 } from 'fabric'
-import { useEffectiveDetails } from './useEffectiveDetails'
+import { useEffectiveSelectors } from '@/stores/selectors/effective'
 
 type InitOptions = {
   selection?: boolean
@@ -127,8 +127,9 @@ export function useFabricPreview() {
       const group = await getSvgGroup(url, ext)
       if (!group) return
 
-      // Check group objects and see if the id matches the effectiveSvgGroups, if the color is different, change it
-      const effectiveSvgGroups = useEffectiveDetails().effectiveSvgGroups.value
+      // Apply color overrides from effective svg groups
+      const effectiveSvgGroups =
+        useEffectiveSelectors().effectiveSvgGroups.value
       if (effectiveSvgGroups) {
         effectiveSvgGroups?.forEach(effectiveGroup => {
           const object = group._objects.find(

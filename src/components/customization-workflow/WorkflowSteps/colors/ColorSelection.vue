@@ -2,7 +2,7 @@
   import { ref, computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
-  import type { APCustomizationGroupColor } from '@/services/products/types'
+  // import type { APCustomizationGroupColor } from '@/services/products/types'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
@@ -16,12 +16,12 @@
     SelectGroup,
     SelectLabel
   } from '@/components/ui/select'
-  import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective'
   import type { OutputColor } from '@/services/products/types'
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
-  const { effectiveSvgGroups } = useEffectiveDetails()
+  const { effectiveSvgGroups } = useEffectiveSelectors()
 
   // Dummy palettes – replace with real data later
   type Palette = {

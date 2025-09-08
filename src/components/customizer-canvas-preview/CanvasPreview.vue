@@ -2,7 +2,7 @@
   import { onMounted, onBeforeUnmount, watch } from 'vue'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useFabricPreview } from '@/composables/useFabricPreview'
-  import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective'
 
   const workflowStore = useWorkflowStore()
   const {
@@ -19,8 +19,11 @@
     fadeOut,
     fadeIn
   } = useFabricPreview()
-  const { effectiveDesignDetails, effectiveStyleDetails, effectiveSvgGroups } =
-    useEffectiveDetails({ autoFetch: true })
+  const {
+    activeDesignDetails: effectiveDesignDetails,
+    activeStyleDetails: effectiveStyleDetails,
+    renderVersion
+  } = useEffectiveSelectors()
 
   async function renderPreview() {
     if (!canvas.value) return
@@ -88,12 +91,7 @@
   })
 
   watch(
-    () => [
-      workflowStore.activeCanvasSide,
-      effectiveDesignDetails.value?.id,
-      effectiveStyleDetails.value?.id,
-      effectiveSvgGroups.value
-    ],
+    () => [workflowStore.activeCanvasSide, renderVersion.value],
     () => renderPreview()
   )
 

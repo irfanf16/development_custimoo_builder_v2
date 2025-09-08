@@ -7,7 +7,7 @@
     OutputDesignPreview
   } from '@/services/products/types'
   import { useFabricPreview } from '@/composables/useFabricPreview'
-  import { useEffectiveDetails } from '@/composables/useEffectiveDetails'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective'
 
   const props = defineProps({
     product: { type: Object as PropType<OutputProductPreview>, required: true },
@@ -49,6 +49,8 @@
     addModelLayer,
     addDesignLayer
   } = useFabricPreview()
+
+  const { renderVersion } = useEffectiveSelectors()
 
   const containerEl = ref<HTMLElement | null>(null)
   const isVisible = ref(false)
@@ -147,6 +149,7 @@
     }
   })
 
+  // Watch own props and global render version for effective design/style changes
   watch(
     [
       () => props.product?.id,
@@ -156,7 +159,7 @@
       () =>
         props.overlayRect &&
         `${props.overlayRect.x}-${props.overlayRect.y}-${props.overlayRect.width}-${props.overlayRect.height}`,
-      () => useEffectiveDetails().effectiveSvgGroups.value
+      () => renderVersion.value
     ],
     () => {
       if (isVisible.value && canvas.value) {

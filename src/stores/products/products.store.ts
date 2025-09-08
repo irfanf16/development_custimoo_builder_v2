@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { loadSVGFromURL, util, type FabricObject, type Group } from 'fabric'
 import type {
   OutputProductCategories,
   GetProductCategoriesParams,
@@ -20,10 +21,24 @@ import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
 import { useCustomizationStore } from '../customization/customization.store'
-import { useFabricPreview } from '@/composables/useFabricPreview'
-
-const { getSvgGroup } = useFabricPreview()
 export const useProductsStore = defineStore('productsStore', () => {
+  // Local helper: build storage URL
+  const storageBase = import.meta.env.VITE_APP_STORAGE_URL || ''
+  function fromStorage(path: string): string {
+    const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
+    const clean = path?.startsWith('/') ? path.slice(1) : path
+    return base + clean
+  }
+
+  type CustomFabricGroup = Group & { _objects: FabricObject & { id: string }[] }
+  async function getSvgGroup(url: string, ext?: string) {
+    if (ext?.toLowerCase() === 'svg' && !url.toLowerCase().endsWith('.svg')) {
+      url += '.svg'
+    }
+    const { objects } = await loadSVGFromURL(fromStorage(url))
+    const safeObjects = (objects || []).filter(Boolean) as FabricObject[]
+    return util.groupSVGElements(safeObjects) as CustomFabricGroup
+  }
   const categories = ref<OutputProductCategories | null>(null)
   const activeProductDetails = ref<OutputProductDetails | null>(null)
   const activeStyleDetails = ref<OutputStyleDetails | null>(null)
@@ -43,6 +58,11 @@ export const useProductsStore = defineStore('productsStore', () => {
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+
+  // In-flight request de-duplication
+  const inFlightProduct = new Map<number, Promise<any>>()
+  const inFlightStyle = new Map<number, Promise<any>>()
+  const inFlightDesign = new Map<number, Promise<any>>()
 
   function setCategories(data: OutputProductCategories) {
     categories.value = data
@@ -175,23 +195,34 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   async function fetchActiveStyleDetails(styleId: number) {
-    setLoading(true)
-    setError(null)
-    const resp = await tryCatchApi(API.products.getActiveStyleDetails(styleId))
-    if (resp.success) {
-      const payload = resp.content as unknown as {
-        productstyle: OutputStyleDetails
-        productdesign: OutputDesignDetails
+    if (inFlightStyle.has(styleId)) return inFlightStyle.get(styleId)!
+    const p = (async () => {
+      setLoading(true)
+      setError(null)
+      const resp = await tryCatchApi(
+        API.products.getActiveStyleDetails(styleId)
+      )
+      if (resp.success) {
+        const payload = resp.content as unknown as {
+          productstyle: OutputStyleDetails
+          productdesign: OutputDesignDetails
+        }
+        setActiveStyleDetailsState(payload.productstyle)
+        setActiveDesignDetailsState(payload.productdesign)
+        customization.setStyle(styleId)
+        setSvgGroups()
+      } else {
+        setError('Error getting active style details')
       }
-      setActiveStyleDetailsState(payload.productstyle)
-      setActiveDesignDetailsState(payload.productdesign)
-      customization.setStyle(styleId)
-      setSvgGroups()
-    } else {
-      setError('Error getting active style details')
+      setLoading(false)
+      return resp
+    })()
+    inFlightStyle.set(styleId, p)
+    try {
+      return await p
+    } finally {
+      inFlightStyle.delete(styleId)
     }
-    setLoading(false)
-    return resp
   }
 
   async function fetchProductAddons(productId: number) {
@@ -217,27 +248,38 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   async function fetchActiveProductDetails(productId: number) {
-    setLoading(true)
-    setError(null)
-    const result = await tryCatchApi(
-      API.products.getActiveProductDetails(productId)
-    )
-    if (result.success && result.content) {
-      const details = result.content as ActiveProductDetails
-      setActiveProductDetailsState(details.productDetails)
-      setActiveStyleDetailsState(details.styleDetails)
-      setActiveDesignDetailsState(details.designDetails as OutputDesignDetails)
-      customization.setProduct(productId)
-      await setSvgGroups()
-      if (!customization.customization) {
-        customization.ensureCustomization()
-        saveCustomizationToLocalStorage()
+    if (inFlightProduct.has(productId)) return inFlightProduct.get(productId)!
+    const p = (async () => {
+      setLoading(true)
+      setError(null)
+      const result = await tryCatchApi(
+        API.products.getActiveProductDetails(productId)
+      )
+      if (result.success && result.content) {
+        const details = result.content as ActiveProductDetails
+        setActiveProductDetailsState(details.productDetails)
+        setActiveStyleDetailsState(details.styleDetails)
+        setActiveDesignDetailsState(
+          details.designDetails as OutputDesignDetails
+        )
+        customization.setProduct(productId)
+        await setSvgGroups()
+        if (!customization.customization) {
+          customization.ensureCustomization()
+          saveCustomizationToLocalStorage()
+        }
+      } else {
+        setError('Error getting active product details')
       }
-    } else {
-      setError('Error getting active product details')
+      setLoading(false)
+      return result
+    })()
+    inFlightProduct.set(productId, p)
+    try {
+      return await p
+    } finally {
+      inFlightProduct.delete(productId)
     }
-    setLoading(false)
-    return result
   }
 
   const defaultActiveDetails = ref<{
@@ -303,16 +345,28 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   async function fetchDesignDetailsById(designId: number) {
-    setLoading(true)
-    setError(null)
-    const resp = await tryCatchApi(API.products.getDesignDetailsById(designId))
-    if (resp.success) {
-      activeDesignDetails.value = resp.content as unknown as OutputDesignDetails
-    } else {
-      setError('Error getting design details')
+    if (inFlightDesign.has(designId)) return inFlightDesign.get(designId)!
+    const p = (async () => {
+      setLoading(true)
+      setError(null)
+      const resp = await tryCatchApi(
+        API.products.getDesignDetailsById(designId)
+      )
+      if (resp.success) {
+        activeDesignDetails.value =
+          resp.content as unknown as OutputDesignDetails
+      } else {
+        setError('Error getting design details')
+      }
+      setLoading(false)
+      return resp
+    })()
+    inFlightDesign.set(designId, p)
+    try {
+      return await p
+    } finally {
+      inFlightDesign.delete(designId)
     }
-    setLoading(false)
-    return resp
   }
 
   async function fetchRecentLogos(companyId?: number) {
@@ -327,6 +381,40 @@ export const useProductsStore = defineStore('productsStore', () => {
     setLoading(false)
     return resp
   }
+
+  // Centralized fetch orchestration reacting to customization selections
+  watch(
+    () => [
+      customization.activeProductId,
+      customization.activeStyleId,
+      customization.activeDesignId
+    ],
+    async ([pid, sid, did]) => {
+      // Product fetch sets default style/design
+      if (
+        pid &&
+        (!activeProductDetails.value || activeProductDetails.value.id !== pid)
+      ) {
+        await fetchActiveProductDetails(pid)
+      }
+      // Explicit style selection overrides design
+      if (
+        sid &&
+        (!activeStyleDetails.value || activeStyleDetails.value.id !== sid)
+      ) {
+        await fetchActiveStyleDetails(sid)
+      }
+      // Explicit design selection overrides current
+      if (
+        did &&
+        (!activeDesignDetails.value || activeDesignDetails.value.id !== did)
+      ) {
+        await fetchDesignDetailsById(did)
+        await setSvgGroups()
+      }
+    },
+    { immediate: true }
+  )
 
   return {
     categories,

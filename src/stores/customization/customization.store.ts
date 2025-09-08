@@ -115,29 +115,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       next,
       timestamp: Date.now()
     })
-    const resp = await API.products.getActiveProductDetails(productId)
-    if ('data' in resp && resp.data) {
-      const details = resp.data
-      ;(
-        productsStore as unknown as {
-          setActiveProductDetailsState: (
-            p: import('@/services/products/types').OutputProductDetails
-          ) => void
-          setActiveStyleDetailsState: (
-            s: import('@/services/products/types').OutputStyleDetails
-          ) => void
-          setActiveDesignDetailsState: (
-            d: import('@/services/products/types').OutputDesignDetails
-          ) => void
-        }
-      ).setActiveProductDetailsState(details.productDetails)
-      ;(productsStore as unknown as any).setActiveStyleDetailsState(
-        details.styleDetails
-      )
-      ;(productsStore as unknown as any).setActiveDesignDetailsState(
-        details.designDetails
-      )
-    }
+    // Fetch orchestration handled in products store watcher
     save()
   }
 
@@ -170,19 +148,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       next: styleId,
       timestamp: Date.now()
     })
-    const resp = await API.products.getActiveStyleDetails(styleId)
-    if ('data' in resp) {
-      const { productstyle, productdesign } = resp.data as {
-        productstyle: import('@/services/products/types').OutputStyleDetails
-        productdesign: import('@/services/products/types').OutputDesignDetails
-      }
-      ;(productsStore as unknown as any).setActiveStyleDetailsState(
-        productstyle
-      )
-      ;(productsStore as unknown as any).setActiveDesignDetailsState(
-        productdesign
-      )
-    }
+    // Fetch orchestration handled in products store watcher
     save()
   }
 
@@ -197,10 +163,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       next: designId,
       timestamp: Date.now()
     })
-    const resp = await API.products.getDesignDetailsById(designId)
-    if ('data' in resp) {
-      ;(productsStore as unknown as any).setActiveDesignDetailsState(resp.data)
-    }
+    // Fetch orchestration handled in products store watcher
     save()
   }
 
