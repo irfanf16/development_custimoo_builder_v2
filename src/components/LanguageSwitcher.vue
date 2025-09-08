@@ -20,7 +20,6 @@
   )
 
   const handleLanguageChange = (locale: ParaglideLocale) => {
-    console.log('Changing language to:', locale)
     localeStore.setCurrentLocale(locale)
   }
 

@@ -30,9 +30,6 @@ export const useLocaleStore = defineStore('localeStore', () => {
     // If there's only one available language, automatically use it
     if (availableLocales.value.length === 1) {
       const singleLocale = availableLocales.value[0]
-      console.log(
-        `Only one language available (${singleLocale}), automatically applying it`
-      )
       setCurrentLocale(singleLocale)
       isInitialized.value = true
       return
@@ -90,9 +87,6 @@ export const useLocaleStore = defineStore('localeStore', () => {
     // If there's only one language available, automatically use it
     if (newLocales.length === 1) {
       const singleLocale = newLocales[0]
-      console.log(
-        `Only one language available (${singleLocale}), automatically applying it`
-      )
       setCurrentLocale(singleLocale)
       return
     }

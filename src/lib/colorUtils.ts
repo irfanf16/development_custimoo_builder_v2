@@ -7,7 +7,6 @@
 export function hexToHsl(hex: string): { h: number; s: number; l: number } {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
   if (!result) {
-    console.log('Invalid hex color:', hex)
     throw new Error('Invalid hex color')
   }
 

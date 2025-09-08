@@ -58,14 +58,10 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
   function setActiveStep(_: string | null) {}
   async function setSvgGroups(): Promise<void> {
-    console.log('setSvgGroups')
     const frontDesignUrl = activeDesignDetails.value?.front_design.file_url
     const fileExtension = activeDesignDetails.value?.front_design.file_extension
-    console.log('frontDesignUrl', frontDesignUrl)
-    console.log('fileExtension', fileExtension)
     if (!frontDesignUrl || !fileExtension) return
     const group = await getSvgGroup(frontDesignUrl, fileExtension)
-    console.log('group', group)
     if (!group?._objects) return
     type FillWithToHex = { toHex: () => string }
     type FillWithColor = { color: string }
@@ -102,7 +98,6 @@ export const useProductsStore = defineStore('productsStore', () => {
           }>
         }
       })
-    console.log('svgGroups', svgGroups.value)
   }
   function reset() {
     categories.value = null
