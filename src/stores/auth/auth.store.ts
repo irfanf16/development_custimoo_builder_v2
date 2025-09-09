@@ -10,16 +10,20 @@ import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
 
 export const useAuthStore = defineStore('authStore', () => {
+  // ===== STATE =====
   const customer = ref<Customer | null>(null)
-  const isAuthenticated = ref(false)
   const accessToken = ref<string | null>(null)
-  const customerInitials = computed(() => {
-    return `${customer.value?.first_name?.charAt(0)}${customer.value?.last_name?.charAt(0)}`.toUpperCase()
-  })
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  // Actions
+  // ===== COMPUTED =====
+  const isAuthenticated = computed(() => !!accessToken.value)
+  const customerInitials = computed(() => {
+    if (!customer.value) return ''
+    return `${customer.value?.first_name?.charAt(0)}${customer.value?.last_name?.charAt(0)}`.toUpperCase()
+  })
+
+  // ===== ACTIONS =====
   function setLoading(loading: boolean) {
     isLoading.value = loading
   }
@@ -34,53 +38,62 @@ export const useAuthStore = defineStore('authStore', () => {
 
   function setAccessToken(data: string) {
     accessToken.value = data
-    isAuthenticated.value = true
   }
 
-  // Consolidated clear function
   function clearAuth() {
     customer.value = null
     accessToken.value = null
-    isAuthenticated.value = false
   }
 
-  // Initialize customer and token from data
-  function initCustomerAndAccessToken(data: OutputLogin) {
-    if (data.user && data.access_token) {
-      setCustomer(data.user)
-      setAccessToken(data.access_token)
-      // Persist to localStorage
-      localStorage.setItem('customer', JSON.stringify(data.user))
-      localStorage.setItem('jwtToken', data.access_token)
+  // ===== PERSISTENCE =====
+  function saveToLocalStorage() {
+    if (typeof window === 'undefined') return
+    if (customer.value) {
+      localStorage.setItem('customer', JSON.stringify(customer.value))
+    }
+    if (accessToken.value) {
+      localStorage.setItem('jwtToken', accessToken.value)
     }
   }
 
-  // Initialize from localStorage
-  function initCustomerAndAccessTokenFromLocalStorage() {
+  function loadFromLocalStorage() {
+    if (typeof window === 'undefined') return false
     const customerJson = localStorage.getItem('customer')
     const jwtToken = localStorage.getItem('jwtToken')
     if (customerJson && jwtToken) {
       try {
         setCustomer(JSON.parse(customerJson))
         setAccessToken(jwtToken)
+        return true
       } catch (error) {
         console.error('Failed to parse stored customer data:', error)
         clearAuth()
       }
     }
+    return false
   }
 
-  function logout() {
-    clearAuth()
-    // Remove from localStorage
+  function clearLocalStorage() {
+    if (typeof window === 'undefined') return
     localStorage.removeItem('customer')
     localStorage.removeItem('jwtToken')
   }
 
-  // API Functions
-  async function dispatchLogin(
-    input: InputLogin
-  ): Promise<APIResponse<OutputLogin>> {
+  // ===== BUSINESS LOGIC =====
+  function initCustomerAndAccessToken(data: OutputLogin) {
+    if (data.user && data.access_token) {
+      setCustomer(data.user)
+      setAccessToken(data.access_token)
+      saveToLocalStorage()
+    }
+  }
+
+  function logout() {
+    clearAuth()
+    clearLocalStorage()
+  }
+
+  async function login(input: InputLogin): Promise<APIResponse<OutputLogin>> {
     setLoading(true)
     setError(null)
     const output = await tryCatchApi(API.authentication.postLogin(input))
@@ -93,15 +106,29 @@ export const useAuthStore = defineStore('authStore', () => {
     return output
   }
 
+  // ===== RETURN =====
   return {
+    // State
     customer,
-    isAuthenticated,
     accessToken,
-    dispatchLogin,
-    logout,
-    customerInitials,
     isLoading,
     error,
-    initCustomerAndAccessTokenFromLocalStorage
+    // Computed
+    isAuthenticated,
+    customerInitials,
+    // Actions
+    setLoading,
+    setError,
+    setCustomer,
+    setAccessToken,
+    clearAuth,
+    // Persistence
+    saveToLocalStorage,
+    loadFromLocalStorage,
+    clearLocalStorage,
+    // Business Logic
+    initCustomerAndAccessToken,
+    login,
+    logout
   }
 })

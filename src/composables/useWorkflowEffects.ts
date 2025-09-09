@@ -9,10 +9,12 @@ import { useCustomizationStore } from '@/stores/customization/customization.stor
  * Keep this separate from UI navigation logic.
  */
 export function useWorkflowEffects() {
+  // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
 
+  // ===== WATCHERS =====
   // Watch for step changes and trigger appropriate data fetches
   watch(
     () => workflowStore.activeStep,
@@ -60,28 +62,30 @@ export function useWorkflowEffects() {
     }
   )
 
-  return {
-    // Expose any effects that components might need to trigger manually
-    triggerStepEffects: async (step: string) => {
-      // Manual trigger for effects if needed
-      if (step === 'Designs') {
-        const styleId =
-          productsStore.activeStyleDetails?.id ||
-          customizationStore.activeStyleId
-        if (styleId) {
-          await productsStore.fetchDesignPreviewsByStyleId(styleId as number)
-        }
-      } else if (step === 'Styles') {
-        const pid =
-          productsStore.activeProductDetails?.id ||
-          customizationStore.activeProductId
-        if (pid) {
-          await productsStore.fetchStylePreviews(pid as number)
-          await productsStore.fetchProductAddons(pid as number)
-        }
-      } else if (step === 'Logos') {
-        await productsStore.fetchRecentLogos()
+  // ===== BUSINESS LOGIC =====
+  const triggerStepEffects = async (step: string) => {
+    // Manual trigger for effects if needed
+    if (step === 'Designs') {
+      const styleId =
+        productsStore.activeStyleDetails?.id || customizationStore.activeStyleId
+      if (styleId) {
+        await productsStore.fetchDesignPreviewsByStyleId(styleId as number)
       }
+    } else if (step === 'Styles') {
+      const pid =
+        productsStore.activeProductDetails?.id ||
+        customizationStore.activeProductId
+      if (pid) {
+        await productsStore.fetchStylePreviews(pid as number)
+        await productsStore.fetchProductAddons(pid as number)
+      }
+    } else if (step === 'Logos') {
+      await productsStore.fetchRecentLogos()
     }
+  }
+
+  // ===== RETURN =====
+  return {
+    triggerStepEffects
   }
 }

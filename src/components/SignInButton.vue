@@ -40,7 +40,7 @@
   // Methods
   const handleSignIn = async () => {
     error.value = ''
-    const result = await authStore.dispatchLogin(credentials.value)
+    const result = await authStore.login(credentials.value)
     if (result.success) {
       showSignInDialog.value = false
       credentials.value = { email: '', password: '' }

@@ -6,13 +6,14 @@ import { useCompanyStore } from '@/stores/company/company.store'
 export type ParaglideLocale = 'en' | 'fr' | 'da'
 
 export const useLocaleStore = defineStore('localeStore', () => {
-  // State
+  // ===== DEPENDENCIES =====
+  const companyStore = useCompanyStore()
+
+  // ===== STATE =====
   const currentLocale = ref<ParaglideLocale>('en')
   const isInitialized = ref(false)
 
-  // Computed
-  const companyStore = useCompanyStore()
-
+  // ===== COMPUTED =====
   const availableLocales = computed(() =>
     companyStore.localization.availableLanguages.map(
       lang => lang.code as ParaglideLocale
@@ -23,34 +24,18 @@ export const useLocaleStore = defineStore('localeStore', () => {
     () => companyStore.localization.defaultLanguage as ParaglideLocale
   )
 
-  // Actions
-  function initializeLocale() {
-    if (isInitialized.value) return
-
-    // If there's only one available language, automatically use it
-    if (availableLocales.value.length === 1) {
-      const singleLocale = availableLocales.value[0]
-      setCurrentLocale(singleLocale)
-      isInitialized.value = true
-      return
-    }
-
-    // Try to restore from localStorage
-    const savedLocale = localStorage.getItem(
-      'customizer_locale'
-    ) as ParaglideLocale | null
-
-    if (savedLocale && isValidLocale(savedLocale)) {
-      setCurrentLocale(savedLocale)
-    } else {
-      // Use company default or fallback to 'en'
-      const locale = defaultLocale.value || 'en'
-      setCurrentLocale(locale)
-    }
-
-    isInitialized.value = true
+  // ===== PERSISTENCE =====
+  function saveToLocalStorage() {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('customizer_locale', currentLocale.value)
   }
 
+  function loadFromLocalStorage(): ParaglideLocale | null {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('customizer_locale') as ParaglideLocale | null
+  }
+
+  // ===== ACTIONS =====
   function setCurrentLocale(locale: ParaglideLocale) {
     // Validate the locale is still available
     if (!isValidLocale(locale)) {
@@ -67,19 +52,45 @@ export const useLocaleStore = defineStore('localeStore', () => {
     setLocale(locale, { reload: false })
 
     // Persist to localStorage
-    localStorage.setItem('customizer_locale', locale)
+    saveToLocalStorage()
 
     // Update company store to keep in sync
     companyStore.localization.defaultLanguage = locale
   }
 
-  function isValidLocale(locale: string): locale is ParaglideLocale {
-    return availableLocales.value.includes(locale as ParaglideLocale)
-  }
-
   function resetToDefault() {
     const locale = defaultLocale.value || 'en'
     setCurrentLocale(locale)
+  }
+
+  // ===== BUSINESS LOGIC =====
+  function initializeLocale() {
+    if (isInitialized.value) return
+
+    // If there's only one available language, automatically use it
+    if (availableLocales.value.length === 1) {
+      const singleLocale = availableLocales.value[0]
+      setCurrentLocale(singleLocale)
+      isInitialized.value = true
+      return
+    }
+
+    // Try to restore from localStorage
+    const savedLocale = loadFromLocalStorage()
+
+    if (savedLocale && isValidLocale(savedLocale)) {
+      setCurrentLocale(savedLocale)
+    } else {
+      // Use company default or fallback to 'en'
+      const locale = defaultLocale.value || 'en'
+      setCurrentLocale(locale)
+    }
+
+    isInitialized.value = true
+  }
+
+  function isValidLocale(locale: string): locale is ParaglideLocale {
+    return availableLocales.value.includes(locale as ParaglideLocale)
   }
 
   // Watch for changes in available languages
@@ -100,19 +111,22 @@ export const useLocaleStore = defineStore('localeStore', () => {
     }
   })
 
+  // ===== RETURN =====
   return {
     // State
     currentLocale: computed(() => currentLocale.value),
     isInitialized: computed(() => isInitialized.value),
-
     // Computed
     availableLocales,
     defaultLocale,
-
+    // Persistence
+    saveToLocalStorage,
+    loadFromLocalStorage,
     // Actions
-    initializeLocale,
     setCurrentLocale,
-    isValidLocale,
-    resetToDefault
+    resetToDefault,
+    // Business Logic
+    initializeLocale,
+    isValidLocale
   }
 })

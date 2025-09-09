@@ -9,21 +9,35 @@ import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
 
 export const useCustomizationStore = defineStore('customizationStore', () => {
+  // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
+
+  // ===== STATE =====
   const customization = ref<ActiveProductCustomization | null>(null)
 
-  // Centralized history removed from this store; no local undo/redo here
+  // ===== COMPUTED =====
+  const activeProductId = computed(() =>
+    customization.value ? Number(customization.value.product_id) : null
+  )
+  const activeStyleId = computed(() => customization.value?.style_id ?? null)
+  const activeDesignId = computed(() => customization.value?.design_id ?? null)
+  const activeCategoryId = computed(
+    () => customization.value?.category_id ?? null
+  )
+  const activeSubCategoryId = computed(
+    () => customization.value?.sub_category_id ?? null
+  )
 
-  function save() {
+  // ===== PERSISTENCE =====
+  function saveToLocalStorage() {
     if (typeof window === 'undefined') return
     window.localStorage.setItem(
       'activeProductCustomization',
       JSON.stringify(customization.value)
     )
-    // persist customization
   }
 
-  function load(): boolean {
+  function loadFromLocalStorage(): boolean {
     if (typeof window === 'undefined') return false
     const raw = window.localStorage.getItem('activeProductCustomization')
     if (!raw) return false
@@ -37,12 +51,18 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     return false
   }
 
+  // ===== ACTIONS =====
+  function setCustomization(initial: ActiveProductCustomization) {
+    customization.value = initial
+    saveToLocalStorage()
+  }
+
   async function setCategory(categoryId: number) {
     if (!customization.value) return
     if (customization.value.category_id === categoryId) return
     customization.value.category_id = categoryId
     await API.products.getProductPreviewsByCategory(categoryId)
-    save()
+    saveToLocalStorage()
   }
 
   async function setProduct(productId: number) {
@@ -52,7 +72,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (prev === next) return
     customization.value.product_id = next
     // Fetch orchestration handled in products store watcher
-    save()
+    saveToLocalStorage()
   }
 
   async function setSubCategory(subCategoryId: number) {
@@ -63,7 +83,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     try {
       await API.products.getProductPreviewsByCategory(subCategoryId)
     } catch (_) {}
-    save()
+    saveToLocalStorage()
   }
 
   async function setStyle(styleId: number) {
@@ -72,7 +92,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (prev === styleId) return
     customization.value.style_id = styleId
     // Fetch orchestration handled in products store watcher
-    save()
+    saveToLocalStorage()
   }
 
   async function setDesign(designId: number) {
@@ -81,7 +101,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (prev === designId) return
     customization.value.design_id = designId
     // Fetch orchestration handled in products store watcher
-    save()
+    saveToLocalStorage()
   }
 
   async function setAddons(addons: OutputAddon[]) {
@@ -95,7 +115,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       ungrouped_addons: [],
       simple_addons: addons.map(a => a.addon_id)
     }
-    save()
+    saveToLocalStorage()
   }
 
   function setGroupColor(groupName: string, groupColor: OutputColor) {
@@ -104,14 +124,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       color: groupColor.value,
       name: groupColor.name
     }
-    save()
-  }
-
-  // No local undo/redo here; use centralized history store
-
-  function setCustomization(initial: ActiveProductCustomization) {
-    customization.value = initial
-    save()
+    saveToLocalStorage()
   }
 
   // Helper function to create default customization with preserved IDs
@@ -187,18 +200,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     )
   }
 
-  const activeProductId = computed(() =>
-    customization.value ? Number(customization.value.product_id) : null
-  )
-  const activeStyleId = computed(() => customization.value?.style_id ?? null)
-  const activeDesignId = computed(() => customization.value?.design_id ?? null)
-  const activeCategoryId = computed(
-    () => customization.value?.category_id ?? null
-  )
-  const activeSubCategoryId = computed(
-    () => customization.value?.sub_category_id ?? null
-  )
-
+  // ===== BUSINESS LOGIC =====
   function ensureCustomization() {
     if (customization.value) return
     setCustomization(createDefaultCustomization())
@@ -221,17 +223,20 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     )
   }
 
+  // ===== RETURN =====
   return {
+    // State
     customization,
-    // computed ids
+    // Computed
     activeProductId,
     activeStyleId,
     activeDesignId,
     activeCategoryId,
     activeSubCategoryId,
-    // persistence and history
-    load,
-    save,
+    // Persistence
+    saveToLocalStorage,
+    loadFromLocalStorage,
+    // Actions
     setCustomization,
     setCategory,
     setSubCategory,
@@ -239,9 +244,11 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     setStyle,
     setDesign,
     setAddons,
+    setGroupColor,
+    // Business Logic
     ensureCustomization,
     resetCustomizationToCurrentProductDefaults,
-    setGroupColor,
-    clearCustomization
+    clearCustomization,
+    createDefaultCustomization
   }
 })

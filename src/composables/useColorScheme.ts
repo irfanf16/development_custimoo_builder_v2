@@ -3,7 +3,7 @@ import { useUIStore } from '@/stores/ui'
 import { loadGoogleFont, getFontFamilyCSS } from '@/lib/utils'
 
 export function useColorScheme() {
-  // Apply CSS variables to the widget container only
+  // ===== BUSINESS LOGIC =====
   const applyColorScheme = async (container?: HTMLElement, hostTheme?: any) => {
     const target = container || document.documentElement
 
@@ -119,6 +119,7 @@ export function useColorScheme() {
     target.style.setProperty('--font-heading', headingFontCSS)
   }
 
+  // ===== RETURN =====
   return {
     applyColorScheme
   }

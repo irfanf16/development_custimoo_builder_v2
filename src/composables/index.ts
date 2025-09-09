@@ -1,5 +1,8 @@
 export { useAppInitialization } from './useAppInitialization'
+export { useColorActions } from './useColorActions'
 export { useColorScheme } from './useColorScheme'
 export { useFabricPreview } from './useFabricPreview'
+export { useParaglideLocale } from './useParaglideLocale'
+export { useWorkflowEffects } from './useWorkflowEffects'
 export { useWorkflowManager } from './useWorkflowManager'
 export { useWorkflowNavigation } from './useWorkflowNavigation'

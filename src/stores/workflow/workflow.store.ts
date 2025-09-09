@@ -11,6 +11,10 @@ import type {
 } from './workflow.store.types'
 
 export const useWorkflowStore = defineStore('workflowStore', () => {
+  // ===== DEPENDENCIES =====
+  const customization = useCustomizationStore()
+
+  // ===== STATE =====
   const activeStep = ref<string | null>(
     typeof window !== 'undefined'
       ? window.localStorage.getItem('activeStep')
@@ -33,60 +37,34 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const selectedCategoryId = ref<number | null>(null)
   const selectedSubCategoryId = ref<number | null>(null)
 
-  function saveStep() {
+  // ===== PERSISTENCE =====
+  function saveToLocalStorage() {
     if (typeof window === 'undefined') return
-    if (activeStep.value)
+    if (activeStep.value) {
       window.localStorage.setItem('activeStep', activeStep.value)
-  }
-
-  function setActiveStep(step: string | null) {
-    activeStep.value = step
-    saveStep()
-  }
-
-  function setLogosSubStep(step: LogosSubStep) {
-    logosSubStep.value = step
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('workflow.logosSubStep', step)
     }
   }
 
-  function setProductsSubStep(step: ProductsSubStep) {
-    productsSubStep.value = step
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('workflow.productsSubStep', step)
-    }
+  function saveSubStepsToLocalStorage() {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('workflow.logosSubStep', logosSubStep.value)
+    window.localStorage.setItem(
+      'workflow.productsSubStep',
+      productsSubStep.value
+    )
+    window.localStorage.setItem(
+      'workflow.patternsSubStep',
+      patternsSubStep.value
+    )
+    window.localStorage.setItem('workflow.textsSubStep', textsSubStep.value)
+    window.localStorage.setItem('workflow.rosterSubStep', rosterSubStep.value)
+    window.localStorage.setItem(
+      'workflow.patternsGroupName',
+      activePatternGroupName.value || ''
+    )
   }
 
-  function setPatternsSubStep(step: PatternsSubStep) {
-    patternsSubStep.value = step
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('workflow.patternsSubStep', step)
-    }
-  }
-
-  function setTextsSubStep(step: TextsSubStep) {
-    textsSubStep.value = step
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('workflow.textsSubStep', step)
-    }
-  }
-
-  function setRosterSubStep(step: RosterSubStep) {
-    rosterSubStep.value = step
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('workflow.rosterSubStep', step)
-    }
-  }
-
-  function setActivePatternGroup(name: string | null) {
-    activePatternGroupName.value = name
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('workflow.patternsGroupName', name || '')
-    }
-  }
-
-  function loadWorkflowSubStepsFromLocalStorage() {
+  function loadFromLocalStorage() {
     if (typeof window === 'undefined') return
     try {
       const logos = window.localStorage.getItem('workflow.logosSubStep') as
@@ -118,9 +96,44 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     } catch (_) {}
   }
 
-  // Commit preview selections into customization store
+  // ===== ACTIONS =====
+  function setActiveStep(step: string | null) {
+    activeStep.value = step
+    saveToLocalStorage()
+  }
+
+  function setLogosSubStep(step: LogosSubStep) {
+    logosSubStep.value = step
+    saveSubStepsToLocalStorage()
+  }
+
+  function setProductsSubStep(step: ProductsSubStep) {
+    productsSubStep.value = step
+    saveSubStepsToLocalStorage()
+  }
+
+  function setPatternsSubStep(step: PatternsSubStep) {
+    patternsSubStep.value = step
+    saveSubStepsToLocalStorage()
+  }
+
+  function setTextsSubStep(step: TextsSubStep) {
+    textsSubStep.value = step
+    saveSubStepsToLocalStorage()
+  }
+
+  function setRosterSubStep(step: RosterSubStep) {
+    rosterSubStep.value = step
+    saveSubStepsToLocalStorage()
+  }
+
+  function setActivePatternGroup(name: string | null) {
+    activePatternGroupName.value = name
+    saveSubStepsToLocalStorage()
+  }
+
+  // ===== BUSINESS LOGIC =====
   function commitSelectedCategory() {
-    const customization = useCustomizationStore()
     if (selectedCategoryId.value != null) {
       customization.setCategory(selectedCategoryId.value)
       selectedCategoryId.value = null
@@ -128,7 +141,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   }
 
   function commitSelectedSubCategory() {
-    const customization = useCustomizationStore()
     if (selectedSubCategoryId.value != null) {
       customization.setSubCategory(selectedSubCategoryId.value)
       selectedSubCategoryId.value = null
@@ -143,52 +155,61 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedSubCategoryId.value = subCategoryId
   }
 
+  // ===== CANVAS ACTIONS =====
   function setActiveCanvasSide(side: CanvasSide) {
     activeCanvasSide.value = side
   }
+
   function toggleActiveCanvasSide() {
     activeCanvasSide.value =
       activeCanvasSide.value === 'front' ? 'back' : 'front'
   }
+
   function setCanvasZoom(zoom: number) {
     const clamped = Math.max(0.25, Math.min(4, zoom))
     canvasZoom.value = clamped
   }
+
   function zoomIn(step = 0.1) {
     setCanvasZoom(canvasZoom.value + step)
   }
+
   function zoomOut(step = 0.1) {
     setCanvasZoom(canvasZoom.value - step)
   }
 
+  // ===== RETURN =====
   return {
-    // step
+    // State
     activeStep,
-    setActiveStep,
-    // substeps
     logosSubStep,
     productsSubStep,
     patternsSubStep,
     textsSubStep,
     rosterSubStep,
     activePatternGroupName,
+    selectedCategoryId,
+    selectedSubCategoryId,
+    activeCanvasSide,
+    canvasZoom,
+    // Persistence
+    saveToLocalStorage,
+    saveSubStepsToLocalStorage,
+    loadFromLocalStorage,
+    // Actions
+    setActiveStep,
     setLogosSubStep,
     setProductsSubStep,
     setPatternsSubStep,
     setTextsSubStep,
     setRosterSubStep,
     setActivePatternGroup,
-    loadWorkflowSubStepsFromLocalStorage,
-    // preview selection
-    selectedCategoryId,
-    selectedSubCategoryId,
-    setSelectedCategoryForPreview,
-    setSelectedSubCategoryForPreview,
+    // Business Logic
     commitSelectedCategory,
     commitSelectedSubCategory,
-    // canvas
-    activeCanvasSide,
-    canvasZoom,
+    setSelectedCategoryForPreview,
+    setSelectedSubCategoryForPreview,
+    // Canvas Actions
     setActiveCanvasSide,
     toggleActiveCanvasSide,
     setCanvasZoom,

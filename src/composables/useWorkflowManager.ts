@@ -15,10 +15,11 @@ export interface UseWorkflowManagerApi {
  * All state comes from workflowStore, all effects handled by useWorkflowEffects.
  */
 export function useWorkflowManager(): UseWorkflowManagerApi {
+  // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
 
-  // Derive current step from workflow store instead of maintaining local state
+  // ===== COMPUTED =====
   const currentStep = computed<WorkflowRouteStep>(() => {
     const step = workflowStore.activeStep
     if (step === 'Designs') return 'designs'
@@ -46,6 +47,7 @@ export function useWorkflowManager(): UseWorkflowManagerApi {
     return 'category' // fallback
   })
 
+  // ===== ACTIONS =====
   const handleCategorySelect = (categoryId: number) => {
     workflowStore.setSelectedCategoryForPreview(categoryId)
     // If category has subcategories, go to subcategory step, otherwise products
@@ -65,6 +67,7 @@ export function useWorkflowManager(): UseWorkflowManagerApi {
     workflowStore.setProductsSubStep('product')
   }
 
+  // ===== RETURN =====
   return {
     currentStep,
     handleCategorySelect,

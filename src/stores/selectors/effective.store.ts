@@ -5,9 +5,11 @@ import { useCustomizationStore } from '@/stores/customization/customization.stor
 import type { OutputSvgGroupColor } from '@/services/products/types'
 
 export function useEffectiveSelectors() {
+  // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
 
+  // ===== STORE REFS =====
   const {
     activeProductDetails,
     activeStyleDetails,
@@ -15,6 +17,7 @@ export function useEffectiveSelectors() {
     svgGroups
   } = storeToRefs(productsStore)
 
+  // ===== COMPUTED =====
   const effectiveProductId = computed<number | null>(() => {
     const fromCustomization = customizationStore.customization?.product_id
     if (fromCustomization != null) return Number(fromCustomization)
@@ -65,16 +68,17 @@ export function useEffectiveSelectors() {
     return `${idPart}|${groupsPart}`
   })
 
+  // ===== RETURN =====
   return {
-    // ids
-    effectiveProductId,
-    effectiveStyleId,
-    effectiveDesignId,
-    // details (store refs)
+    // Store Refs
     activeProductDetails,
     activeStyleDetails,
     activeDesignDetails,
-    // derived
+    // Computed IDs
+    effectiveProductId,
+    effectiveStyleId,
+    effectiveDesignId,
+    // Computed Derived
     effectiveSvgGroups,
     renderVersion
   }

@@ -40,7 +40,7 @@ export const registry: Registry = {
         const c = customizationStore.customization
         if (c && c.group_colors && c.group_colors[payload.groupId]) {
           delete c.group_colors[payload.groupId]
-          customizationStore.save()
+          customizationStore.saveToLocalStorage()
         }
       }
     },
@@ -60,7 +60,7 @@ export const registry: Registry = {
       if (!arr[payload.index])
         arr[payload.index] = { value: payload.prevValue ?? '' }
       arr[payload.index].value = payload.nextValue
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
     revert({ customizationStore }, payload: TextSetValuePayload) {
       const root = customizationStore.customization
@@ -72,7 +72,7 @@ export const registry: Registry = {
       if (!arr[payload.index])
         arr[payload.index] = { value: payload.nextValue ?? '' }
       arr[payload.index].value = payload.prevValue
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
     describe(_, p) {
       return `Change text #${p.index + 1}`
@@ -85,7 +85,7 @@ export const registry: Registry = {
       const arr = (map as any)[payload.key] || ((map as any)[payload.key] = [])
       const at = payload.index ?? arr.length
       arr.splice(at, 0, payload.logo)
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
     revert({ customizationStore }, payload: LogoAddPayload) {
       const map = customizationStore.customization?.custom_logos
@@ -94,9 +94,9 @@ export const registry: Registry = {
       if (!arr) return
       const at = payload.index ?? arr.length - 1
       arr.splice(at, 1)
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
-    describe(_, p) {
+    describe() {
       return `Add logo`
     }
   },
@@ -108,7 +108,7 @@ export const registry: Registry = {
       if (!arr || payload.index < 0 || payload.index >= arr.length) return
       payload.logo = arr[payload.index]
       arr.splice(payload.index, 1)
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
     revert({ customizationStore }, payload: LogoRemovePayload) {
       const map = customizationStore.customization?.custom_logos
@@ -116,9 +116,9 @@ export const registry: Registry = {
       const arr = (map as any)[payload.key] || ((map as any)[payload.key] = [])
       if (!payload.logo) return
       arr.splice(payload.index, 0, payload.logo)
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
-    describe(_, p) {
+    describe() {
       return `Remove logo`
     }
   },
@@ -130,7 +130,7 @@ export const registry: Registry = {
       if (!arr) return
       const [item] = arr.splice(payload.from, 1)
       arr.splice(payload.to, 0, item)
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
     revert({ customizationStore }, payload: LogoMovePayload) {
       const map = customizationStore.customization?.custom_logos
@@ -139,9 +139,9 @@ export const registry: Registry = {
       if (!arr) return
       const [item] = arr.splice(payload.to, 1)
       arr.splice(payload.from, 0, item)
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
-    describe(_, p) {
+    describe() {
       return `Move logo`
     }
   },
@@ -150,7 +150,7 @@ export const registry: Registry = {
       const map = customizationStore.customization?.group_patterns
       if (!map) return
       ;(map as any)[payload.groupName] = payload.next
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
     revert({ customizationStore }, payload: PatternSetGroupPayload) {
       const map = customizationStore.customization?.group_patterns
@@ -160,7 +160,7 @@ export const registry: Registry = {
       } else {
         ;(map as any)[payload.groupName] = payload.prev
       }
-      customizationStore.save()
+      customizationStore.saveToLocalStorage()
     },
     describe(_, p) {
       return `Set pattern group ${p.groupName}`

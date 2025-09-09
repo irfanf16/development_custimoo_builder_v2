@@ -22,7 +22,26 @@ import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
 import { useCustomizationStore } from '../customization/customization.store'
 export const useProductsStore = defineStore('productsStore', () => {
-  // Local helper: build storage URL
+  // ===== DEPENDENCIES =====
+  const customization = useCustomizationStore()
+
+  // ===== STATE =====
+  const categories = ref<OutputProductCategories | null>(null)
+  const activeProductDetails = ref<OutputProductDetails | null>(null)
+  const activeStyleDetails = ref<OutputStyleDetails | null>(null)
+  const activeDesignDetails = ref<OutputDesignDetails | null>(null)
+  const svgGroups = ref<OutputSvgGroupColor[] | null>(null)
+  const activeAddons = ref<OutputAddon[] | null>(null)
+  const productAddons = ref<OutputAddon[] | null>(null)
+  const companyAddons = ref<OutputCompanyAddon[] | null>(null)
+  const productPreviews = ref<ProductPreviewItem[] | null>(null)
+  const stylePreviews = ref<OutputStylePreview[] | null>(null)
+  const designPreviews = ref<OutputDesignPreview[] | null>(null)
+  const recentLogos = ref<OutputRecentLogo[] | null>(null)
+  const isLoading = ref(false)
+  const error = ref<string | null>(null)
+
+  // ===== UTILITIES =====
   const storageBase = import.meta.env.VITE_APP_STORAGE_URL || ''
   function fromStorage(path: string): string {
     const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
@@ -39,44 +58,51 @@ export const useProductsStore = defineStore('productsStore', () => {
     const safeObjects = (objects || []).filter(Boolean) as FabricObject[]
     return util.groupSVGElements(safeObjects) as CustomFabricGroup
   }
-  const categories = ref<OutputProductCategories | null>(null)
-  const activeProductDetails = ref<OutputProductDetails | null>(null)
-  const activeStyleDetails = ref<OutputStyleDetails | null>(null)
-  const activeDesignDetails = ref<OutputDesignDetails | null>(null)
 
-  const svgGroups = ref<OutputSvgGroupColor[] | null>(null)
-
-  const activeAddons = ref<OutputAddon[] | null>(null)
-  const productAddons = ref<OutputAddon[] | null>(null)
-  const companyAddons = ref<OutputCompanyAddon[] | null>(null)
-
-  const customization = useCustomizationStore()
-
-  const productPreviews = ref<ProductPreviewItem[] | null>(null)
-  const stylePreviews = ref<OutputStylePreview[] | null>(null)
-  const designPreviews = ref<OutputDesignPreview[] | null>(null)
-  const recentLogos = ref<OutputRecentLogo[] | null>(null)
-  const isLoading = ref(false)
-  const error = ref<string | null>(null)
-
-  // In-flight request de-duplication
+  // ===== REQUEST MANAGEMENT =====
   const inFlightProduct = new Map<number, Promise<any>>()
   const inFlightStyle = new Map<number, Promise<any>>()
   const inFlightDesign = new Map<number, Promise<any>>()
 
-  function setCategories(data: OutputProductCategories) {
-    categories.value = data
-  }
+  // ===== ACTIONS =====
   function setLoading(loading: boolean) {
     isLoading.value = loading
   }
+
   function setError(errorMessage: string | null) {
     error.value = errorMessage
   }
-  function initActiveSelectionFromLocalStorage() {
-    customization.load()
+
+  function setCategories(data: OutputProductCategories) {
+    categories.value = data
   }
-  function setActiveStep(_: string | null) {}
+
+  // Strongly-typed setters to mutate internal state
+  function setActiveProductDetailsState(payload: OutputProductDetails | null) {
+    activeProductDetails.value = payload
+  }
+
+  function setActiveStyleDetailsState(payload: OutputStyleDetails | null) {
+    activeStyleDetails.value = payload
+  }
+
+  function setActiveDesignDetailsState(payload: OutputDesignDetails | null) {
+    activeDesignDetails.value = payload
+  }
+
+  // Addons setters to avoid direct mutations from components
+  function setActiveAddonsList(addons: OutputAddon[]) {
+    activeAddons.value = addons
+  }
+
+  function updateActiveAddonSelected(addonId: number, selected: boolean) {
+    if (!activeAddons.value) return
+    const idx = activeAddons.value.findIndex(a => a.addon_id === addonId)
+    if (idx >= 0) {
+      activeAddons.value[idx].selected = selected
+    }
+  }
+  // ===== BUSINESS LOGIC =====
   async function setSvgGroups(): Promise<void> {
     const frontDesignUrl = activeDesignDetails.value?.front_design.file_url
     const fileExtension = activeDesignDetails.value?.front_design.file_extension
@@ -118,36 +144,24 @@ export const useProductsStore = defineStore('productsStore', () => {
         }
       })
   }
+
   function reset() {
     categories.value = null
     isLoading.value = false
     error.value = null
   }
 
-  // Strongly-typed setters to mutate internal state
-  function setActiveProductDetailsState(payload: OutputProductDetails | null) {
-    activeProductDetails.value = payload
-  }
-  function setActiveStyleDetailsState(payload: OutputStyleDetails | null) {
-    activeStyleDetails.value = payload
-  }
-  function setActiveDesignDetailsState(payload: OutputDesignDetails | null) {
-    activeDesignDetails.value = payload
+  function initActiveSelectionFromLocalStorage() {
+    customization.loadFromLocalStorage()
   }
 
-  // Addons setters to avoid direct mutations from components
-  function setActiveAddonsList(addons: OutputAddon[]) {
-    activeAddons.value = addons
+  function setActiveStep(_: string | null) {}
+
+  function saveCustomizationToLocalStorage() {
+    customization.saveToLocalStorage()
   }
 
-  function updateActiveAddonSelected(addonId: number, selected: boolean) {
-    if (!activeAddons.value) return
-    const idx = activeAddons.value.findIndex(a => a.addon_id === addonId)
-    if (idx >= 0) {
-      activeAddons.value[idx].selected = selected
-    }
-  }
-
+  // ===== API FUNCTIONS =====
   async function fetchCustomizedCategories(): Promise<
     APIResponse<OutputProductCategories>
   > {
@@ -239,10 +253,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     }
     setLoading(false)
     return resp
-  }
-
-  function saveCustomizationToLocalStorage() {
-    customization.save()
   }
 
   async function fetchActiveProductDetails(productId: number) {
@@ -416,24 +426,42 @@ export const useProductsStore = defineStore('productsStore', () => {
     { immediate: true }
   )
 
+  // ===== RETURN =====
   return {
+    // State
     categories,
+    activeProductDetails,
+    activeStyleDetails,
+    activeDesignDetails,
+    svgGroups,
+    activeAddons,
+    productAddons,
+    companyAddons,
+    productPreviews,
+    stylePreviews,
+    designPreviews,
+    recentLogos,
     isLoading,
     error,
-    activeProductDetails: activeProductDetails,
-    activeStyleDetails: activeStyleDetails,
-    activeDesignDetails: activeDesignDetails,
-    setCategories,
+    // Actions
     setLoading,
     setError,
-    reset,
+    setCategories,
     setActiveProductDetailsState,
     setActiveStyleDetailsState,
     setActiveDesignDetailsState,
     setActiveAddonsList,
     updateActiveAddonSelected,
+    // Business Logic
+    setSvgGroups,
+    reset,
     initActiveSelectionFromLocalStorage,
     setActiveStep,
+    saveCustomizationToLocalStorage,
+    applyDesignPreview,
+    captureDefaultsSnapshot,
+    resetToDefaultsSnapshot,
+    // API Functions
     fetchCustomizedCategories,
     fetchProductPreviews,
     fetchStylePreviews,
@@ -442,18 +470,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     fetchProductAddons,
     fetchDesignPreviewsByStyleId,
     fetchDesignDetailsById,
-    fetchRecentLogos,
-    productPreviews,
-    designPreviews,
-    stylePreviews,
-    recentLogos,
-    activeAddons,
-    productAddons,
-    companyAddons,
-    applyDesignPreview,
-    captureDefaultsSnapshot,
-    resetToDefaultsSnapshot,
-    saveCustomizationToLocalStorage,
-    svgGroups
+    fetchRecentLogos
   }
 })

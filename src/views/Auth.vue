@@ -27,7 +27,7 @@
   })
 
   const handleLogin = async () => {
-    const result = await authStore.dispatchLogin(loginForm.value)
+    const result = await authStore.login(loginForm.value)
     if (result.success) {
       loginForm.value = { email: '', password: '' }
       router.push('/')

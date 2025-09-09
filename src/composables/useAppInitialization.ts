@@ -25,7 +25,7 @@ export function useAppInitialization() {
     // Initialize authentication state from localStorage
     try {
       const authStore = useAuthStore()
-      authStore.initCustomerAndAccessTokenFromLocalStorage()
+      authStore.loadFromLocalStorage()
     } catch (_err) {
       // In rare cases the store may not be available; ignore and continue
     }
@@ -33,10 +33,10 @@ export function useAppInitialization() {
     // Initialize selection/customization from localStorage
     const productsStore = useProductsStore()
     const customizationStore = useCustomizationStore()
-    const hasActiveCustomization = customizationStore.load()
+    const hasActiveCustomization = customizationStore.loadFromLocalStorage()
 
     // Restore saved workflow sub-steps
-    wf.loadWorkflowSubStepsFromLocalStorage()
+    wf.loadFromLocalStorage()
 
     // Load history stacks early so UI reflects state immediately
     try {
@@ -170,7 +170,7 @@ export function useAppInitialization() {
 
       if (!customizationStore.customization) {
         customizationStore.ensureCustomization()
-        customizationStore.save()
+        customizationStore.saveToLocalStorage()
       }
     }
 

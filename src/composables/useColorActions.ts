@@ -12,11 +12,13 @@ type Palette = {
 }
 
 export function useColorActions() {
+  // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const history = useHistoryStore()
   const { effectiveSvgGroups } = useEffectiveSelectors()
 
+  // ===== COMPUTED =====
   const palettes = computed<Palette[] | undefined>(() => {
     return productsStore.activeProductDetails?.namecolors?.map(colorGroup => ({
       id: colorGroup.id,
@@ -25,6 +27,7 @@ export function useColorActions() {
     }))
   })
 
+  // ===== ACTIONS =====
   function shuffleColors(paletteId?: number) {
     const availablePalettes = palettes.value
     if (!availablePalettes || !availablePalettes.length) return
@@ -56,5 +59,6 @@ export function useColorActions() {
     })
   }
 
+  // ===== RETURN =====
   return { palettes, shuffleColors }
 }

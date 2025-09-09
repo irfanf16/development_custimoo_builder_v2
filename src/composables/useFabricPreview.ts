@@ -26,9 +26,11 @@ type FitOptions = {
 }
 
 export function useFabricPreview() {
+  // ===== STATE =====
   const canvasEl = ref<HTMLCanvasElement | null>(null)
   const canvas = ref<Canvas | null>(null)
 
+  // ===== UTILITIES =====
   const storageBase = import.meta.env.VITE_APP_STORAGE_URL || ''
 
   function fromStorage(path: string): string {
@@ -37,6 +39,7 @@ export function useFabricPreview() {
     return base + clean
   }
 
+  // ===== CANVAS MANAGEMENT =====
   function initCanvas(options?: InitOptions) {
     if (!canvasEl.value) return
     canvas.value = new Canvas(canvasEl.value, {
@@ -84,6 +87,7 @@ export function useFabricPreview() {
     else obj.scaleToHeight(targetH)
   }
 
+  // ===== LAYER MANAGEMENT =====
   async function addModelLayer(
     url: string,
     composition: GlobalCompositeOperation
@@ -168,6 +172,7 @@ export function useFabricPreview() {
     }
   }
 
+  // ===== ANIMATION =====
   async function fadeOut(durationMs = 150) {
     if (!canvasEl.value) return
     canvasEl.value.style.opacity = '0'
@@ -179,9 +184,12 @@ export function useFabricPreview() {
     canvasEl.value.style.opacity = '1'
   }
 
+  // ===== RETURN =====
   return {
+    // State
     canvasEl,
     canvas,
+    // Canvas Management
     initCanvas,
     setCanvasSize,
     disposeCanvas,
@@ -189,10 +197,12 @@ export function useFabricPreview() {
     requestRender,
     setZoom,
     fitObject,
+    // Layer Management
     addModelLayer,
     addDesignLayer,
+    getSvgGroup,
+    // Animation
     fadeOut,
-    fadeIn,
-    getSvgGroup
+    fadeIn
   }
 }
