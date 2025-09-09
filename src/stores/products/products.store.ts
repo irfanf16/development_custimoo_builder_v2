@@ -382,32 +382,34 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   // Centralized fetch orchestration reacting to customization selections
   watch(
-    () => [
-      customization.activeProductId,
-      customization.activeStyleId,
-      customization.activeDesignId
+    [
+      () => customization.activeProductId,
+      () => customization.activeStyleId,
+      () => customization.activeDesignId
     ],
-    async ([pid, sid, did]) => {
-      // Product fetch sets default style/design
+    async (
+      [productId, styleId, designId],
+      [prevProductId, prevStyleId, prevDesignId]
+    ) => {
+      // No changes detected
       if (
-        pid &&
-        (!activeProductDetails.value || activeProductDetails.value.id !== pid)
-      ) {
-        await fetchActiveProductDetails(pid)
+        productId === prevProductId &&
+        styleId === prevStyleId &&
+        designId === prevDesignId
+      )
+        return
+
+      // Product fetch sets default style/design
+      if (productId && activeProductDetails.value?.id !== productId) {
+        await fetchActiveProductDetails(productId)
       }
       // Explicit style selection overrides design
-      if (
-        sid &&
-        (!activeStyleDetails.value || activeStyleDetails.value.id !== sid)
-      ) {
-        await fetchActiveStyleDetails(sid)
+      if (styleId && activeStyleDetails.value?.id !== styleId) {
+        await fetchActiveStyleDetails(styleId)
       }
       // Explicit design selection overrides current
-      if (
-        did &&
-        (!activeDesignDetails.value || activeDesignDetails.value.id !== did)
-      ) {
-        await fetchDesignDetailsById(did)
+      if (designId && activeDesignDetails.value?.id !== designId) {
+        await fetchDesignDetailsById(designId)
         await setSvgGroups()
       }
     },

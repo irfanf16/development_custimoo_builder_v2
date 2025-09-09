@@ -121,31 +121,50 @@ export function useAppInitialization() {
         // This is the core of the initialization process - ensuring we have a valid product selection
 
         if (hasActiveCustomization) {
-          // SCENARIO A: Restore from stored customization by fetching dependent details
+          // SCENARIO A: Hydrate from stored customization; if IDs missing, fill defaults
           const apc = customizationStore.customization
           if (apc) {
-            // Step 0: Load style previews
-            await productsStore.fetchStylePreviews(apc.product_id)
-
-            // Step 1: Load product details (loads default style + design)
-            await productsStore.fetchActiveProductDetails(
-              Number(apc.product_id)
-            )
-
-            // Step 2: Load explicit style if different from default
-            if (
-              customizationStore.activeStyleId &&
-              apc.style_id !== customizationStore.activeStyleId
-            ) {
-              await productsStore.fetchActiveStyleDetails(apc.style_id)
+            let productId = Number(apc.product_id || 0)
+            // If productId is missing, pick first from previews
+            if (!productId) {
+              const fallbackProductId =
+                (productsStore.productPreviews &&
+                  productsStore.productPreviews.length &&
+                  productsStore.productPreviews[0].productPreview.id) ||
+                null
+              if (fallbackProductId != null) {
+                await productsStore.fetchStylePreviews(fallbackProductId)
+                await productsStore.fetchActiveProductDetails(fallbackProductId)
+                customizationStore.setProduct(fallbackProductId)
+                productId = fallbackProductId
+              }
+            } else {
+              await productsStore.fetchStylePreviews(productId)
+              await productsStore.fetchActiveProductDetails(productId)
             }
 
-            // Step 3: Load explicit design if different from current
-            if (
-              customizationStore.activeDesignId &&
-              apc.design_id !== customizationStore.activeDesignId
-            ) {
-              await productsStore.fetchDesignDetailsById(apc.design_id)
+            // Ensure style
+            let styleId = Number(apc.style_id || 0)
+            if (!styleId) {
+              const defaultStyleId = productsStore.activeStyleDetails?.id
+              if (defaultStyleId) {
+                customizationStore.setStyle(defaultStyleId)
+                styleId = defaultStyleId
+              }
+            } else if (productsStore.activeStyleDetails?.id !== styleId) {
+              await productsStore.fetchActiveStyleDetails(styleId)
+            }
+
+            // Ensure design
+            let designId = Number(apc.design_id || 0)
+            if (!designId) {
+              const defaultDesignId = productsStore.activeDesignDetails?.id
+              if (defaultDesignId) {
+                customizationStore.setDesign(defaultDesignId)
+                designId = defaultDesignId
+              }
+            } else if (productsStore.activeDesignDetails?.id !== designId) {
+              await productsStore.fetchDesignDetailsById(designId)
             }
           }
         } else {

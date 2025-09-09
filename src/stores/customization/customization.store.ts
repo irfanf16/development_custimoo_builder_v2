@@ -9,32 +9,12 @@ import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
 // import { useWorkflowStore } from '../workflow/workflow.store'
 
-type SelectionKey =
-  | 'category_id'
-  | 'sub_category_id'
-  | 'product_id'
-  | 'style_id'
-  | 'design_id'
-  | 'addons'
-  | 'group_colors'
-
-type SelectionCommand = {
-  key: SelectionKey
-  prev: unknown
-  next: unknown
-  activeStep?: string | null
-  timestamp: number
-}
-
 export const useCustomizationStore = defineStore('customizationStore', () => {
   const productsStore = useProductsStore()
   // const workflowStore = useWorkflowStore()
   const customization = ref<ActiveProductCustomization | null>(null)
 
-  // Deprecated local history in favor of centralized history store
-  const undoStack = ref<SelectionCommand[]>([])
-  const redoStack = ref<SelectionCommand[]>([])
-  // const isApplying = ref(false)
+  // Centralized history removed from this store; no local undo/redo here
 
   function save() {
     if (typeof window === 'undefined') return
@@ -42,17 +22,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       'activeProductCustomization',
       JSON.stringify(customization.value)
     )
-    // legacy persistence for old history kept for backward compatibility
-    try {
-      window.localStorage.setItem(
-        'selection.undo',
-        JSON.stringify(undoStack.value)
-      )
-      window.localStorage.setItem(
-        'selection.redo',
-        JSON.stringify(redoStack.value)
-      )
-    } catch (_) {}
+    // persist customization
   }
 
   function load(): boolean {
@@ -61,48 +31,18 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (!raw) return false
     try {
       const parsed = JSON.parse(raw)
-      if (
-        parsed &&
-        typeof parsed.product_id === 'string' &&
-        typeof parsed.style_id === 'number' &&
-        typeof parsed.design_id === 'number'
-      ) {
+      if (parsed) {
         customization.value = parsed as ActiveProductCustomization
-        try {
-          undoStack.value = JSON.parse(
-            window.localStorage.getItem('selection.undo') || '[]'
-          )
-          redoStack.value = JSON.parse(
-            window.localStorage.getItem('selection.redo') || '[]'
-          )
-        } catch (_) {
-          undoStack.value = []
-          redoStack.value = []
-        }
         return true
       }
     } catch (_) {}
     return false
   }
 
-  function pushCommand(cmd: SelectionCommand) {
-    // centralized history now handles pushing; keep no-op for older callers
-    undoStack.value.push(cmd)
-    redoStack.value = []
-    save()
-  }
-
   async function setCategory(categoryId: number) {
     if (!customization.value) return
-    const prev = customization.value.category_id
-    if (prev === categoryId) return
+    if (customization.value.category_id === categoryId) return
     customization.value.category_id = categoryId
-    pushCommand({
-      key: 'category_id',
-      prev,
-      next: categoryId,
-      timestamp: Date.now()
-    })
     await API.products.getProductPreviewsByCategory(categoryId)
     save()
   }
@@ -113,14 +53,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const next = productId
     if (prev === next) return
     customization.value.product_id = next
-    customization.value.style_id = 0
-    customization.value.design_id = 0
-    pushCommand({
-      key: 'product_id',
-      prev,
-      next,
-      timestamp: Date.now()
-    })
     // Fetch orchestration handled in products store watcher
     save()
   }
@@ -130,12 +62,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const prev = customization.value.sub_category_id
     if (prev === subCategoryId) return
     customization.value.sub_category_id = subCategoryId
-    pushCommand({
-      key: 'sub_category_id',
-      prev,
-      next: subCategoryId,
-      timestamp: Date.now()
-    })
     try {
       await API.products.getProductPreviewsByCategory(subCategoryId)
     } catch (_) {}
@@ -147,13 +73,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const prev = customization.value.style_id
     if (prev === styleId) return
     customization.value.style_id = styleId
-    customization.value.design_id = 0
-    pushCommand({
-      key: 'style_id',
-      prev,
-      next: styleId,
-      timestamp: Date.now()
-    })
     // Fetch orchestration handled in products store watcher
     save()
   }
@@ -163,12 +82,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const prev = customization.value.design_id
     if (prev === designId) return
     customization.value.design_id = designId
-    pushCommand({
-      key: 'design_id',
-      prev,
-      next: designId,
-      timestamp: Date.now()
-    })
     // Fetch orchestration handled in products store watcher
     save()
   }
@@ -176,7 +89,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   async function setAddons(addons: OutputAddon[]) {
     if (!customization.value) return
     const key = customization.value.product_id
-    const prev = customization.value.addons_info?.[key]?.simple_addons ?? []
     if (!customization.value.addons_info)
       customization.value.addons_info =
         {} as import('@/services/products/types').APCustomizationAddonsInfo
@@ -185,40 +97,19 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       ungrouped_addons: [],
       simple_addons: addons.map(a => a.addon_id)
     }
-    pushCommand({
-      key: 'addons',
-      prev,
-      next: customization.value.addons_info[key].simple_addons,
-      timestamp: Date.now()
-    })
     save()
   }
 
   function setGroupColor(groupName: string, groupColor: OutputColor) {
     if (!customization.value) return
-    const prev = customization.value.group_colors[groupName]
     customization.value.group_colors[groupName] = {
       color: groupColor.value,
       name: groupColor.name
     }
-    pushCommand({
-      key: 'group_colors',
-      prev,
-      next: customization.value.group_colors[groupName],
-      timestamp: Date.now()
-    })
     save()
   }
 
-  // applyCommand and local undo/redo are deprecated in favor of centralized history
-
-  async function undo() {
-    // deprecated: use centralized history store instead
-  }
-
-  async function redo() {
-    // deprecated: use centralized history store instead
-  }
+  // No local undo/redo here; use centralized history store
 
   function setCustomization(initial: ActiveProductCustomization) {
     customization.value = initial
@@ -321,8 +212,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
   return {
     customization,
-    undoStack,
-    redoStack,
     // computed ids
     activeProductId,
     activeStyleId,
@@ -339,8 +228,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     setStyle,
     setDesign,
     setAddons,
-    undo,
-    redo,
     ensureCustomization,
     resetCustomizationToCurrentProductDefaults,
     setGroupColor,
