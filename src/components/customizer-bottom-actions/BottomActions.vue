@@ -40,10 +40,6 @@
       }}
     </Button>
     <Button variant="outline" size="default" class="rounded-lg">
-      <Save class="size-4" />
-      {{ actions_save_design({}, { locale: localeStore.currentLocale }) }}
-    </Button>
-    <Button variant="outline" size="default" class="rounded-lg">
       <Share2 class="size-4" />
       {{ actions_share_design({}, { locale: localeStore.currentLocale }) }}
     </Button>
