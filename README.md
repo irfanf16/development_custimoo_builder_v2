@@ -12,6 +12,6 @@ This repository contains a Vue 3 + TypeScript widget for product customization.
 ### Quick start
 
 ```bash
-pnpm install
-pnpm dev
+npm install
+npm dev
 ```
