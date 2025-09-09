@@ -20,6 +20,176 @@ export function useAppInitialization() {
   const error = ref<string | null>(null)
   const wf = useWorkflowStore()
 
+  // PHASE 1: Initialize stores from localStorage (non-blocking operations)
+  const initializeStoresFromLocalStorage = () => {
+    // Initialize authentication state from localStorage
+    try {
+      const authStore = useAuthStore()
+      authStore.initCustomerAndAccessTokenFromLocalStorage()
+    } catch (_err) {
+      // In rare cases the store may not be available; ignore and continue
+    }
+
+    // Initialize selection/customization from localStorage
+    const productsStore = useProductsStore()
+    const customizationStore = useCustomizationStore()
+    const hasActiveCustomization = customizationStore.load()
+
+    // Restore saved workflow sub-steps
+    wf.loadWorkflowSubStepsFromLocalStorage()
+
+    // Load history stacks early so UI reflects state immediately
+    try {
+      const history = useHistoryStore()
+      history.load()
+    } catch (_) {}
+
+    return { productsStore, customizationStore, hasActiveCustomization }
+  }
+
+  // PHASE 2: Fetch essential data from API (blocking operations)
+  const fetchEssentialData = async () => {
+    const companyStore = useCompanyStore()
+    const productsStore = useProductsStore()
+
+    await Promise.all([
+      companyStore.dispatchGetCompany(),
+      companyStore.dispatchGetSettings(),
+      productsStore.fetchCustomizedCategories()
+    ])
+  }
+
+  // PHASE 3: Initialize localization and determine effective category
+  const initializeLocalizationAndCategory = (
+    customizationStore: any,
+    productsStore: any
+  ) => {
+    // Initialize locale store after company data is loaded
+    const localeStore = useLocaleStore()
+    localeStore.initializeLocale()
+
+    // Determine the effective category ID for loading products
+    const effectiveCategoryId =
+      customizationStore.activeCategoryId ||
+      productsStore.categories?.data?.[0]?.id ||
+      null
+
+    if (effectiveCategoryId) {
+      wf.setSelectedCategoryForPreview(effectiveCategoryId)
+    }
+
+    return effectiveCategoryId
+  }
+
+  // PHASE 4: Load product data
+  const loadProductData = async (
+    productsStore: any,
+    effectiveCategoryId: number | null
+  ) => {
+    await productsStore.fetchProductPreviews(effectiveCategoryId)
+  }
+
+  // PHASE 5A: Restore customization with defaults
+  const restoreCustomizationWithDefaults = async (
+    customizationStore: any,
+    productsStore: any,
+    hasActiveCustomization: boolean
+  ) => {
+    if (!hasActiveCustomization) return
+
+    const apc = customizationStore.customization
+    if (!apc) return
+
+    let productId = Number(apc.product_id || 0)
+
+    // If productId is missing, pick first from previews
+    if (!productId) {
+      const fallbackProductId =
+        (productsStore.productPreviews &&
+          productsStore.productPreviews.length &&
+          productsStore.productPreviews[0].productPreview.id) ||
+        null
+      if (fallbackProductId != null) {
+        await productsStore.fetchStylePreviews(fallbackProductId)
+        await productsStore.fetchActiveProductDetails(fallbackProductId)
+        customizationStore.setProduct(fallbackProductId)
+        productId = fallbackProductId
+      }
+    } else {
+      await productsStore.fetchStylePreviews(productId)
+      await productsStore.fetchActiveProductDetails(productId)
+    }
+
+    // Ensure style
+    let styleId = Number(apc.style_id || 0)
+    if (!styleId) {
+      const defaultStyleId = productsStore.activeStyleDetails?.id
+      if (defaultStyleId) {
+        customizationStore.setStyle(defaultStyleId)
+        styleId = defaultStyleId
+      }
+    } else if (productsStore.activeStyleDetails?.id !== styleId) {
+      await productsStore.fetchActiveStyleDetails(styleId)
+    }
+
+    // Ensure design
+    let designId = Number(apc.design_id || 0)
+    if (!designId) {
+      const defaultDesignId = productsStore.activeDesignDetails?.id
+      if (defaultDesignId) {
+        customizationStore.setDesign(defaultDesignId)
+        designId = defaultDesignId
+      }
+    } else if (productsStore.activeDesignDetails?.id !== designId) {
+      await productsStore.fetchDesignDetailsById(designId)
+    }
+  }
+
+  // PHASE 5B: Create default customization
+  const createDefaultCustomization = async (
+    customizationStore: any,
+    productsStore: any,
+    effectiveCategoryId: number | null
+  ) => {
+    // Clear stale history when no customization is restored
+    try {
+      const history = useHistoryStore()
+      history.clear()
+    } catch (_) {}
+
+    // Determine which product to load as default
+    const activeProductId =
+      customizationStore.activeProductId ||
+      (productsStore.productPreviews && productsStore.productPreviews.length
+        ? productsStore.productPreviews[0].productPreview.id
+        : null)
+
+    if (activeProductId != null) {
+      await productsStore.fetchStylePreviews(activeProductId)
+      await productsStore.fetchActiveProductDetails(activeProductId)
+
+      if (!customizationStore.customization) {
+        customizationStore.ensureCustomization()
+        customizationStore.save()
+      }
+    }
+
+    // Set initial workflow step
+    const storedActiveStep = localStorage.getItem('activeStep')
+    if (storedActiveStep) {
+      wf.setActiveStep(storedActiveStep)
+    } else if (effectiveCategoryId && productsStore.categories?.data?.length) {
+      wf.setActiveStep('Categories')
+    } else {
+      wf.setActiveStep('Products')
+    }
+  }
+
+  // PHASE 6: Initialize workflow effects
+  const initializeWorkflowEffects = () => {
+    useWorkflowEffects()
+  }
+
   const initializeApp = async () => {
     // If already initialized globally, just return the cached result
     if (globalIsInitialized) {
@@ -28,7 +198,6 @@ export function useAppInitialization() {
     }
 
     // If initialization is already in progress globally, wait for it to complete
-    // This prevents multiple simultaneous initialization attempts
     if (globalInitializationPromise) {
       await globalInitializationPromise
       isInitialized.value = globalIsInitialized
@@ -43,197 +212,49 @@ export function useAppInitialization() {
     error.value = null
 
     // Create global promise to prevent multiple simultaneous initializations
-    // This ensures only one initialization process runs at a time across the entire app
     globalInitializationPromise = (async () => {
       try {
-        // PHASE 1: Initialize stores from localStorage (non-blocking operations)
-        // These operations can fail without breaking the entire initialization process
+        // PHASE 1: Initialize stores from localStorage
+        const { productsStore, customizationStore, hasActiveCustomization } =
+          initializeStoresFromLocalStorage()
 
-        // Initialize authentication state from localStorage
-        // This loads any previously saved user session or access tokens
-        try {
-          const authStore = useAuthStore()
-          authStore.initCustomerAndAccessTokenFromLocalStorage()
-        } catch (_err) {
-          // In rare cases the store may not be available; ignore and continue
-          // This prevents authentication issues from blocking app initialization
-        }
-
-        // Initialize selection/customization from localStorage
-        const productsStore = useProductsStore()
-        const customizationStore = useCustomizationStore()
-        const hasActiveCustomization = customizationStore.load()
-        // restore saved workflow sub-steps
-        wf.loadWorkflowSubStepsFromLocalStorage()
-
-        // Load history stacks early so UI reflects state immediately
-        try {
-          const history = useHistoryStore()
-          history.load()
-        } catch (_) {}
-
-        // PHASE 2: Fetch essential data from API (blocking operations)
-        // These operations must complete before we can proceed with customization setup
-
-        // Fetch company information and settings
-        // Company data is required for proper app configuration and localization
-        const companyStore = useCompanyStore()
-        await Promise.all([
-          companyStore.dispatchGetCompany(),
-          companyStore.dispatchGetSettings(),
-          // Conditionally fetch categories based on whether we have an active category
-          // If we have a stored category, fetch products for that category
-          // Otherwise, fetch all available categories
-          productsStore.fetchCustomizedCategories()
-        ])
+        // PHASE 2: Fetch essential data from API
+        await fetchEssentialData()
 
         // PHASE 3: Initialize localization and determine effective category
-        // Locale must be set after company data is loaded since it may depend on company settings
+        const effectiveCategoryId = initializeLocalizationAndCategory(
+          customizationStore,
+          productsStore
+        )
 
-        // Initialize locale store after company data is loaded
-        // This sets up the appropriate language and regional settings
-        const localeStore = useLocaleStore()
-        localeStore.initializeLocale()
-
-        // Determine the effective category ID for loading products
-        // Priority order: stored category > first available category > null
-        const effectiveCategoryId =
-          customizationStore.activeCategoryId ||
-          productsStore.categories?.data?.[0]?.id ||
-          null
-
-        // Set the active category in customization state if we have one
-        // This ensures the customization state reflects the current category selection
-        // if (effectiveCategoryId) {
-        //   customizationStore.setCategory(effectiveCategoryId)
-        // }
-        if (effectiveCategoryId) {
-          wf.setSelectedCategoryForPreview(effectiveCategoryId)
-        }
-
-        // PHASE 4: Load product data and set up customization state
-
-        // Load product previews for the ProductPanel
-        // These are lightweight previews that show available products in the selected category
-        await productsStore.fetchProductPreviews(effectiveCategoryId)
+        // PHASE 4: Load product data
+        await loadProductData(productsStore, effectiveCategoryId)
 
         // PHASE 5: Set up product customization state
-        // This is the core of the initialization process - ensuring we have a valid product selection
-
         if (hasActiveCustomization) {
-          // SCENARIO A: Hydrate from stored customization; if IDs missing, fill defaults
-          const apc = customizationStore.customization
-          if (apc) {
-            let productId = Number(apc.product_id || 0)
-            // If productId is missing, pick first from previews
-            if (!productId) {
-              const fallbackProductId =
-                (productsStore.productPreviews &&
-                  productsStore.productPreviews.length &&
-                  productsStore.productPreviews[0].productPreview.id) ||
-                null
-              if (fallbackProductId != null) {
-                await productsStore.fetchStylePreviews(fallbackProductId)
-                await productsStore.fetchActiveProductDetails(fallbackProductId)
-                customizationStore.setProduct(fallbackProductId)
-                productId = fallbackProductId
-              }
-            } else {
-              await productsStore.fetchStylePreviews(productId)
-              await productsStore.fetchActiveProductDetails(productId)
-            }
-
-            // Ensure style
-            let styleId = Number(apc.style_id || 0)
-            if (!styleId) {
-              const defaultStyleId = productsStore.activeStyleDetails?.id
-              if (defaultStyleId) {
-                customizationStore.setStyle(defaultStyleId)
-                styleId = defaultStyleId
-              }
-            } else if (productsStore.activeStyleDetails?.id !== styleId) {
-              await productsStore.fetchActiveStyleDetails(styleId)
-            }
-
-            // Ensure design
-            let designId = Number(apc.design_id || 0)
-            if (!designId) {
-              const defaultDesignId = productsStore.activeDesignDetails?.id
-              if (defaultDesignId) {
-                customizationStore.setDesign(defaultDesignId)
-                designId = defaultDesignId
-              }
-            } else if (productsStore.activeDesignDetails?.id !== designId) {
-              await productsStore.fetchDesignDetailsById(designId)
-            }
-          }
+          await restoreCustomizationWithDefaults(
+            customizationStore,
+            productsStore,
+            hasActiveCustomization
+          )
         } else {
-          // SCENARIO B: Create default customization but navigate to category selection
-          // User is new or has no saved customization, set up sensible defaults
-
-          // Clear stale history when no customization is restored to avoid mismatches
-          try {
-            const history = useHistoryStore()
-            history.clear()
-          } catch (_) {}
-
-          // Determine which product to load as default
-          // Priority order: stored product ID > first product in category > null
-          const activeProductId =
-            customizationStore.activeProductId ||
-            (productsStore.productPreviews &&
-            productsStore.productPreviews.length
-              ? productsStore.productPreviews[0].productPreview.id
-              : null)
-
-          if (activeProductId != null) {
-            // Load the default product details (includes default style and design)
-            // Step 0: Load style previews
-            await productsStore.fetchStylePreviews(activeProductId)
-
-            // Step 1: Load product details (loads default style + design)
-            await productsStore.fetchActiveProductDetails(activeProductId)
-
-            // Ensure we have a default customization set up
-            // This creates a customization object with the default product, style, and design
-            if (!customizationStore.customization) {
-              customizationStore.ensureCustomization()
-              customizationStore.save()
-            }
-          }
-
-          // On initialization, check for activeStep in localStorage and set the active step accordingly.
-          // If not found, fall back to Categories (if available) or Products.
-          const storedActiveStep = localStorage.getItem('activeStep')
-          if (storedActiveStep) {
-            wf.setActiveStep(storedActiveStep)
-          } else if (
-            effectiveCategoryId &&
-            productsStore.categories?.data?.length
-          ) {
-            wf.setActiveStep('Categories')
-          } else {
-            wf.setActiveStep('Products')
-          }
+          await createDefaultCustomization(
+            customizationStore,
+            productsStore,
+            effectiveCategoryId
+          )
         }
 
         // PHASE 6: Initialize workflow effects
-        // This sets up data fetching side effects for workflow step changes
-        useWorkflowEffects()
+        initializeWorkflowEffects()
 
         // PHASE 7: Mark initialization as complete
-        // Set both local and global flags to prevent re-initialization
-
         isInitialized.value = true
         globalIsInitialized = true
       } catch (err) {
-        // Handle any errors during initialization
-        // This prevents the app from getting stuck in a loading state
         error.value =
           err instanceof Error ? err.message : 'Failed to initialize app'
       } finally {
-        // Clean up loading state and global promise
-        // This ensures the initialization can be retried if needed
         isLoading.value = false
         globalInitializationPromise = null
       }

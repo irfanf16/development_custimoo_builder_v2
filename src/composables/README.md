@@ -43,18 +43,19 @@ useWorkflowEffects()
 - Single entry-point to initialize the app in phases.
 - Loads localStorage state (auth, customization, workflow), loads history stacks early, fetches essentials, sets locale, determines category, loads previews, restores customization or creates defaults, initializes workflow effects.
 - Handles missing product/style/design IDs by filling with defaults during restoration.
+- Refactored into focused methods for better maintainability and readability.
 
 Phases overview:
 
-1. Load auth, customization, workflow sub-steps, and history stacks
-2. Fetch company + categories
-3. Initialize locale, compute effective category
-4. Fetch product previews
-5. Restore customization (A) or clear history and create defaults (B)
+1. **`initializeStoresFromLocalStorage()`**: Load auth, customization, workflow sub-steps, and history stacks
+2. **`fetchEssentialData()`**: Fetch company + categories
+3. **`initializeLocalizationAndCategory()`**: Initialize locale, compute effective category
+4. **`loadProductData()`**: Fetch product previews
+5. **`restoreCustomizationWithDefaults()` / `createDefaultCustomization()`**: Restore customization (A) or clear history and create defaults (B)
    - **SCENARIO A**: Hydrate from stored customization; if IDs missing, fill defaults
    - **SCENARIO B**: Create default customization but navigate to category selection
-6. Initialize workflow effects
-7. Mark ready
+6. **`initializeWorkflowEffects()`**: Initialize workflow effects
+7. **Mark ready**: Complete initialization
 
 Example:
 

@@ -1,12 +1,11 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import { Ruler, Save, Share2, FileText, RotateCcw } from 'lucide-vue-next'
+  import { Ruler, Share2, FileText, RotateCcw } from 'lucide-vue-next'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import {
     actions_size_guide,
     actions_reset_customization,
-    actions_save_design,
     actions_share_design,
     actions_generate_pdf
   } from '@/paraglide/messages'
