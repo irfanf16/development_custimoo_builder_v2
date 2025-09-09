@@ -1,38 +1,54 @@
 <script setup lang="ts">
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
+  import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
+  import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
 </script>
 
 <template>
   <div class="p-6">
     <Accordion type="multiple" :collapsible="true">
       <AccordionItem value="product"
-        ><template #trigger>Product</template>
-        <div class="h-24 bg-muted rounded" />
+        ><AccordionTrigger>Product</AccordionTrigger>
+        <AccordionContent>
+          <div class="h-24 bg-muted rounded" />
+        </AccordionContent>
       </AccordionItem>
       <AccordionItem value="style"
-        ><template #trigger>Style</template>
-        <div class="h-24 bg-muted rounded" />
+        ><AccordionTrigger>Style</AccordionTrigger>
+        <AccordionContent>
+          <div class="h-24 bg-muted rounded" />
+        </AccordionContent>
       </AccordionItem>
       <AccordionItem value="design"
-        ><template #trigger>Design</template>
-        <div class="h-24 bg-muted rounded" />
+        ><AccordionTrigger>Design</AccordionTrigger>
+        <AccordionContent>
+          <div class="h-24 bg-muted rounded" />
+        </AccordionContent>
       </AccordionItem>
       <AccordionItem value="colors"
-        ><template #trigger>Colors</template>
-        <div class="h-24 bg-muted rounded" />
+        ><AccordionTrigger>Colors</AccordionTrigger>
+        <AccordionContent>
+          <div class="h-24 bg-muted rounded" />
+        </AccordionContent>
       </AccordionItem>
       <AccordionItem value="logos"
-        ><template #trigger>Logos</template>
-        <div class="h-24 bg-muted rounded" />
+        ><AccordionTrigger>Logos</AccordionTrigger>
+        <AccordionContent>
+          <div class="h-24 bg-muted rounded" />
+        </AccordionContent>
       </AccordionItem>
       <AccordionItem value="texts"
-        ><template #trigger>Texts</template>
-        <div class="h-24 bg-muted rounded" />
+        ><AccordionTrigger>Texts</AccordionTrigger>
+        <AccordionContent>
+          <div class="h-24 bg-muted rounded" />
+        </AccordionContent>
       </AccordionItem>
       <AccordionItem value="roster"
-        ><template #trigger>Roster</template>
-        <div class="h-24 bg-muted rounded" />
+        ><AccordionTrigger>Roster</AccordionTrigger>
+        <AccordionContent>
+          <div class="h-24 bg-muted rounded" />
+        </AccordionContent>
       </AccordionItem>
     </Accordion>
   </div>

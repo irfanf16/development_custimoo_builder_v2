@@ -3,34 +3,17 @@
   import BottomActions from '@/components/customizer-bottom-actions/BottomActions.vue'
   import PriceCard from '@/components/customizer-price/PriceCard.vue'
   import { CustomizerMenu } from '@/components/customizer-menu'
-  import {
-    WorkflowManager,
-    WorkflowNavigation,
-    WorkflowLayout
-  } from '@/components/customization-workflow'
+  import { WorkflowLayout } from '@/components/customization-workflow'
   import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
-  import { ref, computed } from 'vue'
   import { CustomizerTopbar } from '@/components/customizer-topbar'
   import SmallPreview from '@/components/customizer-canvas-preview/SmallPreview.vue'
 
-  // Workflow management logic is now handled by WorkflowManager
-  const workflowManager = ref<InstanceType<typeof WorkflowManager> | null>(null)
-  const workflowNavigation = ref<InstanceType<
-    typeof WorkflowNavigation
-  > | null>(null)
-
-  // Computed properties for reactive access to workflow manager methods
-  const currentStep = computed(
-    () => workflowManager.value?.currentStep || 'category'
-  )
-  const navigateBack = computed(
-    () => workflowManager.value?.navigateBack || (() => {})
-  )
-  const handleCategorySelect = computed(
-    () => workflowManager.value?.handleCategorySelect || (() => {})
-  )
-  const navigationItems = computed(
-    () => workflowNavigation.value?.navigationItems || []
+  // Workflow logic moved to composables
+  import { useWorkflowManager, useWorkflowNavigation } from '@/composables'
+  const { currentStep, navigateBack, handleCategorySelect } =
+    useWorkflowManager()
+  const { navigationItems } = useWorkflowNavigation(currentStep, () =>
+    navigateBack()
   )
 </script>
 
@@ -44,15 +27,8 @@
             <CustomizerMenu />
           </div>
 
-          <!-- Workflow management and layout handled by extracted components -->
-          <WorkflowManager ref="workflowManager" />
-          <WorkflowNavigation
-            ref="workflowNavigation"
-            :current-step="currentStep"
-            :on-navigate-back="navigateBack"
-          />
+          <!-- Workflow management and navigation now handled via composables -->
           <WorkflowLayout
-            v-if="workflowManager && workflowNavigation"
             :current-step="currentStep"
             :navigation-items="navigationItems"
             :on-navigate-back="navigateBack"

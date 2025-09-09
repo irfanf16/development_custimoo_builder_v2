@@ -98,9 +98,9 @@ export function useAppInitialization() {
 
         // Set the active category in customization state if we have one
         // This ensures the customization state reflects the current category selection
-        if (effectiveCategoryId) {
-          customizationStore.setCategory(effectiveCategoryId)
-        }
+        // if (effectiveCategoryId) {
+        //   customizationStore.setCategory(effectiveCategoryId)
+        // }
 
         // PHASE 4: Load product data and set up customization state
 

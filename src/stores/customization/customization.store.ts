@@ -7,6 +7,7 @@ import type {
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
+import { useWorkflowStore } from '../workflow/workflow.store'
 
 type SelectionKey =
   | 'category_id'
@@ -27,7 +28,7 @@ type SelectionCommand = {
 
 export const useCustomizationStore = defineStore('customizationStore', () => {
   const productsStore = useProductsStore()
-
+  const workflowStore = useWorkflowStore()
   const customization = ref<ActiveProductCustomization | null>(null)
 
   const undoStack = ref<SelectionCommand[]>([])
@@ -195,11 +196,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       color: groupColor.value,
       name: groupColor.name
     }
-    console.log(
-      'setGroupColor',
-      prev,
-      customization.value.group_colors[groupName]
-    )
     pushCommand({
       key: 'group_colors',
       prev,
@@ -209,10 +205,12 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     save()
   }
 
-  function applyCommand(cmd: SelectionCommand) {
+  async function applyCommand(cmd: SelectionCommand) {
     switch (cmd.key) {
       case 'category_id':
         customization.value!.category_id = cmd.next as number
+        // workflowStore.handleCategorySelect(cmd.next as number)
+        await productsStore.fetchProductPreviews(cmd.next as number)
         break
       case 'sub_category_id':
         customization.value!.sub_category_id = cmd.next as number

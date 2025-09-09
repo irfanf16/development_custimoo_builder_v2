@@ -36,7 +36,6 @@
       colors: colorGroup.json_data
     }))
   })
-  console.log('computedPalettes', computedPalettes.value)
 
   // Three color slots shown in the UI
   // const slotLabels = computed(
