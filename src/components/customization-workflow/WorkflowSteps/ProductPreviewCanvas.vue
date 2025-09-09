@@ -87,7 +87,7 @@
     }
     //}
 
-    // Overlay rectangle for logo placement preview
+    // Overlay rectangle for logo placement preview (absolute pixels)
     if (props.overlayRect) {
       const { x, y, width, height, color } = props.overlayRect
       const rect = new Rect({
