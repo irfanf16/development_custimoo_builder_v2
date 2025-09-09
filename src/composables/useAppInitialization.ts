@@ -66,6 +66,12 @@ export function useAppInitialization() {
         // restore saved workflow sub-steps
         wf.loadWorkflowSubStepsFromLocalStorage()
 
+        // Load history stacks early so UI reflects state immediately
+        try {
+          const history = useHistoryStore()
+          history.load()
+        } catch (_) {}
+
         // PHASE 2: Fetch essential data from API (blocking operations)
         // These operations must complete before we can proceed with customization setup
 
@@ -146,6 +152,12 @@ export function useAppInitialization() {
           // SCENARIO B: Create default customization but navigate to category selection
           // User is new or has no saved customization, set up sensible defaults
 
+          // Clear stale history when no customization is restored to avoid mismatches
+          try {
+            const history = useHistoryStore()
+            history.clear()
+          } catch (_) {}
+
           // Determine which product to load as default
           // Priority order: stored product ID > first product in category > null
           const activeProductId =
@@ -186,12 +198,8 @@ export function useAppInitialization() {
           }
         }
 
-        // PHASE 6: Load undo/redo stacks, initialize workflow effects
+        // PHASE 6: Initialize workflow effects
         // This sets up data fetching side effects for workflow step changes
-        try {
-          const history = useHistoryStore()
-          history.load()
-        } catch (_) {}
         useWorkflowEffects()
 
         // PHASE 7: Mark initialization as complete

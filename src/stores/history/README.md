@@ -4,9 +4,15 @@ The history system centralizes undo/redo. Actions are serializable entries with 
 
 ### Files
 
-- `history.store.ts`: Manages stacks, exposes `execute`, `undo`, `redo`, and batching.
+- `history.store.ts`: Manages stacks, exposes `execute`, `undo`, `redo`, batching, and persistence.
 - `registry.ts`: Maps action types to `apply`, `revert`, `describe` handlers.
 - `types.ts`: Shared types and payload shapes.
+
+### Persistence
+
+- Undo/redo stacks are automatically saved to localStorage after each operation.
+- Stacks are loaded during app initialization via `useAppInitialization.ts`.
+- Use `history.clear()` to reset both stacks and persist the change.
 
 ### Basic usage
 
@@ -25,6 +31,13 @@ await history.execute('color.set-group', {
 await history.undo()
 console.log(history.nextRedoDescription)
 await history.redo()
+```
+
+### Clear history
+
+```ts
+// Clear both undo and redo stacks
+history.clear()
 ```
 
 ### Batch operations

@@ -13,6 +13,7 @@
     Shuffle
   } from 'lucide-vue-next'
   import { useHistoryStore } from '@/stores/history/history.store'
+  import { useColorActions } from '@/composables/useColorActions'
   import {
     TooltipProvider,
     Tooltip,
@@ -22,15 +23,23 @@
 
   const workflowStore = useWorkflowStore()
   const history = useHistoryStore()
+  const { shuffleColors } = useColorActions()
 
-  const tools = [
+  import { computed } from 'vue'
+
+  // Determine if undo/redo stacks are empty
+  const isUndoDisabled = computed(() => history.undoStack.length === 0)
+  const isRedoDisabled = computed(() => history.redoStack.length === 0)
+
+  const tools = computed(() => [
     {
       id: 'rotateCcw',
       icon: RotateCcw,
       label: 'Rotate CCW',
       action: () => {
         // TODO: implement rotate counter-clockwise
-      }
+      },
+      disabled: true
     },
     {
       id: 'rotateCw',
@@ -38,19 +47,22 @@
       label: 'Rotate CW',
       action: () => {
         // TODO: implement rotate clockwise
-      }
+      },
+      disabled: true
     },
     {
       id: 'zoomIn',
       icon: ZoomIn,
       label: 'Zoom in',
-      action: () => workflowStore.zoomIn()
+      action: () => workflowStore.zoomIn(),
+      disabled: false
     },
     {
       id: 'zoomOut',
       icon: ZoomOut,
       label: 'Zoom out',
-      action: () => workflowStore.zoomOut()
+      action: () => workflowStore.zoomOut(),
+      disabled: false
     },
     {
       id: 'rotate3d',
@@ -58,7 +70,8 @@
       label: 'Rotate 3D',
       action: () => {
         // TODO: implement 3D rotation
-      }
+      },
+      disabled: true
     },
     {
       id: 'layers',
@@ -66,29 +79,31 @@
       label: 'Layers',
       action: () => {
         // TODO: implement layers
-      }
+      },
+      disabled: true
     },
     {
       id: 'shuffle',
       icon: Shuffle,
-      label: 'Shuffle',
-      action: () => {
-        // TODO: implement shuffle
-      }
+      label: 'Shuffle colors',
+      action: () => shuffleColors(),
+      disabled: false
     },
     {
       id: 'undo',
       icon: Undo2,
       label: 'Undo',
-      action: () => history.undo()
+      action: () => history.undo(),
+      disabled: isUndoDisabled.value
     },
     {
       id: 'redo',
       icon: Redo2,
       label: 'Redo',
-      action: () => history.redo()
+      action: () => history.redo(),
+      disabled: isRedoDisabled.value
     }
-  ]
+  ])
 </script>
 
 <template>
@@ -106,6 +121,7 @@
               class="rounded-full size-10 p-0 bg-card outline outline-border border-0 shadow-none"
               :aria-label="t.label"
               @click="t.action"
+              :disabled="t.disabled"
             >
               <component :is="t.icon" class="size-4" :stroke-width="1.75" />
             </Button>

@@ -19,11 +19,13 @@
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import type { OutputColor } from '@/services/products/types'
   import { useHistoryStore } from '@/stores/history/history.store'
+  import { useColorActions } from '@/composables/useColorActions'
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const { effectiveSvgGroups } = useEffectiveSelectors()
   const history = useHistoryStore()
+  const { shuffleColors } = useColorActions()
 
   // Dummy palettes – replace with real data later
   type Palette = {
@@ -110,28 +112,7 @@
   }
 
   function shuffleAll() {
-    const colors = currentPalette.value?.colors
-    if (!colors?.length || !effectiveSvgGroups.value) return
-    history.runBatch('Shuffle colors', add => {
-      effectiveSvgGroups.value?.forEach(group => {
-        const randomColor = colors[Math.floor(Math.random() * colors.length)]
-        if (!randomColor) return
-        const prevRaw =
-          customizationStore.customization?.group_colors?.[group.id]
-        const prevColor = prevRaw
-          ? {
-              name: prevRaw.name || '',
-              value: prevRaw.color || '',
-              position: 0
-            }
-          : null
-        add('color.set-group', {
-          groupId: group.id,
-          prevColor,
-          nextColor: randomColor
-        })
-      })
-    })
+    shuffleColors(currentPaletteId.value)
   }
 </script>
 

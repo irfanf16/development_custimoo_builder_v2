@@ -21,8 +21,16 @@ This project follows a clear separation of concerns between domain state (Pinia 
 1. UI triggers an action (e.g., change color) via the History store: `history.execute('color.set-group', payload)`.
 2. History registry applies the action by calling pure setters on stores.
 3. Stores mutate their slice and persist state.
-4. Effects composable reacts to workflow step changes and fetches as needed.
-5. Navigation composable computes the breadcrumb from store state.
+4. History store persists undo/redo stacks to localStorage.
+5. Effects composable reacts to workflow step changes and fetches as needed.
+6. Navigation composable computes the breadcrumb from store state.
+
+### Persistence
+
+- **Customization state**: Saved to localStorage via `customization.store.ts` `save()` method.
+- **Workflow state**: Sub-steps and active step saved to localStorage via `workflow.store.ts`.
+- **History stacks**: Undo/redo stacks persisted to localStorage and loaded on app initialization.
+- **Reset functionality**: Clears both customization and history stacks, providing a clean slate.
 
 ### Why this design
 

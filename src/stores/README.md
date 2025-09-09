@@ -7,6 +7,7 @@ Pinia stores hold domain and UI state. They expose simple, imperative setters an
 - Holds `ActiveProductCustomization`.
 - Exposes setters like `setGroupColor`, `setAddons`, `setProduct`, etc.
 - Persists to localStorage via `save()`.
+- Provides `clearCustomization()` to reset state.
 
 Example (do not call directly from components if you want undo/redo):
 
@@ -17,6 +18,7 @@ customization.setGroupColor('base', {
   value: '#0070f3',
   position: 0
 })
+customization.clearCustomization() // Resets to null
 ```
 
 With undo/redo (recommended):
@@ -61,6 +63,8 @@ wf.setLogosSubStep('list')
 
 - Centralized undo/redo with serializable entries.
 - Registry applies/reverts mutations on stores and produces descriptions.
+- Persists undo/redo stacks to localStorage automatically.
+- Provides `load()` and `clear()` for persistence management.
 
 Example:
 
@@ -74,4 +78,5 @@ await history.execute('text.set-value', {
 })
 await history.undo()
 await history.redo()
+history.clear() // Clears both stacks and persists
 ```

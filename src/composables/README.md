@@ -29,10 +29,33 @@ handleCategorySelect(12)
 
 - Centralized side effects for workflow step changes (fetch previews, recent logos, etc.).
 - Initialize once at app start, e.g. inside `useAppInitialization`.
+- Also loads history stacks from localStorage during initialization.
 
 Example:
 
 ```ts
 // In app init
 useWorkflowEffects()
+```
+
+### useAppInitialization.ts
+
+- Single entry-point to initialize the app in phases.
+- Loads localStorage state (auth, customization, workflow), loads history stacks early, fetches essentials, sets locale, determines category, loads previews, restores customization or creates defaults, initializes workflow effects.
+
+Phases overview:
+
+1. Load auth, customization, workflow sub-steps, and history stacks
+2. Fetch company + categories
+3. Initialize locale, compute effective category
+4. Fetch product previews
+5. Restore customization (A) or clear history and create defaults (B)
+6. Initialize workflow effects
+7. Mark ready
+
+Example:
+
+```ts
+const { isInitialized, initializeApp } = useAppInitialization()
+onMounted(() => initializeApp())
 ```
