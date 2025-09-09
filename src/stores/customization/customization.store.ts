@@ -7,11 +7,9 @@ import type {
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
-// import { useWorkflowStore } from '../workflow/workflow.store'
 
 export const useCustomizationStore = defineStore('customizationStore', () => {
   const productsStore = useProductsStore()
-  // const workflowStore = useWorkflowStore()
   const customization = ref<ActiveProductCustomization | null>(null)
 
   // Centralized history removed from this store; no local undo/redo here
@@ -116,9 +114,77 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     save()
   }
 
+  // Helper function to create default customization with preserved IDs
+  function createDefaultCustomization(
+    preservedIds: {
+      productId?: number
+      styleId?: number
+      designId?: number
+      categoryId?: number
+      subCategoryId?: number | null
+    } = {}
+  ): ActiveProductCustomization {
+    return {
+      fixed_logo_index: 0,
+      category_index: 0,
+      category_id: preservedIds.categoryId ?? 0,
+      design_index: 0,
+      design_id: preservedIds.designId ?? 0,
+      product_index: 0,
+      product_id: preservedIds.productId ?? 0,
+      search_products: '',
+      style_index: 0,
+      style_id: preservedIds.styleId ?? 0,
+      page_no: 1,
+      customized: true,
+      personalized: false,
+      private_product: false,
+      product_custom_texts: {},
+      custom_logos: {},
+      default_colors: [
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null },
+        { color: null, pantone: null, name: null }
+      ],
+      group_colors: {},
+      logo_colors: [],
+      roster_detail: [],
+      products_rosters: {},
+      shuffle_color_number: 0,
+      addons_info: {},
+      group_patterns: {},
+      sub_category_id: preservedIds.subCategoryId ?? null,
+      sub_category_index: null
+    } as ActiveProductCustomization
+  }
+
   function clearCustomization() {
-    customization.value = null
-    save()
+    const existing = customization.value
+    const productId =
+      (existing && Number(existing.product_id)) ||
+      productsStore.activeProductDetails?.id ||
+      0
+    const styleId =
+      (existing && Number(existing.style_id)) ||
+      productsStore.activeStyleDetails?.id ||
+      0
+    const designId =
+      (existing && Number(existing.design_id)) ||
+      productsStore.activeDesignDetails?.id ||
+      0
+    const categoryId = (existing && Number(existing.category_id)) || 0
+    const subCategoryId = existing?.sub_category_id ?? null
+
+    setCustomization(
+      createDefaultCustomization({
+        productId,
+        styleId,
+        designId,
+        categoryId,
+        subCategoryId
+      })
+    )
   }
 
   const activeProductId = computed(() =>
@@ -135,39 +201,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
   function ensureCustomization() {
     if (customization.value) return
-    setCustomization({
-      fixed_logo_index: 0,
-      category_index: 0,
-      category_id: 0,
-      design_index: 0,
-      design_id: 0,
-      product_index: 0,
-      product_id: 0,
-      search_products: '',
-      style_index: 0,
-      style_id: 0,
-      page_no: 1,
-      customized: true,
-      personalized: false,
-      private_product: false,
-      product_custom_texts: {},
-      custom_logos: {},
-      default_colors: [
-        { color: null, pantone: null, name: null },
-        { color: null, pantone: null, name: null },
-        { color: null, pantone: null, name: null },
-        { color: null, pantone: null, name: null }
-      ],
-      group_colors: {},
-      logo_colors: [],
-      roster_detail: [],
-      products_rosters: {},
-      shuffle_color_number: 0,
-      addons_info: {},
-      group_patterns: {},
-      sub_category_id: null,
-      sub_category_index: null
-    } as ActiveProductCustomization)
+    setCustomization(createDefaultCustomization())
   }
 
   function resetCustomizationToCurrentProductDefaults() {
@@ -175,39 +209,16 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const productId = productsStore.activeProductDetails?.id ?? 0
     const styleId = productsStore.activeStyleDetails?.id ?? 0
     const designId = productsStore.activeDesignDetails?.id ?? 0
-    setCustomization({
-      fixed_logo_index: 0,
-      category_index: 0,
-      category_id: customization.value?.category_id ?? 0,
-      design_index: 0,
-      design_id: designId,
-      product_index: 0,
-      product_id: productId,
-      search_products: '',
-      style_index: 0,
-      style_id: styleId,
-      page_no: 1,
-      customized: true,
-      personalized: false,
-      private_product: false,
-      product_custom_texts: {},
-      custom_logos: {},
-      default_colors: [
-        { color: null, pantone: null, name: null },
-        { color: null, pantone: null, name: null },
-        { color: null, pantone: null, name: null },
-        { color: null, pantone: null, name: null }
-      ],
-      group_colors: {},
-      logo_colors: [],
-      roster_detail: [],
-      products_rosters: {},
-      shuffle_color_number: 0,
-      addons_info: {},
-      group_patterns: {},
-      sub_category_id: null,
-      sub_category_index: null
-    } as ActiveProductCustomization)
+    const categoryId = customization.value?.category_id ?? 0
+
+    setCustomization(
+      createDefaultCustomization({
+        productId,
+        styleId,
+        designId,
+        categoryId
+      })
+    )
   }
 
   return {
