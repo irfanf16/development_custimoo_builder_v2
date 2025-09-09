@@ -222,6 +222,7 @@ export const useProductsStore = defineStore('productsStore', () => {
         setActiveStyleDetailsState(payload.productstyle)
         setActiveDesignDetailsState(payload.productdesign)
         customization.setStyle(styleId)
+        customization.setDesign(payload.productdesign.id)
         setSvgGroups()
       } else {
         setError('Error getting active style details')
@@ -271,6 +272,8 @@ export const useProductsStore = defineStore('productsStore', () => {
           details.designDetails as OutputDesignDetails
         )
         customization.setProduct(productId)
+        customization.setStyle(details.styleDetails.id)
+        customization.setDesign(details.designDetails.id)
         await setSvgGroups()
         if (!customization.customization) {
           customization.ensureCustomization()

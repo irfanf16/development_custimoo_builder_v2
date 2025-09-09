@@ -44,7 +44,7 @@
     }
   })
 
-  async function selectStyle(styleId: number) {
+  async function handleStyleSelection(styleId: number) {
     await productsStore.fetchActiveStyleDetails(styleId)
     await productsStore.fetchDesignPreviewsByStyleId(styleId)
     // keep user on Styles; breadcrumbs will show updated style name
@@ -106,7 +106,7 @@
               )
             "
             class="w-full aspect-square object-contain rounded-xl border border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/30 hover:border-border transition-colors"
-            @click="selectStyle(s.id)"
+            @click="handleStyleSelection(s.id)"
             :alt="styles_alt_icon({}, { locale: localeStore.currentLocale })"
           />
         </div>

@@ -5,7 +5,7 @@ import { useHistoryStore } from '@/stores/history/history.store'
 import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
 import type { OutputColor } from '@/services/products/types'
 
-type Palette = {
+export type Palette = {
   id: number
   name: string
   colors: OutputColor[]

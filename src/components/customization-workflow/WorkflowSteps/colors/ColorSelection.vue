@@ -20,6 +20,7 @@
   import type { OutputColor } from '@/services/products/types'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
+  import type { Palette } from '@/composables/useColorActions'
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
@@ -27,12 +28,6 @@
   const history = useHistoryStore()
   const { shuffleColors } = useColorActions()
 
-  // Dummy palettes – replace with real data later
-  type Palette = {
-    id: number
-    name: string
-    colors: OutputColor[]
-  }
   const computedPalettes = computed<Palette[] | undefined>(() => {
     return productsStore.activeProductDetails?.namecolors.map(colorGroup => ({
       id: colorGroup.id,
@@ -41,17 +36,6 @@
     }))
   })
 
-  // Three color slots shown in the UI
-  // const slotLabels = computed(
-  //   () => productsStore.svgGroups?.map(group => group.id) || []
-  // )
-  // const slotValues = ref<string[]>(['#F9C80E', '#E5E7EB', '#111827'])
-
-  // const customizedColorGroups = computed<
-  //   Record<string, APCustomizationGroupColor>
-  // >(() => {
-  //   return customizationStore.customization?.group_colors || {}
-  // })
   // Local clipboard for copy/paste between slots
   const clipboardHex = ref<string | null>(null)
 
