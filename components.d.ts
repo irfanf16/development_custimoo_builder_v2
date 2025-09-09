@@ -110,7 +110,5 @@ declare module 'vue' {
     TooltipTrigger: typeof import('./src/components/ui/tooltip/TooltipTrigger.vue')['default']
     WidgetApp: typeof import('./src/components/WidgetApp.vue')['default']
     WorkflowLayout: typeof import('./src/components/customization-workflow/WorkflowLayout.vue')['default']
-    WorkflowManager: typeof import('./src/components/customization-workflow/WorkflowManager.vue')['default']
-    WorkflowNavigation: typeof import('./src/components/customization-workflow/WorkflowNavigation.vue')['default']
   }
 }

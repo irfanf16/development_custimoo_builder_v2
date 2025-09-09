@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth/auth.store'
 import { useProductsStore } from '@/stores/products/products.store.ts'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useLocaleStore } from '@/stores/locale/locale.store'
+import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 
 // Global state to prevent multiple initializations
 // This prevents race conditions when multiple components try to initialize the app simultaneously
@@ -15,6 +16,7 @@ export function useAppInitialization() {
   const isInitialized = ref(globalIsInitialized)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const wf = useWorkflowStore()
 
   const initializeApp = async () => {
     // If already initialized globally, just return the cached result
@@ -60,10 +62,6 @@ export function useAppInitialization() {
         const customizationStore = useCustomizationStore()
         const hasActiveCustomization = customizationStore.load()
         // restore saved workflow sub-steps
-        const { useWorkflowStore } = await import(
-          '@/stores/workflow/workflow.store'
-        )
-        const wf = useWorkflowStore()
         wf.loadWorkflowSubStepsFromLocalStorage()
 
         // PHASE 2: Fetch essential data from API (blocking operations)
@@ -101,6 +99,9 @@ export function useAppInitialization() {
         // if (effectiveCategoryId) {
         //   customizationStore.setCategory(effectiveCategoryId)
         // }
+        if (effectiveCategoryId) {
+          wf.setSelectedCategoryForPreview(effectiveCategoryId)
+        }
 
         // PHASE 4: Load product data and set up customization state
 
