@@ -10,11 +10,12 @@
 
   // Workflow logic moved to composables
   import { useWorkflowManager, useWorkflowNavigation } from '@/composables'
-  const { currentStep, navigateBack, handleCategorySelect } =
-    useWorkflowManager()
-  const { navigationItems } = useWorkflowNavigation(currentStep, () =>
-    navigateBack()
-  )
+
+  const { currentStep, handleCategorySelect } = useWorkflowManager()
+  const { navigationItems } = useWorkflowNavigation(currentStep, () => {
+    // Navigate back by going to previous step in workflow store
+    // This is now handled by the workflow store itself
+  })
 </script>
 
 <template>
@@ -31,7 +32,7 @@
           <WorkflowLayout
             :current-step="currentStep"
             :navigation-items="navigationItems"
-            :on-navigate-back="navigateBack"
+            :on-navigate-back="() => {}"
             :on-category-select="handleCategorySelect"
           />
         </div>

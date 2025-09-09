@@ -5,6 +5,8 @@ import { useProductsStore } from '@/stores/products/products.store.ts'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useLocaleStore } from '@/stores/locale/locale.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+import { useWorkflowEffects } from './useWorkflowEffects'
+import { useHistoryStore } from '@/stores/history/history.store'
 
 // Global state to prevent multiple initializations
 // This prevents race conditions when multiple components try to initialize the app simultaneously
@@ -184,7 +186,15 @@ export function useAppInitialization() {
           }
         }
 
-        // PHASE 6: Mark initialization as complete
+        // PHASE 6: Load undo/redo stacks, initialize workflow effects
+        // This sets up data fetching side effects for workflow step changes
+        try {
+          const history = useHistoryStore()
+          history.load()
+        } catch (_) {}
+        useWorkflowEffects()
+
+        // PHASE 7: Mark initialization as complete
         // Set both local and global flags to prevent re-initialization
 
         isInitialized.value = true

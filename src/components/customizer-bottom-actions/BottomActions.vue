@@ -2,6 +2,7 @@
   import { Button } from '@/components/ui/button'
   import { Ruler, Save, Share2, FileText, RotateCcw } from 'lucide-vue-next'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { useHistoryStore } from '@/stores/history/history.store'
   import {
     actions_size_guide,
     actions_reset_customization,
@@ -12,10 +13,12 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const customizationStore = useCustomizationStore()
+  const history = useHistoryStore()
   const localeStore = useLocaleStore()
 
   function handleResetCustomization() {
-    customizationStore.resetCustomizationToCurrentProductDefaults()
+    customizationStore.clearCustomization()
+    history.clear()
   }
 </script>
 

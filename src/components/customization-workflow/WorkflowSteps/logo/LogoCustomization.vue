@@ -3,6 +3,7 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useHistoryStore } from '@/stores/history/history.store'
   import type {
     OutputProductDetails,
     OutputStyleDetails,
@@ -35,6 +36,7 @@
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const localeStore = useLocaleStore()
+  const history = useHistoryStore()
 
   type SubPanel = 'list' | 'placement' | 'edit'
   const subPanel = ref<SubPanel>('list')
@@ -69,7 +71,32 @@
   })
 
   function handleSelectRecentLogo(_logo: OutputRecentLogo) {
-    // TODO: implement addCustomLogoFromRecent in customization/workflow if needed
+    const key = String(customizationStore.customization?.product_id || '')
+    const logo = {
+      id: _logo.id,
+      product_id: productsStore.activeProductDetails?.id || 0,
+      product_style_id: productsStore.activeStyleDetails?.id || null,
+      following_product_ids: null,
+      rotation: 0,
+      originalWidth: 0,
+      originalHeight: 0,
+      width: 0,
+      height: 0,
+      name_of_placement: '',
+      side: 'front' as const,
+      x_axis: 0,
+      y_axis: 0,
+      x_axis_3d: 0,
+      y_axis_3d: 0,
+      is_locked: 0,
+      logo_name: _logo.logo_name,
+      url: _logo.url,
+      haveControls: true,
+      logo_colors: [],
+      is_replace_success: false,
+      logo_index: 0
+    }
+    history.execute('logo.add', { key, logo })
     goToControls()
   }
 

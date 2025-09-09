@@ -18,10 +18,12 @@
   } from '@/components/ui/select'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import type { OutputColor } from '@/services/products/types'
+  import { useHistoryStore } from '@/stores/history/history.store'
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const { effectiveSvgGroups } = useEffectiveSelectors()
+  const history = useHistoryStore()
 
   // Dummy palettes – replace with real data later
   type Palette = {
@@ -83,7 +85,16 @@
   const currentPaletteId = ref<number>(computedPalettes.value?.[0]?.id || 0)
 
   function setGroupColor(colorGroupId: string, color: OutputColor) {
-    customizationStore.setGroupColor(colorGroupId, color)
+    const prevRaw =
+      customizationStore.customization?.group_colors?.[colorGroupId]
+    const prevColor = prevRaw
+      ? { name: prevRaw.name || '', value: prevRaw.color || '', position: 0 }
+      : null
+    history.execute('color.set-group', {
+      groupId: colorGroupId,
+      prevColor,
+      nextColor: color
+    })
   }
 
   function copyFrom(groupId: string) {
@@ -101,12 +112,25 @@
   function shuffleAll() {
     const colors = currentPalette.value?.colors
     if (!colors?.length || !effectiveSvgGroups.value) return
-    // For each group, assign a random color from the palette using setGroupColor
-    effectiveSvgGroups.value.forEach(group => {
-      const randomColor = colors[Math.floor(Math.random() * colors.length)]
-      if (randomColor) {
-        setGroupColor(group.id, randomColor)
-      }
+    history.runBatch('Shuffle colors', add => {
+      effectiveSvgGroups.value?.forEach(group => {
+        const randomColor = colors[Math.floor(Math.random() * colors.length)]
+        if (!randomColor) return
+        const prevRaw =
+          customizationStore.customization?.group_colors?.[group.id]
+        const prevColor = prevRaw
+          ? {
+              name: prevRaw.name || '',
+              value: prevRaw.color || '',
+              position: 0
+            }
+          : null
+        add('color.set-group', {
+          groupId: group.id,
+          prevColor,
+          nextColor: randomColor
+        })
+      })
     })
   }
 </script>

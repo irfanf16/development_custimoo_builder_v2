@@ -7,7 +7,7 @@ import type {
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
-import { useWorkflowStore } from '../workflow/workflow.store'
+// import { useWorkflowStore } from '../workflow/workflow.store'
 
 type SelectionKey =
   | 'category_id'
@@ -28,12 +28,13 @@ type SelectionCommand = {
 
 export const useCustomizationStore = defineStore('customizationStore', () => {
   const productsStore = useProductsStore()
-  const workflowStore = useWorkflowStore()
+  // const workflowStore = useWorkflowStore()
   const customization = ref<ActiveProductCustomization | null>(null)
 
+  // Deprecated local history in favor of centralized history store
   const undoStack = ref<SelectionCommand[]>([])
   const redoStack = ref<SelectionCommand[]>([])
-  const isApplying = ref(false)
+  // const isApplying = ref(false)
 
   function save() {
     if (typeof window === 'undefined') return
@@ -41,14 +42,17 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       'activeProductCustomization',
       JSON.stringify(customization.value)
     )
-    window.localStorage.setItem(
-      'selection.undo',
-      JSON.stringify(undoStack.value)
-    )
-    window.localStorage.setItem(
-      'selection.redo',
-      JSON.stringify(redoStack.value)
-    )
+    // legacy persistence for old history kept for backward compatibility
+    try {
+      window.localStorage.setItem(
+        'selection.undo',
+        JSON.stringify(undoStack.value)
+      )
+      window.localStorage.setItem(
+        'selection.redo',
+        JSON.stringify(redoStack.value)
+      )
+    } catch (_) {}
   }
 
   function load(): boolean {
@@ -82,6 +86,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   }
 
   function pushCommand(cmd: SelectionCommand) {
+    // centralized history now handles pushing; keep no-op for older callers
     undoStack.value.push(cmd)
     redoStack.value = []
     save()
@@ -205,65 +210,23 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     save()
   }
 
-  async function applyCommand(cmd: SelectionCommand) {
-    switch (cmd.key) {
-      case 'category_id':
-        customization.value!.category_id = cmd.next as number
-        // workflowStore.handleCategorySelect(cmd.next as number)
-        await productsStore.fetchProductPreviews(cmd.next as number)
-        break
-      case 'sub_category_id':
-        customization.value!.sub_category_id = cmd.next as number
-        break
-      case 'product_id':
-        customization.value!.product_id = cmd.next as number
-        break
-      case 'style_id':
-        customization.value!.style_id = cmd.next as number
-        break
-      case 'design_id':
-        customization.value!.design_id = cmd.next as number
-        break
-      case 'addons': {
-        const key = customization.value!.product_id
-        if (!customization.value!.addons_info)
-          customization.value!.addons_info =
-            {} as import('@/services/products/types').APCustomizationAddonsInfo
-        customization.value!.addons_info[key] = {
-          grouped_addons: {},
-          ungrouped_addons: [],
-          simple_addons: cmd.next as number[]
-        }
-        break
-      }
-    }
-  }
+  // applyCommand and local undo/redo are deprecated in favor of centralized history
 
   async function undo() {
-    if (isApplying.value || !undoStack.value.length || !customization.value)
-      return
-    const cmd = undoStack.value.pop()!
-    const inverse: SelectionCommand = { ...cmd, prev: cmd.next, next: cmd.prev }
-    redoStack.value.push(cmd)
-    isApplying.value = true
-    applyCommand(inverse)
-    isApplying.value = false
-    save()
+    // deprecated: use centralized history store instead
   }
 
   async function redo() {
-    if (isApplying.value || !redoStack.value.length || !customization.value)
-      return
-    const cmd = redoStack.value.pop()!
-    undoStack.value.push(cmd)
-    isApplying.value = true
-    applyCommand(cmd)
-    isApplying.value = false
-    save()
+    // deprecated: use centralized history store instead
   }
 
   function setCustomization(initial: ActiveProductCustomization) {
     customization.value = initial
+    save()
+  }
+
+  function clearCustomization() {
+    customization.value = null
     save()
   }
 
@@ -380,6 +343,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     redo,
     ensureCustomization,
     resetCustomizationToCurrentProductDefaults,
-    setGroupColor
+    setGroupColor,
+    clearCustomization
   }
 })
