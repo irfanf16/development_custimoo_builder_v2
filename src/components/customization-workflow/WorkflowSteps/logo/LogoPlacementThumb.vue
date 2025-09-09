@@ -33,7 +33,7 @@
       y: s.y_axis * scale - (s.height * scale) / 2,
       width: s.height * scale,
       height: s.height * scale,
-      color: 'rgba(107,114,128,0.35)'
+      color: 'rgba(55,65,81,0.45)'
     }
 
     return scaledRect
