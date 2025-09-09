@@ -16,15 +16,74 @@
   const workflowStore = useWorkflowStore()
 
   const tools = [
-    { id: 'rotateCcw', icon: RotateCcw, label: 'Rotate CCW' },
-    { id: 'rotateCw', icon: RotateCw, label: 'Rotate CW' },
-    { id: 'zoomIn', icon: ZoomIn, label: 'Zoom in' },
-    { id: 'zoomOut', icon: ZoomOut, label: 'Zoom out' },
-    { id: 'rotate3d', icon: Rotate3D, label: 'Rotate 3D' },
-    { id: 'layers', icon: Layers3, label: 'Layers' },
-    { id: 'shuffle', icon: Shuffle, label: 'Shuffle' },
-    { id: 'undo', icon: Undo2, label: 'Undo' },
-    { id: 'redo', icon: Redo2, label: 'Redo' }
+    {
+      id: 'rotateCcw',
+      icon: RotateCcw,
+      label: 'Rotate CCW',
+      action: () => {
+        // TODO: implement rotate counter-clockwise
+      }
+    },
+    {
+      id: 'rotateCw',
+      icon: RotateCw,
+      label: 'Rotate CW',
+      action: () => {
+        // TODO: implement rotate clockwise
+      }
+    },
+    {
+      id: 'zoomIn',
+      icon: ZoomIn,
+      label: 'Zoom in',
+      action: () => workflowStore.zoomIn()
+    },
+    {
+      id: 'zoomOut',
+      icon: ZoomOut,
+      label: 'Zoom out',
+      action: () => workflowStore.zoomOut()
+    },
+    {
+      id: 'rotate3d',
+      icon: Rotate3D,
+      label: 'Rotate 3D',
+      action: () => {
+        // TODO: implement 3D rotation
+      }
+    },
+    {
+      id: 'layers',
+      icon: Layers3,
+      label: 'Layers',
+      action: () => {
+        // TODO: implement layers
+      }
+    },
+    {
+      id: 'shuffle',
+      icon: Shuffle,
+      label: 'Shuffle',
+      action: () => {
+        // TODO: implement shuffle
+      }
+    },
+    {
+      id: 'undo',
+      icon: Undo2,
+      label: 'Undo',
+      action: () => {
+        // TODO: implement undo
+      }
+    },
+    {
+      id: 'redo',
+      icon: Redo2,
+      label: 'Redo',
+      action: () => {
+        // TODO: implement redo
+      }
+    }
   ]
 </script>
 
@@ -40,13 +99,7 @@
       size="icon"
       class="rounded-full size-10 p-0 bg-card outline outline-border border-0 shadow-none"
       :aria-label="t.label"
-      @click="
-        t.id === 'zoomIn'
-          ? workflowStore.zoomIn()
-          : t.id === 'zoomOut'
-            ? workflowStore.zoomOut()
-            : null
-      "
+      @click="t.action"
     >
       <component :is="t.icon" class="size-4" :stroke-width="1.75" />
     </Button>
