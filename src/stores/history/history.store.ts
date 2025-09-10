@@ -106,10 +106,10 @@ export const useHistoryStore = defineStore('historyStore', () => {
   const canUndo = computed(() => undoStack.value.length > 0)
   const canRedo = computed(() => redoStack.value.length > 0)
   const nextUndoDescription = computed(
-    () => undoStack.value.at(-1)?.description || null
+    () => undoStack.value[undoStack.value.length - 1]?.description || null
   )
   const nextRedoDescription = computed(
-    () => redoStack.value.at(-1)?.description || null
+    () => redoStack.value[redoStack.value.length - 1]?.description || null
   )
 
   return {
