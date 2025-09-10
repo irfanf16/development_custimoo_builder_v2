@@ -3,6 +3,8 @@
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import Switch from '@/components/ui/switch/Switch.vue'
+  import Label from '@/components/ui/label/Label.vue'
 
   const customizationStore = useCustomizationStore()
 
@@ -12,6 +14,8 @@
   const selectedDesignId = computed(() => customizationStore.activeDesignId)
 
   const designSelectionContainer = ref<HTMLElement | null>(null)
+
+  const applyCustomizationOverrides = ref(false)
 
   onMounted(async () => {
     if (!productsStore.designPreviews) {
@@ -57,6 +61,10 @@
 </script>
 
 <template>
+  <div class="flex items-center gap-2">
+    <Switch v-model="applyCustomizationOverrides" />
+    <Label>Preview with customization overrides</Label>
+  </div>
   <div ref="designSelectionContainer" class="flex flex-wrap mb-6">
     <div
       v-for="item in previews"
@@ -87,6 +95,7 @@
           :design-base="item"
           :width="176"
           :height="176"
+          :apply-customization-overrides="applyCustomizationOverrides"
           class="rounded-xl"
         />
       </div>

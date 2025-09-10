@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   Canvas,
   FabricImage,
@@ -25,7 +25,9 @@ type FitOptions = {
   padding?: number
 }
 
-export function useFabricPreview() {
+export function useFabricPreview(
+  applyActiveCustomizationOverrides = computed(() => true)
+) {
   // ===== STATE =====
   const canvasEl = ref<HTMLCanvasElement | null>(null)
   const canvas = ref<Canvas | null>(null)
@@ -131,18 +133,20 @@ export function useFabricPreview() {
       const group = await getSvgGroup(url, ext)
       if (!group) return
 
-      // Apply color overrides from effective svg groups
-      const effectiveSvgGroups =
-        useEffectiveSelectors().effectiveSvgGroups.value
-      if (effectiveSvgGroups) {
-        effectiveSvgGroups?.forEach(effectiveGroup => {
-          const object = group._objects.find(
-            (o: any) => o.id === effectiveGroup.id
-          )
-          if (object && object.fill !== effectiveGroup.color) {
-            object.fill = effectiveGroup.color
-          }
-        })
+      // Apply color overrides from effective svg groups if applyActiveCustomizationOverrides is true
+      if (applyActiveCustomizationOverrides.value) {
+        const effectiveSvgGroups =
+          useEffectiveSelectors().effectiveSvgGroups.value
+        if (effectiveSvgGroups) {
+          effectiveSvgGroups?.forEach(effectiveGroup => {
+            const object = group._objects.find(
+              (o: any) => o.id === effectiveGroup.id
+            )
+            if (object && object.fill !== effectiveGroup.color) {
+              object.fill = effectiveGroup.color
+            }
+          })
+        }
       }
 
       fitObject(group)

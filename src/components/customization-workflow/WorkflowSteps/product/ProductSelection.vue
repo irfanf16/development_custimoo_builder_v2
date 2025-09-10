@@ -99,6 +99,7 @@
           :design-base="item.designPreview"
           :width="176"
           :height="176"
+          :apply-customization-overrides="false"
           class="rounded-xl"
         />
 
