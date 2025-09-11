@@ -56,12 +56,29 @@
   // Breadcrumb logic for design selection
   const breadcrumbs = computed(() => [{ label: 'Designs' }])
 
+  // Header search config
+  const designSearchQuery = ref('')
+  const filteredPreviews = computed(() => {
+    const q = designSearchQuery.value.trim().toLowerCase()
+    if (!q) return previews.value
+    return previews.value.filter(d =>
+      d.front_design.design_name.toLowerCase().includes(q)
+    )
+  })
+
   // Expose to parent
-  defineExpose({ breadcrumbs })
+  const headerExtras = {
+    search: {
+      placeholder: 'Search designs...',
+      model: designSearchQuery,
+      onInput: (val: string) => (designSearchQuery.value = val)
+    }
+  }
+  defineExpose({ breadcrumbs, headerExtras })
 
   // Hint to TS that these are used via the template
   void ProductPreviewCanvas
-  void previews
+  void filteredPreviews
   void selectedDesignId
   void designSelectionContainer
   void selectDesign
@@ -71,7 +88,7 @@
   <!-- Content -->
   <div ref="designSelectionContainer" class="flex flex-wrap mb-6">
     <div
-      v-for="item in previews"
+      v-for="item in filteredPreviews"
       :key="item.id"
       :id="`design-${item.id}`"
       class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"

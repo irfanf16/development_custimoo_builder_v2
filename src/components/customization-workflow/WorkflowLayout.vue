@@ -1,9 +1,10 @@
 <script setup lang="ts">
-  import { computed, ref, isRef } from 'vue'
+  import { computed, ref, isRef, type Ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { Button } from '@/components/ui/button'
   import { Maximize2, Minimize2 } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
+  import { useWorkflowNavigation } from '@/composables/useWorkflowNavigation'
   import {
     CategorySelection,
     SubcategorySelection,
@@ -57,6 +58,13 @@
     breadcrumbs?: ComputedRef<BreadcrumbItem[]>
   } | null>(null)
 
+  // Navigation fallback derived from workflow state
+  const routeStepRef = computed(() => props.currentStep) as unknown as Ref<any>
+  const { navigationItems } = useWorkflowNavigation(
+    routeStepRef,
+    props.onNavigateBack
+  )
+
   // Computed properties for workflow step configuration
   const contentKey = computed(() => {
     return props.currentStep === 'logos'
@@ -71,10 +79,20 @@
   // Get breadcrumbs from current step component
   const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => {
     const exposed = currentStepRef.value?.breadcrumbs as unknown
-    if (!exposed) return [{ label: 'Category' }]
-    return isRef(exposed)
-      ? (exposed as ComputedRef<BreadcrumbItem[]>).value
-      : (exposed as BreadcrumbItem[])
+    if (exposed) {
+      return isRef(exposed)
+        ? (exposed as ComputedRef<BreadcrumbItem[]>).value
+        : (exposed as BreadcrumbItem[])
+    }
+    // Fallback to centralized navigation when panel doesn't expose breadcrumbs
+    return navigationItems.value
+  })
+
+  // Header extras (e.g., search) exposed by the active panel
+  const headerSearch = computed(() => {
+    const extras = (currentStepRef.value as unknown as { headerExtras?: any })
+      ?.headerExtras
+    return extras?.search
   })
 
   const toggleExpanded = () => {
@@ -108,21 +126,39 @@
     >
       <!-- Header slot -->
       <template #header="{ isExpanded }">
-        <div
-          class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
-        >
-          <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
-        </div>
+        <div class="w-full flex flex-col gap-5">
+          <div class="flex items-center gap-3">
+            <div
+              class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
+            >
+              <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
+            </div>
 
-        <Button
-          v-if="isExpandable"
-          variant="outline"
-          size="icon"
-          class="rounded-lg"
-          @click="toggleExpanded"
-        >
-          <component :is="isExpanded ? Minimize2 : Maximize2" class="size-4" />
-        </Button>
+            <Button
+              v-if="isExpandable"
+              variant="outline"
+              size="icon"
+              class="rounded-lg"
+              @click="toggleExpanded"
+            >
+              <component
+                :is="isExpanded ? Minimize2 : Maximize2"
+                class="size-4"
+              />
+            </Button>
+          </div>
+
+          <div v-if="headerSearch" class="flex items-center flex-1">
+            <input
+              class="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              :placeholder="headerSearch.placeholder || 'Search...'"
+              :value="headerSearch.model?.value ?? ''"
+              @input="
+                headerSearch.onInput(($event.target as HTMLInputElement).value)
+              "
+            />
+          </div>
+        </div>
       </template>
       <!-- Category Selection Step -->
       <CategorySelection
@@ -155,7 +191,10 @@
       />
 
       <!-- Logo Customization Step -->
-      <LogoCustomization v-else-if="currentStep === 'logos'" />
+      <LogoCustomization
+        v-else-if="currentStep === 'logos'"
+        ref="currentStepRef"
+      />
 
       <!-- Colors -->
       <ColorSelection
@@ -171,18 +210,24 @@
       <PatternGroupSelection v-else-if="currentStep === 'patterns-group'" />
 
       <!-- Texts -->
-      <TextsSelection v-else-if="currentStep === 'texts'" />
+      <TextsSelection
+        v-else-if="currentStep === 'texts'"
+        ref="currentStepRef"
+      />
       <TextPlacement
         v-else-if="currentStep === 'texts-placement'"
         ref="currentStepRef"
       />
 
       <!-- Roster -->
-      <RosterEntry v-else-if="currentStep === 'roster'" />
+      <RosterEntry v-else-if="currentStep === 'roster'" ref="currentStepRef" />
       <RosterEdit v-else-if="currentStep === 'roster-edit'" />
 
       <!-- Summary -->
-      <SummaryPanel v-else-if="currentStep === 'summary'" />
+      <SummaryPanel
+        v-else-if="currentStep === 'summary'"
+        ref="currentStepRef"
+      />
     </WorkflowPanel>
   </div>
 </template>

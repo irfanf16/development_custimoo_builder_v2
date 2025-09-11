@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, watch, nextTick } from 'vue'
+  import { computed, onMounted, watch, nextTick, ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -120,13 +120,31 @@
   })
 
   // Expose breadcrumbs to parent component
-  defineExpose({ breadcrumbs })
+  // Header search config
+  const productSearchQuery = ref('')
+  const filteredPreviews = computed(() => {
+    const q = productSearchQuery.value.trim().toLowerCase()
+    if (!q) return previews.value
+    return previews.value.filter(p =>
+      p.productPreview.display_name.toLowerCase().includes(q)
+    )
+  })
+
+  const headerExtras = {
+    search: {
+      placeholder: 'Search...',
+      model: productSearchQuery,
+      onInput: (val: string) => (productSearchQuery.value = val)
+    }
+  }
+
+  defineExpose({ breadcrumbs, headerExtras })
 </script>
 
 <template>
   <div class="flex flex-wrap mb-6">
     <div
-      v-for="item in previews"
+      v-for="item in filteredPreviews"
       :key="item.productPreview.id"
       :id="`product-${item.productPreview.id}`"
       class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"
