@@ -6,29 +6,10 @@
     CardContent,
     CardFooter
   } from '@/components/ui/card'
-  import { Button } from '@/components/ui/button'
-  import { Maximize2, Minimize2 } from 'lucide-vue-next'
-  import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator
-  } from '@/components/ui/breadcrumb'
-
-  interface BreadcrumbItem {
-    label: string
-    action?: () => void
-    isActive?: boolean
-  }
 
   interface Props {
-    breadcrumbs?: BreadcrumbItem[]
     expandable?: boolean
     isExpanded?: boolean
-    showBackButton?: boolean
-    onBack?: () => void
     contentKey?: string | number
   }
 
@@ -38,8 +19,7 @@
 
   const props = withDefaults(defineProps<Props>(), {
     expandable: false,
-    isExpanded: false,
-    showBackButton: false
+    isExpanded: false
   })
 
   const emit = defineEmits<Emits>()
@@ -47,35 +27,7 @@
   // Use computed to get the current expanded state from props
   const isExpanded = computed(() => props.isExpanded)
 
-  const currentBreadcrumbIndex = ref(0)
   const cardContentRef = ref<HTMLElement | null>(null)
-
-  const toggleExpanded = () => {
-    if (props.expandable) {
-      emit('update:isExpanded', !props.isExpanded)
-    }
-  }
-
-  const handleBreadcrumbClick = (index: number) => {
-    if (
-      index < currentBreadcrumbIndex.value &&
-      props.breadcrumbs?.[index]?.action
-    ) {
-      props.breadcrumbs[index].action?.()
-      emit('update:isExpanded', false)
-    }
-  }
-
-  // Watch for breadcrumb changes to update active state
-  watch(
-    () => props.breadcrumbs,
-    newBreadcrumbs => {
-      if (newBreadcrumbs) {
-        currentBreadcrumbIndex.value = newBreadcrumbs.length - 1
-      }
-    },
-    { immediate: true }
-  )
 
   // Collapse panel when switching to a different content key (panel)
   watch(
@@ -194,56 +146,14 @@
       class="h-full max-h-[80vh] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 overflow-hidden flex flex-col py-0"
       :class="isExpanded ? 'w-[75vw]' : 'w-[470px]'"
     >
-      <CardHeader
-        class="py-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem] flex-shrink-0"
-      >
-        <div
-          class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
+      <!-- Header slot - panels can provide their own header content -->
+      <template v-if="$slots.header">
+        <CardHeader
+          class="py-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem] flex-shrink-0"
         >
-          <!-- Breadcrumb Navigation -->
-          <Breadcrumb
-            v-if="breadcrumbs && breadcrumbs.length > 0"
-            class="min-w-0 overflow-hidden"
-          >
-            <BreadcrumbList>
-              <template v-for="(item, index) in breadcrumbs" :key="index">
-                <Transition name="breadcrumb-item" appear>
-                  <BreadcrumbItem
-                    :class="{
-                      'cursor-pointer': index < currentBreadcrumbIndex
-                    }"
-                    @click="handleBreadcrumbClick(index)"
-                  >
-                    <BreadcrumbLink
-                      v-if="index < currentBreadcrumbIndex"
-                      class="hover:text-primary transition-colors truncate max-w-[280px]"
-                    >
-                      {{ item.label }}
-                    </BreadcrumbLink>
-                    <BreadcrumbPage v-else class="truncate max-w-[280px]">
-                      {{ item.label }}
-                    </BreadcrumbPage>
-
-                    <BreadcrumbSeparator
-                      v-if="index < breadcrumbs.length - 1"
-                    />
-                  </BreadcrumbItem>
-                </Transition>
-              </template>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-
-        <Button
-          v-if="expandable"
-          variant="outline"
-          size="icon"
-          class="rounded-lg"
-          @click="toggleExpanded"
-        >
-          <component :is="isExpanded ? Minimize2 : Maximize2" class="size-4" />
-        </Button>
-      </CardHeader>
+          <slot name="header" :is-expanded="isExpanded" />
+        </CardHeader>
+      </template>
 
       <CardContent class="p-0 flex-1 min-h-0">
         <!-- Content slot for different panel types -->
@@ -253,10 +163,7 @@
             :key="props.contentKey"
             class="h-full overflow-y-auto [scrollbar-gutter:stable] max-h-[60vh]"
           >
-            <slot
-              :is-expanded="isExpanded"
-              :current-breadcrumb="currentBreadcrumbIndex"
-            />
+            <slot :is-expanded="isExpanded" />
           </div>
         </Transition>
       </CardContent>
@@ -272,22 +179,6 @@
 </template>
 
 <style scoped>
-  /* Smooth transitions for breadcrumb items */
-  .breadcrumb-item-enter-active,
-  .breadcrumb-item-leave-active {
-    transition: all 200ms ease;
-  }
-
-  .breadcrumb-item-enter-from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-
-  .breadcrumb-item-leave-to {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
   /* Content slide/fade transitions */
   .panel-slide-enter-active,
   .panel-slide-leave-active {

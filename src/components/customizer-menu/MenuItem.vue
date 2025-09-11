@@ -16,7 +16,7 @@
   const buttonClass = computed(() =>
     isActive.value
       ? 'w-[4.5rem] h-[4.5rem] p-4 rounded-2xl animate text-primary-foreground display'
-      : 'w-[4.5rem] h-[4.5rem] p-4 rounded-2xl animate'
+      : 'w-[4.5rem] h-[4.5rem] p-4 rounded-2xl animate bg-card'
   )
 </script>
 

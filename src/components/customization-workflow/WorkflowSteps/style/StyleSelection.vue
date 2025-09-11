@@ -12,6 +12,7 @@
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
+  // no emits
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const localeStore = useLocaleStore()
@@ -76,9 +77,18 @@
       title: a.title
     })) as Array<{ addon_id: number; title: string }>
   })
+
+  // Breadcrumb logic for style selection
+  const breadcrumbs = computed(() => {
+    const title = productsStore.activeProductDetails?.display_name || 'Styles'
+    return [{ label: title }]
+  })
+
+  defineExpose({ breadcrumbs })
 </script>
 
 <template>
+  <!-- Content -->
   <div class="flex flex-col gap-6 pr-4 mx-6">
     <div class="flex flex-col gap-2">
       <div
@@ -136,7 +146,6 @@
           </Label>
         </div>
       </div>
-      <!-- Prev/Next moved to MenuPanel footer slot -->
     </div>
   </div>
 </template>

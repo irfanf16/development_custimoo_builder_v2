@@ -4,14 +4,24 @@
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
 
-  const customizationStore = useCustomizationStore()
+  interface Emits {
+    (
+      e: 'scroll-to-element',
+      elementId: string,
+      behavior?: 'smooth' | 'auto'
+    ): void
+  }
 
+  const emit = defineEmits<Emits>()
+  const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
 
   const previews = computed(() => productsStore.designPreviews || [])
   const selectedDesignId = computed(() => customizationStore.activeDesignId)
-
   const designSelectionContainer = ref<HTMLElement | null>(null)
+  const applyCustomizationOverrides = ref(false)
+  // Mark used via template
+  void applyCustomizationOverrides
 
   onMounted(async () => {
     if (!productsStore.designPreviews) {
@@ -24,7 +34,7 @@
     nextTick(() => {
       const activeDesignId = customizationStore.customization?.design_id
       if (activeDesignId) {
-        // Small delay to ensure MenuPanel is fully mounted
+        // Small delay to ensure WorkflowPanel is fully mounted
         setTimeout(() => {
           emit('scroll-to-element', `design-${activeDesignId}`, 'auto')
         }, 100)
@@ -32,31 +42,33 @@
     })
   })
 
-  interface Emits {
-    (e: 'update:isExpanded', value: boolean): void
-    (
-      e: 'scroll-to-element',
-      elementId: string,
-      behavior?: 'smooth' | 'auto'
-    ): void
-  }
-
-  const emit = defineEmits<Emits>()
-
   async function selectDesign(
     item: import('@/services/products/types').OutputDesignPreview
   ) {
     console.log('selectDesign', item)
-    emit('update:isExpanded', false)
     productsStore.applyDesignPreview(item)
     // Scroll to selected design with smooth animation
     setTimeout(() => {
       emit('scroll-to-element', `design-${item.id}`, 'smooth')
     }, 300)
   }
+
+  // Breadcrumb logic for design selection
+  const breadcrumbs = computed(() => [{ label: 'Designs' }])
+
+  // Expose to parent
+  defineExpose({ breadcrumbs })
+
+  // Hint to TS that these are used via the template
+  void ProductPreviewCanvas
+  void previews
+  void selectedDesignId
+  void designSelectionContainer
+  void selectDesign
 </script>
 
 <template>
+  <!-- Content -->
   <div ref="designSelectionContainer" class="flex flex-wrap mb-6">
     <div
       v-for="item in previews"
@@ -87,6 +99,7 @@
           :design-base="item"
           :width="176"
           :height="176"
+          :apply-customization-overrides="applyCustomizationOverrides"
           class="rounded-xl"
         />
       </div>

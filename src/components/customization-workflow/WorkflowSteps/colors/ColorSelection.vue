@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref, computed, type Ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
   // import type { APCustomizationGroupColor } from '@/services/products/types'
@@ -21,9 +21,24 @@
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
   import type { Palette } from '@/composables/useColorActions'
+  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import {
+    color_shuffle_design_colors,
+    color_shuffle_heading_1,
+    color_shuffle_heading_2,
+    color_shuffle_heading_3,
+    color_shuffle_heading_4,
+    color_shuffle_text_1,
+    color_shuffle_text_2,
+    color_shuffle_text_3,
+    color_shuffle_text_4
+  } from '@/paraglide/messages'
+  // no emits
+
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
+  const localeStore = useLocaleStore()
   const { effectiveSvgGroups } = useEffectiveSelectors()
   const history = useHistoryStore()
   const { shuffleColors } = useColorActions()
@@ -54,6 +69,31 @@
         value: palette.id
       })) ?? []
   )
+
+  const shuffleColorsHeadingIndex: Ref<0 | 1 | 2 | 3> = ref(
+    Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3
+  )
+  const shuffleColorsTextIndex: Ref<0 | 1 | 2 | 3> = ref(
+    Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3
+  )
+
+  const shuffleColorsHeadings = computed(() => {
+    return [
+      color_shuffle_heading_1({}, { locale: localeStore.currentLocale }),
+      color_shuffle_heading_2({}, { locale: localeStore.currentLocale }),
+      color_shuffle_heading_3({}, { locale: localeStore.currentLocale }),
+      color_shuffle_heading_4({}, { locale: localeStore.currentLocale })
+    ]
+  })
+
+  const shuffleColorsTexts = computed(() => {
+    return [
+      color_shuffle_text_1({}, { locale: localeStore.currentLocale }),
+      color_shuffle_text_2({}, { locale: localeStore.currentLocale }),
+      color_shuffle_text_3({}, { locale: localeStore.currentLocale }),
+      color_shuffle_text_4({}, { locale: localeStore.currentLocale })
+    ]
+  })
 
   // The currently selected palette object
   const currentPalette = computed(() => {
@@ -96,38 +136,62 @@
   }
 
   function shuffleAll() {
+    // Assign a random number from 0 to 3 that is not the same as the current value
+    function getRandomIndexExcluding(current: number): 0 | 1 | 2 | 3 {
+      const options = [0, 1, 2, 3].filter(i => i !== current)
+      return options[Math.floor(Math.random() * options.length)] as
+        | 0
+        | 1
+        | 2
+        | 3
+    }
+    shuffleColorsHeadingIndex.value = getRandomIndexExcluding(
+      shuffleColorsHeadingIndex.value
+    )
+    shuffleColorsTextIndex.value = getRandomIndexExcluding(
+      shuffleColorsTextIndex.value
+    )
     shuffleColors(currentPaletteId.value)
   }
+
+  // Breadcrumb logic for color selection
+  const breadcrumbs = computed(() => [{ label: 'Color' }])
+
+  defineExpose({ breadcrumbs })
 </script>
 
 <template>
+  <!-- Content -->
   <div class="flex flex-col gap-6">
     <!-- Lucky / Locker actions -->
     <div class="rounded-xl border border-border bg-muted/40 p-4 mx-6">
-      <div class="flex items-start gap-4">
+      <div class="flex items-start gap-3">
         <i-flex-line-paint-palette class="size-10 text-primary" />
         <div class="flex-1">
           <div class="text-base font-semibold text-foreground">
-            Feeling lucky?
+            {{ shuffleColorsHeadings[shuffleColorsHeadingIndex] }}
           </div>
           <div class="text-sm text-muted-foreground">
-            Let’s see what the color gods decide.
+            {{ shuffleColorsTexts[shuffleColorsTextIndex] }}
           </div>
         </div>
       </div>
       <div class="mt-4">
-        <Button class="w-full" variant="default" @click="shuffleAll"
-          >Shuffle</Button
-        >
+        <Button class="w-full" variant="default" @click="shuffleAll">{{
+          color_shuffle_design_colors({}, { locale: localeStore.currentLocale })
+        }}</Button>
       </div>
       <div
-        class="relative my-4 flex items-center justify-center text-xs text-muted-foreground"
+        class="my-4 flex items-center justify-center text-xs text-muted-foreground gap-2"
       >
-        <span class="px-3 bg-card">or</span>
-        <div class="absolute inset-x-0 h-px bg-border"></div>
+        <div class="flex-1 h-px bg-border" />
+        <span class="px-3 text-foreground font-medium">or</span>
+        <div class="flex-1 h-px bg-border" />
       </div>
       <div>
-        <Button class="w-full" variant="outline">Choose from locker</Button>
+        <Button class="w-full bg-card" variant="outline"
+          >Choose from locker</Button
+        >
       </div>
     </div>
 

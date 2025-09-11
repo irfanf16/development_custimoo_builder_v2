@@ -1,8 +1,11 @@
 <script setup lang="ts">
+  import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  // import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { flexDuoCategoryIcons } from '@/icons/flex-duo-categories'
   import { ChevronRight } from 'lucide-vue-next'
+
   interface Props {
     onSelectCategory?: (categoryId: number) => void
   }
@@ -10,6 +13,7 @@
   const props = defineProps<Props>()
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
+  // const customizationStore = useCustomizationStore()
 
   async function handleSelectCategory(categoryId: number) {
     workflowStore.setSelectedCategoryForPreview(categoryId)
@@ -65,6 +69,12 @@
 
   const getCategoryIcon = (index: number) =>
     fallbackFlexDuoIcons[index % fallbackFlexDuoIcons.length]
+
+  // Expose breadcrumb data to parent
+  const breadcrumbs = computed(() => [{ label: 'Category' }])
+
+  // Expose breadcrumbs to parent component
+  defineExpose({ breadcrumbs })
 </script>
 
 <template>

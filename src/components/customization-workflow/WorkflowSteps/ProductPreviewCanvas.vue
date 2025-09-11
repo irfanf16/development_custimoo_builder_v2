@@ -1,5 +1,12 @@
 <script setup lang="ts">
-  import { onMounted, onBeforeUnmount, watch, ref, type PropType } from 'vue'
+  import {
+    onMounted,
+    onBeforeUnmount,
+    watch,
+    ref,
+    type PropType,
+    computed
+  } from 'vue'
   import { Rect } from 'fabric'
   import type {
     OutputProductPreview,
@@ -23,6 +30,7 @@
     height: { type: Number, default: 176 },
     side: { type: String as PropType<'front' | 'back'>, default: 'front' },
     class: { type: String, default: '' },
+    applyCustomizationOverrides: { type: Boolean, default: true },
     overlayRect: {
       type: Object as PropType<
         | {
@@ -48,7 +56,7 @@
     requestRender,
     addModelLayer,
     addDesignLayer
-  } = useFabricPreview()
+  } = useFabricPreview(computed(() => props.applyCustomizationOverrides))
 
   const { renderVersion } = useEffectiveSelectors()
 
@@ -156,6 +164,7 @@
       () => props.styleBase?.id,
       () => props.designBase?.id,
       () => props.side,
+      () => props.applyCustomizationOverrides,
       () =>
         props.overlayRect &&
         `${props.overlayRect.x}-${props.overlayRect.y}-${props.overlayRect.width}-${props.overlayRect.height}`,

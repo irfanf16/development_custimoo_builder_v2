@@ -1,7 +1,9 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, ref, isRef } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { Button } from '@/components/ui/button'
+  import { Maximize2, Minimize2 } from 'lucide-vue-next'
+  import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import {
     CategorySelection,
     SubcategorySelection,
@@ -18,7 +20,7 @@
     RosterEdit,
     SummaryPanel
   } from '@/components/customization-workflow/WorkflowSteps'
-  import MenuPanel from './MenuPanel.vue'
+  import WorkflowPanel from './WorkflowPanel.vue'
 
   interface Props {
     currentStep:
@@ -36,11 +38,6 @@
       | 'roster'
       | 'roster-edit'
       | 'summary'
-    navigationItems: Array<{
-      label: string
-      action?: () => void
-      isActive?: boolean
-    }>
     onNavigateBack: () => void
     onCategorySelect: (categoryId: number) => void
   }
@@ -52,6 +49,12 @@
   const isExpanded = ref(false)
   const menuPanelRef = ref<{
     scrollToElement: (elementId: string, behavior?: 'smooth' | 'auto') => void
+  } | null>(null)
+  import type { ComputedRef } from 'vue'
+  type BreadcrumbItem = { label: string; action?: () => void }
+
+  const currentStepRef = ref<{
+    breadcrumbs?: ComputedRef<BreadcrumbItem[]>
   } | null>(null)
 
   // Computed properties for workflow step configuration
@@ -65,13 +68,24 @@
     return props.currentStep === 'product' || props.currentStep === 'designs'
   })
 
-  const showBackButton = computed(() => {
-    return props.currentStep !== 'category'
+  // Get breadcrumbs from current step component
+  const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => {
+    const exposed = currentStepRef.value?.breadcrumbs as unknown
+    if (!exposed) return [{ label: 'Category' }]
+    return isRef(exposed)
+      ? (exposed as ComputedRef<BreadcrumbItem[]>).value
+      : (exposed as BreadcrumbItem[])
   })
+
+  const toggleExpanded = () => {
+    if (isExpandable.value) {
+      isExpanded.value = !isExpanded.value
+    }
+  }
 
   /**
    * Handles scroll-to-element events from child components
-   * Delegates to the MenuPanel's scrollToElement method
+   * Delegates to the WorkflowPanel's scrollToElement method
    */
   const handleScrollToElement = (
     elementId: string,
@@ -85,19 +99,35 @@
 
 <template>
   <div id="workflow-panel-container" class="flex-col">
-    <MenuPanel
+    <WorkflowPanel
       ref="menuPanelRef"
       :content-key="contentKey"
-      :breadcrumbs="navigationItems"
       :expandable="isExpandable"
       :is-expanded="isExpanded"
-      :show-back-button="showBackButton"
-      :on-back="onNavigateBack"
       @update:is-expanded="isExpanded = $event"
     >
+      <!-- Header slot -->
+      <template #header="{ isExpanded }">
+        <div
+          class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
+        >
+          <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
+        </div>
+
+        <Button
+          v-if="isExpandable"
+          variant="outline"
+          size="icon"
+          class="rounded-lg"
+          @click="toggleExpanded"
+        >
+          <component :is="isExpanded ? Minimize2 : Maximize2" class="size-4" />
+        </Button>
+      </template>
       <!-- Category Selection Step -->
       <CategorySelection
         v-if="currentStep === 'category'"
+        ref="currentStepRef"
         @select-category="onCategorySelect"
       />
 
@@ -107,32 +137,45 @@
       <!-- Product Selection Step -->
       <ProductSelection
         v-else-if="currentStep === 'product'"
+        ref="currentStepRef"
         @scroll-to-element="handleScrollToElement"
       />
 
       <!-- Design Selection Step -->
       <DesignSelection
         v-else-if="currentStep === 'designs'"
+        ref="currentStepRef"
         @scroll-to-element="handleScrollToElement"
-        @update:is-expanded="isExpanded = $event"
       />
 
       <!-- Style Selection Step -->
-      <StyleSelection v-else-if="currentStep === 'styles'" />
+      <StyleSelection
+        v-else-if="currentStep === 'styles'"
+        ref="currentStepRef"
+      />
 
       <!-- Logo Customization Step -->
       <LogoCustomization v-else-if="currentStep === 'logos'" />
 
       <!-- Colors -->
-      <ColorSelection v-else-if="currentStep === 'colors'" />
+      <ColorSelection
+        v-else-if="currentStep === 'colors'"
+        ref="currentStepRef"
+      />
 
       <!-- Patterns -->
-      <PatternSelection v-else-if="currentStep === 'patterns'" />
+      <PatternSelection
+        v-else-if="currentStep === 'patterns'"
+        ref="currentStepRef"
+      />
       <PatternGroupSelection v-else-if="currentStep === 'patterns-group'" />
 
       <!-- Texts -->
       <TextsSelection v-else-if="currentStep === 'texts'" />
-      <TextPlacement v-else-if="currentStep === 'texts-placement'" />
+      <TextPlacement
+        v-else-if="currentStep === 'texts-placement'"
+        ref="currentStepRef"
+      />
 
       <!-- Roster -->
       <RosterEntry v-else-if="currentStep === 'roster'" />
@@ -140,28 +183,6 @@
 
       <!-- Summary -->
       <SummaryPanel v-else-if="currentStep === 'summary'" />
-
-      <template v-if="currentStep === 'designs'" #footer="{ isExpanded }">
-        <div
-          class="flex gap-3 w-full"
-          :class="isExpanded ? 'justify-end' : 'justify-between'"
-        >
-          <Button
-            variant="outline"
-            size="default"
-            class="rounded-lg w-[12.5rem]"
-          >
-            Previous
-          </Button>
-          <Button
-            variant="default"
-            size="default"
-            class="rounded-lg w-[12.5rem]"
-          >
-            Next
-          </Button>
-        </div>
-      </template>
-    </MenuPanel>
+    </WorkflowPanel>
   </div>
 </template>

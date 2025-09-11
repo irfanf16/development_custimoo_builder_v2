@@ -1,62 +1,27 @@
+export type OutputDesignAsset = {
+  color_group: string | null
+  design_name: string
+  design_position: string
+  file_base_url: string
+  file_extension: string
+  file_thumbnail_url: string
+  file_url: string
+  id: number
+}
+
 export type OutputDesignPreview = {
   id: number
   is_default: 1 | 0
-  front_design: {
-    color_group: string | null
-    design_name: string
-    design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
-    file_url: string
-    id: number
-  }
-  frontsafezone_design: {
-    design_position: string
-    file_base_url?: string
-    file_extension?: string
-    file_thumbnail_url?: string
-    file_url: string
-    id: number
-  }
-  frontboundary_design: {
-    design_position: string
-    file_base_url?: string
-    file_extension?: string
-    file_thumbnail_url?: string
-    file_url: string
-    id: number
-  }
+  front_design: OutputDesignAsset
+  frontsafezone_design: OutputDesignAsset
+  frontboundary_design: OutputDesignAsset
   svg_parts: string[]
 }
 
 export type OutputDesignDetails = OutputDesignPreview & {
-  back_design: {
-    color_group: string | null
-    design_name: string
-    design_position: string
-    file_base_url: string
-    file_extension: string
-    file_thumbnail_url: string
-    file_url: string
-    id: number
-  }
-  backboundary_design: {
-    design_position: string
-    file_base_url?: string
-    file_extension?: string
-    file_thumbnail_url?: string
-    file_url: string
-    id: number
-  }
-  backsafezone_design: {
-    design_position: string
-    file_base_url?: string
-    file_extension?: string
-    file_thumbnail_url?: string
-    file_url: string
-    id: number
-  }
+  back_design: OutputDesignAsset
+  backboundary_design: OutputDesignAsset
+  backsafezone_design: OutputDesignAsset
   container_file_id: number
   created_at: string
   deleted_at: string | null
