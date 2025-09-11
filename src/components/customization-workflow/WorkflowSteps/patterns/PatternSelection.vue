@@ -2,6 +2,7 @@
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
 
+  // no emits
   const productsStore = useProductsStore()
   const product = computed(() => productsStore.activeProductDetails as any)
   const patterns = computed(() => product.value?.patterns || [])
@@ -11,9 +12,15 @@
     // productsStore.setActivePatternGroup(name)
     // productsStore.setPatternsSubStep('group')
   }
+
+  // Breadcrumb logic for pattern selection
+  const breadcrumbs = computed(() => [{ label: 'Pattern' }])
+
+  defineExpose({ breadcrumbs })
 </script>
 
 <template>
+  <!-- Content -->
   <div class="p-6 grid grid-cols-2 gap-3">
     <button
       v-for="(group, idx) in patterns"

@@ -6,12 +6,6 @@
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
 
-  const productsStore = useProductsStore()
-  const customizationStore = useCustomizationStore()
-  const workflowStore = useWorkflowStore()
-  const previews = computed(() => productsStore.productPreviews || [])
-  const selectedProductId = computed(() => customizationStore.activeProductId)
-
   interface Emits {
     (
       e: 'scroll-to-element',
@@ -21,6 +15,11 @@
   }
 
   const emit = defineEmits<Emits>()
+  const productsStore = useProductsStore()
+  const customizationStore = useCustomizationStore()
+  const workflowStore = useWorkflowStore()
+  const previews = computed(() => productsStore.productPreviews || [])
+  const selectedProductId = computed(() => customizationStore.activeProductId)
 
   function loadPreviewsForCurrentCategory() {
     const categoryId =
@@ -35,7 +34,7 @@
     nextTick(() => {
       const activeProductId = customizationStore.activeProductId
       if (activeProductId) {
-        // Small delay to ensure MenuPanel is fully mounted
+        // Small delay to ensure WorkflowPanel is fully mounted
         setTimeout(() => {
           emit('scroll-to-element', `product-${activeProductId}`, 'auto')
         }, 100)
@@ -71,6 +70,57 @@
     // Move step to Designs
     workflowStore.setActiveStep('Designs')
   }
+
+  // Breadcrumb logic for product selection
+  const breadcrumbs = computed(() => {
+    const categoryId =
+      workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
+    const category = productsStore.categories?.data?.find(
+      c => c.id === categoryId
+    )
+    const subId =
+      workflowStore.selectedSubCategoryId ??
+      customizationStore.activeSubCategoryId
+
+    const hasSubs = !!(
+      category &&
+      category.subcategories &&
+      category.subcategories.length
+    )
+
+    const trail = [
+      {
+        label: 'Category',
+        action: () => {
+          workflowStore.setProductsSubStep('category')
+          workflowStore.setActiveStep('Categories')
+        }
+      },
+      {
+        label: category?.category_name || '—',
+        action: hasSubs
+          ? () => {
+              workflowStore.setProductsSubStep('subcategory')
+              workflowStore.setActiveStep('Categories')
+            }
+          : undefined
+      }
+    ]
+
+    if (category && subId) {
+      const sub = category.subcategories?.find(s => s.id === subId)
+      if (sub)
+        trail.push({
+          label: sub.category_name,
+          action: undefined
+        })
+    }
+
+    return trail
+  })
+
+  // Expose breadcrumbs to parent component
+  defineExpose({ breadcrumbs })
 </script>
 
 <template>
@@ -108,9 +158,9 @@
           class="absolute -bottom-[-1rem] left-1/2 -translate-x-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity"
         >
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
-            class="shadow-sm"
+            class="bg-card"
             @click.stop="handleSelectProduct(item.productPreview.id)"
           >
             Product details

@@ -73,7 +73,6 @@ declare module 'vue' {
     LogoCustomization: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoCustomization.vue')['default']
     LogoPlacementThumb: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoPlacementThumb.vue')['default']
     MenuItem: typeof import('./src/components/customizer-menu/MenuItem.vue')['default']
-    MenuPanel: typeof import('./src/components/customization-workflow/MenuPanel.vue')['default']
     PatternGroupSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/patterns/PatternGroupSelection.vue')['default']
     PatternSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/patterns/PatternSelection.vue')['default']
     PriceCard: typeof import('./src/components/customizer-price/PriceCard.vue')['default']
@@ -109,6 +108,8 @@ declare module 'vue' {
     TooltipProvider: typeof import('./src/components/ui/tooltip/TooltipProvider.vue')['default']
     TooltipTrigger: typeof import('./src/components/ui/tooltip/TooltipTrigger.vue')['default']
     WidgetApp: typeof import('./src/components/WidgetApp.vue')['default']
+    WorkflowBreadcrumbs: typeof import('./src/components/customization-workflow/WorkflowBreadcrumbs.vue')['default']
     WorkflowLayout: typeof import('./src/components/customization-workflow/WorkflowLayout.vue')['default']
+    WorkflowPanel: typeof import('./src/components/customization-workflow/WorkflowPanel.vue')['default']
   }
 }
