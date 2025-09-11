@@ -3,6 +3,8 @@
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import type { HeaderAndFooterConfiguration } from '../../types'
+  import type { BreadcrumbItem } from '../../types'
 
   interface Emits {
     (
@@ -13,13 +15,6 @@
   }
 
   const emit = defineEmits<Emits>()
-  interface Emits {
-    (
-      e: 'scroll-to-element',
-      elementId: string,
-      behavior?: 'smooth' | 'auto'
-    ): void
-  }
 
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
@@ -28,8 +23,6 @@
   const selectedDesignId = computed(() => customizationStore.activeDesignId)
   const designSelectionContainer = ref<HTMLElement | null>(null)
   const applyCustomizationOverrides = ref(false)
-  // Mark used via template
-  void applyCustomizationOverrides
 
   onMounted(async () => {
     if (!productsStore.designPreviews) {
@@ -61,9 +54,6 @@
     }, 300)
   }
 
-  // Breadcrumb logic for design selection
-  const breadcrumbs = computed(() => [{ label: 'Designs' }])
-
   // Header search config
   const designSearchQuery = ref('')
   const filteredPreviews = computed(() => {
@@ -75,14 +65,24 @@
   })
 
   // Expose to parent
-  const headerExtras = {
-    search: {
-      placeholder: 'Search designs...',
-      model: designSearchQuery,
-      onInput: (val: string) => (designSearchQuery.value = val)
+  const headerAndFooterConfiguration: HeaderAndFooterConfiguration = {
+    headerExtras: {
+      search: {
+        placeholder: 'Search designs...',
+        model: designSearchQuery,
+        onInput: (val: string) => (designSearchQuery.value = val)
+      },
+      applyOverrides: {
+        model: applyCustomizationOverrides,
+        onInput: (val: boolean) => (applyCustomizationOverrides.value = val),
+        label: 'Preview with customization'
+      },
+      isExpandable: true,
+      breadcrumbs: computed<BreadcrumbItem[]>(() => [{ label: 'Designs' }])
     }
   }
-  defineExpose({ breadcrumbs, headerExtras })
+
+  defineExpose(headerAndFooterConfiguration)
 
   // Hint to TS that these are used via the template
   void ProductPreviewCanvas
