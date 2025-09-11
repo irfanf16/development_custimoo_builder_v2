@@ -13,13 +13,30 @@ Vite is configured with `unplugin-icons` to load Streamline SVGs as Vue componen
 - Streamline Flex Duo SVGs: `src/icons/streamline/flex-duo/`
 - Streamline Flex Line SVGs: `src/icons/streamline/flex-line/`
 
+### Official Streamline catalogs
+
+- Flex Duo: [streamlinehq.com/icons/flex-duo](https://www.streamlinehq.com/icons/flex-duo)
+- Flex Line: [streamlinehq.com/icons/flex-line](https://www.streamlinehq.com/icons/flex-line)
+
 ### Naming and usage (Streamline → Vue components)
 
 - Components are auto‑generated with the pattern: `i-{collection}-{file-name-without-.svg}`
-- File names are normalized to kebab‑case. We removed the `--Streamline-Flex` suffix from all files to avoid inconsistencies. Examples:
-  - `src/icons/streamline/flex-line/Paint-Palette.svg` → `<i-flex-line-paint-palette />`
-  - `src/icons/streamline/flex-line/Landscape1.svg` → `<i-flex-line-landscape1 />`
-  - `src/icons/streamline/flex-duo/Football.svg` → `<i-flex-duo-football />`
+- File names must be lowercase kebab‑case. Remove any `--Streamline-Flex` suffix when saving the file. Examples:
+  - `src/icons/streamline/flex-line/paint-palette.svg` → `<i-flex-line-paint-palette />`
+  - `src/icons/streamline/flex-line/landscape1.svg` → `<i-flex-line-landscape1 />`
+  - `src/icons/streamline/flex-duo/football.svg` → `<i-flex-duo-football />`
+
+### Quick add (Streamline icons)
+
+1. Find an icon in the official catalog (links above) and download the SVG.
+2. Save it into the correct folder:
+   - Flex Duo → `src/icons/streamline/flex-duo/`
+   - Flex Line → `src/icons/streamline/flex-line/`
+3. Rename the file to lowercase kebab‑case and remove any `--Streamline-Flex` suffix. Example: `Paint-Palette--Streamline-Flex.svg` → `paint-palette.svg`.
+4. Use it in Vue:
+   - Flex Line: `<i-flex-line-{file-name} />`
+   - Flex Duo: `<i-flex-duo-{file-name} />`
+5. If a Duo icon must be always bundled (not tree‑shaken), add a corresponding import in `src/icons/flex-duo-categories.ts`.
 
 ### Coloring and sizing
 
@@ -125,6 +142,9 @@ Examples:
 - **Vite error: Icon `flex-line/...` not found:**
   - Check the SVG file exists under `src/icons/streamline/flex-line/`.
   - Confirm the kebab‑case mapping. Example: `Landscape1.svg` → `landscape1` (no dash before the number).
+
+- **Linux/macOS mismatch (case‑sensitive filesystems):**
+  - On Linux, file paths are case‑sensitive. Ensure SVG filenames are lowercase and match the component name. Example: `<i-flex-line-text-file>` requires `src/icons/streamline/flex-line/text-file.svg`.
 
 - **Tooltips/popovers rendering incorrectly in host page:**
   - This widget runs in a Shadow DOM. Portals must teleport into the widget container.
