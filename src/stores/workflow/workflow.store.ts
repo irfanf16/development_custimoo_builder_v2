@@ -170,11 +170,11 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     canvasZoom.value = clamped
   }
 
-  function zoomIn(step = 0.1) {
+  function zoomIn(step = 0.3) {
     setCanvasZoom(canvasZoom.value + step)
   }
 
-  function zoomOut(step = 0.1) {
+  function zoomOut(step = 0.3) {
     setCanvasZoom(canvasZoom.value - step)
   }
 

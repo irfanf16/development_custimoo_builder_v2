@@ -112,6 +112,59 @@ export function useFabricPreview(
     canvas.value.zoomToPoint(point, zoom)
   }
 
+  function animateZoom(
+    zoom: number,
+    options?: {
+      center?: { x: number; y: number } | 'asset' | 'canvas'
+      duration?: number
+      easing?: (t: number) => number
+    }
+  ) {
+    if (!canvas.value) return
+    const from = canvas.value.getZoom?.() || 1
+    const duration = options?.duration ?? 250
+
+    let point: Point | null = null
+    const center = options?.center
+    if (!center || center === 'asset') {
+      const target = mainDesignObject.value as any
+      if (target && typeof target.getCenterPoint === 'function') {
+        const c = target.getCenterPoint()
+        point = new Point(c.x, c.y)
+      }
+    }
+    if (!point) {
+      if (center && center !== 'asset' && center !== 'canvas') {
+        point = new Point(center.x, center.y)
+      } else {
+        const { left, top } = canvas.value.getCenter()
+        point = new Point(left, top)
+      }
+    }
+
+    if (Math.abs(from - zoom) < 0.0001) {
+      canvas.value.zoomToPoint(point, zoom)
+      return
+    }
+
+    const easingFn =
+      (util as any)?.ease?.easeInOutCubic ||
+      ((t: number) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+
+    util.animate({
+      startValue: from,
+      endValue: zoom,
+      duration,
+      easing: options?.easing || easingFn,
+      onChange: (value: number) => {
+        if (!canvas.value) return
+        canvas.value.zoomToPoint(point as Point, value)
+        canvas.value.requestRenderAll()
+      }
+    })
+  }
+
   function fitObject(obj: any, options?: FitOptions) {
     if (!canvas.value) return
     const padding = options?.padding ?? 8
@@ -257,6 +310,7 @@ export function useFabricPreview(
     clearCanvas,
     requestRender,
     setZoom,
+    animateZoom,
     fitObject,
     // Layer Management
     addModelLayer,

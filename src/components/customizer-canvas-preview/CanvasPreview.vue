@@ -14,6 +14,7 @@
     clearCanvas,
     requestRender,
     setZoom,
+    animateZoom,
     addModelLayer,
     addDesignLayer,
     fadeOut,
@@ -36,7 +37,7 @@
     const style = effectiveStyleDetails.value
     if (!design || !style) return
 
-    const fitOptions = { scaleBy: 'height', heightPercent: 0.8 } as const
+    const fitOptions = { scaleBy: 'height', heightPercent: 0.75 } as const
 
     if (side === 'back' && design.back_design) {
       await addDesignLayer(
@@ -103,7 +104,7 @@
     () => workflowStore.canvasZoom,
     z => {
       if (!canvas.value) return
-      setZoom(z)
+      animateZoom(z, { duration: 250, center: 'asset' })
       requestRender()
     }
   )
