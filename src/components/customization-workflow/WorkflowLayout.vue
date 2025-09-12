@@ -170,16 +170,14 @@
                 class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
               />
               <Input
+                v-model="currentStepRef.headerExtras.search.model"
                 :placeholder="
                   currentStepRef?.headerExtras?.search?.placeholder ||
                   'Search...'
                 "
-                :value="headerSearchValue"
                 class="pl-8"
-                @input="
-                  currentStepRef?.headerExtras?.search?.onInput(
-                    ($event.target as HTMLInputElement).value
-                  )
+                @update:model-value="
+                  currentStepRef?.headerExtras?.search?.onInput($event)
                 "
               />
             </div>

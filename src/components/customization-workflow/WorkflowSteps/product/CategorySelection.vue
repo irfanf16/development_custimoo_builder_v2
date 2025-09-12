@@ -70,11 +70,10 @@
   const getCategoryIcon = (index: number) =>
     fallbackFlexDuoIcons[index % fallbackFlexDuoIcons.length]
 
-  // Expose breadcrumb data to parent
+  // Expose breadcrumb data to parent using new header model
   const breadcrumbs = computed(() => [{ label: 'Category' }])
-
-  // Expose breadcrumbs to parent component
-  defineExpose({ breadcrumbs })
+  const headerExtras = { breadcrumbs }
+  defineExpose({ headerExtras })
 </script>
 
 <template>

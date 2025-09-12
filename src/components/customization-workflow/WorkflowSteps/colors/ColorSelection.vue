@@ -156,8 +156,8 @@
 
   // Breadcrumb logic for color selection
   const breadcrumbs = computed(() => [{ label: 'Color' }])
-
-  defineExpose({ breadcrumbs })
+  const headerExtras = { breadcrumbs }
+  defineExpose({ headerExtras })
 </script>
 
 <template>

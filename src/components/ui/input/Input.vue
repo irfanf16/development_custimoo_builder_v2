@@ -22,6 +22,7 @@
 <template>
   <input
     v-model="modelValue"
+    v-bind="$attrs"
     data-slot="input"
     :class="
       cn(

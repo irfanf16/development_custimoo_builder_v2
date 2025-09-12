@@ -15,8 +15,8 @@
 
   // Breadcrumb logic for pattern selection
   const breadcrumbs = computed(() => [{ label: 'Pattern' }])
-
-  defineExpose({ breadcrumbs })
+  const headerExtras = { breadcrumbs }
+  defineExpose({ headerExtras })
 </script>
 
 <template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, nextTick, onMounted, ref } from 'vue'
+  import { computed, nextTick, onMounted, ref, watch } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -54,10 +54,26 @@
     }, 300)
   }
 
-  // Header search config
+  // Header search config (debounced for perf)
   const designSearchQuery = ref('')
+  const debouncedDesignQuery = computed({
+    get: () => designSearchQuery.value,
+    set: v => (designSearchQuery.value = v)
+  })
+  let designSearchTimeout: number | null = null
+  const designQuery = ref('')
+  watch(
+    debouncedDesignQuery,
+    (v: string) => {
+      if (designSearchTimeout) window.clearTimeout(designSearchTimeout)
+      designSearchTimeout = window.setTimeout(() => {
+        designQuery.value = v.trim().toLowerCase()
+      }, 150)
+    },
+    { immediate: true }
+  )
   const filteredPreviews = computed(() => {
-    const q = designSearchQuery.value.trim().toLowerCase()
+    const q = designQuery.value
     if (!q) return previews.value
     return previews.value.filter(d =>
       d.front_design.design_name.toLowerCase().includes(q)
@@ -69,8 +85,8 @@
     headerExtras: {
       search: {
         placeholder: 'Search designs...',
-        model: designSearchQuery,
-        onInput: (val: string) => (designSearchQuery.value = val)
+        model: debouncedDesignQuery,
+        onInput: (val: string) => (debouncedDesignQuery.value = val)
       },
       applyOverrides: {
         model: applyCustomizationOverrides,
