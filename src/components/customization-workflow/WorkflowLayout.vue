@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref, isRef, unref, type Ref, type ComputedRef } from 'vue'
+  import { computed, ref, isRef, type Ref, type ComputedRef } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { Button } from '@/components/ui/button'
   import { Input } from '@/components/ui/input'
@@ -94,10 +94,28 @@
     return currentStepRef.value?.headerExtras?.applyOverrides
   })
 
-  // Safely unwrap nested ref for header search model
-  const headerSearchValue = computed(() => {
-    const model = currentStepRef.value?.headerExtras?.search?.model
-    return model ? unref(model) : ''
+  // Bridge nested refs from child steps to primitives for props expecting non-Ref
+  const applyOverridesModelValue = computed({
+    get: (): boolean => {
+      const model = currentStepRef.value?.headerExtras?.applyOverrides
+        ?.model as Ref<boolean> | undefined
+      return model?.value ?? false
+    },
+    set: (val: boolean) => {
+      currentStepRef.value?.headerExtras?.applyOverrides?.onInput?.(!!val)
+    }
+  })
+
+  const searchModelValue = computed({
+    get: (): string => {
+      const model = currentStepRef.value?.headerExtras?.search?.model as
+        | Ref<string>
+        | undefined
+      return model?.value ?? ''
+    },
+    set: (val: string) => {
+      currentStepRef.value?.headerExtras?.search?.onInput?.(val)
+    }
   })
 
   const toggleExpanded = () => {
@@ -139,10 +157,13 @@
               <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
             </div>
 
-            <div v-if="headerApplyOverrides" class="flex items-center gap-3">
+            <div
+              v-if="headerApplyOverrides !== undefined"
+              class="flex items-center gap-3"
+            >
               <Switch
-                v-model="headerApplyOverrides.model"
-                @update:model-value="headerApplyOverrides.onInput($event)"
+                :model-value="applyOverridesModelValue"
+                @update:model-value="val => (applyOverridesModelValue = !!val)"
               />
               <Label>{{ headerApplyOverrides.label }}</Label>
             </div>
@@ -170,15 +191,13 @@
                 class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
               />
               <Input
-                v-model="currentStepRef.headerExtras.search.model"
+                :model-value="searchModelValue"
                 :placeholder="
                   currentStepRef?.headerExtras?.search?.placeholder ||
                   'Search...'
                 "
                 class="pl-8"
-                @update:model-value="
-                  currentStepRef?.headerExtras?.search?.onInput($event)
-                "
+                @update:model-value="val => (searchModelValue = String(val))"
               />
             </div>
           </div>
