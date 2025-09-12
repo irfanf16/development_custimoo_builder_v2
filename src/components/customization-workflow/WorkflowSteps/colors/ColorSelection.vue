@@ -2,7 +2,6 @@
   import { ref, computed, type Ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
-  // import type { APCustomizationGroupColor } from '@/services/products/types'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
@@ -164,34 +163,41 @@
   <!-- Content -->
   <div class="flex flex-col gap-6">
     <!-- Lucky / Locker actions -->
-    <div class="rounded-xl border border-border bg-muted/40 p-4 mx-6">
-      <div class="flex items-start gap-3">
-        <i-flex-line-paint-palette class="size-10 text-primary" />
-        <div class="flex-1">
-          <div class="text-base font-semibold text-foreground">
-            {{ shuffleColorsHeadings[shuffleColorsHeadingIndex] }}
-          </div>
-          <div class="text-sm text-muted-foreground">
-            {{ shuffleColorsTexts[shuffleColorsTextIndex] }}
+    <div class="flex flex-col gap-3">
+      <div class="rounded-xl border border-border bg-primary/10 p-4 mx-6">
+        <div class="flex items-start gap-3">
+          <i-flex-flat-paint-palette class="size-10 text-primary" />
+          <div class="flex-1">
+            <div class="text-base font-semibold text-foreground">
+              {{ shuffleColorsHeadings[shuffleColorsHeadingIndex] }}
+            </div>
+            <div class="text-sm text-muted-foreground">
+              {{ shuffleColorsTexts[shuffleColorsTextIndex] }}
+            </div>
           </div>
         </div>
+        <div class="mt-4">
+          <Button class="w-full" variant="default" @click="shuffleAll">{{
+            color_shuffle_design_colors(
+              {},
+              { locale: localeStore.currentLocale }
+            )
+          }}</Button>
+        </div>
       </div>
-      <div class="mt-4">
-        <Button class="w-full" variant="default" @click="shuffleAll">{{
-          color_shuffle_design_colors({}, { locale: localeStore.currentLocale })
-        }}</Button>
-      </div>
-      <div
-        class="my-4 flex items-center justify-center text-xs text-muted-foreground gap-2"
-      >
-        <div class="flex-1 h-px bg-border" />
-        <span class="px-3 text-foreground font-medium">or</span>
-        <div class="flex-1 h-px bg-border" />
-      </div>
-      <div>
-        <Button class="w-full bg-card" variant="outline"
-          >Choose from locker</Button
+      <div class="flex flex-col gap-3 px-6">
+        <div
+          class="flex items-center justify-center text-xs text-muted-foreground gap-2"
         >
+          <div class="flex-1 h-px bg-border" />
+          <span class="px-3 text-foreground font-medium">or</span>
+          <div class="flex-1 h-px bg-border" />
+        </div>
+        <div>
+          <Button class="w-full bg-card" variant="outline"
+            >Choose from locker</Button
+          >
+        </div>
       </div>
     </div>
 

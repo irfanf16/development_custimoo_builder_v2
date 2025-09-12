@@ -57,6 +57,9 @@
 /* ===== WIDGET CSS VARIABLES ===== */
 :host,
 :root {
+  /* Icons */
+  --icon-primary: currentColor;
+  --icon-secondary: rgb(from currentColor r g b / 0.5);
   /* Colors will be set dynamically by JavaScript */
   /* --radius is defined below in light theme */
   --font-sans: ui-sans-serif, system-ui, sans-serif;

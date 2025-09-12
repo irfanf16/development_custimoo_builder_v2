@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
-import '@/icons/flex-duo-categories'
+import '@/icons/flex-flat-categories'
 
 // Import CSS styles
 import widgetStyles from './widget-styles.css?inline'

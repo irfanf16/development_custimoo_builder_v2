@@ -59,6 +59,7 @@ declare module 'vue' {
     DropdownMenuSubContent: typeof import('./src/components/ui/dropdown-menu/DropdownMenuSubContent.vue')['default']
     DropdownMenuSubTrigger: typeof import('./src/components/ui/dropdown-menu/DropdownMenuSubTrigger.vue')['default']
     DropdownMenuTrigger: typeof import('./src/components/ui/dropdown-menu/DropdownMenuTrigger.vue')['default']
+    IFlexFlatPaintPalette: typeof import('~icons/flex-flat/paint-palette')['default']
     IFlexLineAiEditSpark: typeof import('~icons/flex-line/ai-edit-spark')['default']
     IFlexLineAiSparkles: typeof import('~icons/flex-line/ai-sparkles')['default']
     IFlexLineCategories: typeof import('~icons/flex-line/categories')['default']
