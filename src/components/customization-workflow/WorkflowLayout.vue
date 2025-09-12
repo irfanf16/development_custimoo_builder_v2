@@ -165,7 +165,9 @@
                 :model-value="applyOverridesModelValue"
                 @update:model-value="val => (applyOverridesModelValue = !!val)"
               />
-              <Label>{{ headerApplyOverrides.label }}</Label>
+              <Label class="text-sm font-normal text-muted-foreground">{{
+                headerApplyOverrides.label
+              }}</Label>
             </div>
 
             <Button
