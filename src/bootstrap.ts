@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 import '@/icons/flex-flat-categories'
+import { useUIStore } from '@/stores/ui'
 
 // Import CSS styles
 import widgetStyles from './widget-styles.css?inline'
@@ -36,21 +37,22 @@ export function bootstrap(
   // Teleport target for UI portals (e.g., tooltips) inside the widget's Shadow DOM
   ;(window as any).__CUSTOMIZER_CONTAINER__ = container
 
-  // Set container height with responsive minimum heights
+  // Initialize Pinia and UI store early to manage viewport state
+  const pinia = createPinia()
+  const ui = useUIStore(pinia)
+
+  // Set container height with responsive minimum heights from the UI store
   const setContainerHeight = () => {
-    const isMobile = window.innerWidth < 768 // Common mobile breakpoint
-    const minHeight = isMobile ? 700 : 800
+    ui.setContainerSize(container.clientWidth, container.clientHeight)
 
-    // Use min-height instead of fixed height to allow content to determine actual height
+    const minHeight = ui.minWidgetHeight
     container.style.minHeight = `${minHeight}px`
-    container.style.height = 'auto' // Let content determine height
+    container.style.height = 'auto'
 
-    console.log('Widget height calculation:', {
-      screenWidth: window.innerWidth,
-      isMobile,
-      minHeight,
-      containerHeight: container.style.height,
-      containerMinHeight: container.style.minHeight
+    console.log('Container height set:', {
+      width: ui.containertWidth,
+      height: ui.containerHeight,
+      isMobile: ui.isMobile
     })
   }
 
@@ -61,6 +63,7 @@ export function bootstrap(
   window.addEventListener('resize', setContainerHeight)
 
   shadowRoot.appendChild(container)
+  ui.setWidgetRoot(container)
 
   // Inject CSS into shadow DOM
   const style = document.createElement('style')
@@ -77,7 +80,6 @@ export function bootstrap(
   const app = createApp(App, attributes)
 
   // Initialize Pinia for the widget
-  const pinia = createPinia()
   app.use(pinia)
 
   // Initialize unified Router for the widget
@@ -85,6 +87,8 @@ export function bootstrap(
 
   // Mount the Vue application onto the container element within shadow root
   app.mount(container)
+
+  setContainerHeight()
 
   // Return cleanup function
   return () => {

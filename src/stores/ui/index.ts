@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 export const useUIStore = defineStore('uiStore', () => {
   // State
@@ -13,11 +13,22 @@ export const useUIStore = defineStore('uiStore', () => {
     (localStorage.getItem('customizer-theme') as 'light' | 'dark') || 'light'
   )
   const widgetRoot = ref<HTMLElement>()
+  const containertWidth = ref<number>(0)
+  const containerHeight = ref<number>(0)
+
+  // Derived state
+  const isMobile = computed(() => containertWidth.value < 768)
+  const minWidgetHeight = computed(() => (isMobile.value ? 700 : 800))
 
   // Actions
 
   function setWidgetRoot(root: HTMLElement) {
     widgetRoot.value = root
+  }
+
+  function setContainerSize(width: number, height: number) {
+    containertWidth.value = width
+    containerHeight.value = height
   }
 
   function openMobileMenu() {
@@ -82,6 +93,10 @@ export const useUIStore = defineStore('uiStore', () => {
     isLoginDialogOpen,
     isRegisterDialogOpen,
     isLoading,
+    containertWidth,
+    containerHeight,
+    isMobile,
+    minWidgetHeight,
     currentTheme,
     openMobileMenu,
     closeMobileMenu,
@@ -99,6 +114,7 @@ export const useUIStore = defineStore('uiStore', () => {
     allowColorModeSwitch,
     defaultColorMode,
     setWidgetRoot,
-    widgetRoot
+    widgetRoot,
+    setContainerSize
   }
 })

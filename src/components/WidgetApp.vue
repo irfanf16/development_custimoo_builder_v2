@@ -75,12 +75,6 @@
       await applyColorScheme(widgetRootContainer.value, hostTheme)
     }
   })
-
-  // const currentRoute = computed(() => route.path)
-
-  // const navigateTo = (path: string) => {
-  //   router.push(path)
-  // }
 </script>
 
 <template>

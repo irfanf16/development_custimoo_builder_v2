@@ -36,27 +36,31 @@
     const style = effectiveStyleDetails.value
     if (!design || !style) return
 
+    const fitOptions = { scaleBy: 'height', heightPercent: 0.8 } as const
+
     if (side === 'back' && design.back_design) {
       await addDesignLayer(
         design.back_design.file_url,
-        design.back_design.file_extension
+        design.back_design.file_extension,
+        fitOptions
       )
       for (const m of (style as any).back_models || []) {
         const comp = (
           m.composition === 'multiply' ? 'multiply' : 'screen'
         ) as GlobalCompositeOperation
-        await addModelLayer(m.file_url, comp)
+        await addModelLayer(m.file_url, comp, fitOptions)
       }
     } else {
       await addDesignLayer(
         design.front_design.file_url,
-        design.front_design.file_extension
+        design.front_design.file_extension,
+        fitOptions
       )
       for (const m of (style as any).front_models || []) {
         const comp = (
           m.composition === 'multiply' ? 'multiply' : 'screen'
         ) as GlobalCompositeOperation
-        await addModelLayer(m.file_url, comp)
+        await addModelLayer(m.file_url, comp, fitOptions)
       }
     }
 
@@ -106,12 +110,12 @@
 </script>
 
 <template>
-  <div class="relative z-0">
-    <div class="absolute inset-0 z-0 pointer-events-none max-w-full max-h-full">
+  <div class="relative">
+    <div class="inset-0 max-w-full max-h-full">
       <div class="w-full h-full grid place-items-center">
         <canvas
           ref="canvasEl"
-          class="rounded-[32px] transition-opacity duration-300"
+          class="rounded-[32px] transition-opacity duration-300 z-10"
         />
       </div>
     </div>
