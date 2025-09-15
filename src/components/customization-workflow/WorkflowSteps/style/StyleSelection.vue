@@ -13,6 +13,7 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   // no emits
+  // no emits
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const localeStore = useLocaleStore()
@@ -84,7 +85,26 @@
     return [{ label: title }]
   })
 
-  defineExpose({ breadcrumbs })
+  // Header search config
+  const styleSearchQuery = computed({
+    get: () => '',
+    set: (_v: string) => {}
+  })
+  const filteredPreviews = computed(() => {
+    const q = (styleSearchQuery as any).value?.trim?.().toLowerCase?.() || ''
+    if (!q) return previews.value
+    return previews.value.filter(s => s.name.toLowerCase().includes(q))
+  })
+
+  const headerExtras = {
+    // search: {
+    //   placeholder: 'Search styles...',
+    //   model: styleSearchQuery,
+    //   onInput: (val: string) => ((styleSearchQuery as any).value = val)
+    // }
+  }
+
+  defineExpose({ breadcrumbs, headerExtras })
 </script>
 
 <template>
@@ -102,7 +122,7 @@
       </div>
       <div class="grid grid-cols-2 gap-x-16 gap-y-8 px-6">
         <div
-          v-for="s in previews"
+          v-for="s in filteredPreviews"
           :key="s.id"
           class="flex flex-col gap-3 items-start"
         >

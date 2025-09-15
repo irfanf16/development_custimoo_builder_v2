@@ -149,7 +149,7 @@
       <!-- Header slot - panels can provide their own header content -->
       <template v-if="$slots.header">
         <CardHeader
-          class="py-6 px-6 flex flex-row items-center justify-between gap-2 h-[4.5rem] flex-shrink-0"
+          class="py-6 px-6 flex flex-row items-center justify-between gap-2 min-h-[4.5rem] max-h-[18rem] flex-shrink-0"
         >
           <slot name="header" :is-expanded="isExpanded" />
         </CardHeader>
