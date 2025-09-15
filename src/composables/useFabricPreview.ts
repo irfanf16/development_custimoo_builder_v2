@@ -146,7 +146,12 @@ export function useFabricPreview(
     options?: {
       center?: { x: number; y: number } | 'asset' | 'canvas'
       duration?: number
-      easing?: (t: number) => number
+      easing?: (
+        timeElapsed: number,
+        startValue: number,
+        byValue: number,
+        duration: number
+      ) => number
     }
   ) {
     if (!canvas.value) return
@@ -176,16 +181,25 @@ export function useFabricPreview(
       return
     }
 
-    const easingFn =
-      (util as any)?.ease?.easeInOutCubic ||
-      ((t: number) =>
-        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+    // Default easing function for Fabric.js 6.7.1
+    const defaultEasing = (
+      timeElapsed: number,
+      startValue: number,
+      byValue: number,
+      duration: number
+    ) => {
+      const t = timeElapsed / duration
+      return (
+        startValue +
+        byValue * (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+      )
+    }
 
     util.animate({
       startValue: from,
       endValue: zoom,
       duration,
-      easing: options?.easing || easingFn,
+      easing: options?.easing || defaultEasing,
       onChange: (value: number) => {
         if (!canvas.value) return
         canvas.value.zoomToPoint(point as Point, value)

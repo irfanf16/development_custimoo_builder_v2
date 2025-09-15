@@ -112,7 +112,7 @@
     () => workflowStore.canvasZoom,
     z => {
       if (!canvas.value) return
-      animateZoom(z, { duration: 500, center: 'asset' })
+      animateZoom(z, { duration: 150, center: 'asset' })
       requestRender()
     }
   )
