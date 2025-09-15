@@ -112,13 +112,22 @@ fi
 # DEPLOY TO /var/www
 # =====================
 if [ "$move_to_nginx" = "true" ]; then
-  echo "********** Deploying build to $DOMAIN_ROOT **********"
+  echo "********** Deploying build and project files to $DOMAIN_ROOT **********"
   sudo rm -rf "$DOMAIN_ROOT"/*
+
+  # Copy build output first
   if [[ -d "$build_directory_name/development" ]]; then
     sudo cp -a "$build_directory_name/development"/. "$DOMAIN_ROOT/"
   else
     echo "No build directory found."
   fi
+
+  # Copy rest of the project except node_modules, build artifacts, .git and .env
+  rsync -av \
+    --exclude 'node_modules' \
+    --exclude "$build_directory_name" \
+    --exclude '.git' \
+    ./ "$DOMAIN_ROOT/"
 fi
 
 # =====================
