@@ -19,7 +19,7 @@
     addDesignLayer,
     fadeOut,
     fadeIn,
-    registerClickMoveEventHandlers
+    registerBackgroundDragHandlers
   } = useFabricPreview()
   const {
     activeDesignDetails: effectiveDesignDetails,
@@ -94,7 +94,7 @@
     })
     updateCanvasSize()
     window.addEventListener('resize', handleResize)
-    registerClickMoveEventHandlers()
+    registerBackgroundDragHandlers()
     renderPreview()
   })
 
@@ -112,7 +112,7 @@
     () => workflowStore.canvasZoom,
     z => {
       if (!canvas.value) return
-      animateZoom(z, { duration: 175, center: 'asset' })
+      animateZoom(z, { duration: 500, center: 'asset' })
       requestRender()
     }
   )

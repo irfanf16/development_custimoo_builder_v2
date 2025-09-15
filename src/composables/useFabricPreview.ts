@@ -75,7 +75,7 @@ export function useFabricPreview(
     canvas.value.requestRenderAll()
   }
 
-  function registerClickMoveEventHandlers() {
+  function registerBackgroundDragHandlers() {
     if (!canvas.value) return
     let draggingAll = false
     let last: { x: number; y: number } | null = null
@@ -341,7 +341,7 @@ export function useFabricPreview(
     setZoom,
     animateZoom,
     fitObject,
-    registerClickMoveEventHandlers,
+    registerBackgroundDragHandlers,
     // Layer Management
     addModelLayer,
     addDesignLayer,
