@@ -18,7 +18,8 @@
     addModelLayer,
     addDesignLayer,
     fadeOut,
-    fadeIn
+    fadeIn,
+    registerClickMoveEventHandlers
   } = useFabricPreview()
   const {
     activeDesignDetails: effectiveDesignDetails,
@@ -72,7 +73,7 @@
   }
 
   function updateCanvasSize() {
-    const w = window.innerWidth - 65 || 1200
+    const w = window.innerWidth || 1200
     const h = window.innerHeight || 800
     setCanvasSize({ width: w, height: h })
   }
@@ -85,14 +86,15 @@
   onMounted(() => {
     if (!canvasEl.value) return
     initCanvas({
-      selection: true,
+      selection: false,
       enableRetinaScaling: true,
       moveCursor: 'grab',
       defaultCursor: 'grab',
-      enablePointerEvents: true
+      enablePointerEvents: false
     })
     updateCanvasSize()
     window.addEventListener('resize', handleResize)
+    registerClickMoveEventHandlers()
     renderPreview()
   })
 

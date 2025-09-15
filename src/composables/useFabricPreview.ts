@@ -75,6 +75,44 @@ export function useFabricPreview(
     canvas.value.requestRenderAll()
   }
 
+  function registerClickMoveEventHandlers() {
+    if (!canvas.value) return
+    let draggingAll = false
+    let last: { x: number; y: number } | null = null
+
+    // Start background drag only when no target is hit
+    canvas.value.on('mouse:down:before', (opt: any) => {
+      if (!canvas.value) return
+      const target = canvas.value.findTarget?.(opt.e)
+      if (target) return
+      const p =
+        canvas.value.getScenePoint?.(opt.e) || canvas.value.getPointer(opt.e)
+      last = { x: p.x, y: p.y }
+      draggingAll = true
+    })
+
+    canvas.value.on('mouse:move', (opt: any) => {
+      if (!canvas.value || !draggingAll || !last) return
+      const p =
+        canvas.value.getScenePoint?.(opt.e) || canvas.value.getPointer(opt.e)
+      const dx = p.x - last.x
+      const dy = p.y - last.y
+      if (dx === 0 && dy === 0) return
+      const objs = canvas.value.getObjects()
+      for (const o of objs) {
+        o.set({ left: (o.left || 0) + dx, top: (o.top || 0) + dy } as any)
+        o.setCoords()
+      }
+      last = { x: p.x, y: p.y }
+      canvas.value.requestRenderAll()
+    })
+
+    canvas.value.on('mouse:up', () => {
+      draggingAll = false
+      last = null
+    })
+  }
+
   function setZoom(
     zoom: number,
     center?: { x: number; y: number } | 'asset' | 'canvas'
@@ -303,6 +341,7 @@ export function useFabricPreview(
     setZoom,
     animateZoom,
     fitObject,
+    registerClickMoveEventHandlers,
     // Layer Management
     addModelLayer,
     addDesignLayer,
