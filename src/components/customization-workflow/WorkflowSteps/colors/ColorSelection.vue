@@ -168,12 +168,32 @@
         <div class="flex items-start gap-3">
           <i-flex-flat-paint-palette class="size-10 text-primary" />
           <div class="flex-1">
-            <div class="text-base font-semibold text-foreground">
-              {{ shuffleColorsHeadings[shuffleColorsHeadingIndex] }}
-            </div>
-            <div class="text-sm text-muted-foreground">
-              {{ shuffleColorsTexts[shuffleColorsTextIndex] }}
-            </div>
+            <Transition
+              name="fade-slide"
+              mode="out-in"
+              type="animation"
+              :duration="{ enter: 300, leave: 300 }"
+            >
+              <div
+                :key="shuffleColorsHeadingIndex"
+                class="text-base font-semibold text-foreground"
+              >
+                {{ shuffleColorsHeadings[shuffleColorsHeadingIndex] }}
+              </div>
+            </Transition>
+            <Transition
+              name="fade-slide"
+              mode="out-in"
+              type="animation"
+              :duration="{ enter: 300, leave: 300 }"
+            >
+              <div
+                :key="shuffleColorsTextIndex"
+                class="text-sm text-muted-foreground"
+              >
+                {{ shuffleColorsTexts[shuffleColorsTextIndex] }}
+              </div>
+            </Transition>
           </div>
         </div>
         <div class="mt-4">

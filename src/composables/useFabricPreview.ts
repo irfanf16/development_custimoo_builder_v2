@@ -210,8 +210,8 @@ export function useFabricPreview(
       originY: 'center',
       globalCompositeOperation: composition
     })
-    canvas.value.add(img as unknown as FabricObject)
-    canvas.value.viewportCenterObject(img as unknown as FabricObject)
+    canvas.value.add(img as FabricObject)
+    canvas.value.viewportCenterObject(img as FabricObject)
     img.setCoords()
   }
 
@@ -267,7 +267,7 @@ export function useFabricPreview(
       canvas.value.add(group)
       canvas.value.viewportCenterObject(group)
       group.setCoords()
-      mainDesignObject.value = group as unknown as FabricObject
+      mainDesignObject.value = group as FabricObject
     } else {
       const img = await FabricImage.fromURL(fromStorage(url), {
         crossOrigin: 'anonymous'
@@ -279,10 +279,10 @@ export function useFabricPreview(
         originX: 'center',
         originY: 'center'
       })
-      canvas.value.add(img as unknown as FabricObject)
-      canvas.value.viewportCenterObject(img as unknown as FabricObject)
+      canvas.value.add(img as FabricObject)
+      canvas.value.viewportCenterObject(img as FabricObject)
       img.setCoords()
-      mainDesignObject.value = img as unknown as FabricObject
+      mainDesignObject.value = img as FabricObject
     }
   }
 
