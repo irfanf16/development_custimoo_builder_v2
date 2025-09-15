@@ -34,6 +34,11 @@
       nextValue: next
     })
   }
+
+  // Breadcrumbs only
+  const breadcrumbs = computed(() => [{ label: 'Texts' }])
+  const headerExtras = { breadcrumbs }
+  defineExpose({ headerExtras })
 </script>
 
 <template>

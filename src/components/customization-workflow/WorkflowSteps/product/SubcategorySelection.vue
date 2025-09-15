@@ -30,6 +30,11 @@
     workflowStore.setSelectedSubCategoryForPreview(subcategoryId)
     props.onSelectSubcategory?.(subcategoryId)
   }
+
+  // Expose breadcrumb via header model
+  const breadcrumbs = computed(() => [{ label: 'Subcategory' }])
+  const headerExtras = { breadcrumbs }
+  defineExpose({ headerExtras })
 </script>
 
 <template>

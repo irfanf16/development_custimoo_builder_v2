@@ -112,6 +112,9 @@
     subPanel.value = 'list'
     // integrate with workflow store if needed
   }
+  // Breadcrumbs only
+  const headerExtras = { breadcrumbs: [{ label: 'Logos' }] }
+  defineExpose({ headerExtras })
 </script>
 
 <template>

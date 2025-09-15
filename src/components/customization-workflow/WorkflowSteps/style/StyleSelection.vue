@@ -96,15 +96,8 @@
     return previews.value.filter(s => s.name.toLowerCase().includes(q))
   })
 
-  const headerExtras = {
-    // search: {
-    //   placeholder: 'Search styles...',
-    //   model: styleSearchQuery,
-    //   onInput: (val: string) => ((styleSearchQuery as any).value = val)
-    // }
-  }
-
-  defineExpose({ breadcrumbs, headerExtras })
+  const headerExtras = { breadcrumbs }
+  defineExpose({ headerExtras })
 </script>
 
 <template>

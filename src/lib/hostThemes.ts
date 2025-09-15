@@ -31,6 +31,20 @@ export const hostThemes: Record<string, HostTheme> = {
     defaultColorMode: 'light'
   },
 
+  // Staging
+  'builder-v2.custimoo.com': {
+    primary: '#FF6B6B',
+    secondary: '#4ECDC4',
+    accent: '#FF6B6B',
+    radius: '0.75rem',
+    fontFamilyDefault: 'Geist',
+    fontFamilyHeading: 'Poppins',
+    name: 'E-commerce Red',
+    description: 'Warm red primary with teal accent for shopping sites',
+    allowColorModeSwitch: false,
+    defaultColorMode: 'light'
+  },
+
   // Example: E-commerce site
   'shop.example.com': {
     primary: '#FF6B6B',

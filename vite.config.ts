@@ -19,7 +19,12 @@ export default defineConfig({
     Components({
       resolvers: [
         IconsResolver({
-          customCollections: ['flex-line', 'flex-duo'],
+          customCollections: [
+            'flex-line',
+            'flex-flat',
+            'other',
+            'other-fixed-color'
+          ],
           componentPrefix: 'i'
         })
       ]
@@ -42,35 +47,91 @@ export default defineConfig({
                 '<svg stroke="currentColor" fill="none" stroke-width="1.5" width="1em" height="1em"'
               )
         ),
-        'flex-duo': FileSystemIconLoader('src/icons/streamline/flex-duo', svg =>
-          // Strategy:
-          // - Default to primary = currentColor
-          // - Secondary layers use var(--icon-secondary, currentColor)
+        // Flat icons: two-tone fills; darker accent -> primary, lighter base -> secondary
+        'flex-flat': FileSystemIconLoader(
+          'src/icons/streamline/flex-flat',
+          svg =>
+            svg
+              // Normalize viewport sizing
+              .replace(/<svg([^>]*)>/, '<svg$1 width="1em" height="1em">')
+              // Map accent (dark blue) to primary
+              .replace(
+                /fill="#3c6de3"/gi,
+                'fill="var(--icon-primary, currentColor)"'
+              )
+              .replace(
+                /stroke="#3c6de3"/gi,
+                'stroke="var(--icon-primary, currentColor)"'
+              )
+              // Map base (light blue) to secondary
+              .replace(
+                /fill="#7fb0f2"/gi,
+                'fill="var(--icon-secondary, currentColor)"'
+              )
+              .replace(
+                /stroke="#7fb0f2"/gi,
+                'stroke="var(--icon-secondary, currentColor)"'
+              )
+        ),
+        // Icons that can use primary/secondary colors but preserve explicit white
+        other: FileSystemIconLoader('src/icons/other', svg =>
           svg
+            // Normalize viewport sizing
             .replace(/<svg([^>]*)>/, '<svg$1 width="1em" height="1em">')
-            // Strokes are primary
+            // Primary color for strokes, but don't override none or white
             .replace(
-              /stroke="[^"]*"/g,
+              /stroke="(?!none|white)[^"]*"/gi,
               'stroke="var(--icon-primary, currentColor)"'
             )
-            // All non-none fills are secondary; keep fill="none" untouched
+            // Secondary color for fills, but don't override none or white
             .replace(
-              /fill="(?!none)[^"]*"/g,
+              /fill="(?!none|white)[^"]*"/gi,
               'fill="var(--icon-secondary, currentColor)"'
             )
-            // Treat partially opaque layers as secondary color
+            // Handle partially transparent fills as secondary unless explicitly white
             .replace(
-              /opacity="(?:0?\.[0-9]+)"/g,
-              'fill="var(--icon-secondary, currentColor)" opacity="1"'
+              /<([^>]*?)fill-opacity="(?:0?\.[0-9]+)"([^>]*?)>/gi,
+              (full, pre, post) => {
+                if (/fill="white"/i.test(full)) {
+                  return full.replace(
+                    /fill-opacity="(?:0?\.[0-9]+)"/i,
+                    'fill-opacity="1"'
+                  )
+                }
+                return `<${pre}fill="var(--icon-secondary, currentColor)" fill-opacity="1"${post}>`
+              }
             )
+            // Handle partially transparent strokes as secondary unless explicitly white
             .replace(
-              /fill-opacity="(?:0?\.[0-9]+)"/g,
-              'fill="var(--icon-secondary, currentColor)" fill-opacity="1"'
+              /<([^>]*?)stroke-opacity="(?:0?\.[0-9]+)"([^>]*?)>/gi,
+              (full, pre, post) => {
+                if (/stroke="white"/i.test(full)) {
+                  return full.replace(
+                    /stroke-opacity="(?:0?\.[0-9]+)"/i,
+                    'stroke-opacity="1"'
+                  )
+                }
+                return `<${pre}stroke="var(--icon-secondary, currentColor)" stroke-opacity="1"${post}>`
+              }
             )
+            // Generic opacity: treat as secondary unless white is explicitly set
             .replace(
-              /stroke-opacity="(?:0?\.[0-9]+)"/g,
-              'stroke="var(--icon-secondary, currentColor)" stroke-opacity="1"'
+              /<([^>]*?)opacity="(?:0?\.[0-9]+)"([^>]*?)>/gi,
+              (full, pre, post) => {
+                if (/(fill|stroke)="white"/i.test(full)) {
+                  return full.replace(
+                    /opacity="(?:0?\.[0-9]+)"/i,
+                    'opacity="1"'
+                  )
+                }
+                return `<${pre}fill="var(--icon-secondary, currentColor)" opacity="1"${post}>`
+              }
             )
+        ),
+        // Icons with fixed colors; keep original fills/strokes, only normalize sizing
+        'other-fixed-color': FileSystemIconLoader(
+          'src/icons/other-fixed-color',
+          svg => svg.replace(/<svg([^>]*)>/, '<svg$1 width="1em" height="1em">')
         )
       }
     })

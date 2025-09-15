@@ -1,8 +1,11 @@
 <script setup lang="ts">
-  import { computed, ref, isRef, type Ref } from 'vue'
+  import { computed, ref, isRef, type Ref, type ComputedRef } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { Button } from '@/components/ui/button'
-  import { Maximize2, Minimize2 } from 'lucide-vue-next'
+  import { Input } from '@/components/ui/input'
+  import { Label } from '@/components/ui/label'
+  import { Switch } from '@/components/ui/switch'
+  import { Maximize2, Minimize2, Search } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import { useWorkflowNavigation } from '@/composables/useWorkflowNavigation'
   import {
@@ -22,6 +25,7 @@
     SummaryPanel
   } from '@/components/customization-workflow/WorkflowSteps'
   import WorkflowPanel from './WorkflowPanel.vue'
+  import type { HeaderAndFooterConfiguration, BreadcrumbItem } from './types'
 
   interface Props {
     currentStep:
@@ -51,12 +55,6 @@
   const menuPanelRef = ref<{
     scrollToElement: (elementId: string, behavior?: 'smooth' | 'auto') => void
   } | null>(null)
-  import type { ComputedRef } from 'vue'
-  type BreadcrumbItem = { label: string; action?: () => void }
-
-  const currentStepRef = ref<{
-    breadcrumbs?: ComputedRef<BreadcrumbItem[]>
-  } | null>(null)
 
   // Navigation fallback derived from workflow state
   const routeStepRef = computed(() => props.currentStep) as unknown as Ref<any>
@@ -72,27 +70,52 @@
       : props.currentStep
   })
 
+  // Get header and footer configuration from current step component
+
+  const currentStepRef = ref<HeaderAndFooterConfiguration | null>(null)
+
   const isExpandable = computed(() => {
-    return props.currentStep === 'product' || props.currentStep === 'designs'
+    return currentStepRef.value?.headerExtras?.isExpandable
   })
 
   // Get breadcrumbs from current step component
   const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => {
-    const exposed = currentStepRef.value?.breadcrumbs as unknown
+    const exposed = currentStepRef.value?.headerExtras?.breadcrumbs
     if (exposed) {
       return isRef(exposed)
-        ? (exposed as ComputedRef<BreadcrumbItem[]>).value
+        ? (exposed as unknown as ComputedRef<BreadcrumbItem[]>).value
         : (exposed as BreadcrumbItem[])
     }
     // Fallback to centralized navigation when panel doesn't expose breadcrumbs
     return navigationItems.value
   })
 
-  // Header extras (e.g., search) exposed by the active panel
-  const headerSearch = computed(() => {
-    const extras = (currentStepRef.value as unknown as { headerExtras?: any })
-      ?.headerExtras
-    return extras?.search
+  const headerApplyOverrides = computed(() => {
+    return currentStepRef.value?.headerExtras?.applyOverrides
+  })
+
+  // Bridge nested refs from child steps to primitives for props expecting non-Ref
+  const applyOverridesModelValue = computed({
+    get: (): boolean => {
+      const model = currentStepRef.value?.headerExtras?.applyOverrides
+        ?.model as Ref<boolean> | undefined
+      return model?.value ?? false
+    },
+    set: (val: boolean) => {
+      currentStepRef.value?.headerExtras?.applyOverrides?.onInput?.(!!val)
+    }
+  })
+
+  const searchModelValue = computed({
+    get: (): string => {
+      const model = currentStepRef.value?.headerExtras?.search?.model as
+        | Ref<string>
+        | undefined
+      return model?.value ?? ''
+    },
+    set: (val: string) => {
+      currentStepRef.value?.headerExtras?.search?.onInput?.(val)
+    }
   })
 
   const toggleExpanded = () => {
@@ -134,6 +157,19 @@
               <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
             </div>
 
+            <div
+              v-if="headerApplyOverrides !== undefined"
+              class="flex items-center gap-3"
+            >
+              <Switch
+                :model-value="applyOverridesModelValue"
+                @update:model-value="val => (applyOverridesModelValue = !!val)"
+              />
+              <Label class="text-sm font-normal text-muted-foreground">{{
+                headerApplyOverrides.label
+              }}</Label>
+            </div>
+
             <Button
               v-if="isExpandable"
               variant="outline"
@@ -148,15 +184,24 @@
             </Button>
           </div>
 
-          <div v-if="headerSearch" class="flex items-center flex-1">
-            <input
-              class="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              :placeholder="headerSearch.placeholder || 'Search...'"
-              :value="headerSearch.model?.value ?? ''"
-              @input="
-                headerSearch.onInput(($event.target as HTMLInputElement).value)
-              "
-            />
+          <div
+            v-if="currentStepRef?.headerExtras?.search"
+            class="flex items-center flex-1"
+          >
+            <div class="relative w-full">
+              <Search
+                class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+              />
+              <Input
+                :model-value="searchModelValue"
+                :placeholder="
+                  currentStepRef?.headerExtras?.search?.placeholder ||
+                  'Search...'
+                "
+                class="pl-8"
+                @update:model-value="val => (searchModelValue = String(val))"
+              />
+            </div>
           </div>
         </div>
       </template>

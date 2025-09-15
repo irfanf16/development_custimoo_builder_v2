@@ -5,7 +5,8 @@
 
   // Breadcrumb logic for text placement
   const breadcrumbs = computed(() => [{ label: 'Texts' }])
-  defineExpose({ breadcrumbs })
+  const headerExtras = { breadcrumbs }
+  defineExpose({ headerExtras })
 </script>
 
 <template>

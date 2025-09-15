@@ -29,16 +29,19 @@
   const forwarded = useForwardPropsEmits(delegatedProps, emits)
 
   // Ensure portal renders inside the widget's Shadow DOM container when embedded
-  const portalTarget = ref<string | HTMLElement>('body')
+  const teleportTo = ref<string | HTMLElement>('body')
   onMounted(() => {
     const anyWindow = window as any
     const container = anyWindow?.__CUSTOMIZER_CONTAINER__
-    if (container instanceof HTMLElement) portalTarget.value = container
+    if (container instanceof HTMLElement)
+      teleportTo.value = container.getElementsByClassName(
+        'widget-theme'
+      )[0] as HTMLElement
   })
 </script>
 
 <template>
-  <SelectPortal :to="portalTarget">
+  <SelectPortal :to="teleportTo">
     <SelectContent
       data-slot="select-content"
       v-bind="{ ...forwarded, ...$attrs }"

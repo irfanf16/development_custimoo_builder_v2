@@ -5,6 +5,10 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
+  import type {
+    HeaderAndFooterConfiguration,
+    BreadcrumbItem
+  } from '../../types'
 
   interface Emits {
     (
@@ -72,7 +76,7 @@
   }
 
   // Breadcrumb logic for product selection
-  const breadcrumbs = computed(() => {
+  const breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const categoryId =
       workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
     const category = productsStore.categories?.data?.find(
@@ -119,26 +123,45 @@
     return trail
   })
 
-  // Expose breadcrumbs to parent component
   // Header search config
   const productSearchQuery = ref('')
+  const debouncedProductModel = computed({
+    get: () => productSearchQuery.value,
+    set: v => (productSearchQuery.value = v)
+  })
+  let productSearchTimeout: number | null = null
+  const productQuery = ref('')
+  watch(
+    debouncedProductModel,
+    v => {
+      if (productSearchTimeout) window.clearTimeout(productSearchTimeout)
+      productSearchTimeout = window.setTimeout(() => {
+        productQuery.value = v.trim().toLowerCase()
+      }, 150)
+    },
+    { immediate: true }
+  )
   const filteredPreviews = computed(() => {
-    const q = productSearchQuery.value.trim().toLowerCase()
+    const q = productQuery.value
     if (!q) return previews.value
     return previews.value.filter(p =>
       p.productPreview.display_name.toLowerCase().includes(q)
     )
   })
 
-  const headerExtras = {
-    search: {
-      placeholder: 'Search...',
-      model: productSearchQuery,
-      onInput: (val: string) => (productSearchQuery.value = val)
+  const headerAndFooterConfiguration: HeaderAndFooterConfiguration = {
+    headerExtras: {
+      breadcrumbs,
+      search: {
+        placeholder: 'Search products...',
+        model: debouncedProductModel,
+        onInput: (val: string) => (debouncedProductModel.value = val)
+      },
+      isExpandable: true
     }
   }
 
-  defineExpose({ breadcrumbs, headerExtras })
+  defineExpose(headerAndFooterConfiguration)
 </script>
 
 <template>
