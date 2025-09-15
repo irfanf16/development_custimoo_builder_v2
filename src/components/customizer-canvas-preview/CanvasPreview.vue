@@ -84,7 +84,13 @@
 
   onMounted(() => {
     if (!canvasEl.value) return
-    initCanvas({ selection: false, enableRetinaScaling: true })
+    initCanvas({
+      selection: true,
+      enableRetinaScaling: true,
+      moveCursor: 'grab',
+      defaultCursor: 'grab',
+      enablePointerEvents: true
+    })
     updateCanvasSize()
     window.addEventListener('resize', handleResize)
     renderPreview()

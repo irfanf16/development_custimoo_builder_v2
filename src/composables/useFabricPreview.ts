@@ -6,16 +6,10 @@ import {
   loadSVGFromURL,
   util,
   type FabricObject,
+  type CanvasOptions,
   Point
 } from 'fabric'
 import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
-
-type InitOptions = {
-  selection?: boolean
-  enableRetinaScaling?: boolean
-  hoverCursor?: string
-  defaultCursor?: string
-}
 
 type SizeOptions = {
   width: number
@@ -39,6 +33,7 @@ export function useFabricPreview(
   const canvasEl = ref<HTMLCanvasElement | null>(null)
   const canvas = ref<Canvas | null>(null)
   const mainDesignObject = ref<FabricObject | null>(null)
+  const canvasOptions = ref<Partial<CanvasOptions>>({})
 
   // ===== UTILITIES =====
   const storageBase = import.meta.env.VITE_APP_STORAGE_URL || ''
@@ -50,14 +45,10 @@ export function useFabricPreview(
   }
 
   // ===== CANVAS MANAGEMENT =====
-  function initCanvas(options?: InitOptions) {
+  function initCanvas(options?: Partial<CanvasOptions>) {
+    canvasOptions.value = options ?? {}
     if (!canvasEl.value) return
-    canvas.value = new Canvas(canvasEl.value, {
-      selection: options?.selection ?? false,
-      enableRetinaScaling: options?.enableRetinaScaling ?? true,
-      hoverCursor: options?.hoverCursor,
-      defaultCursor: options?.defaultCursor
-    })
+    canvas.value = new Canvas(canvasEl.value, options)
   }
 
   function setCanvasSize({ width, height }: SizeOptions) {
@@ -204,8 +195,8 @@ export function useFabricPreview(
     })
     fitObject(img, fitOptions)
     img.set({
-      selectable: false,
-      evented: false,
+      selectable: canvasOptions.value.selection ?? false,
+      evented: canvasOptions.value.enablePointerEvents ?? false,
       originX: 'center',
       originY: 'center',
       globalCompositeOperation: composition
@@ -259,8 +250,8 @@ export function useFabricPreview(
 
       fitObject(group, fitOptions)
       group.set({
-        selectable: false,
-        evented: false,
+        selectable: canvasOptions.value.selection ?? false,
+        evented: canvasOptions.value.enablePointerEvents ?? false,
         originX: 'center',
         originY: 'center'
       })
@@ -274,8 +265,8 @@ export function useFabricPreview(
       })
       fitObject(img, fitOptions)
       img.set({
-        selectable: false,
-        evented: false,
+        selectable: canvasOptions.value.selection ?? false,
+        evented: canvasOptions.value.enablePointerEvents ?? false,
         originX: 'center',
         originY: 'center'
       })
