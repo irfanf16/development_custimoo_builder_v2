@@ -6,16 +6,10 @@ import {
   loadSVGFromURL,
   util,
   type FabricObject,
+  type CanvasOptions,
   Point
 } from 'fabric'
 import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
-
-type InitOptions = {
-  selection?: boolean
-  enableRetinaScaling?: boolean
-  hoverCursor?: string
-  defaultCursor?: string
-}
 
 type SizeOptions = {
   width: number
@@ -39,6 +33,7 @@ export function useFabricPreview(
   const canvasEl = ref<HTMLCanvasElement | null>(null)
   const canvas = ref<Canvas | null>(null)
   const mainDesignObject = ref<FabricObject | null>(null)
+  const canvasOptions = ref<Partial<CanvasOptions>>({})
 
   // ===== UTILITIES =====
   const storageBase = import.meta.env.VITE_APP_STORAGE_URL || ''
@@ -50,14 +45,10 @@ export function useFabricPreview(
   }
 
   // ===== CANVAS MANAGEMENT =====
-  function initCanvas(options?: InitOptions) {
+  function initCanvas(options?: Partial<CanvasOptions>) {
+    canvasOptions.value = options ?? {}
     if (!canvasEl.value) return
-    canvas.value = new Canvas(canvasEl.value, {
-      selection: options?.selection ?? false,
-      enableRetinaScaling: options?.enableRetinaScaling ?? true,
-      hoverCursor: options?.hoverCursor,
-      defaultCursor: options?.defaultCursor
-    })
+    canvas.value = new Canvas(canvasEl.value, options)
   }
 
   function setCanvasSize({ width, height }: SizeOptions) {
@@ -82,6 +73,44 @@ export function useFabricPreview(
   function requestRender() {
     if (!canvas.value) return
     canvas.value.requestRenderAll()
+  }
+
+  function registerBackgroundDragHandlers() {
+    if (!canvas.value) return
+    let draggingAll = false
+    let last: { x: number; y: number } | null = null
+
+    // Start background drag only when no target is hit
+    canvas.value.on('mouse:down:before', (opt: any) => {
+      if (!canvas.value) return
+      const target = canvas.value.findTarget?.(opt.e)
+      if (target) return
+      const p =
+        canvas.value.getScenePoint?.(opt.e) || canvas.value.getPointer(opt.e)
+      last = { x: p.x, y: p.y }
+      draggingAll = true
+    })
+
+    canvas.value.on('mouse:move', (opt: any) => {
+      if (!canvas.value || !draggingAll || !last) return
+      const p =
+        canvas.value.getScenePoint?.(opt.e) || canvas.value.getPointer(opt.e)
+      const dx = p.x - last.x
+      const dy = p.y - last.y
+      if (dx === 0 && dy === 0) return
+      const objs = canvas.value.getObjects()
+      for (const o of objs) {
+        o.set({ left: (o.left || 0) + dx, top: (o.top || 0) + dy } as any)
+        o.setCoords()
+      }
+      last = { x: p.x, y: p.y }
+      canvas.value.requestRenderAll()
+    })
+
+    canvas.value.on('mouse:up', () => {
+      draggingAll = false
+      last = null
+    })
   }
 
   function setZoom(
@@ -117,7 +146,12 @@ export function useFabricPreview(
     options?: {
       center?: { x: number; y: number } | 'asset' | 'canvas'
       duration?: number
-      easing?: (t: number) => number
+      easing?: (
+        timeElapsed: number,
+        startValue: number,
+        byValue: number,
+        duration: number
+      ) => number
     }
   ) {
     if (!canvas.value) return
@@ -147,16 +181,25 @@ export function useFabricPreview(
       return
     }
 
-    const easingFn =
-      (util as any)?.ease?.easeInOutCubic ||
-      ((t: number) =>
-        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+    // Default easing function for Fabric.js 6.7.1
+    const defaultEasing = (
+      timeElapsed: number,
+      startValue: number,
+      byValue: number,
+      duration: number
+    ) => {
+      const t = timeElapsed / duration
+      return (
+        startValue +
+        byValue * (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+      )
+    }
 
     util.animate({
       startValue: from,
       endValue: zoom,
       duration,
-      easing: options?.easing || easingFn,
+      easing: options?.easing || defaultEasing,
       onChange: (value: number) => {
         if (!canvas.value) return
         canvas.value.zoomToPoint(point as Point, value)
@@ -204,8 +247,8 @@ export function useFabricPreview(
     })
     fitObject(img, fitOptions)
     img.set({
-      selectable: false,
-      evented: false,
+      selectable: canvasOptions.value.selection ?? false,
+      evented: canvasOptions.value.enablePointerEvents ?? false,
       originX: 'center',
       originY: 'center',
       globalCompositeOperation: composition
@@ -259,8 +302,8 @@ export function useFabricPreview(
 
       fitObject(group, fitOptions)
       group.set({
-        selectable: false,
-        evented: false,
+        selectable: canvasOptions.value.selection ?? false,
+        evented: canvasOptions.value.enablePointerEvents ?? false,
         originX: 'center',
         originY: 'center'
       })
@@ -274,8 +317,8 @@ export function useFabricPreview(
       })
       fitObject(img, fitOptions)
       img.set({
-        selectable: false,
-        evented: false,
+        selectable: canvasOptions.value.selection ?? false,
+        evented: canvasOptions.value.enablePointerEvents ?? false,
         originX: 'center',
         originY: 'center'
       })
@@ -312,6 +355,7 @@ export function useFabricPreview(
     setZoom,
     animateZoom,
     fitObject,
+    registerBackgroundDragHandlers,
     // Layer Management
     addModelLayer,
     addDesignLayer,

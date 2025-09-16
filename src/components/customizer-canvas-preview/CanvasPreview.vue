@@ -18,7 +18,8 @@
     addModelLayer,
     addDesignLayer,
     fadeOut,
-    fadeIn
+    fadeIn,
+    registerBackgroundDragHandlers
   } = useFabricPreview()
   const {
     activeDesignDetails: effectiveDesignDetails,
@@ -72,7 +73,7 @@
   }
 
   function updateCanvasSize() {
-    const w = window.innerWidth - 65 || 1200
+    const w = window.innerWidth || 1200
     const h = window.innerHeight || 800
     setCanvasSize({ width: w, height: h })
   }
@@ -84,9 +85,16 @@
 
   onMounted(() => {
     if (!canvasEl.value) return
-    initCanvas({ selection: false, enableRetinaScaling: true })
+    initCanvas({
+      selection: false,
+      enableRetinaScaling: true,
+      moveCursor: 'grab',
+      defaultCursor: 'grab',
+      enablePointerEvents: false
+    })
     updateCanvasSize()
     window.addEventListener('resize', handleResize)
+    registerBackgroundDragHandlers()
     renderPreview()
   })
 
@@ -104,7 +112,7 @@
     () => workflowStore.canvasZoom,
     z => {
       if (!canvas.value) return
-      animateZoom(z, { duration: 175, center: 'asset' })
+      animateZoom(z, { duration: 150, center: 'asset' })
       requestRender()
     }
   )

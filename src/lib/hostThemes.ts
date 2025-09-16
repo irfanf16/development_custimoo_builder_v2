@@ -41,7 +41,7 @@ export const hostThemes: Record<string, HostTheme> = {
     fontFamilyHeading: 'Poppins',
     name: 'E-commerce Red',
     description: 'Warm red primary with teal accent for shopping sites',
-    allowColorModeSwitch: false,
+    allowColorModeSwitch: true,
     defaultColorMode: 'light'
   },
 

@@ -11,8 +11,10 @@
     topbar_save_options
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useUIStore } from '@/stores/ui'
 
   const localeStore = useLocaleStore()
+  const uiStore = useUIStore()
 </script>
 
 <template>
@@ -58,7 +60,12 @@
     </Button>
     <LanguageSwitcher />
     <SignInButton variant="outline" size="default" class="rounded-lg" />
-    <ThemeToggle variant="outline" size="default" class="rounded-lg" />
+    <ThemeToggle
+      v-if="uiStore.allowColorModeSwitch"
+      variant="outline"
+      size="default"
+      class="rounded-lg"
+    />
   </div>
 </template>
 
