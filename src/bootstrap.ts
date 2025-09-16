@@ -48,12 +48,6 @@ export function bootstrap(
     const minHeight = ui.minWidgetHeight
     container.style.minHeight = `${minHeight}px`
     container.style.height = 'auto'
-
-    console.log('Container height set:', {
-      width: ui.containertWidth,
-      height: ui.containerHeight,
-      isMobile: ui.isMobile
-    })
   }
 
   // Set initial height
