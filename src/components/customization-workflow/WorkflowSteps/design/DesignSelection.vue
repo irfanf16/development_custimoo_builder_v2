@@ -117,7 +117,7 @@
       :id="`design-${item.id}`"
       class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"
       :class="[
-        'relative rounded-xl transition-colors cursor-pointer',
+        'relative rounded-sm transition-colors cursor-pointer',
         'hover:border-border hover:bg-primary/10 hover:outline-ring',
         selectedDesignId === item.id ? 'bg-primary/20' : ''
       ]"
