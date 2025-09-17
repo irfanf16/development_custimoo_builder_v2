@@ -16,6 +16,9 @@ export type OutputDesignPreview = {
   frontsafezone_design: OutputDesignAsset
   frontboundary_design: OutputDesignAsset
   svg_parts: string[]
+  design_name: string
+  design_show: number
+  is_active: number
 }
 
 export type OutputDesignDetails = OutputDesignPreview & {
@@ -25,8 +28,6 @@ export type OutputDesignDetails = OutputDesignPreview & {
   container_file_id: number
   created_at: string
   deleted_at: string | null
-  design_name: string
-  design_show: number
   design_show_on_scroll: number
   front_design_id: number
   back_design_id?: number
@@ -34,7 +35,6 @@ export type OutputDesignDetails = OutputDesignPreview & {
   frontboundary_design_id?: number
   backsafezone_design_id?: number
   backboundary_design_id?: number
-  is_active: number
   production_design: {
     design_position: string
     file_base_url?: string

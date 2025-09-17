@@ -9,6 +9,7 @@
     HeaderAndFooterConfiguration,
     BreadcrumbItem
   } from '../../types'
+  import type { OutputDesignDetails } from '@/services/products/types'
 
   interface Emits {
     (
@@ -68,7 +69,9 @@
     }
     if (designId && styleId) {
       // Persist chosen design in customization
-      customizationStore.setDesign(designId)
+      customizationStore.setDesign(
+        productsStore.activeDesignDetails as OutputDesignDetails
+      )
       await productsStore.fetchDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs
@@ -172,7 +175,7 @@
       :id="`product-${item.productPreview.id}`"
       class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"
       :class="[
-        'relative rounded-xl transition-colors cursor-pointer',
+        'relative rounded-sm transition-colors cursor-pointer',
         'hover:border-border hover:bg-primary/10 hover:outline-ring',
         selectedProductId === item.productPreview.id ? 'bg-primary/20' : ''
       ]"

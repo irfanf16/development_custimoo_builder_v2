@@ -136,6 +136,7 @@ export type ActiveProductCustomization = {
   category_id: number
   design_index: number
   design_id: number
+  design_name: string
   product_index: number
   product_id: number
   search_products: string

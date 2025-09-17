@@ -150,7 +150,7 @@
       <!-- Header slot -->
       <template #header="{ isExpanded }">
         <div class="w-full flex flex-col gap-5">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 h-9 justify-center">
             <div
               class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
             >

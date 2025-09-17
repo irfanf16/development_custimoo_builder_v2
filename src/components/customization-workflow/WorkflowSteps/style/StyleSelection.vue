@@ -41,42 +41,48 @@
       productsStore.fetchStylePreviews(productId.value as number)
     }
     // Ensure addons are loaded when product changes
-    if (productId.value) {
-      productsStore.fetchProductAddons(productId.value as number)
-    }
+    // if (productId.value) {
+    //   productsStore.fetchProductAddons(productId.value as number)
+    // }
   })
 
   async function handleStyleSelection(styleId: number) {
     await productsStore.fetchActiveStyleDetails(styleId)
-    await productsStore.fetchDesignPreviewsByStyleId(styleId)
     // keep user on Styles; breadcrumbs will show updated style name
   }
 
   function toggleAddon(addonId: number) {
-    if (!productsStore.activeAddons) return
-    const idx = productsStore.activeAddons.findIndex(
+    if (!productsStore.activeProductDetails?.active_addons) return
+    const idx = productsStore.activeProductDetails?.active_addons.findIndex(
       a => a.addon_id === addonId
     )
     if (idx >= 0) {
-      const next = !productsStore.activeAddons[idx].selected
       // Use a setter to update store state
-      productsStore.updateActiveAddonSelected(addonId, next)
       // Update customization state with the new addon selection
-      customizationStore.setAddons([...productsStore.activeAddons])
+      customizationStore.setAddons([
+        ...productsStore.activeProductDetails?.active_addons
+      ])
     }
   }
 
   const visibleAddons = computed(() => {
-    if (productsStore.companyAddons && productsStore.companyAddons.length) {
-      return (productsStore.companyAddons || []).map(a => ({
-        addon_id: a.addon_id,
-        title: a.addon_data.title
-      })) as Array<{ addon_id: number; title: string }>
+    if (
+      productsStore.activeProductDetails?.company_addons &&
+      productsStore.activeProductDetails?.company_addons.length
+    ) {
+      return (productsStore.activeProductDetails?.company_addons || []).map(
+        a => ({
+          addon_id: a.addon_id,
+          title: a.addon_data.title
+        })
+      ) as Array<{ addon_id: number; title: string }>
     }
-    return (productsStore.productAddons || []).map(a => ({
-      addon_id: a.addon_id,
-      title: a.title
-    })) as Array<{ addon_id: number; title: string }>
+    return (productsStore.activeProductDetails?.product_addons || []).map(
+      a => ({
+        addon_id: a.addon_id,
+        title: a.title
+      })
+    ) as Array<{ addon_id: number; title: string }>
   })
 
   // Breadcrumb logic for style selection
@@ -148,7 +154,7 @@
           <Checkbox
             :id="`checkbox-addon-${addon.addon_id}`"
             :checked="
-              (productsStore.activeAddons || []).some(
+              (productsStore.activeProductDetails?.active_addons || []).some(
                 a => a.addon_id === addon.addon_id && a.selected
               )
             "

@@ -20,7 +20,7 @@
   const productsStore = useProductsStore()
 
   const previews = computed(() => productsStore.designPreviews || [])
-  const selectedDesignId = computed(() => customizationStore.activeDesignId)
+  const selectedDesignName = computed(() => customizationStore.activeDesignName)
   const designSelectionContainer = ref<HTMLElement | null>(null)
   const applyCustomizationOverrides = ref(false)
 
@@ -33,11 +33,11 @@
     }
     // Scroll to active design when component mounts
     nextTick(() => {
-      const activeDesignId = customizationStore.customization?.design_id
-      if (activeDesignId) {
+      const activeDesignName = customizationStore.customization?.design_name
+      if (activeDesignName) {
         // Small delay to ensure WorkflowPanel is fully mounted
         setTimeout(() => {
-          emit('scroll-to-element', `design-${activeDesignId}`, 'auto')
+          emit('scroll-to-element', `design-${activeDesignName}`, 'auto')
         }, 100)
       }
     })
@@ -46,12 +46,11 @@
   async function selectDesign(
     item: import('@/services/products/types').OutputDesignPreview
   ) {
-    console.log('selectDesign', item)
     productsStore.applyDesignPreview(item)
     // Scroll to selected design with smooth animation
     setTimeout(() => {
-      emit('scroll-to-element', `design-${item.id}`, 'smooth')
-    }, 300)
+      emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
+    }, 100)
   }
 
   // Header search config (debounced for perf)
@@ -103,7 +102,7 @@
   // Hint to TS that these are used via the template
   void ProductPreviewCanvas
   void filteredPreviews
-  void selectedDesignId
+  void selectedDesignName
   void designSelectionContainer
   void selectDesign
 </script>
@@ -114,12 +113,12 @@
     <div
       v-for="item in filteredPreviews"
       :key="item.id"
-      :id="`design-${item.id}`"
+      :id="`design-${item.design_name}`"
       class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"
       :class="[
-        'relative rounded-xl transition-colors cursor-pointer',
+        'relative rounded-sm transition-colors cursor-pointer',
         'hover:border-border hover:bg-primary/10 hover:outline-ring',
-        selectedDesignId === item.id ? 'bg-primary/20' : ''
+        selectedDesignName === item.design_name ? 'bg-primary/20' : ''
       ]"
       @click="selectDesign(item)"
     >
