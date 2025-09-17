@@ -37,12 +37,11 @@ export function useWorkflowEffects() {
           customizationStore.activeProductId
         if (pid && !productsStore.stylePreviews) {
           await productsStore.fetchStylePreviews(pid as number)
-          await productsStore.fetchProductAddons(pid as number)
         }
       } else if (step === 'Logos') {
         // Ensure recent logos are loaded
         if (!productsStore.recentLogos) {
-          await productsStore.fetchRecentLogos()
+          //await productsStore.fetchRecentLogos()
         }
       }
     },
@@ -77,10 +76,9 @@ export function useWorkflowEffects() {
         customizationStore.activeProductId
       if (pid) {
         await productsStore.fetchStylePreviews(pid as number)
-        await productsStore.fetchProductAddons(pid as number)
       }
     } else if (step === 'Logos') {
-      await productsStore.fetchRecentLogos()
+      //await productsStore.fetchRecentLogos()
     }
   }
 

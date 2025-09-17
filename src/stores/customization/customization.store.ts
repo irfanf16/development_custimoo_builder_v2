@@ -3,7 +3,9 @@ import { ref, computed } from 'vue'
 import type {
   ActiveProductCustomization,
   OutputAddon,
-  OutputColor
+  OutputColor,
+  OutputDesignDetails,
+  OutputDesignPreview
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
@@ -21,6 +23,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   )
   const activeStyleId = computed(() => customization.value?.style_id ?? null)
   const activeDesignId = computed(() => customization.value?.design_id ?? null)
+  const activeDesignName = computed(
+    () => customization.value?.design_name ?? null
+  )
   const activeCategoryId = computed(
     () => customization.value?.category_id ?? null
   )
@@ -95,11 +100,12 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  async function setDesign(designId: number) {
+  async function setDesign(design: OutputDesignDetails | OutputDesignPreview) {
     if (!customization.value) return
     const prev = customization.value.design_id
-    if (prev === designId) return
-    customization.value.design_id = designId
+    if (prev === design.id) return
+    customization.value.design_id = design.id
+    customization.value.design_name = design.design_name
     // Fetch orchestration handled in products store watcher
     saveToLocalStorage()
   }
@@ -143,6 +149,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       category_id: preservedIds.categoryId ?? 0,
       design_index: 0,
       design_id: preservedIds.designId ?? 0,
+      design_name: '',
       product_index: 0,
       product_id: preservedIds.productId ?? 0,
       search_products: '',
@@ -231,6 +238,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     activeProductId,
     activeStyleId,
     activeDesignId,
+    activeDesignName,
     activeCategoryId,
     activeSubCategoryId,
     // Persistence

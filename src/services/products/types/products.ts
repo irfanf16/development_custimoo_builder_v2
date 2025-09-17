@@ -12,6 +12,8 @@ export type OutputProductPreview = {
   measurement_ratio: number
   product_id: number
   productnames: OutputProductName[]
+  is_3d_product: number
+  show_3d: number
 }
 
 export type OutputProductDetails = OutputProductPreview & {
@@ -22,14 +24,12 @@ export type OutputProductDetails = OutputProductPreview & {
   deleted_at: string | null
   ecommerce_product_id: number | null
   factory_id: number | null
-  is_3d_product: number
   is_cap_letter_available: number
   is_default: 1 | 0
   is_private: number
   parent_id: number | null
   preview_custom_texts: number
   shareable: number
-  show_3d: number
   sku: {
     addon_group_id: number | null
     asana_task_template_id: number | null

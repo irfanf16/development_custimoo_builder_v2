@@ -1,7 +1,7 @@
 import axios, { type AxiosRequestHeaders } from 'axios'
 
 const instance = axios.create({
-  baseURL: `${import.meta.env.VITE_API_ENDPOINT}/api`
+  baseURL: `${import.meta.env.VITE_API_ENDPOINT}/api/v2`
 })
 
 // Attach CustomerToken header if access token is present

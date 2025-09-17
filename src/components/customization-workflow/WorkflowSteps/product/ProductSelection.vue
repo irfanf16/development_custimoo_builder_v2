@@ -9,6 +9,7 @@
     HeaderAndFooterConfiguration,
     BreadcrumbItem
   } from '../../types'
+  import type { OutputDesignDetails } from '@/services/products/types'
 
   interface Emits {
     (
@@ -68,7 +69,9 @@
     }
     if (designId && styleId) {
       // Persist chosen design in customization
-      customizationStore.setDesign(designId)
+      customizationStore.setDesign(
+        productsStore.activeDesignDetails as OutputDesignDetails
+      )
       await productsStore.fetchDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs

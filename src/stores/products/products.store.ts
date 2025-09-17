@@ -11,11 +11,10 @@ import type {
   OutputStylePreview,
   OutputStyleDetails,
   OutputDesignDetails,
-  OutputAddon,
-  OutputCompanyAddon,
   OutputRecentLogo,
   OutputProductDetails,
-  OutputSvgGroupColor
+  OutputSvgGroupColor,
+  ActiveStyleDetails
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
@@ -31,9 +30,6 @@ export const useProductsStore = defineStore('productsStore', () => {
   const activeStyleDetails = ref<OutputStyleDetails | null>(null)
   const activeDesignDetails = ref<OutputDesignDetails | null>(null)
   const svgGroups = ref<OutputSvgGroupColor[] | null>(null)
-  const activeAddons = ref<OutputAddon[] | null>(null)
-  const productAddons = ref<OutputAddon[] | null>(null)
-  const companyAddons = ref<OutputCompanyAddon[] | null>(null)
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
   const stylePreviews = ref<OutputStylePreview[] | null>(null)
   const designPreviews = ref<OutputDesignPreview[] | null>(null)
@@ -58,11 +54,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     const safeObjects = (objects || []).filter(Boolean) as FabricObject[]
     return util.groupSVGElements(safeObjects) as CustomFabricGroup
   }
-
-  // ===== REQUEST MANAGEMENT =====
-  const inFlightProduct = new Map<number, Promise<any>>()
-  const inFlightStyle = new Map<number, Promise<any>>()
-  const inFlightDesign = new Map<number, Promise<any>>()
 
   // ===== ACTIONS =====
   function setLoading(loading: boolean) {
@@ -91,17 +82,17 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   // Addons setters to avoid direct mutations from components
-  function setActiveAddonsList(addons: OutputAddon[]) {
-    activeAddons.value = addons
-  }
+  // function setActiveAddonsList(addons: OutputAddon[]) {
+  //   activeAddons.value = addons
+  // }
 
-  function updateActiveAddonSelected(addonId: number, selected: boolean) {
-    if (!activeAddons.value) return
-    const idx = activeAddons.value.findIndex(a => a.addon_id === addonId)
-    if (idx >= 0) {
-      activeAddons.value[idx].selected = selected
-    }
-  }
+  // function updateActiveAddonSelected(addonId: number, selected: boolean) {
+  //   if (!activeAddons.value) return
+  //   const idx = activeAddons.value.findIndex(a => a.addon_id === addonId)
+  //   if (idx >= 0) {
+  //     activeAddons.value[idx].selected = selected
+  //   }
+  // }
   // ===== BUSINESS LOGIC =====
   async function setSvgGroups(): Promise<void> {
     const frontDesignUrl = activeDesignDetails.value?.front_design.file_url
@@ -207,90 +198,56 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   async function fetchActiveStyleDetails(styleId: number) {
-    if (inFlightStyle.has(styleId)) return inFlightStyle.get(styleId)!
-    const p = (async () => {
-      setLoading(true)
-      setError(null)
-      const resp = await tryCatchApi(
-        API.products.getActiveStyleDetails(styleId)
-      )
-      if (resp.success) {
-        const payload = resp.content as unknown as {
-          productstyle: OutputStyleDetails
-          productdesign: OutputDesignDetails
-        }
-        setActiveStyleDetailsState(payload.productstyle)
-        setActiveDesignDetailsState(payload.productdesign)
-        customization.setStyle(styleId)
-        customization.setDesign(payload.productdesign.id)
-        setSvgGroups()
-      } else {
-        setError('Error getting active style details')
-      }
-      setLoading(false)
-      return resp
-    })()
-    inFlightStyle.set(styleId, p)
-    try {
-      return await p
-    } finally {
-      inFlightStyle.delete(styleId)
-    }
-  }
-
-  async function fetchProductAddons(productId: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(API.products.getProductAddons(productId))
+    console.log(
+      'designName before fetch',
+      customization.customization?.design_name
+    )
+    const resp = await tryCatchApi(
+      API.products.getActiveStyleDetails(
+        styleId,
+        customization.customization?.design_name
+      )
+    )
     if (resp.success) {
-      const content = resp.content as unknown as {
-        active_addons: OutputAddon[]
-        product_addons: OutputAddon[]
-        company_addons: OutputCompanyAddon[]
-      }
-      activeAddons.value = content.active_addons
-      productAddons.value = content.product_addons
-      companyAddons.value = content.company_addons
+      const payload = resp.content as ActiveStyleDetails
+      setActiveStyleDetailsState(payload.styleDetails)
+      setActiveDesignDetailsState(payload.designDetails)
+      customization.setStyle(styleId)
+      customization.setDesign(payload.designDetails)
+      setSvgGroups()
+    } else {
+      setError('Error getting active style details')
     }
     setLoading(false)
     return resp
   }
 
   async function fetchActiveProductDetails(productId: number) {
-    if (inFlightProduct.has(productId)) return inFlightProduct.get(productId)!
-    const p = (async () => {
-      setLoading(true)
-      setError(null)
-      const result = await tryCatchApi(
-        API.products.getActiveProductDetails(productId)
-      )
-      if (result.success && result.content) {
-        const details = result.content as ActiveProductDetails
-        setActiveProductDetailsState(details.productDetails)
-        setActiveStyleDetailsState(details.styleDetails)
-        setActiveDesignDetailsState(
-          details.designDetails as OutputDesignDetails
-        )
-        customization.setProduct(productId)
-        customization.setStyle(details.styleDetails.id)
-        customization.setDesign(details.designDetails.id)
-        await setSvgGroups()
-        if (!customization.customization) {
-          customization.ensureCustomization()
-          saveCustomizationToLocalStorage()
-        }
-      } else {
-        setError('Error getting active product details')
+    setLoading(true)
+    setError(null)
+    const result = await tryCatchApi(
+      API.products.getActiveProductDetails(productId)
+    )
+    if (result.success && result.content) {
+      const details = result.content as ActiveProductDetails
+      setActiveProductDetailsState(details.productDetails)
+      setActiveStyleDetailsState(details.styleDetails)
+      setActiveDesignDetailsState(details.designDetails as OutputDesignDetails)
+      customization.setProduct(productId)
+      customization.setStyle(details.styleDetails.id)
+      customization.setDesign(details.designDetails)
+      await setSvgGroups()
+      if (!customization.customization) {
+        customization.ensureCustomization()
+        saveCustomizationToLocalStorage()
       }
-      setLoading(false)
-      return result
-    })()
-    inFlightProduct.set(productId, p)
-    try {
-      return await p
-    } finally {
-      inFlightProduct.delete(productId)
+    } else {
+      setError('Error getting active product details')
     }
+    setLoading(false)
+    return result
   }
 
   const defaultActiveDetails = ref<{
@@ -335,7 +292,7 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function applyDesignPreview(designPreview: OutputDesignPreview) {
     if (customization.customization) {
-      customization.setDesign(designPreview.id)
+      customization.setDesign(designPreview)
       saveCustomizationToLocalStorage()
     }
   }
@@ -356,42 +313,30 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   async function fetchDesignDetailsById(designId: number) {
-    if (inFlightDesign.has(designId)) return inFlightDesign.get(designId)!
-    const p = (async () => {
-      setLoading(true)
-      setError(null)
-      const resp = await tryCatchApi(
-        API.products.getDesignDetailsById(designId)
-      )
-      if (resp.success) {
-        activeDesignDetails.value =
-          resp.content as unknown as OutputDesignDetails
-      } else {
-        setError('Error getting design details')
-      }
-      setLoading(false)
-      return resp
-    })()
-    inFlightDesign.set(designId, p)
-    try {
-      return await p
-    } finally {
-      inFlightDesign.delete(designId)
-    }
-  }
-
-  async function fetchRecentLogos(companyId?: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(API.products.getRecentLogos(companyId))
+    const resp = await tryCatchApi(API.products.getDesignDetailsById(designId))
     if (resp.success) {
-      recentLogos.value = resp.content as unknown as OutputRecentLogo[]
+      activeDesignDetails.value = resp.content as unknown as OutputDesignDetails
     } else {
-      setError('Error getting recent logos')
+      setError('Error getting design details')
     }
     setLoading(false)
     return resp
   }
+
+  // async function fetchRecentLogos(companyId?: number) {
+  //   setLoading(true)
+  //   setError(null)
+  //   const resp = await tryCatchApi(API.products.getRecentLogos(companyId))
+  //   if (resp.success) {
+  //     recentLogos.value = resp.content as unknown as OutputRecentLogo[]
+  //   } else {
+  //     setError('Error getting recent logos')
+  //   }
+  //   setLoading(false)
+  //   return resp
+  // }
 
   // Centralized fetch orchestration reacting to customization selections
   watch(
@@ -437,9 +382,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     activeStyleDetails,
     activeDesignDetails,
     svgGroups,
-    activeAddons,
-    productAddons,
-    companyAddons,
+    //activeAddons,
+    //productAddons,
+    //companyAddons,
     productPreviews,
     stylePreviews,
     designPreviews,
@@ -453,8 +398,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveProductDetailsState,
     setActiveStyleDetailsState,
     setActiveDesignDetailsState,
-    setActiveAddonsList,
-    updateActiveAddonSelected,
+    //setActiveAddonsList,
+    //updateActiveAddonSelected,
     // Business Logic
     setSvgGroups,
     reset,
@@ -470,9 +415,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     fetchStylePreviews,
     fetchActiveProductDetails,
     fetchActiveStyleDetails,
-    fetchProductAddons,
+    //fetchProductAddons,
     fetchDesignPreviewsByStyleId,
-    fetchDesignDetailsById,
-    fetchRecentLogos
+    fetchDesignDetailsById
+    //fetchRecentLogos
   }
 })

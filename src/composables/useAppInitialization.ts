@@ -137,7 +137,7 @@ export function useAppInitialization() {
     if (!designId) {
       const defaultDesignId = productsStore.activeDesignDetails?.id
       if (defaultDesignId) {
-        customizationStore.setDesign(defaultDesignId)
+        customizationStore.setDesign(productsStore.activeDesignDetails)
         designId = defaultDesignId
       }
     } else if (productsStore.activeDesignDetails?.id !== designId) {

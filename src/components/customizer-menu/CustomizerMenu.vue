@@ -44,8 +44,10 @@
   const shouldShowStyles = computed(() => {
     const stylesCount = (productsStore.stylePreviews || []).length
     const hasAddons = !!(
-      (productsStore.companyAddons && productsStore.companyAddons.length) ||
-      (productsStore.productAddons && productsStore.productAddons.length)
+      (productsStore.activeProductDetails?.company_addons &&
+        productsStore.activeProductDetails?.company_addons.length) ||
+      (productsStore.activeProductDetails?.product_addons &&
+        productsStore.activeProductDetails?.product_addons.length)
     )
     return stylesCount > 1 || hasAddons
   })
@@ -129,13 +131,12 @@
         if (!productsStore.stylePreviews) {
           await productsStore.fetchStylePreviews(pid as number)
         }
-        // Ensure addons are present
-        await productsStore.fetchProductAddons(pid as number)
       }
     } else if (label === NAV_STEPS.LOGOS) {
       // Prefetch recent logos
       if (!productsStore.recentLogos) {
-        await productsStore.fetchRecentLogos()
+        // To be implemented
+        // await productsStore.fetchRecentLogos()
       }
     } else if (label === NAV_STEPS.COLORS) {
       // Set step directly; colors lives inside product details
