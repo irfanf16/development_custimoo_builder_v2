@@ -86,9 +86,7 @@ export const useCompanyStore = defineStore('companyStore', () => {
   }
 
   // API Functions
-  async function dispatchGetCompany(): Promise<
-    APIResponse<{ company: Company }>
-  > {
+  async function fetchCompany(): Promise<APIResponse<{ company: Company }>> {
     setLoading(true)
     setError(null)
     const response = await tryCatchApi(API.company.getCompany())
@@ -101,7 +99,7 @@ export const useCompanyStore = defineStore('companyStore', () => {
     return response
   }
 
-  async function dispatchGetSettings(): Promise<APIResponse<OutputSettings>> {
+  async function fetchSettings(): Promise<APIResponse<OutputSettings>> {
     setLoading(true)
     setError(null)
     const output = await tryCatchApi(API.company.getSettings())
@@ -130,7 +128,7 @@ export const useCompanyStore = defineStore('companyStore', () => {
     reset,
 
     // API Functions
-    dispatchGetCompany,
-    dispatchGetSettings
+    fetchCompany,
+    fetchSettings
   }
 })

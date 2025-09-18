@@ -53,8 +53,8 @@ export function useAppInitialization() {
     const productsStore = useProductsStore()
 
     await Promise.all([
-      companyStore.dispatchGetCompany(),
-      companyStore.dispatchGetSettings(),
+      companyStore.fetchCompany(),
+      companyStore.fetchSettings(),
       productsStore.fetchCustomizedCategories()
     ])
   }

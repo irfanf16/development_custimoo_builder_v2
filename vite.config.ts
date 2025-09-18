@@ -78,21 +78,30 @@ export default defineConfig({
           svg
             // Normalize viewport sizing
             .replace(/<svg([^>]*)>/, '<svg$1 width="1em" height="1em">')
+            // Allow authors to mark PRIMARY shapes explicitly
+            .replace(
+              /fill="currentColor"/gi,
+              'fill="var(--icon-primary, currentColor)"'
+            )
             // Primary color for strokes, but don't override none or white
             .replace(
               /stroke="(?!none|white)[^"]*"/gi,
               'stroke="var(--icon-primary, currentColor)"'
             )
-            // Secondary color for fills, but don't override none or white
+            // Secondary color for fills, but don't override none, white, or explicit primary/currentColor
             .replace(
-              /fill="(?!none|white)[^"]*"/gi,
+              /fill="(?!none|white|currentColor|var\(--icon-primary)[^"]*"/gi,
               'fill="var(--icon-secondary, currentColor)"'
             )
-            // Handle partially transparent fills as secondary unless explicitly white
+            // Handle partially transparent fills: keep explicit white/primary/currentColor as-is (opacity→1), otherwise make secondary
             .replace(
               /<([^>]*?)fill-opacity="(?:0?\.[0-9]+)"([^>]*?)>/gi,
               (full, pre, post) => {
-                if (/fill="white"/i.test(full)) {
+                if (
+                  /fill="white"/i.test(full) ||
+                  /fill="currentColor"/i.test(full) ||
+                  /fill="var\(--icon-primary/i.test(full)
+                ) {
                   return full.replace(
                     /fill-opacity="(?:0?\.[0-9]+)"/i,
                     'fill-opacity="1"'
@@ -101,11 +110,15 @@ export default defineConfig({
                 return `<${pre}fill="var(--icon-secondary, currentColor)" fill-opacity="1"${post}>`
               }
             )
-            // Handle partially transparent strokes as secondary unless explicitly white
+            // Handle partially transparent strokes: keep explicit white/primary/currentColor as-is (opacity→1), otherwise make secondary
             .replace(
               /<([^>]*?)stroke-opacity="(?:0?\.[0-9]+)"([^>]*?)>/gi,
               (full, pre, post) => {
-                if (/stroke="white"/i.test(full)) {
+                if (
+                  /stroke="white"/i.test(full) ||
+                  /stroke="currentColor"/i.test(full) ||
+                  /stroke="var\(--icon-primary/i.test(full)
+                ) {
                   return full.replace(
                     /stroke-opacity="(?:0?\.[0-9]+)"/i,
                     'stroke-opacity="1"'
@@ -114,11 +127,15 @@ export default defineConfig({
                 return `<${pre}stroke="var(--icon-secondary, currentColor)" stroke-opacity="1"${post}>`
               }
             )
-            // Generic opacity: treat as secondary unless white is explicitly set
+            // Generic opacity: treat as secondary unless white or primary/currentColor is explicitly set
             .replace(
               /<([^>]*?)opacity="(?:0?\.[0-9]+)"([^>]*?)>/gi,
               (full, pre, post) => {
-                if (/(fill|stroke)="white"/i.test(full)) {
+                if (
+                  /(fill|stroke)="white"/i.test(full) ||
+                  /(fill|stroke)="currentColor"/i.test(full) ||
+                  /(fill|stroke)="var\(--icon-primary/i.test(full)
+                ) {
                   return full.replace(
                     /opacity="(?:0?\.[0-9]+)"/i,
                     'opacity="1"'

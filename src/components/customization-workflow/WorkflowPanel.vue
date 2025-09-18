@@ -161,8 +161,10 @@
           <div
             ref="cardContentRef"
             :key="props.contentKey"
-            class="h-full overflow-y-auto [scrollbar-gutter:stable] max-h-[60vh]"
+            class="h-full overflow-y-auto max-h-[60vh]"
           >
+            <!-- class="h-full overflow-y-auto [scrollbar-gutter:stable] max-h-[60vh]"
+          > -->
             <slot :is-expanded="isExpanded" />
           </div>
         </Transition>

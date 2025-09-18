@@ -22,7 +22,6 @@ export function useWorkflowNavigation(
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
-
   // ===== COMPUTED =====
   const navigationItems = computed((): NavigationItem[] => {
     const step = workflowStore.activeStep || 'Categories'

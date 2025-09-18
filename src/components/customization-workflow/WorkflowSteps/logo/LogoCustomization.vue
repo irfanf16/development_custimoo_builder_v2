@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, ref, onMounted } from 'vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -15,6 +15,8 @@
   import LogoPlacementThumb from './LogoPlacementThumb.vue'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
+  import { useLogosStore } from '@/stores/logos/logos.store'
+  import type { Logo as RecentLogo } from '@/services/logos/types'
   import {
     logos_empty_drag_drop,
     logos_empty_click_to_upload,
@@ -37,6 +39,7 @@
   const workflowStore = useWorkflowStore()
   const localeStore = useLocaleStore()
   const history = useHistoryStore()
+  const logosStore = useLogosStore()
 
   type SubPanel = 'list' | 'placement' | 'edit'
   const subPanel = ref<SubPanel>('list')
@@ -61,6 +64,21 @@
     () => product.value?.logos_setting || []
   )
 
+  // Recent logos state
+  const showAllRecent = ref(false)
+  const recentLogos = computed(() => logosStore.recentLogos ?? [])
+  const displayedRecentLogos = computed(() =>
+    showAllRecent.value ? recentLogos.value : recentLogos.value.slice(0, 4)
+  )
+  const shouldShowRecentSection = computed(
+    () => logosStore.isLoadingRecentLogos || recentLogos.value.length > 0
+  )
+  const baseStorageUrl = computed(
+    () => import.meta.env.VITE_APP_STORAGE_URL || ''
+  )
+
+  onMounted(() => {})
+
   const activeLogos = computed(() => {
     const key = customizationStore.customization?.product_id
     const map = customizationStore.customization?.custom_logos
@@ -70,7 +88,7 @@
     )
   })
 
-  function handleSelectRecentLogo(_logo: OutputRecentLogo) {
+  function handleSelectRecentLogo(_logo: OutputRecentLogo | RecentLogo) {
     const key = String(customizationStore.customization?.product_id || '')
     const logo = {
       id: _logo.id,
@@ -118,24 +136,21 @@
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="pb-6">
     <Transition name="logos-slide" mode="out-in" appear>
       <div :key="`logos-${subPanel}`">
         <div v-if="subPanel === 'list'" class="flex flex-col gap-4">
           <!-- Empty state uploader -->
           <div
             v-if="activeLogos.length === 0"
-            class="rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center gap-2 text-center"
+            class="rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center gap-2 text-center mx-6"
           >
             <div
               class="w-12 h-12 rounded-full bg-muted flex items-center justify-center"
             >
-              <svg viewBox="0 0 24 24" class="w-6 h-6 text-muted-foreground">
-                <path
-                  fill="currentColor"
-                  d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14Zm-2-2H5V5h14ZM8 13l2.03-2.71a1 1 0 0 1 1.58-.06L13 12l2-3l3 4Z"
-                />
-              </svg>
+              <i-other-image
+                class="size-10 text-primary icon-secondary-from-primary-50"
+              />
             </div>
             <div class="text-sm font-medium">
               {{
@@ -179,20 +194,48 @@
             }}</Button>
           </div>
 
+          <div class="h-px bg-border" />
+
           <!-- Recent logos -->
-          <div class="flex flex-col gap-2">
-            <div class="text-lg font-semibold">
-              {{ logos_recent({}, { locale: localeStore.currentLocale }) }}
+          <div v-if="shouldShowRecentSection" class="flex flex-col gap-2 px-6">
+            <div class="flex items-center justify-between">
+              <div class="text-base leading-none font-semibold">
+                {{ logos_recent({}, { locale: localeStore.currentLocale }) }}
+              </div>
+              <Button
+                v-if="
+                  !showAllRecent &&
+                  recentLogos.length > 4 &&
+                  !logosStore.isLoadingRecentLogos
+                "
+                variant="ghost"
+                size="sm"
+                class="px-2 py-1 h-7"
+                @click="showAllRecent = true"
+                >View all</Button
+              >
             </div>
-            <div class="grid grid-cols-4 gap-2">
+            <!-- Loading skeleton -->
+            <div
+              v-if="logosStore.isLoadingRecentLogos && recentLogos.length === 0"
+              class="grid grid-cols-4 gap-2"
+            >
+              <div
+                v-for="i in 4"
+                :key="i"
+                class="aspect-square rounded-lg border border-border bg-secondary/30 animate-pulse"
+              />
+            </div>
+            <!-- List -->
+            <div v-else class="grid grid-cols-4 gap-2">
               <button
-                v-for="logo in productsStore.recentLogos || []"
+                v-for="logo in displayedRecentLogos"
                 :key="logo.id"
                 class="aspect-square rounded-lg border border-border overflow-hidden"
                 @click="handleSelectRecentLogo(logo)"
               >
                 <img
-                  :src="logo.url"
+                  :src="baseStorageUrl + logo.url"
                   class="w-full h-full object-cover"
                   alt="recent logo"
                 />
@@ -200,7 +243,7 @@
             </div>
           </div>
 
-          <div class="flex gap-3">
+          <div class="flex gap-3 px-6">
             <Button
               variant="outline"
               class="rounded-lg"

@@ -2,6 +2,7 @@ import { watch } from 'vue'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useLogosStore } from '@/stores/logos/logos.store'
 
 /**
  * Centralized side effects for workflow step changes.
@@ -13,7 +14,7 @@ export function useWorkflowEffects() {
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
-
+  const logosStore = useLogosStore()
   // ===== WATCHERS =====
   // Watch for step changes and trigger appropriate data fetches
   watch(
@@ -29,20 +30,18 @@ export function useWorkflowEffects() {
           productsStore.designPreviews.length > 0
         )
         if (needsPreviews && styleId) {
-          await productsStore.fetchDesignPreviewsByStyleId(styleId as number)
+          productsStore.fetchDesignPreviewsByStyleId(styleId as number)
         }
       } else if (step === 'Styles') {
         const pid =
           productsStore.activeProductDetails?.id ||
           customizationStore.activeProductId
         if (pid && !productsStore.stylePreviews) {
-          await productsStore.fetchStylePreviews(pid as number)
+          productsStore.fetchStylePreviews(pid as number)
         }
       } else if (step === 'Logos') {
         // Ensure recent logos are loaded
-        if (!productsStore.recentLogos) {
-          //await productsStore.fetchRecentLogos()
-        }
+        logosStore.fetchRecentLogos()
       }
     },
     { immediate: true }
@@ -62,28 +61,28 @@ export function useWorkflowEffects() {
   )
 
   // ===== BUSINESS LOGIC =====
-  const triggerStepEffects = async (step: string) => {
-    // Manual trigger for effects if needed
-    if (step === 'Designs') {
-      const styleId =
-        productsStore.activeStyleDetails?.id || customizationStore.activeStyleId
-      if (styleId) {
-        await productsStore.fetchDesignPreviewsByStyleId(styleId as number)
-      }
-    } else if (step === 'Styles') {
-      const pid =
-        productsStore.activeProductDetails?.id ||
-        customizationStore.activeProductId
-      if (pid) {
-        await productsStore.fetchStylePreviews(pid as number)
-      }
-    } else if (step === 'Logos') {
-      //await productsStore.fetchRecentLogos()
-    }
-  }
+  // const triggerStepEffects = async (step: string) => {
+  //   // Manual trigger for effects if needed
+  //   if (step === 'Designs') {
+  //     const styleId =
+  //       productsStore.activeStyleDetails?.id || customizationStore.activeStyleId
+  //     if (styleId) {
+  //       await productsStore.fetchDesignPreviewsByStyleId(styleId as number)
+  //     }
+  //   } else if (step === 'Styles') {
+  //     const pid =
+  //       productsStore.activeProductDetails?.id ||
+  //       customizationStore.activeProductId
+  //     if (pid) {
+  //       await productsStore.fetchStylePreviews(pid as number)
+  //     }
+  //   } else if (step === 'Logos') {
+  //     logosStore.fetchRecentLogos()
+  //   }
+  // }
 
   // ===== RETURN =====
-  return {
-    triggerStepEffects
-  }
+  // return {
+  //   triggerStepEffects
+  // }
 }
