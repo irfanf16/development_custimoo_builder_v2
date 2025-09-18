@@ -108,9 +108,8 @@ if [[ -d "dist" ]]; then
   cp -a dist/. "$build_directory_name/development"/
 fi
 
-# =====================
+
 # DEPLOY TO /var/www
-# =====================
 if [ "$move_to_nginx" = "true" ]; then
   echo "********** Deploying build and project files to $DOMAIN_ROOT **********"
   sudo rm -rf "$DOMAIN_ROOT"/*
