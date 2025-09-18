@@ -100,7 +100,7 @@ npm cache clean --force
 npm ci
 
 echo "*********** npm run build ***********"
-npm run build
+npm run build:staging
 
 mkdir -p "$build_directory_name/development"
 if [[ -d "dist" ]]; then
