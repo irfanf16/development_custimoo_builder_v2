@@ -22,7 +22,7 @@ export type OutputRecentLogos = {
 }
 
 export type UploadLogoParams = {
-  logo: File
+  file: File
   product_id: number
 }
 

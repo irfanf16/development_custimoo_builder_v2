@@ -114,7 +114,7 @@
   async function doUpload(file: File) {
     if (!effectiveProductId.value) return
     const res = await logosStore.uploadLogo({
-      logo: file,
+      file: file,
       product_id: effectiveProductId.value
     })
     if ((res as any)?.success) {
@@ -290,9 +290,9 @@
             <div
               v-for="logo in logosStore.logos || []"
               :key="logo.id"
-              class="rounded-xl border border-border p-3 flex flex-col gap-3"
+              class="rounded-xl border border-border p-3 flex flex-col gap-3 bg-background"
             >
-              <div class="flex items-center gap-3">
+              <div class="flex flex-col items-center gap-3">
                 <div
                   class="w-24 h-24 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0"
                 >
@@ -302,24 +302,30 @@
                     alt="uploaded logo"
                   />
                 </div>
-                <div class="flex-1">
-                  <div class="text-xs mb-2">Colors detected</div>
-                  <div class="flex flex-wrap gap-2">
+                <div class="flex flex-row justify-between w-full">
+                  <div class="flex items-center">
                     <div
                       v-for="(c, idx) in logo.logo_colors || []"
                       :key="idx"
-                      class="size-6 rounded-md border border-border"
-                      :style="{ backgroundColor: rgbArrToHex(c as any) }"
+                      :class="[
+                        'w-10 h-10 rounded-full border border-background',
+                        idx > 0 ? '-ml-5' : ''
+                      ]"
+                      :style="{
+                        backgroundColor: rgbArrToHex(c as any),
+                        zIndex: 10 + idx
+                      }"
+                      :title="rgbArrToHex(c as any)"
                     />
                   </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    @click="applyLogoColors(logo)"
+                  >
+                    Apply colors
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  @click="applyLogoColors(logo)"
-                >
-                  Apply colors
-                </Button>
               </div>
             </div>
 

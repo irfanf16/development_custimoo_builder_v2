@@ -10,10 +10,14 @@ async function getRecentLogos() {
 }
 
 async function uploadLogo(uploadLogoParams: UploadLogoParams) {
-  return await http.post<OutputUploadLogo>(
-    'customer/upload/logo',
-    uploadLogoParams
-  )
+  console.log('uploadLogoParams', uploadLogoParams)
+  const form = new FormData()
+  form.append('file', uploadLogoParams.file)
+  form.append('product_id', String(uploadLogoParams.product_id))
+
+  return await http.post<OutputUploadLogo>('customer/upload/logo', form, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
 }
 
 export default {
