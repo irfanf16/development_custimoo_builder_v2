@@ -85,6 +85,7 @@ export const registry: Registry = {
       const arr = (map as any)[payload.key] || ((map as any)[payload.key] = [])
       const at = payload.index ?? arr.length
       arr.splice(at, 0, payload.logo)
+      customizationStore.appendLogoColors((payload.logo as any).logo_colors)
       customizationStore.saveToLocalStorage()
     },
     revert({ customizationStore }, payload: LogoAddPayload) {

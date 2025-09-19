@@ -163,15 +163,20 @@ export function useAppInitialization() {
       (productsStore.productPreviews && productsStore.productPreviews.length
         ? productsStore.productPreviews[0].productPreview.id
         : null)
-
     if (activeProductId != null) {
       await productsStore.fetchStylePreviews(activeProductId)
       await productsStore.fetchActiveProductDetails(activeProductId)
 
-      if (!customizationStore.customization) {
-        customizationStore.ensureCustomization()
-        customizationStore.saveToLocalStorage()
-      }
+      ///if (!customizationStore.customization) {
+      customizationStore.ensureCustomization({
+        productId: activeProductId,
+        styleId: productsStore.activeStyleDetails?.id,
+        designId: productsStore.activeDesignDetails?.id,
+        categoryId: customizationStore.activeCategoryId,
+        subCategoryId: customizationStore.activeSubCategoryId
+      })
+      customizationStore.saveToLocalStorage()
+      //}
     }
 
     // Set initial workflow step

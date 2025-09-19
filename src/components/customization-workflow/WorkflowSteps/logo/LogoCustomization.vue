@@ -8,7 +8,6 @@
     OutputProductDetails,
     OutputStyleDetails,
     OutputDesignDetails,
-    OutputRecentLogo,
     OutputProductLogosSetting
   } from '@/services/products/types'
   import { Button } from '@/components/ui/button'
@@ -16,7 +15,7 @@
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import { useLogosStore } from '@/stores/logos/logos.store'
-  import type { Logo as RecentLogo, Logo } from '@/services/logos/types'
+  import type { Logo } from '@/services/logos/types'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import {
     logos_empty_drag_drop,
@@ -34,6 +33,7 @@
     logos_more_options
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { Trash } from 'lucide-vue-next'
 
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
@@ -67,13 +67,22 @@
   )
 
   // Recent logos state
+  const customLogos = computed(() => {
+    const key = customizationStore.customization?.product_id
+    const map = customizationStore.customization?.custom_logos
+    if (!key || !map) return [] as Array<any>
+    return (map as unknown as Record<string, Array<any>>)[key] || []
+  })
   const showAllRecent = ref(false)
-  const recentLogos = computed(() => logosStore.recentLogos ?? [])
   const displayedRecentLogos = computed(() =>
-    showAllRecent.value ? recentLogos.value : recentLogos.value.slice(0, 4)
+    showAllRecent.value
+      ? logosStore.recentLogos
+      : logosStore.recentLogos?.slice(0, 4)
   )
   const shouldShowRecentSection = computed(
-    () => logosStore.isLoadingRecentLogos || recentLogos.value.length > 0
+    () =>
+      logosStore.isLoadingRecentLogos ||
+      (logosStore?.recentLogos && logosStore.recentLogos.length > 0)
   )
   const baseStorageUrl = computed(
     () => import.meta.env.VITE_APP_STORAGE_URL || ''
@@ -84,7 +93,8 @@
   // Upload area state
   const isDragOver = ref(false)
   const fileInputRef = ref<HTMLInputElement | null>(null)
-  const hasAnyLogo = computed(() => (logosStore.logos?.length || 0) > 0)
+  const activeLogos = customLogos
+  const hasAnyLogo = computed(() => activeLogos.value.length > 0)
 
   function onClickUpload() {
     fileInputRef.value?.click()
@@ -117,9 +127,12 @@
       file: file,
       product_id: effectiveProductId.value
     })
-    if ((res as any)?.success) {
+    if (res.success) {
+      // Add uploaded logo into customization and collect colors
+      const uploaded = res?.content?.result?.customer_logo
+      if (uploaded) addUploadedLogoToCustomization(uploaded)
       // After upload, go to placement selection
-      goToPlacement()
+      // goToPlacement()
     }
   }
 
@@ -133,7 +146,7 @@
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`
   }
 
-  function applyLogoColors(logo: RecentLogo | OutputRecentLogo) {
+  function applyLogoColors(logo: Logo | any) {
     const palette = (logo as any).logo_colors as number[][] | undefined
     if (!palette?.length || !effectiveSvgGroups.value?.length) return
     const hexColors = palette.map(c => rgbArrToHex(c))
@@ -159,40 +172,18 @@
     })
   }
 
-  // Legacy customization logos mapping retained for history actions (unused in UI)
-
-  function handleSelectRecentLogo(_logo: OutputRecentLogo | RecentLogo) {
-    // Add to logos state in store
-    if (!logosStore.logos) logosStore.logos = []
-    logosStore.logos.push(_logo as Logo)
-
-    const key = String(customizationStore.customization?.product_id || '')
-    const logo = {
-      id: _logo.id,
-      product_id: productsStore.activeProductDetails?.id || 0,
-      product_style_id: productsStore.activeStyleDetails?.id || null,
-      following_product_ids: null,
-      rotation: 0,
-      originalWidth: 0,
-      originalHeight: 0,
-      width: 0,
-      height: 0,
-      name_of_placement: '',
-      side: 'front' as const,
-      x_axis: 0,
-      y_axis: 0,
-      x_axis_3d: 0,
-      y_axis_3d: 0,
-      is_locked: 0,
-      logo_name: _logo.logo_name,
-      url: _logo.url,
-      haveControls: true,
-      logo_colors: [],
-      is_replace_success: false,
-      logo_index: 0
-    }
-    history.execute('logo.add', { key, logo })
+  function addUploadedLogoToCustomization(_logo: Logo) {
+    const res = customizationStore.addLogoToCustomizationFromSource(_logo)
+    if (res) history.execute('logo.add', res)
     goToPlacement()
+  }
+
+  function removeLogoFromCustomization(logo: any) {
+    const key = String(customizationStore.customization?.product_id || '')
+    const index = customLogos.value.findIndex(l => l.id === logo.id)
+    if (index !== -1) {
+      history.execute('logo.remove', { key, index })
+    }
   }
 
   function goToPlacement() {
@@ -288,13 +279,13 @@
           <!-- When logos exist: render each logo with swatches + actions -->
           <div v-else class="flex flex-col gap-4 mx-6">
             <div
-              v-for="logo in logosStore.logos || []"
+              v-for="logo in customLogos || []"
               :key="logo.id"
-              class="rounded-xl border border-border p-3 flex flex-col gap-3 bg-background"
+              class="relative group rounded-xl border border-border p-3 flex flex-col gap-3 bg-background"
             >
               <div class="flex flex-col items-center gap-3">
                 <div
-                  class="w-24 h-24 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0"
+                  class="w-24 h-24 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
                 >
                   <img
                     :src="baseStorageUrl + (logo.url || logo.logo_url)"
@@ -319,6 +310,7 @@
                     />
                   </div>
                   <Button
+                    v-if="logo.logo_colors && logo.logo_colors.length > 0"
                     size="sm"
                     variant="outline"
                     @click="applyLogoColors(logo)"
@@ -327,9 +319,17 @@
                   </Button>
                 </div>
               </div>
+              <Button
+                as="div"
+                variant="ghost"
+                size="icon"
+                class="absolute top-1 right-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity text-foreground"
+                @click.stop="removeLogoFromCustomization(logo)"
+              >
+                <Trash class="size-4" />
+              </Button>
             </div>
 
-            <!-- Add another logo -->
             <div>
               <Button
                 variant="outline"
@@ -359,7 +359,8 @@
               <Button
                 v-if="
                   !showAllRecent &&
-                  recentLogos.length > 4 &&
+                  displayedRecentLogos &&
+                  displayedRecentLogos.length > 4 &&
                   !logosStore.isLoadingRecentLogos
                 "
                 variant="ghost"
@@ -371,7 +372,10 @@
             </div>
             <!-- Loading skeleton -->
             <div
-              v-if="logosStore.isLoadingRecentLogos && recentLogos.length === 0"
+              v-if="
+                logosStore.isLoadingRecentLogos &&
+                displayedRecentLogos?.length === 0
+              "
               class="grid grid-cols-4 gap-2"
             >
               <div
@@ -385,30 +389,31 @@
               <button
                 v-for="logo in displayedRecentLogos"
                 :key="logo.id"
-                class="aspect-square rounded-lg border border-border overflow-hidden"
-                @click="handleSelectRecentLogo(logo)"
+                class="relative group aspect-square rounded-lg border border-border overflow-hidden"
+                @click="addUploadedLogoToCustomization(logo)"
               >
                 <img
                   :src="baseStorageUrl + logo.url"
                   class="w-full h-full object-cover"
                   alt="recent logo"
                 />
+                <Button
+                  as="div"
+                  variant="outline"
+                  size="icon"
+                  class="absolute top-1 right-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity text-foreground"
+                  @click.stop="logosStore.deleteRecentLogo(logo.id.toString())"
+                >
+                  <Trash class="size-4" />
+                </Button>
               </button>
             </div>
           </div>
 
           <div class="flex gap-3 px-6">
-            <Button
-              variant="outline"
-              class="rounded-lg"
-              @click="goToPlacement"
-              >{{
-                logos_choose_placement(
-                  {},
-                  { locale: localeStore.currentLocale }
-                )
-              }}</Button
-            >
+            <Button variant="ghost" class="rounded-lg" @click="goToPlacement">{{
+              logos_choose_placement({}, { locale: localeStore.currentLocale })
+            }}</Button>
           </div>
         </div>
 

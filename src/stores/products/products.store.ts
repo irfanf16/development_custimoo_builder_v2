@@ -200,10 +200,6 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchActiveStyleDetails(styleId: number) {
     setLoading(true)
     setError(null)
-    console.log(
-      'designName before fetch',
-      customization.customization?.design_name
-    )
     const resp = await tryCatchApi(
       API.products.getActiveStyleDetails(
         styleId,

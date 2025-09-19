@@ -59,11 +59,11 @@
               <CustomizerTopbar class="z-10" />
               <div
                 id="canvas-controls-container"
-                class="flex flex-col grow items-center w-full h-full"
+                class="flex flex-col grow w-full h-full"
               >
                 <div
                   id="canvas-controls-container-inner"
-                  class="flex flex-col gap-9 items-end justify-between h-full"
+                  class="flex flex-col gap-9 items-end justify-between h-full mr-[25vw]"
                 >
                   <RightToolbar class="z-10" />
                   <SmallPreview class="z-10" />

@@ -96,10 +96,6 @@
 
   // The currently selected palette object
   const currentPalette = computed(() => {
-    console.log(
-      'currentPalette',
-      computedPalettes.value?.find(p => p.id === currentPaletteId.value)
-    )
     return (
       computedPalettes.value?.find(p => p.id === currentPaletteId.value) ||
       computedPalettes.value?.[0]

@@ -70,7 +70,6 @@
   // Update colors when component mounts
   onMounted(async () => {
     if (widgetRootContainer.value) {
-      console.log('widgetRootContainer', widgetRootContainer.value)
       uiStore.setWidgetRoot(widgetRootContainer.value)
       await applyColorScheme(widgetRootContainer.value, hostTheme)
     }

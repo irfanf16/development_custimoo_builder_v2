@@ -10,7 +10,6 @@ async function getRecentLogos() {
 }
 
 async function uploadLogo(uploadLogoParams: UploadLogoParams) {
-  console.log('uploadLogoParams', uploadLogoParams)
   const form = new FormData()
   form.append('file', uploadLogoParams.file)
   form.append('product_id', String(uploadLogoParams.product_id))
@@ -20,7 +19,12 @@ async function uploadLogo(uploadLogoParams: UploadLogoParams) {
   })
 }
 
+async function deleteRecentLogo(logoId: string) {
+  return await http.delete(`logos/recent/${logoId}`)
+}
+
 export default {
   getRecentLogos,
-  uploadLogo
+  uploadLogo,
+  deleteRecentLogo
 }

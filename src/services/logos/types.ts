@@ -1,19 +1,45 @@
+export type LogoColor =
+  | number[]
+  | { hex: string | null; pantone: string | null; name: string | null }
+
 export type Logo = {
   id: number
-  customer_id?: number
-  company_id?: number
-  product_id?: number
+  product_id: number
+  product_style_id: number | null
+  following_product_ids: number[] | null
+  rotation: number
+  originalWidth: number | string
+  originalHeight: number | string
+  width: number
+  height: number
+  name_of_placement: string
+  side: 'front' | 'back'
+  x_axis: number
+  y_axis: number
+  x_axis_3d: number
+  y_axis_3d: number
+  is_locked: number
   logo_name: string
-  logo_url: string
-  transparent_logo_url?: string
-  smart_transparent_logo_url?: string
+  original_logo?: string
+  transparent_logo?: string
+  smart_transparent_logo?: string
   original_logo_url?: string
-  browser_key?: string
-  logo_colors?: any // This is cast as array in the model
-  recent_delete?: number
-  // Additional computed properties added in the transform
-  is_vector: boolean
-  url: string // This is set to logo_url in the transform
+  is_smart_transparent: boolean
+  url: string
+  haveControls: boolean
+  logo_colors: LogoColor[]
+  is_replace_success: boolean
+  logo_index: number
+  is_vector?: boolean
+  logos_follows_product?: number
+  logo_technologies?: null | string[]
+  created_at?: string
+  updated_at?: string
+  is_recent_logo?: boolean
+  actualWidth?: number
+  actualHeight?: number
+  scaleX?: number
+  scaleY?: number
 }
 
 export type OutputRecentLogos = {
@@ -30,21 +56,7 @@ export type OutputUploadLogo = {
   success: boolean
   message: string
   result: {
-    customer_logo: {
-      product_id: number
-      browser_key: string
-      company_id: number
-      logo_name: string
-      logo_url: string
-      original_logo_url: string
-      original_png: string
-      transparent_logo_url: string
-      smart_transparent_logo_url: string
-      logo_colors: number[][]
-      is_vector: boolean
-      id: number
-      url: string
-    }
+    customer_logo: Logo
   }
   errors: any[]
   status_code: number

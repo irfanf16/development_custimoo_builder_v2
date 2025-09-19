@@ -9,6 +9,7 @@ import type {
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
+import type { Logo, LogoColor } from '@/services/logos/types'
 
 export const useCustomizationStore = defineStore('customizationStore', () => {
   // ===== DEPENDENCIES =====
@@ -133,6 +134,21 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
+  function appendLogoColors(colors?: LogoColor[]) {
+    if (!customization.value) return
+    if (!colors || !colors.length) return
+    if (!Array.isArray(customization.value.logo_colors))
+      customization.value.logo_colors = []
+    colors.forEach(c => customization.value!.logo_colors.push(c))
+    saveToLocalStorage()
+  }
+
+  function addLogoToCustomizationFromSource(logo: Logo) {
+    if (!customization.value) return
+    const key = String(customization.value.product_id)
+    return { key, logo }
+  }
+
   // Helper function to create default customization with preserved IDs
   function createDefaultCustomization(
     preservedIds: {
@@ -208,9 +224,17 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   }
 
   // ===== BUSINESS LOGIC =====
-  function ensureCustomization() {
-    if (customization.value) return
-    setCustomization(createDefaultCustomization())
+  function ensureCustomization(
+    preservedIds: {
+      productId?: number
+      styleId?: number
+      designId?: number
+      categoryId?: number
+      subCategoryId?: number | null
+    } = {}
+  ) {
+    // if (customization.value) return
+    setCustomization(createDefaultCustomization(preservedIds))
   }
 
   function resetCustomizationToCurrentProductDefaults() {
@@ -253,6 +277,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     setDesign,
     setAddons,
     setGroupColor,
+    appendLogoColors,
+    addLogoToCustomizationFromSource,
     // Business Logic
     ensureCustomization,
     resetCustomizationToCurrentProductDefaults,

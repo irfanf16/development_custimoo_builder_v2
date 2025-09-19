@@ -6,12 +6,13 @@ import type { APIResponse } from '@/services/types'
 import type {
   Logo,
   OutputRecentLogos,
-  UploadLogoParams
+  UploadLogoParams,
+  OutputUploadLogo
 } from '../../services/logos/types'
 
 export const useLogosStore = defineStore('logosStore', () => {
   // State
-  const logos = ref<Logo[] | null>(null)
+  const logos = ref<Logo[] | null>(null) // Deprecated: kept for backward compat; main source is customization.custom_logos
   const recentLogos = ref<Logo[] | null>(null)
 
   const isLoadingRecentLogos = ref(false)
@@ -49,7 +50,9 @@ export const useLogosStore = defineStore('logosStore', () => {
     return response
   }
 
-  async function uploadLogo(uploadLogoParams: UploadLogoParams) {
+  async function uploadLogo(
+    uploadLogoParams: UploadLogoParams
+  ): Promise<APIResponse<OutputUploadLogo>> {
     setLoadingUploadLogo(true)
     setError(null)
     const response = await tryCatchApi(API.logos.uploadLogo(uploadLogoParams))
@@ -70,6 +73,30 @@ export const useLogosStore = defineStore('logosStore', () => {
     return response
   }
 
+  async function deleteRecentLogo(logoId: string): Promise<APIResponse<void>> {
+    setError(null)
+
+    // Store the original logo for rollback if needed
+    const originalLogos = recentLogos.value ? [...recentLogos.value] : []
+    const logoToDelete = recentLogos.value?.find(
+      logo => logo.id.toString() === logoId
+    )
+
+    // Optimistically remove the logo from state
+    setRecentLogos(
+      recentLogos.value?.filter(logo => logo.id.toString() !== logoId) || []
+    )
+
+    const response = await tryCatchApi(API.logos.deleteRecentLogo(logoId))
+    if (!response.success) {
+      // Rollback - restore the original state
+      setRecentLogos(originalLogos)
+      setError('Error deleting logo')
+    }
+
+    return response
+  }
+
   return {
     // State
     logos,
@@ -83,6 +110,7 @@ export const useLogosStore = defineStore('logosStore', () => {
 
     // API Functions
     fetchRecentLogos,
-    uploadLogo
+    uploadLogo,
+    deleteRecentLogo
   }
 })
