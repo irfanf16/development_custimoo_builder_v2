@@ -16,7 +16,8 @@
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import { useLogosStore } from '@/stores/logos/logos.store'
-  import type { Logo as RecentLogo } from '@/services/logos/types'
+  import type { Logo as RecentLogo, Logo } from '@/services/logos/types'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import {
     logos_empty_drag_drop,
     logos_empty_click_to_upload,
@@ -40,6 +41,7 @@
   const localeStore = useLocaleStore()
   const history = useHistoryStore()
   const logosStore = useLogosStore()
+  const { effectiveProductId, effectiveSvgGroups } = useEffectiveSelectors()
 
   type SubPanel = 'list' | 'placement' | 'edit'
   const subPanel = ref<SubPanel>('list')
@@ -79,16 +81,91 @@
 
   onMounted(() => {})
 
-  const activeLogos = computed(() => {
-    const key = customizationStore.customization?.product_id
-    const map = customizationStore.customization?.custom_logos
-    if (!key || !map) return [] as Array<{ url?: string }>
-    return (
-      (map as unknown as Record<string, Array<{ url?: string }>>)[key] || []
-    )
-  })
+  // Upload area state
+  const isDragOver = ref(false)
+  const fileInputRef = ref<HTMLInputElement | null>(null)
+  const hasAnyLogo = computed(() => (logosStore.logos?.length || 0) > 0)
+
+  function onClickUpload() {
+    fileInputRef.value?.click()
+  }
+
+  function onDragOver(e: DragEvent) {
+    e.preventDefault()
+    isDragOver.value = true
+  }
+  function onDragLeave() {
+    isDragOver.value = false
+  }
+  async function onDrop(e: DragEvent) {
+    e.preventDefault()
+    isDragOver.value = false
+    const file = e.dataTransfer?.files?.[0]
+    if (file) await doUpload(file)
+  }
+
+  async function onFileChange(e: Event) {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (file) await doUpload(file)
+    if (input) input.value = ''
+  }
+
+  async function doUpload(file: File) {
+    if (!effectiveProductId.value) return
+    const res = await logosStore.uploadLogo({
+      logo: file,
+      product_id: effectiveProductId.value
+    })
+    if ((res as any)?.success) {
+      // After upload, go to placement selection
+      goToPlacement()
+    }
+  }
+
+  // Apply colors from logo palette to first design groups
+  function rgbArrToHex(arr: number[]): string {
+    const [r, g, b] = arr
+    const toHex = (n: number) =>
+      Math.max(0, Math.min(255, Math.round(n)))
+        .toString(16)
+        .padStart(2, '0')
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+  }
+
+  function applyLogoColors(logo: RecentLogo | OutputRecentLogo) {
+    const palette = (logo as any).logo_colors as number[][] | undefined
+    if (!palette?.length || !effectiveSvgGroups.value?.length) return
+    const hexColors = palette.map(c => rgbArrToHex(c))
+    history.runBatch('Apply logo colors', add => {
+      effectiveSvgGroups.value?.forEach((group, idx) => {
+        const nextHex = hexColors[idx]
+        if (!nextHex) return
+        const prevRaw =
+          customizationStore.customization?.group_colors?.[group.id]
+        const prevColor = prevRaw
+          ? {
+              name: prevRaw.name || '',
+              value: prevRaw.color || '',
+              position: 0
+            }
+          : null
+        add('color.set-group', {
+          groupId: group.id,
+          prevColor,
+          nextColor: { name: '', value: nextHex, position: 0 }
+        })
+      })
+    })
+  }
+
+  // Legacy customization logos mapping retained for history actions (unused in UI)
 
   function handleSelectRecentLogo(_logo: OutputRecentLogo | RecentLogo) {
+    // Add to logos state in store
+    if (!logosStore.logos) logosStore.logos = []
+    logosStore.logos.push(_logo as Logo)
+
     const key = String(customizationStore.customization?.product_id || '')
     const logo = {
       id: _logo.id,
@@ -115,7 +192,7 @@
       logo_index: 0
     }
     history.execute('logo.add', { key, logo })
-    goToControls()
+    goToPlacement()
   }
 
   function goToPlacement() {
@@ -130,6 +207,12 @@
     subPanel.value = 'list'
     // integrate with workflow store if needed
   }
+
+  function handlePlacementSelection(placement: OutputProductLogosSetting) {
+    console.log('Chosen placement:', placement)
+    goToList()
+  }
+
   // Breadcrumbs only
   const headerExtras = { breadcrumbs: [{ label: 'Logos' }] }
   defineExpose({ headerExtras })
@@ -140,23 +223,35 @@
     <Transition name="logos-slide" mode="out-in" appear>
       <div :key="`logos-${subPanel}`">
         <div v-if="subPanel === 'list'" class="flex flex-col gap-4">
-          <!-- Empty state uploader -->
+          <!-- Empty state uploader (shown when no logos yet) -->
           <div
-            v-if="activeLogos.length === 0"
-            class="rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center gap-2 text-center mx-6"
+            v-if="!hasAnyLogo"
+            class="relative rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center gap-2 text-center mx-6 transition-colors"
+            :class="
+              isDragOver
+                ? 'bg-secondary/20 border-primary/60 ring-2 ring-primary/30'
+                : ''
+            "
+            @dragover="onDragOver"
+            @dragleave="onDragLeave"
+            @drop="onDrop"
           >
             <div
               class="w-12 h-12 rounded-full bg-muted flex items-center justify-center"
             >
               <i-other-image
-                class="size-10 text-primary icon-secondary-from-primary-50"
+                class="size-12 text-primary icon-secondary-from-primary-50"
               />
             </div>
             <div class="text-sm font-medium">
               {{
                 logos_empty_drag_drop({}, { locale: localeStore.currentLocale })
               }}
-              <button class="text-primary underline underline-offset-2">
+              <button
+                type="button"
+                class="text-primary underline underline-offset-2"
+                @click="onClickUpload"
+              >
                 {{
                   logos_empty_click_to_upload(
                     {},
@@ -173,25 +268,78 @@
                 )
               }}
             </div>
+
+            <!-- Uploading skeleton overlay -->
+            <div
+              v-if="logosStore.isLoadingUploadLogo"
+              class="absolute inset-0 rounded-xl animate-pulse bg-secondary/30"
+            />
+
+            <!-- Hidden file input -->
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="onFileChange"
+            />
           </div>
 
-          <!-- When a logo exists -->
-          <div
-            v-else
-            class="rounded-xl border border-border p-3 flex flex-col items-center gap-3"
-          >
+          <!-- When logos exist: render each logo with swatches + actions -->
+          <div v-else class="flex flex-col gap-4 mx-6">
             <div
-              class="w-full h-24 rounded-lg bg-muted flex items-center justify-center overflow-hidden"
+              v-for="logo in logosStore.logos || []"
+              :key="logo.id"
+              class="rounded-xl border border-border p-3 flex flex-col gap-3"
             >
-              <img
-                :src="activeLogos[0]?.url || ''"
-                class="max-h-full object-contain"
-                alt="active logo"
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-24 h-24 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0"
+                >
+                  <img
+                    :src="baseStorageUrl + (logo.url || logo.logo_url)"
+                    class="max-h-full object-contain"
+                    alt="uploaded logo"
+                  />
+                </div>
+                <div class="flex-1">
+                  <div class="text-xs mb-2">Colors detected</div>
+                  <div class="flex flex-wrap gap-2">
+                    <div
+                      v-for="(c, idx) in logo.logo_colors || []"
+                      :key="idx"
+                      class="size-6 rounded-md border border-border"
+                      :style="{ backgroundColor: rgbArrToHex(c as any) }"
+                    />
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  @click="applyLogoColors(logo)"
+                >
+                  Apply colors
+                </Button>
+              </div>
+            </div>
+
+            <!-- Add another logo -->
+            <div>
+              <Button
+                variant="outline"
+                class="rounded-lg w-full"
+                @click="onClickUpload"
+              >
+                {{ logos_add_logo({}, { locale: localeStore.currentLocale }) }}
+              </Button>
+              <input
+                ref="fileInputRef"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="onFileChange"
               />
             </div>
-            <Button variant="outline" class="rounded-lg w-full">{{
-              logos_add_logo({}, { locale: localeStore.currentLocale })
-            }}</Button>
           </div>
 
           <div class="h-px bg-border" />
@@ -263,7 +411,8 @@
             <div
               v-for="s in placements"
               :key="s.id"
-              class="flex flex-col gap-2 items-center"
+              class="flex flex-col gap-2 items-center cursor-pointer"
+              @click="handlePlacementSelection(s)"
             >
               <LogoPlacementThumb
                 v-if="product && styleBase && designBase"

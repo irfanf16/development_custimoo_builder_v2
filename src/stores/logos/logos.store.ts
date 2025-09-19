@@ -3,13 +3,19 @@ import { ref } from 'vue'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
-import type { Logo, OutputRecentLogos } from '../../services/logos/types'
+import type {
+  Logo,
+  OutputRecentLogos,
+  UploadLogoParams
+} from '../../services/logos/types'
 
 export const useLogosStore = defineStore('logosStore', () => {
   // State
+  const logos = ref<Logo[] | null>(null)
   const recentLogos = ref<Logo[] | null>(null)
 
   const isLoadingRecentLogos = ref(false)
+  const isLoadingUploadLogo = ref(false)
   const error = ref<string | null>(null)
 
   // Actions
@@ -17,8 +23,12 @@ export const useLogosStore = defineStore('logosStore', () => {
     recentLogos.value = data
   }
 
-  function setLoading(loading: boolean) {
+  function setLoadingRecentLogos(loading: boolean) {
     isLoadingRecentLogos.value = loading
+  }
+
+  function setLoadingUploadLogo(loading: boolean) {
+    isLoadingUploadLogo.value = loading
   }
 
   function setError(errorMessage: string | null) {
@@ -27,7 +37,7 @@ export const useLogosStore = defineStore('logosStore', () => {
 
   // API Functions
   async function fetchRecentLogos(): Promise<APIResponse<OutputRecentLogos>> {
-    setLoading(true)
+    setLoadingRecentLogos(true)
     setError(null)
     const response = await tryCatchApi(API.logos.getRecentLogos())
     if (response.success) {
@@ -35,20 +45,44 @@ export const useLogosStore = defineStore('logosStore', () => {
     } else {
       setError('Error getting recent logos')
     }
-    setLoading(false)
+    setLoadingRecentLogos(false)
+    return response
+  }
+
+  async function uploadLogo(uploadLogoParams: UploadLogoParams) {
+    setLoadingUploadLogo(true)
+    setError(null)
+    const response = await tryCatchApi(API.logos.uploadLogo(uploadLogoParams))
+    if (response.success) {
+      setLoadingUploadLogo(false)
+      const created = response.content?.result?.customer_logo
+      if (created) {
+        if (!recentLogos.value) recentLogos.value = []
+        if (!logos.value) logos.value = []
+        recentLogos.value.push(created)
+        logos.value.push(created)
+      }
+    } else {
+      setLoadingUploadLogo(false)
+      setError('Error uploading logo')
+    }
+
     return response
   }
 
   return {
     // State
+    logos,
     recentLogos,
     isLoadingRecentLogos,
+    isLoadingUploadLogo,
     error,
 
     // Actions
     setRecentLogos,
 
     // API Functions
-    fetchRecentLogos
+    fetchRecentLogos,
+    uploadLogo
   }
 })
