@@ -5,7 +5,8 @@ import type {
   OutputAddon,
   OutputColor,
   OutputDesignDetails,
-  OutputDesignPreview
+  OutputDesignPreviewFront,
+  OutputDesignPreviewBack
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
@@ -101,7 +102,12 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  async function setDesign(design: OutputDesignDetails | OutputDesignPreview) {
+  async function setDesign(
+    design:
+      | OutputDesignDetails
+      | OutputDesignPreviewFront
+      | (OutputDesignPreviewFront & OutputDesignPreviewBack)
+  ) {
     if (!customization.value) return
     const prev = customization.value.design_id
     if (prev === design.id) return

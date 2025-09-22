@@ -13,7 +13,7 @@ instance.interceptors.request.use(config => {
 
   if (token) {
     if (!config.headers) config.headers = {} as AxiosRequestHeaders
-    ;(config.headers as Record<string, any>)['CustomerToken'] = token
+    ;(config.headers as Record<string, string>)['CustomerToken'] = token
   }
   return config
 })

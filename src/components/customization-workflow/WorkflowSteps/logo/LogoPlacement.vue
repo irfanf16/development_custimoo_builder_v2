@@ -9,10 +9,17 @@
     OutputDesignDetails,
     OutputProductLogosSetting
   } from '@/services/products/types'
+  import type { Logo } from '@/services/logos/types'
   import type { BreadcrumbItem } from '../../types'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { useHistoryStore } from '@/stores/history/history.store'
+  import { useLogosStore } from '@/stores/logos/logos.store'
 
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
+  const customizationStore = useCustomizationStore()
+  const historyStore = useHistoryStore()
+  const logosStore = useLogosStore()
 
   const product = computed<OutputProductDetails | null>(
     () => productsStore.activeProductDetails ?? null
@@ -28,6 +35,9 @@
   )
 
   function handlePlacementSelection(_placement: OutputProductLogosSetting) {
+    if (logosStore.activeLogo) {
+      addActiveLogoToCustomization(logosStore.activeLogo)
+    }
     // Persist placement selection if needed; for now, just return to Logos list
     workflowStore.setLogosSubStep('list')
   }
@@ -41,13 +51,19 @@
     { label: 'Placement' }
   ])
 
+  function addActiveLogoToCustomization(_logo: Logo) {
+    const res = customizationStore.addLogoToCustomizationFromSource(_logo)
+    // Set default placement
+    if (res) historyStore.execute('logo.add', res)
+  }
+
   const headerExtras = { breadcrumbs }
   defineExpose({ headerExtras })
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-2">
       <div
         v-for="s in placements"
         :key="s.id"
@@ -55,7 +71,7 @@
         @click="handlePlacementSelection(s)"
       >
         <div
-          class="flex-start w-full text-base font-semibold truncate leading-none"
+          class="flex-start w-full text-base font-semibold truncate leading-none overflow-visible"
         >
           {{ s.name_of_placement }}
         </div>

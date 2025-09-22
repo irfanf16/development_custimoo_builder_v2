@@ -44,7 +44,7 @@
   })
 
   async function selectDesign(
-    item: import('@/services/products/types').OutputDesignPreview
+    item: import('@/services/products/types').OutputDesignPreviewFront
   ) {
     productsStore.applyDesignPreview(item)
     // Scroll to selected design with smooth animation
@@ -131,12 +131,11 @@
         <ProductPreviewCanvas
           v-if="
             productsStore.activeProductDetails &&
-            productsStore.activeStyleDetails &&
-            productsStore.activeDesignDetails
+            productsStore.activeStyleDetails
           "
           :product="productsStore.activeProductDetails!"
           :style-base="productsStore.activeStyleDetails!"
-          :design-base="item"
+          :design-base="item as any"
           :width="176"
           :height="176"
           :apply-customization-overrides="applyCustomizationOverrides"

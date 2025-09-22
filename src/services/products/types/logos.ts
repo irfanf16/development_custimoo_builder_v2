@@ -1,37 +1,17 @@
-export type OutputProductLogosSetting = {
-  created_at: string
-  following_product_ids: number[] | null
-  haveControls: boolean
-  height: number
-  id: number
-  is_locked: 0 | 1
-  is_replace_success: boolean
-  is_smart_transparent: boolean | null
-  is_vector: boolean
-  logo_colors: any[]
-  length: number
-  logo_index: number
-  logo_name: string | null
-  logo_technologies: string[] | null
-  logos_follows_product: 0 | 1
-  name_of_placement: string
+import type { LogoPlacementBase } from '@/services/types'
+
+export type OutputProductLogosSetting = LogoPlacementBase & {
+  // Refinements for products API shape
+  originalWidth: number // products API guarantees numbers
   originalHeight: number
-  originalWidth: number
-  original_logo: any | null
-  original_logo_url: string | null
-  product_id: number
-  product_style_id: number | null
-  rotation: number
-  side: 'front' | 'back'
-  smart_transparent_logo: any | null
-  transparent_logo: any | null
+  logo_colors: any[]
+  logo_technologies: string[] | null
+  logo_name: string | null
+  is_locked: 0 | 1
+  logos_follows_product: 0 | 1
+  created_at: string
   updated_at: string
-  url: string | null
-  width: number
-  x_axis: number
-  x_axis_3d: number
-  y_axis: number
-  y_axis_3d: number
+  length: number
 }
 
 export type OutputRecentLogo = {
@@ -46,7 +26,7 @@ export type OutputRecentLogo = {
   original_logo_url: string
   original_png: string
   browser_key: string
-  logo_colors: number[][]
+  logo_colors: import('@/services/logos/types').LogoColor[]
   recent_delete: number
   url: string
 }

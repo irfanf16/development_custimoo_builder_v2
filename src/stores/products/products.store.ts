@@ -7,14 +7,14 @@ import type {
   ActiveProductCustomization,
   ActiveProductDetails,
   ProductPreviewItem,
-  OutputDesignPreview,
   OutputStylePreviewFront,
   OutputStyleDetails,
   OutputDesignDetails,
   OutputRecentLogo,
   OutputProductDetails,
   OutputSvgGroupColor,
-  ActiveStyleDetails
+  ActiveStyleDetails,
+  OutputDesignPreviewFront
 } from '@/services/products/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
@@ -32,7 +32,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   const svgGroups = ref<OutputSvgGroupColor[] | null>(null)
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
   const stylePreviews = ref<OutputStylePreviewFront[] | null>(null)
-  const designPreviews = ref<OutputDesignPreview[] | null>(null)
+  const designPreviews = ref<OutputDesignPreviewFront[] | null>(null)
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -286,7 +286,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     }
   }
 
-  function applyDesignPreview(designPreview: OutputDesignPreview) {
+  function applyDesignPreview(designPreview: OutputDesignPreviewFront) {
     if (customization.customization) {
       customization.setDesign(designPreview)
       saveCustomizationToLocalStorage()
@@ -300,7 +300,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       API.products.getDesignPreviewsByStyleId(styleId)
     )
     if (resp.success) {
-      designPreviews.value = resp.content as unknown as OutputDesignPreview[]
+      designPreviews.value = resp.content as OutputDesignPreviewFront[]
     } else {
       setError('Error getting design previews')
     }
@@ -320,19 +320,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     setLoading(false)
     return resp
   }
-
-  // async function fetchRecentLogos(companyId?: number) {
-  //   setLoading(true)
-  //   setError(null)
-  //   const resp = await tryCatchApi(API.products.getRecentLogos(companyId))
-  //   if (resp.success) {
-  //     recentLogos.value = resp.content as unknown as OutputRecentLogo[]
-  //   } else {
-  //     setError('Error getting recent logos')
-  //   }
-  //   setLoading(false)
-  //   return resp
-  // }
 
   // Centralized fetch orchestration reacting to customization selections
   watch(

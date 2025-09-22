@@ -5,7 +5,8 @@ import {
   type GetProductCategoriesParams,
   type ActiveProductDetails,
   type ProductPreviewItem,
-  type OutputDesignPreview,
+  type OutputDesignPreviewFront,
+  type OutputDesignPreviewBack,
   type OutputStylePreviewFront,
   type OutputDesignDetails,
   type ActiveStyleDetails
@@ -31,7 +32,7 @@ async function getProductPreviewsByCategory(categoryId: number | null) {
 }
 
 async function getDesignPreviewsByStyleId(styleId: number) {
-  return await http.get<OutputDesignPreview[]>(
+  return await http.get<(OutputDesignPreviewFront & OutputDesignPreviewBack)[]>(
     `product/style/${styleId}/design/previews`
   )
 }

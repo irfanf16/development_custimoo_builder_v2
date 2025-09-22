@@ -1,9 +1,15 @@
+import type {
+  Style3DMap,
+  StyleLogoEntry,
+  StyleLogoTechnology
+} from '@/services/types'
+
 export type OutputStylePreviewBase = {
   id: number
   name: string
   product_id: number
   style_icon_url?: string
-  logo: unknown[]
+  logo: StyleLogoEntry[]
 }
 
 export type OutputStylePreviewFront = OutputStylePreviewBase & {
@@ -32,24 +38,12 @@ type CustomizedAddons = {
 }
 
 export type OutputStyleDetails = OutputStylePreviewFront & {
-  _3d_alpha_map: unknown
-  _3d_ao_map: unknown
-  _3d_metalness_map: unknown
-  _3d_model: {
-    composition: 'multiply' | 'screen' | null
-    file_url: string
-    id: number
-    thumb_sm_url: string | null
-    type: string
-  }
-  _3d_roughness_map: unknown
-  _3d_texture: {
-    composition: 'multiply' | 'screen' | null
-    file_url: string
-    id: number
-    thumb_sm_url: string | null
-    type: string
-  }
+  _3d_alpha_map: Style3DMap
+  _3d_ao_map: Style3DMap
+  _3d_metalness_map: Style3DMap
+  _3d_model: Style3DMap & { composition: 'multiply' | 'screen' | null }
+  _3d_roughness_map: Style3DMap
+  _3d_texture: Style3DMap & { composition: 'multiply' | 'screen' | null }
   back_enabled: boolean
   back_models: {
     composition: 'multiply' | 'screen'
@@ -74,8 +68,8 @@ export type OutputStyleDetails = OutputStylePreviewFront & {
   id: number
   is_default: 1 | 0
   is_fixed_logos_all: boolean
-  logo: unknown[]
-  logo_technologies: unknown[]
+  logo: StyleLogoEntry[]
+  logo_technologies: StyleLogoTechnology[]
   metalness: number | null
   name: string
   product_id: number

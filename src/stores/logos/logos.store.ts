@@ -14,6 +14,7 @@ export const useLogosStore = defineStore('logosStore', () => {
   // State
   const logos = ref<Logo[] | null>(null) // Deprecated: kept for backward compat; main source is customization.custom_logos
   const recentLogos = ref<Logo[] | null>(null)
+  const activeLogo = ref<Logo | null>(null)
 
   const isLoadingRecentLogos = ref(false)
   const isLoadingUploadLogo = ref(false)
@@ -34,6 +35,10 @@ export const useLogosStore = defineStore('logosStore', () => {
 
   function setError(errorMessage: string | null) {
     error.value = errorMessage
+  }
+
+  function setActiveLogo(logo: Logo | null) {
+    activeLogo.value = logo
   }
 
   // API Functions
@@ -98,13 +103,14 @@ export const useLogosStore = defineStore('logosStore', () => {
     // State
     logos,
     recentLogos,
+    activeLogo,
     isLoadingRecentLogos,
     isLoadingUploadLogo,
     error,
 
     // Actions
     setRecentLogos,
-
+    setActiveLogo,
     // API Functions
     fetchRecentLogos,
     uploadLogo,

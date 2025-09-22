@@ -28,7 +28,8 @@
     },
     designBase: {
       type: Object as PropType<
-        OutputDesignPreviewFront & OutputDesignPreviewBack
+        | OutputDesignPreviewFront
+        | (OutputDesignPreviewFront & OutputDesignPreviewBack)
       >,
       required: true
     },
@@ -76,14 +77,16 @@
     isRendering.value = true
     clearCanvas()
 
-    await addDesignLayer(
-      props.side === 'front'
-        ? props.designBase.front_design.file_url
-        : props.designBase.back_design.file_url,
-      props.side === 'front'
-        ? props.designBase.front_design.file_extension
-        : props.designBase.back_design.file_extension
-    )
+    const chosenDesign = (() => {
+      if (props.side === 'front') return props.designBase.front_design
+      return 'back_design' in props.designBase
+        ? (
+            props.designBase as OutputDesignPreviewFront &
+              OutputDesignPreviewBack
+          ).back_design
+        : props.designBase.front_design
+    })()
+    await addDesignLayer(chosenDesign.file_url, chosenDesign.file_extension)
     for (const m of props.side === 'front'
       ? props.styleBase.front_models
       : (props.styleBase.back_models ?? [])) {

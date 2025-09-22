@@ -7,7 +7,7 @@ export type APIResponseSuccess<T> = {
   axiosError: null
 }
 
-export type APIResponseError<T = any> = {
+export type APIResponseError<T = unknown> = {
   success: false
   content: null
   status: number
@@ -15,3 +15,6 @@ export type APIResponseError<T = any> = {
 }
 
 export type APIResponse<T> = APIResponseSuccess<T> | APIResponseError<T>
+
+export * from './types/logo-placement'
+export * from './types/styles'

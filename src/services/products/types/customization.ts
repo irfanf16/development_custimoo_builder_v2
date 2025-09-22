@@ -33,7 +33,7 @@ export type APCustomizationText = {
   product_id: number
   type: string
   label: string
-  following_products: unknown[]
+  following_products: number[]
   items: APCustomizationTextItem[]
   created_at: string | null
   updated_at: string | null
@@ -77,8 +77,8 @@ export type APCustomizationProductsRosters = Record<
 >
 
 export type APCustomizationAddonsInfoEntry = {
-  grouped_addons: Record<string, unknown>
-  ungrouped_addons: unknown[]
+  grouped_addons: Record<string, import('./addons').OutputAddon[]>
+  ungrouped_addons: import('./addons').OutputAddon[]
   simple_addons: number[]
 }
 
@@ -107,7 +107,7 @@ export type ActiveProductCustomization = {
   custom_logos: APCustomizationLogosMap
   default_colors: APCustomizationDefaultColor[]
   group_colors: Record<string, APCustomizationGroupColor>
-  logo_colors: unknown[]
+  logo_colors: import('@/services/logos/types').LogoColor[]
   roster_detail: APCustomizationRosterEntry[]
   products_rosters: APCustomizationProductsRosters
   shuffle_color_number: number

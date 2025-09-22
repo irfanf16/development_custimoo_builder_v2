@@ -105,7 +105,7 @@
     if (res.success) {
       // Add uploaded logo into customization and collect colors
       const uploaded = res?.content?.result?.customer_logo
-      if (uploaded) addUploadedLogoToCustomization(uploaded)
+      if (uploaded) addRecentLogoToCustomization(uploaded)
       return
       // After upload, go to placement selection
       // goToPlacement()
@@ -148,14 +148,10 @@
     })
   }
 
-  function addUploadedLogoToCustomization(_logo: Logo) {
-    const res = customizationStore.addLogoToCustomizationFromSource(_logo)
-    if (res) history.execute('logo.add', res)
-  }
-
   function addRecentLogoToCustomization(logo: Logo) {
+    logosStore.setActiveLogo(logo)
     goToPlacement()
-    addUploadedLogoToCustomization(logo)
+    // addActiveLogoToCustomization(logo)
   }
 
   function removeLogoFromCustomization(logo: any) {
