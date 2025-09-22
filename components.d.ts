@@ -75,6 +75,8 @@ declare module 'vue' {
     LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
     LogoCustomization: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoCustomization.vue')['default']
     LogoPlacementThumb: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoPlacementThumb.vue')['default']
+    LogoUploadingSkeleton: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoUploadingSkeleton.vue')['default']
+    LogoUploadingSkepeton: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoUploadingSkepeton.vue')['default']
     MenuItem: typeof import('./src/components/customizer-menu/MenuItem.vue')['default']
     PatternGroupSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/patterns/PatternGroupSelection.vue')['default']
     PatternSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/patterns/PatternSelection.vue')['default']

@@ -34,6 +34,7 @@
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import { Trash } from 'lucide-vue-next'
+  import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
 
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
@@ -122,6 +123,7 @@
   }
 
   async function doUpload(file: File) {
+    goToPlacement()
     if (!effectiveProductId.value) return
     const res = await logosStore.uploadLogo({
       file: file,
@@ -131,6 +133,7 @@
       // Add uploaded logo into customization and collect colors
       const uploaded = res?.content?.result?.customer_logo
       if (uploaded) addUploadedLogoToCustomization(uploaded)
+      return
       // After upload, go to placement selection
       // goToPlacement()
     }
@@ -175,7 +178,6 @@
   function addUploadedLogoToCustomization(_logo: Logo) {
     const res = customizationStore.addLogoToCustomizationFromSource(_logo)
     if (res) history.execute('logo.add', res)
-    goToPlacement()
   }
 
   function removeLogoFromCustomization(logo: any) {
@@ -216,7 +218,7 @@
         <div v-if="subPanel === 'list'" class="flex flex-col gap-4">
           <!-- Empty state uploader (shown when no logos yet) -->
           <div
-            v-if="!hasAnyLogo"
+            v-if="!hasAnyLogo && !logosStore.isLoadingUploadLogo"
             class="relative rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center gap-2 text-center mx-6 transition-colors"
             :class="
               isDragOver
@@ -260,12 +262,6 @@
               }}
             </div>
 
-            <!-- Uploading skeleton overlay -->
-            <div
-              v-if="logosStore.isLoadingUploadLogo"
-              class="absolute inset-0 rounded-xl animate-pulse bg-secondary/30"
-            />
-
             <!-- Hidden file input -->
             <input
               ref="fileInputRef"
@@ -275,9 +271,12 @@
               @change="onFileChange"
             />
           </div>
+          <LogoUploadingSkeleton
+            v-if="logosStore.isLoadingUploadLogo && !hasAnyLogo"
+          />
 
           <!-- When logos exist: render each logo with swatches + actions -->
-          <div v-else class="flex flex-col gap-4 mx-6">
+          <div v-if="hasAnyLogo" class="flex flex-col gap-4 mx-6">
             <div
               v-for="logo in customLogos || []"
               :key="logo.id"
@@ -330,7 +329,7 @@
               </Button>
             </div>
 
-            <div>
+            <div v-if="!logosStore.isLoadingUploadLogo">
               <Button
                 variant="outline"
                 class="rounded-lg w-full"
@@ -346,6 +345,7 @@
                 @change="onFileChange"
               />
             </div>
+            <LogoUploadingSkeleton v-else />
           </div>
 
           <div class="h-px bg-border" />
@@ -381,7 +381,7 @@
               <div
                 v-for="i in 4"
                 :key="i"
-                class="aspect-square rounded-lg border border-border bg-secondary/30 animate-pulse"
+                class="aspect-square rounded-lg border border-border bg-primary/30 animate-pulse"
               />
             </div>
             <!-- List -->
