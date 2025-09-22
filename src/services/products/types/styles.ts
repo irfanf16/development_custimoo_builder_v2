@@ -1,4 +1,12 @@
-export type OutputStylePreview = {
+export type OutputStylePreviewBase = {
+  id: number
+  name: string
+  product_id: number
+  style_icon_url?: string
+  logo: unknown[]
+}
+
+export type OutputStylePreviewFront = OutputStylePreviewBase & {
   front_models: {
     composition: 'multiply' | 'screen'
     file_url: string
@@ -6,11 +14,16 @@ export type OutputStylePreview = {
     thumb_sm_url: string
     type: string
   }[]
-  id: number
-  logo: unknown[]
-  name: string
-  product_id: number
-  style_icon_url?: string
+}
+
+export type OutputStylePreviewBack = OutputStylePreviewBase & {
+  back_models: {
+    composition: 'multiply' | 'screen'
+    file_url: string
+    id: number
+    thumb_sm_url: string
+    type: string
+  }[]
 }
 
 type CustomizedAddons = {
@@ -18,7 +31,7 @@ type CustomizedAddons = {
   ungrouped_addons: import('./addons').OutputAddon[]
 }
 
-export type OutputStyleDetails = OutputStylePreview & {
+export type OutputStyleDetails = OutputStylePreviewFront & {
   _3d_alpha_map: unknown
   _3d_ao_map: unknown
   _3d_metalness_map: unknown

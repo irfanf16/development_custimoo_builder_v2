@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, isRef, type Ref, type ComputedRef } from 'vue'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { Button } from '@/components/ui/button'
   import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'
@@ -15,6 +15,7 @@
     DesignSelection,
     StyleSelection,
     LogoCustomization,
+    LogoPlacement,
     ColorSelection,
     PatternSelection,
     PatternGroupSelection,
@@ -49,7 +50,7 @@
 
   const props = defineProps<Props>()
 
-  const productsStore = useProductsStore()
+  const workflowStore = useWorkflowStore()
 
   const isExpanded = ref(false)
   const menuPanelRef = ref<{
@@ -64,10 +65,17 @@
   )
 
   // Computed properties for workflow step configuration
+  const logosSubStepValue = computed(() => {
+    const sub = (workflowStore as any).logosSubStep
+    return sub && typeof sub === 'object' && 'value' in sub ? sub.value : sub
+  })
+
   const contentKey = computed(() => {
-    return props.currentStep === 'logos'
-      ? `logos-${(productsStore as any).logosSubStep || 'list'}`
-      : props.currentStep
+    if (props.currentStep === 'logos') {
+      const sub = logosSubStepValue.value || 'list'
+      return `logos-${sub}`
+    }
+    return props.currentStep
   })
 
   // Get header and footer configuration from current step component
@@ -236,8 +244,12 @@
       />
 
       <!-- Logo Customization Step -->
+      <LogoPlacement
+        v-else-if="currentStep === 'logos' && logosSubStepValue === 'placement'"
+        ref="currentStepRef"
+      />
       <LogoCustomization
-        v-else-if="currentStep === 'logos'"
+        v-else-if="currentStep === 'logos' && logosSubStepValue !== 'placement'"
         ref="currentStepRef"
       />
 

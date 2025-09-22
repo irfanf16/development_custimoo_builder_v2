@@ -16,6 +16,8 @@
     }
   }
 
+  const CANVAS_SIZE = 176
+
   const props = defineProps<Props>()
 
   // Convert product placement coordinates to canvas overlay rect
@@ -25,7 +27,7 @@
     if (!s) return undefined
 
     const originalCanvasSize = 600
-    const actualCanvasSize = 120
+    const actualCanvasSize = CANVAS_SIZE
     const scale = actualCanvasSize / originalCanvasSize
 
     const scaledRect = {
@@ -46,8 +48,9 @@
       :product="product"
       :style-base="styleBase"
       :design-base="designBase"
-      :width="120"
-      :height="120"
+      :width="CANVAS_SIZE"
+      :height="CANVAS_SIZE"
+      :side="props.setting.side"
       :class="`rounded-lg border border-border/50 ${props.class || ''}`"
       :overlay-rect="overlayRect"
     />

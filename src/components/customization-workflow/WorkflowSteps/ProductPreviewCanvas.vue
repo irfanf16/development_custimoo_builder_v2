@@ -10,8 +10,10 @@
   import { Rect } from 'fabric'
   import type {
     OutputProductPreview,
-    OutputStylePreview,
-    OutputDesignPreview
+    OutputStylePreviewFront,
+    OutputStylePreviewBack,
+    OutputDesignPreviewFront,
+    OutputDesignPreviewBack
   } from '@/services/products/types'
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
@@ -19,11 +21,15 @@
   const props = defineProps({
     product: { type: Object as PropType<OutputProductPreview>, required: true },
     styleBase: {
-      type: Object as PropType<OutputStylePreview>,
+      type: Object as PropType<
+        OutputStylePreviewFront & OutputStylePreviewBack
+      >,
       required: true
     },
     designBase: {
-      type: Object as PropType<OutputDesignPreview>,
+      type: Object as PropType<
+        OutputDesignPreviewFront & OutputDesignPreviewBack
+      >,
       required: true
     },
     width: { type: Number, default: 176 },
@@ -70,23 +76,17 @@
     isRendering.value = true
     clearCanvas()
 
-    // if (props.side === 'back' && props.designBase.back_design) {
-    //   const back = props.designBase.back_design
-    //   await addDesignLayer(back.file_url, back.file_extension)
-    //   const backModels = props.styleBase.back_models || []
-    //   for (const m of backModels) {
-    //     const comp =
-    //       (m.composition as 'multiply' | 'screen') === 'multiply'
-    //         ? 'multiply'
-    //         : 'screen'
-    //     await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
-    //   }
-    // } else {
     await addDesignLayer(
-      props.designBase.front_design.file_url,
-      props.designBase.front_design.file_extension
+      props.side === 'front'
+        ? props.designBase.front_design.file_url
+        : props.designBase.back_design.file_url,
+      props.side === 'front'
+        ? props.designBase.front_design.file_extension
+        : props.designBase.back_design.file_extension
     )
-    for (const m of props.styleBase.front_models || []) {
+    for (const m of props.side === 'front'
+      ? props.styleBase.front_models
+      : (props.styleBase.back_models ?? [])) {
       const comp =
         (m.composition as 'multiply' | 'screen') === 'multiply'
           ? 'multiply'

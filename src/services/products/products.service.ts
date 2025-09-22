@@ -6,7 +6,7 @@ import {
   type ActiveProductDetails,
   type ProductPreviewItem,
   type OutputDesignPreview,
-  type OutputStylePreview,
+  type OutputStylePreviewFront,
   type OutputDesignDetails,
   type ActiveStyleDetails
 } from '@/services/products/types'
@@ -38,7 +38,7 @@ async function getDesignPreviewsByStyleId(styleId: number) {
 
 // Preview styles for a product
 async function getStylePreviewsByProduct(productId: number) {
-  return await http.get<OutputStylePreview[]>(
+  return await http.get<OutputStylePreviewFront[]>(
     `product/${productId}/style/previews`
   )
 }

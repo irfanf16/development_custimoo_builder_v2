@@ -1,17 +1,11 @@
 <script setup lang="ts">
   import { computed, ref, onMounted } from 'vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { useProductsStore } from '@/stores/products/products.store'
+  // import { useProductsStore } from '@/stores/products/products.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useHistoryStore } from '@/stores/history/history.store'
-  import type {
-    OutputProductDetails,
-    OutputStyleDetails,
-    OutputDesignDetails,
-    OutputProductLogosSetting
-  } from '@/services/products/types'
+  // no type imports needed here
   import { Button } from '@/components/ui/button'
-  import LogoPlacementThumb from './LogoPlacementThumb.vue'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import { useLogosStore } from '@/stores/logos/logos.store'
@@ -24,8 +18,6 @@
     logos_add_logo,
     logos_recent,
     logos_choose_placement,
-    logos_back_to_logos,
-    logos_save_placement,
     logos_back,
     logos_editor,
     logos_recolor_logo,
@@ -37,35 +29,17 @@
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
 
   const customizationStore = useCustomizationStore()
-  const productsStore = useProductsStore()
+  // const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const localeStore = useLocaleStore()
   const history = useHistoryStore()
   const logosStore = useLogosStore()
   const { effectiveProductId, effectiveSvgGroups } = useEffectiveSelectors()
 
-  type SubPanel = 'list' | 'placement' | 'edit'
+  type SubPanel = 'list' | 'edit'
   const subPanel = ref<SubPanel>('list')
-  // Sync local panel from workflow substep
-  if (
-    workflowStore.logosSubStep &&
-    workflowStore.logosSubStep !== subPanel.value
-  ) {
-    subPanel.value = workflowStore.logosSubStep
-  }
 
-  const product = computed<OutputProductDetails | null>(
-    () => productsStore.activeProductDetails ?? null
-  )
-  const styleBase = computed<OutputStyleDetails | null>(
-    () => productsStore.activeStyleDetails ?? null
-  )
-  const designBase = computed<OutputDesignDetails | null>(
-    () => productsStore.activeDesignDetails ?? null
-  )
-  const placements = computed<OutputProductLogosSetting[]>(
-    () => product.value?.logos_setting || []
-  )
+  // no product/styleBase needed in this panel
 
   // Recent logos state
   const customLogos = computed(() => {
@@ -180,6 +154,11 @@
     if (res) history.execute('logo.add', res)
   }
 
+  function addRecentLogoToCustomization(logo: Logo) {
+    goToPlacement()
+    addUploadedLogoToCustomization(logo)
+  }
+
   function removeLogoFromCustomization(logo: any) {
     const key = String(customizationStore.customization?.product_id || '')
     const index = customLogos.value.findIndex(l => l.id === logo.id)
@@ -189,8 +168,7 @@
   }
 
   function goToPlacement() {
-    subPanel.value = 'placement'
-    // integrate with workflow store if needed
+    workflowStore.setLogosSubStep('placement')
   }
   function goToControls() {
     subPanel.value = 'edit'
@@ -199,11 +177,6 @@
   function goToList() {
     subPanel.value = 'list'
     // integrate with workflow store if needed
-  }
-
-  function handlePlacementSelection(placement: OutputProductLogosSetting) {
-    console.log('Chosen placement:', placement)
-    goToList()
   }
 
   // Breadcrumbs only
@@ -390,7 +363,7 @@
                 v-for="logo in displayedRecentLogos"
                 :key="logo.id"
                 class="relative group aspect-square rounded-lg border border-border overflow-hidden"
-                @click="addUploadedLogoToCustomization(logo)"
+                @click="addRecentLogoToCustomization(logo)"
               >
                 <img
                   :src="baseStorageUrl + logo.url"
@@ -413,38 +386,6 @@
           <div class="flex gap-3 px-6">
             <Button variant="ghost" class="rounded-lg" @click="goToPlacement">{{
               logos_choose_placement({}, { locale: localeStore.currentLocale })
-            }}</Button>
-          </div>
-        </div>
-
-        <div v-else-if="subPanel === 'placement'" class="flex flex-col gap-4">
-          <div class="grid grid-cols-3 gap-3">
-            <div
-              v-for="s in placements"
-              :key="s.id"
-              class="flex flex-col gap-2 items-center cursor-pointer"
-              @click="handlePlacementSelection(s)"
-            >
-              <LogoPlacementThumb
-                v-if="product && styleBase && designBase"
-                :product="product"
-                :style-base="styleBase"
-                :design-base="designBase"
-                :setting="s"
-                :width="112"
-                :height="112"
-              />
-              <div class="text-xs text-muted-foreground truncate max-w-[112px]">
-                {{ s.name_of_placement }}
-              </div>
-            </div>
-          </div>
-          <div class="flex gap-3">
-            <Button variant="outline" class="rounded-lg" @click="goToList">{{
-              logos_back_to_logos({}, { locale: localeStore.currentLocale })
-            }}</Button>
-            <Button variant="default" class="rounded-lg" @click="goToList">{{
-              logos_save_placement({}, { locale: localeStore.currentLocale })
             }}</Button>
           </div>
         </div>

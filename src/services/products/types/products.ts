@@ -72,6 +72,6 @@ export type OutputProductDetails = OutputProductPreview & {
 
 export type ProductPreviewItem = {
   productPreview: OutputProductPreview
-  stylePreview: import('./styles').OutputStylePreview
+  stylePreview: import('./styles').OutputStylePreviewFront
   designPreview: import('./designs').OutputDesignPreview
 }

@@ -74,6 +74,7 @@ declare module 'vue' {
     Label: typeof import('./src/components/ui/label/Label.vue')['default']
     LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
     LogoCustomization: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoCustomization.vue')['default']
+    LogoPlacement: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoPlacement.vue')['default']
     LogoPlacementThumb: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoPlacementThumb.vue')['default']
     LogoUploadingSkeleton: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoUploadingSkeleton.vue')['default']
     LogoUploadingSkepeton: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoUploadingSkepeton.vue')['default']

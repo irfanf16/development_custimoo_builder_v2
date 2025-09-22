@@ -8,7 +8,7 @@ import type {
   ActiveProductDetails,
   ProductPreviewItem,
   OutputDesignPreview,
-  OutputStylePreview,
+  OutputStylePreviewFront,
   OutputStyleDetails,
   OutputDesignDetails,
   OutputRecentLogo,
@@ -31,7 +31,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   const activeDesignDetails = ref<OutputDesignDetails | null>(null)
   const svgGroups = ref<OutputSvgGroupColor[] | null>(null)
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
-  const stylePreviews = ref<OutputStylePreview[] | null>(null)
+  const stylePreviews = ref<OutputStylePreviewFront[] | null>(null)
   const designPreviews = ref<OutputDesignPreview[] | null>(null)
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
   const isLoading = ref(false)
@@ -191,7 +191,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       API.products.getStylePreviewsByProduct(productId)
     )
     if (resp.success) {
-      stylePreviews.value = resp.content as unknown as OutputStylePreview[]
+      stylePreviews.value = resp.content as unknown as OutputStylePreviewFront[]
     }
     setLoading(false)
     return resp
