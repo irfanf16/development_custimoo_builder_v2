@@ -71,7 +71,6 @@ declare module 'vue' {
     IFlexLineTextStyle: typeof import('~icons/flex-line/text-style')['default']
     Input: typeof import('./src/components/ui/input/Input.vue')['default']
     IOtherImage: typeof import('~icons/other/image')['default']
-    IOtherTrash: typeof import('~icons/other/trash')['default']
     Label: typeof import('./src/components/ui/label/Label.vue')['default']
     LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
     LogoCustomization: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoCustomization.vue')['default']

@@ -78,9 +78,6 @@ export const useLogosStore = defineStore('logosStore', () => {
 
     // Store the original logo for rollback if needed
     const originalLogos = recentLogos.value ? [...recentLogos.value] : []
-    const logoToDelete = recentLogos.value?.find(
-      logo => logo.id.toString() === logoId
-    )
 
     // Optimistically remove the logo from state
     setRecentLogos(
