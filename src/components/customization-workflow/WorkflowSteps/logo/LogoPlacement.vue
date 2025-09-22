@@ -51,9 +51,14 @@
       <div
         v-for="s in placements"
         :key="s.id"
-        class="flex flex-col gap-2 items-center cursor-pointer"
+        class="flex flex-col gap-4 items-center cursor-pointer w-full p-4"
         @click="handlePlacementSelection(s)"
       >
+        <div
+          class="flex-start w-full text-base font-semibold truncate leading-none"
+        >
+          {{ s.name_of_placement }}
+        </div>
         <LogoPlacementThumb
           v-if="product && styleBase && designBase"
           :product="product"
@@ -63,9 +68,6 @@
           :width="112"
           :height="112"
         />
-        <div class="text-xs text-muted-foreground truncate max-w-[112px]">
-          {{ s.name_of_placement }}
-        </div>
       </div>
     </div>
   </div>

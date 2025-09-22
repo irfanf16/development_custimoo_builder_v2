@@ -51,7 +51,7 @@
       :width="CANVAS_SIZE"
       :height="CANVAS_SIZE"
       :side="props.setting.side"
-      :class="`rounded-lg border border-border/50 ${props.class || ''}`"
+      :class="`${props.class || ''}`"
       :overlay-rect="overlayRect"
     />
   </div>

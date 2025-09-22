@@ -64,6 +64,7 @@ declare module 'vue' {
     IFlexLineAiSparkles: typeof import('~icons/flex-line/ai-sparkles')['default']
     IFlexLineCategories: typeof import('~icons/flex-line/categories')['default']
     IFlexLineLandscape1: typeof import('~icons/flex-line/landscape1')['default']
+    IFlexLineLogo: typeof import('~icons/flex-line/logo')['default']
     IFlexLinePaintPalette: typeof import('~icons/flex-line/paint-palette')['default']
     IFlexLinePattern: typeof import('~icons/flex-line/pattern')['default']
     IFlexLineTable: typeof import('~icons/flex-line/table')['default']

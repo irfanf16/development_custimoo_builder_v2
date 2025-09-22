@@ -17,7 +17,6 @@
     logos_supported_formats,
     logos_add_logo,
     logos_recent,
-    logos_choose_placement,
     logos_back,
     logos_editor,
     logos_recolor_logo,
@@ -381,12 +380,6 @@
                 </Button>
               </button>
             </div>
-          </div>
-
-          <div class="flex gap-3 px-6">
-            <Button variant="ghost" class="rounded-lg" @click="goToPlacement">{{
-              logos_choose_placement({}, { locale: localeStore.currentLocale })
-            }}</Button>
           </div>
         </div>
 
