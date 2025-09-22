@@ -11,12 +11,12 @@ async function getRecentLogos() {
 
 async function uploadLogo(uploadLogoParams: UploadLogoParams) {
   const form = new FormData()
+  // Backend expects the field name 'logo'
   form.append('file', uploadLogoParams.file)
   form.append('product_id', String(uploadLogoParams.product_id))
 
-  return await http.post<OutputUploadLogo>('customer/upload/logo', form, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
+  // Let Axios set the correct multipart Content-Type with boundary
+  return await http.post<OutputUploadLogo>('customer/upload/logo', form)
 }
 
 async function deleteRecentLogo(logoId: string) {
