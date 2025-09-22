@@ -1,10 +1,7 @@
-export type LogoColor =
-  | number[]
-  | { hex: string | null; pantone: string | null; name: string | null }
+import type { LogoPlacementBase, LogoColor } from '@/services/types'
+export type { LogoColor } from '@/services/types'
 
-import type { LogoPlacementBase } from '@/services/types'
-
-export type Logo = LogoPlacementBase & {
+export type CustomLogo = LogoPlacementBase & {
   // Refinements for this domain
   url: string // stricter than base's string | null
   logo_colors: LogoColor[] // refine unknown[] to concrete union
@@ -23,7 +20,7 @@ export type Logo = LogoPlacementBase & {
 }
 
 export type OutputRecentLogos = {
-  data: Logo[]
+  data: CustomLogo[]
   message: string
 }
 
@@ -36,7 +33,7 @@ export type OutputUploadLogo = {
   success: boolean
   message: string
   result: {
-    customer_logo: Logo
+    customer_logo: CustomLogo
   }
   errors: { code?: string; message?: string }[]
   status_code: number

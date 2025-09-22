@@ -9,7 +9,7 @@
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import { useLogosStore } from '@/stores/logos/logos.store'
-  import type { Logo } from '@/services/logos/types'
+  import type { CustomLogo } from '@/services/logos/types'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import {
     logos_empty_drag_drop,
@@ -122,7 +122,7 @@
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`
   }
 
-  function applyLogoColors(logo: Logo | any) {
+  function applyLogoColors(logo: CustomLogo | any) {
     const palette = (logo as any).logo_colors as number[][] | undefined
     if (!palette?.length || !effectiveSvgGroups.value?.length) return
     const hexColors = palette.map(c => rgbArrToHex(c))
@@ -148,7 +148,7 @@
     })
   }
 
-  function addRecentLogoToCustomization(logo: Logo) {
+  function addRecentLogoToCustomization(logo: CustomLogo) {
     logosStore.setActiveLogo(logo)
     goToPlacement()
     // addActiveLogoToCustomization(logo)

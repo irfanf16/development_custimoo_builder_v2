@@ -10,7 +10,7 @@ import type {
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
-import type { Logo, LogoColor } from '@/services/logos/types'
+import type { CustomLogo, LogoColor } from '@/services/logos/types'
 
 export const useCustomizationStore = defineStore('customizationStore', () => {
   // ===== DEPENDENCIES =====
@@ -149,7 +149,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  function addLogoToCustomizationFromSource(logo: Logo) {
+  function addLogoToCustomizationFromSource(logo: CustomLogo) {
     if (!customization.value) return
     const key = String(customization.value.product_id)
     return { key, logo }

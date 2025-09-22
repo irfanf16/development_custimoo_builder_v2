@@ -9,7 +9,7 @@
     OutputDesignDetails,
     OutputProductLogosSetting
   } from '@/services/products/types'
-  import type { Logo } from '@/services/logos/types'
+  import type { CustomLogo } from '@/services/logos/types'
   import type { BreadcrumbItem } from '../../types'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
@@ -51,7 +51,7 @@
     { label: 'Placement' }
   ])
 
-  function addActiveLogoToCustomization(_logo: Logo) {
+  function addActiveLogoToCustomization(_logo: CustomLogo) {
     const res = customizationStore.addLogoToCustomizationFromSource(_logo)
     // Set default placement
     if (res) historyStore.execute('logo.add', res)

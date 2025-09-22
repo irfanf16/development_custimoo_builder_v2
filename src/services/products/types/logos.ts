@@ -1,4 +1,5 @@
 import type { LogoPlacementBase } from '@/services/types'
+import type { LogoColor } from '@/services/types'
 
 export type OutputProductLogosSetting = LogoPlacementBase & {
   // Refinements for products API shape
@@ -26,7 +27,7 @@ export type OutputRecentLogo = {
   original_logo_url: string
   original_png: string
   browser_key: string
-  logo_colors: import('@/services/logos/types').LogoColor[]
+  logo_colors: LogoColor[]
   recent_delete: number
   url: string
 }

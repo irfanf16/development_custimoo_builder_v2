@@ -1,5 +1,3 @@
-export type Boolean01 = 0 | 1
-
 export type LogoColor =
   | number[]
   | { hex: string | null; pantone: string | null; name: string | null }
@@ -33,11 +31,11 @@ export type LogoPlacementBase = {
   logo_name: string | null
 
   // Flags/status
-  is_locked: number | Boolean01
+  is_locked: 1 | 0
   is_vector?: boolean
   is_smart_transparent: boolean | null
   haveControls: boolean
-  logos_follows_product?: number | Boolean01
+  logos_follows_product?: 0 | 1
   is_replace_success: boolean
 
   // Bookkeeping

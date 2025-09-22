@@ -49,7 +49,7 @@ export type APCustomizationText = {
 
 export type APCustomizationTextsMap = Record<string, APCustomizationText[]>
 
-export type APCustomizationLogo = import('@/services/logos/types').Logo
+export type APCustomizationLogo = import('@/services/logos/types').CustomLogo
 export type APCustomizationLogosMap = Record<string, APCustomizationLogo[]>
 
 export type APCustomizationDefaultColor = {
@@ -107,7 +107,7 @@ export type ActiveProductCustomization = {
   custom_logos: APCustomizationLogosMap
   default_colors: APCustomizationDefaultColor[]
   group_colors: Record<string, APCustomizationGroupColor>
-  logo_colors: import('@/services/logos/types').LogoColor[]
+  logo_colors: import('@/services/types').LogoColor[]
   roster_detail: APCustomizationRosterEntry[]
   products_rosters: APCustomizationProductsRosters
   shuffle_color_number: number

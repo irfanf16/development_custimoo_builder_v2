@@ -4,7 +4,7 @@ import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
 import type {
-  Logo,
+  CustomLogo,
   OutputRecentLogos,
   UploadLogoParams,
   OutputUploadLogo
@@ -12,16 +12,16 @@ import type {
 
 export const useLogosStore = defineStore('logosStore', () => {
   // State
-  const logos = ref<Logo[] | null>(null) // Deprecated: kept for backward compat; main source is customization.custom_logos
-  const recentLogos = ref<Logo[] | null>(null)
-  const activeLogo = ref<Logo | null>(null)
+  const logos = ref<CustomLogo[] | null>(null) // Deprecated: kept for backward compat; main source is customization.custom_logos
+  const recentLogos = ref<CustomLogo[] | null>(null)
+  const activeLogo = ref<CustomLogo | null>(null)
 
   const isLoadingRecentLogos = ref(false)
   const isLoadingUploadLogo = ref(false)
   const error = ref<string | null>(null)
 
   // Actions
-  function setRecentLogos(data: Logo[]) {
+  function setRecentLogos(data: CustomLogo[]) {
     recentLogos.value = data
   }
 
@@ -37,7 +37,7 @@ export const useLogosStore = defineStore('logosStore', () => {
     error.value = errorMessage
   }
 
-  function setActiveLogo(logo: Logo | null) {
+  function setActiveLogo(logo: CustomLogo | null) {
     activeLogo.value = logo
   }
 
