@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { OutputSvgGroupColor } from '@/services/products/types'
+import type { CustomLogo } from '@/services/logos/types'
 
 export function useEffectiveSelectors() {
   // ===== DEPENDENCIES =====
@@ -56,11 +57,21 @@ export function useEffectiveSelectors() {
     })
   })
 
+  const effectiveLogos = computed<CustomLogo[]>(() => {
+    if (!effectiveProductId.value) return []
+    return (
+      customizationStore.customization?.custom_logos[
+        effectiveProductId.value.toString()
+      ] || []
+    )
+  })
+
   const renderVersion = computed<string>(() => {
     const idPart = [
       effectiveProductId.value ?? 'null',
       effectiveStyleId.value ?? 'null',
-      effectiveDesignId.value ?? 'null'
+      effectiveDesignId.value ?? 'null',
+      effectiveLogos.value.map(l => l.id).join(',')
     ].join(':')
     const groupsPart = (effectiveSvgGroups.value || [])
       .map(g => `${g.id}:${g.color}`)
@@ -80,6 +91,7 @@ export function useEffectiveSelectors() {
     effectiveDesignId,
     // Computed Derived
     effectiveSvgGroups,
+    effectiveLogos,
     renderVersion
   }
 }

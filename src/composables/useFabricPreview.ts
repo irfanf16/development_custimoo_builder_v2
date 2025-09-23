@@ -10,6 +10,7 @@ import {
   Point
 } from 'fabric'
 import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
+import type { CustomLogo } from '@/services/logos/types'
 
 type SizeOptions = {
   width: number
@@ -329,6 +330,121 @@ export function useFabricPreview(
     }
   }
 
+  /**
+   * Adds a logo layer to the canvas honoring placement coordinates, size and rotation
+   * Coordinates are expected in the original product coordinate space (default 600x600)
+   */
+  async function addLogoLayer(
+    logo: CustomLogo,
+    options?: {
+      originalCanvasSize?: number // base coordinate system, defaults to 600
+      respectScaleProps?: boolean // apply logo.scaleX/scaleY on top of computed scale
+    }
+  ) {
+    if (!canvas.value || !logo?.url) return
+
+    const baseSize = options?.originalCanvasSize ?? 600
+
+    // Map product coordinates (base 600x600) into the DESIGN bounds, not the whole canvas.
+    // This ensures positioning stays aligned even when the design is scaled and centered.
+    const main = mainDesignObject.value as FabricObject | null
+
+    // Compute design-space unit scale (UNIFORM) and top-left offset within the canvas
+    let unitScale = 1
+    let designLeftOffset = 0
+    let designTopOffset = 0
+
+    if (main) {
+      const anyMain = main as any
+      const getScaledWidth =
+        typeof anyMain.getScaledWidth === 'function'
+          ? anyMain.getScaledWidth.bind(main)
+          : null
+      const getScaledHeight =
+        typeof anyMain.getScaledHeight === 'function'
+          ? anyMain.getScaledHeight.bind(main)
+          : null
+
+      const scaledW = getScaledWidth
+        ? getScaledWidth()
+        : (main.width || 0) * (main.scaleX || 1)
+      const scaledH = getScaledHeight
+        ? getScaledHeight()
+        : (main.height || 0) * (main.scaleY || 1)
+
+      // Map product's 600x600 square into the inscribed square within the scaled design
+      const squareSide = Math.min(scaledW || 0, scaledH || 0)
+      unitScale = (squareSide || 0) / baseSize
+
+      // main's origin is 'center'
+      const centerX = (main.left as number) || 0
+      const centerY = (main.top as number) || 0
+      designLeftOffset = centerX - (scaledW || 0) / 2
+      designTopOffset = centerY - (scaledH || 0) / 2
+    } else {
+      // Fallback: map into full canvas (less precise if design is scaled/centered)
+      const canvasHeight = canvas.value.getHeight?.() || 0
+      // Fallback assumes design fills height; inscribed square side equals canvasHeight
+      unitScale = canvasHeight / baseSize
+      designLeftOffset = 0
+      designTopOffset = 0
+    }
+
+    const img = await FabricImage.fromURL(fromStorage(logo.url))
+
+    // Compute uniform scale to match target height in the current canvas space
+    const targetHeightPx = (Number(logo.height) || 0) * unitScale
+    const safeImgHeight = img.height || 1
+    const baseScale = targetHeightPx > 0 ? targetHeightPx / safeImgHeight : 1
+    const scaleX =
+      options?.respectScaleProps && logo.scaleX
+        ? baseScale * logo.scaleX
+        : baseScale
+    const scaleY =
+      options?.respectScaleProps && logo.scaleY
+        ? baseScale * logo.scaleY
+        : baseScale
+
+    // Position at (x_axis, y_axis) as the CENTER within the scaled design bounds
+    // Use inner offsets to account for inscribed square inside the design's bounding box
+    const anyMain = main as any
+    const scaledW = anyMain
+      ? typeof anyMain.getScaledWidth === 'function'
+        ? anyMain.getScaledWidth()
+        : (main?.width || 0) * (main?.scaleX || 1)
+      : canvas.value.getWidth?.() || 0
+    const scaledH = anyMain
+      ? typeof anyMain.getScaledHeight === 'function'
+        ? anyMain.getScaledHeight()
+        : (main?.height || 0) * (main?.scaleY || 1)
+      : canvas.value.getHeight?.() || 0
+    const squareSide = Math.min(scaledW || 0, scaledH || 0)
+    const innerOffsetX = ((scaledW || 0) - squareSide) / 2
+    const innerOffsetY = ((scaledH || 0) - squareSide) / 2
+
+    const cx =
+      designLeftOffset + innerOffsetX + (Number(logo.x_axis) || 0) * unitScale
+    const cy =
+      designTopOffset + innerOffsetY + (Number(logo.y_axis) || 0) * unitScale
+
+    img.set({
+      selectable: canvasOptions.value.selection ?? false,
+      evented: canvasOptions.value.enablePointerEvents ?? false,
+      originX: 'center',
+      originY: 'center',
+      left: cx,
+      top: cy,
+      angle: Number(logo.rotation) || 0,
+      scaleX,
+      scaleY
+    })
+
+    canvas.value.add(img as FabricObject)
+    img.setCoords()
+    canvas.value.requestRenderAll()
+    return img as FabricObject
+  }
+
   // ===== ANIMATION =====
   async function fadeOut(durationMs = 150) {
     if (!canvasEl.value) return
@@ -359,6 +475,7 @@ export function useFabricPreview(
     // Layer Management
     addModelLayer,
     addDesignLayer,
+    addLogoLayer,
     getSvgGroup,
     // Animation
     fadeOut,

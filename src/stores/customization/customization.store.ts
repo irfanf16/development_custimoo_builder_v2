@@ -6,7 +6,8 @@ import type {
   OutputColor,
   OutputDesignDetails,
   OutputDesignPreviewFront,
-  OutputDesignPreviewBack
+  OutputDesignPreviewBack,
+  OutputProductLogosSetting
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
@@ -155,6 +156,52 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     return { key, logo }
   }
 
+  function getMergedCustomizationLogo(
+    _logo: CustomLogo,
+    _placement: OutputProductLogosSetting
+  ) {
+    return {
+      id: _logo.id,
+      product_id: _logo.product_id || _placement.product_id,
+      product_style_id: _logo.product_style_id || _placement.product_style_id,
+      following_product_ids:
+        _logo.following_product_ids || _placement.following_product_ids,
+      haveControls: _logo.haveControls ?? true,
+      height: _logo.height || _placement.height || 180,
+      is_locked: _logo.is_locked ?? _placement.is_locked ?? 0,
+      is_replace_success: _logo.is_replace_success ?? false,
+      is_smart_transparent: _logo.is_smart_transparent ?? false,
+      is_vector: _logo.is_vector ?? true,
+      logo_colors: _logo.logo_colors || [],
+      logo_index: _logo.logo_index ?? 0,
+      logo_name: _logo.logo_name,
+      logo_technologies: _logo.logo_technologies,
+      logos_follows_product: _logo.logos_follows_product ?? 0,
+      name_of_placement:
+        _logo.name_of_placement || _placement.name_of_placement,
+      originalHeight: _logo.originalHeight || _placement.originalHeight,
+      originalWidth: _logo.originalWidth || _placement.originalWidth,
+      original_logo: _logo.original_logo,
+      original_logo_url: _logo.original_logo_url,
+      rotation: _logo.rotation ?? _placement.rotation ?? 0,
+      side: _logo.side || _placement.side || 'front',
+      smart_transparent_logo: _logo.smart_transparent_logo,
+      transparent_logo: _logo.transparent_logo,
+      created_at: _logo.created_at,
+      updated_at: _logo.updated_at,
+      url: _logo.url,
+      width: _logo.width || _placement.width || 0,
+      x_axis: _logo.x_axis || _placement.x_axis || 300,
+      x_axis_3d: _logo.x_axis_3d ?? _placement.x_axis_3d ?? 0,
+      y_axis: _logo.y_axis || _placement.y_axis || 300,
+      y_axis_3d: _logo.y_axis_3d ?? _placement.y_axis_3d ?? 0,
+      actualWidth: _logo.actualWidth,
+      actualHeight: _logo.actualHeight,
+      scaleX: _logo.scaleX,
+      scaleY: _logo.scaleY
+    } as CustomLogo
+  }
+
   // Helper function to create default customization with preserved IDs
   function createDefaultCustomization(
     preservedIds: {
@@ -285,6 +332,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     setGroupColor,
     appendLogoColors,
     addLogoToCustomizationFromSource,
+    getMergedCustomizationLogo,
     // Business Logic
     ensureCustomization,
     resetCustomizationToCurrentProductDefaults,

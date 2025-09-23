@@ -96,7 +96,6 @@
   }
 
   async function doUpload(file: File) {
-    goToPlacement()
     if (!effectiveProductId.value) return
     const res = await logosStore.uploadLogo({
       file: file,
@@ -105,7 +104,7 @@
     if (res.success) {
       // Add uploaded logo into customization and collect colors
       const uploaded = res?.content?.result?.customer_logo
-      if (uploaded) addRecentLogoToCustomization(uploaded)
+      if (uploaded) handleLogoAfterUpload(uploaded)
       return
       // After upload, go to placement selection
       // goToPlacement()
@@ -148,10 +147,8 @@
     })
   }
 
-  function addRecentLogoToCustomization(logo: CustomLogo) {
+  function setUploadedLogoAsActive(logo: CustomLogo) {
     logosStore.setActiveLogo(logo)
-    goToPlacement()
-    // addActiveLogoToCustomization(logo)
   }
 
   function removeLogoFromCustomization(logo: any) {
@@ -172,6 +169,16 @@
   function goToList() {
     subPanel.value = 'list'
     // integrate with workflow store if needed
+  }
+
+  function handleRecentLogoClick(logo: CustomLogo) {
+    setUploadedLogoAsActive(logo)
+    goToPlacement()
+  }
+
+  function handleLogoAfterUpload(logo: CustomLogo) {
+    setUploadedLogoAsActive(logo)
+    goToPlacement()
   }
 
   // Breadcrumbs only
@@ -358,7 +365,7 @@
                 v-for="logo in displayedRecentLogos"
                 :key="logo.id"
                 class="relative group aspect-square rounded-lg border border-border overflow-hidden"
-                @click="addRecentLogoToCustomization(logo)"
+                @click="handleRecentLogoClick(logo)"
               >
                 <img
                   :src="baseStorageUrl + logo.url"

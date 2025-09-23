@@ -17,12 +17,14 @@
     addModelLayer,
     addDesignLayer,
     fadeOut,
-    fadeIn
+    fadeIn,
+    addLogoLayer
   } = useFabricPreview()
   const {
     activeDesignDetails: effectiveDesignDetails,
     activeStyleDetails: effectiveStyleDetails,
-    renderVersion
+    renderVersion,
+    effectiveLogos
   } = useEffectiveSelectors()
 
   async function renderPreview() {
@@ -48,6 +50,9 @@
         ) as GlobalCompositeOperation
         await addModelLayer(m.file_url, comp)
       }
+      for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
+        await addLogoLayer(logo)
+      }
     } else if (design.front_design) {
       await addDesignLayer(
         design.front_design.file_url,
@@ -58,6 +63,9 @@
           m.composition === 'multiply' ? 'multiply' : 'screen'
         ) as GlobalCompositeOperation
         await addModelLayer(m.file_url, comp)
+      }
+      for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
+        await addLogoLayer(logo)
       }
     }
 

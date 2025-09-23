@@ -17,6 +17,7 @@
     animateZoom,
     addModelLayer,
     addDesignLayer,
+    addLogoLayer,
     fadeOut,
     fadeIn,
     registerBackgroundDragHandlers
@@ -24,8 +25,11 @@
   const {
     activeDesignDetails: effectiveDesignDetails,
     activeStyleDetails: effectiveStyleDetails,
-    renderVersion
+    renderVersion,
+    effectiveLogos
   } = useEffectiveSelectors()
+
+  console.log('effectiveLogos', effectiveLogos.value)
 
   async function renderPreview() {
     if (!canvas.value) return
@@ -52,6 +56,9 @@
         ) as GlobalCompositeOperation
         await addModelLayer(m.file_url, comp, fitOptions)
       }
+      for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
+        await addLogoLayer(logo)
+      }
     } else {
       await addDesignLayer(
         design.front_design.file_url,
@@ -63,6 +70,9 @@
           m.composition === 'multiply' ? 'multiply' : 'screen'
         ) as GlobalCompositeOperation
         await addModelLayer(m.file_url, comp, fitOptions)
+      }
+      for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
+        await addLogoLayer(logo)
       }
     }
 

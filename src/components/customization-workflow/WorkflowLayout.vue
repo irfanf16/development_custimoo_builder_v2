@@ -147,7 +147,7 @@
 </script>
 
 <template>
-  <div id="workflow-panel-container" class="flex-col">
+  <div id="workflow-panel-container" class="flex-col h-fit">
     <WorkflowPanel
       ref="menuPanelRef"
       :content-key="contentKey"
