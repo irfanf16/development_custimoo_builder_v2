@@ -18,8 +18,6 @@
     addModelLayer,
     addDesignLayer,
     addLogoLayer,
-    fadeOut,
-    fadeIn,
     registerBackgroundDragHandlers
   } = useFabricPreview()
   const {
