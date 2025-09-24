@@ -143,19 +143,19 @@
     ]"
   >
     <Card
-      class="h-full max-h-[80vh] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 overflow-hidden flex flex-col py-0"
+      class="h-full max-h-[80vh] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 md:gap-0 overflow-hidden flex flex-col py-0"
       :class="isExpanded ? 'w-[75vw]' : 'w-[470px]'"
     >
       <!-- Header slot - panels can provide their own header content -->
       <template v-if="$slots.header">
         <CardHeader
-          class="py-6 px-6 flex flex-row items-center justify-between gap-2 min-h-[4.5rem] max-h-[18rem] flex-shrink-0"
+          class="pb-4 pt-0 px-4 md:pb-6 md:px-6 flex flex-row items-center justify-between gap-2 min-h-[4.5rem] max-h-[18rem] flex-shrink-0"
         >
           <slot name="header" :is-expanded="isExpanded" />
         </CardHeader>
       </template>
 
-      <CardContent class="p-0 flex-1 min-h-0">
+      <CardContent class="p-0 px-0 md:p-0 md:px-0 flex-1 min-h-0">
         <!-- Content slot for different panel types -->
         <Transition name="panel-slide" mode="out-in" appear>
           <div
@@ -172,7 +172,7 @@
 
       <!-- Footer actions -->
       <template v-if="$slots.footer">
-        <CardFooter class="px-6 flex-shrink-0 py-6 border-t">
+        <CardFooter class="px-4 md:px-6 flex-shrink-0 py-4 md:py-6 border-t">
           <slot name="footer" :is-expanded="isExpanded" />
         </CardFooter>
       </template>

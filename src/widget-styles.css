@@ -18,12 +18,13 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
+  /* Secondary is derived from primary in this project; keep variables but they map to primary */
+  --color-secondary: var(--primary);
+  --color-secondary-foreground: var(--primary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--primary);
+  --color-accent-foreground: var(--primary-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -64,6 +65,7 @@
   /* --radius is defined below in light theme */
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-heading: ui-sans-serif, system-ui, sans-serif;
+  --font-brand: var(--font-heading);
   /* Base color references for dark-mode derivations */
   --primary-base: var(--primary);
   --secondary-base: var(--secondary);
@@ -78,12 +80,12 @@
   --popover-foreground: oklch(0.129 0.042 264.695);
   --primary: oklch(0.208 0.042 265.755);
   --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: var(--primary);
+  --secondary-foreground: var(--primary-foreground);
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --accent: var(--primary);
+  --accent-foreground: var(--primary-foreground);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
@@ -116,17 +118,11 @@
       color-mix(in oklch, var(--primary-base), black 25%)
     );
     --primary-foreground: oklch(0.208 0.042 265.755);
-    --secondary: var(
-      --secondary-dark,
-      color-mix(in oklch, var(--secondary-base), black 30%)
-    );
+    --secondary: var(--primary);
     --secondary-foreground: oklch(0.984 0.003 247.858);
     --muted: oklch(0.279 0.041 260.031);
     --muted-foreground: oklch(0.704 0.04 256.788);
-    --accent: var(
-      --accent-dark,
-      color-mix(in oklch, var(--accent-base), black 35%)
-    );
+    --accent: var(--primary);
     --accent-foreground: oklch(0.984 0.003 247.858);
     --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
@@ -237,6 +233,9 @@
 @layer utilities {
   .icon-secondary-from-primary-50 {
     --icon-secondary: rgb(from currentColor r g b / 0.5);
+  }
+  .font-brand {
+    font-family: var(--font-brand), var(--font-sans), system-ui;
   }
 }
 

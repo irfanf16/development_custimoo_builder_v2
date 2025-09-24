@@ -194,7 +194,7 @@
           <!-- Empty state uploader (shown when no logos yet) -->
           <div
             v-if="!hasAnyLogo && !logosStore.isLoadingUploadLogo"
-            class="relative rounded-xl border border-dashed border-border p-6 flex flex-col items-center justify-center gap-2 text-center mx-6 transition-colors"
+            class="relative rounded-xl border border-dashed border-border p-4 md:p-6 flex flex-col items-center justify-center gap-2 text-center mx-4 md:mx-6 transition-colors"
             :class="
               isDragOver
                 ? 'bg-secondary/20 border-primary/60 ring-2 ring-primary/30'
@@ -211,7 +211,7 @@
                 class="size-12 text-primary icon-secondary-from-primary-50"
               />
             </div>
-            <div class="text-sm font-medium">
+            <div class="text-sm font-medium font-brand">
               {{
                 logos_empty_drag_drop({}, { locale: localeStore.currentLocale })
               }}
@@ -251,7 +251,7 @@
           />
 
           <!-- When logos exist: render each logo with swatches + actions -->
-          <div v-if="hasAnyLogo" class="flex flex-col gap-4 mx-6">
+          <div v-if="hasAnyLogo" class="flex flex-col gap-4 mx-4 md:mx-6">
             <div
               v-for="logo in customLogos || []"
               :key="logo.id"
@@ -326,7 +326,10 @@
           <div class="h-px bg-border" />
 
           <!-- Recent logos -->
-          <div v-if="shouldShowRecentSection" class="flex flex-col gap-2 px-6">
+          <div
+            v-if="shouldShowRecentSection"
+            class="flex flex-col gap-2 px-4 md:px-6"
+          >
             <div class="flex items-center justify-between">
               <div class="text-base leading-none font-semibold">
                 {{ logos_recent({}, { locale: localeStore.currentLocale }) }}

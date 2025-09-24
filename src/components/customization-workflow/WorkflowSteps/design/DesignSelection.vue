@@ -109,12 +109,12 @@
 
 <template>
   <!-- Content -->
-  <div ref="designSelectionContainer" class="flex flex-wrap mb-6">
+  <div ref="designSelectionContainer" class="flex flex-wrap mb-4 md:mb-6">
     <div
       v-for="item in filteredPreviews"
       :key="item.id"
       :id="`design-${item.design_name}`"
-      class="group relative flex flex-col items-center flex-shrink-0 gap-6 p-6"
+      class="group relative flex flex-col items-center flex-shrink-0 gap-4 md:gap-6 p-4 md:p-6"
       :class="[
         'relative rounded-sm transition-colors cursor-pointer',
         'hover:border-border hover:bg-primary/10 hover:outline-ring',

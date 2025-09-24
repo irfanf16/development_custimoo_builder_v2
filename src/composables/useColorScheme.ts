@@ -1,10 +1,14 @@
-import { generateCssVariables, hexToHsl } from '@/lib/colorUtils'
+import { hexToHsl } from '@/lib/colorUtils'
 import { useUIStore } from '@/stores/ui'
 import { loadGoogleFont, getFontFamilyCSS } from '@/lib/utils'
+import type { HostTheme } from '@/lib/hostThemes'
 
 export function useColorScheme() {
   // ===== BUSINESS LOGIC =====
-  const applyColorScheme = async (container?: HTMLElement, hostTheme?: any) => {
+  const applyColorScheme = async (
+    container?: HTMLElement,
+    hostTheme?: HostTheme | null
+  ) => {
     const target = container || document.documentElement
 
     // If no host theme provided, use CSS defaults
@@ -23,17 +27,23 @@ export function useColorScheme() {
       return
     }
 
-    // Load font if specified
-    if (hostTheme.fontFamilyDefault || hostTheme.fontFamilyHeading) {
+    // Load fonts if specified (Google or arbitrary URLs)
+    if (hostTheme.font?.default?.name || hostTheme.font?.brandAccent?.name) {
       try {
-        const fontsToLoad = []
-        if (hostTheme.fontFamilyDefault)
-          fontsToLoad.push(hostTheme.fontFamilyDefault)
-        if (hostTheme.fontFamilyHeading)
-          fontsToLoad.push(hostTheme.fontFamilyHeading)
+        // Default font: try URL if provided, else Google
+        const tasks: Promise<void>[] = []
+        const defaultFont = hostTheme.font?.default
+        const brandFont = hostTheme.font?.brandAccent
+
+        if (defaultFont?.name) {
+          tasks.push(loadGoogleFont(defaultFont.name, defaultFont.url))
+        }
+        if (brandFont?.name) {
+          tasks.push(loadGoogleFont(brandFont.name, brandFont.url))
+        }
 
         await Promise.race([
-          Promise.all(fontsToLoad.map(font => loadGoogleFont(font))),
+          Promise.all(tasks),
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Font loading timeout')), 5000)
           )
@@ -63,60 +73,41 @@ export function useColorScheme() {
       uiStore.widgetRoot?.classList.remove('dark')
     }
 
-    // Generate color CSS variables for the theme
-    const variables = generateCssVariables(hostTheme)
-
     // Clear existing variables before applying new ones
-    const limitedVars = ['--primary', '--secondary', '--accent', '--radius']
+    const limitedVars = [
+      '--primary',
+      '--radius',
+      '--font-sans',
+      '--font-heading'
+    ]
+    limitedVars.forEach(varName => target.style.removeProperty(varName))
 
-    limitedVars.forEach(varName => {
-      target.style.removeProperty(varName)
-    })
+    // Apply minimal variables from host theme
+    const primaryHsl = hexToHsl(hostTheme.primary)
+    const primary = `hsl(${Math.round(primaryHsl.h)} ${Math.round(
+      primaryHsl.s
+    )}% ${Math.round(primaryHsl.l)}%)`
+    target.style.setProperty('--primary', primary)
+    target.style.setProperty('--radius', hostTheme.radius || '0.625rem')
 
-    // Apply color variables
-    variables.split('\n').forEach((line: string) => {
-      const trimmed = line.trim()
-      if (trimmed && trimmed.includes(':')) {
-        const [property, value] = trimmed
-          .split(':')
-          .map((s: string) => s.trim())
-        if (property && value) {
-          const cleanValue = value.replace(/;$/, '')
-          target.style.setProperty(property, cleanValue)
-        }
-      }
-    })
-
-    // Override for dark theme directly to avoid cascade conflicts with inline vars
+    // Dark mode tweak for primary only
     if (uiStore.currentTheme === 'dark') {
-      const primaryHsl = hexToHsl(hostTheme.primary)
-      const secondaryHsl = hexToHsl(hostTheme.secondary || hostTheme.primary)
-      const accentHsl = hexToHsl(hostTheme.accent)
-
       const darkPrimary = `hsl(${Math.round(primaryHsl.h)} ${Math.round(
         primaryHsl.s
       )}% ${Math.round(Math.max(primaryHsl.l * 0.8, 10))}%)`
-      const darkSecondary = `hsl(${Math.round(secondaryHsl.h)} ${Math.round(
-        secondaryHsl.s
-      )}% ${Math.round(Math.max(secondaryHsl.l * 0.7, 10))}%)`
-      const darkAccent = `hsl(${Math.round(accentHsl.h)} ${Math.round(
-        accentHsl.s
-      )}% ${Math.round(Math.max(accentHsl.l * 0.6, 10))}%)`
-
       target.style.setProperty('--primary', darkPrimary)
-      target.style.setProperty('--secondary', darkSecondary)
-      target.style.setProperty('--accent', darkAccent)
     }
 
     // Apply font variables
-    const defaultFontCSS = hostTheme.fontFamilyDefault
-      ? getFontFamilyCSS(hostTheme.fontFamilyDefault)
+    const defaultFontCSS = hostTheme.font?.default?.name
+      ? getFontFamilyCSS(hostTheme.font.default.name)
       : 'ui-sans-serif, system-ui, sans-serif'
-    const headingFontCSS = hostTheme.fontFamilyHeading
-      ? getFontFamilyCSS(hostTheme.fontFamilyHeading)
+    const headingFontCSS = hostTheme.font?.brandAccent?.name
+      ? getFontFamilyCSS(hostTheme.font.brandAccent.name)
       : defaultFontCSS
     target.style.setProperty('--font-sans', defaultFontCSS)
     target.style.setProperty('--font-heading', headingFontCSS)
+    target.style.setProperty('--font-brand', headingFontCSS)
   }
 
   // ===== RETURN =====

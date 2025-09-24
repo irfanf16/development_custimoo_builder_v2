@@ -34,7 +34,7 @@
   async function renderPreview() {
     if (!canvas.value) return
 
-    await fadeOut(150)
+    // await fadeOut(150)
 
     clearCanvas()
     const side = workflowStore.activeCanvasSide
@@ -78,7 +78,7 @@
 
     setZoom(workflowStore.canvasZoom)
 
-    fadeIn()
+    // fadeIn()
     requestRender()
   }
 

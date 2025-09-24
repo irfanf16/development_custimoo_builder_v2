@@ -157,7 +157,7 @@
 
 <template>
   <!-- Content -->
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-4 md:gap-6">
     <!-- Lucky / Locker actions -->
     <div class="flex flex-col gap-3">
       <div class="rounded-xl border border-border bg-primary/10 p-4 mx-6">
@@ -201,7 +201,7 @@
           }}</Button>
         </div>
       </div>
-      <div class="flex flex-col gap-3 px-6">
+      <div class="flex flex-col gap-3 px-4 md:px-6">
         <div
           class="flex items-center justify-center text-xs text-muted-foreground gap-2"
         >
@@ -223,7 +223,7 @@
         v-for="(svgGroup, idx) in effectiveSvgGroups"
         :key="svgGroup.id"
         :value="String(idx)"
-        class="px-6"
+        class="px-4 md:px-6"
       >
         <AccordionTrigger>
           <div class="flex justify-between gap-3 w-full group">

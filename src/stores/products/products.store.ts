@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { loadSVGFromURL, util, type FabricObject, type Group } from 'fabric'
 import type {
   OutputProductCategories,
@@ -357,6 +357,29 @@ export const useProductsStore = defineStore('productsStore', () => {
     { immediate: true }
   )
 
+  // ===== RENDER MODE SELECTION =====
+  /**
+   * Determine whether to render in 2D (Fabric) or 3D (Three.js)
+   * Priority order:
+   * - If product declares show_3d/is_3d_product and style exposes any 3D maps/model → '3d'
+   * - Otherwise → '2d'
+   */
+  const activeRenderMode = computed<'2d' | '3d'>(() => {
+    const product = activeProductDetails.value
+    const style = activeStyleDetails.value
+    const productWants3D = !!(product?.is_3d_product || product?.show_3d)
+    const styleHas3DAssets = !!(
+      style &&
+      (style._3d_model?.file_url ||
+        style._3d_texture?.file_url ||
+        style._3d_alpha_map?.file_url ||
+        style._3d_ao_map?.file_url ||
+        style._3d_metalness_map?.file_url ||
+        style._3d_roughness_map?.file_url)
+    )
+    return productWants3D && styleHas3DAssets ? '3d' : '2d'
+  })
+
   // ===== RETURN =====
   return {
     // State
@@ -364,6 +387,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     activeProductDetails,
     activeStyleDetails,
     activeDesignDetails,
+    activeRenderMode,
     svgGroups,
     //activeAddons,
     //productAddons,

@@ -8,68 +8,66 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Load Google Font dynamically
  */
-export function loadGoogleFont(fontFamily: string): Promise<void> {
+export function loadGoogleFont(
+  fontFamily: string,
+  url?: string
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    // Check if font is already loaded by testing with a real element
-    const testElement = document.createElement('div')
-    testElement.style.fontFamily = fontFamily
-    testElement.style.position = 'absolute'
-    testElement.style.visibility = 'hidden'
-    testElement.style.fontSize = '20px'
-    testElement.textContent = 'Test'
-    document.body.appendChild(testElement)
+    try {
+      const family = fontFamily.trim()
+      const quoted = /\s/.test(family) ? `"${family}"` : family
 
-    const originalFont = getComputedStyle(testElement).fontFamily
+      // If already loaded, resolve early
+      const fontsApi = (document as any).fonts
+      if (fontsApi?.check && fontsApi.check(`1em ${quoted}`)) {
+        resolve()
+        return
+      }
 
-    // If the font is already loaded and working, resolve immediately
-    if (
-      originalFont.includes(fontFamily) &&
-      !originalFont.includes('fallback')
-    ) {
-      document.body.removeChild(testElement)
-      resolve()
-      return
-    }
+      // Avoid duplicate links
+      const existing = Array.from(
+        document.querySelectorAll('link[rel="stylesheet"]')
+      ).some(l =>
+        url
+          ? l.getAttribute('href') === url
+          : (l.getAttribute('href') || '').includes(
+              `family=${family.replace(/\s+/g, '+')}`
+            )
+      )
+      if (!existing) {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+          ? url
+          : `https://fonts.googleapis.com/css2?family=${family.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`
+        link.onerror = () =>
+          reject(new Error(`Failed to load font CSS: ${family}`))
+        document.head.appendChild(link)
+      }
 
-    // Remove test element
-    document.body.removeChild(testElement)
+      const timeout = setTimeout(() => {
+        reject(new Error(`Timed out loading font: ${family}`))
+      }, 7000)
 
-    // Create link element for Google Fonts
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`
+      const wait = fontsApi?.load
+        ? Promise.all([
+            fontsApi.load(`1em ${quoted}`),
+            fontsApi.load(`700 1em ${quoted}`).catch(() => Promise.resolve([]))
+          ])
+        : new Promise<void>(res => setTimeout(res, 300))
 
-    link.onload = () => {
-      // Create a new test element to verify the font loaded
-      const verifyElement = document.createElement('div')
-      verifyElement.style.fontFamily = fontFamily
-      verifyElement.style.position = 'absolute'
-      verifyElement.style.visibility = 'hidden'
-      verifyElement.style.fontSize = '20px'
-      verifyElement.textContent = 'Test'
-      document.body.appendChild(verifyElement)
-
-      // Wait for fonts to be ready
-      document.fonts.ready.then(() => {
-        const newFont = getComputedStyle(verifyElement).fontFamily
-
-        // Check if the font actually changed
-        if (newFont.includes(fontFamily)) {
-          document.body.removeChild(verifyElement)
+      wait
+        .then(() => {
+          clearTimeout(timeout)
           resolve()
-        } else {
-          document.body.removeChild(verifyElement)
-          reject(new Error(`Font ${fontFamily} failed to load`))
-        }
-      })
+        })
+        .catch(err => {
+          clearTimeout(timeout)
+          reject(err)
+        })
+    } catch (err) {
+      reject(err as Error)
     }
-
-    link.onerror = () => {
-      reject(new Error(`Failed to load font CSS: ${fontFamily}`))
-    }
-
-    // Append to main document head
-    document.head.appendChild(link)
   })
 }
 

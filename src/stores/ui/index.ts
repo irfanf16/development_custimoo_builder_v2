@@ -13,21 +13,51 @@ export const useUIStore = defineStore('uiStore', () => {
     (localStorage.getItem('customizer-theme') as 'light' | 'dark') || 'light'
   )
   const widgetRoot = ref<HTMLElement>()
-  const containertWidth = ref<number>(0)
+  const containerWidth = ref<number>(0)
   const containerHeight = ref<number>(0)
+  let resizeObserver: ResizeObserver | null = null
+  // Configurable mobile breakpoint to determine layout behavior
+  const mobileBreakpoint = ref<number>(768)
 
   // Derived state
-  const isMobile = computed(() => containertWidth.value < 768)
+  const isMobile = computed(() => containerWidth.value < mobileBreakpoint.value)
   const minWidgetHeight = computed(() => (isMobile.value ? 700 : 800))
 
   // Actions
 
   function setWidgetRoot(root: HTMLElement) {
     widgetRoot.value = root
+
+    // Disconnect any previous observer
+    if (resizeObserver) {
+      try {
+        resizeObserver.disconnect()
+      } catch (_) {}
+      resizeObserver = null
+    }
+
+    // Measure immediately
+    const measure = () => {
+      try {
+        const rect = root.getBoundingClientRect()
+        setContainerSize(Math.round(rect.width), Math.round(rect.height))
+      } catch (_) {}
+    }
+    measure()
+
+    // Observe size changes
+    if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
+      resizeObserver = new ResizeObserver(() => {
+        measure()
+      })
+      try {
+        resizeObserver.observe(root)
+      } catch (_) {}
+    }
   }
 
   function setContainerSize(width: number, height: number) {
-    containertWidth.value = width
+    containerWidth.value = width
     containerHeight.value = height
   }
 
@@ -93,7 +123,7 @@ export const useUIStore = defineStore('uiStore', () => {
     isLoginDialogOpen,
     isRegisterDialogOpen,
     isLoading,
-    containertWidth,
+    containerWidth,
     containerHeight,
     isMobile,
     minWidgetHeight,
@@ -115,6 +145,7 @@ export const useUIStore = defineStore('uiStore', () => {
     defaultColorMode,
     setWidgetRoot,
     widgetRoot,
-    setContainerSize
+    setContainerSize,
+    mobileBreakpoint
   }
 })

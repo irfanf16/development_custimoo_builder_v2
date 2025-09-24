@@ -33,6 +33,9 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const activeCanvasSide = ref<CanvasSide>('front')
   const canvasZoom = ref<number>(1)
 
+  // Mobile panel state
+  const panelOpen = ref<boolean>(true)
+
   // Preview selection state
   const selectedCategoryId = ref<number | null>(null)
   const selectedSubCategoryId = ref<number | null>(null)
@@ -178,6 +181,14 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setCanvasZoom(canvasZoom.value - step)
   }
 
+  // ===== MOBILE PANEL ACTIONS =====
+  function setPanelOpen(open: boolean) {
+    panelOpen.value = open
+  }
+  function togglePanel() {
+    panelOpen.value = !panelOpen.value
+  }
+
   // ===== RETURN =====
   return {
     // State
@@ -214,6 +225,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     toggleActiveCanvasSide,
     setCanvasZoom,
     zoomIn,
-    zoomOut
+    zoomOut,
+    // Mobile Panel
+    panelOpen,
+    setPanelOpen,
+    togglePanel
   }
 })

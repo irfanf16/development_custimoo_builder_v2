@@ -5,11 +5,11 @@
 
 export interface HostTheme {
   primary: string
-  secondary?: string
-  accent: string
   radius?: string
-  fontFamilyDefault?: string
-  fontFamilyHeading?: string
+  font?: {
+    default?: { name: string; url?: string }
+    brandAccent?: { name: string; url?: string }
+  }
   name: string
   description: string
   allowColorModeSwitch: boolean
@@ -20,11 +20,30 @@ export const hostThemes: Record<string, HostTheme> = {
   // Development/Testing
   localhost: {
     primary: '#3B82F6',
-    secondary: '#6B7280',
-    accent: '#F3F4F6',
     radius: '0.5rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Geist',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: {
+        name: 'Orbitron',
+        url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
+      }
+    },
+    name: 'Development Blue',
+    description: 'Blue primary with green accent for development',
+    allowColorModeSwitch: true,
+    defaultColorMode: 'light'
+  },
+
+  'test.custimoo.com': {
+    primary: '#3B82F6',
+    radius: '0.5rem',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: {
+        name: 'Orbitron',
+        url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
+      }
+    },
     name: 'Development Blue',
     description: 'Blue primary with green accent for development',
     allowColorModeSwitch: true,
@@ -34,11 +53,11 @@ export const hostThemes: Record<string, HostTheme> = {
   // Staging
   'builder-v2.custimoo.com': {
     primary: '#FF6B6B',
-    secondary: '#4ECDC4',
-    accent: '#FF6B6B',
     radius: '0.75rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Poppins',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: { name: 'Orbitron' }
+    },
     name: 'E-commerce Red',
     description: 'Warm red primary with teal accent for shopping sites',
     allowColorModeSwitch: true,
@@ -48,11 +67,11 @@ export const hostThemes: Record<string, HostTheme> = {
   // Example: E-commerce site
   'shop.example.com': {
     primary: '#FF6B6B',
-    secondary: '#4ECDC4',
-    accent: '#FF6B6B',
     radius: '0.75rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Poppins',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: { name: 'Poppins' }
+    },
     name: 'E-commerce Red',
     description: 'Warm red primary with teal accent for shopping sites',
     allowColorModeSwitch: false,
@@ -62,11 +81,11 @@ export const hostThemes: Record<string, HostTheme> = {
   // Example: Corporate site
   'corporate.example.com': {
     primary: '#1F2937',
-    secondary: '#6B7280',
-    accent: '#F3F4F6',
     radius: '0.375rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Inter',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: { name: 'Inter' }
+    },
     name: 'Corporate Gray',
     description: 'Professional gray theme for corporate sites',
     allowColorModeSwitch: true,
@@ -76,11 +95,11 @@ export const hostThemes: Record<string, HostTheme> = {
   // Example: Creative agency
   'creative.example.com': {
     primary: '#8B5CF6',
-    secondary: '#F59E0B',
-    accent: '#FEF3C7',
     radius: '1rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Montserrat',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: { name: 'Montserrat' }
+    },
     name: 'Creative Purple',
     description: 'Creative purple theme for design agencies',
     allowColorModeSwitch: true,
