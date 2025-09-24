@@ -54,8 +54,14 @@ export function useWorkflowNavigation(
       // Subcategory list view
       if (currentStep.value === 'subcategory') {
         return [
-          { label: 'Category', action: onNavigateBack },
-          { label: category?.category_name || '—' }
+          {
+            label: 'Category',
+            action: () => {
+              workflowStore.setProductsSubStep('category')
+              workflowStore.setActiveStep('Categories')
+            }
+          },
+          { label: 'Subcategory' }
         ]
       }
 
@@ -65,7 +71,28 @@ export function useWorkflowNavigation(
         category.subcategories &&
         category.subcategories.length
       )
-      const trail: NavigationItem[] = [
+
+      // If category has subcategories, breadcrumb should be: Category -> [Subcategory]
+      if (hasSubs) {
+        const selectedSub =
+          category && subId
+            ? category.subcategories?.find(s => s.id === subId)
+            : undefined
+        const subLabel = selectedSub?.category_name || 'Subcategory'
+        return [
+          {
+            label: 'Category',
+            action: () => {
+              workflowStore.setProductsSubStep('category')
+              workflowStore.setActiveStep('Categories')
+            }
+          },
+          { label: subLabel }
+        ]
+      }
+
+      // If no subcategories, show: Category -> [Category Name]
+      return [
         {
           label: 'Category',
           action: () => {
@@ -73,21 +100,8 @@ export function useWorkflowNavigation(
             workflowStore.setActiveStep('Categories')
           }
         },
-        {
-          label: category?.category_name || '—',
-          action: hasSubs
-            ? () => {
-                workflowStore.setProductsSubStep('subcategory')
-                workflowStore.setActiveStep('Categories')
-              }
-            : undefined
-        }
+        { label: category?.category_name || '—' }
       ]
-      if (category && subId) {
-        const sub = category.subcategories?.find(s => s.id === subId)
-        if (sub) trail.push({ label: sub.category_name })
-      }
-      return trail
     }
 
     if (normalizedStep === 'Designs') {

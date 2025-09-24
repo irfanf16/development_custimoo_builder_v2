@@ -19,8 +19,8 @@ export interface HostTheme {
 export const hostThemes: Record<string, HostTheme> = {
   // Development/Testing
   localhost: {
-    primary: '#3B82F6',
-    radius: '0.5rem',
+    primary: '#e12d2e',
+    radius: '0rem',
     font: {
       default: { name: 'Geist' },
       brandAccent: {
@@ -28,8 +28,8 @@ export const hostThemes: Record<string, HostTheme> = {
         url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
       }
     },
-    name: 'Development Blue',
-    description: 'Blue primary with green accent for development',
+    name: 'E-commerce Red',
+    description: 'Warm red primary with teal accent for shopping sites',
     allowColorModeSwitch: true,
     defaultColorMode: 'light'
   },
@@ -52,16 +52,19 @@ export const hostThemes: Record<string, HostTheme> = {
 
   // Staging
   'builder-v2.custimoo.com': {
-    primary: '#FF6B6B',
-    radius: '0.75rem',
+    primary: '#e12d2e',
+    radius: '0rem',
     font: {
       default: { name: 'Geist' },
-      brandAccent: { name: 'Orbitron' }
+      brandAccent: {
+        name: 'Orbitron',
+        url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
+      }
     },
     name: 'E-commerce Red',
     description: 'Warm red primary with teal accent for shopping sites',
     allowColorModeSwitch: true,
-    defaultColorMode: 'light'
+    defaultColorMode: 'dark'
   },
 
   // Example: E-commerce site

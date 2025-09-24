@@ -116,7 +116,7 @@
       ></div>
     </div>
     <div class="flex flex-col gap-3 pt-6 pb-2">
-      <div class="text-lg font-semibold">
+      <div class="text-lg font-semibold font-brand">
         {{ styles_title({}, { locale: localeStore.currentLocale }) }}
       </div>
       <div

@@ -235,7 +235,7 @@
     --icon-secondary: rgb(from currentColor r g b / 0.5);
   }
   .font-brand {
-    font-family: var(--font-brand), var(--font-sans), system-ui;
+    font-family: var(--font-brand), var(--font-sans), system-ui !important;
   }
 }
 

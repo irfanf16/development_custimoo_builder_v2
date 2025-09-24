@@ -172,7 +172,7 @@
             >
               <div
                 :key="shuffleColorsHeadingIndex"
-                class="text-base font-semibold text-foreground"
+                class="text-base font-semibold text-foreground font-brand"
               >
                 {{ shuffleColorsHeadings[shuffleColorsHeadingIndex] }}
               </div>

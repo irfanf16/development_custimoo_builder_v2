@@ -60,17 +60,15 @@
           >
             <BreadcrumbLink
               v-if="index < currentBreadcrumbIndex"
-              class="hover:text-primary transition-colors truncate max-w-[280px]"
+              class="hover:text-primary transition-colors truncate max-w-[280px] font-brand"
             >
               {{ item.label }}
             </BreadcrumbLink>
-            <BreadcrumbPage v-else class="truncate max-w-[280px]">
+            <BreadcrumbPage v-else class="truncate max-w-[280px] font-brand">
               {{ item.label }}
             </BreadcrumbPage>
 
-            <BreadcrumbSeparator
-              v-if="index < breadcrumbs.length - 1"
-            />
+            <BreadcrumbSeparator v-if="index < breadcrumbs.length - 1" />
           </BreadcrumbItem>
         </Transition>
       </template>

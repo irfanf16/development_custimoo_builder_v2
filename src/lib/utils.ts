@@ -5,6 +5,37 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Ensure a generic link tag exists */
+function ensureLink(rel: string, href: string, crossOrigin?: string): void {
+  try {
+    const exists = Array.from(
+      document.querySelectorAll<HTMLLinkElement>(`link[rel="${rel}"]`)
+    ).some(l => l.href === href)
+    if (!exists) {
+      const link = document.createElement('link')
+      link.rel = rel
+      link.href = href
+      if (crossOrigin) link.crossOrigin = crossOrigin
+      document.head.appendChild(link)
+    }
+  } catch (_) {}
+}
+
+/** Ensure a stylesheet link with the given href exists in document.head */
+export function ensureStylesheet(href: string): void {
+  try {
+    const exists = Array.from(
+      document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')
+    ).some(l => l.href === href)
+    if (!exists) {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = href
+      document.head.appendChild(link)
+    }
+  } catch (_) {}
+}
+
 /**
  * Load Google Font dynamically
  */
@@ -17,38 +48,20 @@ export function loadGoogleFont(
       const family = fontFamily.trim()
       const quoted = /\s/.test(family) ? `"${family}"` : family
 
-      // If already loaded, resolve early
-      const fontsApi = (document as any).fonts
-      if (fontsApi?.check && fontsApi.check(`1em ${quoted}`)) {
-        resolve()
-        return
-      }
-
-      // Avoid duplicate links
-      const existing = Array.from(
-        document.querySelectorAll('link[rel="stylesheet"]')
-      ).some(l =>
-        url
-          ? l.getAttribute('href') === url
-          : (l.getAttribute('href') || '').includes(
-              `family=${family.replace(/\s+/g, '+')}`
-            )
-      )
-      if (!existing) {
-        const link = document.createElement('link')
-        link.rel = 'stylesheet'
-        link.href = url
-          ? url
-          : `https://fonts.googleapis.com/css2?family=${family.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`
-        link.onerror = () =>
-          reject(new Error(`Failed to load font CSS: ${family}`))
-        document.head.appendChild(link)
-      }
+      // Always ensure stylesheet link exists (no early exit)
+      const href = url
+        ? url
+        : `https://fonts.googleapis.com/css2?family=${family.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`
+      // Helpful preconnects
+      ensureLink('preconnect', 'https://fonts.googleapis.com')
+      ensureLink('preconnect', 'https://fonts.gstatic.com', 'anonymous')
+      ensureStylesheet(href)
 
       const timeout = setTimeout(() => {
         reject(new Error(`Timed out loading font: ${family}`))
       }, 7000)
 
+      const fontsApi = (document as any).fonts
       const wait = fontsApi?.load
         ? Promise.all([
             fontsApi.load(`1em ${quoted}`),
