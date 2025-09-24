@@ -62,6 +62,7 @@ export function useWorkflowManager(): UseWorkflowManagerApi {
   }
 
   const handleSubcategorySelect = (subcategoryId: number) => {
+    console.log('handleSubcategorySelect', subcategoryId)
     workflowStore.setSelectedSubCategoryForPreview(subcategoryId)
     // Entering product list within Categories flow
     workflowStore.setProductsSubStep('product')

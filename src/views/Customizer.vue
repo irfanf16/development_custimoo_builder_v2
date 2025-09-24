@@ -17,7 +17,8 @@
   // Workflow logic moved to composables
   import { useWorkflowManager, useWorkflowNavigation } from '@/composables'
 
-  const { currentStep, handleCategorySelect } = useWorkflowManager()
+  const { currentStep, handleCategorySelect, handleSubcategorySelect } =
+    useWorkflowManager()
   const { navigationItems } = useWorkflowNavigation(currentStep, () => {
     // Navigate back by going to previous step in workflow store
     // This is now handled by the workflow store itself
@@ -52,6 +53,7 @@
                   :navigation-items="navigationItems"
                   :on-navigate-back="() => {}"
                   :on-category-select="handleCategorySelect"
+                  :on-subcategory-select="handleSubcategorySelect"
                   class="z-20"
                 />
               </div>
@@ -93,6 +95,7 @@
                 :current-step="currentStep"
                 :on-navigate-back="() => {}"
                 :on-category-select="handleCategorySelect"
+                :on-subcategory-select="handleSubcategorySelect"
               />
               <MobileActionBar />
             </div>

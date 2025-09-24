@@ -32,7 +32,19 @@
   }
 
   // Expose breadcrumb via header model
-  const breadcrumbs = computed(() => [{ label: 'Subcategory' }])
+  const breadcrumbs = computed(() => {
+    const category = selectedCategory.value
+    return [
+      {
+        label: 'Category',
+        action: () => {
+          workflowStore.setProductsSubStep('category')
+          workflowStore.setActiveStep('Categories')
+        }
+      },
+      { label: category?.category_name || '—' }
+    ]
+  })
   const headerExtras = { breadcrumbs }
   defineExpose({ headerExtras })
 </script>

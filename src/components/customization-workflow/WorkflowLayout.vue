@@ -46,6 +46,7 @@
       | 'summary'
     onNavigateBack: () => void
     onCategorySelect: (categoryId: number) => void
+    onSubcategorySelect: (subcategoryId: number) => void
   }
 
   const props = defineProps<Props>()
@@ -221,7 +222,11 @@
       />
 
       <!-- Subcategory Selection Step -->
-      <SubcategorySelection v-else-if="currentStep === 'subcategory'" />
+      <SubcategorySelection
+        v-else-if="currentStep === 'subcategory'"
+        ref="currentStepRef"
+        @select-subcategory="onSubcategorySelect"
+      />
 
       <!-- Product Selection Step -->
       <ProductSelection

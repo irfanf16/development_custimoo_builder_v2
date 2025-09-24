@@ -169,11 +169,17 @@ export const useProductsStore = defineStore('productsStore', () => {
     return output
   }
 
-  async function fetchProductPreviews(categoryId: number | null) {
+  async function fetchProductPreviews(
+    categoryId: number | null,
+    subcategoryId?: number
+  ) {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(
-      API.products.getProductPreviewsByCategory(categoryId ?? null)
+      API.products.getProductPreviewsByCategory(
+        categoryId ?? null,
+        subcategoryId ?? undefined
+      )
     )
     if (resp.success) {
       productPreviews.value = resp.content as unknown as ProductPreviewItem[]

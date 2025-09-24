@@ -9,8 +9,22 @@ export type Category = {
   parent_id: number | null
   searchable: number
   sort_order: number
-  subcategories: Category[]
+  subcategories: OutputSubCategory[]
   updated_at: string
+}
+
+export type OutputSubCategory = {
+  id: number
+  parent_id: number
+  category_name: string
+  factory_id: number | null
+  company_id: number
+  image_url: string
+  searchable: number
+  sort_order: number
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
 }
 
 export type OutputProductCategories = {

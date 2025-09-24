@@ -39,6 +39,7 @@
       | 'summary'
     onNavigateBack: () => void
     onCategorySelect: (categoryId: number) => void
+    onSubcategorySelect: (subcategoryId: number) => void
   }>()
 
   const workflow = useWorkflowStore()
@@ -82,7 +83,10 @@
             v-if="currentStep === 'category'"
             @select-category="onCategorySelect"
           />
-          <SubcategorySelection v-else-if="currentStep === 'subcategory'" />
+          <SubcategorySelection
+            v-else-if="currentStep === 'subcategory'"
+            @select-subcategory="onSubcategorySelect"
+          />
           <ProductSelection v-else-if="currentStep === 'product'" />
           <DesignSelection v-else-if="currentStep === 'designs'" />
           <StyleSelection v-else-if="currentStep === 'styles'" />

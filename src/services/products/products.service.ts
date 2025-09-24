@@ -25,9 +25,12 @@ async function getActiveProductDetails(productId: number) {
 }
 
 // Fetch lightweight previews for all products in a category
-async function getProductPreviewsByCategory(categoryId: number | null) {
+async function getProductPreviewsByCategory(
+  categoryId: number | null,
+  subcategoryId?: number
+) {
   return await http.get<ProductPreviewItem[]>(`product/previews`, {
-    params: { category_id: categoryId }
+    params: { category_id: categoryId, sub_category_id: subcategoryId ?? null }
   })
 }
 

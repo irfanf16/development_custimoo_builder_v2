@@ -53,6 +53,7 @@ export function useWorkflowNavigation(
 
       // Subcategory list view
       if (currentStep.value === 'subcategory') {
+        const categoryName = category?.category_name || '—'
         return [
           {
             label: 'Category',
@@ -61,7 +62,7 @@ export function useWorkflowNavigation(
               workflowStore.setActiveStep('Categories')
             }
           },
-          { label: 'Subcategory' }
+          { label: categoryName }
         ]
       }
 

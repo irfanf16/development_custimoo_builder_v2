@@ -29,7 +29,11 @@
   function loadPreviewsForCurrentCategory() {
     const categoryId =
       workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
-    productsStore.fetchProductPreviews(categoryId)
+    const subcategoryId =
+      workflowStore.selectedSubCategoryId ??
+      customizationStore.activeSubCategoryId ??
+      undefined
+    productsStore.fetchProductPreviews(categoryId, subcategoryId || undefined)
   }
 
   onMounted(() => {
@@ -48,7 +52,10 @@
   })
 
   watch(
-    () => workflowStore.selectedCategoryId,
+    [
+      () => workflowStore.selectedCategoryId,
+      () => workflowStore.selectedSubCategoryId
+    ],
     () => {
       loadPreviewsForCurrentCategory()
     }
