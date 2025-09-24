@@ -19,17 +19,16 @@ export interface HostTheme {
 export const hostThemes: Record<string, HostTheme> = {
   // Development/Testing
   localhost: {
-    primary: '#e12d2e',
-    radius: '0rem',
+    primary: '#3B82F6',
+    radius: '0.5rem',
     font: {
       default: { name: 'Geist' },
       brandAccent: {
-        name: 'Orbitron',
-        url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
+        name: 'Geist'
       }
     },
-    name: 'E-commerce Red',
-    description: 'Warm red primary with teal accent for shopping sites',
+    name: 'Development Blue',
+    description: 'Blue primary with green accent for development',
     allowColorModeSwitch: true,
     defaultColorMode: 'light'
   },
