@@ -70,7 +70,7 @@ This keeps Tailwind utilities and shadcn components in sync with a single source
 #### shadcn/vue
 
 - shadcn/vue components work with Tailwind v4 and use our canonical tokens via utilities.
-- Add shadcn components via the CLI and rely on our token mappings—no extra global CSS is needed.
+- Add shadcn components via the CLI (run with `npx shadcn-vue@latest`). See README for exact commands.
 
 #### Animations
 
