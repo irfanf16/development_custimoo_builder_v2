@@ -16,7 +16,12 @@ export default {
     extend: {
       fontFamily: {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        serif: ['var(--font-heading)', 'ui-serif', 'Georgia', 'serif'],
+        brand: [
+          'var(--font-brand)',
+          'var(--font-sans)',
+          'system-ui',
+          'sans-serif'
+        ],
         mono: [
           'var(--font-sans)',
           'ui-monospace',
@@ -27,10 +32,10 @@ export default {
       keyframes: {
         'accordion-down': {
           from: { height: '0' },
-          to: { height: 'var(--radix-accordion-content-height)' }
+          to: { height: 'var(--reka-accordion-content-height)' }
         },
         'accordion-up': {
-          from: { height: 'var(--radix-accordion-content-height)' },
+          from: { height: 'var(--reka-accordion-content-height)' },
           to: { height: '0' }
         }
       },

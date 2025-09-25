@@ -1,4 +1,17 @@
-/* Widget Styles - All CSS bundled into one file */
+/* Widget Styles - All CSS bundled into one file
+ * This stylesheet is injected into the Shadow DOM of <customizer-widget>,
+ * so it must be self-contained and define its own tokens.
+ *
+ * Variable groups:
+ * - A) Tailwind v4 theme tokens (via @theme inline): --color-*, --radius-*, --animate-*
+ *      These back Tailwind utilities like bg-background, text-foreground, rounded-lg, etc.
+ * - B) App/Shadcn tokens: --background, --foreground, --primary, --radius, etc.
+ *      shadcn/vue components and our utilities read these design tokens.
+ * - C) Custom widget tokens: --icon-primary, --icon-secondary, fonts, etc.
+ *      Used by our icon pipeline and font utilities.
+ * - D) Tailwind internals: --tw-* fallbacks are provided for Shadow DOM safety.
+ *      Optional, but keeping them avoids surprises when utilities expect defaults.
+ */
 
 /* Import Tailwind CSS */
 @import 'tailwindcss';
@@ -8,7 +21,7 @@
 /* Custom widget styles */
 @custom-variant dark (&:is(.dark *));
 
-/* ===== WIDGET DESIGN SYSTEM ===== */
+/* ===== A) TAILWIND V4 THEME TOKENS (utilities read these) ===== */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -18,7 +31,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  /* Secondary is derived from primary in this project; keep variables but they map to primary */
+  /* Secondary currently aliases primary; hosts can override --secondary independently if desired */
   --color-secondary: var(--primary);
   --color-secondary-foreground: var(--primary-foreground);
   --color-muted: var(--muted);
@@ -55,7 +68,7 @@
   }
 }
 
-/* ===== WIDGET CSS VARIABLES ===== */
+/* ===== B) APP/SHADCN DESIGN TOKENS (consumed by components and utilities) ===== */
 :host,
 :root {
   /* Icons */
@@ -64,14 +77,14 @@
   /* Colors will be set dynamically by JavaScript */
   /* --radius is defined below in light theme */
   --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-heading: ui-sans-serif, system-ui, sans-serif;
-  --font-brand: var(--font-heading);
+  --font-brand: var(--font-sans);
   /* Base color references for dark-mode derivations */
   --primary-base: var(--primary);
   --secondary-base: var(--secondary);
   --accent-base: var(--accent);
 
-  /* Light theme CSS variables */
+  /* Light theme CSS variables (default values) */
+  /* Hosts can override these via runtime (see hostThemes.ts) */
   --background: #fafafa;
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
@@ -82,6 +95,8 @@
   --primary-foreground: oklch(0.984 0.003 247.858);
   --secondary: var(--primary);
   --secondary-foreground: var(--primary-foreground);
+  /* Base radius used to derive Tailwind radius scale tokens */
+  --radius: 0.5rem;
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
   --accent: var(--primary);
@@ -90,21 +105,11 @@
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
   --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  /* Optional extras removed: chart-* and sidebar-* tokens (unused) */
 
-  /* ===== DARK THEME VARIABLES ===== */
+  /* ===== DARK THEME VARIABLES =====
+   * Activated by adding `dark` to :host or a top-level container inside Shadow DOM.
+   */
   :host.dark,
   .dark {
     --background: oklch(0.129 0.042 264.695);
@@ -143,7 +148,10 @@
     --sidebar-ring: oklch(0.551 0.027 264.364);
   }
 
-  /* Tailwind CSS 4 internal variables for Shadow DOM compatibility */
+  /* ===== D) TAILWIND INTERNAL DEFAULTS =====
+   * Fallback defaults to ensure utilities work within Shadow DOM even
+   * when global defaults aren't present. Safe to keep; remove only if measured.
+   */
   --tw-border-style: solid;
   --tw-outline-style: solid;
   --tw-ring-inset: ;
@@ -217,16 +225,6 @@
   :focus-visible {
     @apply outline-2 outline-ring outline-offset-2;
   }
-
-  /* Heading font utilities */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-heading);
-  }
 }
 
 /* ===== ICON UTILITIES ===== */
@@ -234,19 +232,9 @@
   .icon-secondary-from-primary-50 {
     --icon-secondary: rgb(from currentColor r g b / 0.5);
   }
-  .font-brand {
-    font-family: var(--font-brand), var(--font-sans), system-ui !important;
-  }
 }
 
-/* ===== WIDGET THEME OVERRIDES ===== */
-.widget-theme {
-  /* Ensure widget has its own color context */
-  color-scheme: light dark;
-}
-.widget-theme.dark {
-  color-scheme: dark;
-}
+/* Removed .widget-theme blocks (unused) */
 
 /* ===== WIDGET SPECIFIC STYLES ===== */
 customizer-widget {
@@ -260,7 +248,7 @@ customizer-widget {
 /* Ensure widget components are properly styled */
 customizer-widget * {
   box-sizing: border-box;
-  font-family: var(--font-sans) !important;
+  font-family: var(--font-sans);
 }
 
 /* Container height management */
@@ -292,41 +280,9 @@ customizer-widget * {
   flex-direction: column;
 }
 
-/* Specific font application for text elements */
-customizer-widget h1,
-customizer-widget h2,
-customizer-widget h3,
-customizer-widget h4,
-customizer-widget h5,
-customizer-widget h6,
-customizer-widget p,
-customizer-widget span,
-customizer-widget div,
-customizer-widget button,
-customizer-widget input,
-customizer-widget textarea,
-customizer-widget label {
-  font-family: var(--font-sans) !important;
-}
+/* Removed explicit text/heading font blocks to allow Tailwind classes to override */
 
-/* Heading font application */
-customizer-widget h1,
-customizer-widget h2,
-customizer-widget h3,
-customizer-widget h4,
-customizer-widget h5,
-customizer-widget h6 {
-  font-family: var(--font-heading) !important;
-}
-
-/* Shadow DOM specific styles */
-customizer-widget::part(content) {
-  all: initial;
-  font-family: var(--font-sans);
-  line-height: inherit;
-  color: inherit;
-  background: inherit;
-}
+/* Removed ::part(content) block (no matching part usage found) */
 
 /* ===== TRANSITIONS (applies inside Shadow DOM) ===== */
 .panel-slide-enter-active,
@@ -375,11 +331,4 @@ customizer-widget::part(content) {
   }
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+/* Removed duplicate base layer to avoid redundancy; base styles are defined above */

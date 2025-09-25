@@ -74,12 +74,7 @@ export function useColorScheme() {
     }
 
     // Clear existing variables before applying new ones
-    const limitedVars = [
-      '--primary',
-      '--radius',
-      '--font-sans',
-      '--font-heading'
-    ]
+    const limitedVars = ['--primary', '--radius', '--font-sans', '--font-brand']
     limitedVars.forEach(varName => target.style.removeProperty(varName))
 
     // Apply minimal variables from host theme
@@ -102,12 +97,11 @@ export function useColorScheme() {
     const defaultFontCSS = hostTheme.font?.default?.name
       ? getFontFamilyCSS(hostTheme.font.default.name)
       : 'ui-sans-serif, system-ui, sans-serif'
-    const headingFontCSS = hostTheme.font?.brandAccent?.name
+    const brandFontCSS = hostTheme.font?.brandAccent?.name
       ? getFontFamilyCSS(hostTheme.font.brandAccent.name)
       : defaultFontCSS
     target.style.setProperty('--font-sans', defaultFontCSS)
-    target.style.setProperty('--font-heading', headingFontCSS)
-    target.style.setProperty('--font-brand', headingFontCSS)
+    target.style.setProperty('--font-brand', brandFontCSS)
   }
 
   // ===== RETURN =====
