@@ -2,8 +2,6 @@
  * Widget-specific utility functions
  */
 
-// import { generateColorScheme } from './colorUtils'
-
 /**
  * Apply widget color scheme to a container element
  */
