@@ -49,23 +49,3 @@ export function createWidgetClass(
   }
   return `${baseClass} widget-theme`
 }
-
-/**
- * Validate widget color parameters
- */
-export function validateWidgetColors(
-  primary?: string,
-  secondary?: string
-): {
-  primary: string
-  secondary: string
-} {
-  const defaultPrimary = '#3B82F6'
-
-  const primaryColor =
-    primary && /^#[0-9A-F]{6}$/i.test(primary) ? primary : defaultPrimary
-  const secondaryColor =
-    secondary && /^#[0-9A-F]{6}$/i.test(secondary) ? secondary : primaryColor
-
-  return { primary: primaryColor, secondary: secondaryColor }
-}

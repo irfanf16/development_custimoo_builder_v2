@@ -74,7 +74,13 @@ export function useColorScheme() {
     }
 
     // Clear existing variables before applying new ones
-    const limitedVars = ['--primary', '--radius', '--font-sans', '--font-brand']
+    const limitedVars = [
+      '--primary',
+      '--radius',
+      '--font-sans',
+      '--font-brand',
+      '--accent'
+    ]
     limitedVars.forEach(varName => target.style.removeProperty(varName))
 
     // Apply minimal variables from host theme
@@ -84,14 +90,18 @@ export function useColorScheme() {
     )}% ${Math.round(primaryHsl.l)}%)`
     target.style.setProperty('--primary', primary)
     target.style.setProperty('--radius', hostTheme.radius || '0.625rem')
+    const ring = `rgb(from var(--primary) r g b / 0.5)`
+    target.style.setProperty('--ring', ring)
+    const accent = `rgb(from var(--primary) r g b / 0.3)`
+    target.style.setProperty('--accent', accent)
 
     // Dark mode tweak for primary only
-    if (uiStore.currentTheme === 'dark') {
-      const darkPrimary = `hsl(${Math.round(primaryHsl.h)} ${Math.round(
-        primaryHsl.s
-      )}% ${Math.round(Math.max(primaryHsl.l * 0.8, 10))}%)`
-      target.style.setProperty('--primary', darkPrimary)
-    }
+    // if (uiStore.currentTheme === 'dark') {
+    //   const darkPrimary = `hsl(${Math.round(primaryHsl.h)} ${Math.round(
+    //     primaryHsl.s
+    //   )}% ${Math.round(Math.max(primaryHsl.l * 0.8, 10))}%)`
+    //   target.style.setProperty('--primary', darkPrimary)
+    // }
 
     // Apply font variables
     const defaultFontCSS = hostTheme.font?.default?.name
