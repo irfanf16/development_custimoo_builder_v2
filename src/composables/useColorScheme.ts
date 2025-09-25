@@ -95,14 +95,6 @@ export function useColorScheme() {
     const accent = `rgb(from var(--primary) r g b / 0.3)`
     target.style.setProperty('--accent', accent)
 
-    // Dark mode tweak for primary only
-    // if (uiStore.currentTheme === 'dark') {
-    //   const darkPrimary = `hsl(${Math.round(primaryHsl.h)} ${Math.round(
-    //     primaryHsl.s
-    //   )}% ${Math.round(Math.max(primaryHsl.l * 0.8, 10))}%)`
-    //   target.style.setProperty('--primary', darkPrimary)
-    // }
-
     // Apply font variables
     const defaultFontCSS = hostTheme.font?.default?.name
       ? getFontFamilyCSS(hostTheme.font.default.name)
