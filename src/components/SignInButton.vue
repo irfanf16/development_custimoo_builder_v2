@@ -11,6 +11,8 @@
   } from '@/components/ui/dialog'
   import { Button } from '@/components/ui/button'
   import type { ButtonVariants } from '@/components/ui/button'
+  import { Input } from '@/components/ui/input'
+  import { Label } from '@/components/ui/label'
   import {
     auth_sign_in,
     auth_signing_in,
@@ -150,59 +152,47 @@
           </DialogDescription>
         </DialogHeader>
         <form @submit.prevent="handleSignIn" class="space-y-4">
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
+          <div class="grid gap-2">
+            <Label for="email">Email</Label>
+            <Input
               id="email"
               v-model="credentials.email"
               type="email"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter your email"
+              autocomplete="email"
             />
           </div>
-          <div>
-            <label
-              for="password"
-              class="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <input
+          <div class="grid gap-2">
+            <Label for="password">Password</Label>
+            <Input
               id="password"
               v-model="credentials.password"
               type="password"
               required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter your password"
+              autocomplete="current-password"
             />
           </div>
           <div v-if="error" class="text-sm text-red-600">
             {{ error }}
           </div>
           <DialogFooter>
-            <button
+            <Button
               type="button"
+              variant="outline"
               @click="showSignInDialog = false"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
             >
               {{ auth_cancel({}, { locale: localeStore.currentLocale }) }}
-            </button>
-            <button
-              type="submit"
-              :disabled="isLoading"
-              class="px-4 py-2 text-sm font-medium text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              style="background-color: var(--widget-color, #3b82f6)"
-            >
+            </Button>
+            <Button type="submit" :disabled="isLoading">
               <span v-if="isLoading">{{
                 auth_signing_in({}, { locale: localeStore.currentLocale })
               }}</span>
               <span v-else>{{
                 auth_sign_in({}, { locale: localeStore.currentLocale })
               }}</span>
-            </button>
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

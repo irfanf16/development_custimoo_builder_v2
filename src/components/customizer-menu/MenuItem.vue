@@ -13,11 +13,12 @@
 
   const variant = computed(() => (isActive.value ? 'default' : 'outline'))
 
-  const buttonClass = computed(() =>
-    isActive.value
-      ? 'w-[4.5rem] h-[4.5rem] p-4 rounded-2xl animate text-primary-foreground display'
-      : 'w-[4.5rem] h-[4.5rem] p-4 rounded-2xl animate bg-card'
-  )
+  const buttonClass = computed(() => {
+    const baseClass = 'w-[4.5rem] h-[4.5rem] p-4 rounded-2xl '
+    return isActive.value
+      ? `${baseClass} text-primary-foreground display`
+      : `${baseClass} `
+  })
 </script>
 
 <template>

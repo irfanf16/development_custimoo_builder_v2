@@ -31,13 +31,13 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  /* Secondary currently aliases primary; hosts can override --secondary independently if desired */
-  --color-secondary: var(--primary);
-  --color-secondary-foreground: var(--primary-foreground);
+  /* Secondary currently aliases primary by default via tokens, but map to distinct vars */
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--primary);
-  --color-accent-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -122,7 +122,7 @@
       --primary-dark,
       color-mix(in oklch, var(--primary-base), black 25%)
     );
-    --primary-foreground: oklch(0.208 0.042 265.755);
+    --primary-foreground: oklch(0.984 0.003 247.858);
     --secondary: var(--primary);
     --secondary-foreground: oklch(0.984 0.003 247.858);
     --muted: oklch(0.279 0.041 260.031);
