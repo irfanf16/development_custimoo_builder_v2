@@ -14,7 +14,9 @@
       }
     >(),
     {
-      variant: 'default'
+      variant: 'default',
+      class: undefined,
+      inset: undefined
     }
   )
 

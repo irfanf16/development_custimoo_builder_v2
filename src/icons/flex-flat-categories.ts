@@ -109,6 +109,8 @@ export const flexFlatCategoryIcons = {
 
 // Keep a reference so tree-shaking can't drop them
 if (typeof window !== 'undefined') {
-  // @ts-ignore
-  window.__FLEX_FLAT_CATEGORIES__ = flexFlatCategoryIcons
+  // Keep a reference on window for runtime access, without suppressing type checks
+  ;(
+    window as unknown as { __FLEX_FLAT_CATEGORIES__?: Record<string, unknown> }
+  ).__FLEX_FLAT_CATEGORIES__ = flexFlatCategoryIcons as Record<string, unknown>
 }

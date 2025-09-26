@@ -9,7 +9,9 @@
   const customizationStore = useCustomizationStore()
   const history = useHistoryStore()
   const texts = computed(() => {
-    const map = (productsStore.activeProductDetails as any)?.productnames || []
+    const map =
+      (productsStore.activeProductDetails as { productnames?: unknown[] })
+        ?.productnames || []
     return map
   })
 
@@ -22,9 +24,12 @@
   function saveValue(idx: number) {
     const key = String(customizationStore.customization?.product_id || '')
     const current =
-      (customizationStore.customization?.product_custom_texts as any)?.[key]?.[
-        idx
-      ]?.value || ''
+      (
+        customizationStore.customization?.product_custom_texts as Record<
+          string,
+          Array<{ value: string }>
+        >
+      )?.[key]?.[idx]?.value || ''
     const next = editedValues.value[idx] ?? current
     if (next === current) return
     history.execute('text.set-value', {

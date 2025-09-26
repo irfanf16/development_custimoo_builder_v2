@@ -183,7 +183,7 @@
     <!-- Only show Categories step when categories are available -->
     <CustomizerMenuItem
       v-if="shouldShowCategories"
-      :isActive="isActive(NAV_STEPS.PRODUCTS)"
+      :is-active="isActive(NAV_STEPS.PRODUCTS)"
       :text="getNavText(NAV_STEPS.PRODUCTS)"
       @click="goTo(NAV_STEPS.PRODUCTS)"
     >
@@ -192,7 +192,7 @@
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive(NAV_STEPS.DESIGNS)"
+      :is-active="isActive(NAV_STEPS.DESIGNS)"
       :text="getNavText(NAV_STEPS.DESIGNS)"
       @click="goTo(NAV_STEPS.DESIGNS)"
     >
@@ -202,7 +202,7 @@
     </CustomizerMenuItem>
     <CustomizerMenuItem
       v-if="shouldShowStyles"
-      :isActive="isActive(NAV_STEPS.STYLES)"
+      :is-active="isActive(NAV_STEPS.STYLES)"
       :text="getNavText(NAV_STEPS.STYLES)"
       @click="goTo(NAV_STEPS.STYLES)"
     >
@@ -211,7 +211,7 @@
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive(NAV_STEPS.LOGOS)"
+      :is-active="isActive(NAV_STEPS.LOGOS)"
       :text="getNavText(NAV_STEPS.LOGOS)"
       @click="goTo(NAV_STEPS.LOGOS)"
     >
@@ -220,7 +220,7 @@
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive(NAV_STEPS.COLORS)"
+      :is-active="isActive(NAV_STEPS.COLORS)"
       :text="getNavText(NAV_STEPS.COLORS)"
       @click="goTo(NAV_STEPS.COLORS)"
     >
@@ -229,7 +229,7 @@
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive(NAV_STEPS.PATTERNS)"
+      :is-active="isActive(NAV_STEPS.PATTERNS)"
       :text="getNavText(NAV_STEPS.PATTERNS)"
       @click="goTo(NAV_STEPS.PATTERNS)"
     >
@@ -238,7 +238,7 @@
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive(NAV_STEPS.TEXTS)"
+      :is-active="isActive(NAV_STEPS.TEXTS)"
       :text="getNavText(NAV_STEPS.TEXTS)"
       @click="goTo(NAV_STEPS.TEXTS)"
     >
@@ -247,7 +247,7 @@
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive(NAV_STEPS.ROSTER)"
+      :is-active="isActive(NAV_STEPS.ROSTER)"
       :text="getNavText(NAV_STEPS.ROSTER)"
       @click="goTo(NAV_STEPS.ROSTER)"
     >
@@ -256,7 +256,7 @@
       </template>
     </CustomizerMenuItem>
     <CustomizerMenuItem
-      :isActive="isActive(NAV_STEPS.SUMMARY)"
+      :is-active="isActive(NAV_STEPS.SUMMARY)"
       :text="getNavText(NAV_STEPS.SUMMARY)"
       @click="goTo(NAV_STEPS.SUMMARY)"
     >

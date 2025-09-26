@@ -73,8 +73,8 @@
           </div>
           <Button
             class="w-full"
-            @click="handleLogin"
             :disabled="authStore.isLoading"
+            @click="handleLogin"
           >
             {{ authStore.isLoading ? 'Signing In...' : 'Sign In' }}
           </Button>

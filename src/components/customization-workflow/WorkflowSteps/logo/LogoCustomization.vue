@@ -44,8 +44,8 @@
   const customLogos = computed(() => {
     const key = customizationStore.customization?.product_id
     const map = customizationStore.customization?.custom_logos
-    if (!key || !map) return [] as Array<any>
-    return (map as unknown as Record<string, Array<any>>)[key] || []
+    if (!key || !map) return [] as CustomLogo[]
+    return (map as Record<string, CustomLogo[]>)[key] || []
   })
   const showAllRecent = ref(false)
   const displayedRecentLogos = computed(() =>
@@ -121,8 +121,8 @@
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`
   }
 
-  function applyLogoColors(logo: CustomLogo | any) {
-    const palette = (logo as any).logo_colors as number[][] | undefined
+  function applyLogoColors(logo: CustomLogo) {
+    const palette = logo.logo_colors as number[][] | undefined
     if (!palette?.length || !effectiveSvgGroups.value?.length) return
     const hexColors = palette.map(c => rgbArrToHex(c))
     history.runBatch('Apply logo colors', add => {
@@ -151,7 +151,7 @@
     logosStore.setActiveLogo(logo)
   }
 
-  function removeLogoFromCustomization(logo: any) {
+  function removeLogoFromCustomization(logo: CustomLogo) {
     const key = String(customizationStore.customization?.product_id || '')
     const index = customLogos.value.findIndex(l => l.id === logo.id)
     if (index !== -1) {
@@ -277,10 +277,10 @@
                         idx > 0 ? '-ml-5' : ''
                       ]"
                       :style="{
-                        backgroundColor: rgbArrToHex(c as any),
+                        backgroundColor: rgbArrToHex(c as number[]),
                         zIndex: 10 + idx
                       }"
-                      :title="rgbArrToHex(c as any)"
+                      :title="rgbArrToHex(c as number[])"
                     />
                   </div>
                   <Button

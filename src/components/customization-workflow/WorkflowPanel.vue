@@ -19,7 +19,8 @@
 
   const props = withDefaults(defineProps<Props>(), {
     expandable: false,
-    isExpanded: false
+    isExpanded: false,
+    contentKey: undefined
   })
 
   const emit = defineEmits<Emits>()

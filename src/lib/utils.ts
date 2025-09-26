@@ -61,7 +61,11 @@ export function loadGoogleFont(
         reject(new Error(`Timed out loading font: ${family}`))
       }, 7000)
 
-      const fontsApi = (document as any).fonts
+      const fontsApi = (
+        document as unknown as {
+          fonts?: { load?: (desc: string) => Promise<unknown> }
+        }
+      ).fonts
       const wait = fontsApi?.load
         ? Promise.all([
             fontsApi.load(`1em ${quoted}`),
@@ -76,7 +80,7 @@ export function loadGoogleFont(
         })
         .catch(err => {
           clearTimeout(timeout)
-          reject(err)
+          reject(err as Error)
         })
     } catch (err) {
       reject(err as Error)

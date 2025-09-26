@@ -14,10 +14,9 @@
     disposeCanvas,
     clearCanvas,
     requestRender,
+    withCanvasBatch,
     addModelLayer,
     addDesignLayer,
-    fadeOut,
-    fadeIn,
     addLogoLayer
   } = useFabricPreview()
   const {
@@ -27,50 +26,76 @@
     effectiveLogos
   } = useEffectiveSelectors()
 
+  // Prevent overlapping renders in the small preview as well
+  let renderInFlight = false
+  let renderQueued = false
+
   async function renderPreview() {
     if (!canvas.value) return
-
-    await fadeOut(150)
-
-    clearCanvas()
-    const design = effectiveDesignDetails.value
-    const style = effectiveStyleDetails.value
-    const side = (
-      workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'
-    ) as 'front' | 'back'
-    if (!design || !style) return
-    if (side === 'back' && design.back_design) {
-      await addDesignLayer(
-        design.back_design.file_url,
-        design.back_design.file_extension
-      )
-      for (const m of (style as any).back_models || []) {
-        const comp = (
-          m.composition === 'multiply' ? 'multiply' : 'screen'
-        ) as GlobalCompositeOperation
-        await addModelLayer(m.file_url, comp)
-      }
-      for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
-        await addLogoLayer(logo)
-      }
-    } else if (design.front_design) {
-      await addDesignLayer(
-        design.front_design.file_url,
-        design.front_design.file_extension
-      )
-      for (const m of (style as any).front_models || []) {
-        const comp = (
-          m.composition === 'multiply' ? 'multiply' : 'screen'
-        ) as GlobalCompositeOperation
-        await addModelLayer(m.file_url, comp)
-      }
-      for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
-        await addLogoLayer(logo)
-      }
+    if (renderInFlight) {
+      renderQueued = true
+      return
     }
+    renderInFlight = true
 
-    fadeIn()
-    requestRender()
+    await withCanvasBatch(async () => {
+      clearCanvas({ silent: true })
+      const design = effectiveDesignDetails.value
+      const style = effectiveStyleDetails.value
+      const side = (
+        workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'
+      ) as 'front' | 'back'
+      if (!design || !style) return
+      if (side === 'back' && design.back_design) {
+        await addDesignLayer(
+          design.back_design.file_url,
+          design.back_design.file_extension
+        )
+        for (const m of (
+          style as {
+            back_models?: Array<{ composition?: string; file_url: string }>
+          }
+        ).back_models || []) {
+          const comp = (
+            m.composition === 'multiply' ? 'multiply' : 'screen'
+          ) as GlobalCompositeOperation
+          await addModelLayer(m.file_url, comp)
+        }
+        for (const logo of effectiveLogos.value.filter(
+          l => l.side === 'back'
+        )) {
+          await addLogoLayer(logo)
+        }
+      } else if (design.front_design) {
+        await addDesignLayer(
+          design.front_design.file_url,
+          design.front_design.file_extension
+        )
+        for (const m of (
+          style as {
+            front_models?: Array<{ composition?: string; file_url: string }>
+          }
+        ).front_models || []) {
+          const comp = (
+            m.composition === 'multiply' ? 'multiply' : 'screen'
+          ) as GlobalCompositeOperation
+          await addModelLayer(m.file_url, comp)
+        }
+        for (const logo of effectiveLogos.value.filter(
+          l => l.side === 'front'
+        )) {
+          await addLogoLayer(logo)
+        }
+      }
+
+      requestRender()
+    })
+
+    renderInFlight = false
+    if (renderQueued) {
+      renderQueued = false
+      queueMicrotask(() => void renderPreview())
+    }
   }
 
   function handleClick() {

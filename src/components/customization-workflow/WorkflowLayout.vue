@@ -59,7 +59,9 @@
   } | null>(null)
 
   // Navigation fallback derived from workflow state
-  const routeStepRef = computed(() => props.currentStep) as unknown as Ref<any>
+  const routeStepRef = computed(
+    () => props.currentStep
+  ) as unknown as Ref<string>
   const { navigationItems } = useWorkflowNavigation(
     routeStepRef,
     props.onNavigateBack
@@ -67,7 +69,8 @@
 
   // Computed properties for workflow step configuration
   const logosSubStepValue = computed(() => {
-    const sub = (workflowStore as any).logosSubStep
+    const sub = (workflowStore as { logosSubStep?: string | { value: string } })
+      .logosSubStep
     return sub && typeof sub === 'object' && 'value' in sub ? sub.value : sub
   })
 
@@ -157,7 +160,7 @@
       @update:is-expanded="isExpanded = $event"
     >
       <!-- Header slot -->
-      <template #header="{ isExpanded }">
+      <template #header>
         <div class="w-full flex flex-col gap-5">
           <div class="flex items-center gap-3 h-9 justify-center">
             <div

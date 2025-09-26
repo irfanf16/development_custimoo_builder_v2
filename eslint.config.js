@@ -15,7 +15,7 @@ const vueFlatRecommended = Array.isArray(vue.configs['flat/recommended'])
   : [vue.configs['flat/recommended']]
 
 export default [
-  { ignores: ['dist/**', 'node_modules/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'components.d.ts'] },
   ...vueFlatRecommended,
   // TypeScript base recommendations (no type info) - only TS/TSX files
   ...tseslint.configs.recommended.map(cfg => ({
@@ -62,7 +62,11 @@ export default [
       'vue/multi-word-component-names': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_' }
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_'
+        }
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',

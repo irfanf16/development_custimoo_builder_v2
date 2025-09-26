@@ -11,13 +11,36 @@ import widgetStyles from './widget-styles.css?inline'
 // Persist references to style elements across HMR updates
 // so we can live-replace the CSS injected into Shadow DOMs.
 const styleElements: Set<HTMLStyleElement> =
-  (import.meta as any).hot?.data?.styleElements ?? new Set<HTMLStyleElement>()
+  ((import.meta as unknown as { hot?: { data?: Record<string, unknown> } }).hot
+    ?.data?.styleElements as Set<HTMLStyleElement>) ||
+  new Set<HTMLStyleElement>()
 
-if ((import.meta as any).hot) {
-  ;(import.meta as any).hot.data.styleElements = styleElements
-  ;(import.meta as any).hot.accept(
+if (
+  (
+    import.meta as unknown as {
+      hot?: {
+        data: Record<string, unknown>
+        accept: (
+          deps: string[],
+          cb: (mods: Array<{ default?: string }>) => void
+        ) => void
+      }
+    }
+  ).hot
+) {
+  const hot = import.meta as unknown as {
+    hot: {
+      data: Record<string, unknown>
+      accept: (
+        deps: string[],
+        cb: (mods: Array<{ default?: string }>) => void
+      ) => void
+    }
+  }
+  hot.hot.data.styleElements = styleElements
+  hot.hot.accept(
     ['./widget-styles.css?inline'],
-    (mods: any[]) => {
+    (mods: Array<{ default?: string }>) => {
       const nextCss: string = mods?.[0]?.default ?? ''
       for (const el of styleElements) {
         el.textContent = nextCss
@@ -29,13 +52,15 @@ if ((import.meta as any).hot) {
 // Function to bootstrap and mount the Vue.js application
 export function bootstrap(
   shadowRoot: ShadowRoot,
-  attributes: Record<string, any>
+  attributes: Record<string, unknown>
 ) {
   // Create a container element within the shadow root
   const container = document.createElement('div')
   container.id = 'customizer-widget-container'
   // Teleport target for UI portals (e.g., tooltips) inside the widget's Shadow DOM
-  ;(window as any).__CUSTOMIZER_CONTAINER__ = container
+  ;(
+    window as unknown as { __CUSTOMIZER_CONTAINER__?: HTMLElement }
+  ).__CUSTOMIZER_CONTAINER__ = container
 
   // Initialize Pinia and UI store early to manage viewport state
   const pinia = createPinia()

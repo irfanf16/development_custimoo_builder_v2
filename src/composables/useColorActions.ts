@@ -37,7 +37,7 @@ export function useColorActions() {
         : availablePalettes[0]) || availablePalettes[0]
     const colors = selected?.colors
     if (!colors?.length || !effectiveSvgGroups.value) return
-    history.runBatch('Shuffle colors', add => {
+    void history.runBatch('Shuffle colors', add => {
       effectiveSvgGroups.value?.forEach(group => {
         const randomColor = colors[Math.floor(Math.random() * colors.length)]
         if (!randomColor) return

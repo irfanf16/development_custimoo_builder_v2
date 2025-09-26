@@ -120,8 +120,8 @@
               size="icon"
               class="rounded-full size-10 p-0 bg-card outline outline-border border-0 shadow-none"
               :aria-label="t.label"
-              @click="t.action"
               :disabled="t.disabled"
+              @click="t.action"
             >
               <component :is="t.icon" class="size-4" :stroke-width="1.75" />
             </Button>

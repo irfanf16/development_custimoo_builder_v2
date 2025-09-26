@@ -49,7 +49,8 @@ export function useColorScheme() {
           )
         ])
       } catch (error) {
-        console.warn(`Failed to load fonts: ${error}`)
+        const message = error instanceof Error ? error.message : String(error)
+        console.warn(`Failed to load fonts: ${message}`)
         // Continue with font application even if loading fails
       }
     }

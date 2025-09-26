@@ -68,8 +68,8 @@
       <DropdownMenuItem
         v-for="locale in localeStore.availableLocales"
         :key="locale"
-        @click="handleLanguageChange(locale)"
         :class="{ 'bg-accent': locale === localeStore.currentLocale }"
+        @click="handleLanguageChange(locale)"
       >
         <span class="mr-2">
           {{ locale === 'en' ? '🇺🇸' : locale === 'fr' ? '🇫🇷' : '🇩🇰' }}

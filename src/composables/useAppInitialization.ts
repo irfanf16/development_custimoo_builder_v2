@@ -1,7 +1,7 @@
 import { ref, onMounted, readonly } from 'vue'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
-import { useProductsStore } from '@/stores/products/products.store.ts'
+import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useLocaleStore } from '@/stores/locale/locale.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -26,7 +26,7 @@ export function useAppInitialization() {
     try {
       const authStore = useAuthStore()
       authStore.loadFromLocalStorage()
-    } catch (_err) {
+    } catch {
       // In rare cases the store may not be available; ignore and continue
     }
 
@@ -42,7 +42,9 @@ export function useAppInitialization() {
     try {
       const history = useHistoryStore()
       history.load()
-    } catch (_) {}
+    } catch {
+      // Ignore errors when loading history
+    }
 
     return { productsStore, customizationStore, hasActiveCustomization }
   }
@@ -61,8 +63,8 @@ export function useAppInitialization() {
 
   // PHASE 3: Initialize localization and determine effective category
   const initializeLocalizationAndCategory = (
-    customizationStore: any,
-    productsStore: any
+    customizationStore: ReturnType<typeof useCustomizationStore>,
+    productsStore: ReturnType<typeof useProductsStore>
   ) => {
     // Initialize locale store after company data is loaded
     const localeStore = useLocaleStore()
@@ -83,7 +85,7 @@ export function useAppInitialization() {
 
   // PHASE 4: Load product data
   const loadProductData = async (
-    productsStore: any,
+    productsStore: ReturnType<typeof useProductsStore>,
     effectiveCategoryId: number | null
   ) => {
     await productsStore.fetchProductPreviews(effectiveCategoryId)
@@ -91,8 +93,8 @@ export function useAppInitialization() {
 
   // PHASE 5A: Restore customization with defaults
   const restoreCustomizationWithDefaults = async (
-    customizationStore: any,
-    productsStore: any,
+    customizationStore: ReturnType<typeof useCustomizationStore>,
+    productsStore: ReturnType<typeof useProductsStore>,
     hasActiveCustomization: boolean
   ) => {
     if (!hasActiveCustomization) return
@@ -112,7 +114,7 @@ export function useAppInitialization() {
       if (fallbackProductId != null) {
         await productsStore.fetchStylePreviews(fallbackProductId)
         await productsStore.fetchActiveProductDetails(fallbackProductId)
-        customizationStore.setProduct(fallbackProductId)
+        void customizationStore.setProduct(fallbackProductId)
         productId = fallbackProductId
       }
     } else {
@@ -125,7 +127,7 @@ export function useAppInitialization() {
     if (!styleId) {
       const defaultStyleId = productsStore.activeStyleDetails?.id
       if (defaultStyleId) {
-        customizationStore.setStyle(defaultStyleId)
+        void customizationStore.setStyle(defaultStyleId)
         styleId = defaultStyleId
       }
     } else if (productsStore.activeStyleDetails?.id !== styleId) {
@@ -137,7 +139,7 @@ export function useAppInitialization() {
     if (!designId) {
       const defaultDesignId = productsStore.activeDesignDetails?.id
       if (defaultDesignId) {
-        customizationStore.setDesign(productsStore.activeDesignDetails)
+        void customizationStore.setDesign(productsStore.activeDesignDetails)
         designId = defaultDesignId
       }
     } else if (productsStore.activeDesignDetails?.id !== designId) {
@@ -147,15 +149,17 @@ export function useAppInitialization() {
 
   // PHASE 5B: Create default customization
   const createDefaultCustomization = async (
-    customizationStore: any,
-    productsStore: any,
+    customizationStore: ReturnType<typeof useCustomizationStore>,
+    productsStore: ReturnType<typeof useProductsStore>,
     effectiveCategoryId: number | null
   ) => {
     // Clear stale history when no customization is restored
     try {
       const history = useHistoryStore()
       history.clear()
-    } catch (_) {}
+    } catch {
+      // Ignore errors when clearing history
+    }
 
     // Determine which product to load as default
     const activeProductId =
@@ -272,7 +276,7 @@ export function useAppInitialization() {
   // Automatically start initialization when the component is mounted
   // This ensures the app starts loading data as soon as possible
   onMounted(() => {
-    initializeApp()
+    void initializeApp()
   })
 
   return {

@@ -5,7 +5,7 @@ export type OutputProductLogosSetting = LogoPlacementBase & {
   // Refinements for products API shape
   originalWidth: number // products API guarantees numbers
   originalHeight: number
-  logo_colors: any[]
+  logo_colors: LogoColor[]
   logo_technologies: string[] | null
   logo_name: string | null
   is_locked: 0 | 1

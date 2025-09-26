@@ -55,9 +55,7 @@ export function useWorkflowManager(): UseWorkflowManagerApi {
       c => c.id === categoryId && c.subcategories && c.subcategories.length
     )
     workflowStore.setProductsSubStep(
-      (hasSubcategories ? 'subcategory' : 'product') as
-        | 'subcategory'
-        | 'product'
+      hasSubcategories ? 'subcategory' : 'product'
     )
   }
 

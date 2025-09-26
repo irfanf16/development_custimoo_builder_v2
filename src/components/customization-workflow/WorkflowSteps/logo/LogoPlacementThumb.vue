@@ -3,9 +3,9 @@
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
 
   interface Props {
-    product: any
-    styleBase: any
-    designBase: any
+    product: unknown
+    styleBase: unknown
+    designBase: unknown
     class?: string
     setting: {
       x_axis: number

@@ -30,18 +30,18 @@ export function useWorkflowEffects() {
           productsStore.designPreviews.length > 0
         )
         if (needsPreviews && styleId) {
-          productsStore.fetchDesignPreviewsByStyleId(styleId as number)
+          await productsStore.fetchDesignPreviewsByStyleId(styleId)
         }
       } else if (step === 'Styles') {
         const pid =
           productsStore.activeProductDetails?.id ||
           customizationStore.activeProductId
         if (pid && !productsStore.stylePreviews) {
-          productsStore.fetchStylePreviews(pid as number)
+          await productsStore.fetchStylePreviews(pid)
         }
       } else if (step === 'Logos') {
         // Ensure recent logos are loaded
-        logosStore.fetchRecentLogos()
+        await logosStore.fetchRecentLogos()
       }
     },
     { immediate: true }
@@ -50,7 +50,7 @@ export function useWorkflowEffects() {
   // Watch for products sub-step changes while in Categories flow
   watch(
     () => workflowStore.productsSubStep,
-    async sub => {
+    sub => {
       if (workflowStore.activeStep === 'Categories') {
         // When returning to categories, snapshot defaults for potential reset later
         if (sub === 'category') {

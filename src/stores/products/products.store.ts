@@ -5,7 +5,7 @@ import type {
   OutputProductCategories,
   GetProductCategoriesParams,
   ActiveProductCustomization,
-  ActiveProductDetails,
+  _ActiveProductDetails,
   ProductPreviewItem,
   OutputStylePreviewFront,
   OutputStyleDetails,
@@ -13,7 +13,7 @@ import type {
   OutputRecentLogo,
   OutputProductDetails,
   OutputSvgGroupColor,
-  ActiveStyleDetails,
+  _ActiveStyleDetails,
   OutputDesignPreviewFront
 } from '@/services/products/types'
 import { API } from '../../services'
@@ -38,7 +38,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   const error = ref<string | null>(null)
 
   // ===== UTILITIES =====
-  const storageBase = import.meta.env.VITE_APP_STORAGE_URL || ''
+  const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
   function fromStorage(path: string): string {
     const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
     const clean = path?.startsWith('/') ? path.slice(1) : path
@@ -213,12 +213,12 @@ export const useProductsStore = defineStore('productsStore', () => {
       )
     )
     if (resp.success) {
-      const payload = resp.content as ActiveStyleDetails
+      const payload = resp.content
       setActiveStyleDetailsState(payload.styleDetails)
       setActiveDesignDetailsState(payload.designDetails)
       customization.setStyle(styleId)
       customization.setDesign(payload.designDetails)
-      setSvgGroups()
+      void setSvgGroups()
     } else {
       setError('Error getting active style details')
     }
@@ -233,10 +233,10 @@ export const useProductsStore = defineStore('productsStore', () => {
       API.products.getActiveProductDetails(productId)
     )
     if (result.success && result.content) {
-      const details = result.content as ActiveProductDetails
+      const details = result.content
       setActiveProductDetailsState(details.productDetails)
       setActiveStyleDetailsState(details.styleDetails)
-      setActiveDesignDetailsState(details.designDetails as OutputDesignDetails)
+      setActiveDesignDetailsState(details.designDetails)
       customization.setProduct(productId)
       customization.setStyle(details.styleDetails.id)
       customization.setDesign(details.designDetails)
@@ -253,22 +253,28 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   const defaultActiveDetails = ref<{
-    product: any
-    style: any
-    design: any
+    product: OutputProductDetails | null
+    style: OutputStyleDetails | null
+    design: OutputDesignDetails | null
     customization: ActiveProductCustomization | null
   } | null>(null)
 
   function captureDefaultsSnapshot() {
     defaultActiveDetails.value = {
       product: activeProductDetails.value
-        ? JSON.parse(JSON.stringify(activeProductDetails.value))
+        ? (JSON.parse(
+            JSON.stringify(activeProductDetails.value)
+          ) as OutputProductDetails)
         : null,
       style: activeStyleDetails.value
-        ? JSON.parse(JSON.stringify(activeStyleDetails.value))
+        ? (JSON.parse(
+            JSON.stringify(activeStyleDetails.value)
+          ) as OutputStyleDetails)
         : null,
       design: activeDesignDetails.value
-        ? JSON.parse(JSON.stringify(activeDesignDetails.value))
+        ? (JSON.parse(
+            JSON.stringify(activeDesignDetails.value)
+          ) as OutputDesignDetails)
         : null,
       customization: customization.customization
         ? (JSON.parse(

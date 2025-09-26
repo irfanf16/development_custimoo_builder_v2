@@ -13,7 +13,7 @@ export type HistoryActionType =
   | 'pattern.set-group'
   | 'batch'
 
-export interface HistoryEntry<T = any> {
+export interface HistoryEntry<T = unknown> {
   id: string
   type: HistoryActionType
   payload: T

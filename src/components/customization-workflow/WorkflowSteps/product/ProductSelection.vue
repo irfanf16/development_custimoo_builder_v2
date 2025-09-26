@@ -178,8 +178,8 @@
   <div class="flex flex-wrap mb-4 md:mb-6">
     <div
       v-for="item in filteredPreviews"
-      :key="item.productPreview.id"
       :id="`product-${item.productPreview.id}`"
+      :key="item.productPreview.id"
       class="group relative flex flex-col items-center flex-shrink-0 gap-4 md:gap-6 p-4 md:p-6"
       :class="[
         'relative rounded-sm transition-colors cursor-pointer',

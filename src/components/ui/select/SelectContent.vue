@@ -19,7 +19,8 @@
   const props = withDefaults(
     defineProps<SelectContentProps & { class?: HTMLAttributes['class'] }>(),
     {
-      position: 'popper'
+      position: 'popper',
+      class: undefined
     }
   )
   const emits = defineEmits<SelectContentEmits>()
@@ -31,7 +32,9 @@
   // Ensure portal renders inside the widget's Shadow DOM container when embedded
   const teleportTo = ref<string | HTMLElement>('body')
   onMounted(() => {
-    const anyWindow = window as any
+    const anyWindow = window as unknown as {
+      __CUSTOMIZER_CONTAINER__?: HTMLElement
+    }
     const container = anyWindow?.__CUSTOMIZER_CONTAINER__
     if (container instanceof HTMLElement)
       teleportTo.value = container.getElementsByClassName(

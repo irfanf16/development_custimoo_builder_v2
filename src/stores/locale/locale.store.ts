@@ -20,9 +20,12 @@ export const useLocaleStore = defineStore('localeStore', () => {
     )
   )
 
-  const defaultLocale = computed(
-    () => companyStore.localization.defaultLanguage as ParaglideLocale
-  )
+  const defaultLocale = computed<ParaglideLocale>(() => {
+    const dl = companyStore.localization.defaultLanguage as
+      | ParaglideLocale
+      | undefined
+    return dl ?? 'en'
+  })
 
   // ===== PERSISTENCE =====
   function saveToLocalStorage() {
@@ -40,7 +43,9 @@ export const useLocaleStore = defineStore('localeStore', () => {
     // Validate the locale is still available
     if (!isValidLocale(locale)) {
       console.warn(
-        `Locale ${locale} is no longer available, falling back to default`
+        `Locale ${String(
+          locale
+        )} is no longer available, falling back to default`
       )
       locale = defaultLocale.value || 'en'
     }

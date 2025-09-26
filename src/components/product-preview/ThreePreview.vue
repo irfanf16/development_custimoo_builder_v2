@@ -9,14 +9,16 @@
   const products = useProductsStore()
   const containerEl = ref<HTMLDivElement | null>(null)
 
-  let renderer: any = null
-  let scene: any = null
-  let camera: any = null
+  let renderer: THREE.WebGLRenderer | null = null
+  let scene: THREE.Scene | null = null
+  let camera: THREE.PerspectiveCamera | null = null
   let animationId: number | null = null
-  let currentRoot: any = null
-  const loadedTextures: any[] = []
+  let currentRoot: THREE.Object3D | null = null
+  const loadedTextures: THREE.Texture[] = []
 
-  const storageBase = (import.meta as any).env?.VITE_APP_STORAGE_URL || ''
+  const storageBase =
+    (import.meta as { env?: { VITE_APP_STORAGE_URL?: string } }).env
+      ?.VITE_APP_STORAGE_URL || ''
   function fromStorage(path?: string | null): string | null {
     if (!path) return null
     const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
@@ -24,30 +26,26 @@
     return base + clean
   }
 
-  function disposeObject3D(obj: any) {
-    obj.traverse((child: any) => {
-      if ((child as any).isMesh) {
-        const mesh = child as any
+  function disposeObject3D(obj: THREE.Object3D) {
+    obj.traverse((child: THREE.Object3D) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh
         if (mesh.geometry) {
           mesh.geometry.dispose()
         }
-        const material = mesh.material as any
+        const material = mesh.material as THREE.Material | THREE.Material[]
         const list = Array.isArray(material)
           ? material
           : material
             ? [material]
             : []
         list.forEach(m => {
-          // @ts-ignore
-          if (m.map) (m.map as any).dispose()
-          // @ts-ignore
-          if (m.aoMap) (m.aoMap as any).dispose()
-          // @ts-ignore
-          if (m.roughnessMap) (m.roughnessMap as any).dispose()
-          // @ts-ignore
-          if (m.metalnessMap) (m.metalnessMap as any).dispose()
-          // @ts-ignore
-          if (m.alphaMap) (m.alphaMap as any).dispose()
+          const material = m as THREE.MeshStandardMaterial
+          if (material.map) material.map.dispose()
+          if (material.aoMap) material.aoMap.dispose()
+          if (material.roughnessMap) material.roughnessMap.dispose()
+          if (material.metalnessMap) material.metalnessMap.dispose()
+          if (material.alphaMap) material.alphaMap.dispose()
           m.dispose()
         })
       }
@@ -74,7 +72,7 @@
     if (!renderer) {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
       // @ts-ignore - supported in r179+
-      ;(renderer as any).outputColorSpace = THREE.SRGBColorSpace
+      ;(renderer as THREE.WebGLRenderer).outputColorSpace = THREE.SRGBColorSpace
       renderer.setPixelRatio(window.devicePixelRatio)
       renderer.setSize(w, h)
       containerEl.value.appendChild(renderer.domElement)
@@ -87,7 +85,10 @@
       camera.position.set(0, 0, 5)
     }
     // basic lighting
-    if (scene.children.filter((c: any) => (c as any).isLight).length === 0) {
+    if (
+      scene.children.filter((c: THREE.Object3D) => (c as THREE.Light).isLight)
+        .length === 0
+    ) {
       const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1)
       hemi.position.set(0, 1, 0)
       scene.add(hemi)
@@ -115,9 +116,9 @@
   function addPlaceholder() {
     if (!scene) return
     clearSceneContent()
-    const geom = new (THREE as any).SphereGeometry(1, 32, 32)
-    const mat = new (THREE as any).MeshStandardMaterial({ color: 0xffffff })
-    const mesh = new (THREE as any).Mesh(geom, mat)
+    const geom = new THREE.SphereGeometry(1, 32, 32)
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff })
+    const mesh = new THREE.Mesh(geom, mat)
     currentRoot = mesh
     scene.add(mesh)
   }
@@ -191,9 +192,9 @@
 
       currentRoot = gltf.scene
       // Center and scale the model to fit a canonical view
-      const box = new (THREE as any).Box3().setFromObject(currentRoot)
-      const size = new (THREE as any).Vector3()
-      const center = new (THREE as any).Vector3()
+      const box = new THREE.Box3().setFromObject(currentRoot)
+      const size = new THREE.Vector3()
+      const center = new THREE.Vector3()
       box.getSize(size)
       box.getCenter(center)
       currentRoot.position.sub(center)
@@ -201,15 +202,15 @@
       if (maxAxis > 0) currentRoot.scale.multiplyScalar(2.2 / maxAxis)
 
       // Apply textures if available
-      currentRoot.traverse((obj: any) => {
-        if ((obj as any).isMesh) {
-          const mesh = obj as any
-          const mat = mesh.material as any
+      currentRoot.traverse((obj: THREE.Object3D) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh
+          const mat = mesh.material as THREE.MeshStandardMaterial
           if (mat) {
             if (colorTex) {
               mat.map = colorTex
               // @ts-ignore - ensure correct color space
-              ;(mat.map as any).colorSpace = (THREE as any).SRGBColorSpace
+              ;(mat.map as THREE.Texture).colorSpace = THREE.SRGBColorSpace
             }
             if (alphaTex) {
               mat.alphaMap = alphaTex

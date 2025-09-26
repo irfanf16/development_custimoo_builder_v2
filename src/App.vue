@@ -26,9 +26,9 @@
     <div class="text-center">
       <p class="text-destructive mb-4">{{ error }}</p>
       <Button
-        @click="appInit.initializeApp()"
         variant="default"
         class="px-4 py-2"
+        @click="appInit.initializeApp()"
       >
         Retry
       </Button>

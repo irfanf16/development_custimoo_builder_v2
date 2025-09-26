@@ -37,7 +37,7 @@ export function useFabricPreview(
   const canvasOptions = ref<Partial<CanvasOptions>>({})
 
   // ===== UTILITIES =====
-  const storageBase = import.meta.env.VITE_APP_STORAGE_URL || ''
+  const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
 
   function fromStorage(path: string): string {
     const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
@@ -60,20 +60,42 @@ export function useFabricPreview(
 
   function disposeCanvas() {
     if (canvas.value) {
-      canvas.value.dispose()
+      void canvas.value.dispose()
       canvas.value = null
     }
   }
 
-  function clearCanvas() {
+  function clearCanvas(options?: { silent?: boolean }) {
     if (!canvas.value) return
-    canvas.value.clear()
+    const c = canvas.value
+    // Remove all objects synchronously to avoid visual stacking between rapid rerenders
+    const objects = c.getObjects().slice()
+    for (const obj of objects) {
+      c.remove(obj)
+    }
+    c.discardActiveObject()
+    if (!options?.silent) c.requestRenderAll()
     mainDesignObject.value = null
   }
 
   function requestRender() {
     if (!canvas.value) return
-    canvas.value.requestRenderAll()
+    // Ignore returned promise-like
+    void canvas.value.requestRenderAll()
+  }
+
+  async function withCanvasBatch<T>(builder: () => Promise<T> | T) {
+    if (!canvas.value) return undefined as unknown as T
+    const c = canvas.value
+    const prev = c.renderOnAddRemove
+    c.renderOnAddRemove = false
+    try {
+      const result = await builder()
+      return result
+    } finally {
+      c.renderOnAddRemove = prev
+      c.requestRenderAll()
+    }
   }
 
   function registerBackgroundDragHandlers() {
@@ -82,30 +104,30 @@ export function useFabricPreview(
     let last: { x: number; y: number } | null = null
 
     // Start background drag only when no target is hit
-    canvas.value.on('mouse:down:before', (opt: any) => {
+    canvas.value.on('mouse:down:before', opt => {
       if (!canvas.value) return
-      const target = canvas.value.findTarget?.(opt.e)
-      if (target) return
-      const p =
-        canvas.value.getScenePoint?.(opt.e) || canvas.value.getPointer(opt.e)
+      if (opt.target) return
+      const p = canvas.value.getPointer(opt.e)
       last = { x: p.x, y: p.y }
       draggingAll = true
     })
 
-    canvas.value.on('mouse:move', (opt: any) => {
+    canvas.value.on('mouse:move', opt => {
       if (!canvas.value || !draggingAll || !last) return
-      const p =
-        canvas.value.getScenePoint?.(opt.e) || canvas.value.getPointer(opt.e)
+      const p = canvas.value.getPointer(opt.e)
       const dx = p.x - last.x
       const dy = p.y - last.y
       if (dx === 0 && dy === 0) return
       const objs = canvas.value.getObjects()
       for (const o of objs) {
-        o.set({ left: (o.left || 0) + dx, top: (o.top || 0) + dy } as any)
+        o.set({ left: (o.left || 0) + dx, top: (o.top || 0) + dy } as Record<
+          string,
+          unknown
+        >)
         o.setCoords()
       }
       last = { x: p.x, y: p.y }
-      canvas.value.requestRenderAll()
+      void canvas.value.requestRenderAll()
     })
 
     canvas.value.on('mouse:up', () => {
@@ -123,9 +145,20 @@ export function useFabricPreview(
 
     // Default to asset center when available
     if (!center || center === 'asset') {
-      const target = mainDesignObject.value as any
-      if (target && typeof target.getCenterPoint === 'function') {
-        const c = target.getCenterPoint()
+      const target = mainDesignObject.value
+      if (
+        target &&
+        typeof (
+          target as unknown as {
+            getCenterPoint?: () => { x: number; y: number }
+          }
+        ).getCenterPoint === 'function'
+      ) {
+        const c = (
+          target as unknown as {
+            getCenterPoint: () => { x: number; y: number }
+          }
+        ).getCenterPoint()
         point = new Point(c.x, c.y)
       }
     }
@@ -162,9 +195,20 @@ export function useFabricPreview(
     let point: Point | null = null
     const center = options?.center
     if (!center || center === 'asset') {
-      const target = mainDesignObject.value as any
-      if (target && typeof target.getCenterPoint === 'function') {
-        const c = target.getCenterPoint()
+      const target = mainDesignObject.value
+      if (
+        target &&
+        typeof (
+          target as unknown as {
+            getCenterPoint?: () => { x: number; y: number }
+          }
+        ).getCenterPoint === 'function'
+      ) {
+        const c = (
+          target as unknown as {
+            getCenterPoint: () => { x: number; y: number }
+          }
+        ).getCenterPoint()
         point = new Point(c.x, c.y)
       }
     }
@@ -203,13 +247,20 @@ export function useFabricPreview(
       easing: options?.easing || defaultEasing,
       onChange: (value: number) => {
         if (!canvas.value) return
-        canvas.value.zoomToPoint(point as Point, value)
+        canvas.value.zoomToPoint(point, value)
         canvas.value.requestRenderAll()
       }
     })
   }
 
-  function fitObject(obj: any, options?: FitOptions) {
+  type ScalableFabricObject = {
+    scaleToWidth: (w: number) => void
+    scaleToHeight: (h: number) => void
+    width?: number
+    height?: number
+  }
+
+  function fitObject(obj: ScalableFabricObject, options?: FitOptions) {
     if (!canvas.value) return
     const padding = options?.padding ?? 8
     const targetW = (canvas.value.getWidth?.() || 800) - padding
@@ -269,7 +320,9 @@ export function useFabricPreview(
         url += '.svg'
       }
     }
-    const { objects } = await loadSVGFromURL(fromStorage(url))
+    const { objects } = (await loadSVGFromURL(fromStorage(url))) as unknown as {
+      objects: unknown[]
+    }
     const safeObjects = (objects || []).filter(Boolean) as FabricObject[]
     return util.groupSVGElements(safeObjects) as CustomFabricGroup
   }
@@ -290,10 +343,11 @@ export function useFabricPreview(
         const effectiveSvgGroups =
           useEffectiveSelectors().effectiveSvgGroups.value
         if (effectiveSvgGroups) {
-          effectiveSvgGroups?.forEach(effectiveGroup => {
-            const object = group._objects.find(
-              (o: any) => o.id === effectiveGroup.id
-            )
+          effectiveSvgGroups.forEach(effectiveGroup => {
+            const object = group._objects.find(o => {
+              const candidate = o as unknown as { id?: string }
+              return candidate.id === effectiveGroup.id
+            }) as (FabricObject & { fill?: string }) | undefined
             if (object && object.fill !== effectiveGroup.color) {
               object.fill = effectiveGroup.color
             }
@@ -355,30 +409,30 @@ export function useFabricPreview(
     let designTopOffset = 0
 
     if (main) {
-      const anyMain = main as any
-      const getScaledWidth =
-        typeof anyMain.getScaledWidth === 'function'
-          ? anyMain.getScaledWidth.bind(main)
-          : null
-      const getScaledHeight =
-        typeof anyMain.getScaledHeight === 'function'
-          ? anyMain.getScaledHeight.bind(main)
-          : null
-
-      const scaledW = getScaledWidth
-        ? getScaledWidth()
-        : (main.width || 0) * (main.scaleX || 1)
-      const scaledH = getScaledHeight
-        ? getScaledHeight()
-        : (main.height || 0) * (main.scaleY || 1)
+      const withScaled = main as unknown as {
+        getScaledWidth?: () => number
+        getScaledHeight?: () => number
+        width?: number
+        height?: number
+        scaleX?: number
+        scaleY?: number
+        left?: number
+        top?: number
+      }
+      const scaledW = withScaled.getScaledWidth
+        ? withScaled.getScaledWidth()
+        : (withScaled.width || 0) * (withScaled.scaleX || 1)
+      const scaledH = withScaled.getScaledHeight
+        ? withScaled.getScaledHeight()
+        : (withScaled.height || 0) * (withScaled.scaleY || 1)
 
       // Map product's 600x600 square into the inscribed square within the scaled design
       const squareSide = Math.min(scaledW || 0, scaledH || 0)
       unitScale = (squareSide || 0) / baseSize
 
       // main's origin is 'center'
-      const centerX = (main.left as number) || 0
-      const centerY = (main.top as number) || 0
+      const centerX = withScaled.left || 0
+      const centerY = withScaled.top || 0
       designLeftOffset = centerX - (scaledW || 0) / 2
       designTopOffset = centerY - (scaledH || 0) / 2
     } else {
@@ -407,17 +461,20 @@ export function useFabricPreview(
 
     // Position at (x_axis, y_axis) as the CENTER within the scaled design bounds
     // Use inner offsets to account for inscribed square inside the design's bounding box
-    const anyMain = main as any
-    const scaledW = anyMain
-      ? typeof anyMain.getScaledWidth === 'function'
-        ? anyMain.getScaledWidth()
-        : (main?.width || 0) * (main?.scaleX || 1)
-      : canvas.value.getWidth?.() || 0
-    const scaledH = anyMain
-      ? typeof anyMain.getScaledHeight === 'function'
-        ? anyMain.getScaledHeight()
-        : (main?.height || 0) * (main?.scaleY || 1)
-      : canvas.value.getHeight?.() || 0
+    const withScaled2 = main as unknown as {
+      getScaledWidth?: () => number
+      getScaledHeight?: () => number
+      width?: number
+      height?: number
+      scaleX?: number
+      scaleY?: number
+    } | null
+    const scaledW = withScaled2?.getScaledWidth
+      ? withScaled2.getScaledWidth()
+      : (withScaled2?.width || 0) * (withScaled2?.scaleX || 1)
+    const scaledH = withScaled2?.getScaledHeight
+      ? withScaled2.getScaledHeight()
+      : (withScaled2?.height || 0) * (withScaled2?.scaleY || 1)
     const squareSide = Math.min(scaledW || 0, scaledH || 0)
     const innerOffsetX = ((scaledW || 0) - squareSide) / 2
     const innerOffsetY = ((scaledH || 0) - squareSide) / 2
@@ -468,6 +525,7 @@ export function useFabricPreview(
     disposeCanvas,
     clearCanvas,
     requestRender,
+    withCanvasBatch,
     setZoom,
     animateZoom,
     fitObject,

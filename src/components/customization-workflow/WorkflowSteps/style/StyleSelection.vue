@@ -23,7 +23,9 @@
       productsStore.activeProductDetails?.id ||
       customizationStore.activeProductId
   )
-  const previews = computed(() => productsStore.stylePreviews || [])
+  const previews = computed(
+    () => (productsStore.stylePreviews as unknown[]) || []
+  )
   const headerDescription = computed(() => {
     const p = productsStore.activeProductDetails
     return p?.sku?.description || ''
@@ -97,7 +99,10 @@
     set: (_v: string) => {}
   })
   const filteredPreviews = computed(() => {
-    const q = (styleSearchQuery as any).value?.trim?.().toLowerCase?.() || ''
+    const q =
+      (styleSearchQuery as { value?: string }).value
+        ?.trim?.()
+        .toLowerCase?.() || ''
     if (!q) return previews.value
     return previews.value.filter(s => s.name.toLowerCase().includes(q))
   })
@@ -112,7 +117,7 @@
     <div class="flex flex-col gap-2">
       <div
         class="text-muted-foreground text-base leading-relaxed"
-        v-html="headerDescription"
+        v-text="headerDescription"
       ></div>
     </div>
     <div class="flex flex-col gap-3 pt-6 pb-2">
@@ -137,8 +142,8 @@
               )
             "
             class="w-full aspect-square object-contain rounded-xl border border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/30 hover:border-border transition-colors"
-            @click="handleStyleSelection(s.id)"
             :alt="styles_alt_icon({}, { locale: localeStore.currentLocale })"
+            @click="handleStyleSelection(s.id)"
           />
         </div>
       </div>

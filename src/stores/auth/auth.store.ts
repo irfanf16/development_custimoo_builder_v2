@@ -62,7 +62,9 @@ export const useAuthStore = defineStore('authStore', () => {
     const jwtToken = localStorage.getItem('jwtToken')
     if (customerJson && jwtToken) {
       try {
-        setCustomer(JSON.parse(customerJson))
+        const parsed = JSON.parse(customerJson) as unknown
+        // Trust stored data shape; upstream writes a validated Customer
+        setCustomer(parsed as Customer)
         setAccessToken(jwtToken)
         return true
       } catch (error) {

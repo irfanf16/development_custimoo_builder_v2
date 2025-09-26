@@ -138,14 +138,14 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   // ===== BUSINESS LOGIC =====
   function commitSelectedCategory() {
     if (selectedCategoryId.value != null) {
-      customization.setCategory(selectedCategoryId.value)
+      void customization.setCategory(selectedCategoryId.value)
       selectedCategoryId.value = null
     }
   }
 
   function commitSelectedSubCategory() {
     if (selectedSubCategoryId.value != null) {
-      customization.setSubCategory(selectedSubCategoryId.value)
+      void customization.setSubCategory(selectedSubCategoryId.value)
       selectedSubCategoryId.value = null
     }
   }

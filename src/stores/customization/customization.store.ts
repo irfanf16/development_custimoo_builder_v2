@@ -50,12 +50,14 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const raw = window.localStorage.getItem('activeProductCustomization')
     if (!raw) return false
     try {
-      const parsed = JSON.parse(raw)
+      const parsed = JSON.parse(raw) as unknown
       if (parsed) {
         customization.value = parsed as ActiveProductCustomization
         return true
       }
-    } catch (_) {}
+    } catch {
+      // Ignore parsing errors
+    }
     return false
   }
 
@@ -73,7 +75,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  async function setProduct(productId: number) {
+  function setProduct(productId: number) {
     if (!customization.value) return
     const prev = customization.value.product_id
     const next = productId
@@ -94,7 +96,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  async function setStyle(styleId: number) {
+  function setStyle(styleId: number) {
     if (!customization.value) return
     const prev = customization.value.style_id
     if (prev === styleId) return
@@ -103,7 +105,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  async function setDesign(
+  function setDesign(
     design:
       | OutputDesignDetails
       | OutputDesignPreviewFront
@@ -118,7 +120,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  async function setAddons(addons: OutputAddon[]) {
+  function setAddons(addons: OutputAddon[]) {
     if (!customization.value) return
     const key = customization.value.product_id
     if (!customization.value.addons_info)

@@ -61,6 +61,7 @@
     disposeCanvas,
     clearCanvas,
     requestRender,
+    withCanvasBatch,
     addModelLayer,
     addDesignLayer
   } = useFabricPreview(computed(() => props.applyCustomizationOverrides))
@@ -75,49 +76,51 @@
   async function renderPreview() {
     if (!canvas.value) return
     isRendering.value = true
-    clearCanvas()
+    await withCanvasBatch(async () => {
+      clearCanvas({ silent: true })
 
-    const chosenDesign = (() => {
-      if (props.side === 'front') return props.designBase.front_design
-      return 'back_design' in props.designBase
-        ? (
-            props.designBase as OutputDesignPreviewFront &
-              OutputDesignPreviewBack
-          ).back_design
-        : props.designBase.front_design
-    })()
-    await addDesignLayer(chosenDesign.file_url, chosenDesign.file_extension)
-    for (const m of props.side === 'front'
-      ? props.styleBase.front_models
-      : (props.styleBase.back_models ?? [])) {
-      const comp =
-        (m.composition as 'multiply' | 'screen') === 'multiply'
-          ? 'multiply'
-          : 'screen'
-      await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
-    }
-    //}
+      const chosenDesign = (() => {
+        if (props.side === 'front') return props.designBase.front_design
+        return 'back_design' in props.designBase
+          ? (
+              props.designBase as OutputDesignPreviewFront &
+                OutputDesignPreviewBack
+            ).back_design
+          : props.designBase.front_design
+      })()
+      await addDesignLayer(chosenDesign.file_url, chosenDesign.file_extension)
+      for (const m of props.side === 'front'
+        ? props.styleBase.front_models
+        : (props.styleBase.back_models ?? [])) {
+        const comp =
+          (m.composition as 'multiply' | 'screen') === 'multiply'
+            ? 'multiply'
+            : 'screen'
+        await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
+      }
+      //}
 
-    // Overlay rectangle for logo placement preview (absolute pixels)
-    if (props.overlayRect) {
-      const { x, y, width, height, color } = props.overlayRect
-      const rect = new Rect({
-        left: x,
-        top: y,
-        width,
-        height,
-        fill: color || 'rgba(107,114,128,0.35)',
-        stroke: 'rgba(107,114,128,0.6)',
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        originX: 'left',
-        originY: 'top'
-      })
-      canvas.value.add(rect)
-      rect.setCoords()
-    }
-    requestRender()
+      // Overlay rectangle for logo placement preview (absolute pixels)
+      if (props.overlayRect) {
+        const { x, y, width, height, color } = props.overlayRect
+        const rect = new Rect({
+          left: x,
+          top: y,
+          width,
+          height,
+          fill: color || 'rgba(107,114,128,0.35)',
+          stroke: 'rgba(107,114,128,0.6)',
+          strokeWidth: 1,
+          selectable: false,
+          evented: false,
+          originX: 'left',
+          originY: 'top'
+        })
+        canvas.value.add(rect)
+        rect.setCoords()
+      }
+      requestRender()
+    })
     isRendering.value = false
   }
 
@@ -199,8 +202,8 @@
     :style="{ width: `${width / 16}rem`, height: `${height / 16}rem` }"
   >
     <canvas
-      ref="canvasEl"
       v-show="isVisible"
+      ref="canvasEl"
       :width="width"
       :height="height"
       class="rounded-xl"

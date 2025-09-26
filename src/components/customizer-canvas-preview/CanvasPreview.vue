@@ -13,6 +13,7 @@
     disposeCanvas,
     clearCanvas,
     requestRender,
+    withCanvasBatch,
     setZoom,
     animateZoom,
     addModelLayer,
@@ -29,55 +30,86 @@
 
   console.log('effectiveLogos', effectiveLogos.value)
 
+  // Prevent overlapping renders when colors change rapidly
+  let renderInFlight = false
+  let renderQueued = false
+
   async function renderPreview() {
     if (!canvas.value) return
+    if (renderInFlight) {
+      renderQueued = true
+      return
+    }
+    renderInFlight = true
 
     // await fadeOut(150)
 
-    clearCanvas()
-    const side = workflowStore.activeCanvasSide
-    const design = effectiveDesignDetails.value
-    const style = effectiveStyleDetails.value
-    if (!design || !style) return
+    // Batch canvas mutations to avoid flicker
+    await withCanvasBatch(async () => {
+      clearCanvas({ silent: true })
+      const side = workflowStore.activeCanvasSide
+      const design = effectiveDesignDetails.value
+      const style = effectiveStyleDetails.value
+      if (!design || !style) return
 
-    const fitOptions = { scaleBy: 'height', heightPercent: 0.75 } as const
+      const fitOptions = { scaleBy: 'height', heightPercent: 0.75 } as const
 
-    if (side === 'back' && design.back_design) {
-      await addDesignLayer(
-        design.back_design.file_url,
-        design.back_design.file_extension,
-        fitOptions
-      )
-      for (const m of (style as any).back_models || []) {
-        const comp = (
-          m.composition === 'multiply' ? 'multiply' : 'screen'
-        ) as GlobalCompositeOperation
-        await addModelLayer(m.file_url, comp, fitOptions)
+      if (side === 'back' && design.back_design) {
+        await addDesignLayer(
+          design.back_design.file_url,
+          design.back_design.file_extension,
+          fitOptions
+        )
+        for (const m of (
+          style as {
+            back_models?: Array<{ composition?: string; file_url: string }>
+          }
+        ).back_models || []) {
+          const comp = (
+            m.composition === 'multiply' ? 'multiply' : 'screen'
+          ) as GlobalCompositeOperation
+          await addModelLayer(m.file_url, comp, fitOptions)
+        }
+        for (const logo of effectiveLogos.value.filter(
+          l => l.side === 'back'
+        )) {
+          await addLogoLayer(logo)
+        }
+      } else {
+        await addDesignLayer(
+          design.front_design.file_url,
+          design.front_design.file_extension,
+          fitOptions
+        )
+        for (const m of (
+          style as {
+            front_models?: Array<{ composition?: string; file_url: string }>
+          }
+        ).front_models || []) {
+          const comp = (
+            m.composition === 'multiply' ? 'multiply' : 'screen'
+          ) as GlobalCompositeOperation
+          await addModelLayer(m.file_url, comp, fitOptions)
+        }
+        for (const logo of effectiveLogos.value.filter(
+          l => l.side === 'front'
+        )) {
+          await addLogoLayer(logo)
+        }
       }
-      for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
-        await addLogoLayer(logo)
-      }
-    } else {
-      await addDesignLayer(
-        design.front_design.file_url,
-        design.front_design.file_extension,
-        fitOptions
-      )
-      for (const m of (style as any).front_models || []) {
-        const comp = (
-          m.composition === 'multiply' ? 'multiply' : 'screen'
-        ) as GlobalCompositeOperation
-        await addModelLayer(m.file_url, comp, fitOptions)
-      }
-      for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
-        await addLogoLayer(logo)
-      }
+
+      setZoom(workflowStore.canvasZoom)
+
+      // fadeIn()
+      requestRender()
+    })
+
+    renderInFlight = false
+    if (renderQueued) {
+      renderQueued = false
+      // schedule next frame to collapse bursts of updates
+      queueMicrotask(() => void renderPreview())
     }
-
-    setZoom(workflowStore.canvasZoom)
-
-    // fadeIn()
-    requestRender()
   }
 
   function updateCanvasSize() {

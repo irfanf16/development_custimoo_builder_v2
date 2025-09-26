@@ -101,9 +101,9 @@
 
   // Hint to TS that these are used via the template
   void ProductPreviewCanvas
-  void filteredPreviews
-  void selectedDesignName
-  void designSelectionContainer
+  void filteredPreviews.value
+  void selectedDesignName.value
+  void designSelectionContainer.value
   void selectDesign
 </script>
 
@@ -112,8 +112,8 @@
   <div ref="designSelectionContainer" class="flex flex-wrap mb-4 md:mb-6">
     <div
       v-for="item in filteredPreviews"
-      :key="item.id"
       :id="`design-${item.design_name}`"
+      :key="item.id"
       class="group relative flex flex-col items-center flex-shrink-0 gap-4 md:gap-6 p-4 md:p-6"
       :class="[
         'relative rounded-sm transition-colors cursor-pointer',

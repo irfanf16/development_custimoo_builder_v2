@@ -56,9 +56,9 @@ const router = createRouter({
 })
 
 // Navigation guard for authentication
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach((to, _from, next) => {
   // Update document title
-  if (to.meta.title) {
+  if (typeof to.meta.title === 'string') {
     const mode = isWidgetMode() ? 'Widget' : 'Customizer'
     document.title = `${to.meta.title} - ${mode}`
   }

@@ -45,7 +45,9 @@
   const workflow = useWorkflowStore()
   // const ui = useUIStore()
 
-  const logosSubStepValue = computed(() => (workflow as any).logosSubStep)
+  const logosSubStepValue = computed(
+    () => (workflow as { logosSubStep?: string }).logosSubStep
+  )
   const isOpen = computed(() => workflow.panelOpen)
 
   const contentKey = computed(() => {

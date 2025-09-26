@@ -4,7 +4,9 @@
 
   // no emits
   const productsStore = useProductsStore()
-  const product = computed(() => productsStore.activeProductDetails as any)
+  const product = computed(
+    () => productsStore.activeProductDetails as { patterns?: unknown[] } | null
+  )
   const patterns = computed(() => product.value?.patterns || [])
 
   function openGroup(name: string) {

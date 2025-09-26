@@ -78,10 +78,10 @@
     <!-- Sign In Button (when not authenticated) -->
     <Button
       v-if="!isLoggedIn"
-      @click="showSignInDialog = true"
       :variant="props.variant"
       :size="props.size"
       :class="props.class"
+      @click="showSignInDialog = true"
     >
       {{ auth_sign_in({}, { locale: localeStore.currentLocale }) }}
     </Button>
@@ -89,11 +89,11 @@
     <!-- User Menu (when authenticated) -->
     <div v-else class="relative">
       <Button
-        @click="toggleUserMenu"
         :variant="props.variant"
         :size="props.size"
         :class="['flex items-center space-x-2 px-3 py-2', props.class]"
         :title="`Logged in as ${user?.first_name} ${user?.last_name}`"
+        @click="toggleUserMenu"
       >
         <div
           class="w-6 h-6 text-white text-xs font-medium rounded-full flex items-center justify-center"
@@ -131,8 +131,8 @@
             <div class="text-gray-500">{{ user?.email }}</div>
           </div>
           <button
-            @click="handleLogout"
             class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
+            @click="handleLogout"
           >
             Sign Out
           </button>
@@ -151,7 +151,7 @@
             Enter your credentials to access your account.
           </DialogDescription>
         </DialogHeader>
-        <form @submit.prevent="handleSignIn" class="space-y-4">
+        <form class="space-y-4" @submit.prevent="handleSignIn">
           <div class="grid gap-2">
             <Label for="email">Email</Label>
             <Input

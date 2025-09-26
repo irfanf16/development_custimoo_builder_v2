@@ -24,11 +24,15 @@ export const useHistoryStore = defineStore('historyStore', () => {
   function load() {
     if (typeof window === 'undefined') return
     try {
-      const u = JSON.parse(window.localStorage.getItem(KEY_UNDO) || '[]')
-      const r = JSON.parse(window.localStorage.getItem(KEY_REDO) || '[]')
-      if (Array.isArray(u)) undoStack.value = u
-      if (Array.isArray(r)) redoStack.value = r
-    } catch (_) {
+      const u = JSON.parse(
+        window.localStorage.getItem(KEY_UNDO) || '[]'
+      ) as unknown
+      const r = JSON.parse(
+        window.localStorage.getItem(KEY_REDO) || '[]'
+      ) as unknown
+      if (Array.isArray(u)) undoStack.value = u as HistoryEntry[]
+      if (Array.isArray(r)) redoStack.value = r as HistoryEntry[]
+    } catch {
       undoStack.value = []
       redoStack.value = []
     }
@@ -41,10 +45,24 @@ export const useHistoryStore = defineStore('historyStore', () => {
   }
 
   function apply(entry: HistoryEntry) {
-    return registry[entry.type].apply(ctx, entry.payload)
+    return (
+      registry[entry.type] as {
+        apply: (
+          ctx: ReturnType<typeof createHistoryContext>,
+          payload: unknown
+        ) => unknown
+      }
+    ).apply(ctx, entry.payload)
   }
   function revert(entry: HistoryEntry) {
-    return registry[entry.type].revert(ctx, entry.payload)
+    return (
+      registry[entry.type] as {
+        revert: (
+          ctx: ReturnType<typeof createHistoryContext>,
+          payload: unknown
+        ) => unknown
+      }
+    ).revert(ctx, entry.payload)
   }
 
   async function execute<T>(
@@ -94,7 +112,7 @@ export const useHistoryStore = defineStore('historyStore', () => {
     description: string,
     builder: (add: <T>(type: HistoryActionType, payload: T) => void) => void
   ) {
-    const entries: Array<{ type: HistoryActionType; payload: any }> = []
+    const entries: Array<{ type: HistoryActionType; payload: unknown }> = []
     const add = <T>(type: HistoryActionType, payload: T) => {
       entries.push({ type, payload })
     }

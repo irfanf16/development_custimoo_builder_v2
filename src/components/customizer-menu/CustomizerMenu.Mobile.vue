@@ -83,7 +83,7 @@
   <div class="flex items-stretch justify-between gap-2 p-2">
     <CustomizerMenuItem
       v-if="shouldShowCategories"
-      :isActive="isActive(NAV.PRODUCTS)"
+      :is-active="isActive(NAV.PRODUCTS)"
       :text="getNavText(NAV.PRODUCTS)"
       @click="goTo(NAV.PRODUCTS)"
     >
@@ -93,7 +93,7 @@
     </CustomizerMenuItem>
 
     <CustomizerMenuItem
-      :isActive="isActive(NAV.DESIGNS)"
+      :is-active="isActive(NAV.DESIGNS)"
       :text="getNavText(NAV.DESIGNS)"
       @click="goTo(NAV.DESIGNS)"
     >
@@ -103,7 +103,7 @@
     </CustomizerMenuItem>
 
     <CustomizerMenuItem
-      :isActive="isActive(NAV.STYLES)"
+      :is-active="isActive(NAV.STYLES)"
       :text="getNavText(NAV.STYLES)"
       @click="goTo(NAV.STYLES)"
     >
@@ -113,7 +113,7 @@
     </CustomizerMenuItem>
 
     <CustomizerMenuItem
-      :isActive="isActive(NAV.LOGOS)"
+      :is-active="isActive(NAV.LOGOS)"
       :text="getNavText(NAV.LOGOS)"
       @click="goTo(NAV.LOGOS)"
     >
@@ -123,7 +123,7 @@
     </CustomizerMenuItem>
 
     <CustomizerMenuItem
-      :isActive="isActive(NAV.COLORS)"
+      :is-active="isActive(NAV.COLORS)"
       :text="getNavText(NAV.COLORS)"
       @click="goTo(NAV.COLORS)"
     >

@@ -7,7 +7,8 @@
   const props = withDefaults(
     defineProps<PrimitiveProps & { class?: HTMLAttributes['class'] }>(),
     {
-      as: 'a'
+      as: 'a',
+      class: undefined
     }
   )
 </script>

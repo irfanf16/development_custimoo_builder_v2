@@ -1,6 +1,7 @@
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+import type { ActiveProductCustomization } from '@/services/products/types/customization'
 import type {
   HistoryContext,
   HistoryActionType,
@@ -18,7 +19,19 @@ type Handler<T> = {
   describe(ctx: HistoryContext, payload: T): string
 }
 
-type Registry = Record<HistoryActionType, Handler<any>>
+type Registry = Record<
+  HistoryActionType,
+  | Handler<ColorSetGroupPayload>
+  | Handler<TextSetValuePayload>
+  | Handler<LogoAddPayload>
+  | Handler<LogoRemovePayload>
+  | Handler<LogoMovePayload>
+  | Handler<PatternSetGroupPayload>
+  | Handler<{
+      entries: Array<{ type: HistoryActionType; payload: unknown }>
+      label?: string
+    }>
+>
 
 export function createHistoryContext(): HistoryContext {
   return {
@@ -30,16 +43,20 @@ export function createHistoryContext(): HistoryContext {
 
 export const registry: Registry = {
   'color.set-group': {
-    apply({ customizationStore }, payload: ColorSetGroupPayload) {
+    apply(ctx: HistoryContext, payload: ColorSetGroupPayload) {
+      const customizationStore = ctx.customizationStore
       customizationStore.setGroupColor(payload.groupId, payload.nextColor)
     },
-    revert({ customizationStore }, payload: ColorSetGroupPayload) {
+    revert(ctx: HistoryContext, payload: ColorSetGroupPayload) {
+      const customizationStore = ctx.customizationStore
       if (payload.prevColor) {
         customizationStore.setGroupColor(payload.groupId, payload.prevColor)
       } else {
-        const c = customizationStore.customization
-        if (c && c.group_colors && c.group_colors[payload.groupId]) {
-          delete c.group_colors[payload.groupId]
+        const c =
+          customizationStore.customization as ActiveProductCustomization | null
+        const colors = c?.group_colors
+        if (colors && colors[payload.groupId]) {
+          delete colors[payload.groupId]
           customizationStore.saveToLocalStorage()
         }
       }
@@ -50,10 +67,12 @@ export const registry: Registry = {
     }
   },
   'text.set-value': {
-    apply({ customizationStore }, payload: TextSetValuePayload) {
-      const root = customizationStore.customization
+    apply(ctx: HistoryContext, payload: TextSetValuePayload) {
+      const customizationStore = ctx.customizationStore
+      const root =
+        customizationStore.customization as ActiveProductCustomization | null
       if (!root) return
-      const map = root.product_custom_texts as any
+      const map = root.product_custom_texts
       const key = payload.key
       if (!map[key]) map[key] = []
       const arr = map[key]
@@ -62,10 +81,12 @@ export const registry: Registry = {
       arr[payload.index].value = payload.nextValue
       customizationStore.saveToLocalStorage()
     },
-    revert({ customizationStore }, payload: TextSetValuePayload) {
-      const root = customizationStore.customization
+    revert(ctx: HistoryContext, payload: TextSetValuePayload) {
+      const customizationStore = ctx.customizationStore
+      const root =
+        customizationStore.customization as ActiveProductCustomization | null
       if (!root) return
-      const map = root.product_custom_texts as any
+      const map = root.product_custom_texts
       const key = payload.key
       if (!map[key]) map[key] = []
       const arr = map[key]
@@ -74,24 +95,30 @@ export const registry: Registry = {
       arr[payload.index].value = payload.prevValue
       customizationStore.saveToLocalStorage()
     },
-    describe(_, p) {
+    describe(_: HistoryContext, p: TextSetValuePayload) {
       return `Change text #${p.index + 1}`
     }
   },
   'logo.add': {
-    apply({ customizationStore }, payload: LogoAddPayload) {
-      const map = customizationStore.customization?.custom_logos
+    apply(ctx: HistoryContext, payload: LogoAddPayload) {
+      const customizationStore = ctx.customizationStore
+      const root =
+        customizationStore.customization as ActiveProductCustomization | null
+      const map = root?.custom_logos
       if (!map) return
-      const arr = (map as any)[payload.key] || ((map as any)[payload.key] = [])
+      const arr = map[payload.key] || (map[payload.key] = [])
       const at = payload.index ?? arr.length
       arr.splice(at, 0, payload.logo)
-      customizationStore.appendLogoColors((payload.logo as any).logo_colors)
+      customizationStore.appendLogoColors(payload.logo.logo_colors)
       customizationStore.saveToLocalStorage()
     },
-    revert({ customizationStore }, payload: LogoAddPayload) {
-      const map = customizationStore.customization?.custom_logos
+    revert(ctx: HistoryContext, payload: LogoAddPayload) {
+      const customizationStore = ctx.customizationStore
+      const root =
+        customizationStore.customization as ActiveProductCustomization | null
+      const map = root?.custom_logos
       if (!map) return
-      const arr = (map as any)[payload.key]
+      const arr = map[payload.key]
       if (!arr) return
       const at = payload.index ?? arr.length - 1
       arr.splice(at, 1)
@@ -102,19 +129,25 @@ export const registry: Registry = {
     }
   },
   'logo.remove': {
-    apply({ customizationStore }, payload: LogoRemovePayload) {
-      const map = customizationStore.customization?.custom_logos
+    apply(ctx: HistoryContext, payload: LogoRemovePayload) {
+      const customizationStore = ctx.customizationStore
+      const root =
+        customizationStore.customization as ActiveProductCustomization | null
+      const map = root?.custom_logos
       if (!map) return
-      const arr = (map as any)[payload.key]
+      const arr = map[payload.key]
       if (!arr || payload.index < 0 || payload.index >= arr.length) return
       payload.logo = arr[payload.index]
       arr.splice(payload.index, 1)
       customizationStore.saveToLocalStorage()
     },
-    revert({ customizationStore }, payload: LogoRemovePayload) {
-      const map = customizationStore.customization?.custom_logos
+    revert(ctx: HistoryContext, payload: LogoRemovePayload) {
+      const customizationStore = ctx.customizationStore
+      const root =
+        customizationStore.customization as ActiveProductCustomization | null
+      const map = root?.custom_logos
       if (!map) return
-      const arr = (map as any)[payload.key] || ((map as any)[payload.key] = [])
+      const arr = map[payload.key] || (map[payload.key] = [])
       if (!payload.logo) return
       arr.splice(payload.index, 0, payload.logo)
       customizationStore.saveToLocalStorage()
@@ -124,22 +157,27 @@ export const registry: Registry = {
     }
   },
   'logo.move': {
-    apply({ customizationStore }, payload: LogoMovePayload) {
+    apply(ctx: HistoryContext, payload: LogoMovePayload) {
+      const customizationStore = ctx.customizationStore
       const map = customizationStore.customization?.custom_logos
       if (!map) return
-      const arr = (map as any)[payload.key]
+      const arr = map[payload.key]
       if (!arr) return
-      const [item] = arr.splice(payload.from, 1)
-      arr.splice(payload.to, 0, item)
+      const item = arr[payload.from]
+      arr.splice(payload.from, 1)
+      // TypeScript can't infer tuple element type here; use spread to avoid direct any assignment
+      arr.splice(payload.to, 0, item as unknown as (typeof arr)[number])
       customizationStore.saveToLocalStorage()
     },
-    revert({ customizationStore }, payload: LogoMovePayload) {
+    revert(ctx: HistoryContext, payload: LogoMovePayload) {
+      const customizationStore = ctx.customizationStore
       const map = customizationStore.customization?.custom_logos
       if (!map) return
-      const arr = (map as any)[payload.key]
+      const arr = map[payload.key]
       if (!arr) return
-      const [item] = arr.splice(payload.to, 1)
-      arr.splice(payload.from, 0, item)
+      const item = arr[payload.to]
+      arr.splice(payload.to, 1)
+      arr.splice(payload.from, 0, item as unknown as (typeof arr)[number])
       customizationStore.saveToLocalStorage()
     },
     describe() {
@@ -147,41 +185,46 @@ export const registry: Registry = {
     }
   },
   'pattern.set-group': {
-    apply({ customizationStore }, payload: PatternSetGroupPayload) {
+    apply(ctx: HistoryContext, payload: PatternSetGroupPayload) {
+      const customizationStore = ctx.customizationStore
       const map = customizationStore.customization?.group_patterns
       if (!map) return
-      ;(map as any)[payload.groupName] = payload.next
+      map[payload.groupName] = payload.next
       customizationStore.saveToLocalStorage()
     },
-    revert({ customizationStore }, payload: PatternSetGroupPayload) {
+    revert(ctx: HistoryContext, payload: PatternSetGroupPayload) {
+      const customizationStore = ctx.customizationStore
       const map = customizationStore.customization?.group_patterns
       if (!map) return
       if (payload.prev === undefined) {
-        delete (map as any)[payload.groupName]
+        delete map[payload.groupName]
       } else {
-        ;(map as any)[payload.groupName] = payload.prev
+        map[payload.groupName] = payload.prev
       }
       customizationStore.saveToLocalStorage()
     },
-    describe(_, p) {
+    describe(_: HistoryContext, p: PatternSetGroupPayload) {
       return `Set pattern group ${p.groupName}`
     }
   },
   batch: {
-    apply(
-      ctx,
-      payload: { entries: Array<{ type: HistoryActionType; payload: any }> }
+    async apply(
+      ctx: HistoryContext,
+      payload: { entries: Array<{ type: HistoryActionType; payload: unknown }> }
     ) {
-      for (const e of payload.entries) registry[e.type].apply(ctx, e.payload)
+      for (const e of payload.entries) {
+        await (registry[e.type] as Handler<unknown>).apply(ctx, e.payload)
+      }
     },
-    revert(
-      ctx,
-      payload: { entries: Array<{ type: HistoryActionType; payload: any }> }
+    async revert(
+      ctx: HistoryContext,
+      payload: { entries: Array<{ type: HistoryActionType; payload: unknown }> }
     ) {
-      for (const e of [...payload.entries].reverse())
-        registry[e.type].revert(ctx, e.payload)
+      for (const e of [...payload.entries].reverse()) {
+        await (registry[e.type] as Handler<unknown>).revert(ctx, e.payload)
+      }
     },
-    describe(_, payload: { entries: any[]; label?: string }) {
+    describe(_, payload: { entries: unknown[]; label?: string }) {
       return payload.label || `Apply ${payload.entries.length} changes`
     }
   }
