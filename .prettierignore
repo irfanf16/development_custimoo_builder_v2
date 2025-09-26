@@ -4,6 +4,7 @@ node_modules/
 # Build outputs
 dist/
 build/
+src/paraglide/
 
 # Logs
 *.log
@@ -33,4 +34,4 @@ pnpm-lock.yaml
 
 # Generated files
 *.min.js
-*.min.css 
+*.min.css
