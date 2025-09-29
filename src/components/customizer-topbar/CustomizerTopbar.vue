@@ -1,26 +1,48 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import { Save, ShoppingCart } from 'lucide-vue-next'
-  import ThemeToggle from '@/components/ThemeToggle.vue'
+  import { Save, ShoppingCart, RotateCcw } from 'lucide-vue-next'
+  // import ThemeToggle from '@/components/ThemeToggle.vue'
   import SignInButton from '@/components/SignInButton.vue'
-  import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+  // import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
   import {
     topbar_save,
     topbar_locker_room,
     topbar_cart,
-    topbar_save_options
+    topbar_save_options,
+    actions_reset_customization
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
-  import { useUIStore } from '@/stores/ui'
+  // import { useUIStore } from '@/stores/ui'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { useHistoryStore } from '@/stores/history/history.store'
+
+  const customizationStore = useCustomizationStore()
+  const history = useHistoryStore()
+
+  function handleResetCustomization() {
+    customizationStore.clearCustomization()
+    history.clear()
+  }
 
   const localeStore = useLocaleStore()
-  const uiStore = useUIStore()
+  // const uiStore = useUIStore()
 </script>
 
 <template>
   <!-- Right aligned action group. Save is a split button to match figma. -->
   <div class="flex items-center gap-2">
-    <div class="flex rounded-lg outline outline-border overflow-hidden">
+    <Button
+      variant="outline"
+      size="default"
+      class=""
+      @click="handleResetCustomization"
+    >
+      <RotateCcw class="size-4" />
+      {{
+        actions_reset_customization({}, { locale: localeStore.currentLocale })
+      }}
+    </Button>
+    <div class="flex rounded-md outline outline-border overflow-hidden">
       <Button variant="outline" size="default" class="rounded-none border-0">
         <Save class="size-4" />
         <span>{{
@@ -49,23 +71,23 @@
       </Button>
     </div>
 
-    <Button variant="outline" size="default" class="rounded-lg">
+    <Button variant="outline" size="default" class="">
       <span>{{
         topbar_locker_room({}, { locale: localeStore.currentLocale })
       }}</span>
     </Button>
-    <Button variant="outline" size="default" class="rounded-lg">
+    <Button variant="outline" size="default" class="">
       <ShoppingCart class="size-4" />
       <span>{{ topbar_cart({}, { locale: localeStore.currentLocale }) }}</span>
     </Button>
-    <LanguageSwitcher />
-    <SignInButton variant="outline" size="default" class="rounded-lg" />
-    <ThemeToggle
+    <!-- <LanguageSwitcher /> -->
+    <SignInButton variant="outline" size="default" class="" />
+    <!-- <ThemeToggle
       v-if="uiStore.allowColorModeSwitch"
       variant="outline"
       size="default"
-      class="rounded-lg"
-    />
+      class=""
+    /> -->
   </div>
 </template>
 

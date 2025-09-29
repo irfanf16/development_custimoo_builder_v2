@@ -1,7 +1,5 @@
 <script setup lang="ts">
   import ProductPreview from '@/components/product-preview/ProductPreview.vue'
-  import BottomActions from '@/components/customizer-bottom-actions/BottomActions.vue'
-  import PriceCard from '@/components/customizer-price/PriceCard.vue'
   import { CustomizerMenu } from '@/components/customizer-menu'
   import CustomizerMenuMobile from '@/components/customizer-menu/CustomizerMenu.Mobile.vue'
   import { WorkflowLayout } from '@/components/customization-workflow'
@@ -77,13 +75,13 @@
                 </div>
               </div>
             </div>
-            <div
+            <!-- <div
               id="bottom-content"
               class="flex flex-row justify-between items-end"
             >
               <BottomActions class="z-10" />
               <PriceCard class="z-10" />
-            </div>
+            </div> -->
           </template>
 
           <!-- Mobile layout -->

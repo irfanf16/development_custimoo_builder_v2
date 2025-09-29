@@ -139,12 +139,12 @@
 <template>
   <div
     :class="[
-      'relative w-[28rem] max-h-[80vh]',
+      'relative w-[28rem] max-h-[90vh]',
       isExpanded ? 'z-20 max-w-none' : ''
     ]"
   >
     <Card
-      class="h-full max-h-[80vh] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 md:gap-0 overflow-hidden flex flex-col py-0"
+      class="h-full max-h-[90vh] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 md:gap-0 overflow-hidden flex flex-col py-0"
       :class="isExpanded ? 'w-[75vw]' : 'w-[470px]'"
     >
       <!-- Header slot - panels can provide their own header content -->
@@ -162,7 +162,7 @@
           <div
             ref="cardContentRef"
             :key="props.contentKey"
-            class="h-full overflow-y-auto max-h-[60vh]"
+            class="h-full overflow-y-auto max-h-[70vh]"
           >
             <!-- class="h-full overflow-y-auto [scrollbar-gutter:stable] max-h-[60vh]"
           > -->
