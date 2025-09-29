@@ -11,10 +11,10 @@ This project ships a self-contained widget that renders inside a Shadow DOM. Our
 
 #### Files of interest
 
-- `src/widget-styles.css`: Single CSS entry, contains Tailwind import, theme tokens, base/utilities, and transitions.
-- `tailwind.config.js`: Tailwind v4 config, plugins, animations, and font families (including `font-brand`).
-- `src/composables/useColorScheme.ts`: Applies host theme overrides (colors, radius, fonts) to the Shadow root at runtime.
-- `src/lib/hostThemes.ts`: Declarative host theme definitions (per hostname), used to override the widget’s tokens.
+- [`src/widget-styles.css`](../src/widget-styles.css): Single CSS entry, contains Tailwind import, theme tokens, base/utilities, and transitions.
+- [`tailwind.config.js`](../tailwind.config.js): Tailwind v4 config, plugins, animations, and font families (including `font-brand`).
+- [`src/composables/useColorScheme.ts`](../src/composables/useColorScheme.ts): Applies host theme overrides (colors, radius, fonts) to the Shadow root at runtime.
+- [`src/lib/hostThemes.ts`](../src/lib/hostThemes.ts): Declarative host theme definitions (per hostname), used to override the widget's tokens.
 
 #### Design tokens (canonical variables)
 

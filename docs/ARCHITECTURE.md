@@ -8,13 +8,13 @@ This project follows a clear separation of concerns between domain state (Pinia 
 
 ### Key pieces
 
-- `src/stores/customization/customization.store.ts`: Active customization state; pure setters; no history.
-- `src/stores/products/products.store.ts`: Product/category/style/design details and fetch methods.
-- `src/stores/workflow/workflow.store.ts`: Workflow UI state (active step, sub-steps, canvas state, saved prefs).
-- `src/stores/history/history.store.ts` + `src/stores/history/registry.ts`: Centralized undo/redo and action handlers.
-- `src/composables/useWorkflowNavigation.ts`: Compute-only breadcrumb/navigation items.
-- `src/composables/useWorkflowManager.ts`: Thin UI helper wrapping workflow store for step selection.
-- `src/composables/useWorkflowEffects.ts`: Watches workflow state and triggers required fetches.
+- [`src/stores/customization/customization.store.ts`](../src/stores/customization/customization.store.ts): Active customization state; pure setters; no history.
+- [`src/stores/products/products.store.ts`](../src/stores/products/products.store.ts): Product/category/style/design details and fetch methods.
+- [`src/stores/workflow/workflow.store.ts`](../src/stores/workflow/workflow.store.ts): Workflow UI state (active step, sub-steps, canvas state, saved prefs).
+- [`src/stores/history/history.store.ts`](../src/stores/history/history.store.ts) + [`src/stores/history/registry.ts`](../src/stores/history/registry.ts): Centralized undo/redo and action handlers.
+- [`src/composables/useWorkflowNavigation.ts`](../src/composables/useWorkflowNavigation.ts): Compute-only breadcrumb/navigation items.
+- [`src/composables/useWorkflowManager.ts`](../src/composables/useWorkflowManager.ts): Thin UI helper wrapping workflow store for step selection.
+- [`src/composables/useWorkflowEffects.ts`](../src/composables/useWorkflowEffects.ts): Watches workflow state and triggers required fetches.
 
 ### Data flow
 
