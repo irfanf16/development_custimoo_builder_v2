@@ -285,8 +285,8 @@ customizer-widget * {
 .panel-slide-enter-active,
 .panel-slide-leave-active {
   transition:
-    transform 450ms ease,
-    opacity 450ms ease;
+    transform 250ms ease,
+    opacity 250ms ease;
 }
 .panel-slide-enter-from,
 .panel-slide-leave-to {
