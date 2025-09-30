@@ -4,6 +4,7 @@
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useDebounceFn } from '@vueuse/core'
 
   const workflowStore = useWorkflowStore()
   const uiStore = useUIStore()
@@ -128,10 +129,10 @@
     setCanvasSize({ width: w, height: h })
   }
 
-  function handleResize() {
+  const handleResizeDebounced = useDebounceFn(() => {
     updateCanvasSize()
     renderPreview()
-  }
+  }, 100)
 
   onMounted(() => {
     if (!canvasEl.value) return
@@ -143,13 +144,13 @@
       enablePointerEvents: false
     })
     updateCanvasSize()
-    window.addEventListener('resize', handleResize)
+    window.addEventListener('resize', handleResizeDebounced)
     renderPreview()
   })
 
   onBeforeUnmount(() => {
     disposeCanvas()
-    window.removeEventListener('resize', handleResize)
+    window.removeEventListener('resize', handleResizeDebounced)
   })
 
   watch(
