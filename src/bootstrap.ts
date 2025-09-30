@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 import '@/icons/flex-flat-categories'
-import { useUIStore } from '@/stores/ui'
+import { useUIStore } from '@/stores/ui/ui.store'
 
 // Import CSS styles
 import widgetStyles from './widget-styles.css?inline'
@@ -68,21 +68,31 @@ export function bootstrap(
 
   // Set container height with responsive minimum heights from the UI store
   const setContainerHeight = () => {
-    ui.setContainerSize(container.clientWidth, container.clientHeight)
-
     const minHeight = ui.minWidgetHeight
+
+    // Set minHeight BEFORE measuring to ensure it's applied
     container.style.minHeight = `${minHeight}px`
     container.style.height = 'auto'
-  }
 
-  // Set initial height
-  setContainerHeight()
+    // Force a reflow to ensure styles are applied
+
+    const rect = container.getBoundingClientRect()
+
+    // If the actual height is less than minimum, force it to minimum
+    const actualHeight = rect.height
+    const finalHeight = actualHeight < minHeight ? minHeight : actualHeight
+
+    // If we need to force the height, set it explicitly
+    if (actualHeight < minHeight) {
+      container.style.height = `${minHeight}px`
+    }
+    ui.setContainerSize(Math.round(rect.width), Math.round(finalHeight))
+  }
 
   // Update height on window resize
   window.addEventListener('resize', setContainerHeight)
 
   shadowRoot.appendChild(container)
-  ui.setWidgetRoot(container)
 
   // Inject CSS into shadow DOM
   const style = document.createElement('style')
@@ -90,6 +100,12 @@ export function bootstrap(
   shadowRoot.appendChild(style)
   // Track for HMR live updates
   styleElements.add(style)
+
+  // Set initial height AFTER CSS is injected
+  setContainerHeight()
+
+  // Set up the widget root with ResizeObserver
+  ui.setWidgetRoot(container)
 
   // Fonts are loaded centrally in useColorScheme; no shadowRoot font loading here
 

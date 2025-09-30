@@ -3,7 +3,7 @@
   // import { useRouter, useRoute } from 'vue-router'
   import { useColorScheme } from '@/composables/useColorScheme'
   import { getHostTheme } from '@/lib/hostThemes'
-  import { useUIStore } from '@/stores/ui'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import { LayoutWrapper } from '@/layouts'
   // import SignInButton from './SignInButton.vue'
   // import ThemeToggle from './ThemeToggle.vue'

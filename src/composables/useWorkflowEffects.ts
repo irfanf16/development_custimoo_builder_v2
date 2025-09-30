@@ -59,30 +59,4 @@ export function useWorkflowEffects() {
       }
     }
   )
-
-  // ===== BUSINESS LOGIC =====
-  // const triggerStepEffects = async (step: string) => {
-  //   // Manual trigger for effects if needed
-  //   if (step === 'Designs') {
-  //     const styleId =
-  //       productsStore.activeStyleDetails?.id || customizationStore.activeStyleId
-  //     if (styleId) {
-  //       await productsStore.fetchDesignPreviewsByStyleId(styleId as number)
-  //     }
-  //   } else if (step === 'Styles') {
-  //     const pid =
-  //       productsStore.activeProductDetails?.id ||
-  //       customizationStore.activeProductId
-  //     if (pid) {
-  //       await productsStore.fetchStylePreviews(pid as number)
-  //     }
-  //   } else if (step === 'Logos') {
-  //     logosStore.fetchRecentLogos()
-  //   }
-  // }
-
-  // ===== RETURN =====
-  // return {
-  //   triggerStepEffects
-  // }
 }

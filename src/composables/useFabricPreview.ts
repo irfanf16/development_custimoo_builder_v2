@@ -54,8 +54,7 @@ export function useFabricPreview(
 
   function setCanvasSize({ width, height }: SizeOptions) {
     if (!canvas.value) return
-    canvas.value.setWidth(width)
-    canvas.value.setHeight(height)
+    canvas.value.setDimensions({ width, height })
   }
 
   function disposeCanvas() {
@@ -96,44 +95,6 @@ export function useFabricPreview(
       c.renderOnAddRemove = prev
       c.requestRenderAll()
     }
-  }
-
-  function registerBackgroundDragHandlers() {
-    if (!canvas.value) return
-    let draggingAll = false
-    let last: { x: number; y: number } | null = null
-
-    // Start background drag only when no target is hit
-    canvas.value.on('mouse:down:before', opt => {
-      if (!canvas.value) return
-      if (opt.target) return
-      const p = canvas.value.getPointer(opt.e)
-      last = { x: p.x, y: p.y }
-      draggingAll = true
-    })
-
-    canvas.value.on('mouse:move', opt => {
-      if (!canvas.value || !draggingAll || !last) return
-      const p = canvas.value.getPointer(opt.e)
-      const dx = p.x - last.x
-      const dy = p.y - last.y
-      if (dx === 0 && dy === 0) return
-      const objs = canvas.value.getObjects()
-      for (const o of objs) {
-        o.set({ left: (o.left || 0) + dx, top: (o.top || 0) + dy } as Record<
-          string,
-          unknown
-        >)
-        o.setCoords()
-      }
-      last = { x: p.x, y: p.y }
-      void canvas.value.requestRenderAll()
-    })
-
-    canvas.value.on('mouse:up', () => {
-      draggingAll = false
-      last = null
-    })
   }
 
   function setZoom(
@@ -529,7 +490,6 @@ export function useFabricPreview(
     setZoom,
     animateZoom,
     fitObject,
-    registerBackgroundDragHandlers,
     // Layer Management
     addModelLayer,
     addDesignLayer,

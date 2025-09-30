@@ -6,6 +6,7 @@
     CardContent,
     CardFooter
   } from '@/components/ui/card'
+  import { useUIStore } from '@/stores/ui/ui.store'
 
   interface Props {
     expandable?: boolean
@@ -27,6 +28,15 @@
 
   // Use computed to get the current expanded state from props
   const isExpanded = computed(() => props.isExpanded)
+
+  // Get UI store for container height
+  const uiStore = useUIStore()
+
+  // Compute 90% of container height
+  const maxHeight = computed(() => {
+    const height = uiStore.containerHeight
+    return height > 0 ? `${Math.round(height * 0.95)}px` : '90vh'
+  })
 
   const cardContentRef = ref<HTMLElement | null>(null)
 
@@ -138,14 +148,13 @@
 
 <template>
   <div
-    :class="[
-      'relative w-[28rem] max-h-[90vh]',
-      isExpanded ? 'z-20 max-w-none' : ''
-    ]"
+    :class="['relative w-[28rem]', isExpanded ? 'z-20 max-w-none' : '']"
+    :style="{ maxHeight }"
   >
     <Card
-      class="h-full max-h-[90vh] rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 md:gap-0 overflow-hidden flex flex-col py-0"
+      class="h-full rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 md:gap-0 overflow-hidden flex flex-col py-0"
       :class="isExpanded ? 'w-[75vw]' : 'w-[470px]'"
+      :style="{ maxHeight }"
     >
       <!-- Header slot - panels can provide their own header content -->
       <template v-if="$slots.header">

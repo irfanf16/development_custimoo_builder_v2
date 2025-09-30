@@ -9,7 +9,7 @@
   import SmallPreview from '@/components/customizer-canvas-preview/SmallPreview.vue'
   import MobileActionBar from '@/components/customizer-canvas-preview/MobileActionBar.vue'
   import { computed } from 'vue'
-  import { useUIStore } from '@/stores/ui'
+  import { useUIStore } from '@/stores/ui/ui.store'
 
   const uiStore = useUIStore()
   // Workflow logic moved to composables
@@ -42,7 +42,7 @@
           <!-- Desktop layout -->
           <template v-if="!isMobile">
             <div id="top-content" class="flex flex-row justify-between">
-              <div id="left-content" class="flex flex-row gap-4">
+              <div id="nav-content" class="flex flex-row gap-4">
                 <div id="menu-items-container" class="flex-col z-10">
                   <CustomizerMenu />
                 </div>

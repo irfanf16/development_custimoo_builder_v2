@@ -8,7 +8,7 @@
     DropdownMenuItem,
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
-  import { useUIStore } from '@/stores/ui'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import { computed, watch } from 'vue'
   import {
     theme_toggle_sr,

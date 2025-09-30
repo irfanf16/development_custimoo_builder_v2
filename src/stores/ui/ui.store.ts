@@ -25,7 +25,7 @@ export const useUIStore = defineStore('uiStore', () => {
 
   // Actions
 
-  function setWidgetRoot(root: HTMLElement) {
+  function setWidgetRoot(root: HTMLElement, skipInitialMeasure = false) {
     widgetRoot.value = root
 
     // Disconnect any previous observer
@@ -36,19 +36,42 @@ export const useUIStore = defineStore('uiStore', () => {
       resizeObserver = null
     }
 
-    // Measure immediately
+    // Measure immediately (unless skipped)
     const measure = () => {
       try {
         const rect = root.getBoundingClientRect()
+
+        // Don't override with 0 dimensions if we already have valid dimensions
+        if (
+          rect.width === 0 &&
+          rect.height === 0 &&
+          containerWidth.value > 0 &&
+          containerHeight.value > 0
+        ) {
+          return
+        }
+
+        // Don't override with small heights if we already have proper minimum height
+        const minHeight = containerHeight.value >= 700 ? 700 : 800
+        if (rect.height < minHeight && containerHeight.value >= minHeight) {
+          return
+        }
+
         setContainerSize(Math.round(rect.width), Math.round(rect.height))
       } catch (_) {}
     }
-    measure()
+
+    if (!skipInitialMeasure) {
+      measure()
+    }
 
     // Observe size changes
     if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
       resizeObserver = new ResizeObserver(() => {
-        measure()
+        // Add a small delay to ensure CSS has been applied
+        requestAnimationFrame(() => {
+          measure()
+        })
       })
       try {
         resizeObserver.observe(root)

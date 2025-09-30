@@ -1,5 +1,5 @@
 import { hexToHsl } from '@/lib/colorUtils'
-import { useUIStore } from '@/stores/ui'
+import { useUIStore } from '@/stores/ui/ui.store'
 import { loadGoogleFont, getFontFamilyCSS } from '@/lib/utils'
 import type { HostTheme } from '@/lib/hostThemes'
 

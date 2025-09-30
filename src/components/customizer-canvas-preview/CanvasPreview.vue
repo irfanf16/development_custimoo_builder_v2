@@ -3,8 +3,10 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
 
   const workflowStore = useWorkflowStore()
+  const uiStore = useUIStore()
   const {
     canvasEl,
     canvas,
@@ -18,8 +20,7 @@
     animateZoom,
     addModelLayer,
     addDesignLayer,
-    addLogoLayer,
-    registerBackgroundDragHandlers
+    addLogoLayer
   } = useFabricPreview()
   const {
     activeDesignDetails: effectiveDesignDetails,
@@ -28,7 +29,10 @@
     effectiveLogos
   } = useEffectiveSelectors()
 
-  console.log('effectiveLogos', effectiveLogos.value)
+  const props = defineProps<{
+    width: number
+    height: number
+  }>()
 
   // Prevent overlapping renders when colors change rapidly
   let renderInFlight = false
@@ -113,8 +117,14 @@
   }
 
   function updateCanvasSize() {
-    const w = window.innerWidth || 1200
-    const h = window.innerHeight || 800
+    const w = props.width || uiStore.containerWidth
+    const h = props.height || uiStore.containerHeight
+
+    // Don't set canvas size if dimensions are 0 - wait for proper dimensions
+    if (w === 0 || h === 0) {
+      return
+    }
+
     setCanvasSize({ width: w, height: h })
   }
 
@@ -128,13 +138,12 @@
     initCanvas({
       selection: false,
       enableRetinaScaling: true,
-      moveCursor: 'grab',
-      defaultCursor: 'grab',
+      // moveCursor: 'grab',
+      // defaultCursor: 'grab',
       enablePointerEvents: false
     })
     updateCanvasSize()
     window.addEventListener('resize', handleResize)
-    registerBackgroundDragHandlers()
     renderPreview()
   })
 
@@ -156,12 +165,20 @@
       requestRender()
     }
   )
+
+  // Watch for container dimensions changes and update canvas when valid dimensions are available
+  watch(
+    () => [uiStore.containerWidth, uiStore.containerHeight],
+    () => {
+      updateCanvasSize()
+    }
+  )
 </script>
 
 <template>
   <div class="relative">
     <div class="inset-0 max-w-full max-h-full">
-      <div class="w-full h-full grid place-items-center">
+      <div class="w-full h-full grid place-items-end">
         <canvas
           ref="canvasEl"
           class="rounded-[32px] transition-opacity duration-300 z-10"

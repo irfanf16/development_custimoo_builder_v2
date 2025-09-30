@@ -2,7 +2,7 @@
   import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
   import * as THREE from 'three'
   import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-  import { useUIStore } from '@/stores/ui'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import { useProductsStore } from '@/stores/products/products.store'
 
   const ui = useUIStore()
@@ -261,10 +261,7 @@
 </script>
 
 <template>
-  <div
-    ref="containerEl"
-    class="relative w-full h-full grid place-items-center"
-  />
+  <div ref="containerEl" class="relative w-full h-full grid place-items-end" />
 </template>
 
 <style scoped></style>
