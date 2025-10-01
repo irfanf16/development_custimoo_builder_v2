@@ -12,7 +12,11 @@
 </script>
 
 <template>
-  <div id="3d-or-2d-preview" ref="previewContainer" class="w-full h-full">
+  <div
+    id="3d-or-2d-preview"
+    ref="previewContainer"
+    class="w-full h-full max-w-full"
+  >
     <component
       :is="mode === '3d' ? ThreePreview : CanvasPreview"
       v-if="elementSize.width.value > 0 && elementSize.height.value > 0"
