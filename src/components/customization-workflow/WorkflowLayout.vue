@@ -151,7 +151,7 @@
 </script>
 
 <template>
-  <div id="workflow-panel-container" class="flex-col h-fit">
+  <div id="workflow-panel-container" class="max-h-[100%]">
     <WorkflowPanel
       ref="menuPanelRef"
       :content-key="contentKey"

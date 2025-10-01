@@ -80,7 +80,7 @@
   <div
     ref="widgetRootContainer"
     :class="[
-      'widget-theme shadow-sm w-full min-h-full flex flex-col',
+      'widget-theme shadow-sm w-full min-h-full',
       { dark: uiStore.currentTheme === 'dark' }
     ]"
   >

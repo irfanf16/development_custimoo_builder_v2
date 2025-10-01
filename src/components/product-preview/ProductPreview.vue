@@ -1,23 +1,26 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import CanvasPreview from '@/components/customizer-canvas-preview/CanvasPreview.vue'
   import ThreePreview from './ThreePreview.vue'
   import { useProductsStore } from '@/stores/products/products.store'
-  import { useUIStore } from '@/stores/ui/ui.store'
+  import { useElementSize } from '@vueuse/core'
 
-  const uiStore = useUIStore()
   const products = useProductsStore()
   const mode = computed(() => products.activeRenderMode)
+  const previewContainer = ref<HTMLElement>()
+  const elementSize = useElementSize(previewContainer)
 </script>
 
 <template>
-  <component
-    :is="mode === '3d' ? ThreePreview : CanvasPreview"
-    :width="
-      uiStore.isMobile ? uiStore.containerWidth : uiStore.containerWidth / 2
-    "
-    :height="uiStore.containerHeight"
-  />
+  <div id="3d-or-2d-preview" ref="previewContainer" class="w-full h-full">
+    <component
+      :is="mode === '3d' ? ThreePreview : CanvasPreview"
+      v-if="elementSize.width.value > 0 && elementSize.height.value > 0"
+      :width="elementSize.width.value"
+      :height="elementSize.height.value"
+    />
+  </div>
+
   <!-- If needed, we can add a light fade cross-fade here later -->
   <!-- <Transition name="fade"><component :is="..."/></Transition> -->
 </template>

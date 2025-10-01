@@ -115,9 +115,10 @@
   <!-- Content -->
   <div class="flex flex-col gap-4 md:gap-6 pr-4 mx-4 md:mx-6">
     <div class="flex flex-col gap-2">
+      <!-- eslint-disable-next-line vue/no-v-html -->
       <div
         class="text-muted-foreground text-base leading-relaxed"
-        v-text="headerDescription"
+        v-html="headerDescription"
       ></div>
     </div>
     <div class="flex flex-col gap-3 pt-6 pb-2">

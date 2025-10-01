@@ -3,11 +3,9 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
-  import { useUIStore } from '@/stores/ui/ui.store'
   import { useDebounceFn } from '@vueuse/core'
 
   const workflowStore = useWorkflowStore()
-  const uiStore = useUIStore()
   const {
     canvasEl,
     canvas,
@@ -46,8 +44,6 @@
       return
     }
     renderInFlight = true
-
-    // await fadeOut(150)
 
     // Batch canvas mutations to avoid flicker
     await withCanvasBatch(async () => {
@@ -105,7 +101,6 @@
 
       setZoom(workflowStore.canvasZoom)
 
-      // fadeIn()
       requestRender()
     })
 
@@ -117,40 +112,24 @@
     }
   }
 
-  function updateCanvasSize() {
-    const w = props.width || uiStore.containerWidth
-    const h = props.height || uiStore.containerHeight
-
-    // Don't set canvas size if dimensions are 0 - wait for proper dimensions
-    if (w === 0 || h === 0) {
-      return
-    }
-
-    setCanvasSize({ width: w, height: h })
-  }
-
-  const handleResizeDebounced = useDebounceFn(() => {
-    updateCanvasSize()
-    renderPreview()
-  }, 100)
-
-  onMounted(() => {
+  function handleInitCanvas() {
+    disposeCanvas()
     if (!canvasEl.value) return
     initCanvas({
       selection: false,
       enableRetinaScaling: true,
-      // moveCursor: 'grab',
-      // defaultCursor: 'grab',
       enablePointerEvents: false
     })
-    updateCanvasSize()
-    window.addEventListener('resize', handleResizeDebounced)
+    setCanvasSize({ width: props.width, height: props.height })
     renderPreview()
+  }
+
+  onMounted(() => {
+    handleInitCanvas()
   })
 
   onBeforeUnmount(() => {
     disposeCanvas()
-    window.removeEventListener('resize', handleResizeDebounced)
   })
 
   watch(
@@ -167,24 +146,24 @@
     }
   )
 
-  // Watch for container dimensions changes and update canvas when valid dimensions are available
+  const handleResizeDebounced = useDebounceFn(() => {
+    handleInitCanvas()
+  }, 200)
+
   watch(
-    () => [uiStore.containerWidth, uiStore.containerHeight],
+    () => [props.width, props.height],
     () => {
-      updateCanvasSize()
+      //console.log('width or height changed', props.width, props.height)
+      handleResizeDebounced()
     }
   )
 </script>
 
 <template>
   <div class="relative">
-    <div class="inset-0 max-w-full max-h-full">
-      <div class="w-full h-full grid place-items-end">
-        <canvas
-          ref="canvasEl"
-          class="rounded-[32px] transition-opacity duration-300 z-10"
-        />
-      </div>
-    </div>
+    <canvas
+      ref="canvasEl"
+      class="rounded-[32px] transition-opacity duration-300 z-10"
+    />
   </div>
 </template>

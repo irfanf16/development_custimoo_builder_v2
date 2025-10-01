@@ -6,7 +6,6 @@
     CardContent,
     CardFooter
   } from '@/components/ui/card'
-  import { useUIStore } from '@/stores/ui/ui.store'
 
   interface Props {
     expandable?: boolean
@@ -28,15 +27,6 @@
 
   // Use computed to get the current expanded state from props
   const isExpanded = computed(() => props.isExpanded)
-
-  // Get UI store for container height
-  const uiStore = useUIStore()
-
-  // Compute 90% of container height
-  const maxHeight = computed(() => {
-    const height = uiStore.containerHeight
-    return height > 0 ? `${Math.round(height * 0.95)}px` : '90vh'
-  })
 
   const cardContentRef = ref<HTMLElement | null>(null)
 
@@ -148,13 +138,12 @@
 
 <template>
   <div
-    :class="['relative w-[28rem]', isExpanded ? 'z-20 max-w-none' : '']"
-    :style="{ maxHeight }"
+    class="h-full"
+    :class="['w-[28rem]', isExpanded ? 'z-20 max-w-none' : '']"
   >
     <Card
-      class="h-full rounded-2xl justify-start transition-all duration-300 ease-in-out gap-0 md:gap-0 overflow-hidden flex flex-col py-0"
+      class="rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col py-0 max-h-full"
       :class="isExpanded ? 'w-[75vw]' : 'w-[470px]'"
-      :style="{ maxHeight }"
     >
       <!-- Header slot - panels can provide their own header content -->
       <template v-if="$slots.header">
@@ -165,16 +154,16 @@
         </CardHeader>
       </template>
 
-      <CardContent class="p-0 px-0 md:p-0 md:px-0 flex-1 min-h-0">
+      <CardContent
+        class="h-full p-0 px-0 md:p-0 md:px-0 min-h-0 overflow-y-auto"
+      >
         <!-- Content slot for different panel types -->
         <Transition name="panel-slide" mode="out-in" appear>
           <div
             ref="cardContentRef"
             :key="props.contentKey"
-            class="h-full overflow-y-auto max-h-[70vh]"
+            class="overflow-y-auto"
           >
-            <!-- class="h-full overflow-y-auto [scrollbar-gutter:stable] max-h-[60vh]"
-          > -->
             <slot :is-expanded="isExpanded" />
           </div>
         </Transition>
@@ -189,23 +178,3 @@
     </Card>
   </div>
 </template>
-
-<style scoped>
-  /* Content slide/fade transitions */
-  .panel-slide-enter-active,
-  .panel-slide-leave-active {
-    transition:
-      opacity 200ms ease,
-      transform 200ms ease;
-  }
-
-  .panel-slide-enter-from {
-    opacity: 0;
-    transform: translateX(12px);
-  }
-
-  .panel-slide-leave-to {
-    opacity: 0;
-    transform: translateX(-12px);
-  }
-</style>
