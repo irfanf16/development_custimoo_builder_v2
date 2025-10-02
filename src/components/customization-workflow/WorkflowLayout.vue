@@ -5,20 +5,22 @@
   import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'
   import { Switch } from '@/components/ui/switch'
+  import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger
+  } from '@/components/ui/tooltip'
   import { Maximize2, Minimize2, Search } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import { useWorkflowNavigation } from '@/composables/useWorkflowNavigation'
   import {
-    CategorySelection,
-    SubcategorySelection,
-    ProductSelection,
+    ProductsEntry,
     DesignSelection,
     StyleSelection,
-    LogoCustomization,
-    LogoPlacement,
+    LogoSelection,
     ColorSelection,
     PatternSelection,
-    PatternGroupSelection,
     TextsSelection,
     TextPlacement,
     RosterEntry,
@@ -29,24 +31,7 @@
   import type { HeaderAndFooterConfiguration, BreadcrumbItem } from './types'
 
   interface Props {
-    currentStep:
-      | 'category'
-      | 'subcategory'
-      | 'product'
-      | 'designs'
-      | 'styles'
-      | 'logos'
-      | 'colors'
-      | 'patterns'
-      | 'patterns-group'
-      | 'texts'
-      | 'texts-placement'
-      | 'roster'
-      | 'roster-edit'
-      | 'summary'
     onNavigateBack: () => void
-    onCategorySelect: (categoryId: number) => void
-    onSubcategorySelect: (subcategoryId: number) => void
   }
 
   const props = defineProps<Props>()
@@ -58,14 +43,7 @@
     scrollToElement: (elementId: string, behavior?: 'smooth' | 'auto') => void
   } | null>(null)
 
-  // Navigation fallback derived from workflow state
-  const routeStepRef = computed(
-    () => props.currentStep
-  ) as unknown as Ref<string>
-  const { navigationItems } = useWorkflowNavigation(
-    routeStepRef,
-    props.onNavigateBack
-  )
+  const { navigationItems } = useWorkflowNavigation(props.onNavigateBack)
 
   // Computed properties for workflow step configuration
   const logosSubStepValue = computed(() => {
@@ -75,11 +53,11 @@
   })
 
   const contentKey = computed(() => {
-    if (props.currentStep === 'logos') {
+    if (workflowStore.activeStep === 'logos') {
       const sub = logosSubStepValue.value || 'list'
       return `logos-${sub}`
     }
-    return props.currentStep
+    return workflowStore.activeStep
   })
 
   // Get header and footer configuration from current step component
@@ -104,6 +82,10 @@
 
   const headerApplyOverrides = computed(() => {
     return currentStepRef.value?.headerExtras?.applyOverrides
+  })
+
+  const headerActionButton = computed(() => {
+    return currentStepRef.value?.headerExtras?.actionButton
   })
 
   // Bridge nested refs from child steps to primitives for props expecting non-Ref
@@ -154,7 +136,7 @@
   <div id="workflow-panel-container" class="max-h-[100%]">
     <WorkflowPanel
       ref="menuPanelRef"
-      :content-key="contentKey"
+      :content-key="contentKey || ''"
       :expandable="isExpandable"
       :is-expanded="isExpanded"
       @update:is-expanded="isExpanded = $event"
@@ -181,6 +163,23 @@
                 headerApplyOverrides.label
               }}</Label>
             </div>
+
+            <TooltipProvider v-if="headerActionButton">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    @click="headerActionButton.callback"
+                  >
+                    {{ headerActionButton.label }}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent v-if="headerActionButton.tooltip">
+                  <p>{{ headerActionButton.tooltip }}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             <Button
               v-if="isExpandable"
@@ -217,80 +216,64 @@
           </div>
         </div>
       </template>
-      <!-- Category Selection Step -->
-      <CategorySelection
-        v-if="currentStep === 'category'"
+      <ProductsEntry
+        v-if="workflowStore.activeStep === 'product'"
         ref="currentStepRef"
-        @select-category="onCategorySelect"
-      />
-
-      <!-- Subcategory Selection Step -->
-      <SubcategorySelection
-        v-else-if="currentStep === 'subcategory'"
-        ref="currentStepRef"
-        @select-subcategory="onSubcategorySelect"
-      />
-
-      <!-- Product Selection Step -->
-      <ProductSelection
-        v-else-if="currentStep === 'product'"
-        ref="currentStepRef"
-        @scroll-to-element="handleScrollToElement"
       />
 
       <!-- Design Selection Step -->
       <DesignSelection
-        v-else-if="currentStep === 'designs'"
+        v-else-if="workflowStore.activeStep === 'designs'"
         ref="currentStepRef"
         @scroll-to-element="handleScrollToElement"
       />
 
       <!-- Style Selection Step -->
       <StyleSelection
-        v-else-if="currentStep === 'styles'"
+        v-else-if="workflowStore.activeStep === 'styles'"
         ref="currentStepRef"
       />
 
-      <!-- Logo Customization Step -->
-      <LogoPlacement
-        v-else-if="currentStep === 'logos' && logosSubStepValue === 'placement'"
-        ref="currentStepRef"
-      />
-      <LogoCustomization
-        v-else-if="currentStep === 'logos' && logosSubStepValue !== 'placement'"
+      <!-- Logo Selection Step -->
+      <LogoSelection
+        v-else-if="workflowStore.activeStep === 'logos'"
         ref="currentStepRef"
       />
 
       <!-- Colors -->
       <ColorSelection
-        v-else-if="currentStep === 'colors'"
+        v-else-if="workflowStore.activeStep === 'colors'"
         ref="currentStepRef"
       />
 
       <!-- Patterns -->
       <PatternSelection
-        v-else-if="currentStep === 'patterns'"
+        v-else-if="workflowStore.activeStep === 'patterns'"
         ref="currentStepRef"
       />
-      <PatternGroupSelection v-else-if="currentStep === 'patterns-group'" />
-
       <!-- Texts -->
       <TextsSelection
-        v-else-if="currentStep === 'texts'"
+        v-else-if="workflowStore.activeStep === 'texts'"
         ref="currentStepRef"
       />
       <TextPlacement
-        v-else-if="currentStep === 'texts-placement'"
+        v-else-if="workflowStore.activeStep === 'texts-placement'"
         ref="currentStepRef"
       />
 
       <!-- Roster -->
-      <RosterEntry v-else-if="currentStep === 'roster'" ref="currentStepRef" />
-      <RosterEdit v-else-if="currentStep === 'roster-edit'" />
+      <RosterEntry
+        v-else-if="workflowStore.activeStep === 'roster'"
+        ref="currentStepRef"
+      />
+      <RosterEdit
+        v-else-if="workflowStore.activeStep === 'roster-edit'"
+        ref="currentStepRef"
+      />
 
       <!-- Summary -->
       <SummaryPanel
-        v-else-if="currentStep === 'summary'"
+        v-else-if="workflowStore.activeStep === 'summary'"
         ref="currentStepRef"
       />
     </WorkflowPanel>

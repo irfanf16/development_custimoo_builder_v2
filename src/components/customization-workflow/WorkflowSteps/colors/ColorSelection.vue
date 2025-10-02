@@ -7,6 +7,7 @@
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
   import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
   import { Button } from '@/components/ui/button'
+  import { ColorGrid } from '@/components/ui/color-grid'
   import {
     Select,
     SelectTrigger,
@@ -306,19 +307,14 @@
           </div>
 
           <!-- Swatches grid -->
-          <div class="mt-4 grid grid-cols-8 gap-3">
-            <Button
-              v-for="color in currentPalette?.colors"
-              :key="color.value + idx"
-              :class="'relative h-8 w-8 rounded-full border border-border focus:outline-none focus:ring-2 focus:ring-ring '"
-              :style="{ background: color.value }"
-              @click="setGroupColor(svgGroup.id, color)"
-            >
-              <span
-                v-if="svgGroup.color === color.value"
-                class="absolute inset-0 rounded-full ring-2 ring-primary"
-              />
-            </Button>
+          <div class="mt-4">
+            <ColorGrid
+              :colors="currentPalette?.colors || []"
+              :selected-color="svgGroup.color"
+              :grid-cols="8"
+              button-size="md"
+              @color-select="color => setGroupColor(svgGroup.id, color)"
+            />
           </div>
         </AccordionContent>
       </AccordionItem>

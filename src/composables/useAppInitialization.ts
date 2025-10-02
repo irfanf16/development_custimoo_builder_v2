@@ -7,6 +7,8 @@ import { useLocaleStore } from '@/stores/locale/locale.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useWorkflowEffects } from './useWorkflowEffects'
 import { useHistoryStore } from '@/stores/history/history.store'
+import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
+import type { OutputDesignDetails } from '../services/products/types'
 
 // Global state to prevent multiple initializations
 // This prevents race conditions when multiple components try to initialize the app simultaneously
@@ -139,7 +141,9 @@ export function useAppInitialization() {
     if (!designId) {
       const defaultDesignId = productsStore.activeDesignDetails?.id
       if (defaultDesignId) {
-        void customizationStore.setDesign(productsStore.activeDesignDetails)
+        void customizationStore.setDesign(
+          productsStore.activeDesignDetails as OutputDesignDetails
+        )
         designId = defaultDesignId
       }
     } else if (productsStore.activeDesignDetails?.id !== designId) {
@@ -151,7 +155,7 @@ export function useAppInitialization() {
   const createDefaultCustomization = async (
     customizationStore: ReturnType<typeof useCustomizationStore>,
     productsStore: ReturnType<typeof useProductsStore>,
-    effectiveCategoryId: number | null
+    effectiveCategoryId: number | null | undefined
   ) => {
     // Clear stale history when no customization is restored
     try {
@@ -176,7 +180,10 @@ export function useAppInitialization() {
         productId: activeProductId,
         styleId: productsStore.activeStyleDetails?.id,
         designId: productsStore.activeDesignDetails?.id,
-        categoryId: customizationStore.activeCategoryId,
+        categoryId:
+          customizationStore.activeCategoryId ??
+          effectiveCategoryId ??
+          undefined,
         subCategoryId: customizationStore.activeSubCategoryId
       })
       customizationStore.saveToLocalStorage()
@@ -186,11 +193,12 @@ export function useAppInitialization() {
     // Set initial workflow step
     const storedActiveStep = localStorage.getItem('activeStep')
     if (storedActiveStep) {
-      wf.setActiveStep(storedActiveStep)
-    } else if (effectiveCategoryId && productsStore.categories?.data?.length) {
-      wf.setActiveStep('Categories')
+      wf.setActiveStep(storedActiveStep as CustomizerStep)
     } else {
-      wf.setActiveStep('Products')
+      wf.setActiveStep('product')
+    }
+    if (wf.activeStep === 'product') {
+      wf.setProductsSubStep('category')
     }
   }
 

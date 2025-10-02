@@ -21,6 +21,11 @@
   const historyStore = useHistoryStore()
   const logosStore = useLogosStore()
 
+  // Emit events for parent component
+  const emit = defineEmits<{
+    back: []
+  }>()
+
   const product = computed<OutputProductDetails | null>(
     () => productsStore.activeProductDetails ?? null
   )
@@ -46,7 +51,7 @@
   const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     {
       label: 'Logos',
-      action: () => workflowStore.setLogosSubStep('list')
+      action: () => emit('back')
     },
     { label: 'Placement' }
   ])

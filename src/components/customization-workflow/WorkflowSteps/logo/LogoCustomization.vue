@@ -2,7 +2,6 @@
   import { computed, ref, onMounted } from 'vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   // import { useProductsStore } from '@/stores/products/products.store'
-  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   // no type imports needed here
   import { Button } from '@/components/ui/button'
@@ -29,7 +28,6 @@
 
   const customizationStore = useCustomizationStore()
   // const productsStore = useProductsStore()
-  const workflowStore = useWorkflowStore()
   const localeStore = useLocaleStore()
   const history = useHistoryStore()
   const logosStore = useLogosStore()
@@ -159,9 +157,6 @@
     }
   }
 
-  function goToPlacement() {
-    workflowStore.setLogosSubStep('placement')
-  }
   function goToControls() {
     subPanel.value = 'edit'
     // integrate with workflow store if needed
@@ -173,12 +168,22 @@
 
   function handleRecentLogoClick(logo: CustomLogo) {
     setUploadedLogoAsActive(logo)
-    goToPlacement()
+    emit('go-to-placement')
   }
 
   function handleLogoAfterUpload(logo: CustomLogo) {
     setUploadedLogoAsActive(logo)
-    goToPlacement()
+    emit('go-to-placement')
+  }
+
+  // Emit events for parent component
+  const emit = defineEmits<{
+    'select-logo': [logoId: string]
+    'go-to-placement': []
+  }>()
+
+  function handleLogoClick(logo: CustomLogo) {
+    emit('select-logo', logo.id.toString())
   }
 
   // Breadcrumbs only
@@ -255,14 +260,15 @@
             <div
               v-for="logo in customLogos || []"
               :key="logo.id"
-              class="relative group rounded-xl border border-border p-3 flex flex-col gap-3 bg-background"
+              class="relative group rounded-xl border border-border p-3 flex flex-col gap-3 bg-background cursor-pointer hover:bg-muted/50 transition-colors"
+              @click="handleLogoClick(logo)"
             >
               <div class="flex flex-col items-center gap-3">
                 <div
                   class="w-24 h-24 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
                 >
                   <img
-                    :src="baseStorageUrl + (logo.url || logo.logo_url)"
+                    :src="baseStorageUrl + logo.url"
                     class="max-h-full object-contain"
                     alt="uploaded logo"
                   />

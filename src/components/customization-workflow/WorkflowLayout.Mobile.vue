@@ -4,16 +4,13 @@
   // import { useUIStore } from '@/stores/ui'
   import { WorkflowPanel } from '@/components/customization-workflow'
   import {
-    CategorySelection,
-    SubcategorySelection,
-    ProductSelection,
+    ProductsEntry,
     DesignSelection,
     StyleSelection,
     LogoCustomization,
     LogoPlacement,
     ColorSelection,
     PatternSelection,
-    PatternGroupSelection,
     TextsSelection,
     TextPlacement,
     RosterEntry,
@@ -23,23 +20,18 @@
 
   const props = defineProps<{
     currentStep:
-      | 'category'
-      | 'subcategory'
       | 'product'
       | 'designs'
       | 'styles'
       | 'logos'
       | 'colors'
       | 'patterns'
-      | 'patterns-group'
       | 'texts'
       | 'texts-placement'
       | 'roster'
       | 'roster-edit'
       | 'summary'
     onNavigateBack: () => void
-    onCategorySelect: (categoryId: number) => void
-    onSubcategorySelect: (subcategoryId: number) => void
   }>()
 
   const workflow = useWorkflowStore()
@@ -81,15 +73,10 @@
           :expandable="false"
           :is-expanded="true"
         >
-          <CategorySelection
-            v-if="currentStep === 'category'"
-            @select-category="onCategorySelect"
+          <ProductsEntry
+            v-if="['product'].includes(currentStep)"
+            :current-step="currentStep"
           />
-          <SubcategorySelection
-            v-else-if="currentStep === 'subcategory'"
-            @select-subcategory="onSubcategorySelect"
-          />
-          <ProductSelection v-else-if="currentStep === 'product'" />
           <DesignSelection v-else-if="currentStep === 'designs'" />
           <StyleSelection v-else-if="currentStep === 'styles'" />
           <LogoPlacement
@@ -104,7 +91,6 @@
           />
           <ColorSelection v-else-if="currentStep === 'colors'" />
           <PatternSelection v-else-if="currentStep === 'patterns'" />
-          <PatternGroupSelection v-else-if="currentStep === 'patterns-group'" />
           <TextsSelection v-else-if="currentStep === 'texts'" />
           <TextPlacement v-else-if="currentStep === 'texts-placement'" />
           <RosterEntry v-else-if="currentStep === 'roster'" />

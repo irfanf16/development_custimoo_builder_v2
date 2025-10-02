@@ -82,7 +82,7 @@
       await productsStore.fetchDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs
-    workflowStore.setActiveStep('Designs')
+    workflowStore.setActiveStep('designs')
   }
 
   // Breadcrumb logic for product selection
@@ -107,7 +107,6 @@
         label: 'Category',
         action: () => {
           workflowStore.setProductsSubStep('category')
-          workflowStore.setActiveStep('Categories')
         }
       },
       {
@@ -115,7 +114,6 @@
         action: hasSubs
           ? () => {
               workflowStore.setProductsSubStep('subcategory')
-              workflowStore.setActiveStep('Categories')
             }
           : undefined
       }

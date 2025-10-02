@@ -20,7 +20,7 @@ export function useWorkflowEffects() {
   watch(
     () => workflowStore.activeStep,
     async step => {
-      if (step === 'Designs') {
+      if (step === 'designs') {
         // Ensure design previews are available after a reload
         const styleId =
           productsStore.activeStyleDetails?.id ||
@@ -32,14 +32,14 @@ export function useWorkflowEffects() {
         if (needsPreviews && styleId) {
           await productsStore.fetchDesignPreviewsByStyleId(styleId)
         }
-      } else if (step === 'Styles') {
+      } else if (step === 'styles') {
         const pid =
           productsStore.activeProductDetails?.id ||
           customizationStore.activeProductId
         if (pid && !productsStore.stylePreviews) {
           await productsStore.fetchStylePreviews(pid)
         }
-      } else if (step === 'Logos') {
+      } else if (step === 'logos') {
         // Ensure recent logos are loaded
         await logosStore.fetchRecentLogos()
       }
@@ -48,15 +48,15 @@ export function useWorkflowEffects() {
   )
 
   // Watch for products sub-step changes while in Categories flow
-  watch(
-    () => workflowStore.productsSubStep,
-    sub => {
-      if (workflowStore.activeStep === 'Categories') {
-        // When returning to categories, snapshot defaults for potential reset later
-        if (sub === 'category') {
-          productsStore.captureDefaultsSnapshot()
-        }
-      }
-    }
-  )
+  // watch(
+  //   () => workflowStore.productsSubStep,
+  //   sub => {
+  //     if (workflowStore.activeStep === 'Categories') {
+  //       // When returning to categories, snapshot defaults for potential reset later
+  //       if (sub === 'category') {
+  //         productsStore.captureDefaultsSnapshot()
+  //       }
+  //     }
+  //   }
+  // )
 }

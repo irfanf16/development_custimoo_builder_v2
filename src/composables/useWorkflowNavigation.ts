@@ -1,8 +1,7 @@
-import { computed, type ComputedRef, type Ref } from 'vue'
+import { computed, type ComputedRef } from 'vue'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
-import type { WorkflowRouteStep } from '@/components/customization-workflow/types'
 
 export interface NavigationItem {
   label: string
@@ -15,8 +14,7 @@ export interface UseWorkflowNavigationApi {
 }
 
 export function useWorkflowNavigation(
-  currentStep: Ref<WorkflowRouteStep>,
-  onNavigateBack: () => void
+  _onNavigateBack?: () => void
 ): UseWorkflowNavigationApi {
   // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
@@ -24,24 +22,13 @@ export function useWorkflowNavigation(
   const customizationStore = useCustomizationStore()
   // ===== COMPUTED =====
   const navigationItems = computed((): NavigationItem[] => {
-    const step = workflowStore.activeStep || 'Categories'
-    const hasCategories = !!(
-      productsStore.categories?.data && productsStore.categories.data.length
-    )
-    // If categories exist but step is "Products", normalize to "Categories"
-    const normalizedStep =
-      step === 'Products' && hasCategories ? 'Categories' : step
+    const step = workflowStore.activeStep || 'product'
 
-    if (!hasCategories && step === 'Products') {
-      // No categories available at all
-      return [{ label: 'Products' }]
-    }
-
-    if (normalizedStep === 'Categories') {
-      // Category selection view
-      if (currentStep.value === 'category') {
+    if (step === 'product') {
+      if (workflowStore.productsSubStep === 'category') {
         return [{ label: 'Category' }]
       }
+
       const categoryIdForTrail =
         workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
       const category = productsStore.categories?.data?.find(
@@ -51,29 +38,24 @@ export function useWorkflowNavigation(
         workflowStore.selectedSubCategoryId ??
         customizationStore.activeSubCategoryId
 
-      // Subcategory list view
-      if (currentStep.value === 'subcategory') {
-        const categoryName = category?.category_name || '—'
+      if (workflowStore.productsSubStep === 'subcategory') {
         return [
           {
             label: 'Category',
             action: () => {
               workflowStore.setProductsSubStep('category')
-              workflowStore.setActiveStep('Categories')
             }
           },
-          { label: categoryName }
+          { label: category?.category_name || '—' }
         ]
       }
 
-      // Product selection view
       const hasSubs = !!(
         category &&
         category.subcategories &&
         category.subcategories.length
       )
 
-      // If category has subcategories, breadcrumb should be: Category -> [Subcategory]
       if (hasSubs) {
         const selectedSub =
           category && subId
@@ -85,41 +67,38 @@ export function useWorkflowNavigation(
             label: 'Category',
             action: () => {
               workflowStore.setProductsSubStep('category')
-              workflowStore.setActiveStep('Categories')
             }
           },
           { label: subLabel }
         ]
       }
 
-      // If no subcategories, show: Category -> [Category Name]
       return [
         {
           label: 'Category',
           action: () => {
             workflowStore.setProductsSubStep('category')
-            workflowStore.setActiveStep('Categories')
           }
         },
         { label: category?.category_name || '—' }
       ]
     }
 
-    if (normalizedStep === 'Designs') {
+    if (step === 'designs') {
       return [{ label: 'Designs' }]
     }
 
-    if (normalizedStep === 'Styles') {
+    if (step === 'styles') {
       const title = productsStore.activeProductDetails?.display_name || 'Styles'
       return [{ label: title }]
     }
 
-    if (normalizedStep === 'Logos') {
+    if (step === 'logos') {
       const sub = workflowStore.logosSubStep as 'list' | 'placement' | 'edit'
       const map: Record<string, string> = {
         list: 'Logos',
         placement: 'Placement',
-        edit: 'Edit'
+        edit: 'Controls'
       }
       const trail = [
         {
@@ -134,29 +113,23 @@ export function useWorkflowNavigation(
       return trail
     }
 
-    if (normalizedStep === 'Colors') {
+    if (step === 'colors') {
       return [{ label: 'Color' }]
     }
 
-    if (normalizedStep === 'Patterns') {
-      const items = [
-        { label: 'Pattern', action: onNavigateBack }
-      ] as NavigationItem[]
-      if (workflowStore.patternsSubStep === 'group') {
-        items.push({ label: workflowStore.activePatternGroupName || 'Base' })
-      }
-      return items
+    if (step === 'patterns') {
+      return [{ label: 'Pattern' }]
     }
 
-    if (normalizedStep === 'Texts') {
+    if (step === 'texts') {
       return [{ label: 'Texts' }]
     }
 
-    if (normalizedStep === 'Roster') {
+    if (step === 'roster') {
       return [{ label: 'Roster' }]
     }
 
-    if (normalizedStep === 'Summary') {
+    if (step === 'summary') {
       return [{ label: 'Summary' }]
     }
 

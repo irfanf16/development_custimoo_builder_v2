@@ -58,14 +58,6 @@ async function getActiveStyleDetails(
     }
   })
 }
-
-// Recently uploaded logos
-// async function getRecentLogos(companyId?: number) {
-//   return await http.get<OutputRecentLogo[]>(`logos/recent`, {
-//     params: { company_id: companyId }
-//   })
-// }
-
 // Get design details by ID
 async function getDesignDetailsById(designId: number) {
   return await http.get<OutputDesignDetails>(`product/style/design/${designId}`)
@@ -75,10 +67,8 @@ export default {
   getProductCategories,
   getActiveProductDetails,
   getProductPreviewsByCategory,
-  //getProductPreviews,
   getDesignPreviewsByStyleId,
   getStylePreviewsByProduct,
   getActiveStyleDetails,
-  // getRecentLogos,
   getDesignDetailsById
 }

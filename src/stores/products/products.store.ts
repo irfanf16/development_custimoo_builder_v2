@@ -259,31 +259,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     customization: ActiveProductCustomization | null
   } | null>(null)
 
-  function captureDefaultsSnapshot() {
-    defaultActiveDetails.value = {
-      product: activeProductDetails.value
-        ? (JSON.parse(
-            JSON.stringify(activeProductDetails.value)
-          ) as OutputProductDetails)
-        : null,
-      style: activeStyleDetails.value
-        ? (JSON.parse(
-            JSON.stringify(activeStyleDetails.value)
-          ) as OutputStyleDetails)
-        : null,
-      design: activeDesignDetails.value
-        ? (JSON.parse(
-            JSON.stringify(activeDesignDetails.value)
-          ) as OutputDesignDetails)
-        : null,
-      customization: customization.customization
-        ? (JSON.parse(
-            JSON.stringify(customization.customization)
-          ) as ActiveProductCustomization)
-        : null
-    }
-  }
-
   async function resetToDefaultsSnapshot() {
     if (defaultActiveDetails.value) {
       activeProductDetails.value = defaultActiveDetails.value.product
@@ -417,8 +392,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveProductDetailsState,
     setActiveStyleDetailsState,
     setActiveDesignDetailsState,
-    //setActiveAddonsList,
-    //updateActiveAddonSelected,
     // Business Logic
     setSvgGroups,
     reset,
@@ -426,7 +399,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveStep,
     saveCustomizationToLocalStorage,
     applyDesignPreview,
-    captureDefaultsSnapshot,
     resetToDefaultsSnapshot,
     // API Functions
     fetchCustomizedCategories,
@@ -437,6 +409,5 @@ export const useProductsStore = defineStore('productsStore', () => {
     //fetchProductAddons,
     fetchDesignPreviewsByStyleId,
     fetchDesignDetailsById
-    //fetchRecentLogos
   }
 })

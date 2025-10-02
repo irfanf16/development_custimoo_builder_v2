@@ -2,6 +2,7 @@ import { computed, type ComputedRef } from 'vue'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import type { WorkflowRouteStep } from '@/components/customization-workflow/types'
+import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
 
 export interface UseWorkflowManagerApi {
   currentStep: ComputedRef<WorkflowRouteStep>
@@ -21,30 +22,28 @@ export function useWorkflowManager(): UseWorkflowManagerApi {
 
   // ===== COMPUTED =====
   const currentStep = computed<WorkflowRouteStep>(() => {
-    const step = workflowStore.activeStep
-    if (step === 'Designs') return 'designs'
-    if (step === 'Styles') return 'styles'
-    if (step === 'Logos') return 'logos'
-    if (step === 'Colors') return 'colors'
-    if (step === 'Patterns') {
-      const patternsSubStep = workflowStore.patternsSubStep || 'list'
-      return patternsSubStep === 'list' ? 'patterns' : 'patterns-group'
+    const step = workflowStore.activeStep as CustomizerStep | null
+    if (step === 'designs') return 'designs'
+    if (step === 'styles') return 'styles'
+    if (step === 'logos') return 'logos'
+    if (step === 'colors') return 'colors'
+    if (step === 'patterns') {
+      return 'patterns'
     }
-    if (step === 'Texts') {
+    if (step === 'texts') {
       const textsSubStep = workflowStore.textsSubStep || 'list'
       return textsSubStep === 'list' ? 'texts' : 'texts-placement'
     }
-    if (step === 'Roster') {
+    if (step === 'roster') {
       const rosterSubStep = workflowStore.rosterSubStep || 'list'
       return rosterSubStep === 'list' ? 'roster' : 'roster-edit'
     }
-    if (step === 'Summary') return 'summary'
-    if (step === 'Products') return 'product'
-    if (step === 'Categories') {
+    if (step === 'summary') return 'summary'
+    if (step === 'product') {
       const sub = workflowStore.productsSubStep || 'category'
-      return sub as 'category' | 'subcategory' | 'product'
+      return sub as 'product'
     }
-    return 'category' // fallback
+    return 'product'
   })
 
   // ===== ACTIONS =====

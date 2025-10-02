@@ -7,7 +7,8 @@ import type {
   PatternsSubStep,
   TextsSubStep,
   RosterSubStep,
-  CanvasSide
+  CanvasSide,
+  CustomizerStep
 } from './workflow.store.types'
 
 export const useWorkflowStore = defineStore('workflowStore', () => {
@@ -15,19 +16,20 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const customization = useCustomizationStore()
 
   // ===== STATE =====
-  const activeStep = ref<string | null>(
+  const activeStep = ref<CustomizerStep | null | undefined>(
     typeof window !== 'undefined'
-      ? window.localStorage.getItem('activeStep')
+      ? (window.localStorage.getItem('activeStep') as CustomizerStep | null)
       : null
   )
 
   // Workflow UI state
   const logosSubStep = ref<LogosSubStep>('list')
   const productsSubStep = ref<ProductsSubStep>('category')
-  const patternsSubStep = ref<PatternsSubStep>('list')
   const textsSubStep = ref<TextsSubStep>('list')
   const rosterSubStep = ref<RosterSubStep>('list')
+  const patternsSubStep = ref<PatternsSubStep>('list')
   const activePatternGroupName = ref<string | null>(null)
+  const activeLogoId = ref<string | null>(null)
 
   // Canvas state
   const activeCanvasSide = ref<CanvasSide>('front')
@@ -55,15 +57,19 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       'workflow.productsSubStep',
       productsSubStep.value
     )
-    window.localStorage.setItem(
-      'workflow.patternsSubStep',
-      patternsSubStep.value
-    )
     window.localStorage.setItem('workflow.textsSubStep', textsSubStep.value)
     window.localStorage.setItem('workflow.rosterSubStep', rosterSubStep.value)
     window.localStorage.setItem(
-      'workflow.patternsGroupName',
+      'workflow.patternsSubStep',
+      patternsSubStep.value || ''
+    )
+    window.localStorage.setItem(
+      'workflow.activePatternGroupName',
       activePatternGroupName.value || ''
+    )
+    window.localStorage.setItem(
+      'workflow.activeLogoId',
+      activeLogoId.value || ''
     )
   }
 
@@ -78,9 +84,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       const products = window.localStorage.getItem(
         'workflow.productsSubStep'
       ) as 'category' | 'subcategory' | 'product' | null
-      const patterns = window.localStorage.getItem(
-        'workflow.patternsSubStep'
-      ) as 'list' | 'group' | null
       const texts = window.localStorage.getItem('workflow.textsSubStep') as
         | 'list'
         | 'placement'
@@ -89,18 +92,25 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
         | 'list'
         | 'edit'
         | null
-      const group = window.localStorage.getItem('workflow.patternsGroupName')
+      const patterns = window.localStorage.getItem(
+        'workflow.patternsSubStep'
+      ) as 'list' | 'edit' | null
+      const patternGroupName = window.localStorage.getItem(
+        'workflow.activePatternGroupName'
+      )
+      const logoId = window.localStorage.getItem('workflow.activeLogoId')
       if (logos) logosSubStep.value = logos
       if (products) productsSubStep.value = products
-      if (patterns) patternsSubStep.value = patterns
       if (texts) textsSubStep.value = texts
       if (roster) rosterSubStep.value = roster
-      if (group) activePatternGroupName.value = group
+      if (patterns) patternsSubStep.value = patterns
+      if (patternGroupName) activePatternGroupName.value = patternGroupName
+      if (logoId) activeLogoId.value = logoId
     } catch (_) {}
   }
 
   // ===== ACTIONS =====
-  function setActiveStep(step: string | null) {
+  function setActiveStep(step: CustomizerStep) {
     activeStep.value = step
     saveToLocalStorage()
   }
@@ -130,8 +140,13 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
-  function setActivePatternGroup(name: string | null) {
+  function setActivePatternSubStep(name: string | null) {
     activePatternGroupName.value = name
+    saveSubStepsToLocalStorage()
+  }
+
+  function setActiveLogoId(logoId: string | null) {
+    activeLogoId.value = logoId
     saveSubStepsToLocalStorage()
   }
 
@@ -195,10 +210,11 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     activeStep,
     logosSubStep,
     productsSubStep,
-    patternsSubStep,
     textsSubStep,
     rosterSubStep,
+    patternsSubStep,
     activePatternGroupName,
+    activeLogoId,
     selectedCategoryId,
     selectedSubCategoryId,
     activeCanvasSide,
@@ -214,7 +230,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setPatternsSubStep,
     setTextsSubStep,
     setRosterSubStep,
-    setActivePatternGroup,
+    setActivePatternSubStep,
+    setActiveLogoId,
     // Business Logic
     commitSelectedCategory,
     commitSelectedSubCategory,

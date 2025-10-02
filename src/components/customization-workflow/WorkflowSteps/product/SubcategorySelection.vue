@@ -89,7 +89,6 @@
         label: 'Category',
         action: () => {
           workflowStore.setProductsSubStep('category')
-          workflowStore.setActiveStep('Categories')
         }
       },
       { label: category?.category_name || '—' }

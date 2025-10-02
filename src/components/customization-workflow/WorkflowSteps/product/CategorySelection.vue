@@ -13,7 +13,7 @@
   const props = defineProps<Props>()
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
-  // const customizationStore = useCustomizationStore()
+  const categories = computed(() => productsStore.categories?.data)
 
   async function handleSelectCategory(categoryId: number) {
     workflowStore.setSelectedCategoryForPreview(categoryId)
@@ -79,7 +79,7 @@
 <template>
   <div class="flex flex-col">
     <button
-      v-for="(item, index) in productsStore.categories?.data"
+      v-for="(item, index) in categories"
       :key="item.id"
       class="h-14 px-4 md:px-6 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors"
       @click="() => handleSelectCategory(item.id)"
