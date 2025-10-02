@@ -6,6 +6,7 @@
     CardContent,
     CardFooter
   } from '@/components/ui/card'
+  import { ScrollArea } from '@/components/ui/scroll-area'
 
   interface Props {
     expandable?: boolean
@@ -154,19 +155,21 @@
         </CardHeader>
       </template>
 
-      <CardContent
-        class="h-full p-0 px-0 md:p-0 md:px-0 min-h-0 overflow-y-auto"
-      >
-        <!-- Content slot for different panel types -->
-        <Transition name="panel-slide" mode="out-in" appear>
-          <div
-            ref="cardContentRef"
-            :key="props.contentKey"
-            class="overflow-y-auto"
-          >
-            <slot :is-expanded="isExpanded" />
+      <CardContent class="h-full p-0 px-0 md:p-0 md:px-0 min-h-0">
+        <ScrollArea>
+          <div class="max-h-[38rem]">
+            <!-- Content slot for different panel types -->
+            <Transition name="panel-slide" mode="out-in" appear>
+              <div
+                ref="cardContentRef"
+                :key="props.contentKey"
+                class="overflow-y-auto"
+              >
+                <slot :is-expanded="isExpanded" />
+              </div>
+            </Transition>
           </div>
-        </Transition>
+        </ScrollArea>
       </CardContent>
 
       <!-- Footer actions -->

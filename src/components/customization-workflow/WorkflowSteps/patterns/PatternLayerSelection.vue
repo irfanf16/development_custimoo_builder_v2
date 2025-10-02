@@ -44,9 +44,9 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 px-4 md:px-6">
+  <div class="flex flex-col gap-6">
     <!-- Header Section -->
-    <div class="space-y-2">
+    <div class="px-4 md:px-6">
       <p class="text-base text-muted-foreground">
         Apply and customise patterns.
       </p>
