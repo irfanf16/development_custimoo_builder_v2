@@ -2,7 +2,6 @@
   import type { SelectContentEmits, SelectContentProps } from 'reka-ui'
   import type { HTMLAttributes } from 'vue'
   import { reactiveOmit } from '@vueuse/core'
-  import { onMounted, ref } from 'vue'
   import {
     SelectContent,
     SelectPortal,
@@ -11,6 +10,7 @@
   } from 'reka-ui'
   import { cn } from '@/lib/utils'
   import { SelectScrollDownButton, SelectScrollUpButton } from '.'
+  import { useTeleportTo } from '@/composables/useTeleportTo'
 
   defineOptions({
     inheritAttrs: false
@@ -29,18 +29,7 @@
 
   const forwarded = useForwardPropsEmits(delegatedProps, emits)
 
-  // Ensure portal renders inside the widget's Shadow DOM container when embedded
-  const teleportTo = ref<string | HTMLElement>('body')
-  onMounted(() => {
-    const anyWindow = window as unknown as {
-      __CUSTOMIZER_CONTAINER__?: HTMLElement
-    }
-    const container = anyWindow?.__CUSTOMIZER_CONTAINER__
-    if (container instanceof HTMLElement)
-      teleportTo.value = container.getElementsByClassName(
-        'widget-theme'
-      )[0] as HTMLElement
-  })
+  const { teleportTo } = useTeleportTo()
 </script>
 
 <template>

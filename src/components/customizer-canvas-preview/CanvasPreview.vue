@@ -4,7 +4,6 @@
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { useDebounceFn } from '@vueuse/core'
-  import { useUIStore } from '@/stores/ui/ui.store'
 
   const workflowStore = useWorkflowStore()
   const {
@@ -28,7 +27,6 @@
     renderVersion,
     effectiveLogos
   } = useEffectiveSelectors()
-  const uiStore = useUIStore()
 
   const props = defineProps<{
     width: number
@@ -122,7 +120,7 @@
       enableRetinaScaling: true,
       enablePointerEvents: false
     })
-    setCanvasSize({ width: uiStore.containerWidth - 500, height: props.height })
+    setCanvasSize({ width: props.width, height: props.height })
     renderPreview()
   }
 
