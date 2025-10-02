@@ -181,7 +181,7 @@
 <template>
   <div class="flex flex-col gap-6">
     <!-- Pattern Swatches Section -->
-    <div class="space-y-4 p-4 md:p-6">
+    <div class="space-y-4 px-4 md:px-6">
       <h3 class="text-lg font-semibold">Select Pattern</h3>
 
       <!-- Pattern Grid -->
