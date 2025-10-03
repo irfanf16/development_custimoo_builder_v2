@@ -29,10 +29,7 @@
   function loadPreviewsForCurrentCategory() {
     const categoryId =
       workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
-    const subcategoryId =
-      workflowStore.selectedSubCategoryId ??
-      customizationStore.activeSubCategoryId ??
-      undefined
+    const subcategoryId = workflowStore.selectedSubCategoryId ?? undefined
     productsStore.fetchProductPreviews(categoryId, subcategoryId || undefined)
   }
 

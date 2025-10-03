@@ -77,20 +77,31 @@ export function useAppInitialization() {
       customizationStore.activeCategoryId ||
       productsStore.categories?.data?.[0]?.id ||
       null
+    const effectiveSubCategoryId =
+      customizationStore.activeSubCategoryId ||
+      productsStore.categories?.data?.[0]?.subcategories?.[0]?.id ||
+      undefined
 
     if (effectiveCategoryId) {
       wf.setSelectedCategoryForPreview(effectiveCategoryId)
     }
 
-    return effectiveCategoryId
+    return {
+      categoryId: effectiveCategoryId,
+      subCategoryId: effectiveSubCategoryId
+    }
   }
 
   // PHASE 4: Load product data
   const loadProductData = async (
     productsStore: ReturnType<typeof useProductsStore>,
-    effectiveCategoryId: number | null
+    effectiveCategoryId: number | null,
+    effectiveSubCategoryId?: number
   ) => {
-    await productsStore.fetchProductPreviews(effectiveCategoryId)
+    await productsStore.fetchProductPreviews(
+      effectiveCategoryId,
+      effectiveSubCategoryId
+    )
   }
 
   // PHASE 5A: Restore customization with defaults
@@ -155,7 +166,8 @@ export function useAppInitialization() {
   const createDefaultCustomization = async (
     customizationStore: ReturnType<typeof useCustomizationStore>,
     productsStore: ReturnType<typeof useProductsStore>,
-    effectiveCategoryId: number | null | undefined
+    effectiveCategoryId: number | null | undefined,
+    effectiveSubCategoryId?: number
   ) => {
     // Clear stale history when no customization is restored
     try {
@@ -184,7 +196,10 @@ export function useAppInitialization() {
           customizationStore.activeCategoryId ??
           effectiveCategoryId ??
           undefined,
-        subCategoryId: customizationStore.activeSubCategoryId
+        subCategoryId:
+          customizationStore.activeSubCategoryId ??
+          effectiveSubCategoryId ??
+          undefined
       })
       customizationStore.saveToLocalStorage()
       //}
@@ -239,13 +254,15 @@ export function useAppInitialization() {
         await fetchEssentialData()
 
         // PHASE 3: Initialize localization and determine effective category
-        const effectiveCategoryId = initializeLocalizationAndCategory(
-          customizationStore,
-          productsStore
-        )
+        const effectiveCategoryAndSubCategory =
+          initializeLocalizationAndCategory(customizationStore, productsStore)
 
         // PHASE 4: Load product data
-        await loadProductData(productsStore, effectiveCategoryId)
+        await loadProductData(
+          productsStore,
+          effectiveCategoryAndSubCategory.categoryId,
+          effectiveCategoryAndSubCategory.subCategoryId
+        )
 
         // PHASE 5: Set up product customization state
         if (hasActiveCustomization) {
@@ -258,7 +275,8 @@ export function useAppInitialization() {
           await createDefaultCustomization(
             customizationStore,
             productsStore,
-            effectiveCategoryId
+            effectiveCategoryAndSubCategory.categoryId,
+            effectiveCategoryAndSubCategory.subCategoryId
           )
         }
 

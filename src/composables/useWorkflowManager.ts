@@ -53,6 +53,9 @@ export function useWorkflowManager(): UseWorkflowManagerApi {
     const hasSubcategories = !!productsStore.categories?.data?.find(
       c => c.id === categoryId && c.subcategories && c.subcategories.length
     )
+    if (!hasSubcategories) {
+      workflowStore.setSelectedSubCategoryForPreview(null)
+    }
     workflowStore.setProductsSubStep(
       hasSubcategories ? 'subcategory' : 'product'
     )
