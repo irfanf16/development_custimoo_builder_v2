@@ -62,6 +62,15 @@
     // Commit the selected category/subcategory at the moment the product is chosen
     workflowStore.commitSelectedCategory()
     workflowStore.commitSelectedSubCategory()
+    // If there are categories, set the step to category, otherwise set it to product (when the user goes back to the product step)
+    // if (
+    //   productsStore.categories?.data?.length &&
+    //   productsStore.categories.data.length > 0
+    // ) {
+    //   workflowStore.setProductsSubStep('category')
+    // } else {
+    //   workflowStore.setProductsSubStep('product')
+    // }
     await productsStore.fetchActiveProductDetails(productId)
     // After loading active details, ensure customization contains product, style and design ids
     const styleId = productsStore.activeStyleDetails?.id

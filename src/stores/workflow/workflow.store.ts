@@ -154,14 +154,14 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   function commitSelectedCategory() {
     if (selectedCategoryId.value != null) {
       void customization.setCategory(selectedCategoryId.value)
-      selectedCategoryId.value = null
+      //selectedCategoryId.value = null
     }
   }
 
   function commitSelectedSubCategory() {
     if (selectedSubCategoryId.value != null) {
       void customization.setSubCategory(selectedSubCategoryId.value)
-      selectedSubCategoryId.value = null
+      //selectedSubCategoryId.value = null
     }
   }
 
