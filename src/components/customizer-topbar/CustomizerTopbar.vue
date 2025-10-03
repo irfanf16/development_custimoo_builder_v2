@@ -1,9 +1,9 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
   import { Save, ShoppingCart, RotateCcw } from 'lucide-vue-next'
-  // import ThemeToggle from '@/components/ThemeToggle.vue'
-  import SignInButton from '@/components/SignInButton.vue'
-  // import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+  import ThemeToggle from '@/components/ThemeToggle.vue'
+  // import SignInButton from '@/components/SignInButton.vue'
+  import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
   import {
     topbar_save,
     topbar_locker_room,
@@ -12,7 +12,7 @@
     actions_reset_customization
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
-  // import { useUIStore } from '@/stores/ui'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
 
@@ -25,7 +25,7 @@
   }
 
   const localeStore = useLocaleStore()
-  // const uiStore = useUIStore()
+  const uiStore = useUIStore()
 </script>
 
 <template>
@@ -80,14 +80,14 @@
       <ShoppingCart class="size-4" />
       <span>{{ topbar_cart({}, { locale: localeStore.currentLocale }) }}</span>
     </Button>
-    <!-- <LanguageSwitcher /> -->
-    <SignInButton variant="outline" size="default" class="" />
-    <!-- <ThemeToggle
+    <LanguageSwitcher />
+    <!-- <SignInButton variant="outline" size="default" class="" /> -->
+    <ThemeToggle
       v-if="uiStore.allowColorModeSwitch"
       variant="outline"
       size="default"
       class=""
-    /> -->
+    />
   </div>
 </template>
 

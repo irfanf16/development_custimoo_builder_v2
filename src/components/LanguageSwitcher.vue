@@ -33,8 +33,7 @@
           ? 'English'
           : currentCode === 'fr'
             ? 'Français'
-            : 'Dansk',
-      flag: currentCode === 'en' ? '🇺🇸' : currentCode === 'fr' ? '🇫🇷' : '🇩🇰'
+            : 'Dansk'
     }
   })
 
@@ -58,10 +57,9 @@
   <DropdownMenu v-if="shouldShowSwitcher">
     <DropdownMenuTrigger as-child>
       <Button variant="outline" size="default" class="rounded-lg">
-        <Globe class="size-4 mr-2" />
-        <span>{{ currentLanguageConfig?.flag }}</span>
+        <Globe class="size-4" />
         <span class="ml-1">{{ currentLanguageConfig?.name }}</span>
-        <ChevronDown class="size-4 ml-2" />
+        <ChevronDown class="size-4" />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
@@ -71,9 +69,6 @@
         :class="{ 'bg-accent': locale === localeStore.currentLocale }"
         @click="handleLanguageChange(locale)"
       >
-        <span class="mr-2">
-          {{ locale === 'en' ? '🇺🇸' : locale === 'fr' ? '🇫🇷' : '🇩🇰' }}
-        </span>
         <span>
           {{ getLanguageName(locale) }}
         </span>
