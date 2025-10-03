@@ -23,10 +23,7 @@ export const hostThemes: Record<string, HostTheme> = {
     radius: '0.5rem',
     font: {
       default: { name: 'Geist' },
-      brandAccent: {
-        name: 'Orbitron',
-        url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
-      }
+      brandAccent: { name: 'Geist' }
     },
     name: 'Development Blue',
     description: 'Blue primary with green accent for development',
