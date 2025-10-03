@@ -17,7 +17,8 @@
   const props = withDefaults(defineProps<Props>(), {
     gridCols: 8,
     buttonSize: 'md',
-    disabled: false
+    disabled: false,
+    selectedColor: undefined
   })
 
   const emit = defineEmits<Emits>()
@@ -28,7 +29,7 @@
     lg: 'h-10 w-10'
   }
 
-  const gridColsClasses = {
+  const gridColsClasses: Record<number, string> = {
     4: 'grid-cols-4',
     6: 'grid-cols-6',
     8: 'grid-cols-8',

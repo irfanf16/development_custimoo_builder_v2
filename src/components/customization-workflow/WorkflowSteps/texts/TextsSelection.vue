@@ -4,14 +4,18 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { Button } from '@/components/ui/button'
+  import type { OutputProductName } from '@/services/products/types'
 
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const history = useHistoryStore()
   const texts = computed(() => {
     const map =
-      (productsStore.activeProductDetails as { productnames?: unknown[] })
-        ?.productnames || []
+      (
+        productsStore.activeProductDetails as {
+          productnames?: OutputProductName[]
+        }
+      )?.productnames || []
     return map
   })
 
@@ -37,7 +41,7 @@
       index: idx,
       prevValue: current,
       nextValue: next
-    })
+    } as any)
   }
 
   // Breadcrumbs only
@@ -54,19 +58,27 @@
       class="flex items-center justify-between border rounded-lg p-3"
     >
       <div>
-        <div class="font-medium">{{ t.name_of_placement || 'Text' }}</div>
+        <div class="font-medium">
+          {{ (t as OutputProductName).name_of_placement || 'Text' }}
+        </div>
         <div class="text-xs text-muted-foreground">Placement</div>
       </div>
       <div class="flex gap-2 items-center">
         <input
           class="h-9 rounded-md border border-border bg-card px-3 text-sm w-48"
           type="text"
-          :value="editedValues[t.id] ?? t.value ?? ''"
+          :value="editedValues[(t as OutputProductName).id] ?? ''"
           @input="
-            onChangeValue(t.id, ($event.target as HTMLInputElement).value)
+            onChangeValue(
+              (t as OutputProductName).id,
+              ($event.target as HTMLInputElement).value
+            )
           "
         />
-        <Button variant="default" size="sm" @click="saveValue(t.id)"
+        <Button
+          variant="default"
+          size="sm"
+          @click="saveValue((t as OutputProductName).id)"
           >Save</Button
         >
       </div>

@@ -13,7 +13,7 @@
     "lint:fix": "eslint . --ext .ts,.tsx,.vue,.js --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "type-check": "npm run prebuild && vue-tsc --noEmit",
+    "type-check": "npm run prebuild && vue-tsc --b",
     "dev:with-paraglide": "npm run prebuild && npm run dev",
     "machine-translate": "inlang machine translate --project project.inlang",
     "prepare": "husky"

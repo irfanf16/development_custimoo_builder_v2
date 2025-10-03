@@ -1,3 +1,7 @@
+declare module 'three' {
+  export * from 'three'
+}
+
 declare module 'three/examples/jsm/loaders/GLTFLoader' {
   import { Loader, LoadingManager } from 'three'
   import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'

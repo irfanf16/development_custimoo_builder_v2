@@ -61,7 +61,7 @@ export const registry: Registry = {
         }
       }
     },
-    describe(_, p: ColorSetGroupPayload) {
+    describe(_: HistoryContext, p: ColorSetGroupPayload) {
       const label = p.nextColor?.name || p.nextColor?.value || '—'
       return `Set color for ${p.groupId} to ${label}`
     }
@@ -77,7 +77,22 @@ export const registry: Registry = {
       if (!map[key]) map[key] = []
       const arr = map[key]
       if (!arr[payload.index])
-        arr[payload.index] = { value: payload.prevValue ?? '' }
+        arr[payload.index] = {
+          id: 0,
+          product_id: 0,
+          type: 'text',
+          label: '',
+          value: payload.prevValue ?? '',
+          following_products: [],
+          items: [],
+          created_at: null,
+          updated_at: null,
+          deleted_at: null,
+          manually_added: false,
+          font_family: '',
+          following_product_ids: [],
+          active_item_index: 0
+        }
       arr[payload.index].value = payload.nextValue
       customizationStore.saveToLocalStorage()
     },
@@ -91,7 +106,22 @@ export const registry: Registry = {
       if (!map[key]) map[key] = []
       const arr = map[key]
       if (!arr[payload.index])
-        arr[payload.index] = { value: payload.nextValue ?? '' }
+        arr[payload.index] = {
+          id: 0,
+          product_id: 0,
+          type: 'text',
+          label: '',
+          value: payload.nextValue ?? '',
+          following_products: [],
+          items: [],
+          created_at: null,
+          updated_at: null,
+          deleted_at: null,
+          manually_added: false,
+          font_family: '',
+          following_product_ids: [],
+          active_item_index: 0
+        }
       arr[payload.index].value = payload.prevValue
       customizationStore.saveToLocalStorage()
     },
@@ -224,7 +254,10 @@ export const registry: Registry = {
         await (registry[e.type] as Handler<unknown>).revert(ctx, e.payload)
       }
     },
-    describe(_, payload: { entries: unknown[]; label?: string }) {
+    describe(
+      _: HistoryContext,
+      payload: { entries: unknown[]; label?: string }
+    ) {
       return payload.label || `Apply ${payload.entries.length} changes`
     }
   }

@@ -5,7 +5,6 @@ import type {
   OutputProductCategories,
   GetProductCategoriesParams,
   ActiveProductCustomization,
-  _ActiveProductDetails,
   ProductPreviewItem,
   OutputStylePreviewFront,
   OutputStyleDetails,
@@ -13,7 +12,6 @@ import type {
   OutputRecentLogo,
   OutputProductDetails,
   OutputSvgGroupColor,
-  _ActiveStyleDetails,
   OutputDesignPreviewFront
 } from '@/services/products/types'
 import { API } from '../../services'

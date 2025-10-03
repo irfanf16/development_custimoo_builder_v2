@@ -1,11 +1,20 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
+  import type {
+    OutputProductPreview,
+    OutputStylePreviewFront,
+    OutputStylePreviewBack,
+    OutputDesignPreviewFront,
+    OutputDesignPreviewBack
+  } from '@/services/products/types'
 
   interface Props {
-    product: unknown
-    styleBase: unknown
-    designBase: unknown
+    product: OutputProductPreview
+    styleBase: OutputStylePreviewFront & OutputStylePreviewBack
+    designBase:
+      | OutputDesignPreviewFront
+      | (OutputDesignPreviewFront & OutputDesignPreviewBack)
     class?: string
     setting: {
       x_axis: number

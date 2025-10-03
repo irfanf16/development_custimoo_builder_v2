@@ -116,7 +116,7 @@
           originX: 'left',
           originY: 'top'
         })
-        canvas.value.add(rect)
+        canvas.value?.add(rect)
         rect.setCoords()
       }
       requestRender()

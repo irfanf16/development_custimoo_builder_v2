@@ -11,6 +11,7 @@
     styles_alt_icon
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
+  import type { OutputStylePreviewFront } from '@/services/products/types'
 
   // no emits
   // no emits
@@ -24,7 +25,7 @@
       customizationStore.activeProductId
   )
   const previews = computed(
-    () => (productsStore.stylePreviews as unknown[]) || []
+    () => (productsStore.stylePreviews as OutputStylePreviewFront[]) || []
   )
   const headerDescription = computed(() => {
     const p = productsStore.activeProductDetails
@@ -104,7 +105,9 @@
         ?.trim?.()
         .toLowerCase?.() || ''
     if (!q) return previews.value
-    return previews.value.filter(s => s.name.toLowerCase().includes(q))
+    return previews.value.filter((s: OutputStylePreviewFront) =>
+      s.name.toLowerCase().includes(q)
+    )
   })
 
   const headerExtras = { breadcrumbs }
@@ -144,7 +147,7 @@
             "
             class="w-full aspect-square object-contain rounded-xl border border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/30 hover:border-border transition-colors"
             :alt="styles_alt_icon({}, { locale: localeStore.currentLocale })"
-            @click="handleStyleSelection(s.id)"
+            @click="handleStyleSelection((s as OutputStylePreviewFront).id)"
           />
         </div>
       </div>

@@ -4,6 +4,7 @@
   import { useProductsStore } from '@/stores/products/products.store'
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import CustomizerMenuItem from './MenuItem.vue'
+  import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
   import {
     nav_product,
     nav_design,
@@ -66,6 +67,31 @@
     return (workflow.activeStep || NAV.PRODUCTS) === label
   }
 
+  function getStepFromLabel(label: string): CustomizerStep {
+    switch (label) {
+      case NAV.PRODUCTS:
+        return 'product'
+      case NAV.DESIGNS:
+        return 'designs'
+      case NAV.STYLES:
+        return 'styles'
+      case NAV.LOGOS:
+        return 'logos'
+      case NAV.COLORS:
+        return 'colors'
+      case NAV.PATTERNS:
+        return 'patterns'
+      case NAV.TEXTS:
+        return 'texts'
+      case NAV.ROSTER:
+        return 'roster'
+      case NAV.SUMMARY:
+        return 'summary'
+      default:
+        return 'product'
+    }
+  }
+
   async function goTo(label: string) {
     // Toggle panel if tapping current label again
     if ((workflow.activeStep || NAV.PRODUCTS) === label) {
@@ -74,7 +100,7 @@
     }
 
     // Normal navigation
-    workflow.setActiveStep(label)
+    workflow.setActiveStep(getStepFromLabel(label))
     workflow.setPanelOpen(true)
   }
 </script>

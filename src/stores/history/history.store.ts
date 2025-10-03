@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { registry, createHistoryContext } from './registry'
-import type { HistoryEntry, HistoryActionType } from './types'
+import type { HistoryEntry, HistoryActionType, HistoryContext } from './types'
 
 export const useHistoryStore = defineStore('historyStore', () => {
   const undoStack = ref<HistoryEntry[]>([])
@@ -70,7 +70,13 @@ export const useHistoryStore = defineStore('historyStore', () => {
     payload: T,
     description?: string
   ) {
-    const desc = description ?? registry[type].describe(ctx, payload)
+    const desc =
+      description ??
+      (
+        registry[type] as {
+          describe: (ctx: HistoryContext, payload: T) => string
+        }
+      ).describe(ctx, payload)
     const entry: HistoryEntry<T> = {
       id:
         typeof crypto !== 'undefined' && 'randomUUID' in crypto
