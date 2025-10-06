@@ -110,7 +110,7 @@ export const hostThemes: Record<string, HostTheme> = {
 /**
  * Get theme for current host
  */
-export function getHostTheme(): HostTheme | null {
+export function getHostTheme(): HostTheme | undefined {
   const rawHost = window.location.hostname.toLowerCase()
   const normalizedHost =
     rawHost === '127.0.0.1' || rawHost === '::1' ? 'localhost' : rawHost
@@ -124,28 +124,10 @@ export function getHostTheme(): HostTheme | null {
   )
   if (candidates.length > 0) {
     const best = candidates.sort((a, b) => b.length - a.length)[0]
-    return hostThemes[best]
+    return hostThemes[best ?? 'localhost']
   }
 
-  return null
-}
-
-/**
- * Get theme for specific host
- */
-export function getThemeForHost(hostname: string): HostTheme | null {
-  const rawHost = hostname.toLowerCase()
-  const normalizedHost =
-    rawHost === '127.0.0.1' || rawHost === '::1' ? 'localhost' : rawHost
-  if (hostThemes[normalizedHost]) return hostThemes[normalizedHost]
-  const candidates = Object.keys(hostThemes).filter(key =>
-    normalizedHost.endsWith(key)
-  )
-  if (candidates.length > 0) {
-    const best = candidates.sort((a, b) => b.length - a.length)[0]
-    return hostThemes[best]
-  }
-  return null
+  return undefined
 }
 
 /**

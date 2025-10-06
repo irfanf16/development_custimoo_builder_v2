@@ -122,7 +122,7 @@ export function useAppInitialization() {
       const fallbackProductId =
         (productsStore.productPreviews &&
           productsStore.productPreviews.length &&
-          productsStore.productPreviews[0].productPreview.id) ||
+          productsStore.productPreviews[0]?.productPreview.id) ||
         null
       if (fallbackProductId != null) {
         await productsStore.fetchStylePreviews(fallbackProductId)
@@ -181,7 +181,7 @@ export function useAppInitialization() {
     const activeProductId =
       customizationStore.activeProductId ||
       (productsStore.productPreviews && productsStore.productPreviews.length
-        ? productsStore.productPreviews[0].productPreview.id
+        ? productsStore.productPreviews[0]?.productPreview.id
         : null)
     if (activeProductId != null) {
       await productsStore.fetchStylePreviews(activeProductId)

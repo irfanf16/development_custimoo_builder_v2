@@ -17,6 +17,7 @@ export type CustomLogo = LogoPlacementBase & {
   actualHeight?: number
   scaleX?: number
   scaleY?: number
+  placement?: string
 }
 
 export type OutputRecentLogos = {

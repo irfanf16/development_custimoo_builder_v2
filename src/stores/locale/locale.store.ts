@@ -39,7 +39,7 @@ export const useLocaleStore = defineStore('localeStore', () => {
   }
 
   // ===== ACTIONS =====
-  function setCurrentLocale(locale: ParaglideLocale) {
+  async function setCurrentLocale(locale: ParaglideLocale) {
     // Validate the locale is still available
     if (!isValidLocale(locale)) {
       console.warn(
@@ -54,7 +54,7 @@ export const useLocaleStore = defineStore('localeStore', () => {
     currentLocale.value = locale
 
     // Update Paraglide runtime
-    setLocale(locale, { reload: false })
+    await setLocale(locale, { reload: false })
 
     // Persist to localStorage
     saveToLocalStorage()
@@ -65,7 +65,7 @@ export const useLocaleStore = defineStore('localeStore', () => {
 
   function resetToDefault() {
     const locale = defaultLocale.value || 'en'
-    setCurrentLocale(locale)
+    void setCurrentLocale(locale)
   }
 
   // ===== BUSINESS LOGIC =====
@@ -75,20 +75,22 @@ export const useLocaleStore = defineStore('localeStore', () => {
     // If there's only one available language, automatically use it
     if (availableLocales.value.length === 1) {
       const singleLocale = availableLocales.value[0]
-      setCurrentLocale(singleLocale)
-      isInitialized.value = true
-      return
+      if (singleLocale) {
+        void setCurrentLocale(singleLocale)
+        isInitialized.value = true
+        return
+      }
     }
 
     // Try to restore from localStorage
     const savedLocale = loadFromLocalStorage()
 
     if (savedLocale && isValidLocale(savedLocale)) {
-      setCurrentLocale(savedLocale)
+      void setCurrentLocale(savedLocale)
     } else {
       // Use company default or fallback to 'en'
       const locale = defaultLocale.value || 'en'
-      setCurrentLocale(locale)
+      void setCurrentLocale(locale)
     }
 
     isInitialized.value = true
@@ -103,8 +105,10 @@ export const useLocaleStore = defineStore('localeStore', () => {
     // If there's only one language available, automatically use it
     if (newLocales.length === 1) {
       const singleLocale = newLocales[0]
-      setCurrentLocale(singleLocale)
-      return
+      if (singleLocale) {
+        void setCurrentLocale(singleLocale)
+        return
+      }
     }
 
     // If current locale is no longer available, reset to default

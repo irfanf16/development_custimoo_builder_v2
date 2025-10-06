@@ -10,9 +10,9 @@ export function hexToHsl(hex: string): { h: number; s: number; l: number } {
     throw new Error('Invalid hex color')
   }
 
-  const r = parseInt(result[1], 16) / 255
-  const g = parseInt(result[2], 16) / 255
-  const b = parseInt(result[3], 16) / 255
+  const r = parseInt(result[1] ?? '', 16) / 255
+  const g = parseInt(result[2] ?? '', 16) / 255
+  const b = parseInt(result[3] ?? '', 16) / 255
 
   const max = Math.max(r, g, b)
   const min = Math.min(r, g, b)

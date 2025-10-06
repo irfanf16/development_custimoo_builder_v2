@@ -76,8 +76,9 @@ export const registry: Registry = {
       const key = payload.key
       if (!map[key]) map[key] = []
       const arr = map[key]
-      if (!arr[payload.index])
-        arr[payload.index] = {
+      let item = arr[payload.index]
+      if (!item) {
+        item = {
           id: 0,
           product_id: 0,
           type: 'text',
@@ -93,7 +94,9 @@ export const registry: Registry = {
           following_product_ids: [],
           active_item_index: 0
         }
-      arr[payload.index].value = payload.nextValue
+        arr[payload.index] = item
+      }
+      item.value = payload.nextValue
       customizationStore.saveToLocalStorage()
     },
     revert(ctx: HistoryContext, payload: TextSetValuePayload) {
@@ -105,8 +108,9 @@ export const registry: Registry = {
       const key = payload.key
       if (!map[key]) map[key] = []
       const arr = map[key]
-      if (!arr[payload.index])
-        arr[payload.index] = {
+      let item = arr[payload.index]
+      if (!item) {
+        item = {
           id: 0,
           product_id: 0,
           type: 'text',
@@ -122,7 +126,9 @@ export const registry: Registry = {
           following_product_ids: [],
           active_item_index: 0
         }
-      arr[payload.index].value = payload.prevValue
+        arr[payload.index] = item
+      }
+      item.value = payload.prevValue
       customizationStore.saveToLocalStorage()
     },
     describe(_: HistoryContext, p: TextSetValuePayload) {

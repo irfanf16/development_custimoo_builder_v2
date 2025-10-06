@@ -20,6 +20,8 @@
     SelectLabel
   } from '@/components/ui/select'
   import { Trash } from 'lucide-vue-next'
+  import type { CustomLogo } from '@/services/logos/types'
+  import type { OutputColor } from '@/services/products/types'
 
   interface Props {
     logoId: string
@@ -35,6 +37,9 @@
 
   type ColorMode = 'soccer' | 'socks' | 'pantone'
   type BackgroundRemovalMode = 'simple' | 'content' | null
+
+  // Type for color that can be either a hex string or RGB object
+  type ColorValue = string | { r: number; g: number; b: number }
 
   const baseStorageUrl = computed(
     () => import.meta.env.VITE_APP_STORAGE_URL || ''
@@ -56,7 +61,7 @@
 
   const hasColors = computed(() => (logo.value?.logo_colors?.length ?? 0) > 0)
   const placementLabel = computed(
-    () => (logo.value as any)?.placement || 'Chest middle'
+    () => (logo.value as CustomLogo)?.placement || 'Chest middle'
   )
   const previewUrl = computed(
     () => `${baseStorageUrl.value}${logo.value?.url ?? ''}`
@@ -78,20 +83,27 @@
     return colorPalettes[selectedColorMode.value] || colorPalettes.soccer
   })
 
-  // Convert palette colors to hex strings for ColorGrid
+  // Convert palette colors to OutputColor objects for ColorGrid
   const currentPaletteHex = computed(() => {
-    return currentPalette.value.map(color =>
-      typeof color === 'string'
-        ? color
-        : `#${(color as any).r.toString(16).padStart(2, '0')}${(color as any).g.toString(16).padStart(2, '0')}${(color as any).b.toString(16).padStart(2, '0')}`
-    )
+    return currentPalette.value.map((color: ColorValue, index: number) => {
+      const hexValue =
+        typeof color === 'string'
+          ? color
+          : `#${color.r.toString(16).padStart(2, '0')}${color.g.toString(16).padStart(2, '0')}${color.b.toString(16).padStart(2, '0')}`
+
+      return {
+        position: index,
+        name: hexValue,
+        value: hexValue
+      }
+    })
   })
 
   // Model for shadcn/vue select: stores the palette name (string)
   const currentPaletteId = ref<string>(selectedColorMode.value)
 
   const rgbArrayToHex = (arr: number[]): string => {
-    const [r, g, b] = arr
+    const [r = 0, g = 0, b = 0] = arr
     const toHex = (n: number) =>
       Math.max(0, Math.min(255, Math.round(n)))
         .toString(16)
@@ -227,8 +239,8 @@
     })
   }
 
-  function handleRecolorLogo(color: string) {
-    console.log('Recolor logo with:', color)
+  function handleRecolorLogo(color: OutputColor) {
+    console.log('Recolor logo with:', color.value)
   }
 
   function handleDeleteLogo() {
@@ -546,11 +558,11 @@
           <!-- Swatches grid -->
           <div class="mt-4">
             <ColorGrid
-              :colors="currentPaletteHex as any"
+              :colors="currentPaletteHex"
               :selected-color="colorSwatches[0]"
               :grid-cols="8"
               button-size="md"
-              @color-select="handleRecolorLogo as any"
+              @color-select="handleRecolorLogo"
             />
           </div>
         </AccordionContent>
