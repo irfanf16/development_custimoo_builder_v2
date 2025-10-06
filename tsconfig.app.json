@@ -14,13 +14,10 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "types": ["three"],
     "allowJs": true,
     "checkJs": false
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "src/paraglide/**/*.js"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["src/paraglide/**/*"]
 }

@@ -2,7 +2,7 @@
   import { computed, watch, ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  import { useWorkflowManager } from '@/composables/useWorkflowManager'
+  import { useWorkflow } from '@/composables/useWorkflow'
   import CategorySelection from './CategorySelection.vue'
   import SubcategorySelection from './SubcategorySelection.vue'
   import ProductSelection from './ProductSelection.vue'
@@ -14,7 +14,7 @@
   const {
     handleCategorySelect: selectCategory,
     handleSubcategorySelect: selectSubcategory
-  } = useWorkflowManager()
+  } = useWorkflow()
 
   const categories = computed(() => productsStore.categories?.data ?? [])
   const hasCategories = computed(() => categories.value.length > 0)

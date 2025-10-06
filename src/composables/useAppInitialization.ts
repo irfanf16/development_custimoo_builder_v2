@@ -5,7 +5,7 @@ import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useLocaleStore } from '@/stores/locale/locale.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-import { useWorkflowEffects } from './useWorkflowEffects'
+import { useWorkflow } from './useWorkflow'
 import { useHistoryStore } from '@/stores/history/history.store'
 import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
 import type { OutputDesignDetails } from '../services/products/types'
@@ -219,7 +219,8 @@ export function useAppInitialization() {
 
   // PHASE 6: Initialize workflow effects
   const initializeWorkflowEffects = () => {
-    useWorkflowEffects()
+    const { initializeEffects } = useWorkflow()
+    initializeEffects()
   }
 
   const initializeApp = async () => {

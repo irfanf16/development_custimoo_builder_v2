@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
   import * as THREE from 'three'
-  import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+  import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useProductsStore } from '@/stores/products/products.store'
 
@@ -9,12 +9,12 @@
   const products = useProductsStore()
   const containerEl = ref<HTMLDivElement | null>(null)
 
-  let renderer: any = null
-  let scene: any = null
-  let camera: any = null
+  let renderer: THREE.WebGLRenderer | null = null
+  let scene: THREE.Scene | null = null
+  let camera: THREE.PerspectiveCamera | null = null
   let animationId: number | null = null
-  let currentRoot: any = null
-  const loadedTextures: any[] = []
+  let currentRoot: THREE.Object3D | null = null
+  const loadedTextures: THREE.Texture[] = []
 
   const storageBase =
     (import.meta as { env?: { VITE_APP_STORAGE_URL?: string } }).env
@@ -26,27 +26,23 @@
     return base + clean
   }
 
-  function disposeObject3D(obj: any) {
-    obj.traverse((child: any) => {
-      if (child.isMesh) {
-        const mesh = child
-        if (mesh.geometry) {
-          mesh.geometry.dispose()
-        }
-        const material = mesh.material as any
-        const list = Array.isArray(material)
-          ? material
-          : material
-            ? [material]
+  function disposeObject3D(obj: THREE.Object3D) {
+    obj.traverse((child: THREE.Object3D) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose()
+        const materials = Array.isArray(child.material)
+          ? child.material
+          : child.material
+            ? [child.material]
             : []
-        list.forEach(m => {
-          const material = m
-          if (material.map) material.map.dispose()
-          if (material.aoMap) material.aoMap.dispose()
-          if (material.roughnessMap) material.roughnessMap.dispose()
-          if (material.metalnessMap) material.metalnessMap.dispose()
-          if (material.alphaMap) material.alphaMap.dispose()
-          m.dispose()
+        materials.forEach((material: THREE.Material) => {
+          const mat = material as THREE.MeshStandardMaterial
+          mat.map?.dispose()
+          mat.aoMap?.dispose()
+          mat.roughnessMap?.dispose()
+          mat.metalnessMap?.dispose()
+          mat.alphaMap?.dispose()
+          material.dispose()
         })
       }
     })
@@ -67,32 +63,34 @@
 
   function ensureRenderer() {
     if (!containerEl.value) return
-    const w = ui.containerWidth || 800
-    const h = ui.containerHeight || 600
+    const width = ui.containerWidth || 800
+    const height = ui.containerHeight || 600
+
     if (!renderer) {
-      renderer = new (THREE as any).WebGLRenderer({
-        antialias: true,
-        alpha: true
-      })
-      // @ts-ignore - supported in r179+
-      renderer.outputColorSpace = (THREE as any).SRGBColorSpace
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+      renderer.outputColorSpace = THREE.SRGBColorSpace
       renderer.setPixelRatio(window.devicePixelRatio)
-      renderer.setSize(w, h)
+      renderer.setSize(width, height)
       containerEl.value.appendChild(renderer.domElement)
     } else {
-      renderer.setSize(w, h)
+      renderer.setSize(width, height)
     }
-    if (!scene) scene = new (THREE as any).Scene()
+
+    if (!scene) scene = new THREE.Scene()
     if (!camera) {
-      camera = new (THREE as any).PerspectiveCamera(45, w / h, 0.1, 1000)
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
       camera.position.set(0, 0, 5)
     }
-    // basic lighting
-    if (scene.children.filter((c: any) => c.isLight).length === 0) {
-      const hemi = new (THREE as any).HemisphereLight(0xffffff, 0x444444, 1)
+
+    const hasLights = scene.children.some(
+      (child: THREE.Object3D) => child instanceof THREE.Light
+    )
+    if (!hasLights) {
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1)
       hemi.position.set(0, 1, 0)
       scene.add(hemi)
-      const dir = new (THREE as any).DirectionalLight(0xffffff, 1)
+
+      const dir = new THREE.DirectionalLight(0xffffff, 1)
       dir.position.set(3, 3, 5)
       scene.add(dir)
     }
@@ -106,19 +104,19 @@
 
   function resize() {
     if (!renderer || !camera) return
-    const w = ui.containerWidth || 800
-    const h = ui.containerHeight || 600
-    camera.aspect = w / h
+    const width = ui.containerWidth || 800
+    const height = ui.containerHeight || 600
+    camera.aspect = width / height
     camera.updateProjectionMatrix()
-    renderer.setSize(w, h)
+    renderer.setSize(width, height)
   }
 
   function addPlaceholder() {
     if (!scene) return
     clearSceneContent()
-    const geom = new (THREE as any).SphereGeometry(1, 32, 32)
-    const mat = new (THREE as any).MeshStandardMaterial({ color: 0xffffff })
-    const mesh = new (THREE as any).Mesh(geom, mat)
+    const geometry = new THREE.SphereGeometry(1, 32, 32)
+    const material = new THREE.MeshStandardMaterial({ color: 0xffffff })
+    const mesh = new THREE.Mesh(geometry, material)
     currentRoot = mesh
     scene.add(mesh)
   }
@@ -148,7 +146,7 @@
     clearSceneContent()
 
     const gltfLoader = new GLTFLoader()
-    const texLoader = new (THREE as any).TextureLoader()
+    const texLoader = new THREE.TextureLoader()
 
     try {
       const [gltf, colorTex, alphaTex, aoTex, roughTex, metalTex] =
@@ -159,58 +157,55 @@
                 console.log('[3D] base texture load error', err)
                 return null
               })
-            : Promise.resolve(null),
+            : Promise.resolve<THREE.Texture | null>(null),
           alphaUrl
             ? texLoader.loadAsync(alphaUrl).catch((err: unknown) => {
                 console.log('[3D] alpha map load error', err)
                 return null
               })
-            : Promise.resolve(null),
+            : Promise.resolve<THREE.Texture | null>(null),
           aoUrl
             ? texLoader.loadAsync(aoUrl).catch((err: unknown) => {
                 console.log('[3D] ao map load error', err)
                 return null
               })
-            : Promise.resolve(null),
+            : Promise.resolve<THREE.Texture | null>(null),
           roughnessUrl
             ? texLoader.loadAsync(roughnessUrl).catch((err: unknown) => {
                 console.log('[3D] roughness map load error', err)
                 return null
               })
-            : Promise.resolve(null),
+            : Promise.resolve<THREE.Texture | null>(null),
           metalnessUrl
             ? texLoader.loadAsync(metalnessUrl).catch((err: unknown) => {
                 console.log('[3D] metalness map load error', err)
                 return null
               })
-            : Promise.resolve(null)
+            : Promise.resolve<THREE.Texture | null>(null)
         ])
 
-      ;[colorTex, alphaTex, aoTex, roughTex, metalTex].forEach(
-        t => t && loadedTextures.push(t)
-      )
+      ;[colorTex, alphaTex, aoTex, roughTex, metalTex].forEach(texture => {
+        if (texture) loadedTextures.push(texture)
+      })
 
       currentRoot = gltf.scene
-      // Center and scale the model to fit a canonical view
-      const box = new (THREE as any).Box3().setFromObject(currentRoot)
-      const size = new (THREE as any).Vector3()
-      const center = new (THREE as any).Vector3()
-      box.getSize(size)
-      box.getCenter(center)
-      currentRoot.position.sub(center)
-      const maxAxis = Math.max(size.x, size.y, size.z)
-      if (maxAxis > 0) currentRoot.scale.multiplyScalar(2.2 / maxAxis)
 
-      // Apply textures if available
-      currentRoot.traverse((obj: any) => {
-        if (obj.isMesh) {
-          const mesh = obj
-          const mat = mesh.material
-          if (mat) {
+      if (currentRoot) {
+        const box = new THREE.Box3().setFromObject(currentRoot)
+        const size = new THREE.Vector3()
+        const center = new THREE.Vector3()
+        box.getSize(size)
+        box.getCenter(center)
+        currentRoot.position.sub(center)
+        const maxAxis = Math.max(size.x, size.y, size.z)
+        if (maxAxis > 0) currentRoot.scale.multiplyScalar(2.2 / maxAxis)
+
+        currentRoot.traverse((obj: THREE.Object3D) => {
+          if (obj instanceof THREE.Mesh) {
+            const mat = obj.material as THREE.MeshStandardMaterial
             if (colorTex) {
               mat.map = colorTex
-              // @ts-ignore - ensure correct color space
-              mat.map.colorSpace = (THREE as any).SRGBColorSpace
+              mat.map.colorSpace = THREE.SRGBColorSpace
             }
             if (alphaTex) {
               mat.alphaMap = alphaTex
@@ -221,13 +216,13 @@
             if (metalTex) mat.metalnessMap = metalTex
             mat.needsUpdate = true
           }
-        }
-      })
+        })
 
-      scene.add(currentRoot)
+        scene.add(currentRoot)
+      }
       resize()
     } catch (err) {
-      console.log('[3D] GLB load error', err)
+      console.error('[ThreePreview] failed to load assets', err)
       addPlaceholder()
     }
   }
@@ -236,13 +231,13 @@
     ensureRenderer()
     resize()
     renderFrame()
-    loadGLBAndTextures()
+    void loadGLBAndTextures()
   })
 
   watch(
     () => products.activeStyleDetails,
     () => {
-      loadGLBAndTextures()
+      void loadGLBAndTextures()
     }
   )
 

@@ -41,7 +41,7 @@
       index: idx,
       prevValue: current,
       nextValue: next
-    } as any)
+    })
   }
 
   // Breadcrumbs only

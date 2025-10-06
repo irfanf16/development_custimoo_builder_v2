@@ -1,6 +1,5 @@
 <script setup lang="ts">
   import { computed, ref, isRef, type Ref, type ComputedRef } from 'vue'
-  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { Button } from '@/components/ui/button'
   import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'
@@ -13,7 +12,7 @@
   } from '@/components/ui/tooltip'
   import { Maximize2, Minimize2, Search } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
-  import { useWorkflowNavigation } from '@/composables/useWorkflowNavigation'
+  import { useWorkflow } from '@/composables/useWorkflow'
   import {
     ProductsEntry,
     DesignSelection,
@@ -35,33 +34,23 @@
   }
 
   const props = defineProps<Props>()
+  void props.onNavigateBack
 
-  const workflowStore = useWorkflowStore()
+  const {
+    currentStep,
+    contentKey,
+    navigationItems,
+    logosSubStep,
+    textsSubStep,
+    rosterSubStep
+  } = useWorkflow()
 
   const isExpanded = ref(false)
   const menuPanelRef = ref<{
     scrollToElement: (elementId: string, behavior?: 'smooth' | 'auto') => void
   } | null>(null)
 
-  const { navigationItems } = useWorkflowNavigation(props.onNavigateBack)
-
   // Computed properties for workflow step configuration
-  const logosSubStepValue = computed(() => {
-    const sub = (workflowStore as { logosSubStep?: string | { value: string } })
-      .logosSubStep
-    return sub && typeof sub === 'object' && 'value' in sub ? sub.value : sub
-  })
-
-  const contentKey = computed(() => {
-    if (workflowStore.activeStep === 'logos') {
-      const sub = logosSubStepValue.value || 'list'
-      return `logos-${sub}`
-    }
-    return workflowStore.activeStep
-  })
-
-  // Get header and footer configuration from current step component
-
   const currentStepRef = ref<HeaderAndFooterConfiguration | null>(null)
 
   const isExpandable = computed(() => {
@@ -88,6 +77,12 @@
     return currentStepRef.value?.headerExtras?.actionButton
   })
 
+  const toggleExpanded = () => {
+    if (isExpandable.value) {
+      isExpanded.value = !isExpanded.value
+    }
+  }
+
   // Bridge nested refs from child steps to primitives for props expecting non-Ref
   const applyOverridesModelValue = computed({
     get: (): boolean => {
@@ -111,12 +106,6 @@
       currentStepRef.value?.headerExtras?.search?.onInput?.(val)
     }
   })
-
-  const toggleExpanded = () => {
-    if (isExpandable.value) {
-      isExpanded.value = !isExpanded.value
-    }
-  }
 
   /**
    * Handles scroll-to-element events from child components
@@ -216,64 +205,69 @@
           </div>
         </div>
       </template>
-      <ProductsEntry
-        v-if="workflowStore.activeStep === 'product'"
-        ref="currentStepRef"
-      />
+      <ProductsEntry v-if="currentStep === 'product'" ref="currentStepRef" />
 
       <!-- Design Selection Step -->
       <DesignSelection
-        v-else-if="workflowStore.activeStep === 'designs'"
+        v-else-if="currentStep === 'designs'"
         ref="currentStepRef"
         @scroll-to-element="handleScrollToElement"
       />
 
       <!-- Style Selection Step -->
       <StyleSelection
-        v-else-if="workflowStore.activeStep === 'styles'"
+        v-else-if="currentStep === 'styles'"
         ref="currentStepRef"
       />
 
       <!-- Logo Selection Step -->
       <LogoSelection
-        v-else-if="workflowStore.activeStep === 'logos'"
+        v-else-if="currentStep === 'logos' && logosSubStep === 'list'"
+        ref="currentStepRef"
+      />
+      <LogoPlacement
+        v-else-if="currentStep === 'logos' && logosSubStep === 'placement'"
+        ref="currentStepRef"
+      />
+      <LogoCustomization
+        v-else-if="currentStep === 'logos' && logosSubStep === 'edit'"
         ref="currentStepRef"
       />
 
       <!-- Colors -->
       <ColorSelection
-        v-else-if="workflowStore.activeStep === 'colors'"
+        v-else-if="currentStep === 'colors'"
         ref="currentStepRef"
       />
 
       <!-- Patterns -->
       <PatternSelection
-        v-else-if="workflowStore.activeStep === 'patterns'"
+        v-else-if="currentStep === 'patterns'"
         ref="currentStepRef"
       />
       <!-- Texts -->
       <TextsSelection
-        v-else-if="workflowStore.activeStep === 'texts'"
+        v-else-if="currentStep === 'texts' && textsSubStep === 'list'"
         ref="currentStepRef"
       />
       <TextPlacement
-        v-else-if="workflowStore.activeStep === 'texts-placement'"
+        v-else-if="currentStep === 'texts' && textsSubStep === 'placement'"
         ref="currentStepRef"
       />
 
       <!-- Roster -->
       <RosterEntry
-        v-else-if="workflowStore.activeStep === 'roster'"
+        v-else-if="currentStep === 'roster' && rosterSubStep === 'list'"
         ref="currentStepRef"
       />
       <RosterEdit
-        v-else-if="workflowStore.activeStep === 'roster-edit'"
+        v-else-if="currentStep === 'roster' && rosterSubStep === 'edit'"
         ref="currentStepRef"
       />
 
       <!-- Summary -->
       <SummaryPanel
-        v-else-if="workflowStore.activeStep === 'summary'"
+        v-else-if="currentStep === 'summary'"
         ref="currentStepRef"
       />
     </WorkflowPanel>

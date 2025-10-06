@@ -12,9 +12,6 @@
   import { useUIStore } from '@/stores/ui/ui.store'
 
   const uiStore = useUIStore()
-  import { useWorkflowManager, useWorkflowNavigation } from '@/composables'
-  const { currentStep } = useWorkflowManager()
-  const { navigationItems } = useWorkflowNavigation()
   const isMobile = computed(() => uiStore.isMobile)
 </script>
 
@@ -26,10 +23,7 @@
     <template v-if="isMobile">
       <div id="main-content mobile" class="mobile-layout flex flex-col gap-2">
         <CustomizerTopbar class="z-10" />
-        <WorkflowLayoutMobile
-          :current-step="currentStep"
-          :on-navigate-back="() => {}"
-        />
+        <WorkflowLayoutMobile />
         <MobileActionBar />
         <CustomizerMenuMobile />
       </div>
@@ -44,12 +38,7 @@
           <div id="menu-items-container" class="flex-col z-10">
             <CustomizerMenu />
           </div>
-          <WorkflowLayout
-            :current-step="currentStep"
-            :navigation-items="navigationItems"
-            :on-navigate-back="() => {}"
-            class="z-10"
-          />
+          <WorkflowLayout :on-navigate-back="() => {}" class="z-10" />
         </div>
 
         <div
