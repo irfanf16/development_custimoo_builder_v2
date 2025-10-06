@@ -12,17 +12,9 @@
   import { useUIStore } from '@/stores/ui/ui.store'
 
   const uiStore = useUIStore()
-  // Workflow logic moved to composables
   import { useWorkflowManager, useWorkflowNavigation } from '@/composables'
-
   const { currentStep } = useWorkflowManager()
-  const { navigationItems } = useWorkflowNavigation(() => {
-    // Navigate back by going to previous step in workflow store
-    // This is now handled by the workflow store itself
-  })
-
-  // const containerWidth = computed(() => uiStore.containerWidth)
-  // const containerHeight = computed(() => uiStore.containerHeight)
+  const { navigationItems } = useWorkflowNavigation()
   const isMobile = computed(() => uiStore.isMobile)
 </script>
 
@@ -30,8 +22,20 @@
   <div
     class="px-4 py-4 md:px-6 md:py-6 w-full h-[800px] min-h-[800px] max-h-[800px] overflow-hidden flex-none"
   >
+    <!-- Mobile layout -->
+    <template v-if="isMobile">
+      <div id="main-content mobile" class="flex flex-col gap-2">
+        <CustomizerTopbar class="z-10" />
+        <CustomizerMenuMobile />
+        <WorkflowLayoutMobile
+          :current-step="currentStep"
+          :on-navigate-back="() => {}"
+        />
+        <MobileActionBar />
+      </div>
+    </template>
     <!-- Desktop layout -->
-    <template v-if="!isMobile">
+    <template v-else>
       <div
         id="main-content"
         class="flex flex-row justify-between w-full max-h-full"
@@ -77,19 +81,6 @@
           <BottomActions class="z-10" />
           <PriceCard class="z-10" />
         </div> -->
-    </template>
-
-    <!-- Mobile layout -->
-    <template v-else>
-      <div class="flex flex-col gap-2">
-        <CustomizerTopbar class="z-10" />
-        <CustomizerMenuMobile />
-        <WorkflowLayoutMobile
-          :current-step="currentStep"
-          :on-navigate-back="() => {}"
-        />
-        <MobileActionBar />
-      </div>
     </template>
   </div>
 </template>

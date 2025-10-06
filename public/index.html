@@ -57,6 +57,72 @@
         gap: 15px;
         align-items: center;
       }
+      .hamburger {
+        display: none;
+        flex-direction: column;
+        cursor: pointer;
+        padding: 4px;
+      }
+      .hamburger span {
+        width: 25px;
+        height: 3px;
+        background-color: #2c3e50;
+        margin: 3px 0;
+        transition: 0.3s;
+        border-radius: 2px;
+      }
+      .hamburger.active span:nth-child(1) {
+        transform: rotate(-45deg) translate(-5px, 6px);
+      }
+      .hamburger.active span:nth-child(2) {
+        opacity: 0;
+      }
+      .hamburger.active span:nth-child(3) {
+        transform: rotate(45deg) translate(-5px, -6px);
+      }
+      .mobile-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+      .mobile-menu.active {
+        display: block;
+      }
+      .mobile-nav {
+        padding: 20px;
+      }
+      .mobile-nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .mobile-nav li {
+        margin-bottom: 15px;
+      }
+      .mobile-nav a {
+        color: #2c3e50;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 16px;
+        display: block;
+        padding: 10px 0;
+        border-bottom: 1px solid #ecf0f1;
+      }
+      .mobile-nav a:hover {
+        color: #3498db;
+      }
+      .mobile-actions {
+        padding: 20px;
+        border-top: 1px solid #ecf0f1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
       .btn {
         padding: 8px 16px;
         border: none;
@@ -147,6 +213,77 @@
       .social-links a:hover {
         background: #3498db;
       }
+
+      /* Mobile Responsive Styles */
+      @media (max-width: 768px) {
+        .header {
+          position: relative;
+        }
+
+        .header-content {
+          height: 70px;
+          padding: 0 20px;
+        }
+
+        .nav-menu {
+          display: none;
+        }
+
+        .hamburger {
+          display: flex;
+        }
+
+        .header-actions .btn {
+          display: none;
+        }
+
+        .footer-content {
+          grid-template-columns: 1fr;
+          gap: 20px;
+          text-align: center;
+        }
+
+        .social-links {
+          justify-content: center;
+        }
+
+        .footer-bottom {
+          text-align: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header-content {
+          padding: 10px 15px;
+        }
+
+        .nav-menu {
+          gap: 10px;
+        }
+
+        .btn {
+          padding: 6px 12px;
+          font-size: 14px;
+        }
+
+        .footer {
+          padding: 30px 0 15px;
+        }
+
+        .footer-section h3 {
+          font-size: 16px;
+        }
+
+        .social-links {
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .social-links a {
+          padding: 6px 10px;
+          font-size: 14px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -166,6 +303,28 @@
         </nav>
 
         <div class="header-actions">
+          <a href="#" class="btn btn-outline">Sign In</a>
+          <a href="#" class="btn btn-primary">Get Started</a>
+        </div>
+
+        <div class="hamburger" onclick="toggleMobileMenu()">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-nav">
+          <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Products</a></li>
+            <li><a href="#">Customization</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+        <div class="mobile-actions">
           <a href="#" class="btn btn-outline">Sign In</a>
           <a href="#" class="btn btn-primary">Get Started</a>
         </div>
@@ -242,5 +401,42 @@
 
     <!-- Load the widget script -->
     <script type="module" src="/widget.js"></script>
+
+    <!-- Mobile menu toggle script -->
+    <script>
+      function toggleMobileMenu() {
+        const mobileMenu = document.getElementById('mobileMenu')
+        const hamburger = document.querySelector('.hamburger')
+
+        mobileMenu.classList.toggle('active')
+        hamburger.classList.toggle('active')
+      }
+
+      // Close mobile menu when clicking outside
+      document.addEventListener('click', function (event) {
+        const mobileMenu = document.getElementById('mobileMenu')
+        const hamburger = document.querySelector('.hamburger')
+        const header = document.querySelector('.header')
+
+        if (
+          !header.contains(event.target) &&
+          mobileMenu.classList.contains('active')
+        ) {
+          mobileMenu.classList.remove('active')
+          hamburger.classList.remove('active')
+        }
+      })
+
+      // Close mobile menu when clicking on a link
+      document.querySelectorAll('.mobile-nav a').forEach(link => {
+        link.addEventListener('click', function () {
+          const mobileMenu = document.getElementById('mobileMenu')
+          const hamburger = document.querySelector('.hamburger')
+
+          mobileMenu.classList.remove('active')
+          hamburger.classList.remove('active')
+        })
+      })
+    </script>
   </body>
 </html>
