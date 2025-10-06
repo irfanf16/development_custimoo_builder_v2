@@ -1,6 +1,7 @@
 export { useAppInitialization } from './useAppInitialization'
 export { useColorActions } from './useColorActions'
 export { useColorScheme } from './useColorScheme'
+export { useCustomizerMenu } from './useCustomizerMenu'
 export { useFabricPreview } from './useFabricPreview'
 export { useParaglideLocale } from './useParaglideLocale'
 export { useWorkflowEffects } from './useWorkflowEffects'

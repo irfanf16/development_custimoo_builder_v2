@@ -24,14 +24,14 @@
   >
     <!-- Mobile layout -->
     <template v-if="isMobile">
-      <div id="main-content mobile" class="flex flex-col gap-2">
+      <div id="main-content mobile" class="mobile-layout flex flex-col gap-2">
         <CustomizerTopbar class="z-10" />
-        <CustomizerMenuMobile />
         <WorkflowLayoutMobile
           :current-step="currentStep"
           :on-navigate-back="() => {}"
         />
         <MobileActionBar />
+        <CustomizerMenuMobile />
       </div>
     </template>
     <!-- Desktop layout -->
