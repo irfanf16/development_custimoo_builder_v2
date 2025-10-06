@@ -44,7 +44,7 @@
             :current-step="currentStep"
             :navigation-items="navigationItems"
             :on-navigate-back="() => {}"
-            class="z-20"
+            class="z-10"
           />
         </div>
 
@@ -63,8 +63,8 @@
                 id="canvas-controls-container-inner"
                 class="flex flex-col gap-9 items-end justify-between h-full"
               >
-                <RightToolbar class="z-10" />
-                <SmallPreview class="z-10" />
+                <RightToolbar class="" />
+                <SmallPreview class="" />
               </div>
             </div>
           </div>

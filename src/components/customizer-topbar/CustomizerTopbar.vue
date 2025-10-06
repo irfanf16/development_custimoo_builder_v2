@@ -2,7 +2,7 @@
   import { Button } from '@/components/ui/button'
   import { Save, ShoppingCart, RotateCcw } from 'lucide-vue-next'
   import ThemeToggle from '@/components/ThemeToggle.vue'
-  // import SignInButton from '@/components/SignInButton.vue'
+  import SignInButton from '@/components/SignInButton.vue'
   import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
   import {
     topbar_save,
@@ -81,7 +81,7 @@
       <span>{{ topbar_cart({}, { locale: localeStore.currentLocale }) }}</span>
     </Button>
     <LanguageSwitcher />
-    <!-- <SignInButton variant="outline" size="default" class="" /> -->
+    <SignInButton variant="outline" size="default" class="" />
     <ThemeToggle
       v-if="uiStore.allowColorModeSwitch"
       variant="outline"

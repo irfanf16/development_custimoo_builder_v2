@@ -6,7 +6,7 @@
 </script>
 
 <template>
-  <DialogClose data-slot="dialog-close" v-bind="props">
+  <DialogClose v-bind="props">
     <slot />
   </DialogClose>
 </template>
