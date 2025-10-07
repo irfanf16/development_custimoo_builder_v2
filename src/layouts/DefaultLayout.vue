@@ -5,7 +5,7 @@
 </script>
 
 <template>
-  <div class="layout w-full mx-auto overflow-hidden">
+  <div class="layout w-full mx-auto overflow-hidden h-full">
     <slot />
   </div>
 </template>

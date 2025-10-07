@@ -53,7 +53,12 @@
       const style = effectiveStyleDetails.value
       if (!design || !style) return
 
-      const fitOptions = { scaleBy: 'height', heightPercent: 0.75 } as const
+      // Use 'auto' to properly contain images within canvas bounds (prevents clipping)
+      const fitOptions = {
+        scaleBy: 'auto' as const,
+        widthPercent: 0.95,
+        heightPercent: 0.95
+      }
 
       if (side === 'back' && design.back_design) {
         await addDesignLayer(

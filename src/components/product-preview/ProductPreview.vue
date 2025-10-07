@@ -23,7 +23,6 @@
       v-if="elementSize.width.value > 0 && elementSize.height.value > 0"
       :width="elementSize.width.value"
       :height="elementSize.height.value"
-      :class="'top-[-5rem] md:top-0'"
     />
   </div>
 

@@ -243,9 +243,17 @@ export function useFabricPreview(
       obj.scaleToHeight(maxH)
       return
     }
-    // auto: choose the dominant dimension
-    if ((obj.width || 0) > (obj.height || 0)) obj.scaleToWidth(maxW)
-    else obj.scaleToHeight(maxH)
+    // auto: proper contain fit - scale by the most constraining dimension
+    // Calculate scale ratios for both dimensions
+    const widthRatio = maxW / (obj.width || 1)
+    const heightRatio = maxH / (obj.height || 1)
+
+    // Use the smaller ratio to ensure the object fits within both constraints
+    if (widthRatio < heightRatio) {
+      obj.scaleToWidth(maxW)
+    } else {
+      obj.scaleToHeight(maxH)
+    }
   }
 
   // ===== LAYER MANAGEMENT =====

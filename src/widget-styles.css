@@ -268,8 +268,8 @@ customizer-widget * {
 
 /* Container height management */
 #customizer-widget-container {
-  min-height: 700px; /* Mobile minimum */
-  height: auto; /* Let content determine height */
+  min-height: 800px; /* Mobile minimum */
+  height: 800px; /* Let content determine height */
   display: flex;
   flex-direction: column;
 }
@@ -278,6 +278,7 @@ customizer-widget * {
 @media (min-width: 768px) {
   #customizer-widget-container {
     min-height: 800px;
+    height: 800px;
   }
 }
 
