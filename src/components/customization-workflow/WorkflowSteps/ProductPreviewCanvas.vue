@@ -203,7 +203,7 @@
     :style="{ width: `${width / 16}rem`, height: `${height / 16}rem` }"
   >
     <canvas
-      v-show="isVisible"
+      v-show="isVisible && !isRendering"
       ref="canvasEl"
       :width="width"
       :height="height"
@@ -211,9 +211,29 @@
       style="width: 100%; height: 100%"
     />
 
+    <!-- Skeleton loader matching canvas dimensions -->
     <div
       v-if="!isVisible || isRendering"
-      class="absolute inset-0 rounded-xl animate-pulse bg-secondary/30"
-    />
+      class="absolute inset-0 rounded-xl overflow-hidden bg-muted/50"
+    >
+      <!-- Main product silhouette skeleton -->
+      <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          class="relative bg-muted/60 rounded-lg"
+          :style="{
+            width: '70%',
+            height: '85%'
+          }"
+        >
+          <!-- Subtle shimmer effect -->
+          <div
+            class="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-muted-foreground/10 to-transparent"
+          />
+        </div>
+      </div>
+
+      <!-- Pulsing overlay for additional loading effect -->
+      <div class="absolute inset-0 bg-muted/20 animate-pulse" />
+    </div>
   </div>
 </template>
