@@ -16,6 +16,7 @@
   const categories = computed(() => productsStore.categories?.data)
 
   async function handleSelectCategory(categoryId: number) {
+    workflowStore.setSelectedSubCategoryForPreview(null)
     workflowStore.setSelectedCategoryForPreview(categoryId)
     // Do not commit category or preload products here; ProductSelection will handle fetching
     props.onSelectCategory?.(categoryId)

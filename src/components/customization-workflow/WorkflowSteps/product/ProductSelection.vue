@@ -28,21 +28,20 @@
   const { activeProductId: selectedProductId } = storeToRefs(customizationStore)
   const previews = computed(() => productsStore.productPreviews || [])
 
-  function loadPreviewsForCurrentCategory() {
-    console.log('loadPreviewsForCurrentCategory')
+  function loadPreviewsForCurrentCategory(isColdStart: boolean = false) {
+    // isColdStart is true when the component is mounted without a selected subcategory. For example, when the app loads for the first time or when the user navigates back to the product step.
     const categoryId =
       workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
-    const subcategoryId =
-      workflowStore.selectedSubCategoryId ??
-      customizationStore.activeSubCategoryId ??
-      undefined
+    const subcategoryId = isColdStart
+      ? workflowStore.selectedSubCategoryId
+      : customizationStore.activeSubCategoryId
     console.log('categoryId', categoryId)
     console.log('subcategoryId', subcategoryId)
     productsStore.fetchProductPreviews(categoryId, subcategoryId || undefined)
   }
 
   onMounted(() => {
-    loadPreviewsForCurrentCategory()
+    loadPreviewsForCurrentCategory(true)
 
     // Scroll to active product if it exists
     nextTick(() => {
