@@ -155,32 +155,39 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
         category.subcategories.length
       )
 
-      if (hasSubs) {
-        const selectedSub =
-          category && subId
-            ? category.subcategories?.find(s => s.id === subId)
-            : undefined
-        const subLabel = selectedSub?.category_name || 'Subcategory'
-        return [
-          {
-            label: 'Category',
-            action: () => {
-              workflowStore.setProductsSubStep('category')
-            }
-          },
-          { label: subLabel }
-        ]
-      }
-
-      return [
+      const trail: NavigationItem[] = [
         {
           label: 'Category',
           action: () => {
             workflowStore.setProductsSubStep('category')
           }
-        },
-        { label: category?.category_name || '—' }
+        }
       ]
+
+      const categoryLabel = category?.category_name || '—'
+
+      if (categoryLabel) {
+        trail.push({
+          label: categoryLabel,
+          action: hasSubs
+            ? () => {
+                workflowStore.setProductsSubStep('subcategory')
+              }
+            : undefined
+        })
+      }
+
+      if (hasSubs) {
+        const selectedSub =
+          subId && category
+            ? category.subcategories?.find(s => s.id === subId)
+            : undefined
+        if (selectedSub) {
+          trail.push({ label: selectedSub.category_name })
+        }
+      }
+
+      return trail
     }
 
     if (step === 'designs') {

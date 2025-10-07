@@ -6,10 +6,7 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
-  import type {
-    HeaderAndFooterConfiguration,
-    BreadcrumbItem
-  } from '../../types'
+  import type { HeaderAndFooterConfiguration } from '../../types'
   import type { OutputDesignDetails } from '@/services/products/types'
 
   interface Emits {
@@ -101,50 +98,6 @@
   }
 
   // Breadcrumb logic for product selection
-  const breadcrumbs = computed<BreadcrumbItem[]>(() => {
-    const categoryId =
-      workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
-    const category = productsStore.categories?.data?.find(
-      c => c.id === categoryId
-    )
-    const subId =
-      workflowStore.selectedSubCategoryId ??
-      customizationStore.activeSubCategoryId
-
-    const hasSubs = !!(
-      category &&
-      category.subcategories &&
-      category.subcategories.length
-    )
-
-    const trail = [
-      {
-        label: 'Category',
-        action: () => {
-          workflowStore.setProductsSubStep('category')
-        }
-      },
-      {
-        label: category?.category_name || '—',
-        action: hasSubs
-          ? () => {
-              workflowStore.setProductsSubStep('subcategory')
-            }
-          : undefined
-      }
-    ]
-
-    if (category && subId) {
-      const sub = category.subcategories?.find(s => s.id === subId)
-      if (sub)
-        trail.push({
-          label: sub.category_name,
-          action: undefined
-        })
-    }
-
-    return trail
-  })
 
   // Header search config
   const productSearchQuery = ref('')
@@ -174,7 +127,6 @@
 
   const headerAndFooterConfiguration: HeaderAndFooterConfiguration = {
     headerExtras: {
-      breadcrumbs,
       search: {
         placeholder: 'Search products...',
         model: debouncedProductModel,

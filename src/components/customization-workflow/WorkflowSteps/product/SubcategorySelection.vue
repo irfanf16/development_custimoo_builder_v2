@@ -81,21 +81,7 @@
   const getCategoryIcon = (index: number) =>
     fallbackFlexDuoIcons[index % fallbackFlexDuoIcons.length]
 
-  // Expose breadcrumb via header model
-  const breadcrumbs = computed(() => {
-    const category = selectedCategory.value
-    return [
-      {
-        label: 'Category',
-        action: () => {
-          workflowStore.setProductsSubStep('category')
-        }
-      },
-      { label: category?.category_name || '—' }
-    ]
-  })
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  // Breadcrumbs handled centrally via useWorkflow
 </script>
 
 <template>

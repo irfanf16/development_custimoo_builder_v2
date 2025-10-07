@@ -70,10 +70,7 @@
   const getCategoryIcon = (index: number) =>
     fallbackFlexDuoIcons[index % fallbackFlexDuoIcons.length]
 
-  // Expose breadcrumb data to parent using new header model
-  const breadcrumbs = computed(() => [{ label: 'Category' }])
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  // No longer exposing breadcrumbs; centralized in useWorkflow
 </script>
 
 <template>
