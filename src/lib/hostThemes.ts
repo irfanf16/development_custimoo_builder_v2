@@ -50,7 +50,7 @@ export const hostThemes: Record<string, HostTheme> = {
   // Staging
   'builder-v2.custimoo.com': {
     primary: '#e12d2e',
-    radius: '0rem',
+    radius: '0.5rem',
     font: {
       default: { name: 'Geist' },
       brandAccent: {
