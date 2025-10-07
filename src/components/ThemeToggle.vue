@@ -9,7 +9,8 @@
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import { computed, watch } from 'vue'
+  import { watch } from 'vue'
+  import { storeToRefs } from 'pinia'
   import {
     theme_toggle_sr,
     theme_light,
@@ -19,6 +20,8 @@
 
   const uiStore = useUIStore()
   const localeStore = useLocaleStore()
+
+  const { currentTheme: colorMode } = storeToRefs(uiStore)
 
   const props = withDefaults(
     defineProps<{
@@ -36,8 +39,6 @@
   const setTheme = (theme: 'light' | 'dark') => {
     uiStore.setTheme(theme)
   }
-
-  const colorMode = computed(() => uiStore.currentTheme)
 
   watch(colorMode, newVal => {
     if (uiStore.widgetRoot) {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { storeToRefs } from 'pinia'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import LogoCustomization from './LogoCustomization.vue'
   import LogoPlacement from './LogoPlacement.vue'
@@ -8,8 +9,8 @@
   const workflowStore = useWorkflowStore()
 
   // Use workflow store state
-  const currentSubStep = computed(() => workflowStore.logosSubStep)
-  const selectedLogoId = computed(() => workflowStore.activeLogoId)
+  const { logosSubStep: currentSubStep, activeLogoId: selectedLogoId } =
+    storeToRefs(workflowStore)
 
   function handleSelectLogo(logoId: string) {
     workflowStore.setActiveLogoId(logoId)

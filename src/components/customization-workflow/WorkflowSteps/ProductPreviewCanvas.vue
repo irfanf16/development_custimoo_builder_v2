@@ -131,7 +131,8 @@
         enableRetinaScaling: true,
         selection: false,
         hoverCursor: 'pointer',
-        defaultCursor: 'pointer'
+        defaultCursor: 'pointer',
+        allowTouchScrolling: true
       })
       setCanvasSize({ width: props.width, height: props.height })
     }

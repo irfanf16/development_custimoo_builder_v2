@@ -1,16 +1,23 @@
 <script setup lang="ts">
-  import { computed, ref, isRef, type Ref, type ComputedRef } from 'vue'
+  import {
+    computed,
+    ref,
+    isRef,
+    type Ref,
+    type ComputedRef,
+    onMounted
+  } from 'vue'
   import { Button } from '@/components/ui/button'
-  import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'
   import { Switch } from '@/components/ui/switch'
+  import { InputSearchGroup } from '@/components/ui/input-search-group'
   import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger
   } from '@/components/ui/tooltip'
-  import { Maximize2, Minimize2, Search } from 'lucide-vue-next'
+  import { Maximize2, Minimize2 } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import { useWorkflow } from '@/composables/useWorkflow'
   import {
@@ -28,21 +35,18 @@
   } from '@/components/customization-workflow/WorkflowSteps'
   import WorkflowPanel from './WorkflowPanel.vue'
   import type { HeaderAndFooterConfiguration, BreadcrumbItem } from './types'
+  import { useUIStore } from '@/stores/ui/ui.store'
 
-  interface Props {
-    onNavigateBack: () => void
-  }
-
-  const props = defineProps<Props>()
-  void props.onNavigateBack
+  const uiStore = useUIStore()
 
   const {
     currentStep,
     contentKey,
     navigationItems,
-    logosSubStep,
     textsSubStep,
-    rosterSubStep
+    rosterSubStep,
+    isPanelOpen,
+    initializeEffects
   } = useWorkflow()
 
   const isExpanded = ref(false)
@@ -119,18 +123,160 @@
       menuPanelRef.value.scrollToElement(elementId, behavior)
     }
   }
+
+  // Computed container classes based on mobile/desktop
+  const containerClasses = computed(() => {
+    if (uiStore.isMobile) {
+      return 'fixed bottom-25 h-fit max-h-[65vh] w-[calc(100%-2rem)]'
+    }
+    return 'max-h-[100%]'
+  })
+
+  // Initialize effects for mobile
+  onMounted(() => {
+    if (uiStore.isMobile) {
+      initializeEffects()
+    }
+  })
 </script>
 
 <template>
-  <div id="workflow-panel-container" class="max-h-[100%]">
+  <div id="workflow-panel-container" :class="containerClasses">
+    <!-- Mobile: Wrap WorkflowPanel in transition -->
+    <div v-if="uiStore.isMobile" class="relative w-full h-fit">
+      <transition
+        enter-active-class="transition duration-200"
+        enter-from-class="opacity-0 translate-y-4"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition duration-150"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-4"
+      >
+        <WorkflowPanel
+          v-show="isPanelOpen"
+          ref="menuPanelRef"
+          :content-key="contentKey || ''"
+          :expandable="false"
+          :is-expanded="true"
+        >
+          <template #header>
+            <div class="w-full flex flex-col gap-5">
+              <div class="flex items-center gap-3 h-9 justify-center">
+                <div
+                  class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
+                >
+                  <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
+                </div>
+
+                <div
+                  v-if="headerApplyOverrides !== undefined"
+                  class="flex items-center gap-3"
+                >
+                  <Switch
+                    :model-value="applyOverridesModelValue"
+                    @update:model-value="
+                      val => (applyOverridesModelValue = !!val)
+                    "
+                  />
+                  <Label class="text-sm font-normal text-muted-foreground">{{
+                    headerApplyOverrides.label
+                  }}</Label>
+                </div>
+
+                <TooltipProvider v-if="headerActionButton">
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        @click="headerActionButton.callback"
+                      >
+                        {{ headerActionButton.label }}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent v-if="headerActionButton.tooltip">
+                      <p>{{ headerActionButton.tooltip }}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
+              <div
+                v-if="currentStepRef?.headerExtras?.search"
+                class="flex items-center flex-1"
+              >
+                <div class="relative w-full">
+                  <InputSearchGroup
+                    v-model="searchModelValue"
+                    :placeholder="
+                      currentStepRef?.headerExtras?.search?.placeholder ||
+                      'Search...'
+                    "
+                    :on-input="currentStepRef?.headerExtras?.search?.onInput"
+                  />
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <ProductsEntry
+            v-if="currentStep === 'product'"
+            ref="currentStepRef"
+          />
+          <DesignSelection
+            v-else-if="currentStep === 'designs'"
+            ref="currentStepRef"
+            @scroll-to-element="handleScrollToElement"
+          />
+          <StyleSelection
+            v-else-if="currentStep === 'styles'"
+            ref="currentStepRef"
+          />
+          <LogoSelection
+            v-else-if="currentStep === 'logos'"
+            ref="currentStepRef"
+          />
+          <ColorSelection
+            v-else-if="currentStep === 'colors'"
+            ref="currentStepRef"
+          />
+          <PatternSelection
+            v-else-if="currentStep === 'patterns'"
+            ref="currentStepRef"
+          />
+          <TextsSelection
+            v-else-if="currentStep === 'texts' && textsSubStep === 'list'"
+            ref="currentStepRef"
+          />
+          <TextPlacement
+            v-else-if="currentStep === 'texts' && textsSubStep === 'placement'"
+            ref="currentStepRef"
+          />
+          <RosterEntry
+            v-else-if="currentStep === 'roster' && rosterSubStep === 'list'"
+            ref="currentStepRef"
+          />
+          <RosterEdit
+            v-else-if="currentStep === 'roster' && rosterSubStep === 'edit'"
+            ref="currentStepRef"
+          />
+          <SummaryPanel
+            v-else-if="currentStep === 'summary'"
+            ref="currentStepRef"
+          />
+        </WorkflowPanel>
+      </transition>
+    </div>
+
+    <!-- Desktop: Direct WorkflowPanel with expand/collapse functionality -->
     <WorkflowPanel
+      v-else
       ref="menuPanelRef"
       :content-key="contentKey || ''"
       :expandable="isExpandable"
       :is-expanded="isExpanded"
       @update:is-expanded="isExpanded = $event"
     >
-      <!-- Header slot -->
       <template #header>
         <div class="w-full flex flex-col gap-5">
           <div class="flex items-center gap-3 h-9 justify-center">
@@ -189,63 +335,38 @@
             class="flex items-center flex-1"
           >
             <div class="relative w-full">
-              <Search
-                class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
-              />
-              <Input
-                :model-value="searchModelValue"
+              <InputSearchGroup
+                v-model="searchModelValue"
                 :placeholder="
                   currentStepRef?.headerExtras?.search?.placeholder ||
                   'Search...'
                 "
-                class="pl-8"
-                @update:model-value="val => (searchModelValue = String(val))"
+                :on-input="currentStepRef?.headerExtras?.search?.onInput"
               />
             </div>
           </div>
         </div>
       </template>
-      <ProductsEntry v-if="currentStep === 'product'" ref="currentStepRef" />
 
-      <!-- Design Selection Step -->
+      <ProductsEntry v-if="currentStep === 'product'" ref="currentStepRef" />
       <DesignSelection
         v-else-if="currentStep === 'designs'"
         ref="currentStepRef"
         @scroll-to-element="handleScrollToElement"
       />
-
-      <!-- Style Selection Step -->
       <StyleSelection
         v-else-if="currentStep === 'styles'"
         ref="currentStepRef"
       />
-
-      <!-- Logo Selection Step -->
-      <LogoSelection
-        v-else-if="currentStep === 'logos' && logosSubStep === 'list'"
-        ref="currentStepRef"
-      />
-      <LogoPlacement
-        v-else-if="currentStep === 'logos' && logosSubStep === 'placement'"
-        ref="currentStepRef"
-      />
-      <LogoCustomization
-        v-else-if="currentStep === 'logos' && logosSubStep === 'edit'"
-        ref="currentStepRef"
-      />
-
-      <!-- Colors -->
+      <LogoSelection v-else-if="currentStep === 'logos'" ref="currentStepRef" />
       <ColorSelection
         v-else-if="currentStep === 'colors'"
         ref="currentStepRef"
       />
-
-      <!-- Patterns -->
       <PatternSelection
         v-else-if="currentStep === 'patterns'"
         ref="currentStepRef"
       />
-      <!-- Texts -->
       <TextsSelection
         v-else-if="currentStep === 'texts' && textsSubStep === 'list'"
         ref="currentStepRef"
@@ -254,8 +375,6 @@
         v-else-if="currentStep === 'texts' && textsSubStep === 'placement'"
         ref="currentStepRef"
       />
-
-      <!-- Roster -->
       <RosterEntry
         v-else-if="currentStep === 'roster' && rosterSubStep === 'list'"
         ref="currentStepRef"
@@ -264,8 +383,6 @@
         v-else-if="currentStep === 'roster' && rosterSubStep === 'edit'"
         ref="currentStepRef"
       />
-
-      <!-- Summary -->
       <SummaryPanel
         v-else-if="currentStep === 'summary'"
         ref="currentStepRef"

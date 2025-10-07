@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed, onMounted, watch, nextTick, ref } from 'vue'
+  import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -22,9 +23,10 @@
   const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
   const uiStore = useUIStore()
+
+  const { isMobile } = storeToRefs(uiStore)
+  const { activeProductId: selectedProductId } = storeToRefs(customizationStore)
   const previews = computed(() => productsStore.productPreviews || [])
-  const selectedProductId = computed(() => customizationStore.activeProductId)
-  const isMobile = computed(() => uiStore.isMobile)
 
   function loadPreviewsForCurrentCategory() {
     console.log('loadPreviewsForCurrentCategory')
@@ -136,6 +138,8 @@
     }
   }
 
+  console.log('headerAndFooterConfiguration', headerAndFooterConfiguration)
+
   defineExpose(headerAndFooterConfiguration)
 </script>
 
@@ -154,7 +158,7 @@
       @click="handleSelectProduct(item.productPreview.id)"
     >
       <div
-        class="text-base font-medium text-left w-full text-foreground truncate max-w-[145px] overflow-ellipsis leading-none"
+        class="text-sm md:text-base font-medium text-left w-full text-foreground truncate max-w-[145px] overflow-ellipsis leading-none"
       >
         {{ item.productPreview.display_name }}
       </div>
@@ -177,7 +181,7 @@
             variant="outline"
             size="sm"
             class="bg-card"
-            @click.stop="handleSelectProduct(item.productPreview.id)"
+            @click="handleSelectProduct(item.productPreview.id)"
           >
             Product details
           </Button>

@@ -1,10 +1,20 @@
 <script setup lang="ts">
   import { computed, nextTick, onMounted, ref, watch } from 'vue'
+  import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import type { HeaderAndFooterConfiguration } from '../../types'
   import type { BreadcrumbItem } from '../../types'
+  import { useUIStore } from '@/stores/ui/ui.store'
+
+  const uiStore = useUIStore()
+  const customizationStore = useCustomizationStore()
+  const productsStore = useProductsStore()
+
+  const { isMobile } = storeToRefs(uiStore)
+  const { activeDesignName: selectedDesignName } =
+    storeToRefs(customizationStore)
 
   interface Emits {
     (
@@ -16,11 +26,7 @@
 
   const emit = defineEmits<Emits>()
 
-  const customizationStore = useCustomizationStore()
-  const productsStore = useProductsStore()
-
   const previews = computed(() => productsStore.designPreviews || [])
-  const selectedDesignName = computed(() => customizationStore.activeDesignName)
   const designSelectionContainer = ref<HTMLElement | null>(null)
   const applyCustomizationOverrides = ref(false)
 
@@ -136,8 +142,8 @@
           :product="productsStore.activeProductDetails!"
           :style-base="productsStore.activeStyleDetails!"
           :design-base="item as any"
-          :width="176"
-          :height="176"
+          :width="isMobile ? 130 : 176"
+          :height="isMobile ? 130 : 176"
           :apply-customization-overrides="applyCustomizationOverrides"
           class="rounded-xl"
         />

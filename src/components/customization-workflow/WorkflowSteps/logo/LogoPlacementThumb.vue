@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { storeToRefs } from 'pinia'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import type {
     OutputProductPreview,
@@ -8,6 +9,10 @@
     OutputDesignPreviewFront,
     OutputDesignPreviewBack
   } from '@/services/products/types'
+  import { useUIStore } from '@/stores/ui/ui.store'
+
+  const uiStore = useUIStore()
+  const { isMobile } = storeToRefs(uiStore)
 
   interface Props {
     product: OutputProductPreview
@@ -25,8 +30,6 @@
     }
   }
 
-  const CANVAS_SIZE = 176
-
   const props = defineProps<Props>()
 
   // Convert product placement coordinates to canvas overlay rect
@@ -36,7 +39,7 @@
     if (!s) return undefined
 
     const originalCanvasSize = 600
-    const actualCanvasSize = CANVAS_SIZE
+    const actualCanvasSize = isMobile.value ? 130 : 176
     const scale = actualCanvasSize / originalCanvasSize
 
     const scaledRect = {
@@ -57,8 +60,8 @@
       :product="product"
       :style-base="styleBase"
       :design-base="designBase"
-      :width="CANVAS_SIZE"
-      :height="CANVAS_SIZE"
+      :width="isMobile ? 130 : 176"
+      :height="isMobile ? 130 : 176"
       :side="props.setting.side"
       :class="`${props.class || ''}`"
       :overlay-rect="overlayRect"

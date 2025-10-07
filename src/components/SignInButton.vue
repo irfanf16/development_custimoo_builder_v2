@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref } from 'vue'
+  import { storeToRefs } from 'pinia'
   import { useAuthStore } from '@/stores/auth/auth.store'
   import {
     Dialog,
@@ -25,6 +26,13 @@
   const authStore = useAuthStore()
   const localeStore = useLocaleStore()
 
+  const {
+    isAuthenticated: isLoggedIn,
+    customer: user,
+    customerInitials: userInitials,
+    isLoading
+  } = storeToRefs(authStore)
+
   // Reactive state
   const showSignInDialog = ref(false)
   const showUserMenu = ref(false)
@@ -33,12 +41,6 @@
     password: ''
   })
   const error = ref('')
-
-  // Computed properties
-  const isLoggedIn = computed(() => authStore.isAuthenticated)
-  const user = computed(() => authStore.customer)
-  const userInitials = computed(() => authStore.customerInitials)
-  const isLoading = computed(() => authStore.isLoading)
 
   // Methods
   const handleSignIn = async () => {

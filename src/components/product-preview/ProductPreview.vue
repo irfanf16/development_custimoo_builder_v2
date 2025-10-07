@@ -1,12 +1,13 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { ref } from 'vue'
+  import { storeToRefs } from 'pinia'
   import CanvasPreview from '@/components/customizer-canvas-preview/CanvasPreview.vue'
   import ThreePreview from './ThreePreview.vue'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useElementSize } from '@vueuse/core'
 
   const products = useProductsStore()
-  const mode = computed(() => products.activeRenderMode)
+  const { activeRenderMode: mode } = storeToRefs(products)
   const previewContainer = ref<HTMLElement>()
   const elementSize = useElementSize(previewContainer)
 </script>

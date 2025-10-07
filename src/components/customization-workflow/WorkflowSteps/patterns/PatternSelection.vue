@@ -1,14 +1,17 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { storeToRefs } from 'pinia'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import PatternLayerSelection from './PatternLayerSelection.vue'
   import PatternEdit from './PatternEdit.vue'
+  import { computed } from 'vue'
 
   const workflowStore = useWorkflowStore()
 
   // Use workflow store state
-  const currentSubStep = computed(() => workflowStore.patternsSubStep)
-  const selectedLayerId = computed(() => workflowStore.activePatternGroupName)
+  const {
+    patternsSubStep: currentSubStep,
+    activePatternGroupName: selectedLayerId
+  } = storeToRefs(workflowStore)
 
   function handleSelectLayer(layerId: string) {
     workflowStore.setActivePatternSubStep(layerId)

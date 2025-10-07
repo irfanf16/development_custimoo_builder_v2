@@ -8,12 +8,14 @@
 </script>
 
 <template>
-  <li
-    data-slot="breadcrumb-item"
+  <span
     :class="
-      cn('inline-flex items-center gap-1.5 text-base md:text-xl', props.class)
+      cn(
+        `text-muted-foreground flex items-center gap-2 text-sm [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4`,
+        props.class
+      )
     "
   >
     <slot />
-  </li>
+  </span>
 </template>

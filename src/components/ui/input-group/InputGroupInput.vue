@@ -1,6 +1,7 @@
 <script lang="ts" setup>
   import type { HTMLAttributes } from 'vue'
   import { cn } from '@/lib/utils'
+  import { Input } from '../input'
 
   const props = defineProps<{
     class?: HTMLAttributes['class']
@@ -8,12 +9,13 @@
 </script>
 
 <template>
-  <li
-    data-slot="breadcrumb-item"
+  <Input
+    data-slot="input-group-control"
     :class="
-      cn('inline-flex items-center gap-1.5 text-base md:text-xl', props.class)
+      cn(
+        'flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent',
+        props.class
+      )
     "
-  >
-    <slot />
-  </li>
+  />
 </template>

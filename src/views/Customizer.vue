@@ -3,16 +3,14 @@
   import { CustomizerMenu } from '@/components/customizer-menu'
   import CustomizerMenuMobile from '@/components/customizer-menu/CustomizerMenu.Mobile.vue'
   import { WorkflowLayout } from '@/components/customization-workflow'
-  import WorkflowLayoutMobile from '@/components/customization-workflow/WorkflowLayout.Mobile.vue'
   import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
   import { CustomizerTopbar } from '@/components/customizer-topbar'
   import SmallPreview from '@/components/customizer-canvas-preview/SmallPreview.vue'
-  // import MobileActionBar from '@/components/customizer-canvas-preview/MobileActionBar.vue'
-  import { computed } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { storeToRefs } from 'pinia'
 
   const uiStore = useUIStore()
-  const isMobile = computed(() => uiStore.isMobile)
+  const { isMobile } = storeToRefs(uiStore)
 </script>
 
 <template>
@@ -22,12 +20,11 @@
     <!-- Mobile layout -->
     <template v-if="isMobile">
       <div
-        id="main-content mobile h-full"
-        class="mobile-layout flex flex-col gap-2 w-full"
+        id="main-content"
+        class="mobile-layout flex flex-col gap-2 w-full h-full"
       >
         <CustomizerTopbar class="z-10" />
-        <WorkflowLayoutMobile />
-        <!-- <MobileActionBar /> -->
+        <WorkflowLayout />
         <CustomizerMenuMobile />
       </div>
     </template>
@@ -41,7 +38,7 @@
           <div id="menu-items-container" class="flex-col z-10">
             <CustomizerMenu />
           </div>
-          <WorkflowLayout :on-navigate-back="() => {}" class="z-10" />
+          <WorkflowLayout class="z-10" />
         </div>
 
         <div
@@ -59,20 +56,13 @@
                 id="canvas-controls-container-inner"
                 class="flex flex-col gap-9 items-end justify-between h-full"
               >
-                <RightToolbar class="" />
-                <SmallPreview class="" />
+                <RightToolbar />
+                <SmallPreview />
               </div>
             </div>
           </div>
         </div>
       </div>
-      <!-- <div
-          id="bottom-content"
-          class="flex flex-row justify-between items-end"
-        >
-          <BottomActions class="z-10" />
-          <PriceCard class="z-10" />
-        </div> -->
     </template>
   </div>
 </template>
