@@ -7,7 +7,7 @@
   import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
   import { CustomizerTopbar } from '@/components/customizer-topbar'
   import SmallPreview from '@/components/customizer-canvas-preview/SmallPreview.vue'
-  import MobileActionBar from '@/components/customizer-canvas-preview/MobileActionBar.vue'
+  // import MobileActionBar from '@/components/customizer-canvas-preview/MobileActionBar.vue'
   import { computed } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
 
@@ -21,10 +21,13 @@
   >
     <!-- Mobile layout -->
     <template v-if="isMobile">
-      <div id="main-content mobile" class="mobile-layout flex flex-col gap-2">
+      <div
+        id="main-content mobile h-full"
+        class="mobile-layout flex flex-col gap-2 w-full"
+      >
         <CustomizerTopbar class="z-10" />
         <WorkflowLayoutMobile />
-        <MobileActionBar />
+        <!-- <MobileActionBar /> -->
         <CustomizerMenuMobile />
       </div>
     </template>

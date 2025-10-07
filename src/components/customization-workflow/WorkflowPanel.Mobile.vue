@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue'
+  import { ref, nextTick, onMounted, onUnmounted } from 'vue'
   import {
     Card,
     CardHeader,
@@ -7,16 +7,11 @@
     CardFooter
   } from '@/components/ui/card'
   import { ScrollArea } from '@/components/ui/scroll-area'
-  import { useUIStore } from '@/stores/ui/ui.store'
 
   interface Props {
     expandable?: boolean
     isExpanded?: boolean
     contentKey?: string | number
-  }
-
-  interface Emits {
-    (e: 'update:isExpanded', value: boolean): void
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -25,22 +20,7 @@
     contentKey: undefined
   })
 
-  const emit = defineEmits<Emits>()
-
-  const uiStore = useUIStore()
-
-  // Use computed to get the current expanded state from props
-  const isExpanded = computed(() => !uiStore.isMobile && props.isExpanded)
-
   const cardContentRef = ref<HTMLElement | null>(null)
-
-  // Collapse panel when switching to a different content key (panel)
-  watch(
-    () => props.contentKey,
-    () => {
-      emit('update:isExpanded', false)
-    }
-  )
 
   /**
    * Scrolls to a specific element within the scrollable container
@@ -141,26 +121,30 @@
 </script>
 
 <template>
-  <div
-    class="h-full"
-    :class="['w-[28rem]', isExpanded ? 'z-20 max-w-none' : '']"
-  >
-    <Card
+  <div class="h-full w-full" :class="[]">
+    <!-- <Card
       class="rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col py-0 max-h-full"
-      :class="isExpanded ? 'w-[75vw]' : 'w-[470px]'"
+    > -->
+    <Card
+      class="justify-start gap-0 md:gap-0 overflow-hidden flex flex-col py-0 max-h-full"
     >
       <!-- Header slot - panels can provide their own header content -->
       <template v-if="$slots.header">
+        <!-- <CardHeader
+          class="pb-4 pt-0 px-4 md:pb-6 md:px-6 flex flex-row items-center justify-between gap-2 min-h-[4.5rem] max-h-[18rem] flex-shrink-0"
+        > -->
         <CardHeader
           class="pb-4 pt-0 px-4 md:pb-6 md:px-6 flex flex-row items-center justify-between gap-2 min-h-[4.5rem] max-h-[18rem] flex-shrink-0"
         >
-          <slot name="header" :is-expanded="isExpanded" />
+          <slot name="header" :is-expanded="false" />
         </CardHeader>
       </template>
 
+      <!-- <CardContent class="h-full p-0 px-0 md:p-0 md:px-0 min-h-0"> -->
       <CardContent class="h-full p-0 px-0 md:p-0 md:px-0 min-h-0">
-        <ScrollArea>
-          <div class="max-h-[38rem]">
+        <ScrollArea class="">
+          <!-- <div class="max-h-full"> -->
+          <div class="max-h-[calc(65vh-10rem)]">
             <!-- Content slot for different panel types -->
             <Transition name="panel-slide" mode="out-in" appear>
               <div
@@ -168,7 +152,7 @@
                 :key="props.contentKey"
                 class="overflow-y-auto"
               >
-                <slot :is-expanded="isExpanded" />
+                <slot />
               </div>
             </Transition>
           </div>
@@ -177,8 +161,9 @@
 
       <!-- Footer actions -->
       <template v-if="$slots.footer">
-        <CardFooter class="px-4 md:px-6 flex-shrink-0 py-4 md:py-6 border-t">
-          <slot name="footer" :is-expanded="isExpanded" />
+        <!-- <CardFooter class="px-4 md:px-6 flex-shrink-0 py-4 md:py-6 border-t"> -->
+        <CardFooter class="">
+          <slot name="footer" />
         </CardFooter>
       </template>
     </Card>

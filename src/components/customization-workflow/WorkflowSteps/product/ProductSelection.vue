@@ -3,6 +3,7 @@
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
   import type {
@@ -23,13 +24,21 @@
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
+  const uiStore = useUIStore()
   const previews = computed(() => productsStore.productPreviews || [])
   const selectedProductId = computed(() => customizationStore.activeProductId)
+  const isMobile = computed(() => uiStore.isMobile)
 
   function loadPreviewsForCurrentCategory() {
+    console.log('loadPreviewsForCurrentCategory')
     const categoryId =
       workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
-    const subcategoryId = workflowStore.selectedSubCategoryId ?? undefined
+    const subcategoryId =
+      workflowStore.selectedSubCategoryId ??
+      customizationStore.activeSubCategoryId ??
+      undefined
+    console.log('categoryId', categoryId)
+    console.log('subcategoryId', subcategoryId)
     productsStore.fetchProductPreviews(categoryId, subcategoryId || undefined)
   }
 
@@ -184,7 +193,7 @@
       v-for="item in filteredPreviews"
       :id="`product-${item.productPreview.id}`"
       :key="item.productPreview.id"
-      class="group relative flex flex-col items-center flex-shrink-0 gap-4 md:gap-6 p-4 md:p-6"
+      class="group relative flex flex-col items-center flex-shrink-0 gap-4 p-4"
       :class="[
         'relative rounded-sm transition-colors cursor-pointer',
         'hover:border-border hover:bg-primary/10 hover:outline-ring',
@@ -193,17 +202,17 @@
       @click="handleSelectProduct(item.productPreview.id)"
     >
       <div
-        class="text-base font-medium text-left w-full text-foreground truncate max-w-[176px] overflow-ellipsis leading-none"
+        class="text-base font-medium text-left w-full text-foreground truncate max-w-[145px] overflow-ellipsis leading-none"
       >
         {{ item.productPreview.display_name }}
       </div>
-      <div>
+      <div class="px-2">
         <ProductPreviewCanvas
           :product="item.productPreview"
           :style-base="item.stylePreview"
           :design-base="item.designPreview"
-          :width="176"
-          :height="176"
+          :width="isMobile ? 130 : 176"
+          :height="isMobile ? 130 : 176"
           :apply-customization-overrides="false"
           class="rounded-xl"
         />

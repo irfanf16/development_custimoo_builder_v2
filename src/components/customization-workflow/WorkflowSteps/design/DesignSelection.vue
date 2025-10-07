@@ -123,7 +123,7 @@
       @click="selectDesign(item)"
     >
       <div
-        class="text-base font-medium text-left w-full text-foreground truncate max-w-[176px] overflow-ellipsis leading-none"
+        class="text-base font-medium text-left w-full text-foreground truncate max-w-[145px] overflow-ellipsis leading-none"
       >
         {{ item.front_design.design_name }}
       </div>

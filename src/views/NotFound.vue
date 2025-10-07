@@ -17,7 +17,7 @@
 </script>
 
 <template>
-  <div class="min-h-[60vh] flex items-center justify-center">
+  <div class="min-h-[65vh] flex items-center justify-center">
     <div class="text-center">
       <div class="text-6xl font-bold text-muted-foreground mb-4">404</div>
       <h1 class="text-3xl font-bold mb-4">Page Not Found</h1>

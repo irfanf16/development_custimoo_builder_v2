@@ -133,5 +133,6 @@ declare module 'vue' {
     WorkflowLayout: typeof import('./src/components/customization-workflow/WorkflowLayout.vue')['default']
     'WorkflowLayout.Mobile': typeof import('./src/components/customization-workflow/WorkflowLayout.Mobile.vue')['default']
     WorkflowPanel: typeof import('./src/components/customization-workflow/WorkflowPanel.vue')['default']
+    'WorkflowPanel.Mobile': typeof import('./src/components/customization-workflow/WorkflowPanel.Mobile.vue')['default']
   }
 }

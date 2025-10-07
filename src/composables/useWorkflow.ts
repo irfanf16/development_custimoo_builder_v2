@@ -265,29 +265,36 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
   // ===== EFFECTS =====
   const initializeEffects = () => {
     if (effectsInitialized) return
+
     effectsInitialized = true
+
+    async function initializeDesigns() {
+      const styleId =
+        productsStore.activeStyleDetails?.id || customizationStore.activeStyleId
+      const needsPreviews = !(
+        Array.isArray(productsStore.designPreviews) &&
+        productsStore.designPreviews.length > 0
+      )
+      if (needsPreviews && styleId) {
+        await productsStore.fetchDesignPreviewsByStyleId(styleId)
+      }
+    }
+    async function initializeStyles() {
+      const pid =
+        productsStore.activeProductDetails?.id ||
+        customizationStore.activeProductId
+      if (pid && !productsStore.stylePreviews) {
+        await productsStore.fetchStylePreviews(pid)
+      }
+    }
 
     watch(
       () => activeStep.value,
       async step => {
         if (step === 'designs') {
-          const styleId =
-            productsStore.activeStyleDetails?.id ||
-            customizationStore.activeStyleId
-          const needsPreviews = !(
-            Array.isArray(productsStore.designPreviews) &&
-            productsStore.designPreviews.length > 0
-          )
-          if (needsPreviews && styleId) {
-            await productsStore.fetchDesignPreviewsByStyleId(styleId)
-          }
+          await initializeDesigns()
         } else if (step === 'styles') {
-          const pid =
-            productsStore.activeProductDetails?.id ||
-            customizationStore.activeProductId
-          if (pid && !productsStore.stylePreviews) {
-            await productsStore.fetchStylePreviews(pid)
-          }
+          await initializeStyles()
         } else if (step === 'logos') {
           await logosStore.fetchRecentLogos()
         }
