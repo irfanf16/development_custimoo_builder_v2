@@ -49,11 +49,59 @@ if (
   )
 }
 
+// Function to prevent mobile zoom on tap
+function preventMobileZoom() {
+  // Only run in browser environment
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+
+  // Check if we're on a mobile device
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  if (!isMobile) return
+
+  // Get or create viewport meta tag
+  let viewport = document.querySelector('meta[name="viewport"]')
+
+  if (!viewport) {
+    // Create viewport meta tag if it doesn't exist
+    viewport = document.createElement('meta')
+    viewport.setAttribute('name', 'viewport')
+    document.head.appendChild(viewport)
+  }
+
+  // Set content to prevent zoom
+  const currentContent = viewport.getAttribute('content') || ''
+  const settings: Record<string, string> = {}
+
+  // Parse existing viewport settings
+  currentContent.split(',').forEach(setting => {
+    const [key, value] = setting.split('=').map(s => s.trim())
+    if (key && value) {
+      settings[key] = value
+    }
+  })
+
+  // Update settings to prevent zoom
+  settings['width'] = settings['width'] || 'device-width'
+  settings['initial-scale'] = settings['initial-scale'] || '1.0'
+  settings['maximum-scale'] = '1.0'
+  settings['user-scalable'] = 'no'
+
+  // Reconstruct content string
+  const newContent = Object.entries(settings)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(', ')
+
+  viewport.setAttribute('content', newContent)
+}
+
 // Function to bootstrap and mount the Vue.js application
 export function bootstrap(
   shadowRoot: ShadowRoot,
   attributes: Record<string, unknown>
 ) {
+  // Prevent mobile zoom
+  preventMobileZoom()
+
   // Create a container element within the shadow root
   const container = document.createElement('div')
   container.id = 'customizer-widget-container'

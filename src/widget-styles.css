@@ -209,6 +209,22 @@
     }
   }
 
+  /* Prevent mobile zoom on inputs and double-tap zoom */
+  input,
+  textarea,
+  select,
+  button {
+    /* Prevent double-tap zoom on mobile */
+    touch-action: manipulation;
+  }
+
+  /* Ensure all input fields have minimum 16px font size to prevent iOS zoom */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+
   /* Ensure interactive elements have proper cursor */
   button,
   [role='button'],
@@ -240,6 +256,8 @@ customizer-widget {
   line-height: 1.5;
   color: var(--foreground);
   background: var(--background);
+  /* Prevent pinch-to-zoom and double-tap zoom within the widget */
+  touch-action: manipulation;
 }
 
 /* Ensure widget components are properly styled */
