@@ -118,7 +118,8 @@
     initCanvas({
       selection: false,
       enableRetinaScaling: true,
-      enablePointerEvents: false
+      enablePointerEvents: false,
+      allowTouchScrolling: true
     })
     setCanvasSize({ width: props.width, height: props.height })
     renderPreview()
