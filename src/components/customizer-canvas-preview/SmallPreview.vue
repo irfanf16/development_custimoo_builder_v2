@@ -42,15 +42,12 @@
       clearCanvas({ silent: true })
       const design = effectiveDesignDetails.value
       const style = effectiveStyleDetails.value
-      const side = (
-        workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'
-      ) as 'front' | 'back'
+      const side = (workflowStore.activeCanvasSide === 'front' ? 'back' : 'front') as
+        | 'front'
+        | 'back'
       if (!design || !style) return
       if (side === 'back' && design.back_design) {
-        await addDesignLayer(
-          design.back_design.file_url,
-          design.back_design.file_extension
-        )
+        await addDesignLayer(design.back_design.file_url, design.back_design.file_extension)
         for (const m of (
           style as {
             back_models?: Array<{ composition?: string; file_url: string }>
@@ -61,16 +58,11 @@
           ) as GlobalCompositeOperation
           await addModelLayer(m.file_url, comp)
         }
-        for (const logo of effectiveLogos.value.filter(
-          l => l.side === 'back'
-        )) {
+        for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
           await addLogoLayer(logo)
         }
       } else if (design.front_design) {
-        await addDesignLayer(
-          design.front_design.file_url,
-          design.front_design.file_extension
-        )
+        await addDesignLayer(design.front_design.file_url, design.front_design.file_extension)
         for (const m of (
           style as {
             front_models?: Array<{ composition?: string; file_url: string }>
@@ -81,9 +73,7 @@
           ) as GlobalCompositeOperation
           await addModelLayer(m.file_url, comp)
         }
-        for (const logo of effectiveLogos.value.filter(
-          l => l.side === 'front'
-        )) {
+        for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
           await addLogoLayer(logo)
         }
       }

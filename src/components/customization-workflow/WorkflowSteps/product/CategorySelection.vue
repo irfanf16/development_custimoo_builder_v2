@@ -87,9 +87,7 @@
           :is="getCategoryIcon(index)"
           class="size-6 text-primary icon-secondary-from-primary-50"
         />
-        <span class="text-base font-semibold text-card-foreground">{{
-          item.category_name
-        }}</span>
+        <span class="text-base font-semibold text-card-foreground">{{ item.category_name }}</span>
       </div>
       <ChevronRight class="size-4 text-muted-foreground" />
     </button>

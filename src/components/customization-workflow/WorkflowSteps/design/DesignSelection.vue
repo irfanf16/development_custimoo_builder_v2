@@ -13,15 +13,10 @@
   const productsStore = useProductsStore()
 
   const { isMobile } = storeToRefs(uiStore)
-  const { activeDesignName: selectedDesignName } =
-    storeToRefs(customizationStore)
+  const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
 
   interface Emits {
-    (
-      e: 'scroll-to-element',
-      elementId: string,
-      behavior?: 'smooth' | 'auto'
-    ): void
+    (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
   }
 
   const emit = defineEmits<Emits>()
@@ -49,9 +44,7 @@
     })
   })
 
-  async function selectDesign(
-    item: import('@/services/products/types').OutputDesignPreviewFront
-  ) {
+  async function selectDesign(item: import('@/services/products/types').OutputDesignPreviewFront) {
     productsStore.applyDesignPreview(item)
     // Scroll to selected design with smooth animation
     setTimeout(() => {
@@ -80,9 +73,7 @@
   const filteredPreviews = computed(() => {
     const q = designQuery.value
     if (!q) return previews.value
-    return previews.value.filter(d =>
-      d.front_design.design_name.toLowerCase().includes(q)
-    )
+    return previews.value.filter(d => d.front_design.design_name.toLowerCase().includes(q))
   })
 
   // Expose to parent
@@ -135,10 +126,7 @@
       </div>
       <div>
         <ProductPreviewCanvas
-          v-if="
-            productsStore.activeProductDetails &&
-            productsStore.activeStyleDetails
-          "
+          v-if="productsStore.activeProductDetails && productsStore.activeStyleDetails"
           :product="productsStore.activeProductDetails!"
           :style-base="productsStore.activeStyleDetails!"
           :design-base="item as any"

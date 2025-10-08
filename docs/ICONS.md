@@ -53,10 +53,7 @@ Examples:
 <i-flex-line-paint-palette class="size-5 text-blue-600" />
 
 <!-- Flex Flat (two-tone, fully bundled) -->
-<i-flex-flat-football
-  class="size-6 text-emerald-600"
-  style="--icon-secondary:#a7f3d0"
-/>
+<i-flex-flat-football class="size-6 text-emerald-600" style="--icon-secondary:#a7f3d0" />
 ```
 
 #### Flex Flat secondary color tips
@@ -64,10 +61,7 @@ Examples:
 - Per‑icon (inline):
 
   ```vue
-  <i-flex-flat-tennis
-    class="size-5 text-green-600"
-    style="--icon-secondary:#b7f7c2"
-  />
+  <i-flex-flat-tennis class="size-5 text-green-600" style="--icon-secondary:#b7f7c2" />
   ```
 
 - Derived from the primary color (keeps harmony):

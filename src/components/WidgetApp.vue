@@ -79,10 +79,7 @@
 <template>
   <div
     ref="widgetRootContainer"
-    :class="[
-      'widget-theme shadow-sm w-full min-h-full',
-      { dark: uiStore.currentTheme === 'dark' }
-    ]"
+    :class="['widget-theme shadow-sm w-full min-h-full', { dark: uiStore.currentTheme === 'dark' }]"
   >
     <!-- Widget content -->
     <LayoutWrapper class="bg-background text-foreground flex-1 flex flex-col">

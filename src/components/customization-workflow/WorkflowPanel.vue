@@ -1,11 +1,6 @@
 <script setup lang="ts">
   import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue'
-  import {
-    Card,
-    CardHeader,
-    CardContent,
-    CardFooter
-  } from '@/components/ui/card'
+  import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { useUIStore } from '@/stores/ui/ui.store'
 
@@ -66,9 +61,7 @@
   })
 
   const footerClasses = computed(() => {
-    return uiStore.isMobile
-      ? ''
-      : 'px-4 md:px-6 flex-shrink-0 py-4 md:py-6 border-t'
+    return uiStore.isMobile ? '' : 'px-4 md:px-6 flex-shrink-0 py-4 md:py-6 border-t'
   })
 
   /**
@@ -76,10 +69,7 @@
    * @param elementId - The ID of the element to scroll to
    * @param behavior - Scroll behavior: 'auto' for instant, 'smooth' for animated
    */
-  function scrollToElement(
-    elementId: string,
-    behavior: 'smooth' | 'auto' = 'auto'
-  ) {
+  function scrollToElement(elementId: string, behavior: 'smooth' | 'auto' = 'auto') {
     if (!cardContentRef.value) return
 
     nextTick(() => {
@@ -96,8 +86,7 @@
       // Calculate element position relative to container's scrollable content
       const elementRect = targetElement.getBoundingClientRect()
       const containerRect = container.getBoundingClientRect()
-      const elementTop =
-        elementRect.top - containerRect.top + container.scrollTop
+      const elementTop = elementRect.top - containerRect.top + container.scrollTop
       const scrollTop = elementTop - containerHeight / 2 + elementHeight / 2
 
       if (behavior === 'auto') {
@@ -109,8 +98,7 @@
       } else {
         // Smooth scroll with visibility optimization
         const isElementVisible =
-          elementRect.top >= containerRect.top &&
-          elementRect.bottom <= containerRect.bottom
+          elementRect.top >= containerRect.top && elementRect.bottom <= containerRect.bottom
 
         if (!isElementVisible) {
           // Element not visible: scroll to bring it into view
@@ -162,10 +150,8 @@
 
   // Expose scroll function to parent components
   defineExpose({
-    scrollToElement: (
-      elementId: string,
-      behavior: 'smooth' | 'auto' = 'auto'
-    ) => scrollToElement(elementId, behavior)
+    scrollToElement: (elementId: string, behavior: 'smooth' | 'auto' = 'auto') =>
+      scrollToElement(elementId, behavior)
   })
 </script>
 
@@ -186,11 +172,7 @@
           <div :class="scrollAreaMaxHeight">
             <!-- Content slot for different panel types -->
             <Transition name="panel-slide" mode="out-in" appear>
-              <div
-                ref="cardContentRef"
-                :key="props.contentKey"
-                class="overflow-y-auto"
-              >
+              <div ref="cardContentRef" :key="props.contentKey" class="overflow-y-auto">
                 <slot :is-expanded="isExpanded" />
               </div>
             </Transition>

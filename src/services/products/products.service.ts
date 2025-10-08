@@ -25,10 +25,7 @@ async function getActiveProductDetails(productId: number) {
 }
 
 // Fetch lightweight previews for all products in a category
-async function getProductPreviewsByCategory(
-  categoryId: number | null,
-  subcategoryId?: number
-) {
+async function getProductPreviewsByCategory(categoryId: number | null, subcategoryId?: number) {
   return await http.get<ProductPreviewItem[]>(`product/previews`, {
     params: { category_id: categoryId, sub_category_id: subcategoryId ?? null }
   })
@@ -42,16 +39,11 @@ async function getDesignPreviewsByStyleId(styleId: number) {
 
 // Preview styles for a product
 async function getStylePreviewsByProduct(productId: number) {
-  return await http.get<OutputStylePreviewFront[]>(
-    `product/${productId}/style/previews`
-  )
+  return await http.get<OutputStylePreviewFront[]>(`product/${productId}/style/previews`)
 }
 
 // Active style details for a style id (style + default design)
-async function getActiveStyleDetails(
-  styleId: number,
-  activeDesignName?: string
-) {
+async function getActiveStyleDetails(styleId: number, activeDesignName?: string) {
   return await http.get<ActiveStyleDetails>(`product/style/${styleId}`, {
     params: {
       active_design_name: activeDesignName

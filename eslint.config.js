@@ -16,12 +16,7 @@ const vueFlatRecommended = Array.isArray(vue.configs['flat/recommended'])
 
 export default [
   {
-    ignores: [
-      'dist/**',
-      'node_modules/**',
-      'components.d.ts',
-      'src/paraglide/**'
-    ]
+    ignores: ['dist/**', 'node_modules/**', 'components.d.ts', 'src/paraglide/**']
   },
   ...vueFlatRecommended,
   // TypeScript base recommendations (no type info) - only TS/TSX files

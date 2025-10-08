@@ -5,10 +5,7 @@ import type { HostTheme } from '@/lib/hostThemes'
 
 export function useColorScheme() {
   // ===== BUSINESS LOGIC =====
-  const applyColorScheme = async (
-    container?: HTMLElement,
-    hostTheme?: HostTheme | null
-  ) => {
+  const applyColorScheme = async (container?: HTMLElement, hostTheme?: HostTheme | null) => {
     const target = container || document.documentElement
 
     // If no host theme provided, use CSS defaults
@@ -75,13 +72,7 @@ export function useColorScheme() {
     }
 
     // Clear existing variables before applying new ones
-    const limitedVars = [
-      '--primary',
-      '--radius',
-      '--font-sans',
-      '--font-brand',
-      '--accent'
-    ]
+    const limitedVars = ['--primary', '--radius', '--font-sans', '--font-brand', '--accent']
     limitedVars.forEach(varName => target.style.removeProperty(varName))
 
     // Apply minimal variables from host theme

@@ -27,9 +27,7 @@ type FitOptions = {
   widthPercent?: number
 }
 
-export function useFabricPreview(
-  applyActiveCustomizationOverrides = computed(() => true)
-) {
+export function useFabricPreview(applyActiveCustomizationOverrides = computed(() => true)) {
   // ===== STATE =====
   const canvasEl = ref<HTMLCanvasElement | null>(null)
   const canvas = ref<Canvas | null>(null)
@@ -97,10 +95,7 @@ export function useFabricPreview(
     }
   }
 
-  function setZoom(
-    zoom: number,
-    center?: { x: number; y: number } | 'asset' | 'canvas'
-  ) {
+  function setZoom(zoom: number, center?: { x: number; y: number } | 'asset' | 'canvas') {
     if (!canvas.value) return
     let point: Point | null = null
 
@@ -195,10 +190,7 @@ export function useFabricPreview(
       duration: number
     ) => {
       const t = timeElapsed / duration
-      return (
-        startValue +
-        byValue * (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
-      )
+      return startValue + byValue * (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
     }
 
     util.animate({
@@ -296,11 +288,7 @@ export function useFabricPreview(
     return util.groupSVGElements(safeObjects) as CustomFabricGroup
   }
 
-  async function addDesignLayer(
-    url: string,
-    ext: string,
-    fitOptions?: FitOptions
-  ) {
+  async function addDesignLayer(url: string, ext: string, fitOptions?: FitOptions) {
     if (!canvas.value || !url) return
     if (ext?.toLowerCase() === 'svg') {
       if (!canvas.value || !url) return
@@ -309,8 +297,7 @@ export function useFabricPreview(
 
       // Apply color overrides from effective svg groups if applyActiveCustomizationOverrides is true
       if (applyActiveCustomizationOverrides.value) {
-        const effectiveSvgGroups =
-          useEffectiveSelectors().effectiveSvgGroups.value
+        const effectiveSvgGroups = useEffectiveSelectors().effectiveSvgGroups.value
         if (effectiveSvgGroups) {
           effectiveSvgGroups.forEach(effectiveGroup => {
             const object = group._objects.find(o => {
@@ -419,14 +406,8 @@ export function useFabricPreview(
     const targetHeightPx = (Number(logo.height) || 0) * unitScale
     const safeImgHeight = img.height || 1
     const baseScale = targetHeightPx > 0 ? targetHeightPx / safeImgHeight : 1
-    const scaleX =
-      options?.respectScaleProps && logo.scaleX
-        ? baseScale * logo.scaleX
-        : baseScale
-    const scaleY =
-      options?.respectScaleProps && logo.scaleY
-        ? baseScale * logo.scaleY
-        : baseScale
+    const scaleX = options?.respectScaleProps && logo.scaleX ? baseScale * logo.scaleX : baseScale
+    const scaleY = options?.respectScaleProps && logo.scaleY ? baseScale * logo.scaleY : baseScale
 
     // Position at (x_axis, y_axis) as the CENTER within the scaled design bounds
     // Use inner offsets to account for inscribed square inside the design's bounding box
@@ -448,10 +429,8 @@ export function useFabricPreview(
     const innerOffsetX = ((scaledW || 0) - squareSide) / 2
     const innerOffsetY = ((scaledH || 0) - squareSide) / 2
 
-    const cx =
-      designLeftOffset + innerOffsetX + (Number(logo.x_axis) || 0) * unitScale
-    const cy =
-      designTopOffset + innerOffsetY + (Number(logo.y_axis) || 0) * unitScale
+    const cx = designLeftOffset + innerOffsetX + (Number(logo.x_axis) || 0) * unitScale
+    const cy = designTopOffset + innerOffsetY + (Number(logo.y_axis) || 0) * unitScale
 
     img.set({
       selectable: canvasOptions.value.selection ?? false,

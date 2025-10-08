@@ -41,8 +41,7 @@ export function useColorActions() {
       effectiveSvgGroups.value?.forEach(group => {
         const randomColor = colors[Math.floor(Math.random() * colors.length)]
         if (!randomColor) return
-        const prevRaw =
-          customizationStore.customization?.group_colors?.[group.id]
+        const prevRaw = customizationStore.customization?.group_colors?.[group.id]
         const prevColor = prevRaw
           ? {
               name: prevRaw.name || '',

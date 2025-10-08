@@ -47,9 +47,7 @@
   <div class="flex flex-col gap-6">
     <!-- Header Section -->
     <div class="px-4 md:px-6">
-      <p class="text-base text-muted-foreground">
-        Apply and customise patterns.
-      </p>
+      <p class="text-base text-muted-foreground">Apply and customise patterns.</p>
     </div>
 
     <!-- Layer List -->
@@ -66,16 +64,12 @@
             class="size-7 rounded-lg border border-border bg-white flex items-center justify-center"
           >
             <!-- Pattern preview will be shown here once selected -->
-            <span
-              v-if="!layersWithPatterns.has(svgGroup.id)"
-              class="text-xs text-muted-foreground"
+            <span v-if="!layersWithPatterns.has(svgGroup.id)" class="text-xs text-muted-foreground"
               >?</span
             >
             <!-- TODO: Show actual pattern preview when selected -->
           </div>
-          <span class="text-base font-semibold text-card-foreground">{{
-            svgGroup.id
-          }}</span>
+          <span class="text-base font-semibold text-card-foreground">{{ svgGroup.id }}</span>
         </div>
         <ChevronRight class="size-4 text-muted-foreground" />
       </button>

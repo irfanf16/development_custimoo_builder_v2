@@ -111,11 +111,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     svgGroups.value = group._objects
       .filter(obj => {
         const id = (obj as { id?: string }).id?.toLowerCase() || ''
-        return (
-          !id.includes('noncustomizable') &&
-          !id.includes('inside') &&
-          !id.includes('anchor')
-        )
+        return !id.includes('noncustomizable') && !id.includes('inside') && !id.includes('anchor')
       })
       .map(obj => {
         const id = (obj as { id?: string }).id || 'unknown'
@@ -151,9 +147,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   // ===== API FUNCTIONS =====
-  async function fetchCustomizedCategories(): Promise<
-    APIResponse<OutputProductCategories>
-  > {
+  async function fetchCustomizedCategories(): Promise<APIResponse<OutputProductCategories>> {
     setLoading(true)
     setError(null)
     const params: GetProductCategoriesParams = { customized: true }
@@ -167,17 +161,11 @@ export const useProductsStore = defineStore('productsStore', () => {
     return output
   }
 
-  async function fetchProductPreviews(
-    categoryId: number | null,
-    subcategoryId?: number
-  ) {
+  async function fetchProductPreviews(categoryId: number | null, subcategoryId?: number) {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(
-      API.products.getProductPreviewsByCategory(
-        categoryId ?? null,
-        subcategoryId ?? undefined
-      )
+      API.products.getProductPreviewsByCategory(categoryId ?? null, subcategoryId ?? undefined)
     )
     if (resp.success) {
       productPreviews.value = resp.content as unknown as ProductPreviewItem[]
@@ -191,9 +179,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchStylePreviews(productId: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(
-      API.products.getStylePreviewsByProduct(productId)
-    )
+    const resp = await tryCatchApi(API.products.getStylePreviewsByProduct(productId))
     if (resp.success) {
       stylePreviews.value = resp.content as unknown as OutputStylePreviewFront[]
     }
@@ -205,10 +191,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(
-      API.products.getActiveStyleDetails(
-        styleId,
-        customization.customization?.design_name
-      )
+      API.products.getActiveStyleDetails(styleId, customization.customization?.design_name)
     )
     if (resp.success) {
       const payload = resp.content
@@ -227,9 +210,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchActiveProductDetails(productId: number) {
     setLoading(true)
     setError(null)
-    const result = await tryCatchApi(
-      API.products.getActiveProductDetails(productId)
-    )
+    const result = await tryCatchApi(API.products.getActiveProductDetails(productId))
     if (result.success && result.content) {
       const details = result.content
       setActiveProductDetailsState(details.productDetails)
@@ -281,9 +262,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchDesignPreviewsByStyleId(styleId: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(
-      API.products.getDesignPreviewsByStyleId(styleId)
-    )
+    const resp = await tryCatchApi(API.products.getDesignPreviewsByStyleId(styleId))
     if (resp.success) {
       designPreviews.value = resp.content as OutputDesignPreviewFront[]
     } else {
@@ -313,16 +292,9 @@ export const useProductsStore = defineStore('productsStore', () => {
       () => customization.activeStyleId,
       () => customization.activeDesignId
     ],
-    async (
-      [productId, styleId, designId],
-      [prevProductId, prevStyleId, prevDesignId]
-    ) => {
+    async ([productId, styleId, designId], [prevProductId, prevStyleId, prevDesignId]) => {
       // No changes detected
-      if (
-        productId === prevProductId &&
-        styleId === prevStyleId &&
-        designId === prevDesignId
-      )
+      if (productId === prevProductId && styleId === prevStyleId && designId === prevDesignId)
         return
 
       // Product fetch sets default style/design

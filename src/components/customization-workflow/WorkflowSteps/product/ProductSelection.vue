@@ -11,11 +11,7 @@
   import type { OutputDesignDetails } from '@/services/products/types'
 
   interface Emits {
-    (
-      e: 'scroll-to-element',
-      elementId: string,
-      behavior?: 'smooth' | 'auto'
-    ): void
+    (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
   }
 
   const emit = defineEmits<Emits>()
@@ -30,8 +26,7 @@
 
   function loadPreviewsForCurrentCategory(isColdStart: boolean = false) {
     // isColdStart is true when the component is mounted without a selected subcategory. For example, when the app loads for the first time or when the user navigates back to the product step.
-    const categoryId =
-      workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
+    const categoryId = workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
     const subcategoryId = isColdStart
       ? workflowStore.selectedSubCategoryId
       : customizationStore.activeSubCategoryId
@@ -55,15 +50,9 @@
     })
   })
 
-  watch(
-    [
-      () => workflowStore.selectedCategoryId,
-      () => workflowStore.selectedSubCategoryId
-    ],
-    () => {
-      loadPreviewsForCurrentCategory()
-    }
-  )
+  watch([() => workflowStore.selectedCategoryId, () => workflowStore.selectedSubCategoryId], () => {
+    loadPreviewsForCurrentCategory()
+  })
 
   async function handleSelectProduct(productId: number) {
     // Commit the selected category/subcategory at the moment the product is chosen
@@ -89,9 +78,7 @@
     }
     if (designId && styleId) {
       // Persist chosen design in customization
-      customizationStore.setDesign(
-        productsStore.activeDesignDetails as OutputDesignDetails
-      )
+      customizationStore.setDesign(productsStore.activeDesignDetails as OutputDesignDetails)
       await productsStore.fetchDesignPreviewsByStyleId(styleId)
     }
     // Move step to Designs
@@ -121,9 +108,7 @@
   const filteredPreviews = computed(() => {
     const q = productQuery.value
     if (!q) return previews.value
-    return previews.value.filter(p =>
-      p.productPreview.display_name.toLowerCase().includes(q)
-    )
+    return previews.value.filter(p => p.productPreview.display_name.toLowerCase().includes(q))
   })
 
   const headerAndFooterConfiguration: HeaderAndFooterConfiguration = {

@@ -76,9 +76,7 @@
           ) as GlobalCompositeOperation
           await addModelLayer(m.file_url, comp, fitOptions)
         }
-        for (const logo of effectiveLogos.value.filter(
-          l => l.side === 'back'
-        )) {
+        for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
           await addLogoLayer(logo)
         }
       } else {
@@ -97,9 +95,7 @@
           ) as GlobalCompositeOperation
           await addModelLayer(m.file_url, comp, fitOptions)
         }
-        for (const logo of effectiveLogos.value.filter(
-          l => l.side === 'front'
-        )) {
+        for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
           await addLogoLayer(logo)
         }
       }
@@ -169,9 +165,6 @@
 
 <template>
   <div class="relative">
-    <canvas
-      ref="canvasEl"
-      class="rounded-[32px] transition-opacity duration-300 z-10"
-    />
+    <canvas ref="canvasEl" class="rounded-[32px] transition-opacity duration-300 z-10" />
   </div>
 </template>

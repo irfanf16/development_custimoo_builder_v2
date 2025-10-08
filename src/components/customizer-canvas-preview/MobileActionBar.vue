@@ -23,11 +23,7 @@
   <div
     class="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 bg-foreground text-background rounded-full px-3 py-2 md:px-4 shadow-lg flex items-center gap-4 md:gap-6"
   >
-    <Button
-      variant="ghost"
-      class="text-background hover:text-background"
-      @click="shuffleColors()"
-    >
+    <Button variant="ghost" class="text-background hover:text-background" @click="shuffleColors()">
       <Shuffle class="size-5" />
       <span class="ml-2">Shuffle</span>
     </Button>
@@ -49,11 +45,7 @@
       <Redo2 class="size-5" />
       <span class="ml-2">Redo</span>
     </Button>
-    <Button
-      variant="ghost"
-      class="text-background hover:text-background"
-      @click="centerCanvas()"
-    >
+    <Button variant="ghost" class="text-background hover:text-background" @click="centerCanvas()">
       <Crosshair class="size-5" />
       <span class="ml-2">Centre</span>
     </Button>

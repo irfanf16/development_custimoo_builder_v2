@@ -12,9 +12,7 @@
   <Card class="w-[320px] p-0">
     <CardContent class="p-4 flex items-center justify-between gap-4">
       <div class="flex flex-col">
-        <div class="text-lg font-semibold">
-          ${{ (price ?? 56.99).toFixed(2) }}
-        </div>
+        <div class="text-lg font-semibold">${{ (price ?? 56.99).toFixed(2) }}</div>
         <div class="text-xs text-muted-foreground">
           {{
             price_line(

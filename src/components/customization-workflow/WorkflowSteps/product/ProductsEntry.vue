@@ -11,22 +11,16 @@
 
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
-  const {
-    handleCategorySelect: selectCategory,
-    handleSubcategorySelect: selectSubcategory
-  } = useWorkflow()
+  const { handleCategorySelect: selectCategory, handleSubcategorySelect: selectSubcategory } =
+    useWorkflow()
 
   const categories = computed(() => productsStore.categories?.data ?? [])
   const hasCategories = computed(() => categories.value.length > 0)
 
-  const selectedCategoryId = computed<number | null>(
-    () => workflowStore.selectedCategoryId ?? null
-  )
+  const selectedCategoryId = computed<number | null>(() => workflowStore.selectedCategoryId ?? null)
   const selectedCategory = computed(() => {
     if (selectedCategoryId.value == null) return null
-    return (
-      categories.value.find(cat => cat.id === selectedCategoryId.value) || null
-    )
+    return categories.value.find(cat => cat.id === selectedCategoryId.value) || null
   })
   const selectedCategoryHasSubcategories = computed(() => {
     return (selectedCategory.value?.subcategories?.length ?? 0) > 0
@@ -97,10 +91,7 @@
     selectSubcategory(subcategoryId)
   }
 
-  function handleProductScroll(
-    elementId: string,
-    behavior: 'smooth' | 'auto' = 'auto'
-  ) {
+  function handleProductScroll(elementId: string, behavior: 'smooth' | 'auto' = 'auto') {
     const target = document.getElementById(elementId)
     if (target) {
       target.scrollIntoView({ behavior })

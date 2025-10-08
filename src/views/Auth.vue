@@ -1,12 +1,6 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle
-  } from '@/components/ui/card'
+  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAuthStore } from '@/stores/auth/auth.store'
@@ -48,9 +42,7 @@
         <!-- Login Form -->
         <div class="space-y-4">
           <div>
-            <label for="auth-email" class="block text-sm font-medium mb-2"
-              >Email</label
-            >
+            <label for="auth-email" class="block text-sm font-medium mb-2">Email</label>
             <input
               id="auth-email"
               v-model="loginForm.email"
@@ -60,9 +52,7 @@
             />
           </div>
           <div>
-            <label for="auth-password" class="block text-sm font-medium mb-2"
-              >Password</label
-            >
+            <label for="auth-password" class="block text-sm font-medium mb-2">Password</label>
             <input
               id="auth-password"
               v-model="loginForm.password"
@@ -71,11 +61,7 @@
               placeholder="Enter your password"
             />
           </div>
-          <Button
-            class="w-full"
-            :disabled="authStore.isLoading"
-            @click="handleLogin"
-          >
+          <Button class="w-full" :disabled="authStore.isLoading" @click="handleLogin">
             {{ authStore.isLoading ? 'Signing In...' : 'Sign In' }}
           </Button>
         </div>
@@ -92,9 +78,7 @@
         <!-- Register Form -->
         <div class="space-y-4">
           <div>
-            <label for="auth-name" class="block text-sm font-medium mb-2"
-              >Full Name</label
-            >
+            <label for="auth-name" class="block text-sm font-medium mb-2">Full Name</label>
             <input
               id="auth-name"
               v-model="registerForm.name"
@@ -104,9 +88,7 @@
             />
           </div>
           <div>
-            <label for="auth-reg-email" class="block text-sm font-medium mb-2"
-              >Email</label
-            >
+            <label for="auth-reg-email" class="block text-sm font-medium mb-2">Email</label>
             <input
               id="auth-reg-email"
               v-model="registerForm.email"
@@ -116,11 +98,7 @@
             />
           </div>
           <div>
-            <label
-              for="auth-reg-password"
-              class="block text-sm font-medium mb-2"
-              >Password</label
-            >
+            <label for="auth-reg-password" class="block text-sm font-medium mb-2">Password</label>
             <input
               id="auth-reg-password"
               v-model="registerForm.password"
@@ -130,9 +108,7 @@
             />
           </div>
           <div>
-            <label
-              for="auth-confirm-password"
-              class="block text-sm font-medium mb-2"
+            <label for="auth-confirm-password" class="block text-sm font-medium mb-2"
               >Confirm Password</label
             >
             <input
@@ -143,11 +119,7 @@
               placeholder="Confirm your password"
             />
           </div>
-          <Button
-            variant="outline"
-            class="w-full"
-            :disabled="authStore.isLoading"
-          >
+          <Button variant="outline" class="w-full" :disabled="authStore.isLoading">
             {{ authStore.isLoading ? 'Creating Account...' : 'Create Account' }}
           </Button>
         </div>

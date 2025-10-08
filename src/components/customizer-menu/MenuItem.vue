@@ -15,9 +15,7 @@
 
   const buttonClass = computed(() => {
     const baseClass = 'w-[4.5rem] h-[4.5rem] p-4 rounded-2xl '
-    return isActive.value
-      ? `${baseClass} text-primary-foreground display`
-      : `${baseClass} `
+    return isActive.value ? `${baseClass} text-primary-foreground display` : `${baseClass} `
   })
 </script>
 

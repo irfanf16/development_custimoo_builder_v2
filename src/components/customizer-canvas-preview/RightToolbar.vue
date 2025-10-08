@@ -14,12 +14,7 @@
   } from 'lucide-vue-next'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
-  import {
-    TooltipProvider,
-    Tooltip,
-    TooltipTrigger,
-    TooltipContent
-  } from '@/components/ui/tooltip'
+  import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 
   const workflowStore = useWorkflowStore()
   const history = useHistoryStore()

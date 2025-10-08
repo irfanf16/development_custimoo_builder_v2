@@ -27,16 +27,9 @@
       <Ruler class="size-4" />
       {{ actions_size_guide({}, { locale: localeStore.currentLocale }) }}
     </Button>
-    <Button
-      variant="outline"
-      size="default"
-      class="rounded-lg"
-      @click="handleResetCustomization"
-    >
+    <Button variant="outline" size="default" class="rounded-lg" @click="handleResetCustomization">
       <RotateCcw class="size-4" />
-      {{
-        actions_reset_customization({}, { locale: localeStore.currentLocale })
-      }}
+      {{ actions_reset_customization({}, { locale: localeStore.currentLocale }) }}
     </Button>
     <Button variant="outline" size="default" class="rounded-lg">
       <Share2 class="size-4" />

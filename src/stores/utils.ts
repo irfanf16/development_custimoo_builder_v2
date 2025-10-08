@@ -1,9 +1,7 @@
 import type { AxiosError, AxiosResponse } from 'axios'
 import type { APIResponse } from '@/services/types'
 
-export async function tryCatchApi<T>(
-  promise: Promise<AxiosResponse<T>>
-): Promise<APIResponse<T>> {
+export async function tryCatchApi<T>(promise: Promise<AxiosResponse<T>>): Promise<APIResponse<T>> {
   try {
     const { status, data } = await promise
     if (status === 200) {

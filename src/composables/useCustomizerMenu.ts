@@ -22,9 +22,7 @@ export function useCustomizerMenu() {
 
   // Determine if we should show Categories step based on available categories
   const shouldShowCategories = computed(() => {
-    return (
-      productsStore.categories?.data && productsStore.categories.data.length > 0
-    )
+    return productsStore.categories?.data && productsStore.categories.data.length > 0
   })
 
   // Styles visibility: show if more than one style OR addons available
@@ -77,8 +75,7 @@ export function useCustomizerMenu() {
     if (nextStep === 'designs') {
       const styleId = productsStore.activeStyleDetails?.id
       const hasPreviews =
-        Array.isArray(productsStore.designPreviews) &&
-        productsStore.designPreviews.length > 0
+        Array.isArray(productsStore.designPreviews) && productsStore.designPreviews.length > 0
       if (!hasPreviews && styleId) {
         await productsStore.fetchDesignPreviewsByStyleId(styleId)
       }

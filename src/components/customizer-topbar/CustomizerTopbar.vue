@@ -76,18 +76,9 @@
     <ButtonGroup>
       <!-- Reset Button -->
       <ButtonGroup>
-        <Button
-          variant="outline"
-          size="default"
-          @click="handleResetCustomization"
-        >
+        <Button variant="outline" size="default" @click="handleResetCustomization">
           <RotateCcw class="size-4" />
-          {{
-            actions_reset_customization(
-              {},
-              { locale: localeStore.currentLocale }
-            )
-          }}
+          {{ actions_reset_customization({}, { locale: localeStore.currentLocale }) }}
         </Button>
       </ButtonGroup>
       <!-- Save Button Group with DropdownMenu -->
@@ -96,18 +87,14 @@
           <DropdownMenuTrigger as-child>
             <Button variant="outline" size="default">
               <Save class="size-4" />
-              <span>{{
-                topbar_save({}, { locale: localeStore.currentLocale })
-              }}</span>
+              <span>{{ topbar_save({}, { locale: localeStore.currentLocale }) }}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuTrigger as-child>
             <Button
               variant="outline"
               size="icon"
-              :aria-label="
-                topbar_save_options({}, { locale: localeStore.currentLocale })
-              "
+              :aria-label="topbar_save_options({}, { locale: localeStore.currentLocale })"
             >
               <ChevronDown class="size-4" />
             </Button>
@@ -132,9 +119,7 @@
       <!-- Locker Room Button -->
       <ButtonGroup>
         <Button variant="outline" size="default">
-          <span>{{
-            topbar_locker_room({}, { locale: localeStore.currentLocale })
-          }}</span>
+          <span>{{ topbar_locker_room({}, { locale: localeStore.currentLocale }) }}</span>
         </Button>
       </ButtonGroup>
 
@@ -142,9 +127,7 @@
       <ButtonGroup>
         <Button variant="outline" size="default">
           <ShoppingCart class="size-4" />
-          <span>{{
-            topbar_cart({}, { locale: localeStore.currentLocale })
-          }}</span>
+          <span>{{ topbar_cart({}, { locale: localeStore.currentLocale }) }}</span>
         </Button>
       </ButtonGroup>
 

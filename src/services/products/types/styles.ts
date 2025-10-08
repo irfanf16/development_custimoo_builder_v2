@@ -1,8 +1,4 @@
-import type {
-  Style3DMap,
-  StyleLogoEntry,
-  StyleLogoTechnology
-} from '@/services/types'
+import type { Style3DMap, StyleLogoEntry, StyleLogoTechnology } from '@/services/types'
 
 export type OutputStylePreviewBase = {
   id: number

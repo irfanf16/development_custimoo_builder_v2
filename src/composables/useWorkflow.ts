@@ -73,8 +73,7 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
     selectedSubCategoryId
   } = storeToRefs(workflowStore)
 
-  const { activeCategoryId, activeSubCategoryId } =
-    storeToRefs(customizationStore)
+  const { activeCategoryId, activeSubCategoryId } = storeToRefs(customizationStore)
 
   // ===== DERIVED STATE =====
   const currentStep = computed<WorkflowRouteStep>(() => {
@@ -127,15 +126,11 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
         return [{ label: 'Category' }]
       }
 
-      const categoryIdForTrail =
-        selectedCategoryId.value ?? activeCategoryId.value ?? null
+      const categoryIdForTrail = selectedCategoryId.value ?? activeCategoryId.value ?? null
 
-      const category = productsStore.categories?.data?.find(
-        c => c.id === categoryIdForTrail
-      )
+      const category = productsStore.categories?.data?.find(c => c.id === categoryIdForTrail)
 
-      const subId =
-        selectedSubCategoryId.value ?? activeSubCategoryId.value ?? null
+      const subId = selectedSubCategoryId.value ?? activeSubCategoryId.value ?? null
 
       if (productsSubStep.value === 'subcategory') {
         return [
@@ -149,11 +144,7 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
         ]
       }
 
-      const hasSubs = !!(
-        category &&
-        category.subcategories &&
-        category.subcategories.length
-      )
+      const hasSubs = !!(category && category.subcategories && category.subcategories.length)
 
       const trail: NavigationItem[] = [
         {
@@ -179,9 +170,7 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
 
       if (hasSubs) {
         const selectedSub =
-          subId && category
-            ? category.subcategories?.find(s => s.id === subId)
-            : undefined
+          subId && category ? category.subcategories?.find(s => s.id === subId) : undefined
         if (selectedSub) {
           trail.push({ label: selectedSub.category_name })
         }
@@ -251,9 +240,7 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
     if (!hasSubcategories) {
       workflowStore.setSelectedSubCategoryForPreview(null)
     }
-    workflowStore.setProductsSubStep(
-      hasSubcategories ? 'subcategory' : 'product'
-    )
+    workflowStore.setProductsSubStep(hasSubcategories ? 'subcategory' : 'product')
   }
 
   const handleSubcategorySelect = (subcategoryId: number) => {
@@ -276,20 +263,16 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
     effectsInitialized = true
 
     async function initializeDesigns() {
-      const styleId =
-        productsStore.activeStyleDetails?.id || customizationStore.activeStyleId
+      const styleId = productsStore.activeStyleDetails?.id || customizationStore.activeStyleId
       const needsPreviews = !(
-        Array.isArray(productsStore.designPreviews) &&
-        productsStore.designPreviews.length > 0
+        Array.isArray(productsStore.designPreviews) && productsStore.designPreviews.length > 0
       )
       if (needsPreviews && styleId) {
         await productsStore.fetchDesignPreviewsByStyleId(styleId)
       }
     }
     async function initializeStyles() {
-      const pid =
-        productsStore.activeProductDetails?.id ||
-        customizationStore.activeProductId
+      const pid = productsStore.activeProductDetails?.id || customizationStore.activeProductId
       if (pid && !productsStore.stylePreviews) {
         await productsStore.fetchStylePreviews(pid)
       }

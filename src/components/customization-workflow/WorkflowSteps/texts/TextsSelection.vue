@@ -69,16 +69,10 @@
           type="text"
           :value="editedValues[(t as OutputProductName).id] ?? ''"
           @input="
-            onChangeValue(
-              (t as OutputProductName).id,
-              ($event.target as HTMLInputElement).value
-            )
+            onChangeValue((t as OutputProductName).id, ($event.target as HTMLInputElement).value)
           "
         />
-        <Button
-          variant="default"
-          size="sm"
-          @click="saveValue((t as OutputProductName).id)"
+        <Button variant="default" size="sm" @click="saveValue((t as OutputProductName).id)"
           >Save</Button
         >
       </div>

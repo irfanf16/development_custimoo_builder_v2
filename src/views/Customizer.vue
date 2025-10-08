@@ -19,10 +19,7 @@
   >
     <!-- Mobile layout -->
     <template v-if="isMobile">
-      <div
-        id="main-content"
-        class="mobile-layout flex flex-col gap-2 w-full h-full"
-      >
+      <div id="main-content" class="mobile-layout flex flex-col gap-2 w-full h-full">
         <CustomizerTopbar class="z-20" />
         <ProductPreview />
         <WorkflowLayout class="z-10" />
@@ -31,10 +28,7 @@
     </template>
     <!-- Desktop layout -->
     <template v-else>
-      <div
-        id="main-content"
-        class="flex flex-row justify-between w-full max-h-full"
-      >
+      <div id="main-content" class="flex flex-row justify-between w-full max-h-full">
         <div id="nav-content" class="flex flex-row gap-4 max-h-full">
           <div id="menu-items-container" class="flex-col z-10">
             <CustomizerMenu />
@@ -42,10 +36,7 @@
           <WorkflowLayout class="z-10" />
         </div>
 
-        <div
-          id="right-content"
-          class="flex flex-col w-full justify-between items-end"
-        >
+        <div id="right-content" class="flex flex-col w-full justify-between items-end">
           <CustomizerTopbar class="z-10" />
           <div
             id="canvas-controls-container"

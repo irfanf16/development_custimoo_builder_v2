@@ -1,12 +1,5 @@
 <script setup lang="ts">
-  import {
-    onMounted,
-    onBeforeUnmount,
-    watch,
-    ref,
-    type PropType,
-    computed
-  } from 'vue'
+  import { onMounted, onBeforeUnmount, watch, ref, type PropType, computed } from 'vue'
   import { Rect } from 'fabric'
   import type {
     OutputProductPreview,
@@ -21,15 +14,12 @@
   const props = defineProps({
     product: { type: Object as PropType<OutputProductPreview>, required: true },
     styleBase: {
-      type: Object as PropType<
-        OutputStylePreviewFront & OutputStylePreviewBack
-      >,
+      type: Object as PropType<OutputStylePreviewFront & OutputStylePreviewBack>,
       required: true
     },
     designBase: {
       type: Object as PropType<
-        | OutputDesignPreviewFront
-        | (OutputDesignPreviewFront & OutputDesignPreviewBack)
+        OutputDesignPreviewFront | (OutputDesignPreviewFront & OutputDesignPreviewBack)
       >,
       required: true
     },
@@ -82,20 +72,14 @@
       const chosenDesign = (() => {
         if (props.side === 'front') return props.designBase.front_design
         return 'back_design' in props.designBase
-          ? (
-              props.designBase as OutputDesignPreviewFront &
-                OutputDesignPreviewBack
-            ).back_design
+          ? (props.designBase as OutputDesignPreviewFront & OutputDesignPreviewBack).back_design
           : props.designBase.front_design
       })()
       await addDesignLayer(chosenDesign.file_url, chosenDesign.file_extension)
       for (const m of props.side === 'front'
         ? props.styleBase.front_models
         : (props.styleBase.back_models ?? [])) {
-        const comp =
-          (m.composition as 'multiply' | 'screen') === 'multiply'
-            ? 'multiply'
-            : 'screen'
+        const comp = (m.composition as 'multiply' | 'screen') === 'multiply' ? 'multiply' : 'screen'
         await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
       }
       //}
@@ -140,11 +124,7 @@
   }
 
   onMounted(() => {
-    if (
-      typeof window !== 'undefined' &&
-      'IntersectionObserver' in window &&
-      containerEl.value
-    ) {
+    if (typeof window !== 'undefined' && 'IntersectionObserver' in window && containerEl.value) {
       io = new IntersectionObserver(
         entries => {
           const entry = entries[0]

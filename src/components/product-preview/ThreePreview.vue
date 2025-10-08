@@ -17,8 +17,7 @@
   const loadedTextures: THREE.Texture[] = []
 
   const storageBase =
-    (import.meta as { env?: { VITE_APP_STORAGE_URL?: string } }).env
-      ?.VITE_APP_STORAGE_URL || ''
+    (import.meta as { env?: { VITE_APP_STORAGE_URL?: string } }).env?.VITE_APP_STORAGE_URL || ''
   function fromStorage(path?: string | null): string | null {
     if (!path) return null
     const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
@@ -82,9 +81,7 @@
       camera.position.set(0, 0, 5)
     }
 
-    const hasLights = scene.children.some(
-      (child: THREE.Object3D) => child instanceof THREE.Light
-    )
+    const hasLights = scene.children.some((child: THREE.Object3D) => child instanceof THREE.Light)
     if (!hasLights) {
       const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1)
       hemi.position.set(0, 1, 0)
@@ -149,40 +146,39 @@
     const texLoader = new THREE.TextureLoader()
 
     try {
-      const [gltf, colorTex, alphaTex, aoTex, roughTex, metalTex] =
-        await Promise.all([
-          gltfLoader.loadAsync(modelUrl),
-          baseTexUrl
-            ? texLoader.loadAsync(baseTexUrl).catch((err: unknown) => {
-                console.log('[3D] base texture load error', err)
-                return null
-              })
-            : Promise.resolve<THREE.Texture | null>(null),
-          alphaUrl
-            ? texLoader.loadAsync(alphaUrl).catch((err: unknown) => {
-                console.log('[3D] alpha map load error', err)
-                return null
-              })
-            : Promise.resolve<THREE.Texture | null>(null),
-          aoUrl
-            ? texLoader.loadAsync(aoUrl).catch((err: unknown) => {
-                console.log('[3D] ao map load error', err)
-                return null
-              })
-            : Promise.resolve<THREE.Texture | null>(null),
-          roughnessUrl
-            ? texLoader.loadAsync(roughnessUrl).catch((err: unknown) => {
-                console.log('[3D] roughness map load error', err)
-                return null
-              })
-            : Promise.resolve<THREE.Texture | null>(null),
-          metalnessUrl
-            ? texLoader.loadAsync(metalnessUrl).catch((err: unknown) => {
-                console.log('[3D] metalness map load error', err)
-                return null
-              })
-            : Promise.resolve<THREE.Texture | null>(null)
-        ])
+      const [gltf, colorTex, alphaTex, aoTex, roughTex, metalTex] = await Promise.all([
+        gltfLoader.loadAsync(modelUrl),
+        baseTexUrl
+          ? texLoader.loadAsync(baseTexUrl).catch((err: unknown) => {
+              console.log('[3D] base texture load error', err)
+              return null
+            })
+          : Promise.resolve<THREE.Texture | null>(null),
+        alphaUrl
+          ? texLoader.loadAsync(alphaUrl).catch((err: unknown) => {
+              console.log('[3D] alpha map load error', err)
+              return null
+            })
+          : Promise.resolve<THREE.Texture | null>(null),
+        aoUrl
+          ? texLoader.loadAsync(aoUrl).catch((err: unknown) => {
+              console.log('[3D] ao map load error', err)
+              return null
+            })
+          : Promise.resolve<THREE.Texture | null>(null),
+        roughnessUrl
+          ? texLoader.loadAsync(roughnessUrl).catch((err: unknown) => {
+              console.log('[3D] roughness map load error', err)
+              return null
+            })
+          : Promise.resolve<THREE.Texture | null>(null),
+        metalnessUrl
+          ? texLoader.loadAsync(metalnessUrl).catch((err: unknown) => {
+              console.log('[3D] metalness map load error', err)
+              return null
+            })
+          : Promise.resolve<THREE.Texture | null>(null)
+      ])
 
       ;[colorTex, alphaTex, aoTex, roughTex, metalTex].forEach(texture => {
         if (texture) loadedTextures.push(texture)

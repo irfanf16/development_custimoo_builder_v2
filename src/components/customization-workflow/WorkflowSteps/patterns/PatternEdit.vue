@@ -196,12 +196,8 @@
               : 'border-border hover:border-primary/50'
           ]"
           :style="{
-            backgroundColor: pattern.preview.startsWith('url')
-              ? 'white'
-              : pattern.preview,
-            backgroundImage: pattern.preview.startsWith('url')
-              ? pattern.preview
-              : 'none'
+            backgroundColor: pattern.preview.startsWith('url') ? 'white' : pattern.preview,
+            backgroundImage: pattern.preview.startsWith('url') ? pattern.preview : 'none'
           }"
           @click="selectPattern(pattern.id)"
         >
@@ -210,11 +206,7 @@
             v-if="selectedPattern === pattern.id"
             class="absolute bottom-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center"
           >
-            <svg
-              class="w-2.5 h-2.5 text-white"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
+            <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fill-rule="evenodd"
                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -234,16 +226,8 @@
       </div>
 
       <!-- Show Less Button -->
-      <div
-        v-if="showAllPatterns && remainingPatternsCount > 0"
-        class="flex justify-end"
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          class="rounded-lg"
-          @click="toggleShowAllPatterns"
-        >
+      <div v-if="showAllPatterns && remainingPatternsCount > 0" class="flex justify-end">
+        <Button variant="outline" size="sm" class="rounded-lg" @click="toggleShowAllPatterns">
           Show less
         </Button>
       </div>
@@ -274,9 +258,7 @@
     <Accordion type="single" collapsible default-value="colors">
       <AccordionItem value="colors" class="px-4 md:px-6 border-t border-border">
         <AccordionTrigger>
-          <span class="text-base font-medium"
-            >Colour Nacho Kings Nacho Kings</span
-          >
+          <span class="text-base font-medium">Colour Nacho Kings Nacho Kings</span>
         </AccordionTrigger>
         <AccordionContent class="px-4 pb-4">
           <div class="space-y-4">

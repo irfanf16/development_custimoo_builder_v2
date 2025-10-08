@@ -39,10 +39,7 @@ export function ensureStylesheet(href: string): void {
 /**
  * Load Google Font dynamically
  */
-export function loadGoogleFont(
-  fontFamily: string,
-  url?: string
-): Promise<void> {
+export function loadGoogleFont(fontFamily: string, url?: string): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       const family = fontFamily.trim()

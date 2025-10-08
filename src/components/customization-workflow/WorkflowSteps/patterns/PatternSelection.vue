@@ -8,10 +8,8 @@
   const workflowStore = useWorkflowStore()
 
   // Use workflow store state
-  const {
-    patternsSubStep: currentSubStep,
-    activePatternGroupName: selectedLayerId
-  } = storeToRefs(workflowStore)
+  const { patternsSubStep: currentSubStep, activePatternGroupName: selectedLayerId } =
+    storeToRefs(workflowStore)
 
   function handleSelectLayer(layerId: string) {
     workflowStore.setActivePatternSubStep(layerId)
@@ -26,10 +24,7 @@
   // Breadcrumb logic for pattern selection and edit substep
   const breadcrumbs = computed(() => {
     if (currentSubStep.value === 'edit' && selectedLayerId.value) {
-      return [
-        { label: 'Pattern', action: handleBackToLayers },
-        { label: selectedLayerId.value }
-      ]
+      return [{ label: 'Pattern', action: handleBackToLayers }, { label: selectedLayerId.value }]
     }
     return [{ label: 'Pattern' }]
   })

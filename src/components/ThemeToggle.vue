@@ -11,11 +11,7 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import { watch } from 'vue'
   import { storeToRefs } from 'pinia'
-  import {
-    theme_toggle_sr,
-    theme_light,
-    theme_dark
-  } from '@/paraglide/messages'
+  import { theme_toggle_sr, theme_light, theme_dark } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
 
   const uiStore = useUIStore()

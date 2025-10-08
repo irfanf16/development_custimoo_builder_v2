@@ -1,10 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import {
-  type InputLogin,
-  type Customer,
-  type OutputLogin
-} from '@/services/authentication/types'
+import { type InputLogin, type Customer, type OutputLogin } from '@/services/authentication/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'

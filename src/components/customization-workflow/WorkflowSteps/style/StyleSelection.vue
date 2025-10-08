@@ -5,11 +5,7 @@
   // Style previews use static icons (PNG) from style_icon_url, so no canvas is needed
   import { Checkbox } from '@/components/ui/checkbox'
   import { Label } from '@/components/ui/label'
-  import {
-    styles_title,
-    addons_title,
-    styles_alt_icon
-  } from '@/paraglide/messages'
+  import { styles_title, addons_title, styles_alt_icon } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import type { OutputStylePreviewFront } from '@/services/products/types'
 
@@ -20,13 +16,9 @@
   const localeStore = useLocaleStore()
 
   const productId = computed(
-    () =>
-      productsStore.activeProductDetails?.id ||
-      customizationStore.activeProductId
+    () => productsStore.activeProductDetails?.id || customizationStore.activeProductId
   )
-  const previews = computed(
-    () => (productsStore.stylePreviews as OutputStylePreviewFront[]) || []
-  )
+  const previews = computed(() => (productsStore.stylePreviews as OutputStylePreviewFront[]) || [])
   const headerDescription = computed(() => {
     const p = productsStore.activeProductDetails
     return p?.sku?.description || ''
@@ -62,9 +54,7 @@
     if (idx >= 0) {
       // Use a setter to update store state
       // Update customization state with the new addon selection
-      customizationStore.setAddons([
-        ...productsStore.activeProductDetails?.active_addons
-      ])
+      customizationStore.setAddons([...productsStore.activeProductDetails?.active_addons])
     }
   }
 
@@ -73,19 +63,15 @@
       productsStore.activeProductDetails?.company_addons &&
       productsStore.activeProductDetails?.company_addons.length
     ) {
-      return (productsStore.activeProductDetails?.company_addons || []).map(
-        a => ({
-          addon_id: a.addon_id,
-          title: a.addon_data.title
-        })
-      ) as Array<{ addon_id: number; title: string }>
-    }
-    return (productsStore.activeProductDetails?.product_addons || []).map(
-      a => ({
+      return (productsStore.activeProductDetails?.company_addons || []).map(a => ({
         addon_id: a.addon_id,
-        title: a.title
-      })
-    ) as Array<{ addon_id: number; title: string }>
+        title: a.addon_data.title
+      })) as Array<{ addon_id: number; title: string }>
+    }
+    return (productsStore.activeProductDetails?.product_addons || []).map(a => ({
+      addon_id: a.addon_id,
+      title: a.title
+    })) as Array<{ addon_id: number; title: string }>
   })
 
   // Breadcrumb logic for style selection
@@ -100,14 +86,9 @@
     set: (_v: string) => {}
   })
   const filteredPreviews = computed(() => {
-    const q =
-      (styleSearchQuery as { value?: string }).value
-        ?.trim?.()
-        .toLowerCase?.() || ''
+    const q = (styleSearchQuery as { value?: string }).value?.trim?.().toLowerCase?.() || ''
     if (!q) return previews.value
-    return previews.value.filter((s: OutputStylePreviewFront) =>
-      s.name.toLowerCase().includes(q)
-    )
+    return previews.value.filter((s: OutputStylePreviewFront) => s.name.toLowerCase().includes(q))
   })
 
   const headerExtras = { breadcrumbs }
@@ -119,23 +100,14 @@
   <div class="flex flex-col gap-4 md:gap-6 pr-4 mx-4 md:mx-6">
     <div class="flex flex-col gap-2">
       <!-- eslint-disable-next-line vue/no-v-html -->
-      <div
-        class="text-muted-foreground text-base leading-relaxed"
-        v-html="headerDescription"
-      ></div>
+      <div class="text-muted-foreground text-base leading-relaxed" v-html="headerDescription"></div>
     </div>
     <div class="flex flex-col gap-3 pt-6 pb-2">
       <div class="text-lg font-semibold font-brand">
         {{ styles_title({}, { locale: localeStore.currentLocale }) }}
       </div>
-      <div
-        class="grid grid-cols-2 gap-x-8 md:gap-x-16 gap-y-6 md:gap-y-8 px-4 md:px-6"
-      >
-        <div
-          v-for="s in filteredPreviews"
-          :key="s.id"
-          class="flex flex-col gap-3 items-start"
-        >
+      <div class="grid grid-cols-2 gap-x-8 md:gap-x-16 gap-y-6 md:gap-y-8 px-4 md:px-6">
+        <div v-for="s in filteredPreviews" :key="s.id" class="flex flex-col gap-3 items-start">
           <div class="text-base font-semibold">{{ s.name }}</div>
           <img
             :src="
@@ -157,11 +129,7 @@
         {{ addons_title({}, { locale: localeStore.currentLocale }) }}
       </div>
       <div class="flex flex-col gap-2">
-        <div
-          v-for="addon in visibleAddons"
-          :key="addon.addon_id"
-          class="flex items-center gap-2"
-        >
+        <div v-for="addon in visibleAddons" :key="addon.addon_id" class="flex items-center gap-2">
           <Checkbox
             :id="`checkbox-addon-${addon.addon_id}`"
             :checked="

@@ -35,9 +35,7 @@
   const designBase = computed<OutputDesignDetails | null>(
     () => productsStore.activeDesignDetails ?? null
   )
-  const placements = computed<OutputProductLogosSetting[]>(
-    () => product.value?.logos_setting || []
-  )
+  const placements = computed<OutputProductLogosSetting[]>(() => product.value?.logos_setting || [])
 
   function handlePlacementSelection(_placement: OutputProductLogosSetting) {
     if (logosStore.activeLogo) {
@@ -56,10 +54,7 @@
     { label: 'Placement' }
   ])
 
-  function addActiveLogoToCustomization(
-    _logo: CustomLogo,
-    _placement: OutputProductLogosSetting
-  ) {
+  function addActiveLogoToCustomization(_logo: CustomLogo, _placement: OutputProductLogosSetting) {
     const res = customizationStore.addLogoToCustomizationFromSource(
       customizationStore.getMergedCustomizationLogo(_logo, _placement)
     )

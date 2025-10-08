@@ -53,24 +53,15 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   function saveSubStepsToLocalStorage() {
     if (typeof window === 'undefined') return
     window.localStorage.setItem('workflow.logosSubStep', logosSubStep.value)
-    window.localStorage.setItem(
-      'workflow.productsSubStep',
-      productsSubStep.value
-    )
+    window.localStorage.setItem('workflow.productsSubStep', productsSubStep.value)
     window.localStorage.setItem('workflow.textsSubStep', textsSubStep.value)
     window.localStorage.setItem('workflow.rosterSubStep', rosterSubStep.value)
-    window.localStorage.setItem(
-      'workflow.patternsSubStep',
-      patternsSubStep.value || ''
-    )
+    window.localStorage.setItem('workflow.patternsSubStep', patternsSubStep.value || '')
     window.localStorage.setItem(
       'workflow.activePatternGroupName',
       activePatternGroupName.value || ''
     )
-    window.localStorage.setItem(
-      'workflow.activeLogoId',
-      activeLogoId.value || ''
-    )
+    window.localStorage.setItem('workflow.activeLogoId', activeLogoId.value || '')
   }
 
   function loadFromLocalStorage() {
@@ -81,23 +72,21 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
         | 'placement'
         | 'edit'
         | null
-      const products = window.localStorage.getItem(
-        'workflow.productsSubStep'
-      ) as 'category' | 'subcategory' | 'product' | null
+      const products = window.localStorage.getItem('workflow.productsSubStep') as
+        | 'category'
+        | 'subcategory'
+        | 'product'
+        | null
       const texts = window.localStorage.getItem('workflow.textsSubStep') as
         | 'list'
         | 'placement'
         | null
-      const roster = window.localStorage.getItem('workflow.rosterSubStep') as
+      const roster = window.localStorage.getItem('workflow.rosterSubStep') as 'list' | 'edit' | null
+      const patterns = window.localStorage.getItem('workflow.patternsSubStep') as
         | 'list'
         | 'edit'
         | null
-      const patterns = window.localStorage.getItem(
-        'workflow.patternsSubStep'
-      ) as 'list' | 'edit' | null
-      const patternGroupName = window.localStorage.getItem(
-        'workflow.activePatternGroupName'
-      )
+      const patternGroupName = window.localStorage.getItem('workflow.activePatternGroupName')
       const logoId = window.localStorage.getItem('workflow.activeLogoId')
       if (logos) logosSubStep.value = logos
       if (products) productsSubStep.value = products
@@ -179,8 +168,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   }
 
   function toggleActiveCanvasSide() {
-    activeCanvasSide.value =
-      activeCanvasSide.value === 'front' ? 'back' : 'front'
+    activeCanvasSide.value = activeCanvasSide.value === 'front' ? 'back' : 'front'
   }
 
   function setCanvasZoom(zoom: number) {

@@ -13,9 +13,7 @@
   import { cn } from '@/lib/utils'
   import { useUIStore } from '@/stores/ui/ui.store'
 
-  const props = defineProps<
-    DialogContentProps & { class?: HTMLAttributes['class'] }
-  >()
+  const props = defineProps<DialogContentProps & { class?: HTMLAttributes['class'] }>()
   const emits = defineEmits<DialogContentEmits>()
 
   const delegatedProps = reactiveOmit(props, 'class')

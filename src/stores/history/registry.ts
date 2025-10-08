@@ -52,8 +52,7 @@ export const registry: Registry = {
       if (payload.prevColor) {
         customizationStore.setGroupColor(payload.groupId, payload.prevColor)
       } else {
-        const c =
-          customizationStore.customization as ActiveProductCustomization | null
+        const c = customizationStore.customization as ActiveProductCustomization | null
         const colors = c?.group_colors
         if (colors && colors[payload.groupId]) {
           delete colors[payload.groupId]
@@ -69,8 +68,7 @@ export const registry: Registry = {
   'text.set-value': {
     apply(ctx: HistoryContext, payload: TextSetValuePayload) {
       const customizationStore = ctx.customizationStore
-      const root =
-        customizationStore.customization as ActiveProductCustomization | null
+      const root = customizationStore.customization as ActiveProductCustomization | null
       if (!root) return
       const map = root.product_custom_texts
       const key = payload.key
@@ -101,8 +99,7 @@ export const registry: Registry = {
     },
     revert(ctx: HistoryContext, payload: TextSetValuePayload) {
       const customizationStore = ctx.customizationStore
-      const root =
-        customizationStore.customization as ActiveProductCustomization | null
+      const root = customizationStore.customization as ActiveProductCustomization | null
       if (!root) return
       const map = root.product_custom_texts
       const key = payload.key
@@ -138,8 +135,7 @@ export const registry: Registry = {
   'logo.add': {
     apply(ctx: HistoryContext, payload: LogoAddPayload) {
       const customizationStore = ctx.customizationStore
-      const root =
-        customizationStore.customization as ActiveProductCustomization | null
+      const root = customizationStore.customization as ActiveProductCustomization | null
       const map = root?.custom_logos
       if (!map) return
       const arr = map[payload.key] || (map[payload.key] = [])
@@ -150,8 +146,7 @@ export const registry: Registry = {
     },
     revert(ctx: HistoryContext, payload: LogoAddPayload) {
       const customizationStore = ctx.customizationStore
-      const root =
-        customizationStore.customization as ActiveProductCustomization | null
+      const root = customizationStore.customization as ActiveProductCustomization | null
       const map = root?.custom_logos
       if (!map) return
       const arr = map[payload.key]
@@ -167,8 +162,7 @@ export const registry: Registry = {
   'logo.remove': {
     apply(ctx: HistoryContext, payload: LogoRemovePayload) {
       const customizationStore = ctx.customizationStore
-      const root =
-        customizationStore.customization as ActiveProductCustomization | null
+      const root = customizationStore.customization as ActiveProductCustomization | null
       const map = root?.custom_logos
       if (!map) return
       const arr = map[payload.key]
@@ -179,8 +173,7 @@ export const registry: Registry = {
     },
     revert(ctx: HistoryContext, payload: LogoRemovePayload) {
       const customizationStore = ctx.customizationStore
-      const root =
-        customizationStore.customization as ActiveProductCustomization | null
+      const root = customizationStore.customization as ActiveProductCustomization | null
       const map = root?.custom_logos
       if (!map) return
       const arr = map[payload.key] || (map[payload.key] = [])
@@ -260,10 +253,7 @@ export const registry: Registry = {
         await (registry[e.type] as Handler<unknown>).revert(ctx, e.payload)
       }
     },
-    describe(
-      _: HistoryContext,
-      payload: { entries: unknown[]; label?: string }
-    ) {
+    describe(_: HistoryContext, payload: { entries: unknown[]; label?: string }) {
       return payload.label || `Apply ${payload.entries.length} changes`
     }
   }

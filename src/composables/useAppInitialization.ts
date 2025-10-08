@@ -74,9 +74,7 @@ export function useAppInitialization() {
 
     // Determine the effective category ID for loading products
     const effectiveCategoryId =
-      customizationStore.activeCategoryId ||
-      productsStore.categories?.data?.[0]?.id ||
-      null
+      customizationStore.activeCategoryId || productsStore.categories?.data?.[0]?.id || null
     const effectiveSubCategoryId =
       customizationStore.activeSubCategoryId ||
       productsStore.categories?.data?.[0]?.subcategories?.[0]?.id ||
@@ -98,10 +96,7 @@ export function useAppInitialization() {
     effectiveCategoryId: number | null,
     effectiveSubCategoryId?: number
   ) => {
-    await productsStore.fetchProductPreviews(
-      effectiveCategoryId,
-      effectiveSubCategoryId
-    )
+    await productsStore.fetchProductPreviews(effectiveCategoryId, effectiveSubCategoryId)
   }
 
   // PHASE 5A: Restore customization with defaults
@@ -152,9 +147,7 @@ export function useAppInitialization() {
     if (!designId) {
       const defaultDesignId = productsStore.activeDesignDetails?.id
       if (defaultDesignId) {
-        void customizationStore.setDesign(
-          productsStore.activeDesignDetails as OutputDesignDetails
-        )
+        void customizationStore.setDesign(productsStore.activeDesignDetails as OutputDesignDetails)
         designId = defaultDesignId
       }
     } else if (productsStore.activeDesignDetails?.id !== designId) {
@@ -192,14 +185,8 @@ export function useAppInitialization() {
         productId: activeProductId,
         styleId: productsStore.activeStyleDetails?.id,
         designId: productsStore.activeDesignDetails?.id,
-        categoryId:
-          customizationStore.activeCategoryId ??
-          effectiveCategoryId ??
-          undefined,
-        subCategoryId:
-          customizationStore.activeSubCategoryId ??
-          effectiveSubCategoryId ??
-          undefined
+        categoryId: customizationStore.activeCategoryId ?? effectiveCategoryId ?? undefined,
+        subCategoryId: customizationStore.activeSubCategoryId ?? effectiveSubCategoryId ?? undefined
       })
       customizationStore.saveToLocalStorage()
       //}
@@ -255,8 +242,10 @@ export function useAppInitialization() {
         await fetchEssentialData()
 
         // PHASE 3: Initialize localization and determine effective category
-        const effectiveCategoryAndSubCategory =
-          initializeLocalizationAndCategory(customizationStore, productsStore)
+        const effectiveCategoryAndSubCategory = initializeLocalizationAndCategory(
+          customizationStore,
+          productsStore
+        )
 
         // PHASE 4: Load product data
         await loadProductData(
@@ -288,8 +277,7 @@ export function useAppInitialization() {
         isInitialized.value = true
         globalIsInitialized = true
       } catch (err) {
-        error.value =
-          err instanceof Error ? err.message : 'Failed to initialize app'
+        error.value = err instanceof Error ? err.message : 'Failed to initialize app'
       } finally {
         isLoading.value = false
         globalInitializationPromise = null

@@ -41,31 +41,22 @@
   // Type for color that can be either a hex string or RGB object
   type ColorValue = string | { r: number; g: number; b: number }
 
-  const baseStorageUrl = computed(
-    () => import.meta.env.VITE_APP_STORAGE_URL || ''
-  )
+  const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
 
   // Local clipboard for copy/paste between slots
   const clipboardHex = ref<string | null>(null)
 
   const logo = computed(() => {
     if (logosStore.activeLogo) return logosStore.activeLogo
-    return (
-      logosStore.recentLogos?.find(l => l.id.toString() === props.logoId) ||
-      null
-    )
+    return logosStore.recentLogos?.find(l => l.id.toString() === props.logoId) || null
   })
 
   const selectedColorMode = ref<ColorMode>('soccer')
   const removeBackgroundMode = ref<BackgroundRemovalMode>(null)
 
   const hasColors = computed(() => (logo.value?.logo_colors?.length ?? 0) > 0)
-  const placementLabel = computed(
-    () => (logo.value as CustomLogo)?.placement || 'Chest middle'
-  )
-  const previewUrl = computed(
-    () => `${baseStorageUrl.value}${logo.value?.url ?? ''}`
-  )
+  const placementLabel = computed(() => (logo.value as CustomLogo)?.placement || 'Chest middle')
+  const previewUrl = computed(() => `${baseStorageUrl.value}${logo.value?.url ?? ''}`)
 
   // List of palette options for the select dropdown
   const paletteOptions = computed(
@@ -112,9 +103,7 @@
   }
 
   const colorSwatches = computed(() =>
-    (logo.value?.logo_colors || []).map(color =>
-      rgbArrayToHex(color as number[])
-    )
+    (logo.value?.logo_colors || []).map(color => rgbArrayToHex(color as number[]))
   )
 
   // Color modes for recoloring
@@ -220,8 +209,7 @@
         const nextColor = hexPalette[index]
         if (!nextColor) return
 
-        const prevRaw =
-          customizationStore.customization?.group_colors?.[group.id]
+        const prevRaw = customizationStore.customization?.group_colors?.[group.id]
         const prevColor = prevRaw
           ? {
               name: prevRaw.name || '',
@@ -343,20 +331,14 @@
       </div>
     </section>
 
-    <Accordion
-      type="multiple"
-      :default-value="['remove-background', 'recolor']"
-      class="space-y-4"
-    >
+    <Accordion type="multiple" :default-value="['remove-background', 'recolor']" class="space-y-4">
       <AccordionItem value="remove-background" class="overflow-hidden">
         <AccordionTrigger class="px-6 py-4">
           <div
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <span class="text-base font-semibold">Remove background</span>
-            <span
-              class="text-sm font-normal text-muted-foreground md:text-right"
-            >
+            <span class="text-sm font-normal text-muted-foreground md:text-right">
               Nacho Kings Nacho Kings
             </span>
           </div>
@@ -368,11 +350,7 @@
               stroke-width="2"
               viewBox="0 0 24 24"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 9l6 6 6-6"
-              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
             </svg>
           </template>
         </AccordionTrigger>
@@ -386,9 +364,7 @@
             }"
             @click="handleRemoveBackground('simple')"
           >
-            <div
-              class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15"
-            >
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
               <div
                 class="flex h-8 w-8 items-center justify-center rounded-full bg-teal-500 text-white"
               >
@@ -398,14 +374,9 @@
             <div class="flex flex-1 flex-col gap-2">
               <p class="text-sm font-semibold">Simple remove</p>
               <p class="text-xs text-muted-foreground">
-                Removes all pixels matching the top-left colour, even inside the
-                logo.
+                Removes all pixels matching the top-left colour, even inside the logo.
               </p>
-              <Button
-                size="sm"
-                variant="secondary"
-                class="mt-1 self-start rounded-full px-4"
-              >
+              <Button size="sm" variant="secondary" class="mt-1 self-start rounded-full px-4">
                 Apply
               </Button>
             </div>
@@ -420,9 +391,7 @@
             }"
             @click="handleRemoveBackground('content')"
           >
-            <div
-              class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15"
-            >
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
               <div
                 class="flex h-8 w-8 items-center justify-center rounded-full bg-teal-500 text-white"
               >
@@ -432,14 +401,9 @@
             <div class="flex flex-1 flex-col gap-2">
               <p class="text-sm font-semibold">Content remove</p>
               <p class="text-xs text-muted-foreground">
-                Removes the top-left colour only from the background, not the
-                logo.
+                Removes the top-left colour only from the background, not the logo.
               </p>
-              <Button
-                size="sm"
-                variant="secondary"
-                class="mt-1 self-start rounded-full px-4"
-              >
+              <Button size="sm" variant="secondary" class="mt-1 self-start rounded-full px-4">
                 Apply
               </Button>
             </div>
@@ -453,9 +417,7 @@
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <span class="text-base font-semibold">Recolor logo</span>
-            <span
-              class="text-sm font-normal text-muted-foreground md:text-right"
-            >
+            <span class="text-sm font-normal text-muted-foreground md:text-right">
               Nacho Kings Nacho Kings
             </span>
           </div>
@@ -467,20 +429,14 @@
               stroke-width="2"
               viewBox="0 0 24 24"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 9l6 6 6-6"
-              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
             </svg>
           </template>
         </AccordionTrigger>
         <AccordionContent class="px-6 py-5">
           <!-- Controls row -->
           <div class="flex items-center justify-between gap-3">
-            <div
-              class="inline-flex rounded-lg border border-border bg-muted p-1 text-sm"
-            >
+            <div class="inline-flex rounded-lg border border-border bg-muted p-1 text-sm">
               <button
                 class="px-3 h-9 rounded-md transition-colors"
                 :class="[
@@ -519,12 +475,7 @@
               <Button size="sm" variant="outline" @click="copyFrom">
                 <span class="no-underline">Copy</span>
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                :disabled="!clipboardHex"
-                @click="pasteTo"
-              >
+              <Button size="sm" variant="outline" :disabled="!clipboardHex" @click="pasteTo">
                 <span class="no-underline">Paste</span>
               </Button>
             </div>
@@ -535,19 +486,13 @@
             <Select v-model="currentPaletteId">
               <SelectTrigger class="h-9 w-full">
                 <SelectValue
-                  :value="
-                    colorModes.find(mode => mode.id === currentPaletteId)?.label
-                  "
+                  :value="colorModes.find(mode => mode.id === currentPaletteId)?.label"
                 />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Palettes</SelectLabel>
-                  <SelectItem
-                    v-for="p in paletteOptions"
-                    :key="p.value"
-                    :value="p.value"
-                  >
+                  <SelectItem v-for="p in paletteOptions" :key="p.value" :value="p.value">
                     {{ p.label }}
                   </SelectItem>
                 </SelectGroup>
@@ -574,9 +519,7 @@
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <span class="text-base font-semibold">Position</span>
-            <span
-              class="text-sm font-normal text-muted-foreground md:text-right"
-            >
+            <span class="text-sm font-normal text-muted-foreground md:text-right">
               Nacho Kings Nacho Kings
             </span>
           </div>
@@ -588,11 +531,7 @@
               stroke-width="2"
               viewBox="0 0 24 24"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 9l6 6 6-6"
-              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
             </svg>
           </template>
         </AccordionTrigger>
@@ -607,9 +546,7 @@
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <span class="text-base font-semibold">Logo technology</span>
-            <span
-              class="text-sm font-normal text-muted-foreground md:text-right"
-            >
+            <span class="text-sm font-normal text-muted-foreground md:text-right">
               Nacho Kings Nacho Kings
             </span>
           </div>
@@ -621,11 +558,7 @@
               stroke-width="2"
               viewBox="0 0 24 24"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 9l6 6 6-6"
-              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
             </svg>
           </template>
         </AccordionTrigger>
@@ -636,11 +569,7 @@
     </Accordion>
 
     <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end">
-      <Button
-        variant="outline"
-        class="w-full rounded-full sm:w-auto"
-        @click="handleBackToLogos"
-      >
+      <Button variant="outline" class="w-full rounded-full sm:w-auto" @click="handleBackToLogos">
         Cancel
       </Button>
       <Button class="w-full rounded-full sm:w-auto">Save</Button>

@@ -1,9 +1,5 @@
 import http from '../api'
-import type {
-  OutputRecentLogos,
-  OutputUploadLogo,
-  UploadLogoParams
-} from './types'
+import type { OutputRecentLogos, OutputUploadLogo, UploadLogoParams } from './types'
 
 async function getRecentLogos() {
   return await http.get<OutputRecentLogos>('logos/recent')

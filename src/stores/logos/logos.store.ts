@@ -85,9 +85,7 @@ export const useLogosStore = defineStore('logosStore', () => {
     const originalLogos = recentLogos.value ? [...recentLogos.value] : []
 
     // Optimistically remove the logo from state
-    setRecentLogos(
-      recentLogos.value?.filter(logo => logo.id.toString() !== logoId) || []
-    )
+    setRecentLogos(recentLogos.value?.filter(logo => logo.id.toString() !== logoId) || [])
 
     const response = await tryCatchApi(API.logos.deleteRecentLogo(logoId))
     if (!response.success) {

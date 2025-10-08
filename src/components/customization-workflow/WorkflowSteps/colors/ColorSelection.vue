@@ -107,8 +107,7 @@
   const currentPaletteId = ref<number>(computedPalettes.value?.[0]?.id || 0)
 
   function setGroupColor(colorGroupId: string, color: OutputColor) {
-    const prevRaw =
-      customizationStore.customization?.group_colors?.[colorGroupId]
+    const prevRaw = customizationStore.customization?.group_colors?.[colorGroupId]
     const prevColor = prevRaw
       ? { name: prevRaw.name || '', value: prevRaw.color || '', position: 0 }
       : null
@@ -135,18 +134,10 @@
     // Assign a random number from 0 to 3 that is not the same as the current value
     function getRandomIndexExcluding(current: number): 0 | 1 | 2 | 3 {
       const options = [0, 1, 2, 3].filter(i => i !== current)
-      return options[Math.floor(Math.random() * options.length)] as
-        | 0
-        | 1
-        | 2
-        | 3
+      return options[Math.floor(Math.random() * options.length)] as 0 | 1 | 2 | 3
     }
-    shuffleColorsHeadingIndex.value = getRandomIndexExcluding(
-      shuffleColorsHeadingIndex.value
-    )
-    shuffleColorsTextIndex.value = getRandomIndexExcluding(
-      shuffleColorsTextIndex.value
-    )
+    shuffleColorsHeadingIndex.value = getRandomIndexExcluding(shuffleColorsHeadingIndex.value)
+    shuffleColorsTextIndex.value = getRandomIndexExcluding(shuffleColorsTextIndex.value)
     shuffleColors(currentPaletteId.value)
   }
 
@@ -184,10 +175,7 @@
               type="animation"
               :duration="{ enter: 300, leave: 300 }"
             >
-              <div
-                :key="shuffleColorsTextIndex"
-                class="text-sm text-muted-foreground"
-              >
+              <div :key="shuffleColorsTextIndex" class="text-sm text-muted-foreground">
                 {{ shuffleColorsTexts[shuffleColorsTextIndex] }}
               </div>
             </Transition>
@@ -195,25 +183,18 @@
         </div>
         <div class="mt-4">
           <Button class="w-full" variant="default" @click="shuffleAll">{{
-            color_shuffle_design_colors(
-              {},
-              { locale: localeStore.currentLocale }
-            )
+            color_shuffle_design_colors({}, { locale: localeStore.currentLocale })
           }}</Button>
         </div>
       </div>
       <div class="flex flex-col gap-3 px-4 md:px-6">
-        <div
-          class="flex items-center justify-center text-xs text-muted-foreground gap-2"
-        >
+        <div class="flex items-center justify-center text-xs text-muted-foreground gap-2">
           <div class="flex-1 h-px bg-border" />
           <span class="px-3 text-foreground font-medium">or</span>
           <div class="flex-1 h-px bg-border" />
         </div>
         <div>
-          <Button class="w-full bg-card" variant="outline"
-            >Choose from locker</Button
-          >
+          <Button class="w-full bg-card" variant="outline">Choose from locker</Button>
         </div>
       </div>
     </div>
@@ -238,10 +219,7 @@
             <div
               class="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-hover:no-underline transition-opacity"
             >
-              <Button
-                size="sm"
-                variant="outline"
-                @click.stop="copyFrom(svgGroup.id)"
+              <Button size="sm" variant="outline" @click.stop="copyFrom(svgGroup.id)"
                 ><span class="no-underline">Copy</span></Button
               >
               <Button
@@ -257,9 +235,7 @@
         <AccordionContent>
           <!-- Controls row -->
           <div class="flex items-center justify-between gap-3">
-            <div
-              class="inline-flex rounded-lg border border-border bg-muted p-1 text-sm"
-            >
+            <div class="inline-flex rounded-lg border border-border bg-muted p-1 text-sm">
               <button
                 class="px-3 h-9 rounded-md transition-colors"
                 :class="[
@@ -294,11 +270,7 @@
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Palettes</SelectLabel>
-                  <SelectItem
-                    v-for="p in paletteOptions"
-                    :key="p.value"
-                    :value="p.value"
-                  >
+                  <SelectItem v-for="p in paletteOptions" :key="p.value" :value="p.value">
                     {{ p.label }}
                   </SelectItem>
                 </SelectGroup>

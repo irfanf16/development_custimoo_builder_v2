@@ -3,16 +3,10 @@
   import type { HTMLAttributes } from 'vue'
   import { reactiveOmit } from '@vueuse/core'
   import { Check } from 'lucide-vue-next'
-  import {
-    CheckboxIndicator,
-    CheckboxRoot,
-    useForwardPropsEmits
-  } from 'reka-ui'
+  import { CheckboxIndicator, CheckboxRoot, useForwardPropsEmits } from 'reka-ui'
   import { cn } from '@/lib/utils'
 
-  const props = defineProps<
-    CheckboxRootProps & { class?: HTMLAttributes['class'] }
-  >()
+  const props = defineProps<CheckboxRootProps & { class?: HTMLAttributes['class'] }>()
   const emits = defineEmits<CheckboxRootEmits>()
 
   const delegatedProps = reactiveOmit(props, 'class')

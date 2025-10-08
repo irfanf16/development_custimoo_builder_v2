@@ -13,9 +13,7 @@
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
 
-  const selectedCategoryId = computed(
-    () => workflowStore.selectedCategoryId ?? null
-  )
+  const selectedCategoryId = computed(() => workflowStore.selectedCategoryId ?? null)
 
   const selectedCategory = computed(() => {
     const id = selectedCategoryId.value
@@ -23,9 +21,7 @@
     return productsStore.categories?.data?.find(c => c.id === id) || null
   })
 
-  const subcategories = computed(
-    () => selectedCategory.value?.subcategories || []
-  )
+  const subcategories = computed(() => selectedCategory.value?.subcategories || [])
 
   function handleSelectSubcategory(subcategoryId: number) {
     workflowStore.setSelectedSubCategoryForPreview(subcategoryId)
@@ -97,9 +93,7 @@
           :is="getCategoryIcon(index)"
           class="size-6 text-primary icon-secondary-from-primary-50"
         />
-        <span class="text-base font-semibold text-card-foreground">{{
-          item.category_name
-        }}</span>
+        <span class="text-base font-semibold text-card-foreground">{{ item.category_name }}</span>
       </div>
       <ChevronRight class="size-4 text-muted-foreground" />
     </button>

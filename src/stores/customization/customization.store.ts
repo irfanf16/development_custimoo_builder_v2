@@ -26,23 +26,14 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   )
   const activeStyleId = computed(() => customization.value?.style_id ?? null)
   const activeDesignId = computed(() => customization.value?.design_id ?? null)
-  const activeDesignName = computed(
-    () => customization.value?.design_name ?? null
-  )
-  const activeCategoryId = computed(
-    () => customization.value?.category_id ?? null
-  )
-  const activeSubCategoryId = computed(
-    () => customization.value?.sub_category_id ?? null
-  )
+  const activeDesignName = computed(() => customization.value?.design_name ?? null)
+  const activeCategoryId = computed(() => customization.value?.category_id ?? null)
+  const activeSubCategoryId = computed(() => customization.value?.sub_category_id ?? null)
 
   // ===== PERSISTENCE =====
   function saveToLocalStorage() {
     if (typeof window === 'undefined') return
-    window.localStorage.setItem(
-      'activeProductCustomization',
-      JSON.stringify(customization.value)
-    )
+    window.localStorage.setItem('activeProductCustomization', JSON.stringify(customization.value))
   }
 
   function loadFromLocalStorage(): boolean {
@@ -146,8 +137,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   function appendLogoColors(colors?: LogoColor[]) {
     if (!customization.value) return
     if (!colors || !colors.length) return
-    if (!Array.isArray(customization.value.logo_colors))
-      customization.value.logo_colors = []
+    if (!Array.isArray(customization.value.logo_colors)) customization.value.logo_colors = []
     colors.forEach(c => customization.value!.logo_colors.push(c))
     saveToLocalStorage()
   }
@@ -158,16 +148,12 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     return { key, logo }
   }
 
-  function getMergedCustomizationLogo(
-    _logo: CustomLogo,
-    _placement: OutputProductLogosSetting
-  ) {
+  function getMergedCustomizationLogo(_logo: CustomLogo, _placement: OutputProductLogosSetting) {
     return {
       id: _logo.id,
       product_id: _logo.product_id || _placement.product_id,
       product_style_id: _logo.product_style_id || _placement.product_style_id,
-      following_product_ids:
-        _logo.following_product_ids || _placement.following_product_ids,
+      following_product_ids: _logo.following_product_ids || _placement.following_product_ids,
       haveControls: _logo.haveControls ?? true,
       height: _logo.height || _placement.height || 180,
       is_locked: _logo.is_locked ?? _placement.is_locked ?? 0,
@@ -179,8 +165,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       logo_name: _logo.logo_name,
       logo_technologies: _logo.logo_technologies,
       logos_follows_product: _logo.logos_follows_product ?? 0,
-      name_of_placement:
-        _logo.name_of_placement || _placement.name_of_placement,
+      name_of_placement: _logo.name_of_placement || _placement.name_of_placement,
       originalHeight: _logo.originalHeight || _placement.originalHeight,
       originalWidth: _logo.originalWidth || _placement.originalWidth,
       original_logo: _logo.original_logo,
@@ -253,17 +238,11 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   function clearCustomization() {
     const existing = customization.value
     const productId =
-      (existing && Number(existing.product_id)) ||
-      productsStore.activeProductDetails?.id ||
-      0
+      (existing && Number(existing.product_id)) || productsStore.activeProductDetails?.id || 0
     const styleId =
-      (existing && Number(existing.style_id)) ||
-      productsStore.activeStyleDetails?.id ||
-      0
+      (existing && Number(existing.style_id)) || productsStore.activeStyleDetails?.id || 0
     const designId =
-      (existing && Number(existing.design_id)) ||
-      productsStore.activeDesignDetails?.id ||
-      0
+      (existing && Number(existing.design_id)) || productsStore.activeDesignDetails?.id || 0
     const categoryId = (existing && Number(existing.category_id)) || 0
     const subCategoryId = existing?.sub_category_id ?? null
 

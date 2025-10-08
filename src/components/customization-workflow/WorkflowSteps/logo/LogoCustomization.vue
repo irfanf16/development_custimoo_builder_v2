@@ -47,18 +47,14 @@
   })
   const showAllRecent = ref(false)
   const displayedRecentLogos = computed(() =>
-    showAllRecent.value
-      ? logosStore.recentLogos
-      : logosStore.recentLogos?.slice(0, 4)
+    showAllRecent.value ? logosStore.recentLogos : logosStore.recentLogos?.slice(0, 4)
   )
   const shouldShowRecentSection = computed(
     () =>
       logosStore.isLoadingRecentLogos ||
       (logosStore?.recentLogos && logosStore.recentLogos.length > 0)
   )
-  const baseStorageUrl = computed(
-    () => import.meta.env.VITE_APP_STORAGE_URL || ''
-  )
+  const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
 
   onMounted(() => {})
 
@@ -127,8 +123,7 @@
       effectiveSvgGroups.value?.forEach((group, idx) => {
         const nextHex = hexColors[idx]
         if (!nextHex) return
-        const prevRaw =
-          customizationStore.customization?.group_colors?.[group.id]
+        const prevRaw = customizationStore.customization?.group_colors?.[group.id]
         const prevColor = prevRaw
           ? {
               name: prevRaw.name || '',
@@ -200,46 +195,26 @@
           <div
             v-if="!hasAnyLogo && !logosStore.isLoadingUploadLogo"
             class="relative rounded-xl border border-dashed border-border p-4 md:p-6 flex flex-col items-center justify-center gap-2 text-center mx-4 md:mx-6 transition-colors"
-            :class="
-              isDragOver
-                ? 'bg-secondary/20 border-primary/60 ring-2 ring-primary/30'
-                : ''
-            "
+            :class="isDragOver ? 'bg-secondary/20 border-primary/60 ring-2 ring-primary/30' : ''"
             @dragover="onDragOver"
             @dragleave="onDragLeave"
             @drop="onDrop"
           >
-            <div
-              class="w-12 h-12 rounded-full bg-muted flex items-center justify-center"
-            >
-              <i-other-image
-                class="size-12 text-primary icon-secondary-from-primary-50"
-              />
+            <div class="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <i-other-image class="size-12 text-primary icon-secondary-from-primary-50" />
             </div>
             <div class="text-sm font-medium font-brand">
-              {{
-                logos_empty_drag_drop({}, { locale: localeStore.currentLocale })
-              }}
+              {{ logos_empty_drag_drop({}, { locale: localeStore.currentLocale }) }}
               <button
                 type="button"
                 class="text-primary underline underline-offset-2"
                 @click="onClickUpload"
               >
-                {{
-                  logos_empty_click_to_upload(
-                    {},
-                    { locale: localeStore.currentLocale }
-                  )
-                }}
+                {{ logos_empty_click_to_upload({}, { locale: localeStore.currentLocale }) }}
               </button>
             </div>
             <div class="text-xs text-muted-foreground">
-              {{
-                logos_supported_formats(
-                  {},
-                  { locale: localeStore.currentLocale }
-                )
-              }}
+              {{ logos_supported_formats({}, { locale: localeStore.currentLocale }) }}
             </div>
 
             <!-- Hidden file input -->
@@ -251,9 +226,7 @@
               @change="onFileChange"
             />
           </div>
-          <LogoUploadingSkeleton
-            v-if="logosStore.isLoadingUploadLogo && !hasAnyLogo"
-          />
+          <LogoUploadingSkeleton v-if="logosStore.isLoadingUploadLogo && !hasAnyLogo" />
 
           <!-- When logos exist: render each logo with swatches + actions -->
           <div v-if="hasAnyLogo" class="flex flex-col gap-4 mx-4 md:mx-6">
@@ -311,11 +284,7 @@
             </div>
 
             <div v-if="!logosStore.isLoadingUploadLogo">
-              <Button
-                variant="outline"
-                class="rounded-lg w-full"
-                @click="onClickUpload"
-              >
+              <Button variant="outline" class="rounded-lg w-full" @click="onClickUpload">
                 {{ logos_add_logo({}, { locale: localeStore.currentLocale }) }}
               </Button>
               <input
@@ -332,10 +301,7 @@
           <div class="h-px bg-border" />
 
           <!-- Recent logos -->
-          <div
-            v-if="shouldShowRecentSection"
-            class="flex flex-col gap-2 px-4 md:px-6"
-          >
+          <div v-if="shouldShowRecentSection" class="flex flex-col gap-2 px-4 md:px-6">
             <div class="flex items-center justify-between">
               <div class="text-base leading-none font-semibold font-brand">
                 {{ logos_recent({}, { locale: localeStore.currentLocale }) }}
@@ -356,10 +322,7 @@
             </div>
             <!-- Loading skeleton -->
             <div
-              v-if="
-                logosStore.isLoadingRecentLogos &&
-                displayedRecentLogos?.length === 0
-              "
+              v-if="logosStore.isLoadingRecentLogos && displayedRecentLogos?.length === 0"
               class="grid grid-cols-4 gap-2"
             >
               <div
@@ -424,12 +387,7 @@
                 </div>
                 <div class="h-8 bg-muted rounded" />
                 <div class="text-xs">
-                  {{
-                    logos_more_options(
-                      {},
-                      { locale: localeStore.currentLocale }
-                    )
-                  }}
+                  {{ logos_more_options({}, { locale: localeStore.currentLocale }) }}
                 </div>
                 <div class="grid grid-cols-8 gap-1">
                   <div v-for="i in 16" :key="i" class="h-6 bg-muted rounded" />
@@ -438,14 +396,9 @@
             </AccordionItem>
           </Accordion>
           <div class="flex gap-3">
-            <Button
-              variant="outline"
-              class="rounded-lg"
-              @click="goToControls"
-              >{{
-                logos_back({}, { locale: localeStore.currentLocale })
-              }}</Button
-            >
+            <Button variant="outline" class="rounded-lg" @click="goToControls">{{
+              logos_back({}, { locale: localeStore.currentLocale })
+            }}</Button>
           </div>
         </div>
       </div>

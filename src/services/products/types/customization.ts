@@ -71,10 +71,7 @@ export type APCustomizationRosterEntry = {
   information: string
 }
 
-export type APCustomizationProductsRosters = Record<
-  string,
-  APCustomizationRosterEntry[]
->
+export type APCustomizationProductsRosters = Record<string, APCustomizationRosterEntry[]>
 
 export type APCustomizationAddonsInfoEntry = {
   grouped_addons: Record<string, import('./addons').OutputAddon[]>
@@ -82,10 +79,7 @@ export type APCustomizationAddonsInfoEntry = {
   simple_addons: number[]
 }
 
-export type APCustomizationAddonsInfo = Record<
-  string,
-  APCustomizationAddonsInfoEntry
->
+export type APCustomizationAddonsInfo = Record<string, APCustomizationAddonsInfoEntry>
 
 export type ActiveProductCustomization = {
   fixed_logo_index: number

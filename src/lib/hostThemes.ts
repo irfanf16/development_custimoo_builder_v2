@@ -112,16 +112,13 @@ export const hostThemes: Record<string, HostTheme> = {
  */
 export function getHostTheme(): HostTheme | undefined {
   const rawHost = window.location.hostname.toLowerCase()
-  const normalizedHost =
-    rawHost === '127.0.0.1' || rawHost === '::1' ? 'localhost' : rawHost
+  const normalizedHost = rawHost === '127.0.0.1' || rawHost === '::1' ? 'localhost' : rawHost
 
   // Exact match first
   if (hostThemes[normalizedHost]) return hostThemes[normalizedHost]
 
   // Try suffix match for subdomains, pick the longest matching suffix
-  const candidates = Object.keys(hostThemes).filter(key =>
-    normalizedHost.endsWith(key)
-  )
+  const candidates = Object.keys(hostThemes).filter(key => normalizedHost.endsWith(key))
   if (candidates.length > 0) {
     const best = candidates.sort((a, b) => b.length - a.length)[0]
     return hostThemes[best ?? 'localhost']

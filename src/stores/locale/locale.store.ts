@@ -15,15 +15,11 @@ export const useLocaleStore = defineStore('localeStore', () => {
 
   // ===== COMPUTED =====
   const availableLocales = computed(() =>
-    companyStore.localization.availableLanguages.map(
-      lang => lang.code as ParaglideLocale
-    )
+    companyStore.localization.availableLanguages.map(lang => lang.code as ParaglideLocale)
   )
 
   const defaultLocale = computed<ParaglideLocale>(() => {
-    const dl = companyStore.localization.defaultLanguage as
-      | ParaglideLocale
-      | undefined
+    const dl = companyStore.localization.defaultLanguage as ParaglideLocale | undefined
     return dl ?? 'en'
   })
 
@@ -42,11 +38,7 @@ export const useLocaleStore = defineStore('localeStore', () => {
   async function setCurrentLocale(locale: ParaglideLocale) {
     // Validate the locale is still available
     if (!isValidLocale(locale)) {
-      console.warn(
-        `Locale ${String(
-          locale
-        )} is no longer available, falling back to default`
-      )
+      console.warn(`Locale ${String(locale)} is no longer available, falling back to default`)
       locale = defaultLocale.value || 'en'
     }
 
@@ -113,9 +105,7 @@ export const useLocaleStore = defineStore('localeStore', () => {
 
     // If current locale is no longer available, reset to default
     if (newLocales.length > 0 && !isValidLocale(currentLocale.value)) {
-      console.warn(
-        'Current locale is no longer available, resetting to default'
-      )
+      console.warn('Current locale is no longer available, resetting to default')
       resetToDefault()
     }
   })

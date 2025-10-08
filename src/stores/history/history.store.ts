@@ -24,12 +24,8 @@ export const useHistoryStore = defineStore('historyStore', () => {
   function load() {
     if (typeof window === 'undefined') return
     try {
-      const u = JSON.parse(
-        window.localStorage.getItem(KEY_UNDO) || '[]'
-      ) as unknown
-      const r = JSON.parse(
-        window.localStorage.getItem(KEY_REDO) || '[]'
-      ) as unknown
+      const u = JSON.parse(window.localStorage.getItem(KEY_UNDO) || '[]') as unknown
+      const r = JSON.parse(window.localStorage.getItem(KEY_REDO) || '[]') as unknown
       if (Array.isArray(u)) undoStack.value = u as HistoryEntry[]
       if (Array.isArray(r)) redoStack.value = r as HistoryEntry[]
     } catch {
@@ -47,29 +43,19 @@ export const useHistoryStore = defineStore('historyStore', () => {
   function apply(entry: HistoryEntry) {
     return (
       registry[entry.type] as {
-        apply: (
-          ctx: ReturnType<typeof createHistoryContext>,
-          payload: unknown
-        ) => unknown
+        apply: (ctx: ReturnType<typeof createHistoryContext>, payload: unknown) => unknown
       }
     ).apply(ctx, entry.payload)
   }
   function revert(entry: HistoryEntry) {
     return (
       registry[entry.type] as {
-        revert: (
-          ctx: ReturnType<typeof createHistoryContext>,
-          payload: unknown
-        ) => unknown
+        revert: (ctx: ReturnType<typeof createHistoryContext>, payload: unknown) => unknown
       }
     ).revert(ctx, entry.payload)
   }
 
-  async function execute<T>(
-    type: HistoryActionType,
-    payload: T,
-    description?: string
-  ) {
+  async function execute<T>(type: HistoryActionType, payload: T, description?: string) {
     const desc =
       description ??
       (

@@ -7,17 +7,12 @@
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import { ChevronDown, Globe } from 'lucide-vue-next'
-  import {
-    useLocaleStore,
-    type ParaglideLocale
-  } from '@/stores/locale/locale.store'
+  import { useLocaleStore, type ParaglideLocale } from '@/stores/locale/locale.store'
   import { computed } from 'vue'
 
   const localeStore = useLocaleStore()
 
-  const shouldShowSwitcher = computed(
-    () => localeStore.availableLocales.length > 1
-  )
+  const shouldShowSwitcher = computed(() => localeStore.availableLocales.length > 1)
 
   const handleLanguageChange = (locale: ParaglideLocale) => {
     localeStore.setCurrentLocale(locale)
@@ -28,12 +23,7 @@
     // Find the language config from company store or use a fallback
     return {
       code: currentCode,
-      name:
-        currentCode === 'en'
-          ? 'English'
-          : currentCode === 'fr'
-            ? 'Français'
-            : 'Dansk'
+      name: currentCode === 'en' ? 'English' : currentCode === 'fr' ? 'Français' : 'Dansk'
     }
   })
 

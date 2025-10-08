@@ -6,10 +6,7 @@ const instance = axios.create({
 
 // Attach CustomerToken header if access token is present
 instance.interceptors.request.use(config => {
-  const token =
-    typeof window !== 'undefined'
-      ? window.localStorage.getItem('jwtToken')
-      : null
+  const token = typeof window !== 'undefined' ? window.localStorage.getItem('jwtToken') : null
 
   if (token) {
     if (!config.headers) config.headers = {} as AxiosRequestHeaders

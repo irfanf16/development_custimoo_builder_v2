@@ -1,22 +1,10 @@
 <script setup lang="ts">
-  import {
-    computed,
-    ref,
-    isRef,
-    type Ref,
-    type ComputedRef,
-    onMounted
-  } from 'vue'
+  import { computed, ref, isRef, type Ref, type ComputedRef, onMounted } from 'vue'
   import { Button } from '@/components/ui/button'
   import { Label } from '@/components/ui/label'
   import { Switch } from '@/components/ui/switch'
   import { InputSearchGroup } from '@/components/ui/input-search-group'
-  import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger
-  } from '@/components/ui/tooltip'
+  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import { Maximize2, Minimize2 } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import { useWorkflow } from '@/composables/useWorkflow'
@@ -90,8 +78,9 @@
   // Bridge nested refs from child steps to primitives for props expecting non-Ref
   const applyOverridesModelValue = computed({
     get: (): boolean => {
-      const model = currentStepRef.value?.headerExtras?.applyOverrides
-        ?.model as Ref<boolean> | undefined
+      const model = currentStepRef.value?.headerExtras?.applyOverrides?.model as
+        | Ref<boolean>
+        | undefined
       return model?.value ?? false
     },
     set: (val: boolean) => {
@@ -101,9 +90,7 @@
 
   const searchModelValue = computed({
     get: (): string => {
-      const model = currentStepRef.value?.headerExtras?.search?.model as
-        | Ref<string>
-        | undefined
+      const model = currentStepRef.value?.headerExtras?.search?.model as Ref<string> | undefined
       return model?.value ?? ''
     },
     set: (val: string) => {
@@ -115,10 +102,7 @@
    * Handles scroll-to-element events from child components
    * Delegates to the WorkflowPanel's scrollToElement method
    */
-  const handleScrollToElement = (
-    elementId: string,
-    behavior: 'smooth' | 'auto' = 'auto'
-  ) => {
+  const handleScrollToElement = (elementId: string, behavior: 'smooth' | 'auto' = 'auto') => {
     if (menuPanelRef.value) {
       menuPanelRef.value.scrollToElement(elementId, behavior)
     }
@@ -168,15 +152,10 @@
                   <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
                 </div>
 
-                <div
-                  v-if="headerApplyOverrides !== undefined"
-                  class="flex items-center gap-3"
-                >
+                <div v-if="headerApplyOverrides !== undefined" class="flex items-center gap-3">
                   <Switch
                     :model-value="applyOverridesModelValue"
-                    @update:model-value="
-                      val => (applyOverridesModelValue = !!val)
-                    "
+                    @update:model-value="val => (applyOverridesModelValue = !!val)"
                   />
                   <Label class="text-sm font-normal text-muted-foreground">{{
                     headerApplyOverrides.label
@@ -186,11 +165,7 @@
                 <TooltipProvider v-if="headerActionButton">
                   <Tooltip>
                     <TooltipTrigger as-child>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        @click="headerActionButton.callback"
-                      >
+                      <Button variant="outline" size="sm" @click="headerActionButton.callback">
                         {{ headerActionButton.label }}
                       </Button>
                     </TooltipTrigger>
@@ -201,17 +176,11 @@
                 </TooltipProvider>
               </div>
 
-              <div
-                v-if="currentStepRef?.headerExtras?.search"
-                class="flex items-center flex-1"
-              >
+              <div v-if="currentStepRef?.headerExtras?.search" class="flex items-center flex-1">
                 <div class="relative w-full">
                   <InputSearchGroup
                     v-model="searchModelValue"
-                    :placeholder="
-                      currentStepRef?.headerExtras?.search?.placeholder ||
-                      'Search...'
-                    "
+                    :placeholder="currentStepRef?.headerExtras?.search?.placeholder || 'Search...'"
                     :on-input="currentStepRef?.headerExtras?.search?.onInput"
                   />
                 </div>
@@ -219,31 +188,16 @@
             </div>
           </template>
 
-          <ProductsEntry
-            v-if="currentStep === 'product'"
-            ref="currentStepRef"
-          />
+          <ProductsEntry v-if="currentStep === 'product'" ref="currentStepRef" />
           <DesignSelection
             v-else-if="currentStep === 'designs'"
             ref="currentStepRef"
             @scroll-to-element="handleScrollToElement"
           />
-          <StyleSelection
-            v-else-if="currentStep === 'styles'"
-            ref="currentStepRef"
-          />
-          <LogoSelection
-            v-else-if="currentStep === 'logos'"
-            ref="currentStepRef"
-          />
-          <ColorSelection
-            v-else-if="currentStep === 'colors'"
-            ref="currentStepRef"
-          />
-          <PatternSelection
-            v-else-if="currentStep === 'patterns'"
-            ref="currentStepRef"
-          />
+          <StyleSelection v-else-if="currentStep === 'styles'" ref="currentStepRef" />
+          <LogoSelection v-else-if="currentStep === 'logos'" ref="currentStepRef" />
+          <ColorSelection v-else-if="currentStep === 'colors'" ref="currentStepRef" />
+          <PatternSelection v-else-if="currentStep === 'patterns'" ref="currentStepRef" />
           <TextsSelection
             v-else-if="currentStep === 'texts' && textsSubStep === 'list'"
             ref="currentStepRef"
@@ -260,10 +214,7 @@
             v-else-if="currentStep === 'roster' && rosterSubStep === 'edit'"
             ref="currentStepRef"
           />
-          <SummaryPanel
-            v-else-if="currentStep === 'summary'"
-            ref="currentStepRef"
-          />
+          <SummaryPanel v-else-if="currentStep === 'summary'" ref="currentStepRef" />
         </WorkflowPanel>
       </transition>
     </div>
@@ -280,16 +231,11 @@
       <template #header>
         <div class="w-full flex flex-col gap-5">
           <div class="flex items-center gap-3 h-9 justify-center">
-            <div
-              class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
-            >
+            <div class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden">
               <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
             </div>
 
-            <div
-              v-if="headerApplyOverrides !== undefined"
-              class="flex items-center gap-3"
-            >
+            <div v-if="headerApplyOverrides !== undefined" class="flex items-center gap-3">
               <Switch
                 :model-value="applyOverridesModelValue"
                 @update:model-value="val => (applyOverridesModelValue = !!val)"
@@ -302,11 +248,7 @@
             <TooltipProvider v-if="headerActionButton">
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    @click="headerActionButton.callback"
-                  >
+                  <Button variant="outline" size="sm" @click="headerActionButton.callback">
                     {{ headerActionButton.label }}
                   </Button>
                 </TooltipTrigger>
@@ -323,24 +265,15 @@
               class="rounded-lg"
               @click="toggleExpanded"
             >
-              <component
-                :is="isExpanded ? Minimize2 : Maximize2"
-                class="size-4"
-              />
+              <component :is="isExpanded ? Minimize2 : Maximize2" class="size-4" />
             </Button>
           </div>
 
-          <div
-            v-if="currentStepRef?.headerExtras?.search"
-            class="flex items-center flex-1"
-          >
+          <div v-if="currentStepRef?.headerExtras?.search" class="flex items-center flex-1">
             <div class="relative w-full">
               <InputSearchGroup
                 v-model="searchModelValue"
-                :placeholder="
-                  currentStepRef?.headerExtras?.search?.placeholder ||
-                  'Search...'
-                "
+                :placeholder="currentStepRef?.headerExtras?.search?.placeholder || 'Search...'"
                 :on-input="currentStepRef?.headerExtras?.search?.onInput"
               />
             </div>
@@ -354,19 +287,10 @@
         ref="currentStepRef"
         @scroll-to-element="handleScrollToElement"
       />
-      <StyleSelection
-        v-else-if="currentStep === 'styles'"
-        ref="currentStepRef"
-      />
+      <StyleSelection v-else-if="currentStep === 'styles'" ref="currentStepRef" />
       <LogoSelection v-else-if="currentStep === 'logos'" ref="currentStepRef" />
-      <ColorSelection
-        v-else-if="currentStep === 'colors'"
-        ref="currentStepRef"
-      />
-      <PatternSelection
-        v-else-if="currentStep === 'patterns'"
-        ref="currentStepRef"
-      />
+      <ColorSelection v-else-if="currentStep === 'colors'" ref="currentStepRef" />
+      <PatternSelection v-else-if="currentStep === 'patterns'" ref="currentStepRef" />
       <TextsSelection
         v-else-if="currentStep === 'texts' && textsSubStep === 'list'"
         ref="currentStepRef"
@@ -383,10 +307,7 @@
         v-else-if="currentStep === 'roster' && rosterSubStep === 'edit'"
         ref="currentStepRef"
       />
-      <SummaryPanel
-        v-else-if="currentStep === 'summary'"
-        ref="currentStepRef"
-      />
+      <SummaryPanel v-else-if="currentStep === 'summary'" ref="currentStepRef" />
     </WorkflowPanel>
   </div>
 </template>

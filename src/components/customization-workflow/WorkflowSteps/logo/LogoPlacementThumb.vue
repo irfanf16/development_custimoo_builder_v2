@@ -17,9 +17,7 @@
   interface Props {
     product: OutputProductPreview
     styleBase: OutputStylePreviewFront & OutputStylePreviewBack
-    designBase:
-      | OutputDesignPreviewFront
-      | (OutputDesignPreviewFront & OutputDesignPreviewBack)
+    designBase: OutputDesignPreviewFront | (OutputDesignPreviewFront & OutputDesignPreviewBack)
     class?: string
     setting: {
       x_axis: number

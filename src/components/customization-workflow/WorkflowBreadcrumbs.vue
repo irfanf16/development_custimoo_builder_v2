@@ -24,10 +24,7 @@
   const currentBreadcrumbIndex = ref(0)
 
   const handleBreadcrumbClick = (index: number) => {
-    if (
-      index < currentBreadcrumbIndex.value &&
-      props.breadcrumbs?.[index]?.action
-    ) {
+    if (index < currentBreadcrumbIndex.value && props.breadcrumbs?.[index]?.action) {
       props.breadcrumbs[index].action?.()
     }
   }
@@ -45,10 +42,7 @@
 </script>
 
 <template>
-  <Breadcrumb
-    v-if="breadcrumbs && breadcrumbs.length > 0"
-    class="min-w-0 overflow-hidden"
-  >
+  <Breadcrumb v-if="breadcrumbs && breadcrumbs.length > 0" class="min-w-0 overflow-hidden">
     <BreadcrumbList>
       <template v-for="(item, index) in breadcrumbs" :key="index">
         <Transition name="breadcrumb-item" appear>

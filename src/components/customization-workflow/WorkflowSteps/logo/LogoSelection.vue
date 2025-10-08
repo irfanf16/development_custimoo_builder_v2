@@ -9,8 +9,7 @@
   const workflowStore = useWorkflowStore()
 
   // Use workflow store state
-  const { logosSubStep: currentSubStep, activeLogoId: selectedLogoId } =
-    storeToRefs(workflowStore)
+  const { logosSubStep: currentSubStep, activeLogoId: selectedLogoId } = storeToRefs(workflowStore)
 
   function handleSelectLogo(logoId: string) {
     workflowStore.setActiveLogoId(logoId)
@@ -33,16 +32,10 @@
   // Breadcrumb logic for logo selection and edit substep
   const breadcrumbs = computed(() => {
     if (currentSubStep.value === 'edit' && selectedLogoId.value) {
-      return [
-        { label: 'Logos', action: handleBackToLogos },
-        { label: 'Controls' }
-      ]
+      return [{ label: 'Logos', action: handleBackToLogos }, { label: 'Controls' }]
     }
     if (currentSubStep.value === 'placement') {
-      return [
-        { label: 'Logos', action: handleBackFromPlacement },
-        { label: 'Placement' }
-      ]
+      return [{ label: 'Logos', action: handleBackFromPlacement }, { label: 'Placement' }]
     }
     return [{ label: 'Logos' }]
   })
