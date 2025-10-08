@@ -28,21 +28,9 @@ export default {
           'SFMono-Regular',
           'monospace'
         ]
-      },
-      keyframes: {
-        'accordion-down': {
-          from: { height: '0' },
-          to: { height: 'var(--reka-accordion-content-height)' }
-        },
-        'accordion-up': {
-          from: { height: 'var(--reka-accordion-content-height)' },
-          to: { height: '0' }
-        }
-      },
-      animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out'
       }
+      // Keyframes and animations are now defined in CSS using @theme directive
+      // See src/widget-styles.css for all animation definitions
     }
   },
   plugins: [require('tailwindcss-animate')],

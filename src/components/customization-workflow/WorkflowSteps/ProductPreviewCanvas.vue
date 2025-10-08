@@ -227,7 +227,7 @@
         >
           <!-- Subtle shimmer effect -->
           <div
-            class="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-muted-foreground/10 to-transparent"
+            class="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-muted-foreground/10 to-transparent"
           />
         </div>
       </div>
