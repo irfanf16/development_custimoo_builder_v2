@@ -6,7 +6,7 @@ import '@/icons/flex-flat-categories'
 import { useUIStore } from '@/stores/ui/ui.store'
 
 // Import CSS styles
-import widgetStyles from './widget-styles.css?inline'
+import widgetStyles from './styles.css?inline'
 
 // Persist references to style elements across HMR updates
 // so we can live-replace the CSS injected into Shadow DOMs.
@@ -31,7 +31,7 @@ if (
     }
   }
   hot.hot.data.styleElements = styleElements
-  hot.hot.accept(['./widget-styles.css?inline'], (mods: Array<{ default?: string }>) => {
+  hot.hot.accept(['./styles.css?inline'], (mods: Array<{ default?: string }>) => {
     const nextCss: string = mods?.[0]?.default ?? ''
     for (const el of styleElements) {
       el.textContent = nextCss

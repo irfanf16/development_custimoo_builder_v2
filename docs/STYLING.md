@@ -4,14 +4,14 @@ This project ships a self-contained widget that renders inside a Shadow DOM. Our
 
 #### Overview
 
-- Tailwind v4 is imported once in `src/widget-styles.css` via `@import 'tailwindcss'` and compiled by Vite.
+- Tailwind v4 is imported once in `src/styles.css` via `@import 'tailwindcss'` and compiled by Vite.
 - The entire compiled stylesheet is injected into the widget’s Shadow root (`bootstrap.ts`), isolating styles from the host page.
 - We expose a minimal set of design tokens as CSS variables and map them to Tailwind v4 theme tokens using `@theme inline`.
 - shadcn/vue component styles and our utilities consume the same design tokens.
 
 #### Files of interest
 
-- [`src/widget-styles.css`](../src/widget-styles.css): Single CSS entry, contains Tailwind import, theme tokens, base/utilities, and transitions.
+- [`src/styles.css`](../src/styles.css): Single CSS entry, contains Tailwind import, theme tokens, base/utilities, and transitions.
 - [`tailwind.config.js`](../tailwind.config.js): Tailwind v4 config, plugins, animations, and font families (including `font-brand`).
 - [`src/composables/useColorScheme.ts`](../src/composables/useColorScheme.ts): Applies host theme overrides (colors, radius, fonts) to the Shadow root at runtime.
 - [`src/lib/hostThemes.ts`](../src/lib/hostThemes.ts): Declarative host theme definitions (per hostname), used to override the widget's tokens.
@@ -24,7 +24,7 @@ We define canonical app tokens that the widget owns. Hosts override these at run
 - Radius: `--radius` (base value used to derive Tailwind radius scale tokens)
 - Fonts: `--font-sans` and `--font-brand` (brand falls back to sans if not provided)
 
-These variables live under `:host, :root` in `src/widget-styles.css` with sensible light-theme defaults and a `.dark` scope for dark mode.
+These variables live under `:host, :root` in `src/styles.css` with sensible light-theme defaults and a `.dark` scope for dark mode.
 
 #### Tailwind v4 theme tokens (for utilities)
 
@@ -75,7 +75,7 @@ This keeps Tailwind utilities and shadcn components in sync with a single source
 #### Animations
 
 - Accordion animations are unified on `--reka-accordion-content-height` to match our components.
-- Custom transitions are defined in `src/widget-styles.css` and can be used with utility classes.
+- Custom transitions are defined in `src/styles.css` and can be used with utility classes.
 
 #### Common recipes
 

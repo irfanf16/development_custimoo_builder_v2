@@ -141,6 +141,7 @@
   --accent: var(--accent); /* @see hostThemes.ts */
   --accent-foreground: var(--accent-foreground);
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.9705 0.0129 17.38);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
   --ring: rgb(from var(--primary) r g b / 0.5);

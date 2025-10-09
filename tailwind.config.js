@@ -16,7 +16,7 @@ export default {
         mono: ['var(--font-sans)', 'ui-monospace', 'SFMono-Regular', 'monospace']
       }
       // Keyframes and animations are now defined in CSS using @theme directive
-      // See src/widget-styles.css for all animation definitions
+      // See src/styles.css for all animation definitions
     }
   },
   plugins: [require('tailwindcss-animate')],
