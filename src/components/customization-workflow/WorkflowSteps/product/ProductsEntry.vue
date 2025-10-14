@@ -59,7 +59,6 @@
   watch(
     () => activePanel.value,
     panel => {
-      console.log('activePanel', panel)
       if (workflowStore.productsSubStep !== panel) {
         workflowStore.setProductsSubStep(panel)
       }

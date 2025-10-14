@@ -41,32 +41,26 @@
 
   function handleSaveAsDraft() {
     // Handle save as draft
-    console.log('Save as draft')
   }
 
   function handleSaveAndShare() {
     // Handle save and share
-    console.log('Save and share')
   }
 
   function handleExportDesign() {
     // Handle export design
-    console.log('Export design')
   }
 
   function handleUserProfile() {
     // Handle user profile
-    console.log('User profile')
   }
 
   function handleUserSettings() {
     // Handle user settings
-    console.log('User settings')
   }
 
   function handleSignOut() {
     // Handle sign out
-    console.log('Sign out')
   }
 </script>
 

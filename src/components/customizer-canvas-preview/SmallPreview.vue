@@ -38,53 +38,57 @@
     }
     renderInFlight = true
 
-    await withCanvasBatch(async () => {
-      clearCanvas({ silent: true })
-      const design = effectiveDesignDetails.value
-      const style = effectiveStyleDetails.value
-      const side = (workflowStore.activeCanvasSide === 'front' ? 'back' : 'front') as
-        | 'front'
-        | 'back'
-      if (!design || !style) return
-      if (side === 'back' && design.back_design) {
-        await addDesignLayer(design.back_design.file_url, design.back_design.file_extension)
-        for (const m of (
-          style as {
-            back_models?: Array<{ composition?: string; file_url: string }>
+    try {
+      await withCanvasBatch(async () => {
+        clearCanvas({ silent: true })
+        const design = effectiveDesignDetails.value
+        const style = effectiveStyleDetails.value
+        const side = (workflowStore.activeCanvasSide === 'front' ? 'back' : 'front') as
+          | 'front'
+          | 'back'
+        if (!design || !style) return
+        if (side === 'back' && design.back_design) {
+          await addDesignLayer(design.back_design.file_url, design.back_design.file_extension)
+          for (const m of (
+            style as {
+              back_models?: Array<{ composition?: string; file_url: string }>
+            }
+          ).back_models || []) {
+            const comp = (
+              m.composition === 'multiply' ? 'multiply' : 'screen'
+            ) as GlobalCompositeOperation
+            await addModelLayer(m.file_url, comp)
           }
-        ).back_models || []) {
-          const comp = (
-            m.composition === 'multiply' ? 'multiply' : 'screen'
-          ) as GlobalCompositeOperation
-          await addModelLayer(m.file_url, comp)
-        }
-        for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
-          await addLogoLayer(logo)
-        }
-      } else if (design.front_design) {
-        await addDesignLayer(design.front_design.file_url, design.front_design.file_extension)
-        for (const m of (
-          style as {
-            front_models?: Array<{ composition?: string; file_url: string }>
+          for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
+            await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
           }
-        ).front_models || []) {
-          const comp = (
-            m.composition === 'multiply' ? 'multiply' : 'screen'
-          ) as GlobalCompositeOperation
-          await addModelLayer(m.file_url, comp)
+        } else if (design.front_design) {
+          await addDesignLayer(design.front_design.file_url, design.front_design.file_extension)
+          for (const m of (
+            style as {
+              front_models?: Array<{ composition?: string; file_url: string }>
+            }
+          ).front_models || []) {
+            const comp = (
+              m.composition === 'multiply' ? 'multiply' : 'screen'
+            ) as GlobalCompositeOperation
+            await addModelLayer(m.file_url, comp)
+          }
+          for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
+            await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
+          }
         }
-        for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
-          await addLogoLayer(logo)
-        }
+
+        requestRender()
+      })
+    } catch (error) {
+      console.error('SmallPreview: render error', error)
+    } finally {
+      renderInFlight = false
+      if (renderQueued) {
+        renderQueued = false
+        queueMicrotask(() => void renderPreview())
       }
-
-      requestRender()
-    })
-
-    renderInFlight = false
-    if (renderQueued) {
-      renderQueued = false
-      queueMicrotask(() => void renderPreview())
     }
   }
 

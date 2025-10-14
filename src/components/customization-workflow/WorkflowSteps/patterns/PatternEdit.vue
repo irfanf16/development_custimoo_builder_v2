@@ -159,7 +159,6 @@
   function selectPatternColor(color: OutputColor) {
     selectedColor.value = color.value
     // TODO: Update pattern color in store
-    console.log('Selected pattern color:', color)
   }
 
   // Breadcrumb logic for pattern editing

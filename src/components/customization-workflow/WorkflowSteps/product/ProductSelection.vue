@@ -30,8 +30,6 @@
     const subcategoryId = isColdStart
       ? workflowStore.selectedSubCategoryId
       : customizationStore.activeSubCategoryId
-    console.log('categoryId', categoryId)
-    console.log('subcategoryId', subcategoryId)
     productsStore.fetchProductPreviews(categoryId, subcategoryId || undefined)
   }
 
@@ -121,8 +119,6 @@
       isExpandable: true
     }
   }
-
-  console.log('headerAndFooterConfiguration', headerAndFooterConfiguration)
 
   defineExpose(headerAndFooterConfiguration)
 </script>

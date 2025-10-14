@@ -45,71 +45,75 @@
     }
     renderInFlight = true
 
-    // Batch canvas mutations to avoid flicker
-    await withCanvasBatch(async () => {
-      clearCanvas({ silent: true })
-      const side = workflowStore.activeCanvasSide
-      const design = effectiveDesignDetails.value
-      const style = effectiveStyleDetails.value
-      if (!design || !style) return
+    try {
+      // Batch canvas mutations to avoid flicker
+      await withCanvasBatch(async () => {
+        clearCanvas({ silent: true })
+        const side = workflowStore.activeCanvasSide
+        const design = effectiveDesignDetails.value
+        const style = effectiveStyleDetails.value
+        if (!design || !style) return
 
-      // Use 'auto' to properly contain images within canvas bounds (prevents clipping)
-      const fitOptions = {
-        scaleBy: 'auto' as const,
-        widthPercent: 0.95,
-        heightPercent: 0.95
-      }
+        // Use 'auto' to properly contain images within canvas bounds (prevents clipping)
+        const fitOptions = {
+          scaleBy: 'auto' as const,
+          widthPercent: 0.95,
+          heightPercent: 0.95
+        }
 
-      if (side === 'back' && design.back_design) {
-        await addDesignLayer(
-          design.back_design.file_url,
-          design.back_design.file_extension,
-          fitOptions
-        )
-        for (const m of (
-          style as {
-            back_models?: Array<{ composition?: string; file_url: string }>
+        if (side === 'back' && design.back_design) {
+          await addDesignLayer(
+            design.back_design.file_url,
+            design.back_design.file_extension,
+            fitOptions
+          )
+          for (const m of (
+            style as {
+              back_models?: Array<{ composition?: string; file_url: string }>
+            }
+          ).back_models || []) {
+            const comp = (
+              m.composition === 'multiply' ? 'multiply' : 'screen'
+            ) as GlobalCompositeOperation
+            await addModelLayer(m.file_url, comp, fitOptions)
           }
-        ).back_models || []) {
-          const comp = (
-            m.composition === 'multiply' ? 'multiply' : 'screen'
-          ) as GlobalCompositeOperation
-          await addModelLayer(m.file_url, comp, fitOptions)
-        }
-        for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
-          await addLogoLayer(logo)
-        }
-      } else {
-        await addDesignLayer(
-          design.front_design.file_url,
-          design.front_design.file_extension,
-          fitOptions
-        )
-        for (const m of (
-          style as {
-            front_models?: Array<{ composition?: string; file_url: string }>
+          for (const logo of effectiveLogos.value.filter(l => l.side === 'back')) {
+            await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
           }
-        ).front_models || []) {
-          const comp = (
-            m.composition === 'multiply' ? 'multiply' : 'screen'
-          ) as GlobalCompositeOperation
-          await addModelLayer(m.file_url, comp, fitOptions)
+        } else {
+          await addDesignLayer(
+            design.front_design.file_url,
+            design.front_design.file_extension,
+            fitOptions
+          )
+          for (const m of (
+            style as {
+              front_models?: Array<{ composition?: string; file_url: string }>
+            }
+          ).front_models || []) {
+            const comp = (
+              m.composition === 'multiply' ? 'multiply' : 'screen'
+            ) as GlobalCompositeOperation
+            await addModelLayer(m.file_url, comp, fitOptions)
+          }
+          for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
+            await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
+          }
         }
-        for (const logo of effectiveLogos.value.filter(l => l.side === 'front')) {
-          await addLogoLayer(logo)
-        }
+
+        setZoom(workflowStore.canvasZoom)
+
+        requestRender()
+      })
+    } catch (error) {
+      console.error('CanvasPreview: render error', error)
+    } finally {
+      renderInFlight = false
+      if (renderQueued) {
+        renderQueued = false
+        // schedule next frame to collapse bursts of updates
+        queueMicrotask(() => void renderPreview())
       }
-
-      setZoom(workflowStore.canvasZoom)
-
-      requestRender()
-    })
-
-    renderInFlight = false
-    if (renderQueued) {
-      renderQueued = false
-      // schedule next frame to collapse bursts of updates
-      queueMicrotask(() => void renderPreview())
     }
   }
 
@@ -157,7 +161,6 @@
   watch(
     () => [props.width, props.height],
     () => {
-      //console.log('width or height changed', props.width, props.height)
       // handleResizeDebounced()
     }
   )

@@ -227,14 +227,13 @@
     })
   }
 
-  function handleRecolorLogo(color: OutputColor) {
-    console.log('Recolor logo with:', color.value)
+  function handleRecolorLogo(_color: OutputColor) {
+    // TODO: Implement logo recoloring
   }
 
   function handleDeleteLogo() {
     if (!logo.value) return
-    // delete logo
-    console.log('Delete logo:', logo.value)
+    // TODO: Implement logo deletion
     handleBackToLogos()
   }
 
@@ -245,8 +244,7 @@
 
   function pasteTo() {
     if (!clipboardHex.value) return
-    // Apply the copied color to the logo
-    console.log('Paste color to logo:', clipboardHex.value)
+    // TODO: Apply the copied color to the logo
   }
 
   const breadcrumbs = computed(() => [

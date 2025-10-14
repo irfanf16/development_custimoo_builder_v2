@@ -150,31 +150,31 @@
         gltfLoader.loadAsync(modelUrl),
         baseTexUrl
           ? texLoader.loadAsync(baseTexUrl).catch((err: unknown) => {
-              console.log('[3D] base texture load error', err)
+              console.warn('[3D] base texture load error', err)
               return null
             })
           : Promise.resolve<THREE.Texture | null>(null),
         alphaUrl
           ? texLoader.loadAsync(alphaUrl).catch((err: unknown) => {
-              console.log('[3D] alpha map load error', err)
+              console.warn('[3D] alpha map load error', err)
               return null
             })
           : Promise.resolve<THREE.Texture | null>(null),
         aoUrl
           ? texLoader.loadAsync(aoUrl).catch((err: unknown) => {
-              console.log('[3D] ao map load error', err)
+              console.warn('[3D] ao map load error', err)
               return null
             })
           : Promise.resolve<THREE.Texture | null>(null),
         roughnessUrl
           ? texLoader.loadAsync(roughnessUrl).catch((err: unknown) => {
-              console.log('[3D] roughness map load error', err)
+              console.warn('[3D] roughness map load error', err)
               return null
             })
           : Promise.resolve<THREE.Texture | null>(null),
         metalnessUrl
           ? texLoader.loadAsync(metalnessUrl).catch((err: unknown) => {
-              console.log('[3D] metalness map load error', err)
+              console.warn('[3D] metalness map load error', err)
               return null
             })
           : Promise.resolve<THREE.Texture | null>(null)
