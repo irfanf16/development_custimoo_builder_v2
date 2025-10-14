@@ -1,41 +1,33 @@
 <script setup lang="ts">
-  import { Button } from '@/components/ui/button'
-  import type { OutputColor } from '@/services/products/types'
+  import type { HTMLAttributes } from 'vue'
+  import { ColorSelector } from '../color-selector'
+  import { cn } from '@/lib/utils'
 
-  interface Props {
-    colors: OutputColor[]
-    selectedColor?: string
-    gridCols?: number
-    buttonSize?: 'sm' | 'md' | 'lg'
-    disabled?: boolean
+  type OutputColor = {
+    position: number
+    name: string
+    value: string
   }
+
+  const props = withDefaults(
+    defineProps<{
+      colors: OutputColor[]
+      class?: HTMLAttributes['class']
+      selectedColor?: string
+      disabled?: boolean
+    }>(),
+    {
+      class: undefined,
+      disabled: false,
+      selectedColor: undefined
+    }
+  )
 
   interface Emits {
     (e: 'color-select', color: OutputColor): void
   }
 
-  const props = withDefaults(defineProps<Props>(), {
-    gridCols: 8,
-    buttonSize: 'md',
-    disabled: false,
-    selectedColor: undefined
-  })
-
   const emit = defineEmits<Emits>()
-
-  const sizeClasses = {
-    sm: 'h-6 w-6',
-    md: 'h-8 w-8',
-    lg: 'h-10 w-10'
-  }
-
-  const gridColsClasses: Record<number, string> = {
-    4: 'grid-cols-4',
-    6: 'grid-cols-6',
-    8: 'grid-cols-8',
-    10: 'grid-cols-10',
-    12: 'grid-cols-12'
-  }
 
   function handleColorClick(color: OutputColor) {
     if (props.disabled) return
@@ -44,23 +36,14 @@
 </script>
 
 <template>
-  <div :class="['grid gap-3', gridColsClasses[gridCols]]">
-    <Button
+  <div :class="cn('grid gap-2 grid-cols-6 md:grid-cols-8', props.class)">
+    <ColorSelector
       v-for="color in colors"
       :key="color.value"
-      :class="[
-        'relative rounded-full border border-border focus:outline-none focus:ring-2 focus:ring-ring',
-        sizeClasses[buttonSize],
-        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-      ]"
-      :style="{ background: color.value }"
-      :disabled="disabled"
-      @click="handleColorClick(color)"
-    >
-      <span
-        v-if="selectedColor === color.value"
-        class="absolute inset-0 rounded-full ring-2 ring-primary"
-      />
-    </Button>
+      :color="color.value"
+      :disabled="props.disabled"
+      :selected="props.selectedColor === color.value"
+      @click.stop="handleColorClick(color)"
+    />
   </div>
 </template>

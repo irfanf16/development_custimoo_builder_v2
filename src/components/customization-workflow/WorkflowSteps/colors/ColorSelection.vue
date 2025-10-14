@@ -283,8 +283,6 @@
             <ColorGrid
               :colors="currentPalette?.colors || []"
               :selected-color="svgGroup.color"
-              :grid-cols="8"
-              button-size="md"
               @color-select="color => setGroupColor(svgGroup.id, color)"
             />
           </div>

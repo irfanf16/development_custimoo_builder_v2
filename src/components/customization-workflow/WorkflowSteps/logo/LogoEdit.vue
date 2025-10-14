@@ -22,6 +22,7 @@
   import { Trash } from 'lucide-vue-next'
   import type { CustomLogo } from '@/services/logos/types'
   import type { OutputColor } from '@/services/products/types'
+  import ColorsPreview from '@/components/ui/colors-preview/ColorsPreview.vue'
 
   interface Props {
     logoId: string
@@ -299,7 +300,8 @@
             v-if="hasColors"
             class="absolute inset-x-4 bottom-4 flex items-center justify-between"
           >
-            <div class="flex items-center gap-2">
+            <ColorsPreview :colors="colorSwatches" />
+            <!-- <div class="flex items-center gap-2">
               <div
                 v-for="(color, idx) in colorSwatches"
                 :key="color + idx"
@@ -308,7 +310,7 @@
                 :style="{ backgroundColor: color }"
                 :title="color"
               />
-            </div>
+            </div> -->
             <Button
               size="sm"
               variant="outline"
@@ -503,8 +505,6 @@
             <ColorGrid
               :colors="currentPaletteHex"
               :selected-color="colorSwatches[0]"
-              :grid-cols="8"
-              button-size="md"
               @color-select="handleRecolorLogo"
             />
           </div>

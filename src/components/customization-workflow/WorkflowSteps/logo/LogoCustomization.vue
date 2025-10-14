@@ -25,6 +25,7 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import { Trash } from 'lucide-vue-next'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
+  import ColorsPreview from '@/components/ui/colors-preview/ColorsPreview.vue'
 
   const customizationStore = useCustomizationStore()
   // const productsStore = useProductsStore()
@@ -247,7 +248,10 @@
                   />
                 </div>
                 <div class="flex flex-row justify-between w-full">
-                  <div class="flex items-center">
+                  <ColorsPreview
+                    :colors="logo.logo_colors.map(c => `rgb(${(c as number[]).join(',')})`) || []"
+                  />
+                  <!-- <div class="flex items-center">
                     <div
                       v-for="(c, idx) in logo.logo_colors || []"
                       :key="idx"
@@ -261,12 +265,12 @@
                       }"
                       :title="rgbArrToHex(c as number[])"
                     />
-                  </div>
+                  </div> -->
                   <Button
                     v-if="logo.logo_colors && logo.logo_colors.length > 0"
                     size="sm"
                     variant="outline"
-                    @click="applyLogoColors(logo)"
+                    @click.stop="applyLogoColors(logo)"
                   >
                     Apply colors
                   </Button>

@@ -36,6 +36,8 @@ declare module 'vue' {
     Checkbox: typeof import('./src/components/ui/checkbox/Checkbox.vue')['default']
     ColorGrid: typeof import('./src/components/ui/color-grid/ColorGrid.vue')['default']
     ColorSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/colors/ColorSelection.vue')['default']
+    ColorSelector: typeof import('./src/components/ui/color-selector/ColorSelector.vue')['default']
+    ColorsPreview: typeof import('./src/components/ui/colors-preview/ColorsPreview.vue')['default']
     CustomizerMenu: typeof import('./src/components/customizer-menu/CustomizerMenu.vue')['default']
     'CustomizerMenu.Mobile': typeof import('./src/components/customizer-menu/CustomizerMenu.Mobile.vue')['default']
     CustomizerTopbar: typeof import('./src/components/customizer-topbar/CustomizerTopbar.vue')['default']

@@ -302,8 +302,6 @@
             <ColorGrid
               :colors="patternColors"
               :selected-color="selectedColor || undefined"
-              :grid-cols="8"
-              button-size="md"
               @color-select="selectPatternColor"
             />
           </div>
