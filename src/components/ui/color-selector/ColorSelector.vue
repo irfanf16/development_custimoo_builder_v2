@@ -17,6 +17,8 @@
   const props = withDefaults(defineProps<Props>(), {
     as: 'button',
     color: 'rgb(0 0 0)',
+    class: undefined,
+    size: 'default',
     selected: false
   })
 

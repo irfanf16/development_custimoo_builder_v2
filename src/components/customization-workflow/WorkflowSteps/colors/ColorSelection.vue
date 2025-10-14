@@ -16,6 +16,7 @@
     SelectGroup,
     SelectLabel
   } from '@/components/ui/select'
+  import ColorSelector from '@/components/ui/color-selector/ColorSelector.vue'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import type { OutputColor } from '@/services/products/types'
   import { useHistoryStore } from '@/stores/history/history.store'
@@ -210,10 +211,11 @@
         <AccordionTrigger>
           <div class="flex justify-between gap-3 w-full group">
             <div class="flex items-center gap-3 w-full">
-              <span
+              <ColorSelector :color="svgGroup.color" :disabled="true" :size="'sm'" />
+              <!-- <span
                 class="inline-block size-7 rounded-full border border-border"
                 :style="{ background: svgGroup.color ?? '' }"
-              />
+              /> -->
               <span class="text-base">{{ svgGroup.id }}</span>
             </div>
             <div
