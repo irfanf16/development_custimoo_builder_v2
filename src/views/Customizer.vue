@@ -43,7 +43,7 @@
             class="flex flex-row w-full h-full justify-center items-center"
           >
             <ProductPreview />
-            <div class="absolute w-0 ml-[50%]">
+            <div class="absolute w-0 ml-[50%] z-10">
               <div
                 id="canvas-controls-container-inner"
                 class="flex flex-col gap-9 items-end justify-between h-full"
