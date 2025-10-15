@@ -19,10 +19,8 @@
     SelectGroup,
     SelectLabel
   } from '@/components/ui/select'
-  import { Trash } from 'lucide-vue-next'
-  import type { CustomLogo } from '@/services/logos/types'
   import type { OutputColor } from '@/services/products/types'
-  import ColorsPreview from '@/components/ui/colors-preview/ColorsPreview.vue'
+  import LogoCard from './LogoCard.vue'
 
   interface Props {
     logoId: string
@@ -42,8 +40,6 @@
   // Type for color that can be either a hex string or RGB object
   type ColorValue = string | { r: number; g: number; b: number }
 
-  const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
-
   // Local clipboard for copy/paste between slots
   const clipboardHex = ref<string | null>(null)
 
@@ -54,10 +50,6 @@
 
   const selectedColorMode = ref<ColorMode>('soccer')
   const removeBackgroundMode = ref<BackgroundRemovalMode>(null)
-
-  const hasColors = computed(() => (logo.value?.logo_colors?.length ?? 0) > 0)
-  const placementLabel = computed(() => (logo.value as CustomLogo)?.placement || 'Chest middle')
-  const previewUrl = computed(() => `${baseStorageUrl.value}${logo.value?.url ?? ''}`)
 
   // List of palette options for the select dropdown
   const paletteOptions = computed(
@@ -261,75 +253,15 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <section class="rounded-lg border bg-card mx-6">
-      <header class="flex items-start justify-between">
-        <span
-          class="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground"
-        >
-          {{ placementLabel }}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          class="h-8 w-8 text-muted-foreground hover:text-destructive"
-          @click="handleDeleteLogo"
-        >
-          <Trash class="h-4 w-4" />
-        </Button>
-      </header>
-
-      <div class="mt-5 flex flex-col items-center gap-4">
-        <div
-          class="relative flex h-40 w-full items-center justify-center overflow-hidden rounded-2xl md:h-48"
-        >
-          <img
-            v-if="previewUrl"
-            :src="previewUrl"
-            class="max-h-[85%] max-w-[80%] object-contain"
-            alt="logo preview"
-          />
-          <div
-            v-else
-            class="flex h-full w-full items-center justify-center text-sm text-muted-foreground"
-          >
-            Logo preview unavailable
-          </div>
-
-          <div
-            v-if="hasColors"
-            class="absolute inset-x-4 bottom-4 flex items-center justify-between"
-          >
-            <ColorsPreview :colors="colorSwatches" />
-            <!-- <div class="flex items-center gap-2">
-              <div
-                v-for="(color, idx) in colorSwatches"
-                :key="color + idx"
-                class="h-8 w-8 rounded-full border border-background shadow-sm"
-                :class="idx > 0 ? '-ml-3' : ''"
-                :style="{ backgroundColor: color }"
-                :title="color"
-              />
-            </div> -->
-            <Button
-              size="sm"
-              variant="outline"
-              class="px-4 rounded-lg shadow-xs"
-              @click="handleApplyColours"
-            >
-              Apply colours
-            </Button>
-          </div>
-
-          <div
-            v-else
-            class="absolute bottom-4 right-4 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground"
-          >
-            No palette detected
-          </div>
-        </div>
-      </div>
-    </section>
+  <div class="flex flex-col gap-5 w-full">
+    <div class="mt-5 flex flex-col items-center mx-4 md:mx-6 gap-4">
+      <LogoCard
+        v-if="logo"
+        :logo="logo"
+        @apply-colors="handleApplyColours"
+        @delete="handleDeleteLogo"
+      />
+    </div>
 
     <Accordion type="multiple" :default-value="['remove-background', 'recolor']" class="space-y-4">
       <AccordionItem value="remove-background" class="overflow-hidden">

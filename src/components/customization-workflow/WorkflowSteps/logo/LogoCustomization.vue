@@ -25,7 +25,7 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import { Trash } from 'lucide-vue-next'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
-  import ColorsPreview from '@/components/ui/colors-preview/ColorsPreview.vue'
+  import LogoCard from './LogoCard.vue'
 
   const customizationStore = useCustomizationStore()
   // const productsStore = useProductsStore()
@@ -231,61 +231,14 @@
 
           <!-- When logos exist: render each logo with swatches + actions -->
           <div v-if="hasAnyLogo" class="flex flex-col gap-4 mx-4 md:mx-6">
-            <div
+            <LogoCard
               v-for="logo in customLogos || []"
               :key="logo.id"
-              class="relative group rounded-xl border border-border p-3 flex flex-col gap-3 bg-background cursor-pointer hover:bg-muted/50 transition-colors"
+              :logo="logo"
               @click="handleLogoClick(logo)"
-            >
-              <div class="flex flex-col items-center gap-3">
-                <div
-                  class="w-24 h-24 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
-                >
-                  <img
-                    :src="baseStorageUrl + logo.url"
-                    class="max-h-full object-contain"
-                    alt="uploaded logo"
-                  />
-                </div>
-                <div class="flex flex-row justify-between w-full">
-                  <ColorsPreview
-                    :colors="logo.logo_colors.map(c => `rgb(${(c as number[]).join(',')})`) || []"
-                  />
-                  <!-- <div class="flex items-center">
-                    <div
-                      v-for="(c, idx) in logo.logo_colors || []"
-                      :key="idx"
-                      :class="[
-                        'w-10 h-10 rounded-full border border-background',
-                        idx > 0 ? '-ml-5' : ''
-                      ]"
-                      :style="{
-                        backgroundColor: rgbArrToHex(c as number[]),
-                        zIndex: 10 + idx
-                      }"
-                      :title="rgbArrToHex(c as number[])"
-                    />
-                  </div> -->
-                  <Button
-                    v-if="logo.logo_colors && logo.logo_colors.length > 0"
-                    size="sm"
-                    variant="outline"
-                    @click.stop="applyLogoColors(logo)"
-                  >
-                    Apply colors
-                  </Button>
-                </div>
-              </div>
-              <Button
-                as="div"
-                variant="ghost"
-                size="icon"
-                class="absolute top-1 right-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity text-foreground"
-                @click.stop="removeLogoFromCustomization(logo)"
-              >
-                <Trash class="size-4" />
-              </Button>
-            </div>
+              @apply-colors="applyLogoColors(logo)"
+              @delete="removeLogoFromCustomization(logo)"
+            />
 
             <div v-if="!logosStore.isLoadingUploadLogo">
               <Button variant="outline" class="rounded-lg w-full" @click="onClickUpload">

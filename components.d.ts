@@ -87,6 +87,7 @@ declare module 'vue' {
     IOtherImage: typeof import('~icons/other/image')['default']
     Label: typeof import('./src/components/ui/label/Label.vue')['default']
     LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
+    LogoCard: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoCard.vue')['default']
     LogoCustomization: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoCustomization.vue')['default']
     LogoEdit: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoEdit.vue')['default']
     LogoPlacement: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/LogoPlacement.vue')['default']
