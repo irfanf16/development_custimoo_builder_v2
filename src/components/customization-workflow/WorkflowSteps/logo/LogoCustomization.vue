@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, onMounted } from 'vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  // import { useProductsStore } from '@/stores/products/products.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   // no type imports needed here
   import { Button } from '@/components/ui/button'

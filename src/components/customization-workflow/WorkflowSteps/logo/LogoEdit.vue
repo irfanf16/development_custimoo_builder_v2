@@ -21,7 +21,7 @@
   } from '@/components/ui/select'
   import type { OutputColor } from '@/services/products/types'
   import LogoCard from './LogoCard.vue'
-
+  import type { CustomLogo } from '@/services/logos/types'
   interface Props {
     logoId: string
   }
@@ -46,6 +46,14 @@
   const logo = computed(() => {
     if (logosStore.activeLogo) return logosStore.activeLogo
     return logosStore.recentLogos?.find(l => l.id.toString() === props.logoId) || null
+  })
+
+  // Recent logos state
+  const customLogos = computed(() => {
+    const key = customizationStore.customization?.product_id
+    const map = customizationStore.customization?.custom_logos
+    if (!key || !map) return [] as CustomLogo[]
+    return (map as Record<string, CustomLogo[]>)[key] || []
   })
 
   const selectedColorMode = ref<ColorMode>('soccer')
@@ -224,9 +232,17 @@
     // TODO: Implement logo recoloring
   }
 
+  function removeLogoFromCustomization(logo: CustomLogo) {
+    const key = String(customizationStore.customization?.product_id || '')
+    const index = customLogos.value.findIndex(l => l.id === logo.id)
+    if (index !== -1) {
+      historyStore.execute('logo.remove', { key, index })
+    }
+  }
+
   function handleDeleteLogo() {
     if (!logo.value) return
-    // TODO: Implement logo deletion
+    removeLogoFromCustomization(logo.value)
     handleBackToLogos()
   }
 
