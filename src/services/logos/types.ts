@@ -9,8 +9,8 @@ export type CustomLogo = LogoPlacementBase & {
 
   // Extras only present on logos API
   original_logo?: string
-  transparent_logo?: string
-  smart_transparent_logo?: string
+  transparent_logo_url?: string
+  smart_transparent_logo_url?: string
   original_logo_url?: string
   is_recent_logo?: boolean
   actualWidth?: number

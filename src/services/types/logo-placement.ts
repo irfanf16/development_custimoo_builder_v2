@@ -25,8 +25,8 @@ export type LogoPlacementBase = {
   // Media/meta
   url: string | null
   original_logo?: string | null
-  transparent_logo?: string | null
-  smart_transparent_logo?: string | null
+  transparent_logo_url?: string | null
+  smart_transparent_logo_url?: string | null
   original_logo_url?: string | null
   logo_name: string | null
 

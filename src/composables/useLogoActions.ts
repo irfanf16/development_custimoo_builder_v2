@@ -22,9 +22,9 @@ export function useLogoActions() {
     // Determine the new URL based on background removal type
     let nextUrl: string
     if (type === 'simple') {
-      nextUrl = `${baseLogosPath}${customLogo.transparent_logo}`
+      nextUrl = `${baseLogosPath}${customLogo.transparent_logo_url}`
     } else if (type === 'smart') {
-      nextUrl = `${baseLogosPath}${customLogo.smart_transparent_logo}`
+      nextUrl = `${baseLogosPath}${customLogo.smart_transparent_logo_url}`
     } else {
       // 'original'
       nextUrl = `${baseLogosPath}${customLogo.logo_name}`
