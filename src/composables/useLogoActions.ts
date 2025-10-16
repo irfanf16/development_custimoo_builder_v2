@@ -2,7 +2,6 @@ import { useLogosStore } from '@/stores/logos/logos.store'
 import { useHistoryStore } from '@/stores/history/history.store'
 import type { CustomLogo } from '../services/logos/types'
 
-const baseLogosPath = 'files/customers/logos/'
 export type BackgroundRemovalMode = 'simple' | 'smart'
 export function useLogoActions() {
   const logosStore = useLogosStore()
@@ -20,14 +19,11 @@ export function useLogoActions() {
     const prevLogo = { ...customLogo }
 
     // Determine the new URL based on background removal type
-    let nextUrl: string
+    let nextUrl = ''
     if (type === 'simple') {
-      nextUrl = `${baseLogosPath}${customLogo.transparent_logo_url}`
+      nextUrl = `${customLogo.transparent_logo_url}`
     } else if (type === 'smart') {
-      nextUrl = `${baseLogosPath}${customLogo.smart_transparent_logo_url}`
-    } else {
-      // 'original'
-      nextUrl = `${baseLogosPath}${customLogo.logo_name}`
+      nextUrl = `${customLogo.smart_transparent_logo_url}`
     }
 
     // Create the updated logo object with the new URL
