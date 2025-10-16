@@ -10,6 +10,7 @@ import type {
   LogoAddPayload,
   LogoRemovePayload,
   LogoMovePayload,
+  LogoUpdateUrlPayload,
   PatternSetGroupPayload
 } from './types'
 
@@ -26,6 +27,7 @@ type Registry = Record<
   | Handler<LogoAddPayload>
   | Handler<LogoRemovePayload>
   | Handler<LogoMovePayload>
+  | Handler<LogoUpdateUrlPayload>
   | Handler<PatternSetGroupPayload>
   | Handler<{
       entries: Array<{ type: HistoryActionType; payload: unknown }>
@@ -136,9 +138,9 @@ export const registry: Registry = {
     apply(ctx: HistoryContext, payload: LogoAddPayload) {
       const customizationStore = ctx.customizationStore
       const root = customizationStore.customization as ActiveProductCustomization | null
-      const map = root?.custom_logos
-      if (!map) return
-      const arr = map[payload.key] || (map[payload.key] = [])
+      const customLogosMap = root?.custom_logos
+      if (!customLogosMap) return
+      const arr = customLogosMap[payload.key] || (customLogosMap[payload.key] = [])
       const at = payload.index ?? arr.length
       arr.splice(at, 0, payload.logo)
       customizationStore.appendLogoColors(payload.logo.logo_colors)
@@ -147,9 +149,9 @@ export const registry: Registry = {
     revert(ctx: HistoryContext, payload: LogoAddPayload) {
       const customizationStore = ctx.customizationStore
       const root = customizationStore.customization as ActiveProductCustomization | null
-      const map = root?.custom_logos
-      if (!map) return
-      const arr = map[payload.key]
+      const customLogosMap = root?.custom_logos
+      if (!customLogosMap) return
+      const arr = customLogosMap[payload.key]
       if (!arr) return
       const at = payload.index ?? arr.length - 1
       arr.splice(at, 1)
@@ -211,6 +213,37 @@ export const registry: Registry = {
     },
     describe() {
       return `Move logo`
+    }
+  },
+  'logo.remove-background': {
+    apply(ctx: HistoryContext, payload: LogoUpdateUrlPayload) {
+      const customizationStore = ctx.customizationStore
+      const map = customizationStore.customization?.custom_logos
+      if (!map) return
+      const arr = map[payload.key]
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      // Replace the entire logo object to capture all field changes
+      arr[payload.index] = payload.nextLogo
+      customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: LogoUpdateUrlPayload) {
+      const customizationStore = ctx.customizationStore
+      const map = customizationStore.customization?.custom_logos
+      if (!map) return
+      const arr = map[payload.key]
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      // Restore the entire logo object to revert all field changes
+      arr[payload.index] = payload.prevLogo
+      customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, p: LogoUpdateUrlPayload) {
+      const nextUrl = p.nextLogo.url
+      const mode = nextUrl.includes('transparent')
+        ? nextUrl.includes('smart')
+          ? 'smart transparency'
+          : 'simple transparency'
+        : 'original'
+      return `Change logo background to ${mode}`
     }
   },
   'pattern.set-group': {

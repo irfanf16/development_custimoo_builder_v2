@@ -4,6 +4,7 @@
   import { ColorsPreview } from '@/components/ui/colors-preview'
   import type { CustomLogo } from '@/services/logos/types'
   import { computed } from 'vue'
+  import { Badge } from '@/components/ui/badge'
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
 
@@ -51,6 +52,9 @@
         <div class="text-sm text-muted-foreground">No colors detected</div>
       </div>
     </div>
+    <Badge variant="outline" class="text-xs absolute top-1 left-1">
+      {{ props.logo.name_of_placement }}
+    </Badge>
     <Button
       as="div"
       variant="ghost"

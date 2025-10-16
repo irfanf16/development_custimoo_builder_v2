@@ -11,6 +11,7 @@
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
   import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
   import { ColorGrid } from '@/components/ui/color-grid'
+  import ContentRemoveIcons from './ContentRemoveIcons.vue'
   import {
     Select,
     SelectTrigger,
@@ -22,6 +23,8 @@
   import type { OutputColor } from '@/services/products/types'
   import LogoCard from './LogoCard.vue'
   import type { CustomLogo } from '@/services/logos/types'
+  import { useLogoActions } from '@/composables/useLogoActions'
+
   interface Props {
     logoId: string
   }
@@ -31,22 +34,17 @@
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
   const historyStore = useHistoryStore()
+  const { removeBackground } = useLogoActions()
   const { effectiveSvgGroups } = useEffectiveSelectors()
   const logosStore = useLogosStore()
 
   type ColorMode = 'soccer' | 'socks' | 'pantone'
-  type BackgroundRemovalMode = 'simple' | 'content' | null
 
   // Type for color that can be either a hex string or RGB object
   type ColorValue = string | { r: number; g: number; b: number }
 
   // Local clipboard for copy/paste between slots
   const clipboardHex = ref<string | null>(null)
-
-  const logo = computed(() => {
-    if (logosStore.activeLogo) return logosStore.activeLogo
-    return logosStore.recentLogos?.find(l => l.id.toString() === props.logoId) || null
-  })
 
   // Recent logos state
   const customLogos = computed(() => {
@@ -56,8 +54,12 @@
     return (map as Record<string, CustomLogo[]>)[key] || []
   })
 
+  const customLogo = computed(() => {
+    if (props.logoId) return customLogos.value.find(l => l.id.toString() === props.logoId) || null
+    return logosStore.activeLogo || null
+  })
+
   const selectedColorMode = ref<ColorMode>('soccer')
-  const removeBackgroundMode = ref<BackgroundRemovalMode>(null)
 
   // List of palette options for the select dropdown
   const paletteOptions = computed(
@@ -104,7 +106,7 @@
   }
 
   const colorSwatches = computed(() =>
-    (logo.value?.logo_colors || []).map(color => rgbArrayToHex(color as number[]))
+    (customLogo.value?.logo_colors || []).map(color => rgbArrayToHex(color as number[]))
   )
 
   // Color modes for recoloring
@@ -173,9 +175,12 @@
   }
 
   watchEffect(() => {
-    if (logo.value) {
-      logosStore.setActiveLogo(logo.value)
+    if (!customLogo.value) {
+      handleBackToLogos()
     }
+    //   if (customLogo.value) {
+    //     logosStore.setActiveLogo(customLogo.value)
+    //   }
   })
 
   // Sync currentPaletteId with selectedColorMode
@@ -193,16 +198,30 @@
     logosStore.setActiveLogo(null)
   }
 
-  function handleRemoveBackground(type: 'simple' | 'content') {
-    removeBackgroundMode.value = type
+  function handleRemoveBackground(type: 'simple' | 'smart') {
+    if (!customLogo.value || !customizationStore.customization?.product_id) return
+    removeBackground(
+      customLogo.value,
+      type,
+      customizationStore.customization?.product_id,
+      customLogos.value.findIndex(l => l.id === customLogo.value?.id)
+    )
+      .then(logo => {
+        if (logo) {
+          logosStore.setActiveLogo(logo)
+        }
+      })
+      .catch(error => {
+        console.error('Error removing background:', error)
+      })
   }
 
   function handleApplyColours() {
-    if (!logo.value || !logo.value.logo_colors || !effectiveSvgGroups.value) {
+    if (!customLogo.value || !customLogo.value.logo_colors || !effectiveSvgGroups.value) {
       return
     }
 
-    const palette = logo.value.logo_colors as number[][]
+    const palette = customLogo.value.logo_colors as number[][]
     const hexPalette = palette.map(rgbArrayToHex)
 
     historyStore.runBatch('Apply logo colors', add => {
@@ -241,8 +260,8 @@
   }
 
   function handleDeleteLogo() {
-    if (!logo.value) return
-    removeLogoFromCustomization(logo.value)
+    if (!customLogo.value) return
+    removeLogoFromCustomization(customLogo.value)
     handleBackToLogos()
   }
 
@@ -272,8 +291,8 @@
   <div class="flex flex-col gap-5 w-full">
     <div class="mt-5 flex flex-col items-center mx-4 md:mx-6 gap-4">
       <LogoCard
-        v-if="logo"
-        :logo="logo"
+        v-if="customLogo"
+        :logo="customLogo"
         @apply-colors="handleApplyColours"
         @delete="handleDeleteLogo"
       />
@@ -281,18 +300,15 @@
 
     <Accordion type="multiple" :default-value="['remove-background', 'recolor']" class="space-y-4">
       <AccordionItem value="remove-background" class="overflow-hidden">
-        <AccordionTrigger class="px-6 py-4">
+        <AccordionTrigger class="mx-4 md:mx-6 py-4">
           <div
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <span class="text-base font-semibold">Remove background</span>
-            <span class="text-sm font-normal text-muted-foreground md:text-right">
-              Nacho Kings Nacho Kings
-            </span>
           </div>
           <template #icon>
             <svg
-              class="ml-2 h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
+              class="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
               fill="none"
               stroke="currentColor"
               stroke-width="2"
@@ -302,72 +318,61 @@
             </svg>
           </template>
         </AccordionTrigger>
-        <AccordionContent class="space-y-4 px-6 py-5">
+        <AccordionContent class="space-y-4 px-4 md:px-6 py-5">
           <button
             type="button"
             class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition hover:border-primary"
-            :class="{
-              'border-primary bg-primary/5 ring-1 ring-primary/30':
-                removeBackgroundMode === 'simple'
-            }"
             @click="handleRemoveBackground('simple')"
           >
             <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
-              <div
-                class="flex h-8 w-8 items-center justify-center rounded-full bg-teal-500 text-white"
-              >
-                <span class="text-base font-semibold">S</span>
-              </div>
+              <ContentRemoveIcons type="simple" />
             </div>
             <div class="flex flex-1 flex-col gap-2">
               <p class="text-sm font-semibold">Simple remove</p>
               <p class="text-xs text-muted-foreground">
                 Removes all pixels matching the top-left colour, even inside the logo.
               </p>
-              <Button size="sm" variant="secondary" class="mt-1 self-start rounded-full px-4">
-                Apply
-              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                class="mt-1 self-start px-4"
+                @click="handleRemoveBackground('simple')"
+                >Apply</Button
+              >
             </div>
           </button>
 
           <button
             type="button"
             class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition hover:border-primary"
-            :class="{
-              'border-primary bg-primary/5 ring-1 ring-primary/30':
-                removeBackgroundMode === 'content'
-            }"
-            @click="handleRemoveBackground('content')"
+            @click="handleRemoveBackground('smart')"
           >
             <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
-              <div
-                class="flex h-8 w-8 items-center justify-center rounded-full bg-teal-500 text-white"
-              >
-                <span class="text-base font-semibold">C</span>
-              </div>
+              <ContentRemoveIcons type="smart" />
             </div>
             <div class="flex flex-1 flex-col gap-2">
               <p class="text-sm font-semibold">Content remove</p>
               <p class="text-xs text-muted-foreground">
                 Removes the top-left colour only from the background, not the logo.
               </p>
-              <Button size="sm" variant="secondary" class="mt-1 self-start rounded-full px-4">
-                Apply
-              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                class="mt-1 self-start px-4"
+                @click="handleRemoveBackground('smart')"
+                >Apply</Button
+              >
             </div>
           </button>
         </AccordionContent>
       </AccordionItem>
 
       <AccordionItem value="recolor" class="overflow-hidden">
-        <AccordionTrigger class="px-6 py-4">
+        <AccordionTrigger class="px-4 md:px-6 py-4">
           <div
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <span class="text-base font-semibold">Recolor logo</span>
-            <span class="text-sm font-normal text-muted-foreground md:text-right">
-              Nacho Kings Nacho Kings
-            </span>
           </div>
           <template #icon>
             <svg
@@ -381,7 +386,7 @@
             </svg>
           </template>
         </AccordionTrigger>
-        <AccordionContent class="px-6 py-5">
+        <AccordionContent class="px-4 md:px-6 py-5">
           <!-- Controls row -->
           <div class="flex items-center justify-between gap-3">
             <div class="inline-flex rounded-lg border border-border bg-muted p-1 text-sm">
@@ -460,14 +465,11 @@
       </AccordionItem>
 
       <AccordionItem value="position" class="overflow-hidden">
-        <AccordionTrigger class="px-6 py-4">
+        <AccordionTrigger class="mx-4 md:mx-6 py-4">
           <div
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <span class="text-base font-semibold">Position</span>
-            <span class="text-sm font-normal text-muted-foreground md:text-right">
-              Nacho Kings Nacho Kings
-            </span>
           </div>
           <template #icon>
             <svg
@@ -481,7 +483,7 @@
             </svg>
           </template>
         </AccordionTrigger>
-        <AccordionContent class="px-6 py-5 text-sm text-muted-foreground">
+        <AccordionContent class="px-4 md:px-6 py-5 text-sm text-muted-foreground">
           Position controls coming soon.
         </AccordionContent>
       </AccordionItem>
@@ -492,9 +494,6 @@
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <span class="text-base font-semibold">Logo technology</span>
-            <span class="text-sm font-normal text-muted-foreground md:text-right">
-              Nacho Kings Nacho Kings
-            </span>
           </div>
           <template #icon>
             <svg
@@ -513,12 +512,5 @@
         </AccordionContent>
       </AccordionItem>
     </Accordion>
-
-    <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end">
-      <Button variant="outline" class="w-full rounded-full sm:w-auto" @click="handleBackToLogos">
-        Cancel
-      </Button>
-      <Button class="w-full rounded-full sm:w-auto">Save</Button>
-    </div>
   </div>
 </template>

@@ -30,6 +30,12 @@ export type UploadLogoParams = {
   product_id: number
 }
 
+export type UpdateAndPostNewLogoParams = {
+  logo_id: number
+  product_id: number
+  logo: string
+}
+
 export type OutputUploadLogo = {
   success: boolean
   message: string

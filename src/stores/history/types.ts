@@ -10,6 +10,7 @@ export type HistoryActionType =
   | 'logo.add'
   | 'logo.remove'
   | 'logo.move'
+  | 'logo.remove-background'
   | 'pattern.set-group'
   | 'batch'
 
@@ -55,6 +56,13 @@ export type LogoMovePayload = {
   key: string
   from: number
   to: number
+}
+
+export type LogoUpdateUrlPayload = {
+  key: string // product key
+  index: number // logo index in array
+  prevLogo: APCustomizationLogo // full logo state before change
+  nextLogo: APCustomizationLogo // full logo state after change
 }
 
 export type PatternSetGroupPayload = {

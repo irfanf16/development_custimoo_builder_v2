@@ -25,6 +25,16 @@ export const useLogosStore = defineStore('logosStore', () => {
     recentLogos.value = data
   }
 
+  function addRecentLogo(logo: CustomLogo) {
+    if (!recentLogos.value) recentLogos.value = []
+    recentLogos.value.push(logo)
+  }
+
+  function removeRecentLogo(logoId: number) {
+    if (!recentLogos.value) recentLogos.value = []
+    recentLogos.value = recentLogos.value?.filter(logo => logo.id !== logoId)
+  }
+
   function setLoadingRecentLogos(loading: boolean) {
     isLoadingRecentLogos.value = loading
   }
@@ -85,7 +95,7 @@ export const useLogosStore = defineStore('logosStore', () => {
     const originalLogos = recentLogos.value ? [...recentLogos.value] : []
 
     // Optimistically remove the logo from state
-    setRecentLogos(recentLogos.value?.filter(logo => logo.id.toString() !== logoId) || [])
+    removeRecentLogo(Number(logoId))
 
     const response = await tryCatchApi(API.logos.deleteRecentLogo(logoId))
     if (!response.success) {
@@ -94,6 +104,36 @@ export const useLogosStore = defineStore('logosStore', () => {
       setError('Error deleting logo')
     }
 
+    return response
+  }
+
+  async function updateAndPostNewLogo(
+    customLogo: CustomLogo
+  ): Promise<APIResponse<OutputUploadLogo>> {
+    setError(null)
+
+    // Store the original logo for rollback if needed
+    const originalRecentLogos = recentLogos.value ? [...recentLogos.value] : []
+    // Optimistically add the logo to recents state
+    addRecentLogo(customLogo)
+
+    const updateAndPostNewLogoParams = {
+      logo_id: customLogo.id,
+      logo: customLogo.url,
+      product_id: customLogo.product_id
+    }
+    const response = await tryCatchApi(API.logos.updateAndPostNewLogo(updateAndPostNewLogoParams))
+    if (response.success) {
+      // Add the logo to the active logo state
+      setActiveLogo({ ...customLogo, ...response.content?.result?.customer_logo })
+      // Add the logo to the logos state
+      if (!logos.value) logos.value = []
+      logos.value.push(customLogo)
+    } else {
+      // Rollback - restore the original state of recent logos
+      setRecentLogos(originalRecentLogos)
+      setError('Error updating and posting new logo')
+    }
     return response
   }
 
@@ -109,9 +149,12 @@ export const useLogosStore = defineStore('logosStore', () => {
     // Actions
     setRecentLogos,
     setActiveLogo,
+    addRecentLogo,
+    removeRecentLogo,
     // API Functions
     fetchRecentLogos,
     uploadLogo,
-    deleteRecentLogo
+    deleteRecentLogo,
+    updateAndPostNewLogo
   }
 })

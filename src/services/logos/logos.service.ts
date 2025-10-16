@@ -1,5 +1,10 @@
 import http from '../api'
-import type { OutputRecentLogos, OutputUploadLogo, UploadLogoParams } from './types'
+import type {
+  OutputRecentLogos,
+  OutputUploadLogo,
+  UpdateAndPostNewLogoParams,
+  UploadLogoParams
+} from './types'
 
 async function getRecentLogos() {
   return await http.get<OutputRecentLogos>('logos/recent')
@@ -15,6 +20,16 @@ async function uploadLogo(uploadLogoParams: UploadLogoParams) {
   return await http.post<OutputUploadLogo>('customer/upload/logo', form)
 }
 
+async function updateAndPostNewLogo(uploadLogoParams: UpdateAndPostNewLogoParams) {
+  const form = new FormData()
+  // Backend expects the field name 'logo'
+  form.append('logo_id', String(uploadLogoParams.logo_id))
+  form.append('logo', uploadLogoParams.logo)
+  form.append('product_id', String(uploadLogoParams.product_id))
+
+  return await http.post<OutputUploadLogo>('customer/upload/logo', form)
+}
+
 async function deleteRecentLogo(logoId: string) {
   return await http.delete(`logos/recent/${logoId}`)
 }
@@ -22,5 +37,6 @@ async function deleteRecentLogo(logoId: string) {
 export default {
   getRecentLogos,
   uploadLogo,
-  deleteRecentLogo
+  deleteRecentLogo,
+  updateAndPostNewLogo
 }
