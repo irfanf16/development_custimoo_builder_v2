@@ -336,7 +336,7 @@
                 size="sm"
                 variant="outline"
                 class="mt-1 self-start px-4"
-                @click="handleRemoveBackground('simple')"
+                @click.stop="handleRemoveBackground('simple')"
                 >Apply</Button
               >
             </div>
@@ -359,7 +359,7 @@
                 size="sm"
                 variant="outline"
                 class="mt-1 self-start px-4"
-                @click="handleRemoveBackground('smart')"
+                @click.stop="handleRemoveBackground('smart')"
                 >Apply</Button
               >
             </div>
