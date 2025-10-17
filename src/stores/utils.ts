@@ -4,7 +4,7 @@ import type { APIResponse } from '@/services/types'
 export async function tryCatchApi<T>(promise: Promise<AxiosResponse<T>>): Promise<APIResponse<T>> {
   try {
     const { status, data } = await promise
-    if (status === 200) {
+    if (status === 200 || status === 201) {
       return { success: true, content: data, status: 200, axiosError: null }
     }
   } catch (error) {

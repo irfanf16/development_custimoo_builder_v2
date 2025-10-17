@@ -37,7 +37,7 @@ export function useLogoActions() {
     }
 
     // Get the complete logo object from API response (may have additional fields updated)
-    const apiUpdatedLogo = response.content?.result?.customer_logo
+    const apiUpdatedLogo = response.content?.customer_logo
     if (!apiUpdatedLogo) {
       console.error('No logo data in API response')
       return

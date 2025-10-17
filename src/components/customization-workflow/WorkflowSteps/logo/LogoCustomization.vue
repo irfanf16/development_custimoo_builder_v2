@@ -46,9 +46,11 @@
     return (map as Record<string, CustomLogo[]>)[key] || []
   })
   const showAllRecent = ref(false)
-  const displayedRecentLogos = computed(() =>
-    showAllRecent.value ? logosStore.recentLogos : logosStore.recentLogos?.slice(0, 4)
-  )
+  const displayedRecentLogos = computed(() => {
+    if (!logosStore.recentLogos) return []
+    const reversed = [...logosStore.recentLogos].reverse()
+    return showAllRecent.value ? reversed : reversed.slice(0, 4)
+  })
   const shouldShowRecentSection = computed(
     () =>
       logosStore.isLoadingRecentLogos ||
@@ -264,16 +266,14 @@
               </div>
               <Button
                 v-if="
-                  !showAllRecent &&
-                  displayedRecentLogos &&
-                  displayedRecentLogos.length > 4 &&
+                  logosStore.recentLogos &&
+                  logosStore.recentLogos.length > 4 &&
                   !logosStore.isLoadingRecentLogos
                 "
-                variant="ghost"
-                size="sm"
+                variant="outline"
                 class="px-2 py-1 h-7"
-                @click="showAllRecent = true"
-                >View all</Button
+                @click="showAllRecent = !showAllRecent"
+                >{{ showAllRecent ? 'Show less' : 'View all' }}</Button
               >
             </div>
             <!-- Loading skeleton -->

@@ -55,7 +55,9 @@ export function useEffectiveSelectors() {
 
   const effectiveLogos = computed<CustomLogo[]>(() => {
     if (!effectiveProductId.value) return []
-    return customizationStore.customization?.custom_logos[effectiveProductId.value.toString()] || []
+    const effectiveLogos =
+      customizationStore.customization?.custom_logos[effectiveProductId.value.toString()] || []
+    return effectiveLogos
   })
 
   const renderVersion = computed<string>(() => {
@@ -63,7 +65,8 @@ export function useEffectiveSelectors() {
       effectiveProductId.value ?? 'null',
       effectiveStyleId.value ?? 'null',
       effectiveDesignId.value ?? 'null',
-      effectiveLogos.value.map(l => l.id).join(',')
+      effectiveLogos.value.map(l => l.id).join(','),
+      effectiveLogos.value.map(l => `${l.id}:${l.url}`).join(',')
     ].join(':')
     const groupsPart = (effectiveSvgGroups.value || []).map(g => `${g.id}:${g.color}`).join(',')
     return `${idPart}|${groupsPart}`

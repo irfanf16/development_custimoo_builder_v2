@@ -45,3 +45,7 @@ export type OutputUploadLogo = {
   errors: { code?: string; message?: string }[]
   status_code: number
 }
+
+export type OutputUpdateAndPostNewLogo = {
+  customer_logo: CustomLogo
+}

@@ -1,6 +1,7 @@
 import http from '../api'
 import type {
   OutputRecentLogos,
+  OutputUpdateAndPostNewLogo,
   OutputUploadLogo,
   UpdateAndPostNewLogoParams,
   UploadLogoParams
@@ -27,7 +28,7 @@ async function updateAndPostNewLogo(uploadLogoParams: UpdateAndPostNewLogoParams
   form.append('logo', uploadLogoParams.logo)
   form.append('product_id', String(uploadLogoParams.product_id))
 
-  return await http.post<OutputUploadLogo>('customer/update/logo', form)
+  return await http.post<OutputUpdateAndPostNewLogo>('customer/update/logo', form)
 }
 
 async function deleteRecentLogo(logoId: string) {

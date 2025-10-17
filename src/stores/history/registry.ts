@@ -223,7 +223,7 @@ export const registry: Registry = {
       const arr = map[payload.key]
       if (!arr || payload.index < 0 || payload.index >= arr.length) return
       // Replace the entire logo object to capture all field changes
-      arr[payload.index] = payload.nextLogo
+      arr[payload.index] = { ...arr[payload.index], ...payload.nextLogo }
       customizationStore.saveToLocalStorage()
     },
     revert(ctx: HistoryContext, payload: LogoUpdateUrlPayload) {
@@ -233,7 +233,7 @@ export const registry: Registry = {
       const arr = map[payload.key]
       if (!arr || payload.index < 0 || payload.index >= arr.length) return
       // Restore the entire logo object to revert all field changes
-      arr[payload.index] = payload.prevLogo
+      arr[payload.index] = { ...arr[payload.index], ...payload.prevLogo }
       customizationStore.saveToLocalStorage()
     },
     describe(_: HistoryContext, p: LogoUpdateUrlPayload) {

@@ -7,7 +7,8 @@ import type {
   CustomLogo,
   OutputRecentLogos,
   UploadLogoParams,
-  OutputUploadLogo
+  OutputUploadLogo,
+  OutputUpdateAndPostNewLogo
 } from '../../services/logos/types'
 
 export const useLogosStore = defineStore('logosStore', () => {
@@ -109,7 +110,7 @@ export const useLogosStore = defineStore('logosStore', () => {
 
   async function updateAndPostNewLogo(
     customLogo: CustomLogo
-  ): Promise<APIResponse<OutputUploadLogo>> {
+  ): Promise<APIResponse<OutputUpdateAndPostNewLogo>> {
     setError(null)
 
     // Store the original logo for rollback if needed
@@ -125,7 +126,7 @@ export const useLogosStore = defineStore('logosStore', () => {
     const response = await tryCatchApi(API.logos.updateAndPostNewLogo(updateAndPostNewLogoParams))
     if (response.success) {
       // Add the logo to the active logo state
-      setActiveLogo({ ...customLogo, ...response.content?.result?.customer_logo })
+      setActiveLogo({ ...customLogo, ...response.content?.customer_logo })
       // Add the logo to the logos state
       if (!logos.value) logos.value = []
       logos.value.push(customLogo)
