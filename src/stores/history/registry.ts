@@ -2,6 +2,7 @@ import { useCustomizationStore } from '@/stores/customization/customization.stor
 import { useProductsStore } from '@/stores/products/products.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import type { ActiveProductCustomization } from '@/services/products/types/customization'
+import type { CustomLogo } from '@/services/logos/types'
 import type {
   HistoryContext,
   HistoryActionType,
@@ -11,7 +12,10 @@ import type {
   LogoRemovePayload,
   LogoMovePayload,
   LogoUpdateUrlPayload,
-  PatternSetGroupPayload
+  PatternSetGroupPayload,
+  LogoUpdatePlacementPayload,
+  LogoUpdateSizePayload,
+  LogoUpdateRotationPayload
 } from './types'
 
 type Handler<T> = {
@@ -40,6 +44,48 @@ export function createHistoryContext(): HistoryContext {
     customizationStore: useCustomizationStore(),
     productsStore: useProductsStore(),
     workflowStore: useWorkflowStore()
+  }
+}
+
+function getLogoArray(ctx: HistoryContext, key: string) {
+  const map = ctx.customizationStore.customization?.custom_logos
+  if (!map) return null
+  return map[key] ?? null
+}
+
+function withLogoPatch(base: CustomLogo, patch: Partial<CustomLogo>): CustomLogo {
+  return {
+    ...base,
+    ...patch,
+    id: base.id,
+    product_id: base.product_id,
+    product_style_id: base.product_style_id,
+    following_product_ids: base.following_product_ids,
+    rotation: patch.rotation ?? base.rotation,
+    width: patch.width ?? base.width,
+    height: patch.height ?? base.height,
+    placement: patch.placement ?? base.placement,
+    name_of_placement: patch.name_of_placement ?? base.name_of_placement,
+    url: base.url,
+    logo_colors: base.logo_colors,
+    haveControls: base.haveControls,
+    is_locked: base.is_locked,
+    is_replace_success: base.is_replace_success,
+    is_smart_transparent: base.is_smart_transparent,
+    is_vector: base.is_vector,
+    logo_index: base.logo_index,
+    logo_name: base.logo_name,
+    side: patch.side ?? base.side,
+    x_axis: patch.x_axis ?? base.x_axis,
+    y_axis: patch.y_axis ?? base.y_axis,
+    x_axis_3d: base.x_axis_3d,
+    y_axis_3d: base.y_axis_3d,
+    originalWidth: patch.originalWidth ?? base.originalWidth,
+    originalHeight: patch.originalHeight ?? base.originalHeight,
+    logo_technologies: base.logo_technologies,
+    logos_follows_product: base.logos_follows_product,
+    created_at: base.created_at,
+    updated_at: base.updated_at
   }
 }
 
@@ -244,6 +290,91 @@ export const registry: Registry = {
           : 'simple transparency'
         : 'original'
       return `Change logo background to ${mode}`
+    }
+  },
+  'logo.update-placement': {
+    apply(ctx: HistoryContext, payload: LogoUpdatePlacementPayload) {
+      const arr = getLogoArray(ctx, payload.key)
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      const current = arr[payload.index]
+      if (!current) return
+      arr[payload.index] = withLogoPatch(current, {
+        placement: payload.nextPlacementKey ?? current?.placement,
+        name_of_placement: payload.nextPlacementLabel ?? current?.name_of_placement,
+        x_axis: payload.nextX ?? current.x_axis,
+        y_axis: payload.nextY ?? current.y_axis,
+        side: payload.nextSide ?? current.side
+      })
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: LogoUpdatePlacementPayload) {
+      const arr = getLogoArray(ctx, payload.key)
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      const current = arr[payload.index]
+      if (!current) return
+      arr[payload.index] = withLogoPatch(current, {
+        placement: payload.prevPlacementKey ?? current?.placement,
+        name_of_placement: payload.prevPlacementLabel ?? current?.name_of_placement,
+        x_axis: payload.prevX ?? current.x_axis,
+        y_axis: payload.prevY ?? current.y_axis,
+        side: payload.prevSide ?? current.side
+      })
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, _payload: LogoUpdatePlacementPayload) {
+      return `Change logo placement`
+    }
+  },
+  'logo.update-size': {
+    apply(ctx: HistoryContext, payload: LogoUpdateSizePayload) {
+      const arr = getLogoArray(ctx, payload.key)
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      let logoInIndex = arr[payload.index]
+      if (!logoInIndex) return
+      logoInIndex = withLogoPatch(logoInIndex, {
+        width: payload.nextWidth,
+        height: payload.nextHeight
+      })
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: LogoUpdateSizePayload) {
+      const arr = getLogoArray(ctx, payload.key)
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      const logoInIndex = arr[payload.index]
+      if (!logoInIndex) return
+      arr[payload.index] = withLogoPatch(logoInIndex, {
+        width: payload.prevWidth,
+        height: payload.prevHeight
+      })
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, _payload: LogoUpdateSizePayload) {
+      return `Adjust logo size`
+    }
+  },
+  'logo.update-rotation': {
+    apply(ctx: HistoryContext, payload: LogoUpdateRotationPayload) {
+      const arr = getLogoArray(ctx, payload.key)
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      const logoInIndex = arr[payload.index]
+      if (!logoInIndex) return
+      arr[payload.index] = withLogoPatch(logoInIndex, {
+        rotation: payload.nextRotation
+      })
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: LogoUpdateRotationPayload) {
+      const arr = getLogoArray(ctx, payload.key)
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      const logoInIndex = arr[payload.index]
+      if (!logoInIndex) return
+      arr[payload.index] = withLogoPatch(logoInIndex, {
+        rotation: payload.prevRotation
+      })
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, _payload: LogoUpdateRotationPayload) {
+      return `Rotate logo`
     }
   },
   'pattern.set-group': {

@@ -28,7 +28,7 @@ export const useLogosStore = defineStore('logosStore', () => {
 
   function addRecentLogo(logo: CustomLogo) {
     if (!recentLogos.value) recentLogos.value = []
-    recentLogos.value.push(logo)
+    recentLogos.value.unshift(logo)
   }
 
   function removeRecentLogo(logoId: number) {
@@ -115,8 +115,6 @@ export const useLogosStore = defineStore('logosStore', () => {
 
     // Store the original logo for rollback if needed
     const originalRecentLogos = recentLogos.value ? [...recentLogos.value] : []
-    // Optimistically add the logo to recents state
-    addRecentLogo(customLogo)
 
     const updateAndPostNewLogoParams = {
       logo_id: customLogo.id,
@@ -126,10 +124,13 @@ export const useLogosStore = defineStore('logosStore', () => {
     const response = await tryCatchApi(API.logos.updateAndPostNewLogo(updateAndPostNewLogoParams))
     if (response.success) {
       // Add the logo to the active logo state
-      setActiveLogo({ ...customLogo, ...response.content?.customer_logo })
+      const newLogo = { ...customLogo, ...response.content?.customer_logo }
+      setActiveLogo(newLogo)
       // Add the logo to the logos state
       if (!logos.value) logos.value = []
       logos.value.push(customLogo)
+      // Add the logo to the recent logos state
+      // addRecentLogo(newLogo)
     } else {
       // Rollback - restore the original state of recent logos
       setRecentLogos(originalRecentLogos)

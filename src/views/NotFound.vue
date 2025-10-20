@@ -27,7 +27,7 @@
       </p>
       <div class="flex justify-center space-x-4">
         <Button @click="goHome">Go Home</Button>
-        <Button variant="outline" @click="goBack">{{
+        <Button variant="default" @click="goBack">{{
           notfound_go_back({}, { locale: localeStore.currentLocale })
         }}</Button>
       </div>

@@ -226,7 +226,7 @@
 
       <!-- Show Less Button -->
       <div v-if="showAllPatterns && remainingPatternsCount > 0" class="flex justify-end">
-        <Button variant="outline" size="sm" class="rounded-lg" @click="toggleShowAllPatterns">
+        <Button variant="default" size="sm" class="rounded-lg" @click="toggleShowAllPatterns">
           Show less
         </Button>
       </div>

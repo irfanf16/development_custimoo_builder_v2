@@ -1,10 +1,12 @@
 <script setup lang="ts">
-  import { computed, ref, watchEffect } from 'vue'
+  import { computed, reactive, ref, watch, watchEffect, nextTick } from 'vue'
+  import type { AcceptableValue } from 'reka-ui'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { useLogosStore } from '@/stores/logos/logos.store'
+  import { useProductsStore } from '@/stores/products/products.store'
   import { Button } from '@/components/ui/button'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
@@ -18,12 +20,18 @@
     SelectContent,
     SelectItem,
     SelectGroup,
-    SelectLabel
+    SelectLabel,
+    SelectValue
   } from '@/components/ui/select'
   import type { OutputColor } from '@/services/products/types'
   import LogoCard from './LogoCard.vue'
   import type { CustomLogo } from '@/services/logos/types'
   import { useLogoActions } from '@/composables/useLogoActions'
+  import { Label } from '@/components/ui/label'
+  import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
+  import { Slider } from '@/components/ui/slider'
+  import { LocateFixed, Pin } from 'lucide-vue-next'
+  import type { OutputProductLogosSetting } from '@/services/products/types'
 
   interface Props {
     logoId: string
@@ -37,6 +45,7 @@
   const { removeBackground } = useLogoActions()
   const { effectiveSvgGroups } = useEffectiveSelectors()
   const logosStore = useLogosStore()
+  const productsStore = useProductsStore()
 
   type ColorMode = 'soccer' | 'socks' | 'pantone'
 
@@ -53,6 +62,10 @@
     if (!key || !map) return [] as CustomLogo[]
     return (map as Record<string, CustomLogo[]>)[key] || []
   })
+
+  const placements = computed<OutputProductLogosSetting[]>(
+    () => productsStore.activeProductDetails?.logos_setting || []
+  )
 
   const customLogo = computed(() => {
     if (props.logoId) return customLogos.value.find(l => l.id.toString() === props.logoId) || null
@@ -174,15 +187,6 @@
     ]
   }
 
-  watchEffect(() => {
-    if (!customLogo.value) {
-      handleBackToLogos()
-    }
-    //   if (customLogo.value) {
-    //     logosStore.setActiveLogo(customLogo.value)
-    //   }
-  })
-
   // Sync currentPaletteId with selectedColorMode
   watchEffect(() => {
     currentPaletteId.value = selectedColorMode.value
@@ -192,7 +196,7 @@
     selectedColorMode.value = currentPaletteId.value as ColorMode
   })
 
-  function handleBackToLogos() {
+  async function handleBackToLogos() {
     workflowStore.setLogosSubStep('list')
     workflowStore.setActiveLogoId(null)
     logosStore.setActiveLogo(null)
@@ -209,6 +213,7 @@
       .then(logo => {
         if (logo) {
           logosStore.setActiveLogo(logo)
+          workflowStore.setActiveLogoId(logo.id.toString())
         }
       })
       .catch(error => {
@@ -285,6 +290,319 @@
 
   const headerExtras = { breadcrumbs }
   defineExpose({ headerExtras })
+
+  interface PlacementOption {
+    label: string
+    value: string
+    placementId: number
+    placementKey: string
+    x_axis: number | null
+    y_axis: number | null
+    width: number | null
+    height: number | null
+    side: 'front' | 'back'
+  }
+
+  const placementOptions = computed(() =>
+    placements.value
+      .map(placement => ({
+        label: placement.name_of_placement,
+        value: String(placement.id),
+        placementId: placement.id,
+        x_axis: placement.x_axis,
+        y_axis: placement.y_axis,
+        placementKey: `${placement.name_of_placement}_${placement.id}_${placement.x_axis}_${placement.y_axis}_${placement.width}_${placement.height}_${placement.side}`,
+        width: placement.width ?? null,
+        height: placement.height ?? null,
+        side: placement.side
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  )
+
+  const productKey = computed(() => {
+    const id = customizationStore.customization?.product_id
+    if (!id) return null
+    return String(id)
+  })
+
+  const positionForm = reactive({
+    placementOption: null as PlacementOption | null,
+    height: '',
+    angle: [0]
+  })
+  const currentWidth = ref<number>(0)
+
+  const activeLogoIndex = computed(() => {
+    if (!customLogo.value) return -1
+    return customLogos.value.findIndex(l => l.id === customLogo.value?.id)
+  })
+
+  const previousPlacementOption = ref<PlacementOption | null>(null)
+  const isSyncingAngle = ref(false)
+  const rotationChangeStart = ref<number | null>(null)
+  const heightChangeStart = ref<number | null>(null)
+
+  watch(
+    customLogo,
+    logo => {
+      const optionByKey = placementOptions.value.find(item => item.placementKey === logo?.placement)
+      const optionById = placementOptions.value.find(
+        item =>
+          String(item.placementId) === String((logo as { placement_id?: number })?.placement_id)
+      )
+      const option = optionByKey ?? optionById ?? placementOptions.value[0] ?? null
+      positionForm.placementOption = option
+      previousPlacementOption.value = option
+      if (!logo) {
+        positionForm.height = option?.height ? option.height.toFixed(1) : ''
+        return
+      }
+      const resolvedWidth = Number(logo.width || option?.width || 0)
+      const resolvedHeight = Number(logo.height || option?.height || 0)
+      currentWidth.value = resolvedWidth
+      positionForm.height = resolvedHeight ? resolvedHeight.toFixed(1) : ''
+      isSyncingAngle.value = true
+      positionForm.angle = [Number(logo.rotation || 0)]
+      rotationChangeStart.value = null
+      void nextTick(() => {
+        isSyncingAngle.value = false
+      })
+    },
+    { immediate: true }
+  )
+
+  function applyDraftRotation(nextAngle: number) {
+    if (!customizationStore.customization) return
+    if (!productKey.value) return
+    const arr = customizationStore.customization.custom_logos?.[productKey.value]
+    if (!arr) return
+    const index = activeLogoIndex.value
+    if (index === -1) return
+    const current = arr[index]
+    if (!current) return
+    const normalized = Number(nextAngle)
+    if (!Number.isFinite(normalized)) return
+    if (rotationChangeStart.value === null) {
+      rotationChangeStart.value = Number(current.rotation || 0)
+    }
+    if (Math.abs((current.rotation ?? 0) - normalized) < 0.0001) return
+    const updated = { ...current, rotation: normalized }
+    arr.splice(index, 1, updated)
+  }
+
+  watch(
+    () => positionForm.angle[0],
+    nextAngle => {
+      if (isSyncingAngle.value) return
+      if (!Number.isFinite(nextAngle)) return
+      applyDraftRotation(Number(nextAngle))
+    }
+  )
+
+  function handlePlacementChange(option: PlacementOption | null) {
+    positionForm.placementOption = option
+    if (!customLogo.value || !productKey.value || !option) return
+    const index = activeLogoIndex.value
+    if (index === -1) return
+    const prevLabel = customLogo.value.name_of_placement || null
+    const prevPlacementKey = customLogo.value.placement ?? null
+    const prevOption = previousPlacementOption.value
+    const nextPlacementId = option.placementId
+    const nextX = option.x_axis ?? null
+    const nextY = option.y_axis ?? null
+    const nextSide = option.side ?? customLogo.value.side ?? null
+    const prevX = prevOption?.x_axis ?? customLogo.value.x_axis ?? null
+    const prevY = prevOption?.y_axis ?? customLogo.value.y_axis ?? null
+    const prevSide = prevOption?.side ?? customLogo.value.side ?? null
+
+    if (
+      option.label === prevLabel &&
+      option.placementKey === prevPlacementKey &&
+      nextX === prevX &&
+      nextY === prevY &&
+      nextSide === prevSide
+    ) {
+      return
+    }
+
+    void historyStore.execute('logo.update-placement', {
+      key: productKey.value,
+      index,
+      prevPlacementLabel: prevLabel,
+      nextPlacementLabel: option.label,
+      placementId: nextPlacementId,
+      nextPlacementKey: option.placementKey ?? null,
+      prevPlacementKey: prevPlacementKey,
+      nextX,
+      nextY,
+      prevX,
+      prevY,
+      nextSide,
+      prevSide
+    })
+
+    previousPlacementOption.value = option
+    if (option.width) currentWidth.value = option.width
+    if (option.height) {
+      positionForm.height = option.height.toFixed(1)
+    }
+  }
+
+  type PlacementValue = string
+
+  function resolvePlacementByValue(value: PlacementValue | null) {
+    if (!value) return null
+    return placementOptions.value.find(option => option.value === value) ?? null
+  }
+
+  function handlePlacementChangeById(value: PlacementValue | null | AcceptableValue) {
+    const normalized = typeof value === 'string' ? value : null
+    if (!normalized) {
+      positionForm.placementOption = null
+      return
+    }
+    const option = resolvePlacementByValue(normalized)
+    positionForm.placementOption = option
+    handlePlacementChange(option)
+  }
+
+  function handleHeightInput(value: string | number) {
+    const str = String(value)
+    const sanitized = str.replace(/[^0-9.]/g, '')
+    positionForm.height = sanitized
+    const numeric = Number.parseFloat(sanitized)
+    if (!Number.isNaN(numeric)) {
+      pushDraftTransform({ height: numeric })
+    }
+  }
+
+  function handleHeightModelUpdate(value: string | number) {
+    handleHeightInput(value)
+  }
+
+  function pushDraftTransform(transform: { height?: number; angle?: number }) {
+    if (!customizationStore.customization || !productKey.value) return
+    const arr = customizationStore.customization.custom_logos?.[productKey.value]
+    if (!arr) return
+    const index = activeLogoIndex.value
+    if (index === -1) return
+    const current = arr[index]
+    if (!current) return
+    const nextHeight = transform.height ?? current.height
+    const nextAngle = transform.angle ?? current.rotation
+    if (transform.height !== undefined && heightChangeStart.value === null) {
+      heightChangeStart.value = Number(current.height || 0)
+    }
+    const width = Number(
+      current.width ||
+        currentWidth.value ||
+        positionForm.placementOption?.width ||
+        previousPlacementOption.value?.width ||
+        0
+    )
+    if (
+      Math.abs((current.height ?? 0) - (nextHeight ?? 0)) < 0.0001 &&
+      Math.abs((current.rotation ?? 0) - (nextAngle ?? 0)) < 0.0001
+    )
+      return
+    const updated = {
+      ...current,
+      height: nextHeight,
+      rotation: nextAngle,
+      width
+    }
+    arr.splice(index, 1, updated)
+  }
+
+  function commitHeightChange() {
+    if (!customLogo.value || !productKey.value) return
+    const index = activeLogoIndex.value
+    if (index === -1) return
+    const option = positionForm.placementOption || previousPlacementOption.value
+    const heightValue = Number.parseFloat(positionForm.height)
+    if (Number.isNaN(heightValue)) return
+    const prevHeight =
+      heightChangeStart.value ?? Number(customLogo.value.height || option?.height || 0)
+    if (Math.abs(prevHeight - heightValue) < 0.001) {
+      heightChangeStart.value = null
+      return
+    }
+    const widthValue = Number(customLogo.value.width || currentWidth.value || option?.width || 0)
+    currentWidth.value = widthValue
+    void historyStore.execute('logo.update-size', {
+      key: productKey.value,
+      index,
+      prevWidth: widthValue,
+      prevHeight,
+      nextWidth: widthValue,
+      nextHeight: heightValue
+    })
+    heightChangeStart.value = null
+  }
+
+  function handleBlurHeight() {
+    positionForm.height = formatDimension(positionForm.height)
+    commitHeightChange()
+  }
+
+  function formatDimension(value: string) {
+    const numeric = Number.parseFloat(value)
+    if (Number.isNaN(numeric)) return ''
+    return numeric.toFixed(1)
+  }
+
+  const angleText = computed(() => `${positionForm.angle[0]}°`)
+
+  watch(
+    () => positionForm.angle[0],
+    (nextAngle, previousAngle) => {
+      if (nextAngle === previousAngle) return
+      if (!customLogo.value || !productKey.value) return
+      const index = activeLogoIndex.value
+      if (index === -1) return
+      const prevRotation = Number(customLogo.value.rotation || 0)
+      if (Math.abs(prevRotation - Number(nextAngle)) < 0.001) return
+      void historyStore.execute('logo.update-rotation', {
+        key: productKey.value,
+        index,
+        prevRotation,
+        nextRotation: Number(nextAngle)
+      })
+    }
+  )
+
+  function resetPositionToCenter() {
+    if (!customLogo.value || !customizationStore.customization?.product_id) return
+    positionForm.angle = [0]
+    // TODO: dispatch history action to reset logo coordinates once available
+  }
+
+  function pinLogo() {
+    // TODO: Implement pin logo functionality (locks placement)
+  }
+
+  function handleAngleCommit(value: number[]) {
+    if (!customLogo.value || !productKey.value) {
+      rotationChangeStart.value = null
+      return
+    }
+    const index = activeLogoIndex.value
+    if (index === -1) {
+      rotationChangeStart.value = null
+      return
+    }
+    const [rawNext] = value
+    const nextRotation = Number(rawNext ?? 0)
+    const prevRotation = rotationChangeStart.value ?? Number(customLogo.value.rotation || 0)
+    rotationChangeStart.value = null
+    if (Math.abs(prevRotation - nextRotation) < 0.1) return
+    void historyStore.execute('logo.update-rotation', {
+      key: productKey.value,
+      index,
+      prevRotation,
+      nextRotation
+    })
+  }
 </script>
 
 <template>
@@ -319,11 +637,7 @@
           </template>
         </AccordionTrigger>
         <AccordionContent class="space-y-4 px-4 md:px-6 py-5">
-          <button
-            type="button"
-            class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition hover:border-primary"
-            @click="handleRemoveBackground('simple')"
-          >
+          <div class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left">
             <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
               <ContentRemoveIcons type="simple" />
             </div>
@@ -334,19 +648,15 @@
               </p>
               <Button
                 size="sm"
-                variant="outline"
+                variant="default"
                 class="mt-1 self-start px-4"
                 @click.stop="handleRemoveBackground('simple')"
                 >Apply</Button
               >
             </div>
-          </button>
+          </div>
 
-          <button
-            type="button"
-            class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition hover:border-primary"
-            @click="handleRemoveBackground('smart')"
-          >
+          <div class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left">
             <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
               <ContentRemoveIcons type="smart" />
             </div>
@@ -357,13 +667,13 @@
               </p>
               <Button
                 size="sm"
-                variant="outline"
+                variant="default"
                 class="mt-1 self-start px-4"
                 @click.stop="handleRemoveBackground('smart')"
                 >Apply</Button
               >
             </div>
-          </button>
+          </div>
         </AccordionContent>
       </AccordionItem>
 
@@ -425,10 +735,10 @@
               </button>
             </div>
             <div class="flex items-center gap-2">
-              <Button size="sm" variant="outline" @click="copyFrom">
+              <Button size="sm" variant="default" @click="copyFrom">
                 <span class="no-underline">Copy</span>
               </Button>
-              <Button size="sm" variant="outline" :disabled="!clipboardHex" @click="pasteTo">
+              <Button size="sm" variant="default" :disabled="!clipboardHex" @click="pasteTo">
                 <span class="no-underline">Paste</span>
               </Button>
             </div>
@@ -483,32 +793,80 @@
             </svg>
           </template>
         </AccordionTrigger>
-        <AccordionContent class="px-4 md:px-6 py-5 text-sm text-muted-foreground">
-          Position controls coming soon.
-        </AccordionContent>
-      </AccordionItem>
-
-      <AccordionItem value="technology" class="overflow-hidden">
-        <AccordionTrigger class="px-6 py-4">
-          <div
-            class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
-          >
-            <span class="text-base font-semibold">Logo technology</span>
-          </div>
-          <template #icon>
-            <svg
-              class="ml-2 h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
+        <AccordionContent class="space-y-6 px-4 md:px-6 py-5">
+          <div class="space-y-1 text-left">
+            <Label for="logo-placement" class="text-xs font-medium text-muted-foreground"
+              >Placement</Label
             >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
-            </svg>
-          </template>
-        </AccordionTrigger>
-        <AccordionContent class="px-6 py-5 text-sm text-muted-foreground">
-          Technology options will appear here.
+            <Select
+              :model-value="positionForm.placementOption?.value ?? null"
+              @update:model-value="handlePlacementChangeById"
+            >
+              <SelectTrigger id="logo-placement" class="h-9 w-full">
+                <SelectValue
+                  :value="positionForm.placementOption?.label"
+                  placeholder="Select placement"
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in placementOptions"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4">
+            <div class="space-y-1">
+              <Label for="logo-height" class="text-xs font-medium text-muted-foreground"
+                >Height</Label
+              >
+              <InputGroup>
+                <InputGroupInput
+                  id="logo-height"
+                  inputmode="decimal"
+                  :model-value="positionForm.height"
+                  @update:model-value="handleHeightModelUpdate"
+                  @blur="handleBlurHeight"
+                />
+                <InputGroupAddon class="pr-3 text-xs">cm</InputGroupAddon>
+              </InputGroup>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <Label for="logo-angle" class="text-xs font-medium text-muted-foreground"
+                >Angle</Label
+              >
+              <span class="text-sm text-foreground">{{ angleText }}</span>
+            </div>
+            <Slider
+              id="logo-angle"
+              v-model="positionForm.angle"
+              :max="360"
+              :min="0"
+              :step="1"
+              @value-commit="handleAngleCommit"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Button variant="outline" class="h-9" @click="resetPositionToCenter">
+              <LocateFixed class="size-4" />
+              Center logo
+            </Button>
+            <Button variant="outline" class="h-9" @click="pinLogo">
+              <Pin class="size-4" />
+              Pin logo
+            </Button>
+          </div>
         </AccordionContent>
       </AccordionItem>
     </Accordion>

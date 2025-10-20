@@ -48,7 +48,7 @@
   const showAllRecent = ref(false)
   const displayedRecentLogos = computed(() => {
     if (!logosStore.recentLogos) return []
-    const reversed = [...logosStore.recentLogos].reverse()
+    const reversed = [...logosStore.recentLogos]
     return showAllRecent.value ? reversed : reversed.slice(0, 4)
   })
   const shouldShowRecentSection = computed(
@@ -242,7 +242,7 @@
             />
 
             <div v-if="!logosStore.isLoadingUploadLogo">
-              <Button variant="outline" class="rounded-lg w-full" @click="onClickUpload">
+              <Button variant="default" class="rounded-lg w-full" @click="onClickUpload">
                 {{ logos_add_logo({}, { locale: localeStore.currentLocale }) }}
               </Button>
               <input
@@ -270,7 +270,7 @@
                   logosStore.recentLogos.length > 4 &&
                   !logosStore.isLoadingRecentLogos
                 "
-                variant="outline"
+                variant="default"
                 class="px-2 py-1 h-7"
                 @click="showAllRecent = !showAllRecent"
                 >{{ showAllRecent ? 'Show less' : 'View all' }}</Button
@@ -302,7 +302,7 @@
                 />
                 <Button
                   as="div"
-                  variant="outline"
+                  variant="default"
                   size="icon"
                   class="absolute top-1 right-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity text-foreground"
                   @click.stop="logosStore.deleteRecentLogo(logo.id.toString())"
@@ -319,7 +319,7 @@
             {{ logos_editor({}, { locale: localeStore.currentLocale }) }}
           </div>
           <div class="flex gap-3">
-            <Button variant="outline" class="rounded-lg" @click="goToList">{{
+            <Button variant="default" class="rounded-lg" @click="goToList">{{
               logos_back({}, { locale: localeStore.currentLocale })
             }}</Button>
             <Button variant="default" class="rounded-lg" disabled>{{
@@ -352,7 +352,7 @@
             </AccordionItem>
           </Accordion>
           <div class="flex gap-3">
-            <Button variant="outline" class="rounded-lg" @click="goToControls">{{
+            <Button variant="default" class="rounded-lg" @click="goToControls">{{
               logos_back({}, { locale: localeStore.currentLocale })
             }}</Button>
           </div>

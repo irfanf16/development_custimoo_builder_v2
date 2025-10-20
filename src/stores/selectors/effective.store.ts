@@ -60,16 +60,36 @@ export function useEffectiveSelectors() {
     return effectiveLogos
   })
 
+  const groupsVersion = computed<string>(() => {
+    return (effectiveSvgGroups.value || []).map(g => `${g.id}:${g.color}`).join(',')
+  })
+
   const renderVersion = computed<string>(() => {
     const idPart = [
       effectiveProductId.value ?? 'null',
       effectiveStyleId.value ?? 'null',
-      effectiveDesignId.value ?? 'null',
-      effectiveLogos.value.map(l => l.id).join(','),
-      effectiveLogos.value.map(l => `${l.id}:${l.url}`).join(',')
+      effectiveDesignId.value ?? 'null'
     ].join(':')
-    const groupsPart = (effectiveSvgGroups.value || []).map(g => `${g.id}:${g.color}`).join(',')
-    return `${idPart}|${groupsPart}`
+
+    const logosMetaPart = effectiveLogos.value.map(logo => `${logo.id}:${logo.url}`).join(',')
+
+    const logosGeometryPart = effectiveLogos.value
+      .map(logo =>
+        [
+          logo.id,
+          logo.width,
+          logo.height,
+          logo.rotation,
+          logo.x_axis,
+          logo.y_axis,
+          logo.scaleX ?? '',
+          logo.scaleY ?? '',
+          logo.name_of_placement ?? ''
+        ].join(':')
+      )
+      .join(',')
+
+    return `${idPart}|${logosMetaPart}|${logosGeometryPart}`
   })
 
   // ===== RETURN =====
@@ -85,6 +105,7 @@ export function useEffectiveSelectors() {
     // Computed Derived
     effectiveSvgGroups,
     effectiveLogos,
-    renderVersion
+    renderVersion,
+    groupsVersion
   }
 }

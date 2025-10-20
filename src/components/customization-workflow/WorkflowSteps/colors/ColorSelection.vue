@@ -195,7 +195,7 @@
           <div class="flex-1 h-px bg-border" />
         </div>
         <div>
-          <Button class="w-full bg-card" variant="outline">Choose from locker</Button>
+          <Button class="w-full bg-card" variant="default">Choose from locker</Button>
         </div>
       </div>
     </div>
@@ -221,12 +221,12 @@
             <div
               class="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-hover:no-underline transition-opacity"
             >
-              <Button size="sm" variant="outline" @click.stop="copyFrom(svgGroup.id)"
+              <Button size="sm" variant="default" @click.stop="copyFrom(svgGroup.id)"
                 ><span class="no-underline">Copy</span></Button
               >
               <Button
                 size="sm"
-                variant="outline"
+                variant="default"
                 :disabled="!clipboardHex"
                 @click.stop="pasteTo(svgGroup.id)"
                 ><span class="no-underline">Paste</span>

@@ -23,19 +23,19 @@
 
 <template>
   <div class="flex items-center gap-2">
-    <Button variant="outline" size="default" class="rounded-lg">
+    <Button variant="default" size="default" class="rounded-lg">
       <Ruler class="size-4" />
       {{ actions_size_guide({}, { locale: localeStore.currentLocale }) }}
     </Button>
-    <Button variant="outline" size="default" class="rounded-lg" @click="handleResetCustomization">
+    <Button variant="default" size="default" class="rounded-lg" @click="handleResetCustomization">
       <RotateCcw class="size-4" />
       {{ actions_reset_customization({}, { locale: localeStore.currentLocale }) }}
     </Button>
-    <Button variant="outline" size="default" class="rounded-lg">
+    <Button variant="default" size="default" class="rounded-lg">
       <Share2 class="size-4" />
       {{ actions_share_design({}, { locale: localeStore.currentLocale }) }}
     </Button>
-    <Button variant="outline" size="default" class="rounded-lg">
+    <Button variant="default" size="default" class="rounded-lg">
       <FileText class="size-4" />
       {{ actions_generate_pdf({}, { locale: localeStore.currentLocale }) }}
     </Button>

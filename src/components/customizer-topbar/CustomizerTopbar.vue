@@ -70,7 +70,7 @@
     <ButtonGroup>
       <!-- Reset Button -->
       <ButtonGroup>
-        <Button variant="outline" size="default" @click="handleResetCustomization">
+        <Button size="default" @click="handleResetCustomization">
           <RotateCcw class="size-4" />
           {{ actions_reset_customization({}, { locale: localeStore.currentLocale }) }}
         </Button>
@@ -79,14 +79,13 @@
       <DropdownMenu>
         <ButtonGroup>
           <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="default">
+            <Button size="default">
               <Save class="size-4" />
               <span>{{ topbar_save({}, { locale: localeStore.currentLocale }) }}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuTrigger as-child>
             <Button
-              variant="outline"
               size="icon"
               :aria-label="topbar_save_options({}, { locale: localeStore.currentLocale })"
             >
@@ -112,14 +111,14 @@
 
       <!-- Locker Room Button -->
       <ButtonGroup>
-        <Button variant="outline" size="default">
+        <Button size="default">
           <span>{{ topbar_locker_room({}, { locale: localeStore.currentLocale }) }}</span>
         </Button>
       </ButtonGroup>
 
       <!-- Cart Button -->
       <ButtonGroup>
-        <Button variant="outline" size="default">
+        <Button size="default">
           <ShoppingCart class="size-4" />
           <span>{{ topbar_cart({}, { locale: localeStore.currentLocale }) }}</span>
         </Button>
@@ -129,13 +128,13 @@
       <DropdownMenu>
         <ButtonGroup>
           <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="default">
+            <Button size="default">
               <User class="size-4" />
               <span>Oskar</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="icon" aria-label="User menu">
+            <Button size="icon" aria-label="User menu">
               <Menu class="size-4" />
             </Button>
           </DropdownMenuTrigger>

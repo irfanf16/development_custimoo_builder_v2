@@ -121,7 +121,7 @@
             {{ error }}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" @click="showSignInDialog = false">
+            <Button type="button" variant="default" @click="showSignInDialog = false">
               {{ auth_cancel({}, { locale: localeStore.currentLocale }) }}
             </Button>
             <Button type="submit" :disabled="isLoading">

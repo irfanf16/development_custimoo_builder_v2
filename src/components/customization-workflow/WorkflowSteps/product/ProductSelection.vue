@@ -158,7 +158,7 @@
           class="absolute -bottom-[-1rem] left-1/2 -translate-x-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity"
         >
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             class="bg-card"
             @click="handleSelectProduct(item.productPreview.id)"

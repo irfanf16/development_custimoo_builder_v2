@@ -111,7 +111,7 @@
         <Tooltip :delay-duration="200">
           <TooltipTrigger as-child>
             <Button
-              variant="outline"
+              variant="default"
               size="icon"
               class="rounded-full size-10 p-0 bg-card outline outline-border border-0 shadow-none"
               :aria-label="t.label"

@@ -13,16 +13,12 @@
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    as: 'button',
-    variant: undefined,
-    size: undefined,
-    class: undefined
+    as: 'button'
   })
 </script>
 
 <template>
   <Primitive
-    data-slot="button"
     :as="as"
     :as-child="asChild"
     :class="cn(buttonVariants({ variant, size }), props.class)"

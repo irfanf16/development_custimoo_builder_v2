@@ -18,7 +18,7 @@
         <button class="col-span-1 text-muted-foreground">🗑️</button>
       </div>
       <div class="flex justify-between mt-4">
-        <Button variant="outline" class="w-48">Cancel</Button>
+        <Button variant="default" class="w-48">Cancel</Button>
         <Button variant="default" class="w-48">Save</Button>
       </div>
     </div>

@@ -119,7 +119,7 @@
               placeholder="Confirm your password"
             />
           </div>
-          <Button variant="outline" class="w-full" :disabled="authStore.isLoading">
+          <Button variant="default" class="w-full" :disabled="authStore.isLoading">
             {{ authStore.isLoading ? 'Creating Account...' : 'Create Account' }}
           </Button>
         </div>

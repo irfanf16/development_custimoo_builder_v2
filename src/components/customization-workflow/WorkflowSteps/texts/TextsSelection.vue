@@ -77,7 +77,7 @@
         >
       </div>
     </div>
-    <Button variant="outline" class="rounded-lg">Add additional text</Button>
+    <Button variant="default" class="rounded-lg">Add additional text</Button>
   </div>
 </template>
 

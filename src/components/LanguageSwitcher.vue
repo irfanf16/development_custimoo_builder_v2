@@ -46,7 +46,7 @@
   <!-- Only show language switcher when multiple languages are available -->
   <DropdownMenu v-if="shouldShowSwitcher">
     <DropdownMenuTrigger as-child>
-      <Button variant="outline" size="default" class="rounded-lg">
+      <Button variant="default" size="default" class="rounded-lg">
         <Globe class="size-4" />
         <span class="ml-1">{{ currentLanguageConfig?.name }}</span>
         <ChevronDown class="size-4" />

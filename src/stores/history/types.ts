@@ -11,6 +11,9 @@ export type HistoryActionType =
   | 'logo.remove'
   | 'logo.move'
   | 'logo.remove-background'
+  | 'logo.update-placement'
+  | 'logo.update-size'
+  | 'logo.update-rotation'
   | 'pattern.set-group'
   | 'batch'
 
@@ -65,8 +68,45 @@ export type LogoUpdateUrlPayload = {
   nextLogo: APCustomizationLogo // full logo state after change
 }
 
+export type LogoUpdatePlacementPayload = {
+  key: string
+  index: number
+  prevPlacementLabel: string | null
+  nextPlacementLabel: string | null
+  placementId?: number | null
+  nextX?: number | null
+  nextY?: number | null
+  prevX?: number | null
+  prevY?: number | null
+  nextSide?: 'front' | 'back' | null
+  prevSide?: 'front' | 'back' | null
+  nextPlacementKey?: string | null
+  prevPlacementKey?: string | null
+}
+
+export type LogoUpdateSizePayload = {
+  key: string
+  index: number
+  prevWidth: number
+  prevHeight: number
+  nextWidth: number
+  nextHeight: number
+}
+
+export type LogoUpdateRotationPayload = {
+  key: string
+  index: number
+  prevRotation: number
+  nextRotation: number
+}
+
 export type PatternSetGroupPayload = {
   groupName: string
   prev: unknown
   next: unknown
+}
+
+export type LogoPlacementOption = {
+  label: string
+  value: string
 }

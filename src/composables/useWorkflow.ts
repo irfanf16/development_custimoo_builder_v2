@@ -291,6 +291,15 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
       },
       { immediate: true }
     )
+
+    watch(
+      () => logosSubStep.value,
+      async subStep => {
+        if (subStep === 'list') {
+          await logosStore.fetchRecentLogos()
+        }
+      }
+    )
   }
 
   if (options.autoInitializeEffects ?? true) {

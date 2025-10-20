@@ -33,6 +33,8 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
   const canvas = ref<Canvas | null>(null)
   const mainDesignObject = ref<FabricObject | null>(null)
   const canvasOptions = ref<Partial<CanvasOptions>>({})
+  const logoLayers = ref<Map<string, FabricObject>>(new Map())
+  const originalLogoSizes = new Map<string, { width: number; height: number }>()
 
   // ===== UTILITIES =====
   const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
@@ -73,6 +75,7 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
     c.discardActiveObject()
     if (!options?.silent) c.requestRenderAll()
     mainDesignObject.value = null
+    logoLayers.value.clear()
   }
 
   function requestRender() {
@@ -312,16 +315,17 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
       }
 
       fitObject(group, fitOptions)
-      group.set({
+      const fabricGroup = group as FabricObject
+      fabricGroup.set({
         selectable: canvasOptions.value.selection ?? false,
         evented: canvasOptions.value.enablePointerEvents ?? false,
         originX: 'center',
         originY: 'center'
       })
-      canvas.value.add(group)
-      canvas.value.viewportCenterObject(group)
-      group.setCoords()
-      mainDesignObject.value = group as FabricObject
+      canvas.value.add(fabricGroup)
+      canvas.value.viewportCenterObject(fabricGroup)
+      fabricGroup.setCoords()
+      mainDesignObject.value = fabricGroup
     } else {
       const img = await FabricImage.fromURL(fromStorage(url), {
         crossOrigin: 'anonymous'
@@ -402,6 +406,9 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
 
     const img = await FabricImage.fromURL(fromStorage(logo.url))
 
+    const naturalWidth = img.width || 1
+    const naturalHeight = img.height || 1
+
     // Compute uniform scale to match target height in the current canvas space
     const targetHeightPx = (Number(logo.height) || 0) * unitScale
     const safeImgHeight = img.height || 1
@@ -445,9 +452,178 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
     })
 
     canvas.value.add(img as FabricObject)
+    originalLogoSizes.set(String(logo.id), {
+      width: naturalWidth,
+      height: naturalHeight
+    })
     img.setCoords()
     canvas.value.requestRenderAll()
+    logoLayers.value.set(String(logo.id), img as FabricObject)
     return img as FabricObject
+  }
+
+  function removeLogoLayer(logoId: string) {
+    const id = String(logoId)
+    const layer = logoLayers.value.get(id)
+    if (!layer || !canvas.value) return
+    canvas.value.remove(layer as unknown as FabricObject)
+    logoLayers.value.delete(id)
+    canvas.value.requestRenderAll()
+    originalLogoSizes.delete(id)
+  }
+
+  function updateLogoLayer(
+    logoId: string,
+    props: Partial<{
+      left: number
+      top: number
+      angle: number
+      scaleX: number
+      scaleY: number
+      height: number
+    }>
+  ) {
+    const layer = logoLayers.value.get(String(logoId))
+    if (!layer) return
+    const cloneProps = { ...props }
+    if ('height' in cloneProps) {
+      const base = originalLogoSizes.get(String(logoId))
+      const height = cloneProps.height ?? base?.height ?? layer.height ?? 1
+      if (base && base.height) {
+        const scale = height / base.height
+        cloneProps.scaleY = scale
+        cloneProps.scaleX = scale
+      }
+      delete cloneProps.height
+    }
+    if ('angle' in cloneProps) {
+      layer.set({ angle: cloneProps.angle })
+      delete cloneProps.angle
+    }
+    layer.set(cloneProps)
+    layer.setCoords()
+    canvas.value?.requestRenderAll()
+  }
+
+  async function replaceLogoTexture(logoId: string, url: string) {
+    const layer = logoLayers.value.get(String(logoId))
+    if (!layer || !canvas.value) return
+    const img = await FabricImage.fromURL(fromStorage(url), { crossOrigin: 'anonymous' })
+    if (typeof (layer as FabricImage).setSrc === 'function') {
+      await (layer as FabricImage).setSrc(fromStorage(url), { crossOrigin: 'anonymous' })
+    } else if ('setElement' in layer && typeof (layer as FabricImage).setElement === 'function') {
+      ;(layer as FabricImage).setElement(img.getElement())
+    }
+    layer.set({ width: img.width, height: img.height })
+    layer.setCoords()
+    canvas.value.requestRenderAll()
+    originalLogoSizes.set(String(logoId), {
+      width: img.width || 1,
+      height: img.height || 1
+    })
+  }
+
+  function computeLogoPlacement(
+    _logo: CustomLogo,
+    options?: {
+      originalCanvasSize?: number
+      respectScaleProps?: boolean
+    }
+  ) {
+    if (!canvas.value) return null
+
+    const baseSize = options?.originalCanvasSize ?? 600
+    const main = mainDesignObject.value as FabricObject | null
+
+    let unitScale = 1
+    let designLeftOffset = 0
+    let designTopOffset = 0
+
+    if (main) {
+      const withScaled = main as unknown as {
+        getScaledWidth?: () => number
+        getScaledHeight?: () => number
+        width?: number
+        height?: number
+        scaleX?: number
+        scaleY?: number
+        left?: number
+        top?: number
+      }
+      const scaledW = withScaled.getScaledWidth
+        ? withScaled.getScaledWidth()
+        : (withScaled.width || 0) * (withScaled.scaleX || 1)
+      const scaledH = withScaled.getScaledHeight
+        ? withScaled.getScaledHeight()
+        : (withScaled.height || 0) * (withScaled.scaleY || 1)
+      const squareSide = Math.min(scaledW || 0, scaledH || 0)
+      unitScale = (squareSide || 0) / baseSize
+      const centerX = withScaled.left || 0
+      const centerY = withScaled.top || 0
+      designLeftOffset = centerX - (scaledW || 0) / 2
+      designTopOffset = centerY - (scaledH || 0) / 2
+    } else {
+      const canvasHeight = canvas.value.getHeight?.() || 0
+      unitScale = canvasHeight / baseSize
+      designLeftOffset = 0
+      designTopOffset = 0
+    }
+
+    return {
+      unitScale,
+      designLeftOffset,
+      designTopOffset
+    }
+  }
+
+  function updateLogoLayerGeometry(logo: CustomLogo, options?: { originalCanvasSize?: number }) {
+    const layer = logoLayers.value.get(String(logo.id))
+    if (!layer) return
+    const placement = computeLogoPlacement(logo, options)
+    if (!placement) return
+    const { unitScale, designLeftOffset, designTopOffset } = placement
+
+    const dimensions = originalLogoSizes.get(String(logo.id)) || {
+      width: layer.width || 1,
+      height: layer.height || 1
+    }
+    const targetHeightPx = (Number(logo.height) || 0) * unitScale
+    const heightScale = targetHeightPx > 0 ? targetHeightPx / (dimensions.height || 1) : null
+    let scale = heightScale ?? 1
+    if (logo.scaleY) scale *= logo.scaleY
+
+    const main = mainDesignObject.value as unknown as {
+      getScaledWidth?: () => number
+      getScaledHeight?: () => number
+      width?: number
+      height?: number
+      scaleX?: number
+      scaleY?: number
+    }
+    const scaledW = main?.getScaledWidth
+      ? main.getScaledWidth()
+      : (main?.width || 0) * (main?.scaleX || 1)
+    const scaledH = main?.getScaledHeight
+      ? main.getScaledHeight()
+      : (main?.height || 0) * (main?.scaleY || 1)
+    const squareSide = Math.min(scaledW || 0, scaledH || 0)
+    const innerOffsetX = ((scaledW || 0) - squareSide) / 2
+    const innerOffsetY = ((scaledH || 0) - squareSide) / 2
+
+    const left = designLeftOffset + innerOffsetX + (Number(logo.x_axis) || 0) * unitScale
+    const top = designTopOffset + innerOffsetY + (Number(logo.y_axis) || 0) * unitScale
+
+    const angle = Number(logo.rotation ?? 0)
+
+    layer.set({
+      left,
+      top,
+      angle,
+      scaleX: scale,
+      scaleY: scale
+    })
+    layer.setCoords()
+    canvas.value?.requestRenderAll()
   }
 
   // ===== ANIMATION =====
@@ -482,6 +658,11 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
     addDesignLayer,
     addLogoLayer,
     getSvgGroup,
+    removeLogoLayer,
+    updateLogoLayer,
+    replaceLogoTexture,
+    logoLayers,
+    updateLogoLayerGeometry,
     // Animation
     fadeOut,
     fadeIn

@@ -42,7 +42,7 @@
         <Button
           v-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
           size="sm"
-          variant="outline"
+          variant="default"
           @click.stop="emit('apply-colors', props.logo)"
         >
           Apply colors
@@ -52,7 +52,7 @@
         <div class="text-sm text-muted-foreground">No colors detected</div>
       </div>
     </div>
-    <Badge variant="outline" class="text-xs absolute top-1 left-1">
+    <Badge variant="outline" class="text-xs absolute top-1 left-1 bg-card">
       {{ props.logo.name_of_placement }}
     </Badge>
     <Button

@@ -165,7 +165,7 @@
                 <TooltipProvider v-if="headerActionButton">
                   <Tooltip>
                     <TooltipTrigger as-child>
-                      <Button variant="outline" size="sm" @click="headerActionButton.callback">
+                      <Button variant="default" size="sm" @click="headerActionButton.callback">
                         {{ headerActionButton.label }}
                       </Button>
                     </TooltipTrigger>
@@ -248,7 +248,7 @@
             <TooltipProvider v-if="headerActionButton">
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <Button variant="outline" size="sm" @click="headerActionButton.callback">
+                  <Button variant="default" size="sm" @click="headerActionButton.callback">
                     {{ headerActionButton.label }}
                   </Button>
                 </TooltipTrigger>
@@ -260,7 +260,7 @@
 
             <Button
               v-if="isExpandable"
-              variant="outline"
+              variant="default"
               size="icon"
               class="rounded-lg"
               @click="toggleExpanded"
