@@ -49,3 +49,21 @@ export type OutputUploadLogo = {
 export type OutputUpdateAndPostNewLogo = {
   customer_logo: CustomLogo
 }
+
+// {
+//   "logo_id": 169725,
+//   "type": "floodfill",
+//   "image": "6/guest/logos/1663574532.AalborgPirateslogo.svg1760705225WYrFThHLq5_png.png",
+//   "color": "#00843D"
+// }
+export type UpdateLogoParams = {
+  logo_id: number
+  type: 'floodfill'
+  image: string
+  color: string
+}
+
+export type OutputUpdateLogo = {
+  message: string
+  logo: string
+}

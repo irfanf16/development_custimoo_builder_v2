@@ -7,16 +7,8 @@
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
   import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
   import { Button } from '@/components/ui/button'
-  import { ColorGrid } from '@/components/ui/color-grid'
-  import {
-    Select,
-    SelectTrigger,
-    SelectContent,
-    SelectItem,
-    SelectGroup,
-    SelectLabel
-  } from '@/components/ui/select'
   import ColorSelector from '@/components/ui/color-selector/ColorSelector.vue'
+  import { PaletteColorSelector } from '@/components/ui/palette-color-selector'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import type { OutputColor } from '@/services/products/types'
   import { useHistoryStore } from '@/stores/history/history.store'
@@ -55,22 +47,6 @@
   // Local clipboard for copy/paste between slots
   const clipboardHex = ref<string | null>(null)
 
-  // Per-slot mode: 'colors' | 'pantone'
-  const slotMode = ref<Record<number, 'colors' | 'pantone'>>({
-    0: 'colors',
-    1: 'colors',
-    2: 'colors'
-  })
-
-  // List of palette options for the select dropdown
-  const paletteOptions = computed(
-    () =>
-      computedPalettes.value?.map(palette => ({
-        label: palette.name,
-        value: palette.id
-      })) ?? []
-  )
-
   const shuffleColorsHeadingIndex: Ref<0 | 1 | 2 | 3> = ref(
     Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3
   )
@@ -95,17 +71,6 @@
       color_shuffle_text_4({}, { locale: localeStore.currentLocale })
     ]
   })
-
-  // The currently selected palette object
-  const currentPalette = computed(() => {
-    return (
-      computedPalettes.value?.find(p => p.id === currentPaletteId.value) ||
-      computedPalettes.value?.[0]
-    )
-  })
-
-  // Model for shadcn/vue select: stores the palette name (string)
-  const currentPaletteId = ref<number>(computedPalettes.value?.[0]?.id || 0)
 
   function setGroupColor(colorGroupId: string, color: OutputColor) {
     const prevRaw = customizationStore.customization?.group_colors?.[colorGroupId]
@@ -139,7 +104,7 @@
     }
     shuffleColorsHeadingIndex.value = getRandomIndexExcluding(shuffleColorsHeadingIndex.value)
     shuffleColorsTextIndex.value = getRandomIndexExcluding(shuffleColorsTextIndex.value)
-    shuffleColors(currentPaletteId.value)
+    shuffleColors(computedPalettes.value?.[0]?.id)
   }
 
   // Breadcrumb logic for color selection
@@ -235,59 +200,12 @@
           </div>
         </AccordionTrigger>
         <AccordionContent>
-          <!-- Controls row -->
-          <div class="flex items-center justify-between gap-3">
-            <div class="inline-flex rounded-lg border border-border bg-muted p-1 text-sm">
-              <button
-                class="px-3 h-9 rounded-md transition-colors"
-                :class="[
-                  slotMode[idx] === 'colors'
-                    ? 'bg-card text-foreground shadow'
-                    : 'text-muted-foreground'
-                ]"
-                @click="slotMode[idx] = 'colors'"
-              >
-                Colors
-              </button>
-              <button
-                class="px-3 h-9 rounded-md transition-colors"
-                :class="[
-                  slotMode[idx] === 'pantone'
-                    ? 'bg-card text-foreground shadow'
-                    : 'text-muted-foreground'
-                ]"
-                @click="slotMode[idx] = 'pantone'"
-              >
-                Pantone
-              </button>
-            </div>
-          </div>
-
-          <!-- Palette select -->
-          <div class="mt-3">
-            <Select v-model="currentPaletteId">
-              <SelectTrigger class="h-9 w-full">
-                <SelectValue :value="currentPalette?.name" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Palettes</SelectLabel>
-                  <SelectItem v-for="p in paletteOptions" :key="p.value" :value="p.value">
-                    {{ p.label }}
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <!-- Swatches grid -->
-          <div class="mt-4">
-            <ColorGrid
-              :colors="currentPalette?.colors || []"
-              :selected-color="svgGroup.color"
-              @color-select="color => setGroupColor(svgGroup.id, color)"
-            />
-          </div>
+          <PaletteColorSelector
+            v-if="computedPalettes"
+            :palettes="computedPalettes"
+            :selected-color="svgGroup.color"
+            @color-select="color => setGroupColor(svgGroup.id, color)"
+          />
         </AccordionContent>
       </AccordionItem>
     </Accordion>

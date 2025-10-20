@@ -8,7 +8,9 @@ import type {
   OutputRecentLogos,
   UploadLogoParams,
   OutputUploadLogo,
-  OutputUpdateAndPostNewLogo
+  OutputUpdateAndPostNewLogo,
+  UpdateLogoParams,
+  OutputUpdateLogo
 } from '../../services/logos/types'
 
 export const useLogosStore = defineStore('logosStore', () => {
@@ -139,6 +141,17 @@ export const useLogosStore = defineStore('logosStore', () => {
     return response
   }
 
+  async function editLogo(
+    editLogoParams: UpdateLogoParams
+  ): Promise<APIResponse<OutputUpdateLogo>> {
+    setError(null)
+    const response = await tryCatchApi(API.logos.editLogo(editLogoParams))
+    if (response.success) {
+      setError('Error editing logo')
+    }
+    return response
+  }
+
   return {
     // State
     logos,
@@ -157,6 +170,7 @@ export const useLogosStore = defineStore('logosStore', () => {
     fetchRecentLogos,
     uploadLogo,
     deleteRecentLogo,
-    updateAndPostNewLogo
+    updateAndPostNewLogo,
+    editLogo
   }
 })

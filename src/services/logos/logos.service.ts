@@ -2,8 +2,10 @@ import http from '../api'
 import type {
   OutputRecentLogos,
   OutputUpdateAndPostNewLogo,
+  OutputUpdateLogo,
   OutputUploadLogo,
   UpdateAndPostNewLogoParams,
+  UpdateLogoParams,
   UploadLogoParams
 } from './types'
 
@@ -35,9 +37,14 @@ async function deleteRecentLogo(logoId: string) {
   return await http.delete(`logos/recent/${logoId}`)
 }
 
+async function editLogo(editLogoParams: UpdateLogoParams) {
+  return await http.post<OutputUpdateLogo>('edit-logo', editLogoParams)
+}
+
 export default {
   getRecentLogos,
   uploadLogo,
   deleteRecentLogo,
-  updateAndPostNewLogo
+  updateAndPostNewLogo,
+  editLogo
 }

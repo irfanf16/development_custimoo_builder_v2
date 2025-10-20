@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, reactive, ref, watch, watchEffect, nextTick } from 'vue'
+  import { computed, reactive, ref, watch, nextTick } from 'vue'
   import type { AcceptableValue } from 'reka-ui'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -12,7 +12,7 @@
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
   import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
-  import { ColorGrid } from '@/components/ui/color-grid'
+  import { PaletteColorSelector } from '@/components/ui/palette-color-selector'
   import ContentRemoveIcons from './ContentRemoveIcons.vue'
   import {
     Select,
@@ -20,13 +20,13 @@
     SelectContent,
     SelectItem,
     SelectGroup,
-    SelectLabel,
     SelectValue
   } from '@/components/ui/select'
   import type { OutputColor } from '@/services/products/types'
   import LogoCard from './LogoCard.vue'
   import type { CustomLogo } from '@/services/logos/types'
   import { useLogoActions } from '@/composables/useLogoActions'
+  import type { Palette } from '@/composables/useColorActions'
   import { Label } from '@/components/ui/label'
   import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
   import { Slider } from '@/components/ui/slider'
@@ -47,14 +47,6 @@
   const logosStore = useLogosStore()
   const productsStore = useProductsStore()
 
-  type ColorMode = 'soccer' | 'socks' | 'pantone'
-
-  // Type for color that can be either a hex string or RGB object
-  type ColorValue = string | { r: number; g: number; b: number }
-
-  // Local clipboard for copy/paste between slots
-  const clipboardHex = ref<string | null>(null)
-
   // Recent logos state
   const customLogos = computed(() => {
     const key = customizationStore.customization?.product_id
@@ -72,43 +64,6 @@
     return logosStore.activeLogo || null
   })
 
-  const selectedColorMode = ref<ColorMode>('soccer')
-
-  // List of palette options for the select dropdown
-  const paletteOptions = computed(
-    () =>
-      (colorPalettes &&
-        Object.keys(colorPalettes).map(key => ({
-          label: colorModes.find(mode => mode.id === key)?.label || key,
-          value: key
-        }))) ??
-      []
-  )
-
-  // The currently selected palette object
-  const currentPalette = computed(() => {
-    return colorPalettes[selectedColorMode.value] || colorPalettes.soccer
-  })
-
-  // Convert palette colors to OutputColor objects for ColorGrid
-  const currentPaletteHex = computed(() => {
-    return currentPalette.value.map((color: ColorValue, index: number) => {
-      const hexValue =
-        typeof color === 'string'
-          ? color
-          : `#${color.r.toString(16).padStart(2, '0')}${color.g.toString(16).padStart(2, '0')}${color.b.toString(16).padStart(2, '0')}`
-
-      return {
-        position: index,
-        name: hexValue,
-        value: hexValue
-      }
-    })
-  })
-
-  // Model for shadcn/vue select: stores the palette name (string)
-  const currentPaletteId = ref<string>(selectedColorMode.value)
-
   const rgbArrayToHex = (arr: number[]): string => {
     const [r = 0, g = 0, b = 0] = arr
     const toHex = (n: number) =>
@@ -122,78 +77,15 @@
     (customLogo.value?.logo_colors || []).map(color => rgbArrayToHex(color as number[]))
   )
 
-  // Color modes for recoloring
-  const colorModes = [
-    { id: 'soccer', label: 'Soccer colors' },
-    { id: 'socks', label: 'Socks colours' },
-    { id: 'pantone', label: 'Pantone' }
-  ]
-
-  // Mock color palettes for different modes
-  const colorPalettes = {
-    soccer: [
-      '#FF6B6B',
-      '#4ECDC4',
-      '#45B7D1',
-      '#96CEB4',
-      '#FFEAA7',
-      '#DDA0DD',
-      '#98D8C8',
-      '#F7DC6F',
-      '#BB8FCE',
-      '#85C1E9',
-      '#F8C471',
-      '#82E0AA',
-      '#F1948A',
-      '#85C1E9',
-      '#D7BDE2',
-      '#A9DFBF'
-    ],
-    socks: [
-      '#FF0000',
-      '#00FF00',
-      '#0000FF',
-      '#FFFF00',
-      '#FF00FF',
-      '#00FFFF',
-      '#FFA500',
-      '#800080',
-      '#008000',
-      '#000080',
-      '#808080',
-      '#C0C0C0',
-      '#800000',
-      '#808000',
-      '#000000',
-      '#FFFFFF'
-    ],
-    pantone: [
-      '#C5282F',
-      '#F4A261',
-      '#E76F51',
-      '#2A9D8F',
-      '#264653',
-      '#E9C46A',
-      '#F77F00',
-      '#FCBF49',
-      '#D62828',
-      '#F77F00',
-      '#06FFA5',
-      '#3A86FF',
-      '#8338EC',
-      '#FF006E',
-      '#FB5607',
-      '#FFBE0B'
-    ]
-  }
-
-  // Sync currentPaletteId with selectedColorMode
-  watchEffect(() => {
-    currentPaletteId.value = selectedColorMode.value
-  })
-
-  watchEffect(() => {
-    selectedColorMode.value = currentPaletteId.value as ColorMode
+  // Get palettes from products store (same as ColorSelection.vue)
+  const palettes = computed<Palette[]>(() => {
+    return (
+      productsStore.activeProductDetails?.namecolors.map(colorGroup => ({
+        id: colorGroup.id,
+        name: colorGroup.file_name,
+        colors: colorGroup.json_data
+      })) || []
+    )
   })
 
   async function handleBackToLogos() {
@@ -252,8 +144,9 @@
     })
   }
 
-  function handleRecolorLogo(_color: OutputColor) {
+  function handleRecolorLogo(color: OutputColor) {
     // TODO: Implement logo recoloring
+    console.log('Recolor logo with:', color)
   }
 
   function removeLogoFromCustomization(logo: CustomLogo) {
@@ -268,16 +161,6 @@
     if (!customLogo.value) return
     removeLogoFromCustomization(customLogo.value)
     handleBackToLogos()
-  }
-
-  function copyFrom() {
-    // Find the color value for the logo from colorSwatches
-    clipboardHex.value = colorSwatches.value[0] ?? null
-  }
-
-  function pasteTo() {
-    if (!clipboardHex.value) return
-    // TODO: Apply the copied color to the logo
   }
 
   const breadcrumbs = computed(() => [
@@ -697,80 +580,11 @@
           </template>
         </AccordionTrigger>
         <AccordionContent class="px-4 md:px-6 py-5">
-          <!-- Controls row -->
-          <div class="flex items-center justify-between gap-3">
-            <div class="inline-flex rounded-lg border border-border bg-muted p-1 text-sm">
-              <button
-                class="px-3 h-9 rounded-md transition-colors"
-                :class="[
-                  selectedColorMode === 'soccer'
-                    ? 'bg-card text-foreground shadow'
-                    : 'text-muted-foreground'
-                ]"
-                @click="selectedColorMode = 'soccer'"
-              >
-                Soccer colors
-              </button>
-              <button
-                class="px-3 h-9 rounded-md transition-colors"
-                :class="[
-                  selectedColorMode === 'socks'
-                    ? 'bg-card text-foreground shadow'
-                    : 'text-muted-foreground'
-                ]"
-                @click="selectedColorMode = 'socks'"
-              >
-                Socks colours
-              </button>
-              <button
-                class="px-3 h-9 rounded-md transition-colors"
-                :class="[
-                  selectedColorMode === 'pantone'
-                    ? 'bg-card text-foreground shadow'
-                    : 'text-muted-foreground'
-                ]"
-                @click="selectedColorMode = 'pantone'"
-              >
-                Pantone
-              </button>
-            </div>
-            <div class="flex items-center gap-2">
-              <Button size="sm" variant="default" @click="copyFrom">
-                <span class="no-underline">Copy</span>
-              </Button>
-              <Button size="sm" variant="default" :disabled="!clipboardHex" @click="pasteTo">
-                <span class="no-underline">Paste</span>
-              </Button>
-            </div>
-          </div>
-
-          <!-- Palette select -->
-          <div class="mt-3">
-            <Select v-model="currentPaletteId">
-              <SelectTrigger class="h-9 w-full">
-                <SelectValue
-                  :value="colorModes.find(mode => mode.id === currentPaletteId)?.label"
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Palettes</SelectLabel>
-                  <SelectItem v-for="p in paletteOptions" :key="p.value" :value="p.value">
-                    {{ p.label }}
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <!-- Swatches grid -->
-          <div class="mt-4">
-            <ColorGrid
-              :colors="currentPaletteHex"
-              :selected-color="colorSwatches[0]"
-              @color-select="handleRecolorLogo"
-            />
-          </div>
+          <PaletteColorSelector
+            :palettes="palettes"
+            :selected-color="colorSwatches[0]"
+            @color-select="handleRecolorLogo"
+          />
         </AccordionContent>
       </AccordionItem>
 
