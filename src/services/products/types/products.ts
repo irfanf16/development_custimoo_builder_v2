@@ -1,8 +1,8 @@
 import type { OutputProductColor } from './colors'
-import type { OutputProductName } from './names'
 import type { OutputAddon, OutputCompanyAddon } from './addons'
 import type { OutputProductLogosSetting } from './logos'
 import type { OutputProductPattern } from './patterns'
+import type { OutputText, OutputFont, OutputSize, OutputProductName } from './texts'
 
 export type OutputProductPreview = {
   allowed_logos_count: number
@@ -11,7 +11,6 @@ export type OutputProductPreview = {
   is_logo_allowed: number
   measurement_ratio: number
   product_id: number
-  productnames: OutputProductName[]
   is_3d_product: number
   show_3d: number
 }
@@ -68,6 +67,10 @@ export type OutputProductDetails = OutputProductPreview & {
   patterns: OutputProductPattern[]
   colors: OutputProductColor[]
   namecolors: OutputProductColor[]
+  product_texts: OutputText[]
+  namefonts: OutputFont[]
+  sizes: OutputSize[]
+  productnames: OutputProductName[]
 }
 
 export type ProductPreviewItem = {

@@ -1,6 +1,6 @@
 export * from './types/categories'
 export * from './types/colors'
-export * from './types/names'
+export * from './types/texts'
 export * from './types/addons'
 export * from './types/logos'
 export * from './types/designs'
