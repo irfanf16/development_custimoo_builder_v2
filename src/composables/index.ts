@@ -5,3 +5,15 @@ export { useCustomizerMenu } from './useCustomizerMenu'
 export { useFabricPreview } from './useFabricPreview'
 export { useParaglideLocale } from './useParaglideLocale'
 export { useWorkflow } from './useWorkflow'
+export {
+  useRenderQueue,
+  usePreviousLogoState,
+  parseRenderVersion,
+  filterLogosBySide,
+  filterLogosByOppositeSide,
+  getLogoDiffs,
+  applyIncrementalLogoUpdates,
+  type LogoDiffResult,
+  type ParsedRenderVersion,
+  type ApplyLogoUpdatesOptions
+} from './useCanvasRenderer'

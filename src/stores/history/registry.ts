@@ -382,17 +382,12 @@ export const registry: Registry = {
   'logo.recolor': {
     apply(ctx: HistoryContext, payload: LogoRecolorPayload) {
       const arr = getLogoArray(ctx, payload.key)
-      console.log('logo.recolor: arr', arr)
       if (!arr || payload.index < 0 || payload.index >= arr.length) return
       const logoInIndex = arr[payload.index]
-      console.log('logo.recolor: logoInIndex', logoInIndex)
       if (!logoInIndex) return
-      console.log('logo.recolor: payload.nextImage', payload.nextImage)
-      console.log('logo.recolor: arr[payload.index] BEFORE', arr[payload.index])
       arr[payload.index] = withLogoPatch(logoInIndex, {
         url: payload.nextImage
       })
-      console.log('logo.recolor: arr[payload.index] AFTER', arr[payload.index])
       ctx.customizationStore.saveToLocalStorage()
     },
     revert(ctx: HistoryContext, payload: LogoRecolorPayload) {

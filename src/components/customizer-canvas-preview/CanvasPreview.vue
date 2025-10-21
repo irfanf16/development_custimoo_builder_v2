@@ -4,7 +4,13 @@
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { useDebounceFn } from '@vueuse/core'
-  import type { CustomLogo } from '@/services/logos/types'
+  import {
+    useRenderQueue,
+    usePreviousLogoState,
+    parseRenderVersion,
+    filterLogosBySide,
+    applyIncrementalLogoUpdates
+  } from '@/composables'
 
   const workflowStore = useWorkflowStore()
   const {
@@ -38,167 +44,91 @@
     height: number
   }>()
 
-  // Prevent overlapping renders when colors change rapidly
-  let renderInFlight = false
-  let renderQueued = false
-
-  const previousLogoState = ref(new Map<string, CustomLogo>())
+  // Use composables for render queue and logo state management
+  const { queuedRender } = useRenderQueue()
+  const { previousLogoState, reset: resetLogoState, setFromLogos } = usePreviousLogoState()
   const previousSide = ref(workflowStore.activeCanvasSide)
-
-  function parseRenderVersion(version: string) {
-    const [id = '', logosMeta = '', logosGeometry = '', groups = ''] = version.split('|')
-    return {
-      id,
-      logosMeta,
-      logosGeometry,
-      groups
-    }
-  }
-
   const previousRenderParts = ref(parseRenderVersion(renderVersion.value))
   const previousGroupsVersion = ref(groupsVersion.value)
 
-  function getLogoDiffs(next: CustomLogo[]) {
-    const added: CustomLogo[] = []
-    const updated: CustomLogo[] = []
-    const removed: string[] = []
-
-    const previous = previousLogoState.value
-    const nextMap = new Map<string, CustomLogo>()
-
-    for (const logo of next) {
-      nextMap.set(String(logo.id), logo)
-      const prev = previous.get(String(logo.id))
-      if (!prev) {
-        added.push(logo)
-        continue
-      }
-      if (
-        prev.url !== logo.url ||
-        prev.rotation !== logo.rotation ||
-        prev.width !== logo.width ||
-        prev.height !== logo.height ||
-        prev.x_axis !== logo.x_axis ||
-        prev.y_axis !== logo.y_axis ||
-        prev.scaleX !== logo.scaleX ||
-        prev.scaleY !== logo.scaleY ||
-        prev.side !== logo.side ||
-        prev.name_of_placement !== logo.name_of_placement
-      ) {
-        updated.push(logo)
-      }
-    }
-
-    for (const [id] of previous) {
-      if (!nextMap.has(id)) {
-        removed.push(id)
-      }
-    }
-
-    previousLogoState.value = nextMap
-    return { added, updated, removed }
-  }
-
-  function getLogosForSide(side: 'front' | 'back', logos: CustomLogo[]) {
-    return logos.filter(logo => logo.side === side)
-  }
-
   async function renderPreview(full = false) {
     if (!canvas.value) return
-    if (renderInFlight) {
-      renderQueued = true
-      return
-    }
-    renderInFlight = true
 
-    try {
-      await withCanvasBatch(async () => {
-        const side = workflowStore.activeCanvasSide
-        const design = effectiveDesignDetails.value
-        const style = effectiveStyleDetails.value
-        if (!design || !style) return
+    await queuedRender(
+      async () => {
+        await withCanvasBatch(async () => {
+          const side = workflowStore.activeCanvasSide
+          const design = effectiveDesignDetails.value
+          const style = effectiveStyleDetails.value
+          if (!design || !style) return
 
-        if (full) {
-          clearCanvas({ silent: true })
-          const fitOptions = {
-            scaleBy: 'auto' as const,
-            widthPercent: 0.95,
-            heightPercent: 0.95
-          }
-
-          if (side === 'back' && design.back_design) {
-            await addDesignLayer(
-              design.back_design.file_url,
-              design.back_design.file_extension,
-              fitOptions
-            )
-            for (const m of (
-              style as {
-                back_models?: Array<{ composition?: string; file_url: string }>
-              }
-            ).back_models || []) {
-              const comp = (
-                m.composition === 'multiply' ? 'multiply' : 'screen'
-              ) as GlobalCompositeOperation
-              await addModelLayer(m.file_url, comp, fitOptions)
+          if (full) {
+            clearCanvas({ silent: true })
+            const fitOptions = {
+              scaleBy: 'auto' as const,
+              widthPercent: 0.95,
+              heightPercent: 0.95
             }
+
+            if (side === 'back' && design.back_design) {
+              await addDesignLayer(
+                design.back_design.file_url,
+                design.back_design.file_extension,
+                fitOptions
+              )
+              for (const m of (
+                style as {
+                  back_models?: Array<{ composition?: string; file_url: string }>
+                }
+              ).back_models || []) {
+                const comp = (
+                  m.composition === 'multiply' ? 'multiply' : 'screen'
+                ) as GlobalCompositeOperation
+                await addModelLayer(m.file_url, comp, fitOptions)
+              }
+            } else {
+              await addDesignLayer(
+                design.front_design.file_url,
+                design.front_design.file_extension,
+                fitOptions
+              )
+              for (const m of (
+                style as {
+                  front_models?: Array<{ composition?: string; file_url: string }>
+                }
+              ).front_models || []) {
+                const comp = (
+                  m.composition === 'multiply' ? 'multiply' : 'screen'
+                ) as GlobalCompositeOperation
+                await addModelLayer(m.file_url, comp, fitOptions)
+              }
+            }
+
+            const logos = filterLogosBySide(effectiveLogos.value, side)
+            for (const logo of logos) {
+              await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
+            }
+
+            setFromLogos(logos)
           } else {
-            await addDesignLayer(
-              design.front_design.file_url,
-              design.front_design.file_extension,
-              fitOptions
-            )
-            for (const m of (
-              style as {
-                front_models?: Array<{ composition?: string; file_url: string }>
-              }
-            ).front_models || []) {
-              const comp = (
-                m.composition === 'multiply' ? 'multiply' : 'screen'
-              ) as GlobalCompositeOperation
-              await addModelLayer(m.file_url, comp, fitOptions)
-            }
+            const allRelevantLogos = filterLogosBySide(effectiveLogos.value, side)
+
+            await applyIncrementalLogoUpdates({
+              previousLogoState,
+              logos: allRelevantLogos,
+              addLogoLayer,
+              removeLogoLayer,
+              replaceLogoTexture,
+              updateLogoLayerGeometry
+            })
           }
 
-          const logos = getLogosForSide(side, effectiveLogos.value)
-          for (const logo of logos) {
-            await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
-          }
-
-          previousLogoState.value = new Map(logos.map(logo => [String(logo.id), logo]))
-        } else {
-          const allRelevantLogos = getLogosForSide(side, effectiveLogos.value)
-          const { added, updated, removed } = getLogoDiffs(allRelevantLogos)
-
-          for (const id of removed) {
-            removeLogoLayer(id)
-          }
-
-          for (const logo of added) {
-            await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
-          }
-
-          for (const logo of updated) {
-            const prev = previousLogoState.value.get(String(logo.id))
-            if (prev && prev.url !== logo.url) {
-              await replaceLogoTexture(String(logo.id), logo.url)
-            }
-            updateLogoLayerGeometry(logo)
-          }
-        }
-
-        setZoom(workflowStore.canvasZoom)
-        requestRender()
-      })
-    } catch (error) {
-      console.error('CanvasPreview: render error', error)
-    } finally {
-      renderInFlight = false
-      if (renderQueued) {
-        renderQueued = false
-        queueMicrotask(() => void renderPreview())
-      }
-    }
+          setZoom(workflowStore.canvasZoom)
+          requestRender()
+        })
+      },
+      error => console.error('CanvasPreview: render error', error)
+    )
   }
 
   function handleInitCanvas() {
@@ -211,7 +141,7 @@
       allowTouchScrolling: true
     })
     setCanvasSize({ width: props.width, height: props.height })
-    previousLogoState.value = new Map()
+    resetLogoState()
     void renderPreview(true)
   }
 
@@ -230,7 +160,7 @@
     nextSide => {
       if (nextSide === previousSide.value) return
       previousSide.value = nextSide
-      previousLogoState.value = new Map()
+      resetLogoState()
       void renderPreview(true)
     }
   )
@@ -247,7 +177,7 @@
         parts.logosMeta !== prev.logosMeta || parts.logosGeometry !== prev.logosGeometry
 
       if (designChanged) {
-        previousLogoState.value = new Map()
+        resetLogoState()
         void renderPreview(true)
       } else if (logosChanged) {
         void renderPreview(false)
@@ -260,7 +190,7 @@
     nextVersion => {
       if (nextVersion === previousGroupsVersion.value) return
       previousGroupsVersion.value = nextVersion
-      previousLogoState.value = new Map()
+      resetLogoState()
       void renderPreview(true)
     }
   )

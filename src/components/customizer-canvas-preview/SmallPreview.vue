@@ -4,7 +4,12 @@
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { Card, CardContent } from '../ui/card'
-  import type { CustomLogo } from '@/services/logos/types'
+  import {
+    useRenderQueue,
+    usePreviousLogoState,
+    filterLogosByOppositeSide,
+    applyIncrementalLogoUpdates
+  } from '@/composables'
 
   const workflowStore = useWorkflowStore()
   const {
@@ -31,141 +36,72 @@
     groupsVersion
   } = useEffectiveSelectors()
 
-  // Prevent overlapping renders in the small preview as well
-  let renderInFlight = false
-  let renderQueued = false
-
-  const previousLogoState = ref(new Map<string, CustomLogo>())
-
-  function getLogoDiffs(next: CustomLogo[]) {
-    const added: CustomLogo[] = []
-    const updated: CustomLogo[] = []
-    const removed: string[] = []
-
-    const previous = previousLogoState.value
-    const nextMap = new Map<string, CustomLogo>()
-
-    for (const logo of next) {
-      const key = String(logo.id)
-      nextMap.set(key, logo)
-      const prev = previous.get(key)
-      if (!prev) {
-        added.push(logo)
-        continue
-      }
-
-      if (
-        prev.url !== logo.url ||
-        prev.rotation !== logo.rotation ||
-        prev.width !== logo.width ||
-        prev.height !== logo.height ||
-        prev.x_axis !== logo.x_axis ||
-        prev.y_axis !== logo.y_axis ||
-        prev.scaleX !== logo.scaleX ||
-        prev.scaleY !== logo.scaleY ||
-        prev.side !== logo.side ||
-        prev.name_of_placement !== logo.name_of_placement
-      ) {
-        updated.push(logo)
-      }
-    }
-
-    for (const [id] of previous) {
-      if (!nextMap.has(id)) {
-        removed.push(id)
-      }
-    }
-
-    previousLogoState.value = nextMap
-    return { added, updated, removed }
-  }
-
-  function getOppositeSideLogos(side: 'front' | 'back') {
-    const target = side === 'front' ? 'back' : 'front'
-    return effectiveLogos.value.filter(logo => logo.side === target)
-  }
+  // Use composables for render queue and logo state management
+  const { queuedRender } = useRenderQueue()
+  const { previousLogoState, reset: resetLogoState, setFromLogos } = usePreviousLogoState()
 
   async function renderPreview(full = false) {
     if (!canvas.value) return
-    if (renderInFlight) {
-      renderQueued = true
-      return
-    }
-    renderInFlight = true
 
-    try {
-      await withCanvasBatch(async () => {
-        const design = effectiveDesignDetails.value
-        const style = effectiveStyleDetails.value
-        const side = workflowStore.activeCanvasSide
-        const logos = getOppositeSideLogos(side)
+    await queuedRender(
+      async () => {
+        await withCanvasBatch(async () => {
+          const design = effectiveDesignDetails.value
+          const style = effectiveStyleDetails.value
+          const side = workflowStore.activeCanvasSide
+          const logos = filterLogosByOppositeSide(effectiveLogos.value, side)
 
-        if (!design || !style) return
+          if (!design || !style) return
 
-        if (full) {
-          clearCanvas({ silent: true })
-          if (side === 'front' && design.back_design) {
-            await addDesignLayer(design.back_design.file_url, design.back_design.file_extension)
-            for (const m of (
-              style as {
-                back_models?: Array<{ composition?: string; file_url: string }>
+          if (full) {
+            clearCanvas({ silent: true })
+            if (side === 'front' && design.back_design) {
+              await addDesignLayer(design.back_design.file_url, design.back_design.file_extension)
+              for (const m of (
+                style as {
+                  back_models?: Array<{ composition?: string; file_url: string }>
+                }
+              ).back_models || []) {
+                const comp = (
+                  m.composition === 'multiply' ? 'multiply' : 'screen'
+                ) as GlobalCompositeOperation
+                await addModelLayer(m.file_url, comp)
               }
-            ).back_models || []) {
-              const comp = (
-                m.composition === 'multiply' ? 'multiply' : 'screen'
-              ) as GlobalCompositeOperation
-              await addModelLayer(m.file_url, comp)
-            }
-          } else if (design.front_design) {
-            await addDesignLayer(design.front_design.file_url, design.front_design.file_extension)
-            for (const m of (
-              style as {
-                front_models?: Array<{ composition?: string; file_url: string }>
+            } else if (design.front_design) {
+              await addDesignLayer(design.front_design.file_url, design.front_design.file_extension)
+              for (const m of (
+                style as {
+                  front_models?: Array<{ composition?: string; file_url: string }>
+                }
+              ).front_models || []) {
+                const comp = (
+                  m.composition === 'multiply' ? 'multiply' : 'screen'
+                ) as GlobalCompositeOperation
+                await addModelLayer(m.file_url, comp)
               }
-            ).front_models || []) {
-              const comp = (
-                m.composition === 'multiply' ? 'multiply' : 'screen'
-              ) as GlobalCompositeOperation
-              await addModelLayer(m.file_url, comp)
             }
-          }
 
-          for (const logo of logos) {
-            await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
-          }
-
-          previousLogoState.value = new Map(logos.map(logo => [String(logo.id), logo]))
-        } else {
-          const { added, updated, removed } = getLogoDiffs(logos)
-
-          for (const id of removed) {
-            removeLogoLayer(id)
-          }
-
-          for (const logo of added) {
-            await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
-          }
-
-          for (const logo of updated) {
-            const prev = previousLogoState.value.get(String(logo.id))
-            if (prev && prev.url !== logo.url) {
-              await replaceLogoTexture(String(logo.id), logo.url)
+            for (const logo of logos) {
+              await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
             }
-            updateLogoLayerGeometry(logo)
-          }
-        }
 
-        requestRender()
-      })
-    } catch (error) {
-      console.error('SmallPreview: render error', error)
-    } finally {
-      renderInFlight = false
-      if (renderQueued) {
-        renderQueued = false
-        queueMicrotask(() => void renderPreview())
-      }
-    }
+            setFromLogos(logos)
+          } else {
+            await applyIncrementalLogoUpdates({
+              previousLogoState,
+              logos,
+              addLogoLayer,
+              removeLogoLayer,
+              replaceLogoTexture,
+              updateLogoLayerGeometry
+            })
+          }
+
+          requestRender()
+        })
+      },
+      error => console.error('SmallPreview: render error', error)
+    )
   }
 
   function handleClick() {
@@ -196,7 +132,7 @@
     nextVersion => {
       if (nextVersion === previousRenderVersion.value) return
       previousRenderVersion.value = nextVersion
-      previousLogoState.value = new Map()
+      resetLogoState()
       void renderPreview(true)
     }
   )
@@ -206,7 +142,7 @@
     nextVersion => {
       if (nextVersion === previousGroupsVersion.value) return
       previousGroupsVersion.value = nextVersion
-      previousLogoState.value = new Map()
+      resetLogoState()
       void renderPreview(true)
     }
   )
@@ -216,7 +152,7 @@
     nextSide => {
       if (nextSide === previousSide.value) return
       previousSide.value = nextSide
-      previousLogoState.value = new Map()
+      resetLogoState()
       void renderPreview(true)
     }
   )
