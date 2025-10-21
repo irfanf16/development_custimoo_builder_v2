@@ -51,7 +51,8 @@
   const customLogos = computed(() => {
     const key = customizationStore.customization?.product_id
     const map = customizationStore.customization?.custom_logos
-    if (!key || !map) return [] as CustomLogo[]
+    const url = customizationStore.customization?.custom_logos?.[String(key)]?.[0]?.url
+    if (!key || !map || !url) return [] as CustomLogo[]
     return (map as Record<string, CustomLogo[]>)[key] || []
   })
 
@@ -144,9 +145,26 @@
     })
   }
 
-  function handleRecolorLogo(color: OutputColor) {
-    // TODO: Implement logo recoloring
-    console.log('Recolor logo with:', color)
+  async function handleRecolorLogo(_color: OutputColor) {
+    if (!customLogo.value || !customLogo.value.id || !customLogo.value.url || !_color.value) return
+    const response = await logosStore.editLogo({
+      logo_id: customLogo.value.id,
+      type: 'floodfill',
+      image: customLogo.value.url,
+      color: _color.value
+    })
+
+    if (!response.success) {
+      console.error('Error recoloring logo:', response.axiosError?.message)
+      return
+    }
+
+    void historyStore.execute('logo.recolor', {
+      key: productKey.value,
+      index: activeLogoIndex.value,
+      prevImage: customLogo.value.url,
+      nextImage: response.content.logo
+    })
   }
 
   function removeLogoFromCustomization(logo: CustomLogo) {

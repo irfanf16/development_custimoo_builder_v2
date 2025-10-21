@@ -15,7 +15,8 @@ import type {
   PatternSetGroupPayload,
   LogoUpdatePlacementPayload,
   LogoUpdateSizePayload,
-  LogoUpdateRotationPayload
+  LogoUpdateRotationPayload,
+  LogoRecolorPayload
 } from './types'
 
 type Handler<T> = {
@@ -32,6 +33,7 @@ type Registry = Record<
   | Handler<LogoRemovePayload>
   | Handler<LogoMovePayload>
   | Handler<LogoUpdateUrlPayload>
+  | Handler<LogoRecolorPayload>
   | Handler<PatternSetGroupPayload>
   | Handler<{
       entries: Array<{ type: HistoryActionType; payload: unknown }>
@@ -66,7 +68,7 @@ function withLogoPatch(base: CustomLogo, patch: Partial<CustomLogo>): CustomLogo
     height: patch.height ?? base.height,
     placement: patch.placement ?? base.placement,
     name_of_placement: patch.name_of_placement ?? base.name_of_placement,
-    url: base.url,
+    url: patch.url ?? base.url,
     logo_colors: base.logo_colors,
     haveControls: base.haveControls,
     is_locked: base.is_locked,
@@ -375,6 +377,36 @@ export const registry: Registry = {
     },
     describe(_: HistoryContext, _payload: LogoUpdateRotationPayload) {
       return `Rotate logo`
+    }
+  },
+  'logo.recolor': {
+    apply(ctx: HistoryContext, payload: LogoRecolorPayload) {
+      const arr = getLogoArray(ctx, payload.key)
+      console.log('logo.recolor: arr', arr)
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      const logoInIndex = arr[payload.index]
+      console.log('logo.recolor: logoInIndex', logoInIndex)
+      if (!logoInIndex) return
+      console.log('logo.recolor: payload.nextImage', payload.nextImage)
+      console.log('logo.recolor: arr[payload.index] BEFORE', arr[payload.index])
+      arr[payload.index] = withLogoPatch(logoInIndex, {
+        url: payload.nextImage
+      })
+      console.log('logo.recolor: arr[payload.index] AFTER', arr[payload.index])
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: LogoRecolorPayload) {
+      const arr = getLogoArray(ctx, payload.key)
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      const logoInIndex = arr[payload.index]
+      if (!logoInIndex) return
+      arr[payload.index] = withLogoPatch(logoInIndex, {
+        url: payload.prevImage
+      })
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, _payload: LogoRecolorPayload) {
+      return `Recolor logo`
     }
   },
   'pattern.set-group': {

@@ -149,10 +149,12 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   }
 
   function getMergedCustomizationLogo(_logo: CustomLogo, _placement: OutputProductLogosSetting) {
+    const productId = Number(_logo.product_id ?? _placement.product_id ?? 0)
+    const styleId = Number(_logo.product_style_id ?? _placement.product_style_id ?? 0)
     return {
       id: _logo.id,
-      product_id: _logo.product_id || _placement.product_id,
-      product_style_id: _logo.product_style_id || _placement.product_style_id,
+      product_id: productId,
+      product_style_id: styleId,
       following_product_ids: _logo.following_product_ids || _placement.following_product_ids,
       haveControls: _logo.haveControls ?? true,
       height: _logo.height || _placement.height || 180,

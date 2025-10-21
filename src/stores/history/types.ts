@@ -14,6 +14,7 @@ export type HistoryActionType =
   | 'logo.update-placement'
   | 'logo.update-size'
   | 'logo.update-rotation'
+  | 'logo.recolor'
   | 'pattern.set-group'
   | 'batch'
 
@@ -98,6 +99,13 @@ export type LogoUpdateRotationPayload = {
   index: number
   prevRotation: number
   nextRotation: number
+}
+
+export type LogoRecolorPayload = {
+  key: string
+  index: number
+  prevImage: string
+  nextImage: string
 }
 
 export type PatternSetGroupPayload = {
