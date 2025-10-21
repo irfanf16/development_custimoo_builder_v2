@@ -274,6 +274,14 @@
     }
   )
 
+  watch(
+    () => effectiveLogos.value,
+    () => {
+      void renderPreview(false)
+    },
+    { deep: true }
+  )
+
   const handleResizeDebounced = useDebounceFn(() => {
     handleInitCanvas()
   }, 200)
