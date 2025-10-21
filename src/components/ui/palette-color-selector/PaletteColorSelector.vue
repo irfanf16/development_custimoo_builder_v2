@@ -2,10 +2,23 @@
   import { ref, watch, computed } from 'vue'
   import { ColorGrid } from '@/components/ui/color-grid'
   import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-  import type { OutputColor } from '@/services/products/types'
-  import type { Palette } from '@/composables/useColorActions'
+  import type { HTMLAttributes } from 'vue'
+  import { cn } from '@/lib/utils'
+
+  type OutputColor = {
+    position: number
+    name: string
+    value: string
+  }
+
+  type Palette = {
+    id: number
+    name: string
+    colors: OutputColor[]
+  }
 
   interface Props {
+    class?: HTMLAttributes['class']
     palettes: Palette[]
     selectedColor?: string
   }
@@ -47,7 +60,7 @@
 </script>
 
 <template>
-  <div v-if="palettes.length > 0" class="space-y-3">
+  <div v-if="palettes.length > 0" :class="cn('space-y-3', props.class)" class="space-y-3">
     <!-- Tabs for palettes -->
     <Tabs v-model="currentPaletteId">
       <TabsList
