@@ -29,6 +29,7 @@
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
+  import SignInButton from '../SignInButton.vue'
 
   const customizationStore = useCustomizationStore()
   const history = useHistoryStore()
@@ -128,10 +129,11 @@
       <DropdownMenu>
         <ButtonGroup>
           <DropdownMenuTrigger as-child>
-            <Button size="default">
+            <SignInButton />
+            <!-- <Button v-else size="default">
               <User class="size-4" />
               <span>Oskar</span>
-            </Button>
+            </Button> -->
           </DropdownMenuTrigger>
           <DropdownMenuTrigger as-child>
             <Button size="icon" aria-label="User menu">
