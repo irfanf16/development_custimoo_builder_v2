@@ -5,7 +5,7 @@
   import LogoCustomization from './LogoCustomization.vue'
   import LogoPlacement from './LogoPlacement.vue'
   import LogoEdit from './LogoEdit.vue'
-  import { useHeaderConfig } from '@/composables/useHeaderConfig'
+  import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
 
   const workflowStore = useWorkflowStore()
 
@@ -41,7 +41,7 @@
     return [{ label: 'Logos' }]
   })
 
-  useHeaderConfig({ breadcrumbs })
+  useWorkflowHeaderConfig({ breadcrumbs })
 </script>
 
 <template>

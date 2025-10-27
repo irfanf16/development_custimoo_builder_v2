@@ -2,7 +2,7 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import type { HeaderConfiguration } from '@/components/customization-workflow/types'
 
-export type UseHeaderConfigOptions = HeaderConfiguration
+export type useWorkflowHeaderConfigOptions = HeaderConfiguration
 
 /**
  * Composable for managing header configuration in workflow step components.
@@ -11,12 +11,12 @@ export type UseHeaderConfigOptions = HeaderConfiguration
  * @example
  * ```vue
  * <script setup>
- * import { useHeaderConfig } from '@/composables/useHeaderConfig'
+ * import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
  *
  * const searchModel = ref('')
  * const applyOverrides = ref(false)
  *
- * useHeaderConfig({
+ * useWorkflowHeaderConfig({
  *   search: {
  *     placeholder: 'Search designs...',
  *     model: searchModel,
@@ -33,8 +33,8 @@ export type UseHeaderConfigOptions = HeaderConfiguration
  * </script>
  * ```
  */
-export function useHeaderConfig(
-  config: UseHeaderConfigOptions | (() => UseHeaderConfigOptions)
+export function useWorkflowHeaderConfig(
+  config: useWorkflowHeaderConfigOptions | (() => useWorkflowHeaderConfigOptions)
 ): void {
   const workflowStore = useWorkflowStore()
   const { setCurrentHeaderConfig, clearHeaderConfig } = workflowStore

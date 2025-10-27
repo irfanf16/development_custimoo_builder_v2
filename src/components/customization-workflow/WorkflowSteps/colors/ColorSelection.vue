@@ -14,7 +14,7 @@
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
   import type { Palette } from '@/composables/useColorActions'
-  import { useHeaderConfig } from '@/composables/useHeaderConfig'
+  import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import {
     color_shuffle_design_colors,
@@ -110,7 +110,7 @@
 
   // Breadcrumb logic for color selection
   const breadcrumbs = computed(() => [{ label: 'Color' }])
-  useHeaderConfig({ breadcrumbs })
+  useWorkflowHeaderConfig({ breadcrumbs })
 </script>
 
 <template>

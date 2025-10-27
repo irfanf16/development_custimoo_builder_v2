@@ -6,7 +6,7 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import type { BreadcrumbItem } from '../../types'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import { useHeaderConfig } from '@/composables/useHeaderConfig'
+  import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
@@ -77,7 +77,7 @@
   })
 
   // Register header configuration
-  useHeaderConfig({
+  useWorkflowHeaderConfig({
     search: {
       placeholder: 'Search designs...',
       model: debouncedDesignQuery,

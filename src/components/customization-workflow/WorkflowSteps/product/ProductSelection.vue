@@ -8,7 +8,7 @@
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
   import type { OutputDesignDetails } from '@/services/products/types'
-  import { useHeaderConfig } from '@/composables/useHeaderConfig'
+  import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -100,7 +100,7 @@
     return previews.value.filter(p => p.productPreview.display_name.toLowerCase().includes(q))
   })
 
-  useHeaderConfig({
+  useWorkflowHeaderConfig({
     search: {
       placeholder: 'Search products...',
       model: debouncedProductModel,
