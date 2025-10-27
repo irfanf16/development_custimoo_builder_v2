@@ -13,6 +13,7 @@ import type {
   WorkflowRouteStep,
   NavigationItem
 } from './workflow.store.types'
+import type { HeaderConfiguration } from '@/components/customization-workflow/types'
 
 export const useWorkflowStore = defineStore('workflowStore', () => {
   // ===== DEPENDENCIES =====
@@ -41,6 +42,9 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   // Mobile panel state
   const panelOpen = ref<boolean>(true)
+
+  // Header configuration state
+  const currentHeaderConfig = ref<HeaderConfiguration | null>(null)
 
   // Preview selection state
   const selectedCategoryId = ref<number | null>(null)
@@ -369,6 +373,15 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     panelOpen.value = !panelOpen.value
   }
 
+  // ===== HEADER CONFIG ACTIONS =====
+  function setCurrentHeaderConfig(config: HeaderConfiguration | null) {
+    currentHeaderConfig.value = config
+  }
+
+  function clearHeaderConfig() {
+    currentHeaderConfig.value = null
+  }
+
   // ===== RETURN =====
   return {
     // State
@@ -419,6 +432,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     // Mobile Panel
     panelOpen,
     setPanelOpen,
-    togglePanel
+    togglePanel,
+    // Header Config
+    currentHeaderConfig,
+    setCurrentHeaderConfig,
+    clearHeaderConfig
   }
 })

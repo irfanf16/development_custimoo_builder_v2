@@ -8,6 +8,7 @@
   import { styles_title, addons_title, styles_alt_icon } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import type { OutputStylePreviewFront } from '@/services/products/types'
+  import { useHeaderConfig } from '@/composables/useHeaderConfig'
 
   // no emits
   // no emits
@@ -91,8 +92,7 @@
     return previews.value.filter((s: OutputStylePreviewFront) => s.name.toLowerCase().includes(q))
   })
 
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  useHeaderConfig({ breadcrumbs })
 </script>
 
 <template>

@@ -65,22 +65,6 @@
     { immediate: true }
   )
 
-  const categoryRef = ref<{ headerExtras?: unknown } | null>(null)
-  const subcategoryRef = ref<{ headerExtras?: unknown } | null>(null)
-  const productRef = ref<{ headerExtras?: unknown } | null>(null)
-
-  const headerExtras = computed(() => {
-    if (activePanel.value === 'category') {
-      return categoryRef.value?.headerExtras
-    }
-    if (activePanel.value === 'subcategory') {
-      return subcategoryRef.value?.headerExtras
-    }
-    return productRef.value?.headerExtras
-  })
-
-  defineExpose({ headerExtras })
-
   function handleCategorySelect(categoryId: number) {
     selectCategory(categoryId)
   }
@@ -102,22 +86,15 @@
     <CategorySelection
       v-if="activePanel === 'category'"
       key="products-category"
-      ref="categoryRef"
       @select-category="handleCategorySelect"
     />
 
     <SubcategorySelection
       v-else-if="activePanel === 'subcategory'"
       key="products-subcategory"
-      ref="subcategoryRef"
       @select-subcategory="handleSubcategorySelect"
     />
 
-    <ProductSelection
-      v-else
-      key="products-product"
-      ref="productRef"
-      @scroll-to-element="handleProductScroll"
-    />
+    <ProductSelection v-else key="products-product" @scroll-to-element="handleProductScroll" />
   </Transition>
 </template>

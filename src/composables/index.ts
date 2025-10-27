@@ -3,6 +3,7 @@ export { useColorActions } from './useColorActions'
 export { useColorScheme } from './useColorScheme'
 export { useCustomizerMenu } from './useCustomizerMenu'
 export { useFabricPreview } from './useFabricPreview'
+export { useHeaderConfig } from './useHeaderConfig'
 export { useParaglideLocale } from './useParaglideLocale'
 export { useWorkflow } from './useWorkflow'
 export {

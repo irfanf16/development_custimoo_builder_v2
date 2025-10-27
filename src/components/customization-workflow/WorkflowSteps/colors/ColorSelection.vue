@@ -14,6 +14,7 @@
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
   import type { Palette } from '@/composables/useColorActions'
+  import { useHeaderConfig } from '@/composables/useHeaderConfig'
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import {
     color_shuffle_design_colors,
@@ -109,8 +110,7 @@
 
   // Breadcrumb logic for color selection
   const breadcrumbs = computed(() => [{ label: 'Color' }])
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  useHeaderConfig({ breadcrumbs })
 </script>
 
 <template>

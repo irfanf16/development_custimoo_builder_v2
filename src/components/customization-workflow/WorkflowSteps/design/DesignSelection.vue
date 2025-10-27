@@ -4,9 +4,9 @@
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import type { HeaderAndFooterConfiguration } from '../../types'
   import type { BreadcrumbItem } from '../../types'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useHeaderConfig } from '@/composables/useHeaderConfig'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
@@ -76,25 +76,21 @@
     return previews.value.filter(d => d.front_design.design_name.toLowerCase().includes(q))
   })
 
-  // Expose to parent
-  const headerAndFooterConfiguration: HeaderAndFooterConfiguration = {
-    headerExtras: {
-      search: {
-        placeholder: 'Search designs...',
-        model: debouncedDesignQuery,
-        onInput: (val: string) => (debouncedDesignQuery.value = val)
-      },
-      applyOverrides: {
-        model: applyCustomizationOverrides,
-        onInput: (val: boolean) => (applyCustomizationOverrides.value = val),
-        label: 'Preview with customization'
-      },
-      isExpandable: true,
-      breadcrumbs: computed<BreadcrumbItem[]>(() => [{ label: 'Designs' }])
-    }
-  }
-
-  defineExpose(headerAndFooterConfiguration)
+  // Register header configuration
+  useHeaderConfig({
+    search: {
+      placeholder: 'Search designs...',
+      model: debouncedDesignQuery,
+      onInput: (val: string) => (debouncedDesignQuery.value = val)
+    },
+    applyOverrides: {
+      model: applyCustomizationOverrides,
+      onInput: (val: boolean) => (applyCustomizationOverrides.value = val),
+      label: 'Preview with customization'
+    },
+    isExpandable: true,
+    breadcrumbs: computed<BreadcrumbItem[]>(() => [{ label: 'Designs' }])
+  })
 
   // Hint to TS that these are used via the template
   void ProductPreviewCanvas
