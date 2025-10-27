@@ -109,8 +109,7 @@
   }
 
   // Breadcrumb logic for color selection
-  const breadcrumbs = computed(() => [{ label: 'Color' }])
-  useWorkflowHeaderConfig({ breadcrumbs })
+  useWorkflowHeaderConfig({ breadcrumbs: [{ label: 'Color' }] })
 </script>
 
 <template>

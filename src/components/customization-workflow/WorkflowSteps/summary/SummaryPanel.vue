@@ -4,9 +4,10 @@
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
   import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
 
+  import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
+
   // Breadcrumbs only
-  const headerExtras = { breadcrumbs: [{ label: 'Summary' }] }
-  defineExpose({ headerExtras })
+  useWorkflowHeaderConfig({ breadcrumbs: [{ label: 'Summary' }] })
 </script>
 
 <template>

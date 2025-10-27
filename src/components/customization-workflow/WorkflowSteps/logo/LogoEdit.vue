@@ -28,6 +28,7 @@
   import { useLogoActions } from '@/composables/useLogoActions'
   import type { Palette } from '@/composables/useColorActions'
   import { Label } from '@/components/ui/label'
+  import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
   import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
   import { Slider } from '@/components/ui/slider'
   import { LocateFixed, Pin } from 'lucide-vue-next'
@@ -181,16 +182,15 @@
     handleBackToLogos()
   }
 
-  const breadcrumbs = computed(() => [
-    {
-      label: 'Logos',
-      action: handleBackToLogos
-    },
-    { label: 'Controls' }
-  ])
-
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  useWorkflowHeaderConfig({
+    breadcrumbs: [
+      {
+        label: 'Logos',
+        action: handleBackToLogos
+      },
+      { label: 'Controls' }
+    ]
+  })
 
   interface PlacementOption {
     label: string

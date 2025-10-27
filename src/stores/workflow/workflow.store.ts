@@ -14,6 +14,7 @@ import type {
   NavigationItem
 } from './workflow.store.types'
 import type { HeaderConfiguration } from '@/components/customization-workflow/types'
+import type { Ref } from 'vue'
 
 export const useWorkflowStore = defineStore('workflowStore', () => {
   // ===== DEPENDENCIES =====
@@ -44,7 +45,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const panelOpen = ref<boolean>(true)
 
   // Header configuration state
-  const currentHeaderConfig = ref<HeaderConfiguration | null>(null)
+  const currentHeaderConfig = ref<
+    | (HeaderConfiguration & { _refs?: { search?: Ref<string>; applyOverrides?: Ref<boolean> } })
+    | null
+  >(null)
 
   // Preview selection state
   const selectedCategoryId = ref<number | null>(null)

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref, isRef, type Ref, type ComputedRef, onMounted } from 'vue'
+  import { computed, ref, onMounted } from 'vue'
   import { Button } from '@/components/ui/button'
   import { Label } from '@/components/ui/label'
   import { Switch } from '@/components/ui/switch'
@@ -41,14 +41,7 @@
 
   // Get breadcrumbs from current step component
   const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => {
-    const exposed = workflowStore.currentHeaderConfig?.breadcrumbs
-    if (exposed) {
-      return isRef(exposed)
-        ? (exposed as unknown as ComputedRef<BreadcrumbItem[]>).value
-        : (exposed as BreadcrumbItem[])
-    }
-    // Fallback to centralized navigation when panel doesn't expose breadcrumbs
-    return workflowStore.navigationItems
+    return workflowStore.currentHeaderConfig?.breadcrumbs ?? workflowStore.navigationItems
   })
 
   const headerApplyOverrides = computed(() => {
@@ -68,10 +61,9 @@
   // Bridge nested refs from child steps to primitives for props expecting non-Ref
   const applyOverridesModelValue = computed({
     get: (): boolean => {
-      const model = workflowStore.currentHeaderConfig?.applyOverrides?.model as
-        | Ref<boolean>
-        | undefined
-      return model?.value ?? false
+      const modelRef = workflowStore.currentHeaderConfig?._refs?.applyOverrides
+      // Type assertion needed because _refs stores Ref types
+      return (modelRef as any)?.value ?? false
     },
     set: (val: boolean) => {
       workflowStore.currentHeaderConfig?.applyOverrides?.onInput?.(!!val)
@@ -80,8 +72,9 @@
 
   const searchModelValue = computed({
     get: (): string => {
-      const model = workflowStore.currentHeaderConfig?.search?.model as Ref<string> | undefined
-      return model?.value ?? ''
+      const modelRef = workflowStore.currentHeaderConfig?._refs?.search
+      // Type assertion needed because _refs stores Ref types
+      return (modelRef as any)?.value ?? ''
     },
     set: (val: string) => {
       workflowStore.currentHeaderConfig?.search?.onInput?.(val)

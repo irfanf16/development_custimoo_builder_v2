@@ -4,7 +4,6 @@
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import type { BreadcrumbItem } from '../../types'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
 
@@ -89,7 +88,7 @@
       label: 'Preview with customization'
     },
     isExpandable: true,
-    breadcrumbs: computed<BreadcrumbItem[]>(() => [{ label: 'Designs' }])
+    breadcrumbs: [{ label: 'Designs' }]
   })
 
   // Hint to TS that these are used via the template

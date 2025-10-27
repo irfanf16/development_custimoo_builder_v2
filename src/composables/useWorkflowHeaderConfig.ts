@@ -1,8 +1,28 @@
-import { onMounted, onBeforeUnmount } from 'vue'
+import { onMounted, onBeforeUnmount, type Ref } from 'vue'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import type { HeaderConfiguration } from '@/components/customization-workflow/types'
 
-export type useWorkflowHeaderConfigOptions = HeaderConfiguration
+type BreadcrumbItem = { label: string; action?: () => void }
+
+export interface useWorkflowHeaderConfigOptions {
+  breadcrumbs?: BreadcrumbItem[]
+  search?: {
+    placeholder: string
+    model: Ref<string>
+    onInput: (val: string) => void
+  }
+  applyOverrides?: {
+    model: Ref<boolean>
+    onInput: (val: boolean) => void
+    label: string
+  }
+  actionButton?: {
+    label: string
+    tooltip?: string
+    callback: () => void
+  }
+  isExpandable?: boolean
+}
 
 /**
  * Composable for managing header configuration in workflow step components.
@@ -28,7 +48,7 @@ export type useWorkflowHeaderConfigOptions = HeaderConfiguration
  *     label: 'Preview with customization'
  *   },
  *   isExpandable: true,
- *   breadcrumbs: computed(() => [{ label: 'Designs' }])
+ *   breadcrumbs: [{ label: 'Designs' }]
  * })
  * </script>
  * ```
@@ -39,11 +59,36 @@ export function useWorkflowHeaderConfig(
   const workflowStore = useWorkflowStore()
   const { setCurrentHeaderConfig, clearHeaderConfig } = workflowStore
 
-  const getConfig = (): HeaderConfiguration => {
-    if (typeof config === 'function') {
-      return config()
+  const getConfig = (): HeaderConfiguration & {
+    _refs: { search?: Ref<string>; applyOverrides?: Ref<boolean> }
+  } => {
+    const rawConfig = typeof config === 'function' ? config() : config
+
+    const headerConfig: HeaderConfiguration = {
+      breadcrumbs: rawConfig.breadcrumbs,
+      search: rawConfig.search
+        ? {
+            placeholder: rawConfig.search.placeholder,
+            onInput: rawConfig.search.onInput
+          }
+        : undefined,
+      applyOverrides: rawConfig.applyOverrides
+        ? {
+            onInput: rawConfig.applyOverrides.onInput,
+            label: rawConfig.applyOverrides.label
+          }
+        : undefined,
+      actionButton: rawConfig.actionButton,
+      isExpandable: rawConfig.isExpandable
     }
-    return config
+
+    // Store refs for accessing current values
+    const refs = {
+      search: rawConfig.search?.model,
+      applyOverrides: rawConfig.applyOverrides?.model
+    }
+
+    return { ...headerConfig, _refs: refs }
   }
 
   // Register on mount

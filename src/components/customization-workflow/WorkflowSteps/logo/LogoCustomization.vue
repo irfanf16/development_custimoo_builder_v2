@@ -23,6 +23,7 @@
   } from '@/paraglide/messages'
   import { useLocaleStore } from '@/stores/locale/locale.store'
   import { Trash } from 'lucide-vue-next'
+  import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import LogoCard from './LogoCard.vue'
 
@@ -184,8 +185,7 @@
   }
 
   // Breadcrumbs only
-  const headerExtras = { breadcrumbs: [{ label: 'Logos' }] }
-  defineExpose({ headerExtras })
+  useWorkflowHeaderConfig({ breadcrumbs: [{ label: 'Logos' }] })
 </script>
 
 <template>

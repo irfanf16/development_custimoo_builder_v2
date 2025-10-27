@@ -10,10 +10,10 @@
     OutputProductLogosSetting
   } from '@/services/products/types'
   import type { CustomLogo } from '@/services/logos/types'
-  import type { BreadcrumbItem } from '../../types'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useLogosStore } from '@/stores/logos/logos.store'
+  import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
 
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
@@ -46,13 +46,15 @@
   }
 
   // Breadcrumbs: Logos -> Placement
-  const breadcrumbs = computed<BreadcrumbItem[]>(() => [
-    {
-      label: 'Logos',
-      action: () => emit('back')
-    },
-    { label: 'Placement' }
-  ])
+  useWorkflowHeaderConfig({
+    breadcrumbs: [
+      {
+        label: 'Logos',
+        action: () => emit('back')
+      },
+      { label: 'Placement' }
+    ]
+  })
 
   function addActiveLogoToCustomization(_logo: CustomLogo, _placement: OutputProductLogosSetting) {
     const res = customizationStore.addLogoToCustomizationFromSource(
@@ -61,9 +63,6 @@
     // Set default placement
     if (res) historyStore.execute('logo.add', res)
   }
-
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
 </script>
 
 <template>

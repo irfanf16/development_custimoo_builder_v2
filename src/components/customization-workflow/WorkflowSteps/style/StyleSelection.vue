@@ -75,12 +75,6 @@
     })) as Array<{ addon_id: number; title: string }>
   })
 
-  // Breadcrumb logic for style selection
-  const breadcrumbs = computed(() => {
-    const title = productsStore.activeProductDetails?.display_name || 'Styles'
-    return [{ label: title }]
-  })
-
   // Header search config
   const styleSearchQuery = computed({
     get: () => '',
@@ -92,7 +86,12 @@
     return previews.value.filter((s: OutputStylePreviewFront) => s.name.toLowerCase().includes(q))
   })
 
-  useWorkflowHeaderConfig({ breadcrumbs })
+  // Use function for dynamic breadcrumbs based on active product
+  // Pass function so breadcrumbs are evaluated when config is accessed
+  useWorkflowHeaderConfig(() => {
+    const title = productsStore.activeProductDetails?.display_name || 'Styles'
+    return { breadcrumbs: [{ label: title }] }
+  })
 </script>
 
 <template>
