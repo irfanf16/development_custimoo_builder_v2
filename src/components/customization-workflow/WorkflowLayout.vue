@@ -8,6 +8,7 @@
   import { Maximize2, Minimize2 } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import { useWorkflow } from '@/composables/useWorkflow'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import {
     ProductsEntry,
     DesignSelection,
@@ -26,16 +27,8 @@
   import { useUIStore } from '@/stores/ui/ui.store'
 
   const uiStore = useUIStore()
-
-  const {
-    currentStep,
-    contentKey,
-    navigationItems,
-    textsSubStep,
-    rosterSubStep,
-    isPanelOpen,
-    initializeEffects
-  } = useWorkflow()
+  const workflowStore = useWorkflowStore()
+  const { initializeEffects } = useWorkflow()
 
   const isExpanded = ref(false)
   const menuPanelRef = ref<{
@@ -58,7 +51,7 @@
         : (exposed as BreadcrumbItem[])
     }
     // Fallback to centralized navigation when panel doesn't expose breadcrumbs
-    return navigationItems.value
+    return workflowStore.navigationItems
   })
 
   const headerApplyOverrides = computed(() => {
@@ -137,9 +130,9 @@
         leave-to-class="opacity-0 translate-y-4"
       >
         <WorkflowPanel
-          v-show="isPanelOpen"
+          v-show="workflowStore.isPanelOpen"
           ref="menuPanelRef"
-          :content-key="contentKey || ''"
+          :content-key="workflowStore.contentKey || ''"
           :expandable="false"
           :is-expanded="true"
         >
@@ -188,33 +181,44 @@
             </div>
           </template>
 
-          <ProductsEntry v-if="currentStep === 'product'" ref="currentStepRef" />
+          <ProductsEntry v-if="workflowStore.currentStep === 'product'" ref="currentStepRef" />
           <DesignSelection
-            v-else-if="currentStep === 'designs'"
+            v-else-if="workflowStore.currentStep === 'designs'"
             ref="currentStepRef"
             @scroll-to-element="handleScrollToElement"
           />
-          <StyleSelection v-else-if="currentStep === 'styles'" ref="currentStepRef" />
-          <LogoSelection v-else-if="currentStep === 'logos'" ref="currentStepRef" />
-          <ColorSelection v-else-if="currentStep === 'colors'" ref="currentStepRef" />
-          <PatternSelection v-else-if="currentStep === 'patterns'" ref="currentStepRef" />
+          <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" ref="currentStepRef" />
+          <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" ref="currentStepRef" />
+          <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" ref="currentStepRef" />
+          <PatternSelection
+            v-else-if="workflowStore.currentStep === 'patterns'"
+            ref="currentStepRef"
+          />
           <TextsSelection
-            v-else-if="currentStep === 'texts' && textsSubStep === 'list'"
+            v-else-if="
+              workflowStore.currentStep === 'texts' && workflowStore.textsSubStep === 'list'
+            "
             ref="currentStepRef"
           />
           <TextPlacement
-            v-else-if="currentStep === 'texts' && textsSubStep === 'placement'"
+            v-else-if="
+              workflowStore.currentStep === 'texts' && workflowStore.textsSubStep === 'placement'
+            "
             ref="currentStepRef"
           />
           <RosterEntry
-            v-else-if="currentStep === 'roster' && rosterSubStep === 'list'"
+            v-else-if="
+              workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'list'
+            "
             ref="currentStepRef"
           />
           <RosterEdit
-            v-else-if="currentStep === 'roster' && rosterSubStep === 'edit'"
+            v-else-if="
+              workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'edit'
+            "
             ref="currentStepRef"
           />
-          <SummaryPanel v-else-if="currentStep === 'summary'" ref="currentStepRef" />
+          <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" ref="currentStepRef" />
         </WorkflowPanel>
       </transition>
     </div>
@@ -223,7 +227,7 @@
     <WorkflowPanel
       v-else
       ref="menuPanelRef"
-      :content-key="contentKey || ''"
+      :content-key="workflowStore.contentKey || ''"
       :expandable="isExpandable"
       :is-expanded="isExpanded"
       @update:is-expanded="isExpanded = $event"
@@ -281,33 +285,35 @@
         </div>
       </template>
 
-      <ProductsEntry v-if="currentStep === 'product'" ref="currentStepRef" />
+      <ProductsEntry v-if="workflowStore.currentStep === 'product'" ref="currentStepRef" />
       <DesignSelection
-        v-else-if="currentStep === 'designs'"
+        v-else-if="workflowStore.currentStep === 'designs'"
         ref="currentStepRef"
         @scroll-to-element="handleScrollToElement"
       />
-      <StyleSelection v-else-if="currentStep === 'styles'" ref="currentStepRef" />
-      <LogoSelection v-else-if="currentStep === 'logos'" ref="currentStepRef" />
-      <ColorSelection v-else-if="currentStep === 'colors'" ref="currentStepRef" />
-      <PatternSelection v-else-if="currentStep === 'patterns'" ref="currentStepRef" />
+      <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" ref="currentStepRef" />
+      <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" ref="currentStepRef" />
+      <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" ref="currentStepRef" />
+      <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" ref="currentStepRef" />
       <TextsSelection
-        v-else-if="currentStep === 'texts' && textsSubStep === 'list'"
+        v-else-if="workflowStore.currentStep === 'texts' && workflowStore.textsSubStep === 'list'"
         ref="currentStepRef"
       />
       <TextPlacement
-        v-else-if="currentStep === 'texts' && textsSubStep === 'placement'"
+        v-else-if="
+          workflowStore.currentStep === 'texts' && workflowStore.textsSubStep === 'placement'
+        "
         ref="currentStepRef"
       />
       <RosterEntry
-        v-else-if="currentStep === 'roster' && rosterSubStep === 'list'"
+        v-else-if="workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'list'"
         ref="currentStepRef"
       />
       <RosterEdit
-        v-else-if="currentStep === 'roster' && rosterSubStep === 'edit'"
+        v-else-if="workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'edit'"
         ref="currentStepRef"
       />
-      <SummaryPanel v-else-if="currentStep === 'summary'" ref="currentStepRef" />
+      <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" ref="currentStepRef" />
     </WorkflowPanel>
   </div>
 </template>

@@ -4,7 +4,21 @@ export type PatternsSubStep = 'list' | 'edit'
 export type TextsSubStep = 'list' | 'placement'
 export type RosterSubStep = 'list' | 'edit'
 export type CanvasSide = 'front' | 'back'
-export type CustomizerStep =
+
+export type WorkflowBaseStep =
+  | 'product'
+  | 'designs'
+  | 'styles'
+  | 'logos'
+  | 'colors'
+  | 'patterns'
+  | 'texts'
+  | 'roster'
+  | 'summary'
+
+export type CustomizerStep = WorkflowBaseStep
+
+export type WorkflowRouteStep =
   | 'product'
   | 'designs'
   | 'styles'
@@ -16,3 +30,9 @@ export type CustomizerStep =
   | 'roster'
   | 'roster-edit'
   | 'summary'
+
+export type NavigationItem = {
+  label: string
+  action?: () => void
+  isActive?: boolean
+}
