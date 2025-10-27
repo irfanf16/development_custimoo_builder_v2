@@ -1,12 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, onMounted } from 'vue'
-  import { Button } from '@/components/ui/button'
-  import { Label } from '@/components/ui/label'
-  import { Switch } from '@/components/ui/switch'
-  import { InputSearchGroup } from '@/components/ui/input-search-group'
-  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-  import { Maximize2, Minimize2 } from 'lucide-vue-next'
-  import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
+  import WorkflowHeader from './WorkflowHeader.vue'
   import { useWorkflow } from '@/composables/useWorkflow'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import {
@@ -23,7 +17,6 @@
     SummaryPanel
   } from '@/components/customization-workflow/WorkflowSteps'
   import WorkflowPanel from './WorkflowPanel.vue'
-  import type { BreadcrumbItem } from './types'
   import { useUIStore } from '@/stores/ui/ui.store'
 
   const uiStore = useUIStore()
@@ -35,51 +28,17 @@
     scrollToElement: (elementId: string, behavior?: 'smooth' | 'auto') => void
   } | null>(null)
 
-  const isExpandable = computed(() => {
-    return workflowStore.currentHeaderConfig?.isExpandable
-  })
-
-  // Get breadcrumbs from current step component
-  const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => {
-    return workflowStore.currentHeaderConfig?.breadcrumbs ?? workflowStore.navigationItems
-  })
-
-  const headerApplyOverrides = computed(() => {
-    return workflowStore.currentHeaderConfig?.applyOverrides
-  })
-
-  const headerActionButton = computed(() => {
-    return workflowStore.currentHeaderConfig?.actionButton
-  })
-
   const toggleExpanded = () => {
-    if (isExpandable.value) {
-      isExpanded.value = !isExpanded.value
-    }
+    isExpanded.value = !isExpanded.value
   }
 
-  // Bridge nested refs from child steps to primitives for props expecting non-Ref
-  const applyOverridesModelValue = computed({
-    get: (): boolean => {
-      const modelRef = workflowStore.currentHeaderConfig?._refs?.applyOverrides
-      // Type assertion needed because _refs stores Ref types
-      return (modelRef as any)?.value ?? false
-    },
-    set: (val: boolean) => {
-      workflowStore.currentHeaderConfig?.applyOverrides?.onInput?.(!!val)
-    }
-  })
+  const handleApplyOverridesChange = (val: boolean) => {
+    workflowStore.currentHeaderConfig?.applyOverrides?.onInput?.(!!val)
+  }
 
-  const searchModelValue = computed({
-    get: (): string => {
-      const modelRef = workflowStore.currentHeaderConfig?._refs?.search
-      // Type assertion needed because _refs stores Ref types
-      return (modelRef as any)?.value ?? ''
-    },
-    set: (val: string) => {
-      workflowStore.currentHeaderConfig?.search?.onInput?.(val)
-    }
-  })
+  const handleSearchChange = (val: string) => {
+    workflowStore.currentHeaderConfig?.search?.onInput?.(val)
+  }
 
   /**
    * Handles scroll-to-element events from child components
@@ -127,53 +86,10 @@
           :is-expanded="true"
         >
           <template #header>
-            <div class="w-full flex flex-col gap-5">
-              <div class="flex items-center gap-3 h-9 justify-center">
-                <div
-                  class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
-                >
-                  <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
-                </div>
-
-                <div v-if="headerApplyOverrides !== undefined" class="flex items-center gap-3">
-                  <Switch
-                    :model-value="applyOverridesModelValue"
-                    @update:model-value="val => (applyOverridesModelValue = !!val)"
-                  />
-                  <Label class="text-sm font-normal text-muted-foreground">{{
-                    headerApplyOverrides.label
-                  }}</Label>
-                </div>
-
-                <TooltipProvider v-if="headerActionButton">
-                  <Tooltip>
-                    <TooltipTrigger as-child>
-                      <Button variant="default" size="sm" @click="headerActionButton.callback">
-                        {{ headerActionButton.label }}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent v-if="headerActionButton.tooltip">
-                      <p>{{ headerActionButton.tooltip }}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-
-              <div
-                v-if="workflowStore.currentHeaderConfig?.search"
-                class="flex items-center flex-1"
-              >
-                <div class="relative w-full">
-                  <InputSearchGroup
-                    v-model="searchModelValue"
-                    :placeholder="
-                      workflowStore.currentHeaderConfig?.search?.placeholder || 'Search...'
-                    "
-                    :on-input="workflowStore.currentHeaderConfig?.search?.onInput"
-                  />
-                </div>
-              </div>
-            </div>
+            <WorkflowHeader
+              @update:apply-overrides-model-value="handleApplyOverridesChange"
+              @update:search-model-value="handleSearchChange"
+            />
           </template>
 
           <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
@@ -215,61 +131,18 @@
       v-else
       ref="menuPanelRef"
       :content-key="workflowStore.contentKey || ''"
-      :expandable="isExpandable"
+      :expandable="workflowStore.currentHeaderConfig?.isExpandable"
       :is-expanded="isExpanded"
       @update:is-expanded="isExpanded = $event"
     >
       <template #header>
-        <div class="w-full flex flex-col gap-5">
-          <div class="flex items-center gap-3 h-9 justify-center">
-            <div class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden">
-              <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
-            </div>
-
-            <div v-if="headerApplyOverrides !== undefined" class="flex items-center gap-3">
-              <Switch
-                :model-value="applyOverridesModelValue"
-                @update:model-value="val => (applyOverridesModelValue = !!val)"
-              />
-              <Label class="text-sm font-normal text-muted-foreground">{{
-                headerApplyOverrides.label
-              }}</Label>
-            </div>
-
-            <TooltipProvider v-if="headerActionButton">
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <Button variant="default" size="sm" @click="headerActionButton.callback">
-                    {{ headerActionButton.label }}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent v-if="headerActionButton.tooltip">
-                  <p>{{ headerActionButton.tooltip }}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <Button
-              v-if="isExpandable"
-              variant="default"
-              size="icon"
-              class="rounded-lg"
-              @click="toggleExpanded"
-            >
-              <component :is="isExpanded ? Minimize2 : Maximize2" class="size-4" />
-            </Button>
-          </div>
-
-          <div v-if="workflowStore.currentHeaderConfig?.search" class="flex items-center flex-1">
-            <div class="relative w-full">
-              <InputSearchGroup
-                v-model="searchModelValue"
-                :placeholder="workflowStore.currentHeaderConfig?.search?.placeholder || 'Search...'"
-                :on-input="workflowStore.currentHeaderConfig?.search?.onInput"
-              />
-            </div>
-          </div>
-        </div>
+        <WorkflowHeader
+          :is-expanded="isExpanded"
+          :show-expand-button="true"
+          @toggle-expanded="toggleExpanded"
+          @update:apply-overrides-model-value="handleApplyOverridesChange"
+          @update:search-model-value="handleSearchChange"
+        />
       </template>
 
       <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
