@@ -16,6 +16,11 @@ import type {
 import type { HeaderConfiguration } from '@/components/customization-workflow/types'
 import type { Ref } from 'vue'
 
+// Internal store type that includes refs
+type HeaderConfigWithRefs = HeaderConfiguration & {
+  _refs?: { search?: Ref<string>; applyOverrides?: Ref<boolean> }
+}
+
 export const useWorkflowStore = defineStore('workflowStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
@@ -44,11 +49,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   // Mobile panel state
   const panelOpen = ref<boolean>(true)
 
-  // Header configuration state
-  const currentHeaderConfig = ref<
-    | (HeaderConfiguration & { _refs?: { search?: Ref<string>; applyOverrides?: Ref<boolean> } })
-    | null
-  >(null)
+  // Header configuration state (with refs for two-way binding)
+  const currentHeaderConfig = ref<HeaderConfigWithRefs | null>(null)
 
   // Preview selection state
   const selectedCategoryId = ref<number | null>(null)
@@ -378,7 +380,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   }
 
   // ===== HEADER CONFIG ACTIONS =====
-  function setCurrentHeaderConfig(config: HeaderConfiguration | null) {
+  function setCurrentHeaderConfig(config: HeaderConfigWithRefs | null) {
     currentHeaderConfig.value = config
   }
 

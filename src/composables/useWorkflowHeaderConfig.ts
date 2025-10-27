@@ -2,26 +2,16 @@ import { onMounted, onBeforeUnmount, type Ref } from 'vue'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import type { HeaderConfiguration } from '@/components/customization-workflow/types'
 
-type BreadcrumbItem = { label: string; action?: () => void }
-
-export interface useWorkflowHeaderConfigOptions {
-  breadcrumbs?: BreadcrumbItem[]
-  search?: {
-    placeholder: string
+export type useWorkflowHeaderConfigOptions = Omit<
+  HeaderConfiguration,
+  'search' | 'applyOverrides'
+> & {
+  search?: HeaderConfiguration['search'] & {
     model: Ref<string>
-    onInput: (val: string) => void
   }
-  applyOverrides?: {
+  applyOverrides?: HeaderConfiguration['applyOverrides'] & {
     model: Ref<boolean>
-    onInput: (val: boolean) => void
-    label: string
   }
-  actionButton?: {
-    label: string
-    tooltip?: string
-    callback: () => void
-  }
-  isExpandable?: boolean
 }
 
 /**
@@ -59,9 +49,12 @@ export function useWorkflowHeaderConfig(
   const workflowStore = useWorkflowStore()
   const { setCurrentHeaderConfig, clearHeaderConfig } = workflowStore
 
-  const getConfig = (): HeaderConfiguration & {
+  // Internal type for the transformed config stored in the store
+  type StoredHeaderConfig = HeaderConfiguration & {
     _refs: { search?: Ref<string>; applyOverrides?: Ref<boolean> }
-  } => {
+  }
+
+  const getConfig = (): StoredHeaderConfig => {
     const rawConfig = typeof config === 'function' ? config() : config
 
     const headerConfig: HeaderConfiguration = {
