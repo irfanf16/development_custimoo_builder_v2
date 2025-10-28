@@ -5,14 +5,17 @@
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
+  const workflowStore = useWorkflowStore()
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
+  const { selectedDesignCategoryId } = storeToRefs(workflowStore)
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -25,6 +28,9 @@
   const applyCustomizationOverrides = ref(false)
 
   onMounted(async () => {
+    // Reset to "All Categories" when entering design selection
+    workflowStore.setSelectedDesignCategory(null)
+
     if (!productsStore.designPreviews) {
       const styleId = productsStore.activeStyleDetails?.id
       if (styleId) {
@@ -69,10 +75,25 @@
     },
     { immediate: true }
   )
+  // Filter designs by category and search query
   const filteredPreviews = computed(() => {
+    let filtered = previews.value
+
+    // Filter by design category
+    if (selectedDesignCategoryId.value !== null) {
+      filtered = filtered.filter(design => {
+        const categories = design.front_design.design_categories_pivot || []
+        return categories.some(pivot => pivot.design_category_id === selectedDesignCategoryId.value)
+      })
+    }
+
+    // Filter by search query
     const q = designQuery.value
-    if (!q) return previews.value
-    return previews.value.filter(d => d.front_design.design_name.toLowerCase().includes(q))
+    if (q) {
+      filtered = filtered.filter(d => d.front_design.design_name.toLowerCase().includes(q))
+    }
+
+    return filtered
   })
 
   // Register header configuration
@@ -88,7 +109,13 @@
       label: 'Preview with customization'
     },
     isExpandable: true,
-    breadcrumbs: [{ label: 'Designs' }]
+    breadcrumbs: [{ label: 'Designs' }],
+    designCategories: {
+      categories: productsStore.activeProductDetails?.design_categories || [],
+      selectedId: selectedDesignCategoryId.value,
+      onSelect: (id: number | null) => workflowStore.setSelectedDesignCategory(id ?? null),
+      defaultLabel: 'All Categories'
+    }
   })
 
   // Hint to TS that these are used via the template
