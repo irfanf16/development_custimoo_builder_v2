@@ -7,14 +7,17 @@
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import { Maximize2, Minimize2 } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
+  import { DesignCategoryTabs } from './WorkflowSteps'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import type { BreadcrumbItem } from './types'
+  import { useUIStore } from '@/stores/ui/ui.store'
 
   interface Props {
     isExpanded?: boolean
     showExpandButton?: boolean
   }
 
+  const uiStore = useUIStore()
   const props = defineProps<Props>()
 
   const emit = defineEmits<{
@@ -56,6 +59,7 @@
     get: (): boolean => {
       const modelRef = workflowStore.currentHeaderConfig?._refs?.applyOverrides
       // Type assertion needed because _refs stores Ref types
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (modelRef as any)?.value ?? false
     },
     set: (val: boolean) => {
@@ -67,6 +71,7 @@
     get: (): string => {
       const modelRef = workflowStore.currentHeaderConfig?._refs?.search
       // Type assertion needed because _refs stores Ref types
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (modelRef as any)?.value ?? ''
     },
     set: (val: string) => {
@@ -124,15 +129,28 @@
       </Button>
     </div>
 
-    <div v-if="workflowStore.currentHeaderConfig?.search" class="flex items-center flex-1">
-      <div class="relative w-full">
-        <InputSearchGroup
-          :model-value="searchModelValue"
-          :placeholder="workflowStore.currentHeaderConfig?.search?.placeholder || 'Search...'"
-          :on-input="handleSearchInput"
-          @update:model-value="
-            (val: string | number) => emit('update:search-model-value', String(val))
-          "
+    <div :class="!uiStore.isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-3'">
+      <div v-if="workflowStore.currentHeaderConfig?.search" class="flex items-center flex-1">
+        <div class="relative w-full">
+          <InputSearchGroup
+            :model-value="searchModelValue"
+            :placeholder="workflowStore.currentHeaderConfig?.search?.placeholder || 'Search...'"
+            :on-input="handleSearchInput"
+            @update:model-value="
+              (val: string | number) => emit('update:search-model-value', String(val))
+            "
+          />
+        </div>
+      </div>
+
+      <!-- Design Category Tabs - show when configured -->
+      <div v-if="workflowStore.currentHeaderConfig?.designCategories">
+        <DesignCategoryTabs
+          :is-expanded="isExpanded"
+          :categories="workflowStore.currentHeaderConfig?.designCategories?.categories"
+          :selected-id="workflowStore.currentHeaderConfig?.designCategories?.selectedId"
+          :on-select="workflowStore.currentHeaderConfig?.designCategories?.onSelect"
+          :default-label="workflowStore.currentHeaderConfig?.designCategories?.defaultLabel"
         />
       </div>
     </div>

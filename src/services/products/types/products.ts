@@ -15,12 +15,20 @@ export type OutputProductPreview = {
   show_3d: number
 }
 
+export type OutputProductDesignCategory = {
+  category_name: string
+  created_at: string
+  id: number
+  updated_at: string
+}
+
 export type OutputProductDetails = OutputProductPreview & {
   allow_fixed_logo: number
   allow_name_number: number
   company_id: number
   created_by: number
   deleted_at: string | null
+  design_categories: OutputProductDesignCategory[]
   ecommerce_product_id: number | null
   factory_id: number | null
   is_cap_letter_available: number
