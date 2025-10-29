@@ -43,6 +43,7 @@ declare module 'vue' {
     CustomizerMenu: typeof import('./src/components/customizer-menu/CustomizerMenu.vue')['default']
     'CustomizerMenu.Mobile': typeof import('./src/components/customizer-menu/CustomizerMenu.Mobile.vue')['default']
     CustomizerTopbar: typeof import('./src/components/customizer-topbar/CustomizerTopbar.vue')['default']
+    DesignCategoryTabs: typeof import('./src/components/customization-workflow/WorkflowSteps/design/DesignCategoryTabs.vue')['default']
     DesignSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/design/DesignSelection.vue')['default']
     Dialog: typeof import('./src/components/ui/dialog/Dialog.vue')['default']
     DialogClose: typeof import('./src/components/ui/dialog/DialogClose.vue')['default']
