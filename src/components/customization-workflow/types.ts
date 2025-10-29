@@ -16,6 +16,12 @@ export type HeaderConfiguration = {
     callback: () => void
   }
   isExpandable?: boolean
+  designCategories?: {
+    categories: Array<{ category_name: string; created_at: string; id: number; updated_at: string }>
+    selectedId: number | null
+    onSelect: (id: number | null) => void
+    defaultLabel?: string
+  }
 }
 
 export type HeaderAndFooterConfiguration = {
