@@ -1,4 +1,6 @@
-export type OutputTextItem = {
+// Types generated from the product_texts object
+
+export type OutputProductTextItem = {
   label: string
   height: string
   x_axis: string
@@ -8,15 +10,56 @@ export type OutputTextItem = {
   placement: 'Front' | 'Back'
   outline_enabled: boolean
   arc_text_allowed: boolean
+  font_family: string
+  color: string
+  color_pantone: string
+  outline_width: number
+  outline_width_converted: number
+  color_tab_index: number
+  outline_color: string
+  outline_color_pantone: string
+  selected: boolean
+  scaleX: number
+  scaleY: number
 }
 
-export type OutputText = {
+export type OutputProductText = {
   id: number
   product_id: number
-  type: string
+  type: 'name' | 'number' | 'team_name'
   label: string
+  placeholder?: string | null
   following_products: number[]
-  items: OutputTextItem[]
+  items: OutputProductTextItem[]
+  created_at: string | null
+  updated_at: string | null
+  deleted_at: string | null
+  value: string
+  manually_added: boolean
+  font_family: string
+  following_product_ids: number[]
+  active_item_index: number
+  is_first_name?: boolean // present only on name type
+  is_first_number?: boolean // present only on number type
+  is_default?: boolean
+}
+
+export type OutputProductName = {
+  id: number
+  product_id: number
+  x_axis: number
+  y_axis: number
+  rotation: number
+  width: number | null
+  height: number
+  name_of_placement: string
+  side: string
+  type: string
+  arc_text_allowed: number
+  outline_enabled: number
+  is_locked: number
+  text_follows_product: number
+  following_product_ids: number[] | null
   created_at: string | null
   updated_at: string | null
   deleted_at: string | null
@@ -39,28 +82,8 @@ export type OutputFont = {
   file_url: string
   json_data: OutputFontFile[]
   file_name: string
+  preview_url?: string
   pivot: OutputFontPivot
-}
-
-export type OutputProductName = {
-  id: number
-  product_id: number
-  x_axis: number
-  y_axis: number
-  rotation: number
-  width: number | null
-  height: number | null
-  name_of_placement: string
-  side: 'front' | 'back'
-  type: 'name' | 'number'
-  arc_text_allowed: 0 | 1
-  outline_enabled: 0 | 1
-  is_locked: 0 | 1
-  text_follows_product: 0 | 1
-  following_product_ids: number[] | null
-  created_at: string | null
-  updated_at: string | null
-  deleted_at: string | null
 }
 
 export type OutputSizeJsonDataItem = {

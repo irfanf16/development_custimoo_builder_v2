@@ -1,46 +1,76 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
+  import { computed } from 'vue'
+  import { storeToRefs } from 'pinia'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { Button } from '@/components/ui/button'
-  import type { OutputProductName } from '@/services/products/types'
-
-  const productsStore = useProductsStore()
+  import type { OutputProductText } from '@/services/products/types'
+  import { Copy, Plus, Paintbrush } from 'lucide-vue-next'
+  import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
+  import { useTexts } from '@/composables/useTexts'
   const customizationStore = useCustomizationStore()
+  const workflowStore = useWorkflowStore()
   const history = useHistoryStore()
-  const texts = computed(() => {
-    const map =
-      (
-        productsStore.activeProductDetails as {
-          productnames?: OutputProductName[]
-        }
-      )?.productnames || []
-    return map
-  })
+  const { textClipboard } = storeToRefs(workflowStore)
+  const { activeProductTexts } = storeToRefs(customizationStore)
+  const { customAndPresetTexts } = useTexts()
 
-  const editedValues = ref<Record<number, string>>({})
+  // const productCustomTexts = computed(() => customizationStore.activeProductTexts)
+  const effectiveProductId = computed(() => customizationStore.activeProductId)
 
-  function onChangeValue(idx: number, value: string) {
-    editedValues.value[idx] = value
+  // const hasCustomEntries = computed(() => productCustomTexts.value.length > 0)
+
+  // const layoutMode = computed<'empty' | 'filled'>(() =>
+  //   hasCustomEntries.value ? 'filled' : 'empty'
+  // )
+
+  function goToPlacement() {
+    //const baseIndex = productCustomTexts.value.length
+    //const nextIndex = typeof customText?.id === 'number' ? baseIndex : baseIndex
+    // workflowStore.setActiveTextIndex(activeProductTexts.value.length)
+    // workflowStore.setPendingTextTemplateId(customText?.id ?? null)
+    workflowStore.setTextsSubStep('placement')
   }
 
-  function saveValue(idx: number) {
-    const key = String(customizationStore.customization?.product_id || '')
-    const current =
-      (
-        customizationStore.customization?.product_custom_texts as Record<
-          string,
-          Array<{ value: string }>
-        >
-      )?.[key]?.[idx]?.value || ''
-    const next = editedValues.value[idx] ?? current
-    if (next === current) return
-    history.execute('text.set-value', {
+  function goToNumberFont() {
+    workflowStore.setTextsSubStep('number-font')
+  }
+  function goToEditText() {
+    workflowStore.setTextsSubStep('edit')
+  }
+
+  function goToEdit(customText: OutputProductText, index: number) {
+    if (!customText) return
+    workflowStore.setActiveTextIndex(index)
+    if (customText.type === 'number') {
+      goToNumberFont()
+    } else {
+      goToEditText()
+    }
+  }
+
+  function handleCopyStyle(index: number) {
+    const entry = activeProductTexts.value[index]
+    if (!entry) return
+    workflowStore.setTextClipboard({ style: entry })
+  }
+
+  function handlePasteStyle(index: number) {
+    const clipboard = textClipboard.value
+    const entry = activeProductTexts.value[index]
+    if (!clipboard?.style || !entry || !effectiveProductId.value) return
+    const key = String(effectiveProductId.value)
+    const next = {
+      ...entry,
+      font_family: (clipboard.style as OutputProductText).font_family,
+      items: (clipboard.style as OutputProductText).items
+    }
+    history.execute('text.update-entry', {
       key,
-      index: idx,
-      prevValue: current,
-      nextValue: next
+      index,
+      prev: entry,
+      next
     })
   }
 
@@ -51,33 +81,68 @@
 </script>
 
 <template>
-  <div class="p-4 md:p-6 flex flex-col gap-4">
-    <div
-      v-for="t in texts"
-      :key="t.id"
-      class="flex items-center justify-between border rounded-lg p-3"
-    >
-      <div>
-        <div class="font-medium">
-          {{ (t as OutputProductName).name_of_placement || 'Text' }}
-        </div>
-        <div class="text-xs text-muted-foreground">Placement</div>
-      </div>
-      <div class="flex gap-2 items-center">
-        <input
-          class="h-9 rounded-md border border-border bg-card px-3 text-sm w-48"
-          type="text"
-          :value="editedValues[(t as OutputProductName).id] ?? ''"
-          @input="
-            onChangeValue((t as OutputProductName).id, ($event.target as HTMLInputElement).value)
-          "
-        />
-        <Button variant="default" size="sm" @click="saveValue((t as OutputProductName).id)"
-          >Save</Button
-        >
-      </div>
+  <div class="pb-2">
+    <div class="flex flex-col gap-1 mx-4 md:mx-6">
+      <p class="text-sm text-muted-foreground">Insert and style text.</p>
     </div>
-    <Button variant="default" class="rounded-lg">Add additional text</Button>
+
+    <div class="flex flex-col">
+      <PanelNavigationItem
+        v-for="(customText, index) in customAndPresetTexts"
+        :id="`texts-selection-preset-${customText.id}`"
+        :key="customText.id"
+        @click="() => goToEdit(customText, index)"
+      >
+        <template #content>
+          <div
+            v-if="(customText && !customText.value) || customText.value === ''"
+            class="flex items-center gap-3"
+          >
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-semibold">
+                Add a {{ customText.label.toLowerCase() }}
+              </span>
+            </div>
+          </div>
+          <div v-else class="flex items-start justify-between gap-3 w-full">
+            <div class="flex flex-col gap-1 flex-1">
+              <div class="text-lg font-semibold text-foreground">
+                {{ customText.value || customText.label || 'Untitled text' }}
+              </div>
+              <div class="text-xs text-muted-foreground">
+                {{ customText.label || customText.type || 'Custom' }}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                class="gap-1 h-8 px-3 text-xs"
+                @click.stop="handleCopyStyle(index)"
+              >
+                <Copy class="size-3.5" /> Copy style
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                class="gap-1 h-8 px-3 text-xs"
+                :disabled="!textClipboard"
+                @click.stop="handlePasteStyle(index)"
+              >
+                <Paintbrush class="size-3.5" /> Paste style
+              </Button>
+            </div>
+          </div>
+        </template>
+      </PanelNavigationItem>
+    </div>
+    <div class="px-4 md:px-6 w-full mt-2">
+      <Button class="w-full" @click="goToPlacement()">
+        <Plus class="size-4" />
+        <span class="text-sm font-medium">Add additional text</span>
+      </Button>
+    </div>
   </div>
 </template>
 

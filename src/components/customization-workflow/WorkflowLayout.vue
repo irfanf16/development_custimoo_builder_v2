@@ -17,6 +17,8 @@
     PatternSelection,
     TextsSelection,
     TextPlacement,
+    TextEdit,
+    TextNumberFontSelection,
     RosterEntry,
     RosterEdit,
     SummaryPanel
@@ -206,6 +208,14 @@
             v-else-if="currentStep === 'texts' && textsSubStep === 'placement'"
             ref="currentStepRef"
           />
+          <TextEdit
+            v-else-if="currentStep === 'texts' && textsSubStep === 'edit'"
+            ref="currentStepRef"
+          />
+          <TextNumberFontSelection
+            v-else-if="currentStep === 'texts' && textsSubStep === 'number-font'"
+            ref="currentStepRef"
+          />
           <RosterEntry
             v-else-if="currentStep === 'roster' && rosterSubStep === 'list'"
             ref="currentStepRef"
@@ -297,6 +307,14 @@
       />
       <TextPlacement
         v-else-if="currentStep === 'texts' && textsSubStep === 'placement'"
+        ref="currentStepRef"
+      />
+      <TextEdit
+        v-else-if="currentStep === 'texts' && textsSubStep === 'edit'"
+        ref="currentStepRef"
+      />
+      <TextNumberFontSelection
+        v-else-if="currentStep === 'texts' && textsSubStep === 'number-font'"
         ref="currentStepRef"
       />
       <RosterEntry

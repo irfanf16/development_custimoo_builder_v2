@@ -14,6 +14,8 @@ export { default as PatternLayerSelection } from './patterns/PatternLayerSelecti
 export { default as PatternEdit } from './patterns/PatternEdit.vue'
 export { default as TextsSelection } from './texts/TextsSelection.vue'
 export { default as TextPlacement } from './texts/TextPlacement.vue'
+export { default as TextEdit } from './texts/TextEdit.vue'
+export { default as TextNumberFontSelection } from './texts/TextNumberFontSelection.vue'
 export { default as RosterEntry } from './roster/RosterEntry.vue'
 export { default as RosterEdit } from './roster/RosterEdit.vue'
 export { default as SummaryPanel } from './summary/SummaryPanel.vue'

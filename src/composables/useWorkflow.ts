@@ -90,9 +90,9 @@ export function useWorkflow(options: UseWorkflowOptions = {}): UseWorkflowApi {
       case 'patterns':
         return 'patterns'
       case 'texts':
-        return textsSubStep.value === 'placement' ? 'texts-placement' : 'texts'
+        return 'texts'
       case 'roster':
-        return rosterSubStep.value === 'edit' ? 'roster-edit' : 'roster'
+        return 'roster'
       case 'summary':
         return 'summary'
       case 'product':

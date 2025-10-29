@@ -1,4 +1,4 @@
-import type { OutputColor } from '@/services/products/types'
+import type { OutputColor, OutputProductText } from '@/services/products/types'
 import type { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { useProductsStore } from '@/stores/products/products.store'
 import type { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -7,6 +7,9 @@ import type { APCustomizationLogo } from '@/services/products/types'
 export type HistoryActionType =
   | 'color.set-group'
   | 'text.set-value'
+  | 'text.add-entry'
+  | 'text.update-entry'
+  | 'text.remove-entry'
   | 'logo.add'
   | 'logo.remove'
   | 'logo.move'
@@ -42,6 +45,25 @@ export type TextSetValuePayload = {
   index: number // index within the array
   prevValue: string
   nextValue: string
+}
+
+export type TextAddEntryPayload = {
+  key: string
+  entry: OutputProductText
+  index?: number
+}
+
+export type TextRemoveEntryPayload = {
+  key: string
+  index: number
+  entry?: OutputProductText
+}
+
+export type TextUpdateEntryPayload = {
+  key: string
+  index: number
+  prev?: OutputProductText
+  next: OutputProductText
 }
 
 export type LogoAddPayload = {

@@ -2,9 +2,8 @@
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  // import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
-  import { ChevronRight } from 'lucide-vue-next'
+  import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
 
   interface Props {
     onSelectCategory?: (categoryId: number) => void
@@ -76,21 +75,22 @@
 
 <template>
   <div class="flex flex-col">
-    <button
+    <PanelNavigationItem
       v-for="(item, index) in categories"
+      :id="item.id.toString()"
       :key="item.id"
-      class="h-14 px-4 md:px-6 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors"
       @click="() => handleSelectCategory(item.id)"
     >
-      <div class="flex items-center gap-3">
-        <component
-          :is="getCategoryIcon(index)"
-          class="size-6 text-primary icon-secondary-from-primary-50"
-        />
-        <span class="text-base font-semibold text-card-foreground">{{ item.category_name }}</span>
-      </div>
-      <ChevronRight class="size-4 text-muted-foreground" />
-    </button>
+      <template #content>
+        <div class="flex items-center gap-3">
+          <component
+            :is="getCategoryIcon(index)"
+            class="size-6 text-primary icon-secondary-from-primary-50"
+          />
+          <span class="text-base font-semibold text-card-foreground">{{ item.category_name }}</span>
+        </div>
+      </template>
+    </PanelNavigationItem>
   </div>
 </template>
 

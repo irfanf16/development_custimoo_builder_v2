@@ -8,6 +8,9 @@ import type {
   HistoryActionType,
   ColorSetGroupPayload,
   TextSetValuePayload,
+  TextAddEntryPayload,
+  TextUpdateEntryPayload,
+  TextRemoveEntryPayload,
   LogoAddPayload,
   LogoRemovePayload,
   LogoMovePayload,
@@ -29,6 +32,9 @@ type Registry = Record<
   HistoryActionType,
   | Handler<ColorSetGroupPayload>
   | Handler<TextSetValuePayload>
+  | Handler<TextAddEntryPayload>
+  | Handler<TextUpdateEntryPayload>
+  | Handler<TextRemoveEntryPayload>
   | Handler<LogoAddPayload>
   | Handler<LogoRemovePayload>
   | Handler<LogoMovePayload>
@@ -53,6 +59,20 @@ function getLogoArray(ctx: HistoryContext, key: string) {
   const map = ctx.customizationStore.customization?.custom_logos
   if (!map) return null
   return map[key] ?? null
+}
+
+function getTextArray(ctx: HistoryContext, key: string) {
+  const root = ctx.customizationStore.customization
+  if (!root) return null
+  const map = root.product_custom_texts || (root.product_custom_texts = {})
+  if (!map[key]) map[key] = []
+  return map[key]
+}
+
+function cloneTextEntry(entry: import('@/services/products/types').OutputProductText) {
+  return typeof structuredClone === 'function'
+    ? structuredClone(entry)
+    : (JSON.parse(JSON.stringify(entry)) as typeof entry)
 }
 
 function withLogoPatch(base: CustomLogo, patch: Partial<CustomLogo>): CustomLogo {
@@ -124,14 +144,15 @@ export const registry: Registry = {
       const key = payload.key
       if (!map[key]) map[key] = []
       const arr = map[key]
-      let item = arr[payload.index]
-      if (!item) {
-        item = {
+
+      // Ensure array is large enough
+      while (arr.length <= payload.index) {
+        arr.push({
           id: 0,
           product_id: 0,
-          type: 'text',
+          type: 'name',
           label: '',
-          value: payload.prevValue ?? '',
+          value: '',
           following_products: [],
           items: [],
           created_at: null,
@@ -141,11 +162,14 @@ export const registry: Registry = {
           font_family: '',
           following_product_ids: [],
           active_item_index: 0
-        }
-        arr[payload.index] = item
+        })
       }
-      item.value = payload.nextValue
-      customizationStore.saveToLocalStorage()
+
+      const item = arr[payload.index]
+      if (item) {
+        item.value = payload.nextValue
+        customizationStore.saveToLocalStorage()
+      }
     },
     revert(ctx: HistoryContext, payload: TextSetValuePayload) {
       const customizationStore = ctx.customizationStore
@@ -153,16 +177,52 @@ export const registry: Registry = {
       if (!root) return
       const map = root.product_custom_texts
       const key = payload.key
-      if (!map[key]) map[key] = []
+      if (!map[key]) return
       const arr = map[key]
-      let item = arr[payload.index]
-      if (!item) {
-        item = {
+
+      if (payload.index < 0 || payload.index >= arr.length) return
+      const item = arr[payload.index]
+      if (item) {
+        item.value = payload.prevValue
+        customizationStore.saveToLocalStorage()
+      }
+    },
+    describe(_: HistoryContext, p: TextSetValuePayload) {
+      return `Change text #${p.index + 1}`
+    }
+  },
+  'text.add-entry': {
+    apply(ctx: HistoryContext, payload: TextAddEntryPayload) {
+      const map = getTextArray(ctx, payload.key)
+      if (!map) return
+      const index = payload.index ?? map.length
+      map.splice(index, 0, cloneTextEntry(payload.entry))
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextAddEntryPayload) {
+      const map = getTextArray(ctx, payload.key)
+      if (!map) return
+      const index = payload.index ?? map.length - 1
+      map.splice(index, 1)
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextAddEntryPayload) {
+      return `Add text ${payload.entry.label || ''}`.trim()
+    }
+  },
+  'text.update-entry': {
+    apply(ctx: HistoryContext, payload: TextUpdateEntryPayload) {
+      const map = getTextArray(ctx, payload.key)
+      if (!map) return
+
+      // Ensure the entry exists at the target index
+      while (map.length <= payload.index) {
+        map.push({
           id: 0,
           product_id: 0,
-          type: 'text',
+          type: 'name',
           label: '',
-          value: payload.nextValue ?? '',
+          value: '',
           following_products: [],
           items: [],
           created_at: null,
@@ -172,14 +232,53 @@ export const registry: Registry = {
           font_family: '',
           following_product_ids: [],
           active_item_index: 0
-        }
-        arr[payload.index] = item
+        })
       }
-      item.value = payload.prevValue
-      customizationStore.saveToLocalStorage()
+
+      // Capture prev state if not provided
+      const existingEntry = map[payload.index]
+      if (!payload.prev && existingEntry) {
+        payload.prev = cloneTextEntry(existingEntry)
+      }
+
+      // Apply the update
+      if (map[payload.index]) {
+        map[payload.index] = cloneTextEntry(payload.next)
+        ctx.customizationStore.saveToLocalStorage()
+      }
     },
-    describe(_: HistoryContext, p: TextSetValuePayload) {
-      return `Change text #${p.index + 1}`
+    revert(ctx: HistoryContext, payload: TextUpdateEntryPayload) {
+      const map = getTextArray(ctx, payload.key)
+      if (!map || payload.index < 0 || payload.index >= map.length || !payload.prev) return
+      if (map[payload.index]) {
+        map[payload.index] = cloneTextEntry(payload.prev)
+        ctx.customizationStore.saveToLocalStorage()
+      }
+    },
+    describe(_: HistoryContext, payload: TextUpdateEntryPayload) {
+      const label = payload.next.label || `#${payload.index + 1}`
+      return `Update text ${label}`
+    }
+  },
+  'text.remove-entry': {
+    apply(ctx: HistoryContext, payload: TextRemoveEntryPayload) {
+      const map = getTextArray(ctx, payload.key)
+      if (!map || payload.index < 0 || payload.index >= map.length) return
+      const entry = map[payload.index]
+      if (entry) {
+        payload.entry = cloneTextEntry(entry)
+        map.splice(payload.index, 1)
+        ctx.customizationStore.saveToLocalStorage()
+      }
+    },
+    revert(ctx: HistoryContext, payload: TextRemoveEntryPayload) {
+      const map = getTextArray(ctx, payload.key)
+      if (!map || payload.entry == null) return
+      map.splice(payload.index, 0, cloneTextEntry(payload.entry))
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, _payload: TextRemoveEntryPayload) {
+      return `Remove text`
     }
   },
   'logo.add': {
@@ -331,9 +430,9 @@ export const registry: Registry = {
     apply(ctx: HistoryContext, payload: LogoUpdateSizePayload) {
       const arr = getLogoArray(ctx, payload.key)
       if (!arr || payload.index < 0 || payload.index >= arr.length) return
-      let logoInIndex = arr[payload.index]
+      const logoInIndex = arr[payload.index]
       if (!logoInIndex) return
-      logoInIndex = withLogoPatch(logoInIndex, {
+      arr[payload.index] = withLogoPatch(logoInIndex, {
         width: payload.nextWidth,
         height: payload.nextHeight
       })

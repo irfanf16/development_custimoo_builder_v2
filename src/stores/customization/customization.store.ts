@@ -7,7 +7,8 @@ import type {
   OutputDesignDetails,
   OutputDesignPreviewFront,
   OutputDesignPreviewBack,
-  OutputProductLogosSetting
+  OutputProductLogosSetting,
+  OutputProductText
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
@@ -29,6 +30,63 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   const activeDesignName = computed(() => customization.value?.design_name ?? null)
   const activeCategoryId = computed(() => customization.value?.category_id ?? null)
   const activeSubCategoryId = computed(() => customization.value?.sub_category_id ?? null)
+  const activeProductTexts = computed(() => {
+    const prodId = customization.value?.product_id
+    if (!prodId) return []
+    const key = String(prodId)
+    return customization.value?.product_custom_texts?.[key] || []
+  })
+
+  const ensureTextEntry = (productId: number, index: number, seed?: OutputProductText) => {
+    const root = customization.value
+    if (!root) return null
+    const key = String(productId)
+    if (!root.product_custom_texts[key]) root.product_custom_texts[key] = []
+    const bucket = root.product_custom_texts[key]
+    if (!bucket[index]) {
+      bucket[index] =
+        seed ??
+        ({
+          id: 0,
+          product_id: productId,
+          type: 'name',
+          label: 'Custom text',
+          placeholder: '',
+          following_products: [],
+          items: [],
+          created_at: null,
+          updated_at: null,
+          deleted_at: null,
+          value: '',
+          manually_added: true,
+          font_family: '',
+          following_product_ids: [],
+          active_item_index: 0
+        } as OutputProductText)
+    }
+    return bucket[index]
+  }
+
+  const upsertTextEntry = (
+    productId: number,
+    index: number,
+    payload: Partial<OutputProductText>
+  ) => {
+    const entry = ensureTextEntry(productId, index)
+    if (!entry) return
+    Object.assign(entry, payload)
+    saveToLocalStorage()
+  }
+
+  const removeTextEntry = (productId: number, index: number) => {
+    const root = customization.value
+    if (!root) return
+    const key = String(productId)
+    const bucket = root.product_custom_texts[key]
+    if (!bucket) return
+    bucket.splice(index, 1)
+    saveToLocalStorage()
+  }
 
   // ===== PERSISTENCE =====
   function saveToLocalStorage() {
@@ -301,6 +359,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     activeDesignName,
     activeCategoryId,
     activeSubCategoryId,
+    activeProductTexts,
     // Persistence
     saveToLocalStorage,
     loadFromLocalStorage,
@@ -320,6 +379,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     ensureCustomization,
     resetCustomizationToCurrentProductDefaults,
     clearCustomization,
-    createDefaultCustomization
+    createDefaultCustomization,
+    ensureTextEntry,
+    upsertTextEntry,
+    removeTextEntry
   }
 })
