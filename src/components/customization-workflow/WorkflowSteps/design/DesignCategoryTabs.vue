@@ -1,16 +1,16 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
-  import { MoreHorizontal } from 'lucide-vue-next'
+  import { computed } from 'vue'
+  import { MoreHorizontal, Funnel, Check } from 'lucide-vue-next'
   import { Button } from '@/components/ui/button'
   import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import { Funnel } from 'lucide-vue-next'
 
   interface Props {
     isExpanded?: boolean
@@ -29,7 +29,6 @@
   const workflowStore = useWorkflowStore()
   const selectedDesignCategoryId = computed(() => workflowStore.selectedDesignCategoryId)
   const props = defineProps<Props>()
-  const mobileFiltersOpen = ref(false)
 
   // Get all design categories from product details
   const designCategories = computed(() => {
@@ -104,11 +103,11 @@
             More
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="start" :align-offset="-45" :position-strategy="'absolute'">
           <DropdownMenuItem
             v-for="category in dropdownCategories"
             :key="category.id"
-            :class="isActive === category.id ? 'bg-primary text-white hover:bg-primary' : ''"
+            :class="isActive === category.id ? 'bg-primary text-white' : ''"
             @click="handleCategoryChange(category.id)"
           >
             {{ category.category_name }}
@@ -118,36 +117,47 @@
     </div>
 
     <template v-else>
-      <DropdownMenu v-if="dropdownCategories.length > 0" v-model:open="mobileFiltersOpen">
+      <DropdownMenu v-if="designCategories.length > 0">
         <DropdownMenuTrigger as-child>
-          <Button size="sm" class="hover:bg-transparent" :class="mobileFiltersOpen ? '' : ''">
+          <Button size="sm" class="hover:bg-transparent">
             <Funnel class="size-4 mr-1" />
             Filters
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent>
+        <DropdownMenuContent
+          align="start"
+          :position-strategy="'absolute'"
+          :collision-padding="32"
+          class="w-[248px] bg-white rounded-lg shadow-md border p-0 mt-1"
+        >
+          <div class="px-3 py-2.5 font-semibold text-sm">Filter</div>
           <DropdownMenuItem
-            class="rounded-lg"
+            class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
             :class="
               isActive === null
-                ? 'bg-primary text-primary-foreground hover:text-white'
-                : 'hover:bg-transparent hover:text-primary hover:border hover:border-primary'
+                ? 'bg-transparent text-foreground hover:bg-transparent'
+                : 'hover:bg-transparent'
             "
             @click="handleCategoryChange(null)"
           >
-            All
+            <Check v-if="isActive === null" class="size-4 text-foreground" />
+            <span v-else class="w-4"></span>
+            All designs
           </DropdownMenuItem>
+          <DropdownMenuSeparator class="mx-0 my-0 bg-gray-200" />
           <DropdownMenuItem
-            v-for="category in dropdownCategories"
+            v-for="category in designCategories"
             :key="category.id"
-            class="rounded-lg"
+            class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
             :class="
               isActive === category.id
-                ? 'bg-primary text-primary-foreground hover:text-white'
-                : 'hover:bg-transparent hover:text-primary hover:border hover:border-primary'
+                ? 'bg-transparent text-foreground hover:bg-transparent'
+                : 'hover:bg-transparent'
             "
             @click="handleCategoryChange(category.id)"
           >
+            <Check v-if="isActive === category.id" class="size-4 text-foreground" />
+            <span v-else class="w-4"></span>
             {{ category.category_name }}
           </DropdownMenuItem>
         </DropdownMenuContent>
