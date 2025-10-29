@@ -30,11 +30,22 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import SignInButton from '../SignInButton.vue'
+  import { useAuthStore } from '@/stores/auth/auth.store'
+  import { storeToRefs } from 'pinia'
+  import ProfileDialog from '@/components/customizer-profile-section/ProfileDialog.vue'
+  import { ref } from 'vue'
 
   const customizationStore = useCustomizationStore()
   const history = useHistoryStore()
   const localeStore = useLocaleStore()
+  const authStore = useAuthStore()
 
+  const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
+
+  // Reactive state
+  const showProfileDialog = ref(false)
+
+  // Methods
   function handleResetCustomization() {
     customizationStore.clearCustomization()
     history.clear()
@@ -51,9 +62,8 @@
   function handleExportDesign() {
     // Handle export design
   }
-
   function handleUserProfile() {
-    // Handle user profile
+    showProfileDialog.value = true
   }
 
   function handleUserSettings() {
@@ -61,7 +71,7 @@
   }
 
   function handleSignOut() {
-    // Handle sign out
+    authStore.logout()
   }
 </script>
 
@@ -135,14 +145,14 @@
               <span>Oskar</span>
             </Button> -->
           </DropdownMenuTrigger>
-          <DropdownMenuTrigger as-child>
-            <Button size="icon" aria-label="User menu">
+          <DropdownMenuTrigger v-if="isLoggedIn" as-child>
+            <Button size="icon" aria-label="User menu" class="rounded-l-none rounded-r-md">
               <Menu class="size-4" />
             </Button>
           </DropdownMenuTrigger>
         </ButtonGroup>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Oskar</DropdownMenuLabel>
+          <DropdownMenuLabel>{{ user?.first_name }} {{ user?.last_name }}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="handleUserProfile">
             <User class="size-4 mr-2" />
@@ -158,6 +168,7 @@
             Sign Out
           </DropdownMenuItem>
         </DropdownMenuContent>
+        <ProfileDialog :open="showProfileDialog" @update:open="showProfileDialog = $event" />
       </DropdownMenu>
     </ButtonGroup>
   </div>
