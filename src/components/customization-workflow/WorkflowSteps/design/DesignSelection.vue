@@ -5,13 +5,18 @@
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { designCategoriesConfig } from './config'
+  import type { DesignCategoriesConfig } from '../../types'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
+  const workflowStore = useWorkflowStore()
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
+  const { selectedDesignCategoryId } = storeToRefs(workflowStore)
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -28,6 +33,9 @@
   const applyCustomizationOverrides = headerApplyOverridesModel
 
   onMounted(async () => {
+    // Reset to "All Categories" when entering design selection
+    workflowStore.setSelectedDesignCategory(null)
+
     if (!productsStore.designPreviews) {
       const styleId = productsStore.activeStyleDetails?.id
       if (styleId) {
@@ -54,27 +62,34 @@
     }, 100)
   }
 
-  // Header search config (debounced for perf)
-  // const debouncedDesignQuery = computed({
-  //   get: () => designSearchModel.value,
-  //   set: v => (designSearchModel.value = v)
-  // })
-  // let designSearchTimeout: number | null = null
-  // watch(
-  //   debouncedDesignQuery,
-  //   (v: string) => {
-  //     if (designSearchTimeout) window.clearTimeout(designSearchTimeout)
-  //     designSearchTimeout = window.setTimeout(() => {
-  //       designSearchModel.value = v.trim().toLowerCase()
-  //     }, 150)
-  //   },
-  //   { immediate: true }
-  // )
   const filteredPreviews = computed(() => {
+    let filtered = previews.value
+
+    // Filter by design category
+    if (selectedDesignCategoryId.value !== null) {
+      filtered = filtered.filter(design => {
+        const categories = design.front_design.design_categories_pivot || []
+        return categories.some(pivot => pivot.design_category_id === selectedDesignCategoryId.value)
+      })
+    }
+
+    // Filter by search query
     const q = designSearchModel.value
-    if (!q) return previews.value
-    return previews.value.filter(d => d.front_design.design_name.toLowerCase().includes(q))
+    if (q) {
+      filtered = filtered.filter(d => d.front_design.design_name.toLowerCase().includes(q))
+    }
+
+    return filtered
   })
+
+  designCategoriesConfig.value = computed<DesignCategoriesConfig | undefined>(() => {
+    return {
+      categories: productsStore.activeProductDetails?.design_categories || [],
+      selectedId: selectedDesignCategoryId.value,
+      onSelect: (id: number | null) => workflowStore.setSelectedDesignCategory(id ?? null),
+      defaultLabel: 'All Categories'
+    }
+  }).value
 
   // header/footer config moved to config.ts
 

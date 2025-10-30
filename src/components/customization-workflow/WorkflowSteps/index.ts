@@ -3,6 +3,7 @@ export { default as SubcategorySelection } from './product/SubcategorySelection.
 export { default as ProductSelection } from './product/ProductSelection.vue'
 export { default as ProductsEntry } from './product/ProductsEntry.vue'
 export { default as DesignSelection } from './design/DesignSelection.vue'
+export { default as DesignCategoryTabs } from './design/DesignCategoryTabs.vue'
 export { default as StyleSelection } from './style/StyleSelection.vue'
 export { default as LogoSelection } from './logo/LogoSelection.vue'
 export { default as LogoCustomization } from './logo/LogoCustomization.vue'

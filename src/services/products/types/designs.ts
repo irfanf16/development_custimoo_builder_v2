@@ -1,5 +1,9 @@
 export type OutputDesignAsset = {
   color_group: string | null
+  design_categories_pivot: {
+    design_category_id: number
+    design_file_id: number
+  }[]
   design_name: string
   design_position: string
   file_base_url: string

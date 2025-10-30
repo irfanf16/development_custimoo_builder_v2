@@ -1,8 +1,9 @@
 import { computed, ref, type Ref } from 'vue'
-import type { HeaderConfiguration, FooterConfiguration } from '../../types'
+import type { HeaderConfiguration, FooterConfiguration, DesignCategoriesConfig } from '../../types'
 
 export const designSearchModel = ref('')
 export const applyCustomizationOverrides = ref(false)
+export const designCategoriesConfig = ref<DesignCategoriesConfig | undefined>(undefined)
 
 function onDesignSearchInput(val: string) {
   console.log('onDesignSearchInput', val)
@@ -18,6 +19,7 @@ export const designHeaderConfig: Ref<HeaderConfiguration> = computed(() => ({
     onInput: (val: boolean) => (applyCustomizationOverrides.value = val),
     label: 'Preview with customization'
   },
+  designCategories: designCategoriesConfig.value,
   isExpandable: true,
   breadcrumbs: [{ label: 'Designs' }]
 }))

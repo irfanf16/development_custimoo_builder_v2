@@ -7,7 +7,9 @@
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import { Maximize2, Minimize2 } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
+  import { DesignCategoryTabs } from './WorkflowSteps'
   import type { BreadcrumbItem } from './types'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import type { HeaderConfiguration } from './types'
 
   interface Props {
@@ -16,6 +18,7 @@
     config: HeaderConfiguration | undefined
   }
 
+  const uiStore = useUIStore()
   const props = defineProps<Props>()
 
   const emit = defineEmits<{
@@ -103,12 +106,25 @@
       </Button>
     </div>
 
-    <div v-if="props.config?.search" class="flex items-center flex-1">
-      <div class="relative w-full">
-        <InputSearchGroup
-          :model-value="searchModelValue"
-          :placeholder="props.config?.search?.placeholder || 'Search...'"
-          @update:model-value="(val: string | number) => handleSearchInput(String(val))"
+    <div :class="!uiStore.isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-3'">
+      <div v-if="props.config?.search" class="flex items-center flex-1">
+        <div class="relative w-full">
+          <InputSearchGroup
+            :model-value="searchModelValue"
+            :placeholder="props.config?.search?.placeholder || 'Search...'"
+            @update:model-value="(val: string | number) => handleSearchInput(String(val))"
+          />
+        </div>
+      </div>
+
+      <!-- Design Category Tabs - show when configured -->
+      <div v-if="props.config?.designCategories">
+        <DesignCategoryTabs
+          :is-expanded="isExpanded"
+          :categories="props.config?.designCategories?.categories"
+          :selected-id="props.config?.designCategories?.selectedId"
+          :on-select="props.config?.designCategories?.onSelect"
+          :default-label="props.config?.designCategories?.defaultLabel"
         />
       </div>
     </div>
