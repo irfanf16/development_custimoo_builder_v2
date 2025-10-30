@@ -37,7 +37,7 @@
         </div>
 
         <div id="right-content" class="flex flex-col w-full justify-between items-end">
-          <CustomizerTopbar class="z-10" />
+          <CustomizerTopbar class="z-20" />
           <div
             id="canvas-controls-container"
             class="flex flex-row w-full h-full justify-center items-center"

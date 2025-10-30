@@ -19,8 +19,10 @@ import type {
   LogoUpdatePlacementPayload,
   LogoUpdateSizePayload,
   LogoUpdateRotationPayload,
-  LogoRecolorPayload
+  LogoRecolorPayload,
+  AddonsSetPayload
 } from './types'
+import type { OutputAddon, OutputCompanyAddon } from '@/services/products/types'
 
 type Handler<T> = {
   apply(ctx: HistoryContext, payload: T): void | Promise<void>
@@ -41,6 +43,11 @@ type Registry = Record<
   | Handler<LogoUpdateUrlPayload>
   | Handler<LogoRecolorPayload>
   | Handler<PatternSetGroupPayload>
+  | Handler<{
+      productId: number
+      prevIds: number[]
+      nextIds: number[]
+    }>
   | Handler<{
       entries: Array<{ type: HistoryActionType; payload: unknown }>
       label?: string
@@ -524,6 +531,82 @@ export const registry: Registry = {
     },
     describe(_: HistoryContext, p: PatternSetGroupPayload) {
       return `Set pattern group ${p.groupName}`
+    }
+  },
+  'addons.set': {
+    apply(ctx: HistoryContext, payload: AddonsSetPayload) {
+      const customizationStore = ctx.customizationStore
+      const details = ctx.productsStore.activeProductDetails
+      const uniq = (arr: number[]) => Array.from(new Set(arr))
+      const nextIds = uniq(payload.nextIds)
+      type MinimalAddon = { addon_id: number; title: string }
+      const companyAddonsRaw: MinimalAddon[] = (details?.company_addons || []).map(
+        (a: OutputCompanyAddon) => ({ addon_id: a.addon_id, title: a.addon_data?.title || '' })
+      )
+      const productAddonsRaw: MinimalAddon[] = (details?.product_addons || []).map(
+        (a: OutputAddon) => ({ addon_id: a.addon_id, title: a.title || '' })
+      )
+      const idToAddon = new Map<number, MinimalAddon>()
+      for (const a of companyAddonsRaw) idToAddon.set(a.addon_id, a)
+      for (const a of productAddonsRaw) if (!idToAddon.has(a.addon_id)) idToAddon.set(a.addon_id, a)
+      const allAddons: MinimalAddon[] = Array.from(idToAddon.values())
+      const selected = allAddons
+        .filter((a: MinimalAddon) => nextIds.includes(a.addon_id))
+        .map((a: MinimalAddon) => ({
+          addon_id: a.addon_id,
+          title: a.title
+        })) as unknown as OutputAddon[]
+      customizationStore.setAddons(selected)
+    },
+    revert(ctx: HistoryContext, payload: AddonsSetPayload) {
+      const customizationStore = ctx.customizationStore
+      const details = ctx.productsStore.activeProductDetails
+      const uniq = (arr: number[]) => Array.from(new Set(arr))
+      const prevIds = uniq(payload.prevIds)
+      type MinimalAddon = { addon_id: number; title: string }
+      const companyAddonsRaw: MinimalAddon[] = (details?.company_addons || []).map(
+        (a: OutputCompanyAddon) => ({ addon_id: a.addon_id, title: a.addon_data?.title || '' })
+      )
+      const productAddonsRaw: MinimalAddon[] = (details?.product_addons || []).map(
+        (a: OutputAddon) => ({ addon_id: a.addon_id, title: a.title || '' })
+      )
+      const idToAddon = new Map<number, MinimalAddon>()
+      for (const a of companyAddonsRaw) idToAddon.set(a.addon_id, a)
+      for (const a of productAddonsRaw) if (!idToAddon.has(a.addon_id)) idToAddon.set(a.addon_id, a)
+      const allAddons: MinimalAddon[] = Array.from(idToAddon.values())
+      const selected = allAddons
+        .filter((a: MinimalAddon) => prevIds.includes(a.addon_id))
+        .map((a: MinimalAddon) => ({
+          addon_id: a.addon_id,
+          title: a.title
+        })) as unknown as OutputAddon[]
+      customizationStore.setAddons(selected)
+    },
+    describe(ctx: HistoryContext, p: AddonsSetPayload) {
+      const details = ctx.productsStore.activeProductDetails
+      const idToTitle = new Map<number, string>()
+      if (details) {
+        for (const a of details.company_addons || []) {
+          idToTitle.set(a.addon_id, a.addon_data?.title || '')
+        }
+        for (const a of details.product_addons || []) {
+          if (!idToTitle.has(a.addon_id)) idToTitle.set(a.addon_id, a.title || '')
+        }
+      }
+      const uniq = (arr: number[]) => Array.from(new Set(arr))
+      const prev = uniq(p.prevIds)
+      const next = uniq(p.nextIds)
+      const added = next.filter(id => !prev.includes(id))
+      const removed = prev.filter(id => !next.includes(id))
+      const addedLabels = added.map(id => idToTitle.get(id) || `#${id}`)
+      const removedLabels = removed.map(id => idToTitle.get(id) || `#${id}`)
+      const addedWord = added.length > 1 ? 'addons' : 'addon'
+      const removedWord = removed.length > 1 ? 'addons' : 'addon'
+      if (added.length && removed.length)
+        return `Updated addons: added ${addedLabels.join(', ')}; removed ${removedLabels.join(', ')}`
+      if (added.length) return `Added ${addedWord}: ${addedLabels.join(', ')}`
+      if (removed.length) return `Removed ${removedWord}: ${removedLabels.join(', ')}`
+      return `No addon changes`
     }
   },
   batch: {

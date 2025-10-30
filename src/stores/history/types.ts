@@ -19,6 +19,7 @@ export type HistoryActionType =
   | 'logo.update-rotation'
   | 'logo.recolor'
   | 'pattern.set-group'
+  | 'addons.set'
   | 'batch'
 
 export interface HistoryEntry<T = unknown> {
@@ -134,6 +135,12 @@ export type PatternSetGroupPayload = {
   groupName: string
   prev: unknown
   next: unknown
+}
+
+export type AddonsSetPayload = {
+  productId: number
+  prevIds: number[]
+  nextIds: number[]
 }
 
 export type LogoPlacementOption = {

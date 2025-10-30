@@ -51,6 +51,10 @@ import PottedFlowerTulip from 'virtual:icons/flex-flat/potted-flower-tulip'
 import Leaf from 'virtual:icons/flex-flat/leaf'
 import SnowFlake from 'virtual:icons/flex-flat/snow-flake'
 import HolidayVacationBeachUmbrella from 'virtual:icons/flex-flat/holiday-vacation-beach-umbrella'
+import UserIcon from 'virtual:icons/flex-flat/user-circle'
+import SettingsIcon from 'virtual:icons/flex-flat/settings-icon'
+import OrderIcon from 'virtual:icons/flex-flat/orders-icon'
+import AddressIcon from 'virtual:icons/flex-flat/address-book-icon'
 
 export const flexFlatCategoryIcons = {
   Ball,
@@ -104,7 +108,11 @@ export const flexFlatCategoryIcons = {
   PottedFlowerTulip,
   Leaf,
   SnowFlake,
-  HolidayVacationBeachUmbrella
+  HolidayVacationBeachUmbrella,
+  UserIcon,
+  SettingsIcon,
+  OrderIcon,
+  AddressIcon
 }
 
 // Keep a reference so tree-shaking can't drop them

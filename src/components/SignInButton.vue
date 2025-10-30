@@ -52,12 +52,8 @@
     }
   }
 
-  const handleLogout = () => {
-    authStore.logout()
-    showUserMenu.value = false
-  }
-
-  const toggleUserMenu = () => {
+  const toggleUserMenu = (e: MouseEvent) => {
+    e.stopPropagation()
     showUserMenu.value = !showUserMenu.value
   }
 
@@ -71,7 +67,7 @@
     {
       variant: 'outline',
       size: 'default',
-      class: 'rounded-lg'
+      class: '!rounded-l-md rounded-r-none'
     }
   )
 </script>
@@ -83,7 +79,7 @@
     <!-- Sign In Dialog -->
     <Dialog v-if="!isLoggedIn">
       <DialogTrigger as-child>
-        <Button :variant="props.variant" :size="props.size" :class="props.class">
+        <Button :variant="props.variant" :size="props.size" :class="isLoggedIn ?? props.class">
           {{ auth_sign_in({}, { locale: localeStore.currentLocale }) }}
         </Button>
       </DialogTrigger>
@@ -142,7 +138,7 @@
         :size="props.size"
         :class="['flex items-center space-x-2 px-3 py-2', props.class]"
         :title="`Logged in as ${user?.first_name} ${user?.last_name}`"
-        @click="toggleUserMenu"
+        @click="(e: MouseEvent) => toggleUserMenu(e)"
       >
         <div
           class="w-6 h-6 text-white text-xs font-medium rounded-full flex items-center justify-center"
@@ -150,36 +146,8 @@
         >
           {{ userInitials }}
         </div>
-        <span>{{ user?.first_name }} {{ user?.last_name }}</span>
-        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        <span>{{ user?.first_name }}</span>
       </Button>
-
-      <!-- Simple Dropdown Menu -->
-      <div
-        v-if="showUserMenu"
-        class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg"
-        style="z-index: 99999; position: absolute !important"
-      >
-        <div class="py-1">
-          <div class="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
-            <div class="font-medium">{{ user?.first_name }} {{ user?.last_name }}</div>
-            <div class="text-gray-500">{{ user?.email }}</div>
-          </div>
-          <button
-            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
-            @click="handleLogout"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </template>

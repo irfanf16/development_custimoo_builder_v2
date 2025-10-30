@@ -22,8 +22,6 @@
       )
     "
   >
-    <span class="truncate">
-      <slot />
-    </span>
+    <slot />
   </TabsTrigger>
 </template>

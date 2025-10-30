@@ -5,6 +5,7 @@ export { useCustomizerMenu } from './useCustomizerMenu'
 export { useFabricPreview } from './useFabricPreview'
 export { useParaglideLocale } from './useParaglideLocale'
 export { useWorkflow } from './useWorkflow'
+export { useProfileDialogState } from './useProfileDialogState'
 export {
   useRenderQueue,
   usePreviousLogoState,
