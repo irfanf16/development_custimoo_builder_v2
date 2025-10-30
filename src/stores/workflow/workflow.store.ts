@@ -55,6 +55,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   // Preview selection state
   const selectedCategoryId = ref<number | null>(null)
   const selectedSubCategoryId = ref<number | null>(null)
+  const selectedDesignCategoryId = ref<number | null>(null)
 
   // ===== COMPUTED PROPERTIES =====
   const currentStep = computed<WorkflowRouteStep>(() => {
@@ -332,6 +333,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedSubCategoryId.value = subCategoryId
   }
 
+  function setSelectedDesignCategory(dCategoryId: number | null) {
+    selectedDesignCategoryId.value = dCategoryId
+  }
+
   // ===== NAVIGATION ACTIONS =====
   function handleCategorySelect(categoryId: number) {
     setSelectedCategoryForPreview(categoryId)
@@ -401,6 +406,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     activeLogoId,
     selectedCategoryId,
     selectedSubCategoryId,
+    selectedDesignCategoryId,
     activeCanvasSide,
     canvasZoom,
     // Computed
@@ -426,6 +432,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     commitSelectedSubCategory,
     setSelectedCategoryForPreview,
     setSelectedSubCategoryForPreview,
+    setSelectedDesignCategory,
     // Navigation Actions
     handleCategorySelect,
     handleSubcategorySelect,

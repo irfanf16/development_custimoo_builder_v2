@@ -72,7 +72,8 @@ export function useWorkflowHeaderConfig(
           }
         : undefined,
       actionButton: rawConfig.actionButton,
-      isExpandable: rawConfig.isExpandable
+      isExpandable: rawConfig.isExpandable,
+      designCategories: rawConfig.designCategories
     }
 
     // Store refs for accessing current values
