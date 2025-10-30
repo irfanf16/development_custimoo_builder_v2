@@ -6,7 +6,6 @@
   import type { HTMLAttributes } from 'vue'
   const props = defineProps<{
     placeholder: string
-    onInput: (value: string) => void
     modelValue: string
     class?: HTMLAttributes['class']
   }>()
@@ -26,9 +25,8 @@
     <InputGroupInput
       :placeholder="props.placeholder"
       :model-value="modelValue"
-      :on-input="props.onInput"
       :class="cn('text-sm', props.class)"
-      @update:model-value="emits('update:modelValue', $event)"
+      @update:model-value="(val: string | number) => emits('update:modelValue', String(val))"
     />
     <InputGroupAddon>
       <Search />

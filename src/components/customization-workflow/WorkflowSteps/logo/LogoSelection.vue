@@ -1,5 +1,4 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import LogoCustomization from './LogoCustomization.vue'
@@ -29,19 +28,7 @@
     workflowStore.setLogosSubStep('list')
   }
 
-  // Breadcrumb logic for logo selection and edit substep
-  const breadcrumbs = computed(() => {
-    if (currentSubStep.value === 'edit' && selectedLogoId.value) {
-      return [{ label: 'Logos', action: handleBackToLogos }, { label: 'Controls' }]
-    }
-    if (currentSubStep.value === 'placement') {
-      return [{ label: 'Logos', action: handleBackFromPlacement }, { label: 'Placement' }]
-    }
-    return [{ label: 'Logos' }]
-  })
-
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  // header/footer config moved to config.ts
 </script>
 
 <template>

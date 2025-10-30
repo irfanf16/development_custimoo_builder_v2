@@ -144,6 +144,7 @@ declare module 'vue' {
     TextEdit: typeof import('./src/components/customization-workflow/WorkflowSteps/texts/TextEdit.vue')['default']
     TextNumberFontSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/texts/TextNumberFontSelection.vue')['default']
     TextPlacement: typeof import('./src/components/customization-workflow/WorkflowSteps/texts/TextPlacement.vue')['default']
+    Texts: typeof import('./src/components/customization-workflow/WorkflowSteps/texts/index.vue')['default']
     TextsSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/texts/TextsSelection.vue')['default']
     ThemeToggle: typeof import('./src/components/ThemeToggle.vue')['default']
     ThreePreview: typeof import('./src/components/product-preview/ThreePreview.vue')['default']
@@ -153,6 +154,8 @@ declare module 'vue' {
     TooltipTrigger: typeof import('./src/components/ui/tooltip/TooltipTrigger.vue')['default']
     WidgetApp: typeof import('./src/components/WidgetApp.vue')['default']
     WorkflowBreadcrumbs: typeof import('./src/components/customization-workflow/WorkflowBreadcrumbs.vue')['default']
+    WorkflowFooter: typeof import('./src/components/customization-workflow/WorkflowFooter.vue')['default']
+    WorkflowHeader: typeof import('./src/components/customization-workflow/WorkflowHeader.vue')['default']
     WorkflowLayout: typeof import('./src/components/customization-workflow/WorkflowLayout.vue')['default']
     WorkflowPanel: typeof import('./src/components/customization-workflow/WorkflowPanel.vue')['default']
   }

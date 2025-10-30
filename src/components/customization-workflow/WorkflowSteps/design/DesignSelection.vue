@@ -1,11 +1,9 @@
 <script setup lang="ts">
-  import { computed, nextTick, onMounted, ref, watch } from 'vue'
+  import { computed, nextTick, onMounted, ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import type { HeaderAndFooterConfiguration } from '../../types'
-  import type { BreadcrumbItem } from '../../types'
   import { useUIStore } from '@/stores/ui/ui.store'
 
   const uiStore = useUIStore()
@@ -23,7 +21,11 @@
 
   const previews = computed(() => productsStore.designPreviews || [])
   const designSelectionContainer = ref<HTMLElement | null>(null)
-  const applyCustomizationOverrides = ref(false)
+  import {
+    designSearchModel,
+    applyCustomizationOverrides as headerApplyOverridesModel
+  } from './config'
+  const applyCustomizationOverrides = headerApplyOverridesModel
 
   onMounted(async () => {
     if (!productsStore.designPreviews) {
@@ -53,48 +55,28 @@
   }
 
   // Header search config (debounced for perf)
-  const designSearchQuery = ref('')
-  const debouncedDesignQuery = computed({
-    get: () => designSearchQuery.value,
-    set: v => (designSearchQuery.value = v)
-  })
-  let designSearchTimeout: number | null = null
-  const designQuery = ref('')
-  watch(
-    debouncedDesignQuery,
-    (v: string) => {
-      if (designSearchTimeout) window.clearTimeout(designSearchTimeout)
-      designSearchTimeout = window.setTimeout(() => {
-        designQuery.value = v.trim().toLowerCase()
-      }, 150)
-    },
-    { immediate: true }
-  )
+  // const debouncedDesignQuery = computed({
+  //   get: () => designSearchModel.value,
+  //   set: v => (designSearchModel.value = v)
+  // })
+  // let designSearchTimeout: number | null = null
+  // watch(
+  //   debouncedDesignQuery,
+  //   (v: string) => {
+  //     if (designSearchTimeout) window.clearTimeout(designSearchTimeout)
+  //     designSearchTimeout = window.setTimeout(() => {
+  //       designSearchModel.value = v.trim().toLowerCase()
+  //     }, 150)
+  //   },
+  //   { immediate: true }
+  // )
   const filteredPreviews = computed(() => {
-    const q = designQuery.value
+    const q = designSearchModel.value
     if (!q) return previews.value
     return previews.value.filter(d => d.front_design.design_name.toLowerCase().includes(q))
   })
 
-  // Expose to parent
-  const headerAndFooterConfiguration: HeaderAndFooterConfiguration = {
-    headerExtras: {
-      search: {
-        placeholder: 'Search designs...',
-        model: debouncedDesignQuery,
-        onInput: (val: string) => (debouncedDesignQuery.value = val)
-      },
-      applyOverrides: {
-        model: applyCustomizationOverrides,
-        onInput: (val: boolean) => (applyCustomizationOverrides.value = val),
-        label: 'Preview with customization'
-      },
-      isExpandable: true,
-      breadcrumbs: computed<BreadcrumbItem[]>(() => [{ label: 'Designs' }])
-    }
-  }
-
-  defineExpose(headerAndFooterConfiguration)
+  // header/footer config moved to config.ts
 
   // Hint to TS that these are used via the template
   void ProductPreviewCanvas

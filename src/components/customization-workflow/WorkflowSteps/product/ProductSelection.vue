@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, watch, nextTick, ref } from 'vue'
+  import { computed, onMounted, watch, nextTick } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -7,7 +7,6 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
-  import type { HeaderAndFooterConfiguration } from '../../types'
   import type { OutputDesignDetails } from '@/services/products/types'
 
   interface Emits {
@@ -28,7 +27,7 @@
     // isColdStart is true when the component is mounted without a selected subcategory. For example, when the app loads for the first time or when the user navigates back to the product step.
     const categoryId = workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
     const subcategoryId = isColdStart
-      ? workflowStore.selectedSubCategoryId
+      ? (workflowStore.selectedSubCategoryId ?? customizationStore.activeSubCategoryId)
       : customizationStore.activeSubCategoryId
     productsStore.fetchProductPreviews(categoryId, subcategoryId || undefined)
   }
@@ -78,42 +77,22 @@
 
   // Breadcrumb logic for product selection
 
-  // Header search config
-  const productSearchQuery = ref('')
-  const debouncedProductModel = computed({
-    get: () => productSearchQuery.value,
-    set: v => (productSearchQuery.value = v)
-  })
-  let productSearchTimeout: number | null = null
-  const productQuery = ref('')
-  watch(
-    debouncedProductModel,
-    v => {
-      if (productSearchTimeout) window.clearTimeout(productSearchTimeout)
-      productSearchTimeout = window.setTimeout(() => {
-        productQuery.value = v.trim().toLowerCase()
-      }, 150)
-    },
-    { immediate: true }
-  )
+  // Header search config (shared with header config module)
+  import { productSearchModel } from './config'
   const filteredPreviews = computed(() => {
-    const q = productQuery.value
+    const q = productSearchModel.value
     if (!q) return previews.value
     return previews.value.filter(p => p.productPreview.display_name.toLowerCase().includes(q))
   })
 
-  const headerAndFooterConfiguration: HeaderAndFooterConfiguration = {
-    headerExtras: {
-      search: {
-        placeholder: 'Search products...',
-        model: debouncedProductModel,
-        onInput: (val: string) => (debouncedProductModel.value = val)
-      },
-      isExpandable: true
-    }
-  }
-
-  defineExpose(headerAndFooterConfiguration)
+  const headerConfig = computed(() => ({
+    search: {
+      placeholder: 'Search products...',
+      onInput: (val: string) => (productSearchModel.value = val)
+    },
+    isExpandable: true
+  }))
+  void headerConfig.value
 </script>
 
 <template>

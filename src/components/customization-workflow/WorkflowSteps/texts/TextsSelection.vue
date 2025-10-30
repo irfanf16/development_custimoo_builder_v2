@@ -9,6 +9,7 @@
   import { Copy, Plus, Paintbrush } from 'lucide-vue-next'
   import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
   import { useTexts } from '@/composables/useTexts'
+
   const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
   const history = useHistoryStore()
@@ -19,17 +20,7 @@
   // const productCustomTexts = computed(() => customizationStore.activeProductTexts)
   const effectiveProductId = computed(() => customizationStore.activeProductId)
 
-  // const hasCustomEntries = computed(() => productCustomTexts.value.length > 0)
-
-  // const layoutMode = computed<'empty' | 'filled'>(() =>
-  //   hasCustomEntries.value ? 'filled' : 'empty'
-  // )
-
   function goToPlacement() {
-    //const baseIndex = productCustomTexts.value.length
-    //const nextIndex = typeof customText?.id === 'number' ? baseIndex : baseIndex
-    // workflowStore.setActiveTextIndex(activeProductTexts.value.length)
-    // workflowStore.setPendingTextTemplateId(customText?.id ?? null)
     workflowStore.setTextsSubStep('placement')
   }
 
@@ -74,10 +65,8 @@
     })
   }
 
-  // Breadcrumbs only
-  const breadcrumbs = computed(() => [{ label: 'Texts' }])
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  const headerConfig = { breadcrumbs: [{ label: 'Texts' }] }
+  void headerConfig
 </script>
 
 <template>

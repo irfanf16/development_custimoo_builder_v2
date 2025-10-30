@@ -24,7 +24,6 @@
     SelectTrigger,
     SelectValue
   } from '@/components/ui/select'
-  import { Separator } from '@/components/ui/separator'
   import { AlignCenter, Pin } from 'lucide-vue-next'
   import type {
     OutputProductText,
@@ -33,7 +32,7 @@
     OutputColor,
     OutputProductName
   } from '@/services/products/types'
-
+  import { onSaveChanges, onCancel } from './config'
   // Extended type for text items that may have additional properties
   type ExtendedTextItem = OutputProductTextItem & {
     width?: string
@@ -79,12 +78,7 @@
     return null
   })
 
-  const breadcrumbs = computed(() => [
-    { label: 'Texts', action: () => workflowStore.setTextsSubStep('list') },
-    { label: currentEntry.value?.label || 'Edit' }
-  ])
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  // header/footer config is provided by texts/config.ts and layout; breadcrumbs are rendered via header config
 
   const palettes = computed(() => productsStore.activeProductDetails?.namecolors ?? [])
 
@@ -216,7 +210,8 @@
     return next
   }
 
-  async function saveChanges() {
+  onSaveChanges.value = async () => {
+    console.log('onSaveChanges from TextEdit')
     if (!currentEntry.value || productId.value == null || activeTextIndex.value == null) return
     const key = String(productId.value)
     const prev = currentEntry.value
@@ -230,7 +225,8 @@
     workflowStore.setTextsSubStep('list')
   }
 
-  function cancel() {
+  onCancel.value = () => {
+    console.log('onCancel from TextEdit')
     workflowStore.setTextsSubStep('list')
   }
 
@@ -468,13 +464,6 @@
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-
-      <!-- Bottom Actions -->
-      <Separator />
-      <div class="p-6 flex gap-4">
-        <Button variant="outline" class="flex-1" @click="cancel">Cancel</Button>
-        <Button variant="default" class="flex-1" @click="saveChanges">Save</Button>
-      </div>
     </div>
   </div>
 </template>

@@ -181,16 +181,16 @@
     handleBackToLogos()
   }
 
-  const breadcrumbs = computed(() => [
-    {
-      label: 'Logos',
-      action: handleBackToLogos
-    },
-    { label: 'Controls' }
-  ])
-
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  const headerConfig = {
+    breadcrumbs: [
+      {
+        label: 'Logos',
+        action: handleBackToLogos
+      },
+      { label: 'Controls' }
+    ]
+  }
+  void headerConfig
 
   interface PlacementOption {
     label: string

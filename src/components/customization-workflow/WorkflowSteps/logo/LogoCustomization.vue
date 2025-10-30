@@ -184,8 +184,8 @@
   }
 
   // Breadcrumbs only
-  const headerExtras = { breadcrumbs: [{ label: 'Logos' }] }
-  defineExpose({ headerExtras })
+  const headerConfig = { breadcrumbs: [{ label: 'Logos' }] }
+  void headerConfig
 </script>
 
 <template>

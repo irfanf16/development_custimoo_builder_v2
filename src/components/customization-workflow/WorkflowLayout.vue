@@ -1,13 +1,9 @@
 <script setup lang="ts">
-  import { computed, ref, isRef, type Ref, type ComputedRef, onMounted } from 'vue'
-  import { Button } from '@/components/ui/button'
-  import { Label } from '@/components/ui/label'
-  import { Switch } from '@/components/ui/switch'
-  import { InputSearchGroup } from '@/components/ui/input-search-group'
-  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-  import { Maximize2, Minimize2 } from 'lucide-vue-next'
-  import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
+  import { computed, ref, onMounted, type Ref, isRef, type Ref as VueRef } from 'vue'
+  import type { HeaderConfiguration, FooterConfiguration } from './types'
+  import WorkflowHeader from './WorkflowHeader.vue'
   import { useWorkflow } from '@/composables/useWorkflow'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import {
     ProductsEntry,
     DesignSelection,
@@ -15,90 +11,35 @@
     LogoSelection,
     ColorSelection,
     PatternSelection,
-    TextsSelection,
-    TextPlacement,
-    TextEdit,
-    TextNumberFontSelection,
     RosterEntry,
     RosterEdit,
     SummaryPanel
   } from '@/components/customization-workflow/WorkflowSteps'
+  import TextsEntry from '@/components/customization-workflow/WorkflowSteps/texts/index.vue'
   import WorkflowPanel from './WorkflowPanel.vue'
-  import type { HeaderAndFooterConfiguration, BreadcrumbItem } from './types'
   import { useUIStore } from '@/stores/ui/ui.store'
-
+  import WorkflowFooter from './WorkflowFooter.vue'
   const uiStore = useUIStore()
-
-  const {
-    currentStep,
-    contentKey,
-    navigationItems,
-    textsSubStep,
-    rosterSubStep,
-    isPanelOpen,
-    initializeEffects
-  } = useWorkflow()
+  const workflowStore = useWorkflowStore()
+  const { initializeEffects } = useWorkflow()
 
   const isExpanded = ref(false)
+  const currentStepRef: Ref<{ cancel?: () => void; saveChanges?: () => void } | null> = ref(null)
   const menuPanelRef = ref<{
     scrollToElement: (elementId: string, behavior?: 'smooth' | 'auto') => void
   } | null>(null)
 
-  // Computed properties for workflow step configuration
-  const currentStepRef = ref<HeaderAndFooterConfiguration | null>(null)
-
-  const isExpandable = computed(() => {
-    return currentStepRef.value?.headerExtras?.isExpandable
-  })
-
-  // Get breadcrumbs from current step component
-  const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => {
-    const exposed = currentStepRef.value?.headerExtras?.breadcrumbs
-    if (exposed) {
-      return isRef(exposed)
-        ? (exposed as unknown as ComputedRef<BreadcrumbItem[]>).value
-        : (exposed as BreadcrumbItem[])
-    }
-    // Fallback to centralized navigation when panel doesn't expose breadcrumbs
-    return navigationItems.value
-  })
-
-  const headerApplyOverrides = computed(() => {
-    return currentStepRef.value?.headerExtras?.applyOverrides
-  })
-
-  const headerActionButton = computed(() => {
-    return currentStepRef.value?.headerExtras?.actionButton
-  })
-
   const toggleExpanded = () => {
-    if (isExpandable.value) {
-      isExpanded.value = !isExpanded.value
-    }
+    isExpanded.value = !isExpanded.value
   }
 
-  // Bridge nested refs from child steps to primitives for props expecting non-Ref
-  const applyOverridesModelValue = computed({
-    get: (): boolean => {
-      const model = currentStepRef.value?.headerExtras?.applyOverrides?.model as
-        | Ref<boolean>
-        | undefined
-      return model?.value ?? false
-    },
-    set: (val: boolean) => {
-      currentStepRef.value?.headerExtras?.applyOverrides?.onInput?.(!!val)
-    }
-  })
+  const handleApplyOverridesChange = (val: boolean) => {
+    workflowStore.currentHeaderConfig?.applyOverrides?.onInput?.(!!val)
+  }
 
-  const searchModelValue = computed({
-    get: (): string => {
-      const model = currentStepRef.value?.headerExtras?.search?.model as Ref<string> | undefined
-      return model?.value ?? ''
-    },
-    set: (val: string) => {
-      currentStepRef.value?.headerExtras?.search?.onInput?.(val)
-    }
-  })
+  const handleSearchChange = (val: string) => {
+    workflowStore.currentHeaderConfig?.search?.onInput?.(val)
+  }
 
   /**
    * Handles scroll-to-element events from child components
@@ -124,6 +65,93 @@
       initializeEffects()
     }
   })
+
+  // Import header/footer config creators from step config modules
+  import { designHeaderConfig } from './WorkflowSteps/design/config'
+  import { productHeaderConfig } from './WorkflowSteps/product/config'
+  import { styleHeaderConfig } from './WorkflowSteps/style/config'
+  import { logoHeaderConfig } from './WorkflowSteps/logo/config'
+  import { colorsHeaderConfig } from './WorkflowSteps/colors/config'
+  import { textsHeaderConfig } from './WorkflowSteps/texts/config'
+  import { patternsHeaderConfig } from './WorkflowSteps/patterns/config'
+  import { rosterHeaderConfig } from './WorkflowSteps/roster/config'
+  import { summaryHeaderConfig } from './WorkflowSteps/summary/config'
+  import { summaryFooterConfig } from './WorkflowSteps/summary/config'
+  import { designFooterConfig } from './WorkflowSteps/design/config'
+  import { productFooterConfig } from './WorkflowSteps/product/config'
+  import { styleFooterConfig } from './WorkflowSteps/style/config'
+  import { logoFooterConfig } from './WorkflowSteps/logo/config'
+  import { colorsFooterConfig } from './WorkflowSteps/colors/config'
+  import { patternsFooterConfig } from './WorkflowSteps/patterns/config'
+  import { rosterFooterConfig } from './WorkflowSteps/roster/config'
+  import { getTextsFooterConfig } from './WorkflowSteps/texts/config'
+  // Repeat for other steps as available ...
+
+  // Instantiate step configs
+  const productHeader = productHeaderConfig
+  const designHeader = designHeaderConfig
+  const styleHeader = styleHeaderConfig
+  const logoHeader = logoHeaderConfig
+  const colorsHeader = colorsHeaderConfig
+  const textsHeader = textsHeaderConfig
+  const summaryHeader = summaryHeaderConfig
+
+  // Map current step to configs (resolve refs to plain objects)
+  function resolveHeader(
+    h: HeaderConfiguration | VueRef<HeaderConfiguration>
+  ): HeaderConfiguration {
+    return isRef(h) ? h.value : h
+  }
+
+  const headerConfig = computed<HeaderConfiguration>(() => {
+    switch (workflowStore.currentStep) {
+      case 'product':
+        return resolveHeader(productHeader)
+      case 'designs':
+        return resolveHeader(designHeader)
+      case 'styles':
+        return resolveHeader(styleHeader)
+      case 'logos':
+        return resolveHeader(logoHeader)
+      case 'colors':
+        return resolveHeader(colorsHeader)
+      case 'patterns':
+        return resolveHeader(patternsHeaderConfig)
+      case 'texts':
+        return resolveHeader(textsHeader)
+      case 'summary':
+        return resolveHeader(summaryHeader)
+      case 'roster':
+        return resolveHeader(rosterHeaderConfig)
+      default:
+        return { breadcrumbs: [] }
+    }
+  })
+
+  const footerConfig = computed<FooterConfiguration>(() => {
+    switch (workflowStore.currentStep) {
+      case 'product':
+        return productFooterConfig
+      case 'designs':
+        return designFooterConfig
+      case 'styles':
+        return styleFooterConfig
+      case 'logos':
+        return logoFooterConfig
+      case 'colors':
+        return colorsFooterConfig
+      case 'patterns':
+        return patternsFooterConfig
+      case 'texts':
+        return getTextsFooterConfig() // dynamic for edit step (no ref needed)
+      case 'summary':
+        return summaryFooterConfig
+      case 'roster':
+        return rosterFooterConfig
+      default:
+        return { buttons: [] } as FooterConfiguration
+    }
+  })
 </script>
 
 <template>
@@ -139,92 +167,45 @@
         leave-to-class="opacity-0 translate-y-4"
       >
         <WorkflowPanel
-          v-show="isPanelOpen"
+          v-show="workflowStore.isPanelOpen"
           ref="menuPanelRef"
-          :content-key="contentKey || ''"
+          :content-key="workflowStore.contentKey || ''"
           :expandable="false"
           :is-expanded="true"
+          :has-footer="footerConfig?.buttons?.length > 0"
         >
           <template #header>
-            <div class="w-full flex flex-col gap-5">
-              <div class="flex items-center gap-3 h-9 justify-center">
-                <div
-                  class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
-                >
-                  <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
-                </div>
-
-                <div v-if="headerApplyOverrides !== undefined" class="flex items-center gap-3">
-                  <Switch
-                    :model-value="applyOverridesModelValue"
-                    @update:model-value="val => (applyOverridesModelValue = !!val)"
-                  />
-                  <Label class="text-sm font-normal text-muted-foreground">{{
-                    headerApplyOverrides.label
-                  }}</Label>
-                </div>
-
-                <TooltipProvider v-if="headerActionButton">
-                  <Tooltip>
-                    <TooltipTrigger as-child>
-                      <Button variant="default" size="sm" @click="headerActionButton.callback">
-                        {{ headerActionButton.label }}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent v-if="headerActionButton.tooltip">
-                      <p>{{ headerActionButton.tooltip }}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-
-              <div v-if="currentStepRef?.headerExtras?.search" class="flex items-center flex-1">
-                <div class="relative w-full">
-                  <InputSearchGroup
-                    v-model="searchModelValue"
-                    :placeholder="currentStepRef?.headerExtras?.search?.placeholder || 'Search...'"
-                    :on-input="currentStepRef?.headerExtras?.search?.onInput"
-                  />
-                </div>
-              </div>
-            </div>
+            <WorkflowHeader
+              :config="headerConfig"
+              @update:apply-overrides-model-value="handleApplyOverridesChange"
+              @update:search-model-value="handleSearchChange"
+            />
+          </template>
+          <template v-if="footerConfig?.buttons?.length > 0" #footer>
+            <WorkflowFooter :config="footerConfig" />
           </template>
 
-          <ProductsEntry v-if="currentStep === 'product'" ref="currentStepRef" />
+          <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
           <DesignSelection
-            v-else-if="currentStep === 'designs'"
-            ref="currentStepRef"
+            v-else-if="workflowStore.currentStep === 'designs'"
             @scroll-to-element="handleScrollToElement"
           />
-          <StyleSelection v-else-if="currentStep === 'styles'" ref="currentStepRef" />
-          <LogoSelection v-else-if="currentStep === 'logos'" ref="currentStepRef" />
-          <ColorSelection v-else-if="currentStep === 'colors'" ref="currentStepRef" />
-          <PatternSelection v-else-if="currentStep === 'patterns'" ref="currentStepRef" />
-          <TextsSelection
-            v-else-if="currentStep === 'texts' && textsSubStep === 'list'"
-            ref="currentStepRef"
-          />
-          <TextPlacement
-            v-else-if="currentStep === 'texts' && textsSubStep === 'placement'"
-            ref="currentStepRef"
-          />
-          <TextEdit
-            v-else-if="currentStep === 'texts' && textsSubStep === 'edit'"
-            ref="currentStepRef"
-          />
-          <TextNumberFontSelection
-            v-else-if="currentStep === 'texts' && textsSubStep === 'number-font'"
-            ref="currentStepRef"
-          />
+          <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" />
+          <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" />
+          <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" />
+          <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
+          <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" ref="currentStepRef" />
           <RosterEntry
-            v-else-if="currentStep === 'roster' && rosterSubStep === 'list'"
-            ref="currentStepRef"
+            v-else-if="
+              workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'list'
+            "
           />
           <RosterEdit
-            v-else-if="currentStep === 'roster' && rosterSubStep === 'edit'"
-            ref="currentStepRef"
+            v-else-if="
+              workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'edit'
+            "
           />
-          <SummaryPanel v-else-if="currentStep === 'summary'" ref="currentStepRef" />
+          <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" />
         </WorkflowPanel>
       </transition>
     </div>
@@ -233,99 +214,43 @@
     <WorkflowPanel
       v-else
       ref="menuPanelRef"
-      :content-key="contentKey || ''"
-      :expandable="isExpandable"
+      :content-key="workflowStore.contentKey || ''"
+      :expandable="workflowStore.currentHeaderConfig?.isExpandable"
       :is-expanded="isExpanded"
+      :has-footer="footerConfig?.buttons?.length > 0"
       @update:is-expanded="isExpanded = $event"
     >
       <template #header>
-        <div class="w-full flex flex-col gap-5">
-          <div class="flex items-center gap-3 h-9 justify-center">
-            <div class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden">
-              <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
-            </div>
-
-            <div v-if="headerApplyOverrides !== undefined" class="flex items-center gap-3">
-              <Switch
-                :model-value="applyOverridesModelValue"
-                @update:model-value="val => (applyOverridesModelValue = !!val)"
-              />
-              <Label class="text-sm font-normal text-muted-foreground">{{
-                headerApplyOverrides.label
-              }}</Label>
-            </div>
-
-            <TooltipProvider v-if="headerActionButton">
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <Button variant="default" size="sm" @click="headerActionButton.callback">
-                    {{ headerActionButton.label }}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent v-if="headerActionButton.tooltip">
-                  <p>{{ headerActionButton.tooltip }}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <Button
-              v-if="isExpandable"
-              variant="default"
-              size="icon"
-              class="rounded-lg"
-              @click="toggleExpanded"
-            >
-              <component :is="isExpanded ? Minimize2 : Maximize2" class="size-4" />
-            </Button>
-          </div>
-
-          <div v-if="currentStepRef?.headerExtras?.search" class="flex items-center flex-1">
-            <div class="relative w-full">
-              <InputSearchGroup
-                v-model="searchModelValue"
-                :placeholder="currentStepRef?.headerExtras?.search?.placeholder || 'Search...'"
-                :on-input="currentStepRef?.headerExtras?.search?.onInput"
-              />
-            </div>
-          </div>
-        </div>
+        <WorkflowHeader
+          :config="headerConfig"
+          :is-expanded="isExpanded"
+          :show-expand-button="true"
+          @toggle-expanded="toggleExpanded"
+          @update:apply-overrides-model-value="handleApplyOverridesChange"
+          @update:search-model-value="handleSearchChange"
+        />
+      </template>
+      <template v-if="footerConfig?.buttons?.length > 0" #footer>
+        <WorkflowFooter :config="footerConfig" />
       </template>
 
-      <ProductsEntry v-if="currentStep === 'product'" ref="currentStepRef" />
+      <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
       <DesignSelection
-        v-else-if="currentStep === 'designs'"
-        ref="currentStepRef"
+        v-else-if="workflowStore.currentStep === 'designs'"
         @scroll-to-element="handleScrollToElement"
       />
-      <StyleSelection v-else-if="currentStep === 'styles'" ref="currentStepRef" />
-      <LogoSelection v-else-if="currentStep === 'logos'" ref="currentStepRef" />
-      <ColorSelection v-else-if="currentStep === 'colors'" ref="currentStepRef" />
-      <PatternSelection v-else-if="currentStep === 'patterns'" ref="currentStepRef" />
-      <TextsSelection
-        v-else-if="currentStep === 'texts' && textsSubStep === 'list'"
-        ref="currentStepRef"
-      />
-      <TextPlacement
-        v-else-if="currentStep === 'texts' && textsSubStep === 'placement'"
-        ref="currentStepRef"
-      />
-      <TextEdit
-        v-else-if="currentStep === 'texts' && textsSubStep === 'edit'"
-        ref="currentStepRef"
-      />
-      <TextNumberFontSelection
-        v-else-if="currentStep === 'texts' && textsSubStep === 'number-font'"
-        ref="currentStepRef"
-      />
+      <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" />
+      <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" />
+      <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" />
+      <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
+      <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" ref="currentStepRef" />
       <RosterEntry
-        v-else-if="currentStep === 'roster' && rosterSubStep === 'list'"
-        ref="currentStepRef"
+        v-else-if="workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'list'"
       />
       <RosterEdit
-        v-else-if="currentStep === 'roster' && rosterSubStep === 'edit'"
-        ref="currentStepRef"
+        v-else-if="workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'edit'"
       />
-      <SummaryPanel v-else-if="currentStep === 'summary'" ref="currentStepRef" />
+      <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" />
     </WorkflowPanel>
   </div>
 </template>

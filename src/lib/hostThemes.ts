@@ -19,14 +19,13 @@ export interface HostTheme {
 export const hostThemes: Record<string, HostTheme> = {
   // Development/Testing
   localhost: {
-    primary: '#3B82F6',
+    primary: '#14A892',
     radius: '0.5rem',
     font: {
-      default: { name: 'Geist' },
-      brandAccent: { name: 'Geist' }
+      default: { name: 'Geist' }
     },
-    name: 'Development Blue',
-    description: 'Blue primary with green accent for development',
+    name: 'Default Green',
+    description: 'default green theme',
     allowColorModeSwitch: true,
     defaultColorMode: 'light'
   },
@@ -47,22 +46,32 @@ export const hostThemes: Record<string, HostTheme> = {
     defaultColorMode: 'light'
   },
 
-  // Staging
   'builder-v2.custimoo.com': {
-    primary: '#e12d2e',
+    primary: '#14A892',
     radius: '0.5rem',
     font: {
-      default: { name: 'Geist' },
-      brandAccent: {
-        name: 'Orbitron',
-        url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
-      }
+      default: { name: 'Geist' }
     },
-    name: 'E-commerce Red',
-    description: 'Warm red primary with teal accent for shopping sites',
+    name: 'Default Green',
+    description: 'default green theme',
     allowColorModeSwitch: true,
-    defaultColorMode: 'dark'
+    defaultColorMode: 'light'
   },
+  // 'builder-v2.custimoo.com': {
+  //   primary: '#e12d2e',
+  //   radius: '0.5rem',
+  //   font: {
+  //     default: { name: 'Geist' },
+  //     brandAccent: {
+  //       name: 'Orbitron',
+  //       url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
+  //     }
+  //   },
+  //   name: 'E-commerce Red',
+  //   description: 'Warm red primary with teal accent for shopping sites',
+  //   allowColorModeSwitch: true,
+  //   defaultColorMode: 'dark'
+  // },
 
   // Example: E-commerce site
   'shop.example.com': {
@@ -78,7 +87,7 @@ export const hostThemes: Record<string, HostTheme> = {
     defaultColorMode: 'light'
   },
 
-  // Example: Corporate site
+  // Example: Corporate site DARK GREY
   'corporate.example.com': {
     primary: '#1F2937',
     radius: '0.375rem',
@@ -92,7 +101,7 @@ export const hostThemes: Record<string, HostTheme> = {
     defaultColorMode: 'light'
   },
 
-  // Example: Creative agency
+  // Example: Creative agency PURPLE
   'creative.example.com': {
     primary: '#8B5CF6',
     radius: '1rem',

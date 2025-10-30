@@ -4,9 +4,8 @@
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
   import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
 
-  // Breadcrumbs only
-  const headerExtras = { breadcrumbs: [{ label: 'Summary' }] }
-  defineExpose({ headerExtras })
+  const headerConfig = { breadcrumbs: [{ label: 'Summary' }] }
+  void headerConfig
 </script>
 
 <template>

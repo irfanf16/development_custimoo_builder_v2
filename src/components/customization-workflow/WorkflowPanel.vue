@@ -8,6 +8,7 @@
     expandable?: boolean
     isExpanded?: boolean
     contentKey?: string | number
+    hasFooter?: boolean
   }
 
   interface Emits {
@@ -17,7 +18,8 @@
   const props = withDefaults(defineProps<Props>(), {
     expandable: false,
     isExpanded: false,
-    contentKey: undefined
+    contentKey: undefined,
+    hasFooter: false
   })
 
   const emit = defineEmits<Emits>()
@@ -57,11 +59,19 @@
   })
 
   const scrollAreaMaxHeight = computed(() => {
-    return uiStore.isMobile ? 'max-h-[calc(65vh-10rem)]' : 'max-h-[38rem]'
+    if (uiStore.isMobile) {
+      return props.hasFooter ? 'max-h-[calc(65vh-10rem)]' : 'max-h-[calc(65vh-5rem)]'
+    }
+    return props.hasFooter ? 'max-h-[33rem]' : 'max-h-[38rem]'
   })
 
   const footerClasses = computed(() => {
-    return uiStore.isMobile ? '' : 'px-4 md:px-6 flex-shrink-0 py-4 md:py-6 border-t'
+    if (uiStore.isMobile) {
+      return ''
+    }
+    return props.hasFooter
+      ? 'px-4 md:px-6 flex-shrink-0 pt-4 md:pt-6 border-t'
+      : 'px-4 md:px-6 flex-shrink-0 py-4 md:py-6 border-t'
   })
 
   /**

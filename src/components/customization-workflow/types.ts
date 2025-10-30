@@ -1,16 +1,15 @@
-import type { ComputedRef, Ref } from 'vue'
+import type { ButtonVariants } from '../ui/button'
 
 export type BreadcrumbItem = { label: string; action?: () => void }
 
 export type HeaderConfiguration = {
-  breadcrumbs?: ComputedRef<BreadcrumbItem[]>
+  breadcrumbs?: BreadcrumbItem[]
   search?: {
     placeholder: string
-    model: Ref<string>
     onInput: (val: string) => void
   }
   applyOverrides?: {
-    model: Ref<boolean>
+    value?: boolean
     onInput: (val: boolean) => void
     label: string
   }
@@ -22,8 +21,20 @@ export type HeaderConfiguration = {
   isExpandable?: boolean
 }
 
+export type FooterButton = {
+  label: string
+  variant: ButtonVariants['variant']
+  disabled?: boolean
+  onClick: () => void
+}
+
+export type FooterConfiguration = {
+  buttons: FooterButton[]
+}
+
 export type HeaderAndFooterConfiguration = {
   headerExtras?: HeaderConfiguration
+  footerExtras?: FooterConfiguration
 }
 
 export type WorkflowProductsEntryVariant = 'cards' | 'list'

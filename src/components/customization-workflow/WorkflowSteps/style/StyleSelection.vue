@@ -74,12 +74,6 @@
     })) as Array<{ addon_id: number; title: string }>
   })
 
-  // Breadcrumb logic for style selection
-  const breadcrumbs = computed(() => {
-    const title = productsStore.activeProductDetails?.display_name || 'Styles'
-    return [{ label: title }]
-  })
-
   // Header search config
   const styleSearchQuery = computed({
     get: () => '',
@@ -91,8 +85,7 @@
     return previews.value.filter((s: OutputStylePreviewFront) => s.name.toLowerCase().includes(q))
   })
 
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  // header/footer config moved to config.ts
 </script>
 
 <template>
