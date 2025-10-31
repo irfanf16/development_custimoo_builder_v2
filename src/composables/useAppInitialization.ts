@@ -23,11 +23,11 @@ export function useAppInitialization() {
   const wf = useWorkflowStore()
 
   // PHASE 1: Initialize stores from localStorage (non-blocking operations)
-  const initializeStoresFromLocalStorage = () => {
+  const initializeStoresFromLocalStorage = async () => {
     // Initialize authentication state from localStorage
     try {
       const authStore = useAuthStore()
-      authStore.loadFromLocalStorage()
+      await authStore.loadFromLocalStorage()
     } catch {
       // In rare cases the store may not be available; ignore and continue
     }
@@ -236,7 +236,7 @@ export function useAppInitialization() {
       try {
         // PHASE 1: Initialize stores from localStorage
         const { productsStore, customizationStore, hasActiveCustomization } =
-          initializeStoresFromLocalStorage()
+          await initializeStoresFromLocalStorage()
 
         // PHASE 2: Fetch essential data from API
         await fetchEssentialData()

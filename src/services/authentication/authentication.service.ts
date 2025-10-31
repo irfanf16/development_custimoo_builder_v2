@@ -6,6 +6,18 @@ async function postLogin(data: InputLogin) {
   return await http.post<OutputLogin>('customer/login', data)
 }
 
+async function refreshToken(refreshToken: string) {
+  return await http.get<OutputLogin>('customer/from/token', {
+    params: { token: refreshToken },
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0'
+    }
+  })
+}
+
 export default {
-  postLogin
+  postLogin,
+  refreshToken
 }

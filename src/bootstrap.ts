@@ -4,6 +4,7 @@ import router from './router'
 import App from './App.vue'
 import '@/icons/flex-flat-categories'
 import { useUIStore } from '@/stores/ui/ui.store'
+import { useAuthStore } from '@/stores/auth/auth.store'
 
 // Import CSS styles
 import widgetStyles from './styles.css?inline'
@@ -84,10 +85,22 @@ function preventMobileZoom() {
   viewport.setAttribute('content', newContent)
 }
 
+function enforceNoReferrerPolicy() {
+  if (typeof document === 'undefined') return
+  let referrerMeta = document.querySelector('meta[name="referrer"]')
+  if (!referrerMeta) {
+    referrerMeta = document.createElement('meta')
+    referrerMeta.setAttribute('name', 'referrer')
+    document.head.appendChild(referrerMeta)
+  }
+  referrerMeta.setAttribute('content', 'no-referrer')
+}
+
 // Function to bootstrap and mount the Vue.js application
 export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unknown>) {
   // Prevent mobile zoom
   preventMobileZoom()
+  enforceNoReferrerPolicy()
 
   // Create a container element within the shadow root
   const container = document.createElement('div')
@@ -99,6 +112,10 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   // Initialize Pinia and UI store early to manage viewport state
   const pinia = createPinia()
   const ui = useUIStore(pinia)
+
+  // Load auth state from localStorage on app start
+  const authStore = useAuthStore(pinia)
+  void authStore.loadFromLocalStorage()
 
   // Set container height with responsive minimum heights from the UI store
   const setContainerHeight = () => {

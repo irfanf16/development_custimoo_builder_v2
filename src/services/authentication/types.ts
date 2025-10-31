@@ -21,12 +21,14 @@ export type OutputLogin =
   | {
       user: Customer
       access_token: string
+      refresh_token?: string
       errors?: undefined
     }
   | {
       errors: Partial<Record<keyof InputLogin, string[]>>
       user?: undefined
       access_token?: undefined
+      refresh_token?: undefined
     }
 
 export type InputLogin = {

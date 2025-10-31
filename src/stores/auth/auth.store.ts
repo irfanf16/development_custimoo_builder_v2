@@ -9,8 +9,20 @@ export const useAuthStore = defineStore('authStore', () => {
   // ===== STATE =====
   const customer = ref<Customer | null>(null)
   const accessToken = ref<string | null>(null)
+  const refreshToken = ref<string | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const isRefreshing = ref(false)
+  const refreshPromise = ref<Promise<boolean> | null>(null)
+  const encryptionKey = ref<CryptoKey | null>(null)
+
+  const hasWindow = typeof window !== 'undefined'
+  const hasCryptoSupport = hasWindow && !!window.crypto?.subtle
+  const CUSTOMER_STORAGE_KEY = 'customer'
+  const ACCESS_TOKEN_STORAGE_KEY = 'jwtToken'
+  const REFRESH_TOKEN_STORAGE_KEY = 'refreshToken'
+  const REFRESH_TOKEN_CIPHER_KEY = 'refreshTokenCipher'
+  const REFRESH_TOKEN_ENC_KEY = 'refreshTokenEncKey'
 
   // ===== COMPUTED =====
   const isAuthenticated = computed(() => !!accessToken.value)
@@ -36,53 +48,293 @@ export const useAuthStore = defineStore('authStore', () => {
     accessToken.value = data
   }
 
+  function setRefreshToken(data: string) {
+    refreshToken.value = data
+  }
+
   function clearAuth() {
     customer.value = null
     accessToken.value = null
+    refreshToken.value = null
+    refreshPromise.value = null
+    encryptionKey.value = null
+  }
+
+  function bufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
+    if (!hasWindow) return ''
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer)
+    let binary = ''
+    bytes.forEach(byte => {
+      binary += String.fromCharCode(byte)
+    })
+    return window.btoa(binary)
+  }
+
+  function base64ToUint8Array(base64: string): Uint8Array {
+    if (!hasWindow) return new Uint8Array()
+    const binaryString = window.atob(base64)
+    const length = binaryString.length
+    const bytes = new Uint8Array(length)
+    for (let i = 0; i < length; i += 1) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+    return bytes
+  }
+
+  function cloneToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+    const copy = bytes.slice()
+    return copy.buffer.slice(0)
+  }
+
+  async function ensureEncryptionKey(): Promise<CryptoKey | null> {
+    if (!hasCryptoSupport) return null
+    if (encryptionKey.value) return encryptionKey.value
+
+    const sessionStorage = window.sessionStorage
+    let rawKeyBase64 = sessionStorage.getItem(REFRESH_TOKEN_ENC_KEY)
+
+    if (!rawKeyBase64) {
+      const rawKey = window.crypto.getRandomValues(new Uint8Array(32))
+      rawKeyBase64 = bufferToBase64(rawKey)
+      sessionStorage.setItem(REFRESH_TOKEN_ENC_KEY, rawKeyBase64)
+      const keyBuffer = cloneToArrayBuffer(rawKey)
+      encryptionKey.value = await window.crypto.subtle.importKey(
+        'raw',
+        keyBuffer,
+        'AES-GCM',
+        false,
+        ['encrypt', 'decrypt']
+      )
+      return encryptionKey.value
+    }
+
+    const rawKey = base64ToUint8Array(rawKeyBase64)
+    const keyBuffer = cloneToArrayBuffer(rawKey)
+    encryptionKey.value = await window.crypto.subtle.importKey('raw', keyBuffer, 'AES-GCM', false, [
+      'encrypt',
+      'decrypt'
+    ])
+    return encryptionKey.value
+  }
+
+  async function encryptRefreshToken(value: string): Promise<string | null> {
+    if (!hasCryptoSupport) return value
+    const key = await ensureEncryptionKey()
+    if (!key) return null
+
+    const encoder = new TextEncoder()
+    const data = encoder.encode(value)
+    const iv = window.crypto.getRandomValues(new Uint8Array(12))
+    const encrypted = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data)
+    const combined = new Uint8Array(iv.length + encrypted.byteLength)
+    combined.set(iv, 0)
+    combined.set(new Uint8Array(encrypted), iv.length)
+    return bufferToBase64(combined)
+  }
+
+  async function decryptRefreshToken(payload: string | null): Promise<string | null> {
+    if (!payload) return null
+    if (!hasCryptoSupport) return payload
+    const key = await ensureEncryptionKey()
+    if (!key) return null
+
+    const combined = base64ToUint8Array(payload)
+    const iv = combined.slice(0, 12)
+    const ciphertext = combined.slice(12)
+    try {
+      const decrypted = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext)
+      const decoder = new TextDecoder()
+      return decoder.decode(decrypted)
+    } catch (error) {
+      console.error('Failed to decrypt refresh token:', error)
+      return null
+    }
+  }
+
+  // ===== TOKEN UTILITIES =====
+  type JWTPayload = {
+    exp?: number
+    [key: string]: unknown
+  }
+
+  function parseJwt(token: string): JWTPayload | null {
+    try {
+      const parts = token.split('.')
+      if (parts.length !== 3) {
+        return null
+      }
+      const base64Url = parts[1]
+      if (!base64Url) {
+        return null
+      }
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => `%${('00' + c.charCodeAt(0).toString(16)).slice(-2)}`)
+          .join('')
+      )
+      return JSON.parse(jsonPayload) as JWTPayload
+    } catch (e) {
+      console.error('Invalid JWT token:', e)
+      return null
+    }
+  }
+
+  function isTokenExpired(token: string): boolean {
+    const decoded = parseJwt(token)
+    if (!decoded || typeof decoded.exp !== 'number') {
+      // If no expiration claim, assume token is valid
+      return false
+    }
+    const nowInSeconds = Math.floor(Date.now() / 1000)
+    return decoded.exp < nowInSeconds
+  }
+
+  // ===== REFRESH TOKEN ACTION =====
+  async function refreshAccessToken(): Promise<boolean> {
+    if (refreshPromise.value) {
+      return refreshPromise.value
+    }
+
+    if (!refreshToken.value) {
+      console.error('No refresh token available')
+      return false
+    }
+
+    const tokenToRefresh = refreshToken.value
+
+    const operation = (async () => {
+      isRefreshing.value = true
+      try {
+        const response = await tryCatchApi(API.authentication.refreshToken(tokenToRefresh))
+
+        if (response.success && response.content) {
+          const { access_token, refresh_token, user } = response.content
+
+          if (access_token && typeof access_token === 'string') {
+            setAccessToken(access_token)
+          }
+          if (refresh_token && typeof refresh_token === 'string') {
+            setRefreshToken(refresh_token)
+          }
+          if (user) {
+            setCustomer(user)
+          }
+
+          await saveToLocalStorage()
+          return true
+        }
+
+        console.error('Failed to refresh access token', response.axiosError)
+        logout()
+        return false
+      } catch (error) {
+        console.error('Error refreshing token:', error)
+        logout()
+        return false
+      } finally {
+        isRefreshing.value = false
+        refreshPromise.value = null
+      }
+    })()
+
+    refreshPromise.value = operation
+    return operation
   }
 
   // ===== PERSISTENCE =====
-  function saveToLocalStorage() {
-    if (typeof window === 'undefined') return
+  async function saveToLocalStorage(): Promise<void> {
+    if (!hasWindow) return
+    const local = window.localStorage
+    const session = window.sessionStorage
+
     if (customer.value) {
-      localStorage.setItem('customer', JSON.stringify(customer.value))
+      local.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(customer.value))
+    } else {
+      local.removeItem(CUSTOMER_STORAGE_KEY)
     }
+
     if (accessToken.value) {
-      localStorage.setItem('jwtToken', accessToken.value)
+      session.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken.value)
+    } else {
+      session.removeItem(ACCESS_TOKEN_STORAGE_KEY)
     }
+
+    if (refreshToken.value) {
+      const encrypted = await encryptRefreshToken(refreshToken.value)
+      if (encrypted) {
+        local.setItem(REFRESH_TOKEN_CIPHER_KEY, encrypted)
+      }
+    } else {
+      local.removeItem(REFRESH_TOKEN_CIPHER_KEY)
+    }
+
+    // Remove legacy plain-text storage if present
+    local.removeItem(REFRESH_TOKEN_STORAGE_KEY)
   }
 
-  function loadFromLocalStorage() {
-    if (typeof window === 'undefined') return false
-    const customerJson = localStorage.getItem('customer')
-    const jwtToken = localStorage.getItem('jwtToken')
-    if (customerJson && jwtToken) {
+  async function loadFromLocalStorage(): Promise<boolean> {
+    if (!hasWindow) return false
+    const local = window.localStorage
+    const session = window.sessionStorage
+
+    const customerJson = local.getItem(CUSTOMER_STORAGE_KEY)
+    const jwtToken = session.getItem(ACCESS_TOKEN_STORAGE_KEY)
+    const encryptedRefreshToken = local.getItem(REFRESH_TOKEN_CIPHER_KEY)
+    const legacyRefreshToken = encryptedRefreshToken
+      ? null
+      : local.getItem(REFRESH_TOKEN_STORAGE_KEY)
+
+    if (customerJson) {
       try {
         const parsed = JSON.parse(customerJson) as unknown
-        // Trust stored data shape; upstream writes a validated Customer
         setCustomer(parsed as Customer)
-        setAccessToken(jwtToken)
-        return true
       } catch (error) {
         console.error('Failed to parse stored customer data:', error)
         clearAuth()
+        return false
       }
     }
-    return false
+
+    if (jwtToken) {
+      setAccessToken(jwtToken)
+    }
+
+    if (encryptedRefreshToken) {
+      const decrypted = await decryptRefreshToken(encryptedRefreshToken)
+      if (decrypted) {
+        setRefreshToken(decrypted)
+      }
+    } else if (legacyRefreshToken) {
+      setRefreshToken(legacyRefreshToken)
+      void saveToLocalStorage()
+    }
+
+    return !!(customerJson && (jwtToken || encryptedRefreshToken || legacyRefreshToken))
   }
 
   function clearLocalStorage() {
-    if (typeof window === 'undefined') return
-    localStorage.removeItem('customer')
-    localStorage.removeItem('jwtToken')
+    if (!hasWindow) return
+    const local = window.localStorage
+    const session = window.sessionStorage
+    local.removeItem(CUSTOMER_STORAGE_KEY)
+    session.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+    local.removeItem(REFRESH_TOKEN_CIPHER_KEY)
+    local.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+    session.removeItem(REFRESH_TOKEN_ENC_KEY)
   }
 
   // ===== BUSINESS LOGIC =====
-  function initCustomerAndAccessToken(data: OutputLogin) {
-    if (data.user && data.access_token) {
+  async function initCustomerAndAccessToken(data: OutputLogin): Promise<void> {
+    if ('user' in data && 'access_token' in data && data.user && data.access_token) {
       setCustomer(data.user)
       setAccessToken(data.access_token)
-      saveToLocalStorage()
+      const refreshTokenValue = 'refresh_token' in data ? data.refresh_token : undefined
+      if (refreshTokenValue && typeof refreshTokenValue === 'string') {
+        setRefreshToken(refreshTokenValue)
+      }
+      await saveToLocalStorage()
     }
   }
 
@@ -96,7 +348,7 @@ export const useAuthStore = defineStore('authStore', () => {
     setError(null)
     const output = await tryCatchApi(API.authentication.postLogin(input))
     if (output.success) {
-      initCustomerAndAccessToken(output.content)
+      await initCustomerAndAccessToken(output.content)
     } else {
       setError('Login error')
     }
@@ -109,8 +361,10 @@ export const useAuthStore = defineStore('authStore', () => {
     // State
     customer,
     accessToken,
+    refreshToken,
     isLoading,
     error,
+    isRefreshing,
     // Computed
     isAuthenticated,
     customerInitials,
@@ -119,7 +373,12 @@ export const useAuthStore = defineStore('authStore', () => {
     setError,
     setCustomer,
     setAccessToken,
+    setRefreshToken,
     clearAuth,
+    // Token utilities
+    parseJwt,
+    isTokenExpired,
+    refreshAccessToken,
     // Persistence
     saveToLocalStorage,
     loadFromLocalStorage,
