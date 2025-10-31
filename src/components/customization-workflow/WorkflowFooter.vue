@@ -1,7 +1,9 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
   import type { FooterButton } from './types'
+  import { useUIStore } from '@/stores/ui/ui.store'
 
+  const uiStore = useUIStore()
   const props = defineProps<{ config?: { buttons?: FooterButton[] } }>()
 </script>
 <template>
@@ -11,6 +13,7 @@
       :key="button.label"
       :variant="button.variant"
       :disabled="button.disabled ?? false"
+      :size="uiStore.isMobile ? 'sm' : 'default'"
       class="flex-1"
       @click="button.onClick"
       >{{ button.label }}</Button

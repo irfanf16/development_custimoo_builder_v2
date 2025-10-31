@@ -173,6 +173,7 @@
           :expandable="false"
           :is-expanded="true"
           :has-footer="footerConfig?.buttons?.length > 0"
+          :has-search="!!headerConfig?.search"
         >
           <template #header>
             <WorkflowHeader
@@ -218,6 +219,7 @@
       :expandable="workflowStore.currentHeaderConfig?.isExpandable"
       :is-expanded="isExpanded"
       :has-footer="footerConfig?.buttons?.length > 0"
+      :has-search="!!headerConfig?.search"
       @update:is-expanded="isExpanded = $event"
     >
       <template #header>

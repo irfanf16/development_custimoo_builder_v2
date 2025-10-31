@@ -22,7 +22,7 @@
       <div id="main-content" class="mobile-layout flex flex-col gap-2 w-full h-full">
         <CustomizerTopbar class="z-20" />
         <ProductPreview />
-        <WorkflowLayout class="z-10" />
+        <WorkflowLayout class="z-30" />
         <CustomizerMenuMobile />
       </div>
     </template>
@@ -33,7 +33,7 @@
           <div id="menu-items-container" class="flex-col z-10">
             <CustomizerMenu />
           </div>
-          <WorkflowLayout class="z-10" />
+          <WorkflowLayout class="z-30" />
         </div>
 
         <div id="right-content" class="flex flex-col w-full justify-between items-end">

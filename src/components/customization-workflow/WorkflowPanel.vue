@@ -9,6 +9,7 @@
     isExpanded?: boolean
     contentKey?: string | number
     hasFooter?: boolean
+    hasSearch?: boolean
   }
 
   interface Emits {
@@ -60,9 +61,16 @@
 
   const scrollAreaMaxHeight = computed(() => {
     if (uiStore.isMobile) {
-      return props.hasFooter ? 'max-h-[calc(65vh-10rem)]' : 'max-h-[calc(65vh-5rem)]'
+      let baseMinus = 7
+      if (props.hasFooter) {
+        baseMinus += 3
+      }
+      if (props.hasSearch) {
+        baseMinus += 4
+      }
+      return `calc(65vh - ${baseMinus}rem)`
     }
-    return props.hasFooter ? 'max-h-[33rem]' : 'max-h-[38rem]'
+    return props.hasFooter ? '33rem' : '38rem'
   })
 
   const footerClasses = computed(() => {
@@ -179,7 +187,7 @@
 
       <CardContent class="h-full p-0 px-0 md:p-0 md:px-0 min-h-0">
         <ScrollArea>
-          <div :class="scrollAreaMaxHeight">
+          <div id="TEST HEREE" :style="{ maxHeight: scrollAreaMaxHeight }">
             <!-- Content slot for different panel types -->
             <Transition name="panel-slide" mode="out-in" appear>
               <div ref="cardContentRef" :key="props.contentKey" class="overflow-y-auto">
