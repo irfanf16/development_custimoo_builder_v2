@@ -35,6 +35,15 @@ export const useProductsStore = defineStore('productsStore', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
+  // ===== COMPUTED =====
+  // Product type flags from categories response
+  const isCustomized = computed(() => categories.value?.customized ?? false)
+  const isPersonalized = computed(() => categories.value?.personalized ?? false)
+  const isPrivateProduct = computed(() => categories.value?.private_product ?? false)
+  const customizedCount = computed(() => categories.value?.customized_count ?? 0)
+  const personalizedCount = computed(() => categories.value?.personalized_count ?? 0)
+  const privateProductCount = computed(() => categories.value?.private_product_count ?? 0)
+
   // ===== UTILITIES =====
   const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
   function fromStorage(path: string): string {
@@ -147,13 +156,22 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   // ===== API FUNCTIONS =====
-  async function fetchCustomizedCategories(): Promise<APIResponse<OutputProductCategories>> {
+  async function fetchCustomizedCategories(
+    params?: GetProductCategoriesParams
+  ): Promise<APIResponse<OutputProductCategories>> {
     setLoading(true)
     setError(null)
-    const params: GetProductCategoriesParams = { customized: true }
-    const output = await tryCatchApi(API.products.getProductCategories(params))
+    const queryParams: GetProductCategoriesParams = params ?? { customized: true }
+    const output = await tryCatchApi(API.products.getProductCategories(queryParams))
     if (output.success) {
       setCategories(output.content)
+
+      // If product not found and we have a stored customization, clear it
+      // This happens when localStorage has a product_id but the product is no longer available
+      if (output.content?.no_product_found && customization.customization) {
+        customization.customization = null
+        customization.clearLocalStorage()
+      }
     } else {
       setError('Error getting customized categories')
     }
@@ -355,6 +373,13 @@ export const useProductsStore = defineStore('productsStore', () => {
     recentLogos,
     isLoading,
     error,
+    // Computed
+    isCustomized,
+    isPersonalized,
+    isPrivateProduct,
+    customizedCount,
+    personalizedCount,
+    privateProductCount,
     // Actions
     setLoading,
     setError,

@@ -110,6 +110,11 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     return false
   }
 
+  function clearLocalStorage() {
+    if (typeof window === 'undefined') return
+    window.localStorage.removeItem('activeProductCustomization')
+  }
+
   // ===== ACTIONS =====
   function setCustomization(initial: ActiveProductCustomization) {
     customization.value = initial
@@ -363,6 +368,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     // Persistence
     saveToLocalStorage,
     loadFromLocalStorage,
+    clearLocalStorage,
     // Actions
     setCustomization,
     setCategory,

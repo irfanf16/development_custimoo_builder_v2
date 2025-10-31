@@ -7,6 +7,7 @@ import { useLocaleStore } from '@/stores/locale/locale.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useWorkflow } from './useWorkflow'
 import { useHistoryStore } from '@/stores/history/history.store'
+import { useCategoryParams } from './useCategoryParams'
 import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
 import type { OutputDesignDetails } from '../services/products/types'
 
@@ -55,11 +56,15 @@ export function useAppInitialization() {
   const fetchEssentialData = async () => {
     const companyStore = useCompanyStore()
     const productsStore = useProductsStore()
+    const { categoryParams } = useCategoryParams()
+
+    // Use URL-based params if available, otherwise undefined (will default to customized=true)
+    const params = categoryParams.value
 
     await Promise.all([
       companyStore.fetchCompany(),
       companyStore.fetchSettings(),
-      productsStore.fetchCustomizedCategories()
+      productsStore.fetchCustomizedCategories(params)
     ])
   }
 
@@ -72,13 +77,30 @@ export function useAppInitialization() {
     const localeStore = useLocaleStore()
     localeStore.initializeLocale()
 
-    // Determine the effective category ID for loading products
+    // Priority order for category selection:
+    // 1. API response product_category_id (from URL params or backend)
+    // 2. Previously selected category from localStorage
+    // 3. First category from API response
     const effectiveCategoryId =
-      customizationStore.activeCategoryId || productsStore.categories?.data?.[0]?.id || null
-    const effectiveSubCategoryId =
-      customizationStore.activeSubCategoryId ||
-      productsStore.categories?.data?.[0]?.subcategories?.[0]?.id ||
+      productsStore.categories?.product_category_id ??
+      customizationStore.activeCategoryId ??
+      productsStore.categories?.data?.[0]?.id ??
+      null
+
+    // Priority order for subcategory selection:
+    // 1. API response product_sub_category_id (from URL params or backend)
+    // 2. Previously selected subcategory from localStorage
+    // 3. First subcategory from the selected category
+    let effectiveSubCategoryId =
+      productsStore.categories?.product_sub_category_id ??
+      customizationStore.activeSubCategoryId ??
       undefined
+
+    // If we have an effective category but no subcategory, try to find the first subcategory
+    if (effectiveCategoryId && !effectiveSubCategoryId) {
+      const category = productsStore.categories?.data?.find(c => c.id === effectiveCategoryId)
+      effectiveSubCategoryId = category?.subcategories?.[0]?.id ?? undefined
+    }
 
     if (effectiveCategoryId) {
       wf.setSelectedCategoryForPreview(effectiveCategoryId)
