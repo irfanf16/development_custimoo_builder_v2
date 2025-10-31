@@ -26,7 +26,7 @@
       :placeholder="props.placeholder"
       :model-value="modelValue"
       :class="cn('text-sm', props.class)"
-      @update:model-value="(val: string | number) => emits('update:modelValue', String(val))"
+      @update:model-value="(val: string | number) => emits('update:modelValue', val)"
     />
     <InputGroupAddon>
       <Search />

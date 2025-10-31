@@ -30,8 +30,6 @@
   // Use props.isExpanded with fallback for internal state
   const isExpanded = computed(() => props.isExpanded ?? false)
 
-  // REMOVE workflowStore/currentHeaderConfig usage; access config from props.config
-  // All computed using workflowStore.currentHeaderConfig? -> use props.config?
   const isExpandable = computed(() => props.config?.isExpandable)
 
   // Get breadcrumbs from current step component
@@ -60,8 +58,8 @@
   }
 
   const handleSearchInput = (val: string) => {
+    searchModelValue.value = val
     props.config?.search?.onInput?.(val)
-    console.log('handleSearchInput', val)
   }
 </script>
 
@@ -112,7 +110,7 @@
           <InputSearchGroup
             :model-value="searchModelValue"
             :placeholder="props.config?.search?.placeholder || 'Search...'"
-            @update:model-value="(val: string | number) => handleSearchInput(String(val))"
+            @update:model-value="(val: string | number) => handleSearchInput(val as string)"
           />
         </div>
       </div>

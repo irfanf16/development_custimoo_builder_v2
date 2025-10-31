@@ -69,7 +69,9 @@ export const productHeaderConfig = computed<HeaderConfiguration>(() => {
     breadcrumbs: trail,
     search: {
       placeholder: 'Search products...',
-      onInput: (val: string) => (productSearchModel.value = val)
+      onInput: (val: string) => {
+        productSearchModel.value = val
+      }
     },
     isExpandable: true
   }
