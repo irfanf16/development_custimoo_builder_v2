@@ -13,6 +13,7 @@ export type OutputProductPreview = {
   product_id: number
   is_3d_product: number
   show_3d: number
+  product_type: 'customized' | 'personalized'
 }
 
 export type OutputProductDesignCategory = {

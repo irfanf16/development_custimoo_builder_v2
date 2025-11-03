@@ -1,5 +1,5 @@
 import { ref, computed, type Ref } from 'vue'
-import type { HeaderConfiguration, FooterConfiguration } from '../../types'
+import type { HeaderConfiguration, FooterConfiguration, SearchConfiguration } from '../../types'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -12,16 +12,16 @@ const customizationStore = useCustomizationStore()
 
 export const productHeaderConfig = computed<HeaderConfiguration>(() => {
   // Build product breadcrumbs using the same logic previously in workflow.store.ts (navigationItems)
-  if (workflowStore.activeStep !== 'product') {
-    return {
-      search: {
+
+  const search = computed<SearchConfiguration | null>(() => {
+    if (workflowStore.productsSubStep === 'product') {
+      return {
         placeholder: 'Search products...',
         onInput: (val: string) => (productSearchModel.value = val)
-      },
-      isExpandable: true
+      }
     }
-  }
-
+    return null
+  })
   const trail: { label: string; action?: () => void }[] = []
 
   if (workflowStore.productsSubStep === 'category') {
@@ -67,12 +67,7 @@ export const productHeaderConfig = computed<HeaderConfiguration>(() => {
 
   return {
     breadcrumbs: trail,
-    search: {
-      placeholder: 'Search products...',
-      onInput: (val: string) => {
-        productSearchModel.value = val
-      }
-    },
+    search: search.value ?? undefined,
     isExpandable: true
   }
 })

@@ -8,12 +8,15 @@ export type DesignCategoriesConfig = {
   onSelect: (id: number | null) => void
   defaultLabel?: string
 }
+
+export type SearchConfiguration = {
+  placeholder: string
+  onInput: (val: string) => void
+}
+
 export type HeaderConfiguration = {
   breadcrumbs?: BreadcrumbItem[]
-  search?: {
-    placeholder: string
-    onInput: (val: string) => void
-  }
+  search?: SearchConfiguration
   applyOverrides?: {
     value?: boolean
     onInput: (val: boolean) => void

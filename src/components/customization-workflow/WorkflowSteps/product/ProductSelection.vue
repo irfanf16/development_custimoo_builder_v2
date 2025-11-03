@@ -7,6 +7,7 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
+  import { Badge } from '@/components/ui/badge'
   import type { OutputDesignDetails } from '@/services/products/types'
 
   interface Emits {
@@ -93,6 +94,18 @@
     isExpandable: true
   }))
   void headerConfig.value
+
+  // Only show badge if there are both bespoke and personalized products
+  const hasBespokeAndPersonalizedProducts = computed(() => {
+    return (
+      previews.value.some(
+        p => p.productPreview.product_type && p.productPreview.product_type === 'customized'
+      ) &&
+      previews.value.some(
+        p => p.productPreview.product_type && p.productPreview.product_type === 'personalized'
+      )
+    )
+  })
 </script>
 
 <template>
@@ -109,10 +122,23 @@
       ]"
       @click="handleSelectProduct(item.productPreview.id)"
     >
-      <div
-        class="text-sm md:text-base font-medium text-left w-full text-foreground truncate max-w-[145px] overflow-ellipsis leading-none"
-      >
-        {{ item.productPreview.display_name }}
+      <div class="flex flex-col gap-2 items-start w-full justify-start">
+        <Badge
+          v-if="
+            hasBespokeAndPersonalizedProducts &&
+            item.productPreview.product_type &&
+            item.productPreview.product_type === 'customized'
+          "
+          variant="outline"
+          class="font-normal self-start"
+        >
+          Bespoke
+        </Badge>
+        <div
+          class="text-sm md:text-base font-medium text-left w-full text-foreground truncate max-w-[145px] overflow-ellipsis leading-none self-start"
+        >
+          {{ item.productPreview.display_name }}
+        </div>
       </div>
       <div class="px-2">
         <ProductPreviewCanvas
