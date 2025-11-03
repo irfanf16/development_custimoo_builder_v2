@@ -66,8 +66,10 @@
                   :key="status.value"
                   :class="{ 'bg-accent': status.value === store.ordersParams.filter }"
                   @click="
-                    store.ordersParams.filter = status.value
-                    store.filterOrders()
+                    () => {
+                      store.ordersParams.filter = status.value
+                      store.filterOrders()
+                    }
                   "
                 >
                   {{ status.text }}
