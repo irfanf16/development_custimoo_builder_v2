@@ -11,11 +11,12 @@ export const useProfileStore = defineStore('profileStore', () => {
     track_my_orders_count: 0
   })
   const isLoading = ref(false)
+  const isLoadingOrders = ref(false)
   const error = ref<string | null>(null)
   // Orders state
   const orders = ref<any[]>([])
   const ordersView = ref<'grid' | 'list'>('list')
-  const ordersPageType = ref<string>('order')
+  const ordersPageType = ref<'order' | 'quote'>('order')
   const ordersParams = ref<{ search: string; filter: string | null }>({ search: '', filter: null })
   const pagination = ref<{ currentPage: number; perPage: number; total: number; rows: number }>({
     currentPage: 1,
@@ -41,7 +42,7 @@ export const useProfileStore = defineStore('profileStore', () => {
 
   // Orders
   async function fetchOrders(params?: string) {
-    isLoading.value = true
+    isLoadingOrders.value = true
     try {
       const res = await API.orders.getOrders(params, ordersPageType.value)
       console.log('Fetched orders:', res)
@@ -50,7 +51,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'Failed to load orders'
     } finally {
-      isLoading.value = false
+      isLoadingOrders.value = false
     }
   }
 
@@ -135,6 +136,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     clearFilter,
     cancelOrder,
     setView,
-    filterOrders
+    filterOrders,
+    isLoadingOrders
   }
 })
