@@ -3,18 +3,42 @@
   import DialogContent from '@/components/ui/dialog/DialogContent.vue'
   import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
   import { useProfileDialogState } from '@/composables/useProfileDialogState'
+  import AccountTab from './account-section/AccountTab.vue'
+  import OrdersTab from './orders-section/OrdersTab.vue'
+  // import AddressTab from './address-section/AddressTab.vue'
+  // import PreferencesTab from './preferences-section/PreferencesTab.vue'
+  import { watch } from 'vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { storeToRefs } from 'pinia'
+  import Loader from '../ui/loader/Loader.vue'
 
   const props = defineProps<{ open: boolean }>()
   const emit = defineEmits(['update:open'])
 
   const { tab, tabItems } = useProfileDialogState()
+  const profileStore = useProfileStore()
+  const { counters } = storeToRefs(profileStore)
+  watch(
+    () => props.open,
+    isOpen => {
+      if (isOpen) profileStore.fetchDashboard()
+    },
+    { immediate: true }
+  )
+  console.log('Profile Dialog opened:', counters)
 </script>
 
 <template>
   <Dialog :open="props.open" @update:open="emit('update:open', $event)">
     <DialogContent :class="'w-[952px] max-w-full p-0 overflow-hidden'">
+      <div
+        v-if="profileStore.isLoading"
+        class="absolute inset-0 flex items-center justify-center bg-white/70 z-50"
+      >
+        <Loader variant="spinner" class="text-primary" />
+      </div>
+
       <div class="flex h-[600px]">
-        <!-- Left: Tabs -->
         <Tabs
           v-model="tab"
           orientation="vertical"
@@ -37,24 +61,15 @@
             </TabsList>
           </div>
         </Tabs>
+
         <!-- Right: Content -->
         <div class="flex-1 relative px-4 py-2">
           <Tabs v-model="tab" orientation="vertical" class="h-full">
             <TabsContent value="account" class="h-full">
-              <h2 class="text-lg font-semibold mb-4">Account</h2>
-              <p>Account details go here.</p>
+              <AccountTab title="Account" :counters="counters" @save="() => {}" />
             </TabsContent>
             <TabsContent value="orders" class="h-full">
-              <h2 class="text-lg font-semibold mb-4">Orders</h2>
-              <p>Order history goes here.</p>
-            </TabsContent>
-            <TabsContent value="address" class="h-full">
-              <h2 class="text-lg font-semibold mb-4">Address Book</h2>
-              <p>Address book goes here.</p>
-            </TabsContent>
-            <TabsContent value="preferences" class="h-full">
-              <h2 class="text-lg font-semibold mb-4">Preferences</h2>
-              <p>Preferences go here.</p>
+              <OrdersTab title="Orders" />
             </TabsContent>
           </Tabs>
         </div>
