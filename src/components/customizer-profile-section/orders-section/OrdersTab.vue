@@ -41,68 +41,63 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <!-- Header -->
-    <div class="sticky top-0 z-10 pb-3 bg-white">
-      <div class="flex flex-col gap-2">
-        <div class="text-lg font-semibold">Orders</div>
-        <div class="flex items-center justify-between gap-2">
-          <Input
-            v-model="store.ordersParams.search"
-            placeholder="Search orders"
-            class="h-8 w-[220px]"
-            @keydown="onSearchEnter"
-          />
-
-          <div class="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <Button size="sm" variant="outline">
-                  <Filter class="size-4 mr-1" />
-                </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  v-for="status in orderStatuses"
-                  :key="status.value"
-                  :class="{ 'bg-accent': status.value === store.ordersParams.filter }"
-                  @click="
-                    () => {
-                      store.ordersParams.filter = status.value
-                      store.filterOrders()
-                    }
-                  "
-                >
-                  {{ status.text }}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem @click="store.clearFilter()">Clear Filter</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <!-- View Toggle -->
-            <div class="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                :class="{ 'bg-primary/20': store.ordersView === 'list' }"
-                @click="store.setView('list')"
-              >
-                <i-flex-line-list-view class="size-5" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                :class="{ 'bg-primary/20': store.ordersView === 'grid' }"
-                @click="store.setView('grid')"
-              >
-                <i-flex-line-grid-view class="size-5" />
-              </Button>
-            </div>
-          </div>
+    <div class="sticky top-0 z-10 pb-3 w-max">
+      <div class="text-lg font-semibold w-max">Orders</div>
+    </div>
+    <!-- Filter -->
+    <div class="flex items-center justify-between gap-2">
+      <Input
+        v-model="store.ordersParams.search"
+        placeholder="Search orders"
+        class="h-8 w-[220px]"
+        @keydown="onSearchEnter"
+      />
+      <div class="flex items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button size="sm" variant="outline">
+              <Filter class="size-4 mr-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              v-for="status in orderStatuses"
+              :key="status.value"
+              :class="{ 'bg-accent': status.value === store.ordersParams.filter }"
+              @click="
+                () => {
+                  store.ordersParams.filter = status.value
+                  store.filterOrders()
+                }
+              "
+            >
+              {{ status.text }}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem @click="store.clearFilter()">Clear Filter</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <!-- View Toggle -->
+        <div class="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            :class="{ 'bg-primary/20': store.ordersView === 'list' }"
+            @click="store.setView('list')"
+          >
+            <i-flex-line-list-view class="size-5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            :class="{ 'bg-primary/20': store.ordersView === 'grid' }"
+            @click="store.setView('grid')"
+          >
+            <i-flex-line-grid-view class="size-5" />
+          </Button>
         </div>
       </div>
     </div>
-
     <!-- Orders List -->
     <InfiniteScroll @load-more="loadMore">
       <div v-if="store.orders.length">
