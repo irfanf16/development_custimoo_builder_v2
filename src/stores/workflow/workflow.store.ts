@@ -423,10 +423,13 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   // ===== NAVIGATION ACTIONS =====
   function handleCategorySelect(categoryId: number) {
+    console.log('handleCategorySelect from workflow store', categoryId)
     setSelectedCategoryForPreview(categoryId)
+    setSelectedSubCategoryForPreview(null)
     const hasSubcategories = !!productsStore.categories?.data?.find(
       c => c.id === categoryId && c.subcategories && c.subcategories.length
     )
+    console.log('hasSubcategories', hasSubcategories)
     if (!hasSubcategories) {
       setSelectedSubCategoryForPreview(null)
     }

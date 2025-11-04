@@ -11,6 +11,7 @@
   import type { BreadcrumbItem } from './types'
   import { useUIStore } from '@/stores/ui/ui.store'
   import type { HeaderConfiguration } from './types'
+  import CustomizableStockFilter from './WorkflowSteps/product/CustomizableStockFilter.vue'
 
   interface Props {
     isExpanded?: boolean
@@ -113,6 +114,13 @@
             @update:model-value="(val: string | number) => handleSearchInput(val as string)"
           />
         </div>
+      </div>
+
+      <div v-if="props.config?.customizableStockFilter">
+        <CustomizableStockFilter
+          :active-filter="props.config?.customizableStockFilter?.activeFilter"
+          @update:active-filter="props.config?.customizableStockFilter?.onFilterChange"
+        />
       </div>
 
       <!-- Design Category Tabs - show when configured -->

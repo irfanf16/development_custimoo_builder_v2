@@ -2,8 +2,9 @@
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
   import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
+  import { getCategoryIcon } from './icon-utils'
+
   interface Props {
     onSelectSubcategory?: (subcategoryId: number) => void
   }
@@ -26,57 +27,6 @@
     workflowStore.setSelectedSubCategoryForPreview(subcategoryId)
     props.onSelectSubcategory?.(subcategoryId)
   }
-
-  // Temporary mapping: cycle through Flex Duo icons until API provides icon per category
-  const fallbackFlexDuoIcons = [
-    flexFlatCategoryIcons.Shorts,
-    flexFlatCategoryIcons.Hockey,
-    flexFlatCategoryIcons.Baseball,
-    flexFlatCategoryIcons.Soccer,
-    flexFlatCategoryIcons.Football,
-    flexFlatCategoryIcons.Brightness,
-    flexFlatCategoryIcons.PottedFlowerTulip,
-    flexFlatCategoryIcons.Leaf,
-    flexFlatCategoryIcons.SnowFlake,
-    flexFlatCategoryIcons.HolidayVacationBeachUmbrella,
-    flexFlatCategoryIcons.Hanger,
-    flexFlatCategoryIcons.Backpack,
-    flexFlatCategoryIcons.ShoppingBagHandBag,
-    flexFlatCategoryIcons.ModuleThree,
-    flexFlatCategoryIcons.Boots,
-    flexFlatCategoryIcons.CapFrozen,
-    flexFlatCategoryIcons.CapSide,
-    flexFlatCategoryIcons.Cricket,
-    flexFlatCategoryIcons.Tennis,
-    flexFlatCategoryIcons.Volleyball,
-    flexFlatCategoryIcons.Cycling,
-    flexFlatCategoryIcons.BicycleBike,
-    flexFlatCategoryIcons.Running,
-    flexFlatCategoryIcons.Swimming,
-    flexFlatCategoryIcons.Hiking,
-    flexFlatCategoryIcons.Skateboarding,
-    flexFlatCategoryIcons.Snowboarding,
-    flexFlatCategoryIcons.Surfing,
-    flexFlatCategoryIcons.Kayaking,
-    flexFlatCategoryIcons.RollerSkating,
-    flexFlatCategoryIcons.Golf,
-    flexFlatCategoryIcons.Playground,
-    flexFlatCategoryIcons.Stadium,
-    flexFlatCategoryIcons.Whistle,
-    flexFlatCategoryIcons.Shirt,
-    flexFlatCategoryIcons.Sock,
-    flexFlatCategoryIcons.Meditation,
-    flexFlatCategoryIcons.MartialArts,
-    flexFlatCategoryIcons.MotorsportsHelmet,
-    flexFlatCategoryIcons.FlagScore,
-    flexFlatCategoryIcons.WalkingSteps,
-    flexFlatCategoryIcons.ScubaDiving
-  ] as const
-
-  const getCategoryIcon = (index: number) =>
-    fallbackFlexDuoIcons[index % fallbackFlexDuoIcons.length]
-
-  // Breadcrumbs handled centrally via useWorkflow
 </script>
 
 <template>

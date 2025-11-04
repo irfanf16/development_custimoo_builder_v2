@@ -1,11 +1,28 @@
 import { ref, computed, type Ref } from 'vue'
-import type { HeaderConfiguration, FooterConfiguration, SearchConfiguration } from '../../types'
+import type {
+  HeaderConfiguration,
+  FooterConfiguration,
+  SearchConfiguration,
+  CustomizableStockFilterConfiguration
+} from '../../types'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 
-export const productSearchModel: Ref<string> = ref('')
+// Constants
+export const PRODUCT_TYPE = {
+  CUSTOMIZED: 'customized',
+  PERSONALIZED: 'personalized'
+} as const
 
+export type StockFilterOption = 'all' | 'customized' | 'personalized'
+
+// Shared state
+export const productSearchModel: Ref<string> = ref('')
+export const showCustomizerStockFilter: Ref<boolean> = ref(false)
+export const customizerStockFilterModel: Ref<StockFilterOption> = ref('all')
+
+// Store instances (Pinia stores are singletons, safe to initialize at module level)
 const workflowStore = useWorkflowStore()
 const productsStore = useProductsStore()
 const customizationStore = useCustomizationStore()
@@ -23,6 +40,15 @@ export const productHeaderConfig = computed<HeaderConfiguration>(() => {
     return null
   })
   const trail: { label: string; action?: () => void }[] = []
+
+  const customizableStockFilter = computed<CustomizableStockFilterConfiguration | undefined>(() => {
+    return {
+      activeFilter: customizerStockFilterModel.value,
+      onFilterChange: (filter: StockFilterOption) => {
+        customizerStockFilterModel.value = filter
+      }
+    }
+  })
 
   if (workflowStore.productsSubStep === 'category') {
     trail.push({ label: 'Category' })
@@ -68,7 +94,10 @@ export const productHeaderConfig = computed<HeaderConfiguration>(() => {
   return {
     breadcrumbs: trail,
     search: search.value ?? undefined,
-    isExpandable: true
+    isExpandable: true,
+    customizableStockFilter: showCustomizerStockFilter.value
+      ? customizableStockFilter.value
+      : undefined
   }
 })
 export const productFooterConfig: FooterConfiguration = { buttons: [] }

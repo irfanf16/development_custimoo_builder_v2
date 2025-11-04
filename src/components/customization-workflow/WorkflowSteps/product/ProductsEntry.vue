@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, watch, ref } from 'vue'
+  import { computed, watch } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import CategorySelection from './CategorySelection.vue'
@@ -25,38 +25,24 @@
     return (selectedCategory.value?.subcategories?.length ?? 0) > 0
   })
 
-  const derivedPanel = computed<ProductsPanel>(() => {
-    return (workflowStore.productsSubStep as ProductsPanel | null) ?? 'category'
-  })
-
-  const preferredPanel = ref<ProductsPanel>(derivedPanel.value)
-
-  watch(derivedPanel, panel => {
-    preferredPanel.value = panel
-  })
-
-  watch(
-    [hasCategories, selectedCategoryHasSubcategories],
-    ([hasCats, hasSubs]) => {
-      if (!hasCats && preferredPanel.value !== 'product') {
-        preferredPanel.value = 'product'
-      } else if (preferredPanel.value === 'subcategory' && !hasSubs) {
-        preferredPanel.value = 'product'
-      }
-    },
-    { immediate: true }
-  )
-
+  // Determine the active panel based on workflow state and data availability
   const activePanel = computed<ProductsPanel>(() => {
+    // If no categories, show products directly
     if (!hasCategories.value) return 'product'
-    if (preferredPanel.value === 'subcategory') {
-      return selectedCategoryHasSubcategories.value ? 'subcategory' : 'product'
+
+    const workflowPanel = (workflowStore.productsSubStep as ProductsPanel | null) ?? 'category'
+
+    // If workflow says subcategory but category has no subcategories, show products
+    if (workflowPanel === 'subcategory' && !selectedCategoryHasSubcategories.value) {
+      return 'product'
     }
-    return preferredPanel.value
+
+    return workflowPanel
   })
 
+  // Sync computed panel back to workflow store when it changes
   watch(
-    () => activePanel.value,
+    activePanel,
     panel => {
       if (workflowStore.productsSubStep !== panel) {
         workflowStore.setProductsSubStep(panel)

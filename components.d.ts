@@ -40,6 +40,7 @@ declare module 'vue' {
     ColorSelector: typeof import('./src/components/ui/color-selector/ColorSelector.vue')['default']
     ColorsPreview: typeof import('./src/components/ui/colors-preview/ColorsPreview.vue')['default']
     ContentRemoveIcons: typeof import('./src/components/customization-workflow/WorkflowSteps/logo/ContentRemoveIcons.vue')['default']
+    CustomizableStockFilter: typeof import('./src/components/customization-workflow/WorkflowSteps/product/CustomizableStockFilter.vue')['default']
     CustomizerMenu: typeof import('./src/components/customizer-menu/CustomizerMenu.vue')['default']
     'CustomizerMenu.Mobile': typeof import('./src/components/customizer-menu/CustomizerMenu.Mobile.vue')['default']
     CustomizerTopbar: typeof import('./src/components/customizer-topbar/CustomizerTopbar.vue')['default']

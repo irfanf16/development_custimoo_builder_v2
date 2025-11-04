@@ -14,6 +14,11 @@ export type SearchConfiguration = {
   onInput: (val: string) => void
 }
 
+export type CustomizableStockFilterConfiguration = {
+  activeFilter: 'all' | 'customized' | 'personalized'
+  onFilterChange: (filter: 'all' | 'customized' | 'personalized') => void
+}
+
 export type HeaderConfiguration = {
   breadcrumbs?: BreadcrumbItem[]
   search?: SearchConfiguration
@@ -29,6 +34,7 @@ export type HeaderConfiguration = {
   }
   isExpandable?: boolean
   designCategories?: DesignCategoriesConfig
+  customizableStockFilter?: CustomizableStockFilterConfiguration
 }
 
 export type FooterButton = {

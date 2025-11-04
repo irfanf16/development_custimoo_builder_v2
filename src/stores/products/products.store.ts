@@ -161,7 +161,11 @@ export const useProductsStore = defineStore('productsStore', () => {
   ): Promise<APIResponse<OutputProductCategories>> {
     setLoading(true)
     setError(null)
-    const queryParams: GetProductCategoriesParams = params ?? { customized: true }
+    const queryParams: GetProductCategoriesParams = params ?? {
+      customized: true,
+      personalized: true,
+      private: false
+    }
     const output = await tryCatchApi(API.products.getProductCategories(queryParams))
     if (output.success) {
       setCategories(output.content)
