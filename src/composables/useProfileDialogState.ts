@@ -4,7 +4,7 @@ import { m as messages } from '@/paraglide/messages'
 import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
 export function useProfileDialogState() {
   const localeStore = useLocaleStore()
-  const tab = ref('orders')
+  const tab = ref('account')
 
   const tabItems = [
     {

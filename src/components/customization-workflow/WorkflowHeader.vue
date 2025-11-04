@@ -31,7 +31,7 @@
   const isExpandable = computed(() => {
     return workflowStore.currentHeaderConfig?.isExpandable
   })
-
+  console.log('isExpandable:', workflowStore.currentHeaderConfig)
   // Get breadcrumbs from current step component
   const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => {
     return workflowStore.currentHeaderConfig?.breadcrumbs ?? workflowStore.navigationItems
@@ -87,6 +87,8 @@
   <div class="w-full flex flex-col gap-5">
     <div class="flex items-center gap-3 h-9 justify-center">
       <div class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden">
+        {{ console.log('Rendering WorkflowHeader with breadcrumbs:', currentBreadcrumbs) }}
+
         <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
       </div>
 

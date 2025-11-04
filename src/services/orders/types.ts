@@ -31,3 +31,9 @@ export interface Order {
   created_at?: string
   items?: Item[]
 }
+
+export interface OrderDetailResponse {
+  success: boolean
+  result: Order
+  message?: string
+}

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API } from '@/services'
 import type { DashboardCounters } from '@/services/dashboard/types'
-import type { Order } from '@/services/orders/types'
+import type { Order, OrderDetailResponse } from '@/services/orders/types'
 
 export const useProfileStore = defineStore('profileStore', () => {
   // ✅ Dashboard state
@@ -23,6 +23,9 @@ export const useProfileStore = defineStore('profileStore', () => {
     search: '',
     filter: null
   })
+  const breadcrumbs = ref<{ label: string; action?: () => void }[]>([{ label: 'Orders' }])
+  const activeOrder = ref<Order | null>(null)
+  const activeOrderView = ref<'details' | 'timeline'>('details')
   const pagination = ref<{
     currentPage: number
     perPage: number
@@ -138,6 +141,58 @@ export const useProfileStore = defineStore('profileStore', () => {
     ordersView.value = mode
   }
 
+  // ✅ Open Order Details
+  function openOrderDetails(order: Order) {
+    if (!order) return // safety check
+
+    activeOrder.value = order
+    activeOrderView.value = 'details'
+    breadcrumbs.value = [
+      { label: 'Orders', action: () => closeOrderDetails() },
+      { label: `Order #${order.order_no ?? 'N/A'}` }
+    ]
+  }
+
+  // ✅ Fetch Order Details (Order Timeline entry point)
+  async function fetchOrderDetails(orderId: number | string) {
+    isLoading.value = true
+    error.value = null
+    try {
+      const res: OrderDetailResponse = await API.orders.getOrderDetail(orderId)
+      if (res.success) {
+        activeOrder.value = res.result
+        const ord = res.result
+        breadcrumbs.value = [
+          { label: 'Orders', action: () => closeOrderDetails() },
+          { label: `Order #${ord.order_no ?? 'N/A'}` }
+        ]
+      } else {
+        error.value = res.message || 'Failed to load order details'
+      }
+    } catch (e: unknown) {
+      error.value = e instanceof Error ? e.message : 'Failed to load order details'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // ✅ Open Order Timeline (adjust breadcrumb)
+  async function openOrderTimeline(orderId: number | string) {
+    await fetchOrderDetails(orderId)
+    activeOrderView.value = 'timeline'
+    const ord = activeOrder.value
+    breadcrumbs.value = [
+      { label: 'Orders', action: () => closeOrderDetails() },
+      { label: `Order #${ord?.order_no ?? 'N/A'}`, action: () => ord && openOrderDetails(ord) },
+      { label: 'Order Timeline' }
+    ]
+  }
+  // ✅ Close Order Details
+  function closeOrderDetails() {
+    activeOrder.value = null
+    breadcrumbs.value = [{ label: 'Orders' }]
+  }
+
   return {
     // State
     counters,
@@ -149,6 +204,9 @@ export const useProfileStore = defineStore('profileStore', () => {
     ordersPageType,
     ordersParams,
     pagination,
+    breadcrumbs,
+    activeOrder,
+    activeOrderView,
 
     // Actions
     fetchDashboard,
@@ -159,6 +217,10 @@ export const useProfileStore = defineStore('profileStore', () => {
     clearFilter,
     cancelOrder,
     setView,
-    filterOrders
+    filterOrders,
+    openOrderDetails,
+    fetchOrderDetails,
+    openOrderTimeline,
+    closeOrderDetails
   }
 })

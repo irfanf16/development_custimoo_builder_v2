@@ -1,5 +1,5 @@
 import http from '../api'
-import type { CancelOrderResponse } from './types'
+import type { CancelOrderResponse, OrderDetailResponse } from './types'
 
 export type OrdersResponse = {
   result: {
@@ -26,4 +26,9 @@ export async function cancelOrder(orderId: number | string): Promise<CancelOrder
   return response.data
 }
 
-export default { getOrders, cancelOrder }
+async function getOrderDetail(orderId: number | string): Promise<OrderDetailResponse> {
+  const { data } = await http.get<OrderDetailResponse>(`/order/${orderId}`)
+  return data
+}
+
+export default { getOrders, cancelOrder, getOrderDetail }

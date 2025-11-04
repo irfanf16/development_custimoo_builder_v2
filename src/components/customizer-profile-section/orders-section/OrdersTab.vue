@@ -9,12 +9,16 @@
     DropdownMenuItem,
     DropdownMenuSeparator
   } from '@/components/ui/dropdown-menu'
-  import { Filter } from 'lucide-vue-next'
+  import { Filter, Search, X } from 'lucide-vue-next'
   import InfiniteScroll from '@/components/ui/infinite-scroll/InfiniteScroll.vue'
   import Loader from '@/components/ui/loader/Loader.vue'
   import OrdersListItem from './OrdersListItem.vue'
+  import type { Order } from '@/services/orders/types'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { getOrderOptions } from '@/helpers/orderStatuses'
+  import WorkflowBreadcrumbs from '@/components/customization-workflow/WorkflowBreadcrumbs.vue'
+  import OrderDetailsView from './OrderDetailsView.vue'
+  import OrderTimeline from './OrderTimeline.vue'
 
   const store = useProfileStore()
 
@@ -36,22 +40,38 @@
       await store.handlePagination(nextPage)
     }
   }
+  const breadcrumbs = computed(() => store.breadcrumbs)
+
+  function showOrderDetails(order: Order) {
+    // Open details without extra API call
+    store.openOrderDetails(order)
+  }
 </script>
 
 <template>
   <div class="flex flex-col h-full">
     <!-- Header -->
     <div class="sticky top-0 z-10 pb-3 w-max px-4">
-      <div class="text-lg font-semibold w-max">Orders</div>
+      <WorkflowBreadcrumbs :breadcrumbs="breadcrumbs" />
     </div>
     <!-- Filter -->
     <div class="flex items-center justify-between gap-2 border-b pb-2 px-4">
-      <Input
-        v-model="store.ordersParams.search"
-        placeholder="Search orders"
-        class="h-8 w-full"
-        @keydown="onSearchEnter"
-      />
+      <div class="relative w-full">
+        <Input
+          v-model="store.ordersParams.search"
+          placeholder="Search orders"
+          class="h-8 w-full pl-8 pr-8"
+          @keydown="onSearchEnter"
+        />
+        <Search class="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-gray-500" />
+        <button
+          v-if="store.ordersParams.search"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          @click="store.clearSearch()"
+        >
+          <X class="size-4" />
+        </button>
+      </div>
       <div class="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
@@ -60,7 +80,9 @@
               variant="outline"
               class="px-2 h-8 shadow-none"
               :class="
-                store.ordersParams.filter ? 'border-primary text-primary' : 'border-[#E5E5E5]'
+                store.ordersParams.filter
+                  ? 'bg-primary text-white border-primary'
+                  : 'border-[#E5E5E5]'
               "
             >
               <Filter class="size-4" />
@@ -84,6 +106,15 @@
             <DropdownMenuItem @click="store.clearFilter()">Clear Filter</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Button
+          v-if="store.ordersParams.filter"
+          size="sm"
+          variant="ghost"
+          class="h-8 px-2 text-primary"
+          @click="store.clearFilter()"
+        >
+          Clear filter
+        </Button>
         <!-- View Toggle -->
         <div class="flex border border-[#E5E5E5] rounded-[8px] overflow-hidden">
           <!-- List Button -->
@@ -119,7 +150,7 @@
       </div>
     </div>
     <!-- Orders List -->
-    <div class="flex-1 overflow-auto">
+    <div v-if="!store.activeOrder" class="flex-1 overflow-auto">
       <InfiniteScroll @load-more="loadMore">
         <div v-if="store.orders.length">
           <OrdersListItem
@@ -129,7 +160,7 @@
             :expanded="store.ordersView === 'expanded-list'"
             @cancel="store.cancelOrder"
             @pdf="() => {}"
-            @details="() => {}"
+            @details="() => showOrderDetails(order)"
           />
         </div>
         <div v-else class="flex justify-center py-10 text-gray-500">No orders found</div>
@@ -138,6 +169,14 @@
           <Loader />
         </div>
       </InfiniteScroll>
+    </div>
+    <div v-else class="flex-1 overflow-auto">
+      <OrderDetailsView
+        v-if="store.activeOrderView === 'details'"
+        :order="store.activeOrder"
+        @back="store.closeOrderDetails"
+      />
+      <OrderTimeline v-else :order="store.activeOrder" />
     </div>
   </div>
 </template>
