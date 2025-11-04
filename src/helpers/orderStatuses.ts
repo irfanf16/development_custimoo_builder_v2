@@ -30,3 +30,30 @@ export function getOrderOptions(pageType: 'quote' | 'order') {
 
   return options
 }
+// src/helpers/statusColors.ts
+export function getStatusColor(status: string = '') {
+  const normalized = status.toLowerCase()
+
+  const colorMap: Record<string, { bg: string; text: string }> = {
+    submitted_for_factory_review: { bg: '#B997C6', text: '#fff' },
+    order_approve: { bg: '#B997C6', text: '#fff' },
+    quote_requested: { bg: '#B997C6', text: '#fff' },
+    pending_for_factory_assignment: { bg: '#B997C6', text: '#fff' },
+    submitted_for_customer_review: { bg: '#B997C6', text: '#fff' },
+
+    quote_provided: { bg: '#57A2AC', text: '#fff' },
+    factory_approved: { bg: '#57A2AC', text: '#fff' },
+    customer_approved: { bg: '#57A2AC', text: '#fff' },
+
+    factory_rejected: { bg: '#CE2220', text: '#fff' },
+    quote_rejected: { bg: '#CE2220', text: '#fff' },
+    customer_rejected: { bg: '#CE2220', text: '#fff' },
+
+    in_production: { bg: '#D0B440', text: '#fff' },
+    shipped: { bg: '#4E79C4', text: '#fff' },
+    completed: { bg: '#7EB875', text: '#fff' }
+  }
+
+  // Default gray color
+  return colorMap[normalized] || { bg: '#E3E3E3', text: '#555' }
+}

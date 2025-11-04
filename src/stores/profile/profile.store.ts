@@ -2,9 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API } from '@/services'
 import type { DashboardCounters } from '@/services/dashboard/types'
+import type { Order } from '@/services/orders/types'
 
 export const useProfileStore = defineStore('profileStore', () => {
-  // ✅ initialize refs with proper default values
+  // ✅ Dashboard state
   const counters = ref<DashboardCounters>({
     orders_count: 0,
     pending_approval_count: 0,
@@ -13,25 +14,33 @@ export const useProfileStore = defineStore('profileStore', () => {
   const isLoading = ref(false)
   const isLoadingOrders = ref(false)
   const error = ref<string | null>(null)
-  // Orders state
-  const orders = ref<any[]>([])
-  const ordersView = ref<'grid' | 'list'>('list')
+
+  // ✅ Orders state
+  const orders = ref<Order[]>([])
+  const ordersView = ref<'list' | 'expanded-list'>('list')
   const ordersPageType = ref<'order' | 'quote'>('order')
-  const ordersParams = ref<{ search: string; filter: string | null }>({ search: '', filter: null })
-  const pagination = ref<{ currentPage: number; perPage: number; total: number; rows: number }>({
+  const ordersParams = ref<{ search: string; filter: string | null }>({
+    search: '',
+    filter: null
+  })
+  const pagination = ref<{
+    currentPage: number
+    perPage: number
+    total: number
+    next_page_url?: string | null
+  }>({
     currentPage: 1,
     perPage: 10,
     total: 0,
-    rows: 0
+    next_page_url: null
   })
 
+  // ✅ Fetch Dashboard Data
   async function fetchDashboard() {
-    console.log('Fetching dashboard data...')
     isLoading.value = true
     error.value = null
     try {
       const response = await API.dashboard.getDashboard()
-      console.log('Dashboard payload:', response)
       counters.value = response.counters
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'Failed to load dashboard'
@@ -40,13 +49,13 @@ export const useProfileStore = defineStore('profileStore', () => {
     }
   }
 
-  // Orders
+  // ✅ Fetch Orders (base or with params)
   async function fetchOrders(params?: string) {
     isLoadingOrders.value = true
+    error.value = null
     try {
       const res = await API.orders.getOrders(params, ordersPageType.value)
-      console.log('Fetched orders:', res)
-      orders.value = res.data
+      orders.value = res.data ?? []
       makePagination(res)
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'Failed to load orders'
@@ -55,47 +64,68 @@ export const useProfileStore = defineStore('profileStore', () => {
     }
   }
 
+  // ✅ Pagination builder
   function makePagination(data: { current_page: number; per_page: number; total: number }) {
     pagination.value.currentPage = data.current_page
     pagination.value.perPage = data.per_page
     pagination.value.total = data.total
-    pagination.value.rows = data.total
   }
 
-  function handlePagination(page: number | string) {
+  // ✅ Handle Pagination (for infinite scroll)
+  async function handlePagination(page: number) {
+    const { total, perPage, currentPage } = pagination.value
+    const totalPages = Math.ceil(total / perPage)
+
+    // ⛔ Stop if already loading or no more pages
+    if (isLoadingOrders.value || page > totalPages || page === currentPage) return
+
     let params = `?page=${page}`
     const { search, filter } = ordersParams.value
-    if (search && filter)
-      params += `&search=${encodeURIComponent(search)}&filter=${encodeURIComponent(filter)}`
-    else if (search) params += `&search=${encodeURIComponent(search)}`
-    else if (filter) params += `&filter=${encodeURIComponent(filter)}`
-    void fetchOrders(params)
+
+    if (search) params += `&search=${encodeURIComponent(search)}`
+    if (filter) params += `&filter=${encodeURIComponent(filter)}`
+
+    const res = await API.orders.getOrders(params, ordersPageType.value)
+    const newOrders = (res.data ?? []) as unknown[]
+
+    if (Array.isArray(newOrders)) {
+      orders.value.push(...(newOrders as Order[]))
+    }
+    makePagination(res)
   }
 
-  function clearSearch() {
+  // ✅ Clear Search & Filter
+  async function clearSearch() {
     ordersParams.value.search = ''
-    filterOrders()
+    await filterOrders()
   }
-  function clearFilter() {
-    ordersParams.value.filter = null
-    filterOrders()
-  }
-  // function filterOrders() {
-  //   handlePagination(pagination.value.currentPage || 1)
-  // }
 
+  async function clearFilter() {
+    ordersParams.value.filter = null
+    await filterOrders()
+  }
+
+  // ✅ Filter Orders
+  async function filterOrders() {
+    const query = new URLSearchParams()
+    const { search, filter } = ordersParams.value
+    if (search) query.set('search', search)
+    if (filter) query.set('filter', filter)
+
+    const params = query.toString() ? `?${query.toString()}` : ''
+    await fetchOrders(params)
+  }
+
+  // ✅ Cancel Order
   async function cancelOrder(order: { id: number | string; order_no?: string }) {
     const title = order.order_no ? `Order no: ${order.order_no}` : 'Order pending confirmation'
-    const msg = `${title}\nAre you sure that you want to cancel this order?`
-    const confirm = window.confirm(msg)
-    if (!confirm) return
+    const msg = `${title}\nAre you sure you want to cancel this order?`
+    if (!window.confirm(msg)) return
 
     isLoading.value = true
     try {
       const res = await API.orders.cancelOrder(order.id)
-      if (res.success) {
-        await fetchOrders()
-      }
+      if (res.success) await fetchOrders()
     } catch (e: unknown) {
       console.error('Cancel order failed:', e)
     } finally {
@@ -103,32 +133,25 @@ export const useProfileStore = defineStore('profileStore', () => {
     }
   }
 
-  function setView(mode: 'grid' | 'list') {
+  // ✅ View Mode
+  function setView(mode: 'list' | 'expanded-list') {
     ordersView.value = mode
-  }
-  function filterOrders() {
-    const query = new URLSearchParams()
-    const { search, filter } = ordersParams.value
-
-    if (search) query.set('search', search)
-    if (filter) query.set('filter', filter)
-
-    const params = query.toString() ? `?${query.toString()}` : ''
-    void fetchOrders(params)
   }
 
   return {
+    // State
     counters,
     isLoading,
+    isLoadingOrders,
     error,
-    fetchDashboard,
-    // orders state
     orders,
     ordersView,
     ordersPageType,
     ordersParams,
     pagination,
-    // orders actions
+
+    // Actions
+    fetchDashboard,
     fetchOrders,
     makePagination,
     handlePagination,
@@ -136,7 +159,6 @@ export const useProfileStore = defineStore('profileStore', () => {
     clearFilter,
     cancelOrder,
     setView,
-    filterOrders,
-    isLoadingOrders
+    filterOrders
   }
 })

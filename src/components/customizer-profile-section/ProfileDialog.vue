@@ -63,9 +63,9 @@
         </Tabs>
 
         <!-- Right: Content -->
-        <div class="flex-1 relative px-4 py-2">
+        <div class="flex-1 relative py-2">
           <Tabs v-model="tab" orientation="vertical" class="h-full">
-            <TabsContent value="account" class="h-full">
+            <TabsContent value="account" class="h-full px-4">
               <AccountTab title="Account" :counters="counters" @save="() => {}" />
             </TabsContent>
             <TabsContent value="orders" class="h-full">
