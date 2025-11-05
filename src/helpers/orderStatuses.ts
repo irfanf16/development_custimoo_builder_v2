@@ -35,23 +35,24 @@ export function getStatusColor(status: string = '') {
   const normalized = status.toLowerCase()
 
   const colorMap: Record<string, { bg: string; text: string }> = {
-    submitted_for_factory_review: { bg: '#B997C6', text: '#fff' },
-    order_approve: { bg: '#B997C6', text: '#fff' },
+    submitted_for_factory_review: { bg: '#8B5CF6', text: '#fff' },
+    order_approve: { bg: '#F59E0B', text: '#fff' },
     quote_requested: { bg: '#B997C6', text: '#fff' },
-    pending_for_factory_assignment: { bg: '#B997C6', text: '#fff' },
-    submitted_for_customer_review: { bg: '#B997C6', text: '#fff' },
+    pending_for_factory_assignment: { bg: '#F97316', text: '#fff' },
+    submitted_for_customer_review: { bg: '#EAB308', text: '#fff' },
 
     quote_provided: { bg: '#57A2AC', text: '#fff' },
-    factory_approved: { bg: '#57A2AC', text: '#fff' },
-    customer_approved: { bg: '#57A2AC', text: '#fff' },
+    factory_approved: { bg: '#22C55E', text: '#fff' },
+    customer_approved: { bg: '#10B981', text: '#fff' },
 
-    factory_rejected: { bg: '#CE2220', text: '#fff' },
+    factory_rejected: { bg: '#F43F5E', text: '#fff' },
     quote_rejected: { bg: '#CE2220', text: '#fff' },
-    customer_rejected: { bg: '#CE2220', text: '#fff' },
+    customer_rejected: { bg: '#EC4899', text: '#fff' },
 
-    in_production: { bg: '#D0B440', text: '#fff' },
-    shipped: { bg: '#4E79C4', text: '#fff' },
-    completed: { bg: '#7EB875', text: '#fff' }
+    in_production: { bg: '#0EA5E9', text: '#fff' },
+    shipped: { bg: '#3B82F6', text: '#fff' },
+    completed: { bg: '#14A892', text: '#fff' },
+    order_cancel: { bg: '#EF4444', text: '#fff' }
   }
 
   // Default gray color

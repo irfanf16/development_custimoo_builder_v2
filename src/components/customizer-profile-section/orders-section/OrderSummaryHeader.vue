@@ -51,7 +51,7 @@
     </div>
 
     <!-- Bottom Info -->
-    <div class="flex justify-between items-start text-xs text-gray-500 w-full">
+    <div class="grid grid-cols-3 gap-4 text-xs text-gray-500 w-full items-start">
       <!-- Created At -->
       <div class="flex flex-col items-start gap-1">
         <div class="font-medium text-gray-700">Created At</div>
@@ -59,9 +59,9 @@
       </div>
 
       <!-- Statuses -->
-      <div class="flex flex-col items-start gap-1 text-center">
+      <div class="flex flex-col items-start gap-1">
         <div class="font-medium text-gray-700">Order Status</div>
-        <div class="flex flex-wrap justify-center gap-2">
+        <div class="flex flex-wrap gap-2">
           <div
             v-for="(item, index) in order.items || []"
             :key="index"
@@ -81,7 +81,7 @@
       </div>
 
       <!-- Total Quantity -->
-      <div class="flex flex-col items-end gap-1">
+      <div class="flex flex-col items-start gap-1">
         <div class="font-medium text-gray-700">Total Quantity</div>
         <div>{{ getTotalQuantity(order) }}</div>
       </div>

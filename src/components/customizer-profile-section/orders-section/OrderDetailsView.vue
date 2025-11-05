@@ -25,11 +25,11 @@
         >
           <div class="flex flex-col sm:flex-row gap-4">
             <!-- Images Section -->
-            <div class="grid grid-cols-2 gap-3">
+            <div
+              class="grid grid-cols-2 gap-3 bg-[#F5F5F5] rounded-md border border-[#E5E5E5] w-max h-24 p-[12px]"
+            >
               <!-- Front Image -->
-              <div
-                class="w-24 h-24 bg-[#F5F5F5] flex items-center justify-center rounded-md border border-[#E5E5E5] overflow-hidden"
-              >
+              <div class="flex w-[60px] items-center justify-center overflow-hidden">
                 <img
                   v-if="product.front_image"
                   :src="`${storage_url}${product.front_image}`"
@@ -53,9 +53,7 @@
               </div>
 
               <!-- Back Image -->
-              <div
-                class="w-24 h-24 bg-[#F5F5F5] flex items-center justify-center rounded-md border border-[#E5E5E5] overflow-hidden"
-              >
+              <div class="flex w-[60px] items-center justify-center overflow-hidden">
                 <img
                   v-if="product.back_image"
                   :src="`${storage_url}${product.back_image}`"
@@ -91,7 +89,7 @@
                   {{ product.prices?.total_quantity ?? product.roster_quantity ?? 0 }}</span
                 >
                 <span
-                  class="text-xs px-2 py-1 rounded font-medium capitalize"
+                  class="text-xs px-2 py-1 rounded-full font-medium capitalize"
                   :style="{
                     backgroundColor: getStatusColor(item.status).bg,
                     color: getStatusColor(item.status).text
@@ -102,30 +100,30 @@
               </div>
 
               <!-- Actions -->
-              <div class="flex flex-wrap items-center gap-2 mt-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <button
-                  class="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 transition"
+                  class="flex items-center gap-1 border border-gray-200 text-gray-700 px-2 py-1 rounded-md hover:border-gray-300 transition"
                   title="Save"
                 >
                   <i-flex-line-save class="size-4" /> Save
                 </button>
 
                 <button
-                  class="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 transition"
+                  class="flex items-center gap-1 border border-gray-200 text-gray-700 px-2 py-1 rounded-md hover:border-gray-300 transition"
                   title="Share"
                 >
                   <i-flex-line-share class="size-4" /> Share
                 </button>
 
                 <button
-                  class="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 transition"
+                  class="flex items-center gap-1 border border-gray-200 text-gray-700 px-2 py-1 rounded-md hover:border-gray-300 transition"
                   title="Add to Cart"
                 >
                   <i-flex-line-cart class="size-4" /> Cart
                 </button>
 
                 <button
-                  class="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 transition"
+                  class="flex items-center gap-1 border border-gray-200 text-gray-700 px-2 py-1 rounded-md hover:border-gray-300 transition"
                   title="Reorder"
                 >
                   <i-flex-line-reorder class="size-4" /> Reorder
