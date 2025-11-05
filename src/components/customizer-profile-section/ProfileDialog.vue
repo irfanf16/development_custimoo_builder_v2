@@ -39,7 +39,6 @@
     },
     { immediate: true }
   )
-  console.log('Profile Dialog opened:', counters)
 </script>
 
 <template>

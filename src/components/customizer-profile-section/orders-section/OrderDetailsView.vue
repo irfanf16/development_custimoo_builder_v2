@@ -1,7 +1,7 @@
 <template>
-  <div class="p-4 space-y-6">
+  <div class="py-4 space-y-6">
     <!-- Order Info -->
-    <div class="border-b pb-3">
+    <div class="pb-3 px-4">
       <OrderSummaryHeader
         :order="order"
         :show-timeline="true"
@@ -16,109 +16,125 @@
       <div
         v-for="(item, index) in order.items || []"
         :key="index"
-        class="flex flex-col gap-4 border p-3 rounded-lg hover:shadow-sm transition"
+        class="flex flex-col gap-4 hover:shadow-sm transition"
       >
         <div
           v-for="(product, pIdx) in item.factory_products || []"
           :key="`prod-${pIdx}`"
-          class="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+          class="border-b border-[#E5E5E5] px-3 py-4"
         >
-          <!-- Image -->
-          <div class="relative group">
-            <img
-              v-if="!product.is_custom_product"
-              :src="`${storage_url}${product.front_image || '/placeholder.png'}`"
-              alt="Product"
-              class="w-24 h-24 object-cover rounded-md border"
-            />
-            <img
-              v-else
-              :src="`${storage_url}${product.custom_product_placeholder || '/placeholder.png'}`"
-              alt="Custom Product"
-              class="w-24 h-24 object-cover rounded-md border"
-            />
-            <div
-              class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex justify-center items-center gap-2 rounded-md transition"
-            >
-              <button
-                class="bg-white rounded-full p-1.5 shadow hover:bg-gray-100 transition"
-                title="Save"
+          <div class="flex flex-col sm:flex-row gap-4">
+            <!-- Images Section -->
+            <div class="grid grid-cols-2 gap-3">
+              <!-- Front Image -->
+              <div
+                class="w-24 h-24 bg-[#F5F5F5] flex items-center justify-center rounded-md border border-[#E5E5E5] overflow-hidden"
               >
-                <i-flex-line-save class="size-4" />
-              </button>
-              <button
-                class="bg-white rounded-full p-1.5 shadow hover:bg-gray-100 transition"
-                title="Share"
-              >
-                <i-flex-line-share class="size-4" />
-              </button>
-              <button
-                class="bg-white rounded-full p-1.5 shadow hover:bg-gray-100 transition"
-                title="Add to Cart"
-              >
-                <i-flex-line-cart class="size-4" />
-              </button>
-              <button
-                class="bg-white rounded-full p-1.5 shadow hover:bg-gray-100 transition"
-                title="Reorder"
-              >
-                <i-flex-line-reorder class="size-4" />
-              </button>
-            </div>
-          </div>
+                <img
+                  v-if="product.front_image"
+                  :src="`${storage_url}${product.front_image}`"
+                  alt="Front Image"
+                  class="object-cover w-full h-full"
+                  @error="onImageError"
+                />
+                <img
+                  v-else-if="product.is_custom_product && product.custom_product_placeholder"
+                  :src="`${storage_url}${product.custom_product_placeholder}`"
+                  alt="Custom Product"
+                  class="object-cover w-full h-full"
+                  @error="onImageError"
+                />
+                <img
+                  v-else
+                  :src="PLACEHOLDER_IMAGE"
+                  alt="Placeholder"
+                  class="object-cover w-full h-full"
+                />
+              </div>
 
-          <!-- Product Info -->
-          <div class="flex-1 flex flex-col gap-1">
-            <div class="font-semibold text-gray-800">{{ product.product_name || 'Unnamed' }}</div>
-            <div class="text-sm text-gray-500">
-              Quantity: {{ product.prices?.total_quantity ?? product.roster_quantity ?? 0 }}
-            </div>
-            <div
-              class="text-xs px-2 py-1 rounded w-fit font-medium capitalize"
-              :style="{
-                backgroundColor: getStatusColor(item.status).bg,
-                color: getStatusColor(item.status).text
-              }"
-            >
-              {{ item.status?.replace(/_/g, ' ') || 'Unknown' }}
+              <!-- Back Image -->
+              <div
+                class="w-24 h-24 bg-[#F5F5F5] flex items-center justify-center rounded-md border border-[#E5E5E5] overflow-hidden"
+              >
+                <img
+                  v-if="product.back_image"
+                  :src="`${storage_url}${product.back_image}`"
+                  alt="Back Image"
+                  class="object-cover w-full h-full"
+                  @error="onImageError"
+                />
+                <img
+                  v-else-if="product.is_custom_product && product.custom_product_placeholder"
+                  :src="`${storage_url}${product.custom_product_placeholder}`"
+                  alt="Custom Product"
+                  class="object-cover w-full h-full"
+                  @error="onImageError"
+                />
+                <img
+                  v-else
+                  :src="PLACEHOLDER_IMAGE"
+                  alt="Placeholder"
+                  class="object-cover w-full h-full"
+                />
+              </div>
             </div>
 
-            <!-- Actions below quantity -->
-            <div class="flex items-center gap-2 mt-2">
-              <button
-                class="bg-gray-100 text-gray-700 p-1.5 rounded hover:bg-gray-200"
-                title="Save"
-              >
-                <i-flex-line-save class="size-4" />
-              </button>
-              <button
-                class="bg-gray-100 text-gray-700 p-1.5 rounded hover:bg-gray-200"
-                title="Share"
-              >
-                <i-flex-line-share class="size-4" />
-              </button>
-              <button
-                class="bg-gray-100 text-gray-700 p-1.5 rounded hover:bg-gray-200"
-                title="Add to Cart"
-              >
-                <i-flex-line-cart class="size-4" />
-              </button>
-              <button
-                class="bg-gray-100 text-gray-700 p-1.5 rounded hover:bg-gray-200"
-                title="Reorder"
-              >
-                <i-flex-line-reorder class="size-4" />
-              </button>
+            <!-- Product Info -->
+            <div class="flex-1 flex flex-col gap-2">
+              <div class="font-semibold text-gray-800 text-base">
+                {{ product.product_name || 'Unnamed Product' }}
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                <span
+                  >Quantity:
+                  {{ product.prices?.total_quantity ?? product.roster_quantity ?? 0 }}</span
+                >
+                <span
+                  class="text-xs px-2 py-1 rounded font-medium capitalize"
+                  :style="{
+                    backgroundColor: getStatusColor(item.status).bg,
+                    color: getStatusColor(item.status).text
+                  }"
+                >
+                  {{ item.status?.replace(/_/g, ' ') || 'Unknown' }}
+                </span>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex flex-wrap items-center gap-2 mt-2">
+                <button
+                  class="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 transition"
+                  title="Save"
+                >
+                  <i-flex-line-save class="size-4" /> Save
+                </button>
+
+                <button
+                  class="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 transition"
+                  title="Share"
+                >
+                  <i-flex-line-share class="size-4" /> Share
+                </button>
+
+                <button
+                  class="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 transition"
+                  title="Add to Cart"
+                >
+                  <i-flex-line-cart class="size-4" /> Cart
+                </button>
+
+                <button
+                  class="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 transition"
+                  title="Reorder"
+                >
+                  <i-flex-line-reorder class="size-4" /> Reorder
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="pt-4">
-      <button class="text-primary hover:underline text-sm font-medium" @click="$emit('back')">
-        ← Back to Orders
-      </button>
     </div>
   </div>
 </template>
@@ -129,6 +145,7 @@
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
   import type { Order } from '@/services/orders/types'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
 
   defineProps<{ order: Order }>()
   defineEmits<{ (e: 'back'): void }>()

@@ -3,6 +3,7 @@
   import type { Order } from '@/services/orders/types'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
 
   defineProps<{
     order: Order
@@ -45,15 +46,17 @@
           <!-- Product Image -->
           <img
             v-if="!product.is_custom_product"
-            :src="`${storage_url}${product.front_image || '/placeholder.png'}`"
+            :src="`${storage_url}${product.front_image || PLACEHOLDER_IMAGE}`"
             alt="Product"
             class="w-full h-full object-cover"
+            @error="onImageError"
           />
           <img
             v-else
-            :src="`${storage_url}${product.custom_product_placeholder || '/placeholder.png'}`"
+            :src="`${storage_url}${product.custom_product_placeholder || PLACEHOLDER_IMAGE}`"
             alt="Custom Product"
             class="w-full h-full object-cover"
+            @error="onImageError"
           />
 
           <!-- Hover Actions at Bottom -->

@@ -1,14 +1,5 @@
 <template>
   <div class="p-4 space-y-6">
-    <div class="border-b pb-3">
-      <OrderSummaryHeader :order="order" :clickable-title="true" @title-click="goToDetails" />
-      <div class="mt-2">
-        <button class="text-primary hover:underline text-sm font-medium" @click="goBack">
-          ← Back to Orders
-        </button>
-      </div>
-    </div>
-
     <div class="flex flex-col gap-4">
       <div v-for="(item, idx) in order.items || []" :key="`item-${idx}`" class="border rounded p-3">
         <div class="font-semibold text-gray-800 mb-2">Factory {{ idx + 1 }}</div>
@@ -44,19 +35,9 @@
 
 <script setup lang="ts">
   import type { Order } from '@/services/orders/types'
-  import OrderSummaryHeader from './OrderSummaryHeader.vue'
-  import { useProfileStore } from '@/stores/profile/profile.store'
   import { getStatusColor } from '@/helpers/orderStatuses'
 
-  const props = defineProps<{ order: Order }>()
-  const store = useProfileStore()
-
-  function goBack() {
-    store.closeOrderDetails()
-  }
-  function goToDetails() {
-    if (props.order) store.openOrderDetails(props.order)
-  }
+  defineProps<{ order: Order }>()
 
   function getActivities(item: unknown): { title: string; time?: string; message?: string }[] {
     const it: any = item

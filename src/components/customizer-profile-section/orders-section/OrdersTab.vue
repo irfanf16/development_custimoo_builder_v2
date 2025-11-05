@@ -71,7 +71,10 @@
       <WorkflowBreadcrumbs :breadcrumbs="breadcrumbs" />
     </div>
     <!-- Filter -->
-    <div class="flex items-center justify-between gap-2 border-b pb-2 px-4">
+    <div
+      v-if="!store.activeOrder"
+      class="flex items-center justify-between gap-2 border-b pb-2 px-4"
+    >
       <div class="relative w-full">
         <Input
           v-model="store.ordersParams.search"
@@ -105,6 +108,8 @@
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem @click="store.clearFilter()">Clear Filter</DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               v-for="status in orderStatuses"
               :key="status.value"
@@ -118,8 +123,6 @@
             >
               {{ status.text }}
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="store.clearFilter()">Clear Filter</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button
