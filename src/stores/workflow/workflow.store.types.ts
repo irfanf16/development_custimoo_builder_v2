@@ -26,7 +26,6 @@ export type WorkflowRouteStep =
   | 'colors'
   | 'patterns'
   | 'texts'
-  | 'texts-placement'
   | 'roster'
   | 'roster-edit'
   | 'summary'

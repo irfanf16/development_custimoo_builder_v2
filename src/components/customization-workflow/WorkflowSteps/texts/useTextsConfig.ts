@@ -1,24 +1,14 @@
-import { computed, ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import type { HeaderConfiguration, FooterConfiguration } from '../../types'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-import type { OutputProductText } from '../../../../services/products/types'
-
-// ===== SHARED STATE =====
-// These refs are shared across all component instances
-const currentTextEditRef = ref<OutputProductText | null>(null)
-const onSaveChanges = ref<() => void>(() => {
-  console.log('onSaveChanges')
-})
-const onCancel = ref<() => void>(() => {
-  console.log('onCancel')
-})
+import { onSaveChanges, onCancel } from './useTextActions'
 
 export function useTextsConfig() {
   // ===== DEPENDENCIES =====
   const workflowStore = useWorkflowStore()
 
   // ===== COMPUTED =====
-  const headerConfig = computed<HeaderConfiguration>(() => {
+  const headerConfig: Ref<HeaderConfiguration> = computed(() => {
     if (workflowStore.textsSubStep === 'number-font') {
       const label = String(workflowStore.pendingNumberPreset || '1')
       return {
@@ -40,10 +30,18 @@ export function useTextsConfig() {
         ]
       }
     }
+    if (workflowStore.textsSubStep === 'placement') {
+      return {
+        breadcrumbs: [
+          { label: 'Texts', action: () => workflowStore.setTextsSubStep('list') },
+          { label: 'Placement' }
+        ]
+      }
+    }
     return { breadcrumbs: [{ label: 'Texts' }] }
   })
 
-  const footerConfig = computed<FooterConfiguration>(() => {
+  const footerConfig: Ref<FooterConfiguration> = computed(() => {
     if (workflowStore.textsSubStep === 'edit' || workflowStore.textsSubStep === 'number-font') {
       return {
         buttons: [
@@ -61,11 +59,6 @@ export function useTextsConfig() {
 
   // ===== RETURN =====
   return {
-    // State
-    currentTextEditRef,
-    onSaveChanges,
-    onCancel,
-    // Computed
     headerConfig,
     footerConfig
   }

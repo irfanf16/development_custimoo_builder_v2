@@ -81,7 +81,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       case 'patterns':
         return 'patterns'
       case 'texts':
-        return textsSubStep.value === 'placement' ? 'texts-placement' : 'texts'
+        return 'texts'
       case 'roster':
         return rosterSubStep.value === 'edit' ? 'roster-edit' : 'roster'
       case 'summary':

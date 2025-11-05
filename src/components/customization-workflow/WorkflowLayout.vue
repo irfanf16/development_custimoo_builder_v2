@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref, onMounted, type Ref, isRef, type Ref as VueRef } from 'vue'
+  import { computed, ref, onMounted, isRef, type Ref as VueRef } from 'vue'
   import type { HeaderConfiguration, FooterConfiguration } from './types'
   import WorkflowHeader from './WorkflowHeader.vue'
   import { useWorkflow } from '@/composables/useWorkflow'
@@ -24,7 +24,6 @@
   const { initializeEffects } = useWorkflow()
 
   const isExpanded = ref(false)
-  const currentStepRef: Ref<{ cancel?: () => void; saveChanges?: () => void } | null> = ref(null)
   const menuPanelRef = ref<{
     scrollToElement: (elementId: string, behavior?: 'smooth' | 'auto') => void
   } | null>(null)
@@ -188,7 +187,7 @@
           <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" />
           <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" />
           <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
-          <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" ref="currentStepRef" />
+          <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" />
           <RosterEntry
             v-else-if="
               workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'list'

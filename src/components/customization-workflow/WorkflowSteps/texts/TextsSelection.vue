@@ -8,7 +8,7 @@
   import type { OutputProductText } from '@/services/products/types'
   import { Copy, Plus, Paintbrush } from 'lucide-vue-next'
   import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
-  import { useTexts } from '@/composables/useTexts'
+  import { useTexts } from './useTexts'
 
   const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
@@ -127,7 +127,7 @@
       </PanelNavigationItem>
     </div>
     <div class="px-4 md:px-6 w-full mt-2">
-      <Button class="w-full" @click="goToPlacement()">
+      <Button class="w-full" @click="goToPlacement">
         <Plus class="size-4" />
         <span class="text-sm font-medium">Add additional text</span>
       </Button>

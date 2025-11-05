@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { ref } from 'vue'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { ChevronRight } from 'lucide-vue-next'
 
@@ -17,30 +17,28 @@
     props.onSelectLayer?.(layerId)
   }
 
-  function resetAllPatterns() {
-    layersWithPatterns.value.clear()
-    // TODO: Clear pattern selections from store
-  }
+  // function resetAllPatterns() {
+  //   layersWithPatterns.value.clear()
+  //   // TODO: Clear pattern selections from store
+  // }
 
-  // Check if any patterns are selected
-  const hasPatternsSelected = computed(() => layersWithPatterns.value.size > 0)
+  // // Check if any patterns are selected
+  // const hasPatternsSelected = computed(() => layersWithPatterns.value.size > 0)
 
-  // Breadcrumb logic for pattern layer selection
-  const breadcrumbs = computed(() => [{ label: 'Pattern' }])
+  // // Breadcrumb logic for pattern layer selection
+  // const breadcrumbs = computed(() => [{ label: 'Pattern' }])
 
-  // Header configuration with reset button
-  const headerExtras = computed(() => ({
-    breadcrumbs,
-    actionButton: hasPatternsSelected.value
-      ? {
-          label: 'Reset',
-          tooltip: 'Clear all pattern selections',
-          callback: resetAllPatterns
-        }
-      : undefined
-  }))
-
-  defineExpose({ headerExtras })
+  // // Header configuration with reset button
+  // const headerExtras = computed(() => ({
+  //   breadcrumbs,
+  //   actionButton: hasPatternsSelected.value
+  //     ? {
+  //         label: 'Reset',
+  //         tooltip: 'Clear all pattern selections',
+  //         callback: resetAllPatterns
+  //       }
+  //     : undefined
+  // }))
 </script>
 
 <template>

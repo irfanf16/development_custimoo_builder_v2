@@ -1,14 +1,13 @@
 <script setup lang="ts">
-  import { computed, ref, onMounted } from 'vue'
-  import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { useHistoryStore } from '@/stores/history/history.store'
-  // no type imports needed here
+  import { computed, ref } from 'vue'
   import { Button } from '@/components/ui/button'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import { useLogosStore } from '@/stores/logos/logos.store'
   import type { CustomLogo } from '@/services/logos/types'
-  import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
+  import { useLogoActions } from './useLogoActions'
+  import { useLogos } from './useLogos'
+  import { useLogoUpload } from './useLogoUpload'
   import {
     logos_empty_drag_drop,
     logos_empty_click_to_upload,
@@ -26,25 +25,17 @@
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import LogoCard from './LogoCard.vue'
 
-  const customizationStore = useCustomizationStore()
-  // const productsStore = useProductsStore()
   const localeStore = useLocaleStore()
-  const history = useHistoryStore()
   const logosStore = useLogosStore()
-  const { effectiveProductId, effectiveSvgGroups } = useEffectiveSelectors()
+
+  // ===== COMPOSABLES =====
+  const { customLogos } = useLogos()
+  const { applyLogoColors, removeLogo, setActiveLogo } = useLogoActions()
+  const { isDragOver, fileInputRef, onClickUpload, onDragOver, onDragLeave, doUpload } =
+    useLogoUpload()
 
   type SubPanel = 'list' | 'edit'
   const subPanel = ref<SubPanel>('list')
-
-  // no product/styleBase needed in this panel
-
-  // Recent logos state
-  const customLogos = computed(() => {
-    const key = customizationStore.customization?.product_id
-    const map = customizationStore.customization?.custom_logos
-    if (!key || !map) return [] as CustomLogo[]
-    return (map as Record<string, CustomLogo[]>)[key] || []
-  })
   const showAllRecent = ref(false)
   const displayedRecentLogos = computed(() => {
     if (!logosStore.recentLogos) return []
@@ -58,100 +49,44 @@
   )
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
 
-  onMounted(() => {})
+  // ===== EMITS =====
+  const emit = defineEmits<{
+    'select-logo': [logoId: string]
+    'go-to-placement': []
+  }>()
 
-  // Upload area state
-  const isDragOver = ref(false)
-  const fileInputRef = ref<HTMLInputElement | null>(null)
+  // ===== COMPUTED =====
   const activeLogos = customLogos
   const hasAnyLogo = computed(() => activeLogos.value.length > 0)
 
-  function onClickUpload() {
-    fileInputRef.value?.click()
+  // ===== ACTIONS =====
+  function handleLogoAfterUpload(logo: CustomLogo) {
+    setActiveLogo(logo)
+    emit('go-to-placement')
   }
 
-  function onDragOver(e: DragEvent) {
+  async function handleDrop(e: DragEvent) {
     e.preventDefault()
-    isDragOver.value = true
-  }
-  function onDragLeave() {
-    isDragOver.value = false
-  }
-  async function onDrop(e: DragEvent) {
-    e.preventDefault()
-    isDragOver.value = false
+    onDragLeave()
     const file = e.dataTransfer?.files?.[0]
-    if (file) await doUpload(file)
+    if (file) {
+      const uploaded = await doUpload(file)
+      if (uploaded) {
+        handleLogoAfterUpload(uploaded)
+      }
+    }
   }
 
-  async function onFileChange(e: Event) {
+  async function handleFileChange(e: Event) {
     const input = e.target as HTMLInputElement
     const file = input.files?.[0]
-    if (file) await doUpload(file)
+    if (file) {
+      const uploaded = await doUpload(file)
+      if (uploaded) {
+        handleLogoAfterUpload(uploaded)
+      }
+    }
     if (input) input.value = ''
-  }
-
-  async function doUpload(file: File) {
-    if (!effectiveProductId.value) return
-    const res = await logosStore.uploadLogo({
-      file: file,
-      product_id: effectiveProductId.value
-    })
-    if (res.success) {
-      // Add uploaded logo into customization and collect colors
-      const uploaded = res?.content?.result?.customer_logo
-      if (uploaded) handleLogoAfterUpload(uploaded)
-      return
-      // After upload, go to placement selection
-      // goToPlacement()
-    }
-  }
-
-  // Apply colors from logo palette to first design groups
-  function rgbArrToHex(arr: number[]): string {
-    const [r, g, b] = arr
-    const toHex = (n: number) =>
-      Math.max(0, Math.min(255, Math.round(n)))
-        .toString(16)
-        .padStart(2, '0')
-    return `#${toHex(r ?? 0)}${toHex(g ?? 0)}${toHex(b ?? 0)}`
-  }
-
-  function applyLogoColors(logo: CustomLogo) {
-    const palette = logo.logo_colors as number[][] | undefined
-    if (!palette?.length || !effectiveSvgGroups.value?.length) return
-    const hexColors = palette.map(c => rgbArrToHex(c))
-    history.runBatch('Apply logo colors', add => {
-      effectiveSvgGroups.value?.forEach((group, idx) => {
-        const nextHex = hexColors[idx]
-        if (!nextHex) return
-        const prevRaw = customizationStore.customization?.group_colors?.[group.id]
-        const prevColor = prevRaw
-          ? {
-              name: prevRaw.name || '',
-              value: prevRaw.color || '',
-              position: 0
-            }
-          : null
-        add('color.set-group', {
-          groupId: group.id,
-          prevColor,
-          nextColor: { name: '', value: nextHex, position: 0 }
-        })
-      })
-    })
-  }
-
-  function setUploadedLogoAsActive(logo: CustomLogo) {
-    logosStore.setActiveLogo(logo)
-  }
-
-  function removeLogoFromCustomization(logo: CustomLogo) {
-    const key = String(customizationStore.customization?.product_id || '')
-    const index = customLogos.value.findIndex(l => l.id === logo.id)
-    if (index !== -1) {
-      history.execute('logo.remove', { key, index })
-    }
   }
 
   function goToControls() {
@@ -164,20 +99,8 @@
   }
 
   function handleRecentLogoClick(logo: CustomLogo) {
-    setUploadedLogoAsActive(logo)
-    emit('go-to-placement')
+    handleLogoAfterUpload(logo)
   }
-
-  function handleLogoAfterUpload(logo: CustomLogo) {
-    setUploadedLogoAsActive(logo)
-    emit('go-to-placement')
-  }
-
-  // Emit events for parent component
-  const emit = defineEmits<{
-    'select-logo': [logoId: string]
-    'go-to-placement': []
-  }>()
 
   function handleLogoClick(logo: CustomLogo) {
     emit('select-logo', logo.id.toString())
@@ -200,7 +123,7 @@
             :class="isDragOver ? 'bg-secondary/20 border-primary/60 ring-2 ring-primary/30' : ''"
             @dragover="onDragOver"
             @dragleave="onDragLeave"
-            @drop="onDrop"
+            @drop="handleDrop"
           >
             <div class="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
               <i-other-image class="size-12 text-primary icon-secondary-from-primary-50" />
@@ -225,7 +148,7 @@
               type="file"
               accept="image/*"
               class="hidden"
-              @change="onFileChange"
+              @change="handleFileChange"
             />
           </div>
           <LogoUploadingSkeleton v-if="logosStore.isLoadingUploadLogo && !hasAnyLogo" />
@@ -238,7 +161,7 @@
               :logo="logo"
               @click="handleLogoClick(logo)"
               @apply-colors="applyLogoColors(logo)"
-              @delete="removeLogoFromCustomization(logo)"
+              @delete="removeLogo(logo)"
             />
 
             <div v-if="!logosStore.isLoadingUploadLogo">
@@ -250,7 +173,7 @@
                 type="file"
                 accept="image/*"
                 class="hidden"
-                @change="onFileChange"
+                @change="handleFileChange"
               />
             </div>
             <LogoUploadingSkeleton v-else />

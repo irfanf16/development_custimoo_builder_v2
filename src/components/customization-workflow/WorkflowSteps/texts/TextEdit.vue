@@ -1,10 +1,5 @@
 <script setup lang="ts">
-  import { computed, reactive, ref, watch, watchEffect } from 'vue'
-  import { storeToRefs } from 'pinia'
-  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { useProductsStore } from '@/stores/products/products.store'
-  import { useHistoryStore } from '@/stores/history/history.store'
+  import { computed, watch } from 'vue'
   import { Button } from '@/components/ui/button'
   import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'
@@ -25,233 +20,16 @@
     SelectValue
   } from '@/components/ui/select'
   import { AlignCenter, Pin } from 'lucide-vue-next'
-  import type {
-    OutputProductText,
-    OutputProductTextItem,
-    OutputFont,
-    OutputColor,
-    OutputProductName
-  } from '@/services/products/types'
-  import { useTextsConfig } from './useTextsConfig'
-  // Extended type for text items that may have additional properties
-  type ExtendedTextItem = OutputProductTextItem & {
-    width?: string
-    placement_id?: number
-  }
+  import { useTextActions } from './useTextActions'
+  import { useTextPlacements, selectedPlacementId } from './useTextPlacements'
+  import { useTexts } from './useTexts'
 
-  const workflowStore = useWorkflowStore()
-  const customizationStore = useCustomizationStore()
-  const productsStore = useProductsStore()
-  const historyStore = useHistoryStore()
-  const { onSaveChanges, onCancel } = useTextsConfig()
+  // ===== COMPOSABLES =====
+  const { form, currentItem } = useTextActions()
+  const { placementMap, currentPlacement, placementOptions } = useTextPlacements()
+  const { fontOptions, colorPalettes } = useTexts()
 
-  const { activeTextIndex } = storeToRefs(workflowStore)
-  const { activeProductDetails } = storeToRefs(productsStore)
-
-  const textEntries = computed(() => customizationStore.activeProductTexts)
-  const productId = computed(
-    () => customizationStore.activeProductId ?? activeProductDetails.value?.id ?? null
-  )
-
-  const currentEntry = computed<OutputProductText | null>(() => {
-    if (activeTextIndex.value == null) return null
-    return textEntries.value[activeTextIndex.value] ?? null
-  })
-
-  const currentItem = computed<OutputProductTextItem | null>(() => {
-    const entry = currentEntry.value
-    if (!entry) return null
-    const idx = entry.active_item_index ?? 0
-    return entry.items?.[idx] ?? entry.items?.[0] ?? null
-  })
-
-  const placementMap = computed<Record<number, OutputProductName>>(() => {
-    const map: Record<number, OutputProductName> = {}
-    for (const placement of activeProductDetails.value?.productnames ?? []) {
-      map[placement.id] = placement
-    }
-    return map
-  })
-
-  const currentPlacement = computed<OutputProductName | null>(() => {
-    const id = (currentItem.value as Record<string, unknown> | null)?.placement_id
-    if (typeof id === 'number') return placementMap.value[id] ?? null
-    return null
-  })
-
-  // header/footer config is provided by texts/config.ts and layout; breadcrumbs are rendered via header config
-
-  const palettes = computed(() => productsStore.activeProductDetails?.namecolors ?? [])
-
-  // Helper to construct full font URL from path
-  function getFontUrl(path: string): string {
-    if (!path) return ''
-    if (path.startsWith('http://') || path.startsWith('https://')) return path
-    const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
-    const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
-    const clean = path.startsWith('/') ? path.slice(1) : path
-    return base + clean
-  }
-
-  const fontOptions = computed(() => {
-    const options: {
-      label: string
-      value: string
-      preview?: string
-      fontUrl?: string
-      fontFamily?: string
-    }[] = []
-    for (const font of productsStore.activeProductDetails?.namefonts ?? []) {
-      addFontOption(font, options)
-    }
-    return options
-  })
-
-  function addFontOption(
-    font: OutputFont,
-    bucket: {
-      label: string
-      value: string
-      preview?: string
-      fontUrl?: string
-      fontFamily?: string
-    }[]
-  ) {
-    ;(font.json_data ?? []).forEach(file => {
-      bucket.push({
-        label: file.name,
-        value: file.name,
-        preview: file.name,
-        fontUrl: getFontUrl(file.path),
-        fontFamily: file.name
-      })
-    })
-  }
-
-  const fallbackColors: OutputColor[] = [
-    { position: 0, name: 'Black', value: '#000000' },
-    { position: 1, name: 'White', value: '#ffffff' },
-    { position: 2, name: 'Grey', value: '#808080' }
-  ]
-
-  const form = reactive({
-    text: '',
-    font: '',
-    fill: '#000000',
-    outline: '#ffffff',
-    height: 0,
-    width: 0,
-    angle: 0
-  })
-
-  const clone = <T,>(value: T): T =>
-    typeof structuredClone === 'function'
-      ? structuredClone(value)
-      : (JSON.parse(JSON.stringify(value)) as T)
-
-  function toNumber(input: string | number | undefined, fallback = 0) {
-    if (typeof input === 'number') return input
-    const parsed = parseFloat(String(input ?? ''))
-    return Number.isFinite(parsed) ? parsed : fallback
-  }
-
-  watchEffect(() => {
-    const entry = currentEntry.value
-    const item = currentItem.value
-    if (!entry || !item) return
-    form.text = entry.value || ''
-    form.font = entry.font_family || fontOptions.value[0]?.value || ''
-    form.fill = item.color || '#000000'
-    form.outline = item.outline_color || '#ffffff'
-    form.height = toNumber(item.height, 10)
-    form.width = toNumber((item as ExtendedTextItem).width ?? item.height, form.height)
-    form.angle = toNumber(item.rotation, 0)
-
-    // Set selected placement if available
-    const placementId = (item as ExtendedTextItem)?.placement_id
-    if (typeof placementId === 'number') {
-      selectedPlacementId.value = placementId
-    }
-  })
-
-  watch(
-    () => fontOptions.value,
-    options => {
-      if (!form.font && options.length) {
-        form.font = options[0]?.value || ''
-      }
-    },
-    { immediate: true }
-  )
-
-  function buildUpdatedEntry(entry: OutputProductText): OutputProductText {
-    const next = clone(entry)
-    next.value = form.text
-    next.font_family = form.font
-    const idx = next.active_item_index ?? 0
-    if (!next.items) next.items = []
-    if (!next.items[idx]) next.items[idx] = {} as OutputProductTextItem
-    const target = next.items[idx]
-    const extendedTarget = target as ExtendedTextItem
-    extendedTarget.label = extendedTarget.label || next.label
-    extendedTarget.height = String(form.height)
-    extendedTarget.width = String(form.width)
-    extendedTarget.color = form.fill
-    extendedTarget.outline_color = form.outline
-    extendedTarget.rotation = String(form.angle)
-    extendedTarget.scaleX = extendedTarget.scaleX ?? 1
-    extendedTarget.scaleY = extendedTarget.scaleY ?? 1
-    extendedTarget.selected = true
-
-    // Update placement if selected
-    if (selectedPlacementId.value) {
-      extendedTarget.placement_id = selectedPlacementId.value
-    }
-
-    return next
-  }
-
-  onSaveChanges.value = async () => {
-    console.log('onSaveChanges from TextEdit')
-    if (!currentEntry.value || productId.value == null || activeTextIndex.value == null) return
-    const key = String(productId.value)
-    const prev = currentEntry.value
-    const next = buildUpdatedEntry(prev)
-    await historyStore.execute('text.update-entry', {
-      key,
-      index: activeTextIndex.value,
-      prev,
-      next
-    })
-    workflowStore.setTextsSubStep('list')
-  }
-
-  onCancel.value = () => {
-    console.log('onCancel from TextEdit')
-    workflowStore.setTextsSubStep('list')
-  }
-
-  // function applyStylingClipboard() {
-  //   if (!currentEntry.value) return
-  //   workflowStore.setTextClipboard({ style: clone(currentEntry.value) })
-  // }
-
-  const colorPalettes = computed(() => {
-    const source = palettes.value
-    if (!source?.length) {
-      return [
-        {
-          id: 0,
-          name: 'Defaults',
-          colors: fallbackColors
-        }
-      ]
-    }
-    return source.map(group => ({ id: group.id, name: group.file_name, colors: group.json_data }))
-  })
-
-  // const showNumberControls = computed(() => Boolean(currentEntry.value?.is_first_number))
-
+  // ===== COMPUTED =====
   // Slider value for angle (Slider component expects an array)
   const angleSliderValue = computed({
     get: () => [form.angle],
@@ -259,10 +37,6 @@
       form.angle = value[0] || 0
     }
   })
-
-  // Placement selection
-  const selectedPlacementId = ref<number | null>(null)
-  const placementOptions = computed(() => activeProductDetails.value?.productnames ?? [])
 
   // Watch for placement selection changes
   watch(selectedPlacementId, newPlacementId => {
@@ -276,6 +50,18 @@
     }
   })
 
+  // Watch for font options to set default
+  watch(
+    () => fontOptions.value,
+    options => {
+      if (!form.font && options.length) {
+        form.font = options[0]?.value || ''
+      }
+    },
+    { immediate: true }
+  )
+
+  // ===== UTILITIES =====
   // Color name lookup
   function getColorName(colorValue: string): string {
     for (const palette of colorPalettes.value) {

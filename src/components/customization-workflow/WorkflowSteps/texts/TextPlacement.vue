@@ -8,46 +8,38 @@
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
   import ProductPreviewCanvas from '@/components/customization-workflow/WorkflowSteps/ProductPreviewCanvas.vue'
-  import type {
-    OutputProductName,
-    OutputProductText,
-    OutputProductTextItem
-  } from '@/services/products/types'
+  import type { OutputProductName } from '@/services/products/types'
+  import { useTextPlacements } from './useTextPlacements'
 
-  // no props/emits
-
-  // Breadcrumb logic for text placement
+  // ===== STORES =====
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
   const historyStore = useHistoryStore()
 
+  // ===== COMPOSABLES =====
+  const { buildEntryFromTemplate, updateEntryWithPlacement, availablePlacements } =
+    useTextPlacements()
+
+  // ===== STATE =====
   const { activeProductDetails, activeStyleDetails, activeDesignDetails } =
     storeToRefs(productsStore)
   const { activeProductId } = storeToRefs(customizationStore)
   const { activeTextIndex, pendingTextTemplateId } = storeToRefs(workflowStore)
 
-  const breadcrumbs = computed(() => [
-    { label: 'Texts', action: () => workflowStore.setTextsSubStep('list') },
-    { label: 'Placement' }
-  ])
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
-
+  // ===== COMPUTED =====
   const PREVIEW_SIZE = 176
   const CANVAS_BASE = 600
 
   // Get available text templates for lookup
   const textTemplates = computed(() => activeProductDetails.value?.product_texts ?? [])
-
-  const availablePlacements = computed(() => {
-    return activeProductDetails.value?.productnames ?? []
-  })
   const textEntries = computed(() => customizationStore.activeProductTexts)
 
   const placementsWithOverlay = computed(() => {
+    const placements = availablePlacements.value
+    if (!placements || placements.length === 0) return []
     const scale = PREVIEW_SIZE / CANVAS_BASE
-    return availablePlacements.value.map((placement: OutputProductName) => {
+    return placements.map((placement: OutputProductName) => {
       const width = placement.width ?? placement.height ?? 300
       const height = placement.height ?? width
       const overlay = {
@@ -61,85 +53,7 @@
     })
   })
 
-  const clone = <T,>(value: T): T =>
-    typeof structuredClone === 'function'
-      ? structuredClone(value)
-      : (JSON.parse(JSON.stringify(value)) as T)
-
-  const getActiveItem = (text: OutputProductText | null) => {
-    if (!text) return null
-    const idx = text.active_item_index ?? 0
-    return text.items?.[idx] ?? text.items?.[0] ?? null
-  }
-
-  const buildItemFromPlacement = (
-    placement: OutputProductName,
-    templateItem?: OutputProductTextItem | null
-  ): OutputProductTextItem => {
-    const base = templateItem ? clone(templateItem) : ({} as OutputProductTextItem)
-    base.label = placement.name_of_placement
-    base.height = String(placement.height ?? Number(base.height ?? 0))
-    base.x_axis = String(placement.x_axis ?? Number(base.x_axis ?? 0))
-    base.y_axis = String(placement.y_axis ?? Number(base.y_axis ?? 0))
-    base.rotation = String(placement.rotation ?? Number(base.rotation ?? 0))
-    base.is_locked = Boolean(placement.is_locked ?? base.is_locked ?? false)
-    base.arc_text_allowed = Boolean(placement.arc_text_allowed ?? base.arc_text_allowed ?? false)
-    base.outline_enabled = Boolean(base.outline_enabled ?? true)
-    base.outline_width = base.outline_width ?? 0
-    base.outline_width_converted = base.outline_width_converted ?? 0
-    base.color = base.color || '#000000'
-    base.color_pantone = base.color_pantone || ''
-    base.outline_color = base.outline_color || '#FFFFFF'
-    base.outline_color_pantone = base.outline_color_pantone || ''
-    base.color_tab_index = base.color_tab_index ?? 0
-    base.selected = true
-    base.scaleX = base.scaleX ?? 1
-    base.scaleY = base.scaleY ?? 1
-    ;(base as Record<string, unknown>).placement_id = placement.id
-    return base
-  }
-
-  const buildEntryFromTemplate = (
-    template: OutputProductText | undefined,
-    placement: OutputProductName,
-    productIdValue: number
-  ): OutputProductText => {
-    const entry = template ? clone(template) : ({} as OutputProductText)
-    entry.id = entry.id ?? 0
-    entry.product_id = productIdValue
-    entry.type = template?.type ?? 'name'
-    entry.label = template?.label ?? placement.name_of_placement
-    entry.placeholder = template?.placeholder ?? ''
-    entry.value = template?.value ?? ''
-    entry.following_products = template?.following_products ?? []
-    entry.created_at = template?.created_at ?? null
-    entry.updated_at = template?.updated_at ?? null
-    entry.deleted_at = template?.deleted_at ?? null
-    entry.manually_added = true
-    entry.font_family = template?.font_family ?? ''
-    entry.following_product_ids = template?.following_product_ids ?? []
-    entry.active_item_index = 0
-    entry.is_first_name = template?.is_first_name
-    entry.is_first_number = template?.is_first_number
-    const templateItem = template?.items?.[template.active_item_index ?? 0]
-    const item = buildItemFromPlacement(placement, templateItem)
-    entry.items = [item]
-    return entry
-  }
-
-  const updateEntryWithPlacement = (
-    current: OutputProductText,
-    placement: OutputProductName,
-    template?: OutputProductText
-  ) => {
-    const next = clone(current)
-    const templateItem = template?.items?.[template.active_item_index ?? 0] ?? getActiveItem(next)
-    const item = buildItemFromPlacement(placement, templateItem)
-    next.items = [item]
-    next.active_item_index = 0
-    return next
-  }
-
+  // ===== ACTIONS =====
   const handleSelectPlacement = async (placement: OutputProductName) => {
     if (activeProductId.value == null || activeTextIndex.value == null) return
     const key = String(activeProductId.value)
