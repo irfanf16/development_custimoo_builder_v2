@@ -32,16 +32,12 @@
 
     <!-- Expanded Section -->
     <div v-if="expanded" class="pt-3 border-t border-gray-100">
-      <div
-        v-for="(item, indexItem) in order.items || []"
-        :key="'factory-' + indexItem"
-        class="flex flex-wrap gap-4"
-      >
-        <!-- Product Image Grid (3 per row) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <!-- Flatten all factory_products into one list -->
         <div
-          v-for="(product, productIndex) in item.factory_products || []"
-          :key="'product-' + productIndex"
-          class="relative group w-[calc(33.333%-1rem)] aspect-square bg-[#F5F5F5] border border-[#E5E5E5] rounded-lg overflow-hidden"
+          v-for="(product, index) in order.items?.flatMap(item => item.factory_products || [])"
+          :key="'product-' + index"
+          class="relative group bg-[#F5F5F5] border border-[#E5E5E5] rounded-lg overflow-hidden aspect-square"
         >
           <!-- Product Image -->
           <img
@@ -59,7 +55,7 @@
             @error="onImageError"
           />
 
-          <!-- Hover Actions at Bottom -->
+          <!-- Hover Actions -->
           <div
             class="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm py-2 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200"
           >
