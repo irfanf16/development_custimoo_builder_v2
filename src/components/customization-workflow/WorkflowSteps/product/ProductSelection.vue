@@ -9,12 +9,8 @@
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
   import type { OutputDesignDetails } from '@/services/products/types'
-  import {
-    productSearchModel,
-    showCustomizerStockFilter,
-    PRODUCT_TYPE,
-    customizerStockFilterModel
-  } from './config'
+  import { useProductConfig } from './useProductConfig'
+  import { PRODUCT_TYPE } from './useProductConfig'
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -28,6 +24,8 @@
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeProductId: selectedProductId } = storeToRefs(customizationStore)
+  const { productSearchModel, showCustomizerStockFilter, customizerStockFilterModel } =
+    useProductConfig()
   const previews = computed(() => productsStore.productPreviews || [])
 
   // Constants

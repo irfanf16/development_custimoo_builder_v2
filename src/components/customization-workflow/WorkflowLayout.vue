@@ -67,33 +67,27 @@
   })
 
   // Import header/footer config creators from step config modules
-  import { designHeaderConfig } from './WorkflowSteps/design/config'
-  import { productHeaderConfig } from './WorkflowSteps/product/config'
-  import { styleHeaderConfig } from './WorkflowSteps/style/config'
-  import { logoHeaderConfig } from './WorkflowSteps/logo/config'
-  import { colorsHeaderConfig } from './WorkflowSteps/colors/config'
+  import { useDesignConfig } from './WorkflowSteps/design/useDesignConfig'
+  import { useProductConfig } from './WorkflowSteps/product/useProductConfig'
+  import { useStyleConfig } from './WorkflowSteps/style/useStyleConfig'
+  import { useLogoConfig } from './WorkflowSteps/logo/useLogoConfig'
+  import { useColorsConfig } from './WorkflowSteps/colors/useColorsConfig'
   import { useTextsConfig } from './WorkflowSteps/texts/useTextsConfig'
-  import { patternsHeaderConfig } from './WorkflowSteps/patterns/config'
-  import { rosterHeaderConfig } from './WorkflowSteps/roster/config'
-  import { summaryHeaderConfig } from './WorkflowSteps/summary/config'
-  import { summaryFooterConfig } from './WorkflowSteps/summary/config'
-  import { designFooterConfig } from './WorkflowSteps/design/config'
-  import { productFooterConfig } from './WorkflowSteps/product/config'
-  import { styleFooterConfig } from './WorkflowSteps/style/config'
-  import { logoFooterConfig } from './WorkflowSteps/logo/config'
-  import { colorsFooterConfig } from './WorkflowSteps/colors/config'
-  import { patternsFooterConfig } from './WorkflowSteps/patterns/config'
-  import { rosterFooterConfig } from './WorkflowSteps/roster/config'
+  import { usePatternsConfig } from './WorkflowSteps/patterns/usePatternsConfig'
+  import { useRosterConfig } from './WorkflowSteps/roster/useRosterConfig'
+  import { useSummaryConfig } from './WorkflowSteps/summary/useSummaryConfig'
   // Repeat for other steps as available ...
 
   // Instantiate step configs
-  const productHeader = productHeaderConfig
-  const designHeader = designHeaderConfig
-  const styleHeader = styleHeaderConfig
-  const logoHeader = logoHeaderConfig
-  const colorsHeader = colorsHeaderConfig
+  const { headerConfig: productHeader, footerConfig: productFooter } = useProductConfig()
+  const { headerConfig: designHeader, footerConfig: designFooter } = useDesignConfig()
+  const { headerConfig: styleHeader, footerConfig: styleFooter } = useStyleConfig()
+  const { headerConfig: logoHeader, footerConfig: logoFooter } = useLogoConfig()
+  const { headerConfig: colorsHeader, footerConfig: colorsFooter } = useColorsConfig()
   const { headerConfig: textsHeader, footerConfig: textsFooter } = useTextsConfig()
-  const summaryHeader = summaryHeaderConfig
+  const { headerConfig: patternsHeader, footerConfig: patternsFooter } = usePatternsConfig()
+  const { headerConfig: rosterHeader, footerConfig: rosterFooter } = useRosterConfig()
+  const { headerConfig: summaryHeader, footerConfig: summaryFooter } = useSummaryConfig()
 
   // Map current step to configs (resolve refs to plain objects)
   function resolveHeader(
@@ -115,13 +109,13 @@
       case 'colors':
         return resolveHeader(colorsHeader)
       case 'patterns':
-        return resolveHeader(patternsHeaderConfig)
+        return resolveHeader(patternsHeader)
       case 'texts':
         return resolveHeader(textsHeader)
       case 'summary':
         return resolveHeader(summaryHeader)
       case 'roster':
-        return resolveHeader(rosterHeaderConfig)
+        return resolveHeader(rosterHeader)
       default:
         return { breadcrumbs: [] }
     }
@@ -130,23 +124,23 @@
   const footerConfig = computed<FooterConfiguration>(() => {
     switch (workflowStore.currentStep) {
       case 'product':
-        return productFooterConfig
+        return productFooter.value
       case 'designs':
-        return designFooterConfig
+        return designFooter.value
       case 'styles':
-        return styleFooterConfig
+        return styleFooter.value
       case 'logos':
-        return logoFooterConfig
+        return logoFooter.value
       case 'colors':
-        return colorsFooterConfig
+        return colorsFooter.value
       case 'patterns':
-        return patternsFooterConfig
+        return patternsFooter.value
       case 'texts':
         return textsFooter.value
       case 'summary':
-        return summaryFooterConfig
+        return summaryFooter.value
       case 'roster':
-        return rosterFooterConfig
+        return rosterFooter.value
       default:
         return { buttons: [] } as FooterConfiguration
     }

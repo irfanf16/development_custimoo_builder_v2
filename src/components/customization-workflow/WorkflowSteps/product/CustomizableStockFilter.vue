@@ -11,7 +11,7 @@
   import { Check, Funnel } from 'lucide-vue-next'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { storeToRefs } from 'pinia'
-  import type { StockFilterOption } from './config'
+  import type { StockFilterOption } from './useProductConfig'
 
   const uiStore = useUIStore()
   const { isMobile } = storeToRefs(uiStore)

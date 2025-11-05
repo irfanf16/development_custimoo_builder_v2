@@ -6,7 +6,7 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  import { designCategoriesConfig } from './config'
+  import { useDesignConfig } from './useDesignConfig'
   import type { DesignCategoriesConfig } from '../../types'
 
   const uiStore = useUIStore()
@@ -17,6 +17,8 @@
   const { isMobile } = storeToRefs(uiStore)
   const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
   const { selectedDesignCategoryId } = storeToRefs(workflowStore)
+  const { designSearchModel, applyCustomizationOverrides, designCategoriesConfig } =
+    useDesignConfig()
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -26,11 +28,6 @@
 
   const previews = computed(() => productsStore.designPreviews || [])
   const designSelectionContainer = ref<HTMLElement | null>(null)
-  import {
-    designSearchModel,
-    applyCustomizationOverrides as headerApplyOverridesModel
-  } from './config'
-  const applyCustomizationOverrides = headerApplyOverridesModel
 
   onMounted(async () => {
     // Reset to "All Categories" when entering design selection
