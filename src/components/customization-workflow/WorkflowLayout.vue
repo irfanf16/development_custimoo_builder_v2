@@ -72,7 +72,7 @@
   import { styleHeaderConfig } from './WorkflowSteps/style/config'
   import { logoHeaderConfig } from './WorkflowSteps/logo/config'
   import { colorsHeaderConfig } from './WorkflowSteps/colors/config'
-  import { textsHeaderConfig } from './WorkflowSteps/texts/config'
+  import { useTextsConfig } from './WorkflowSteps/texts/useTextsConfig'
   import { patternsHeaderConfig } from './WorkflowSteps/patterns/config'
   import { rosterHeaderConfig } from './WorkflowSteps/roster/config'
   import { summaryHeaderConfig } from './WorkflowSteps/summary/config'
@@ -84,7 +84,6 @@
   import { colorsFooterConfig } from './WorkflowSteps/colors/config'
   import { patternsFooterConfig } from './WorkflowSteps/patterns/config'
   import { rosterFooterConfig } from './WorkflowSteps/roster/config'
-  import { getTextsFooterConfig } from './WorkflowSteps/texts/config'
   // Repeat for other steps as available ...
 
   // Instantiate step configs
@@ -93,7 +92,7 @@
   const styleHeader = styleHeaderConfig
   const logoHeader = logoHeaderConfig
   const colorsHeader = colorsHeaderConfig
-  const textsHeader = textsHeaderConfig
+  const { headerConfig: textsHeader, footerConfig: textsFooter } = useTextsConfig()
   const summaryHeader = summaryHeaderConfig
 
   // Map current step to configs (resolve refs to plain objects)
@@ -143,7 +142,7 @@
       case 'patterns':
         return patternsFooterConfig
       case 'texts':
-        return getTextsFooterConfig() // dynamic for edit step (no ref needed)
+        return textsFooter.value
       case 'summary':
         return summaryFooterConfig
       case 'roster':

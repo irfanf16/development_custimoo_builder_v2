@@ -14,7 +14,7 @@
     OutputProductTextItem,
     OutputProductName
   } from '@/services/products/types'
-  import { onSaveChanges, onCancel } from './config'
+  import { useTextsConfig } from './useTextsConfig'
 
   // Extended type for text items that may have additional properties
   type ExtendedTextItem = OutputProductTextItem & {
@@ -25,6 +25,7 @@
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
   // const historyStore = useHistoryStore()
+  const { onSaveChanges, onCancel } = useTextsConfig()
 
   const { activeTextIndex, pendingNumberPreset } = storeToRefs(workflowStore)
   const { activeProductDetails } = storeToRefs(productsStore)
