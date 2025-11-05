@@ -1,10 +1,13 @@
 import { useLocaleStore } from '@/stores/locale/locale.store'
-import { ref } from 'vue'
 import { m as messages } from '@/paraglide/messages'
 import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
+import { useProfileStore } from '@/stores/profile/profile.store'
+import { storeToRefs } from 'pinia'
+
 export function useProfileDialogState() {
   const localeStore = useLocaleStore()
-  const tab = ref('account')
+  const profileStore = useProfileStore()
+  const { activeTab } = storeToRefs(profileStore)
 
   const tabItems = [
     {
@@ -28,5 +31,5 @@ export function useProfileDialogState() {
       icon: flexFlatCategoryIcons.SettingsIcon
     }
   ]
-  return { tab, tabItems }
+  return { tab: activeTab, tabItems }
 }

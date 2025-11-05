@@ -1,17 +1,14 @@
 <template>
   <div class="p-4 space-y-6">
-    {{ console.log('Rendering OrderDetailsView for order:', order) }}
     <!-- Order Info -->
     <div class="border-b pb-3">
-      <OrderSummaryHeader :order="order" />
-      <div class="mt-2 flex items-center gap-3">
-        <button class="text-primary hover:underline text-sm font-medium" @click="$emit('back')">
-          ← Back to Orders
-        </button>
-        <button class="text-primary hover:underline text-sm font-medium" @click="openTimeline()">
-          Order Timeline
-        </button>
-      </div>
+      <OrderSummaryHeader
+        :order="order"
+        :show-timeline="true"
+        @cancel="store.cancelOrder"
+        @pdf="() => {}"
+        @details="() => {}"
+      />
     </div>
 
     <!-- Product List -->
@@ -129,20 +126,12 @@
 <script setup lang="ts">
   import { defineProps, defineEmits } from 'vue'
   import { getStatusColor } from '@/helpers/orderStatuses'
-  import type { Order } from '@/services/orders/types'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
+  import type { Order } from '@/services/orders/types'
   import { useProfileStore } from '@/stores/profile/profile.store'
 
-  const props = defineProps<{ order: Order }>()
+  defineProps<{ order: Order }>()
   defineEmits<{ (e: 'back'): void }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
   const store = useProfileStore()
-
-  // no-op helpers (summary data handled by OrderSummaryHeader)
-
-  function openTimeline() {
-    if (!props.order?.id) return
-    // Fetch latest detail and update breadcrumb to include timeline wording
-    store.openOrderTimeline(props.order.id)
-  }
 </script>

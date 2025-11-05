@@ -5,7 +5,7 @@
   import { useProfileDialogState } from '@/composables/useProfileDialogState'
   import AccountTab from './account-section/AccountTab.vue'
   import OrdersTab from './orders-section/OrdersTab.vue'
-  // import AddressTab from './address-section/AddressTab.vue'
+  import AddressTab from './address-section/AddressTab.vue'
   // import PreferencesTab from './preferences-section/PreferencesTab.vue'
   import { watch } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
@@ -18,10 +18,24 @@
   const { tab, tabItems } = useProfileDialogState()
   const profileStore = useProfileStore()
   const { counters } = storeToRefs(profileStore)
+
+  // Watch tab changes and persist them
+  watch(
+    () => tab.value,
+    newTab => {
+      profileStore.activeTab = newTab as 'account' | 'orders' | 'address' | 'preferences'
+      profileStore.saveToLocalStorage()
+    }
+  )
+
   watch(
     () => props.open,
     isOpen => {
-      if (isOpen) profileStore.fetchDashboard()
+      if (isOpen) {
+        // Load persisted state when dialog opens
+        profileStore.loadFromLocalStorage()
+        profileStore.fetchDashboard()
+      }
     },
     { immediate: true }
   )
@@ -70,6 +84,9 @@
             </TabsContent>
             <TabsContent value="orders" class="h-full">
               <OrdersTab title="Orders" />
+            </TabsContent>
+            <TabsContent value="address" class="h-full">
+              <AddressTab />
             </TabsContent>
           </Tabs>
         </div>

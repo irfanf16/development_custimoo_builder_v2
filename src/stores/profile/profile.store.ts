@@ -26,6 +26,7 @@ export const useProfileStore = defineStore('profileStore', () => {
   const breadcrumbs = ref<{ label: string; action?: () => void }[]>([{ label: 'Orders' }])
   const activeOrder = ref<Order | null>(null)
   const activeOrderView = ref<'details' | 'timeline'>('details')
+  const activeTab = ref<'account' | 'orders' | 'address' | 'preferences'>('account')
   const pagination = ref<{
     currentPage: number
     perPage: number
@@ -37,6 +38,95 @@ export const useProfileStore = defineStore('profileStore', () => {
     total: 0,
     next_page_url: null
   })
+
+  // ===== PERSISTENCE =====
+  const STORAGE_KEY = 'profileStore'
+
+  function saveToLocalStorage() {
+    if (typeof window === 'undefined') return
+    try {
+      const state = {
+        ordersView: ordersView.value,
+        ordersPageType: ordersPageType.value,
+        ordersParams: ordersParams.value,
+        breadcrumbs: breadcrumbs.value.map(b => ({
+          label: b.label
+          // Note: actions are functions and cannot be serialized, so we skip them
+        })),
+        activeOrder: activeOrder.value, // Store full order for restoration
+        activeOrderView: activeOrderView.value,
+        activeTab: activeTab.value,
+        pagination: pagination.value,
+        orders: orders.value // Persist all loaded orders
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    } catch (e) {
+      console.error('Failed to save profile store to localStorage:', e)
+    }
+  }
+
+  function loadFromLocalStorage() {
+    if (typeof window === 'undefined') return false
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (!stored) return false
+
+      const state = JSON.parse(stored) as {
+        ordersView?: 'list' | 'expanded-list'
+        ordersPageType?: 'order' | 'quote'
+        ordersParams?: { search: string; filter: string | null }
+        breadcrumbs?: Array<{ label: string }>
+        activeOrder?: Order | null
+        activeOrderView?: 'details' | 'timeline'
+        activeTab?: 'account' | 'orders' | 'address' | 'preferences'
+        pagination?: {
+          currentPage: number
+          perPage: number
+          total: number
+          next_page_url?: string | null
+        }
+        orders?: Order[]
+      }
+
+      if (state.ordersView) ordersView.value = state.ordersView
+      if (state.ordersPageType) ordersPageType.value = state.ordersPageType
+      if (state.ordersParams) ordersParams.value = state.ordersParams
+      if (state.activeOrderView) activeOrderView.value = state.activeOrderView
+      if (state.activeTab) activeTab.value = state.activeTab
+      if (state.pagination) pagination.value = state.pagination
+      if (state.orders && Array.isArray(state.orders)) orders.value = state.orders
+
+      // Restore breadcrumbs with proper actions - handle all breadcrumb labels
+      if (state.breadcrumbs) {
+        breadcrumbs.value = state.breadcrumbs.map((b, idx) => {
+          if (idx === 0) {
+            return { label: b.label, action: () => closeOrderDetails() }
+          }
+          // For order detail breadcrumb, add action if we have the order
+          if (state.activeOrder && b.label.includes('Order #')) {
+            return { label: b.label, action: () => openOrderDetails(state.activeOrder!) }
+          }
+          // For Order Timeline breadcrumb, just return the label (no action needed)
+          return { label: b.label }
+        })
+      }
+
+      // Restore activeOrder
+      if (state.activeOrder) {
+        activeOrder.value = state.activeOrder
+      }
+
+      return true
+    } catch (e) {
+      console.error('Failed to load profile store from localStorage:', e)
+      return false
+    }
+  }
+
+  function clearLocalStorage() {
+    if (typeof window === 'undefined') return
+    localStorage.removeItem(STORAGE_KEY)
+  }
 
   // ✅ Fetch Dashboard Data
   async function fetchDashboard() {
@@ -60,6 +150,7 @@ export const useProfileStore = defineStore('profileStore', () => {
       const res = await API.orders.getOrders(params, ordersPageType.value)
       orders.value = res.data ?? []
       makePagination(res)
+      saveToLocalStorage()
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'Failed to load orders'
     } finally {
@@ -95,17 +186,20 @@ export const useProfileStore = defineStore('profileStore', () => {
       orders.value.push(...(newOrders as Order[]))
     }
     makePagination(res)
+    saveToLocalStorage()
   }
 
   // ✅ Clear Search & Filter
   async function clearSearch() {
     ordersParams.value.search = ''
     await filterOrders()
+    saveToLocalStorage()
   }
 
   async function clearFilter() {
     ordersParams.value.filter = null
     await filterOrders()
+    saveToLocalStorage()
   }
 
   // ✅ Filter Orders
@@ -117,6 +211,7 @@ export const useProfileStore = defineStore('profileStore', () => {
 
     const params = query.toString() ? `?${query.toString()}` : ''
     await fetchOrders(params)
+    saveToLocalStorage()
   }
 
   // ✅ Cancel Order
@@ -139,6 +234,7 @@ export const useProfileStore = defineStore('profileStore', () => {
   // ✅ View Mode
   function setView(mode: 'list' | 'expanded-list') {
     ordersView.value = mode
+    saveToLocalStorage()
   }
 
   // ✅ Open Order Details
@@ -151,21 +247,33 @@ export const useProfileStore = defineStore('profileStore', () => {
       { label: 'Orders', action: () => closeOrderDetails() },
       { label: `Order #${order.order_no ?? 'N/A'}` }
     ]
+    saveToLocalStorage()
   }
 
   // ✅ Fetch Order Details (Order Timeline entry point)
   async function fetchOrderDetails(orderId: number | string) {
     isLoading.value = true
     error.value = null
+    const wasOnTimeline = activeOrderView.value === 'timeline'
     try {
       const res: OrderDetailResponse = await API.orders.getOrderDetail(orderId)
       if (res.success) {
         activeOrder.value = res.result
         const ord = res.result
-        breadcrumbs.value = [
-          { label: 'Orders', action: () => closeOrderDetails() },
-          { label: `Order #${ord.order_no ?? 'N/A'}` }
-        ]
+        // If we were on timeline view, preserve the timeline breadcrumb structure
+        if (wasOnTimeline) {
+          breadcrumbs.value = [
+            { label: 'Orders', action: () => closeOrderDetails() },
+            { label: `Order #${ord.order_no ?? 'N/A'}`, action: () => openOrderDetails(ord) },
+            { label: 'Order Timeline' }
+          ]
+        } else {
+          breadcrumbs.value = [
+            { label: 'Orders', action: () => closeOrderDetails() },
+            { label: `Order #${ord.order_no ?? 'N/A'}` }
+          ]
+        }
+        saveToLocalStorage()
       } else {
         error.value = res.message || 'Failed to load order details'
       }
@@ -186,11 +294,13 @@ export const useProfileStore = defineStore('profileStore', () => {
       { label: `Order #${ord?.order_no ?? 'N/A'}`, action: () => ord && openOrderDetails(ord) },
       { label: 'Order Timeline' }
     ]
+    saveToLocalStorage()
   }
   // ✅ Close Order Details
   function closeOrderDetails() {
     activeOrder.value = null
     breadcrumbs.value = [{ label: 'Orders' }]
+    saveToLocalStorage()
   }
 
   return {
@@ -207,6 +317,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     breadcrumbs,
     activeOrder,
     activeOrderView,
+    activeTab,
 
     // Actions
     fetchDashboard,
@@ -221,6 +332,10 @@ export const useProfileStore = defineStore('profileStore', () => {
     openOrderDetails,
     fetchOrderDetails,
     openOrderTimeline,
-    closeOrderDetails
+    closeOrderDetails,
+    // Persistence
+    saveToLocalStorage,
+    loadFromLocalStorage,
+    clearLocalStorage
   }
 })

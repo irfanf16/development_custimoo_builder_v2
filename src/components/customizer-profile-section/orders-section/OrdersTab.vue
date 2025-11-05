@@ -26,7 +26,23 @@
   const orderStatuses = computed(() => getOrderOptions(store.ordersPageType))
 
   onMounted(() => {
-    if (!store.orders.length) store.fetchOrders()
+    // Load persisted state
+    store.loadFromLocalStorage()
+
+    // If on timeline view and activeOrder exists, fetch fresh details
+    if (store.activeOrder?.id && store.activeOrderView === 'timeline') {
+      store.fetchOrderDetails(store.activeOrder.id)
+    }
+
+    // Fetch orders if none loaded
+    if (!store.orders.length) {
+      const query = new URLSearchParams()
+      const { search, filter } = store.ordersParams
+      if (search) query.set('search', search)
+      if (filter) query.set('filter', filter)
+      const params = query.toString() ? `?${query.toString()}` : ''
+      store.fetchOrders(params)
+    }
   })
 
   function onSearchEnter(e: KeyboardEvent) {
@@ -63,7 +79,7 @@
           class="h-8 w-full pl-8 pr-8"
           @keydown="onSearchEnter"
         />
-        <Search class="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-gray-500" />
+        <Search class="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-500" />
         <button
           v-if="store.ordersParams.search"
           class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"

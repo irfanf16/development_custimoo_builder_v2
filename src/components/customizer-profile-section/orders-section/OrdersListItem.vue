@@ -1,32 +1,18 @@
 <script setup lang="ts">
-  import { defineProps, defineEmits } from 'vue'
-  import Button from '@/components/ui/button/Button.vue'
-  import { getStatusColor } from '@/helpers/orderStatuses'
+  import { defineProps } from 'vue'
   import type { Order } from '@/services/orders/types'
-  import { formatDate } from '@/lib/utils'
+  import OrderSummaryHeader from './OrderSummaryHeader.vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
 
   defineProps<{
     order: Order
     expanded?: boolean
   }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || '' // Vite-compatible env usage
+  const store = useProfileStore()
 
-  const emit = defineEmits<{
-    (e: 'cancel', order: Order): void
-    (e: 'pdf', order: Order): void
-    (e: 'details', order: Order): void
-  }>()
-
-  function getTotalQuantity(order: Order): number {
-    if (!order?.items?.length) return 0
-
-    return order.items.reduce((total, item) => {
-      const factoryTotal = (item.factory_products || []).reduce(
-        (sum, product) => sum + (product.prices?.total_quantity || 0),
-        0
-      )
-      return total + factoryTotal
-    }, 0)
+  function showOrderDetails(order: Order) {
+    store.openOrderDetails(order)
   }
 </script>
 
@@ -35,85 +21,13 @@
     class="flex flex-col gap-2 py-3 px-4 border-b border-gray-200 transition-colors hover:bg-gray-50"
   >
     <!-- Top Row -->
-    <div class="flex items-center justify-between">
-      <div>
-        <div class="font-semibold text-gray-800">
-          {{ order.order_no || 'N/A' }}
-        </div>
-        <div class="text-sm text-gray-500">
-          {{ order.customer_reference_no || '-' }}
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <Button
-          v-if="order.items?.some(i => i.status === 'submitted_for_factory_review')"
-          size="sm"
-          variant="ghost"
-          class="text-xs border border-gray-200 hover:bg-gray-100"
-          @click="emit('cancel', order)"
-        >
-          Cancel
-        </Button>
-
-        <Button
-          size="sm"
-          variant="ghost"
-          class="text-xs border border-gray-200 hover:bg-gray-100"
-          @click="emit('pdf', order)"
-        >
-          PDF
-        </Button>
-
-        <Button
-          size="sm"
-          variant="ghost"
-          class="text-xs border border-gray-200 hover:bg-gray-100"
-          @click="emit('details', order)"
-        >
-          Order Details
-        </Button>
-      </div>
-    </div>
-
-    <!-- Statuses -->
-
-    <!-- Bottom Info -->
-    <div class="flex justify-between items-start text-xs text-gray-500">
-      <!-- Created At -->
-      <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-gray-700">Created At</div>
-        <div>{{ formatDate(order.created_at) }}</div>
-      </div>
-
-      <!-- Statuses -->
-      <div class="flex flex-col items-start gap-1 text-center">
-        <div class="font-medium text-gray-700">Order Status</div>
-        <div class="flex flex-wrap justify-center gap-2">
-          <div
-            v-for="(item, index) in order.items || []"
-            :key="index"
-            class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium capitalize"
-            :style="{
-              backgroundColor: getStatusColor(item.status).bg,
-              color: getStatusColor(item.status).text
-            }"
-          >
-            {{
-              item.status === 'order_approve'
-                ? 'Submitted for Factory Review'
-                : item.status?.replace(/_/g, ' ') || 'Unknown'
-            }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Total Quantity -->
-      <div class="flex flex-col items-end gap-1">
-        <div class="font-medium text-gray-700">Total Quantity</div>
-        <div>{{ getTotalQuantity(order) }}</div>
-      </div>
-    </div>
+    <OrderSummaryHeader
+      :order="order"
+      :show-timeline="false"
+      @cancel="store.cancelOrder"
+      @pdf="() => {}"
+      @details="() => showOrderDetails(order)"
+    />
 
     <!-- Expanded Section -->
     <div v-if="expanded" class="pt-3 border-t border-gray-100">
