@@ -245,7 +245,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     activeOrderView.value = 'details'
     breadcrumbs.value = [
       { label: 'Orders', action: () => closeOrderDetails() },
-      { label: `Order #${order.order_no ?? 'N/A'}` }
+      { label: `#${order.order_no ?? 'N/A'}` }
     ]
     saveToLocalStorage()
   }

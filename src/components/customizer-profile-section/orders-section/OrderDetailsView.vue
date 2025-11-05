@@ -86,7 +86,9 @@
               <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
                 <span
                   >Quantity:
-                  {{ product.prices?.total_quantity ?? product.roster_quantity ?? 0 }}</span
+                  <span class="text-[#0A0A0A]">{{
+                    product.prices?.total_quantity ?? product.roster_quantity ?? 0
+                  }}</span></span
                 >
                 <span
                   class="text-xs px-2 py-1 rounded-full font-medium capitalize"
@@ -102,28 +104,28 @@
               <!-- Actions -->
               <div class="flex flex-wrap items-center gap-2">
                 <button
-                  class="flex items-center gap-1 border border-gray-200 text-gray-700 px-2 py-1 rounded-md hover:border-gray-300 transition"
+                  class="flex items-center justify-center gap-1 border border-base text-base text-sm px-4 py-2 rounded-md hover:border-gray-300 transition"
                   title="Save"
                 >
                   <i-flex-line-save class="size-4" /> Save
                 </button>
 
                 <button
-                  class="flex items-center gap-1 border border-gray-200 text-gray-700 px-2 py-1 rounded-md hover:border-gray-300 transition"
+                  class="flex items-center justify-center gap-1 border border-base text-base text-sm px-4 py-2 rounded-md hover:border-gray-300 transition"
                   title="Share"
                 >
                   <i-flex-line-share class="size-4" /> Share
                 </button>
 
                 <button
-                  class="flex items-center gap-1 border border-gray-200 text-gray-700 px-2 py-1 rounded-md hover:border-gray-300 transition"
+                  class="flex items-center justify-center gap-1 border border-base text-base text-sm px-4 py-2 rounded-md hover:border-gray-300 transition"
                   title="Add to Cart"
                 >
                   <i-flex-line-cart class="size-4" /> Cart
                 </button>
 
                 <button
-                  class="flex items-center gap-1 border border-gray-200 text-gray-700 px-2 py-1 rounded-md hover:border-gray-300 transition"
+                  class="flex items-center justify-center gap-1 border border-base text-base text-sm px-4 py-2 rounded-md hover:border-gray-300 transition"
                   title="Reorder"
                 >
                   <i-flex-line-reorder class="size-4" /> Reorder

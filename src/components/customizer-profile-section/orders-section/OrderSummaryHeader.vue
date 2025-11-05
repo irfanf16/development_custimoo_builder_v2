@@ -2,9 +2,7 @@
   <div class="flex flex-col w-full items-start justify-between">
     <div class="flex items-center justify-between w-full">
       <div>
-        <div class="font-semibold text-gray-800">
-          {{ order.order_no || 'N/A' }}
-        </div>
+        <div class="font-semibold text-gray-800">#{{ order.order_no || 'N/A' }}</div>
         <div class="text-sm text-gray-500">
           {{ order.customer_reference_no || '-' }}
         </div>
@@ -51,16 +49,16 @@
     </div>
 
     <!-- Bottom Info -->
-    <div class="grid grid-cols-3 gap-4 text-xs text-gray-500 w-full items-start">
+    <div class="grid grid-cols-3 gap-4 text-xs text-gray-500 w-full items-start mt-2">
       <!-- Created At -->
       <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-gray-700">Created At</div>
-        <div>{{ formatDate(order.created_at) }}</div>
+        <div class="font-medium text-gray-400">Created At</div>
+        <div class="text-[#0A0A0A]">{{ formatDate(order.created_at) }}</div>
       </div>
 
       <!-- Statuses -->
       <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-gray-700">Order Status</div>
+        <div class="font-medium text-gray-400">Order Status</div>
         <div class="flex flex-wrap gap-2">
           <div
             v-for="(item, index) in order.items || []"
@@ -82,8 +80,8 @@
 
       <!-- Total Quantity -->
       <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-gray-700">Total Quantity</div>
-        <div>{{ getTotalQuantity(order) }}</div>
+        <div class="font-medium text-gray-400">Total Quantity</div>
+        <div class="text-[#0A0A0A]">{{ getTotalQuantity(order) }}</div>
       </div>
     </div>
   </div>

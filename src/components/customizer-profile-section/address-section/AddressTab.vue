@@ -1,14 +1,16 @@
 <template>
-  <div class="flex flex-col h-full p-4">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-semibold">Address Book</h2>
-      <Button @click="showAddModal = true">New Address</Button>
+  <div class="flex flex-col h-full px-4">
+    <!-- Header -->
+    <div class="sticky top-0 z-10 pb-3 w-max">
+      <div class="text-lg font-semibold">Addresses</div>
     </div>
 
+    <!-- Loader -->
     <div v-if="isLoading" class="flex justify-center items-center flex-1">
       <Loader />
     </div>
 
+    <!-- Empty State -->
     <div
       v-else-if="!addresses || addresses.length === 0"
       class="flex-1 flex items-center justify-center"
@@ -18,69 +20,64 @@
       </div>
     </div>
 
-    <div v-else class="flex-1 overflow-auto">
-      <table class="w-full border-collapse">
-        <thead class="bg-gray-800 text-white">
-          <tr>
-            <th class="text-left p-3 font-semibold">Address</th>
-            <th class="text-left p-3 font-semibold" style="width: 400px; max-width: 400px">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="address in addresses" :key="address.id" class="border-b border-gray-200">
-            <td class="p-3">
-              <p class="font-semibold">{{ address.first_name }} {{ address.last_name }}</p>
-              <p v-if="address.email" class="text-sm text-gray-600">{{ address.email }}</p>
-              <p v-if="address.phone_number" class="text-sm text-gray-600">
-                {{ address.phone_number }}
-              </p>
-              <p v-if="address.company_name" class="text-sm text-gray-600">
-                {{ address.company_name }}
-              </p>
-              <p v-if="address.address1" class="text-sm text-gray-600">{{ address.address1 }}</p>
-              <p v-if="address.address2" class="text-sm text-gray-600">{{ address.address2 }}</p>
-              <p class="text-sm text-gray-600">
-                <span v-if="address.city">{{ address.city }}</span>
-                <span v-if="address.city && address.state">, </span>
-                <span v-if="address.state">{{ address.state }}</span>
-                <span v-if="address.zip_code"> {{ address.zip_code }}</span>
-              </p>
-              <p v-if="address.country?.name" class="text-sm text-gray-600">
-                {{ address.country.name }}
-              </p>
-            </td>
-            <td
-              class="p-3 text-center"
-              style="width: 400px; max-width: 400px; vertical-align: middle"
+    <!-- Scrollable Grid -->
+    <ScrollArea class="flex-1 h-full overflow-y-auto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-4 pb-4">
+        <!-- Address Cards -->
+        <div
+          v-for="address in addresses"
+          :key="address.id"
+          class="flex flex-col justify-between bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition"
+        >
+          <div>
+            <p class="font-semibold text-gray-800">
+              {{ address.first_name }} {{ address.last_name }}
+            </p>
+            <p v-if="address.email" class="text-sm text-gray-600">{{ address.email }}</p>
+            <p v-if="address.phone_number" class="text-sm text-gray-600">
+              {{ address.phone_number }}
+            </p>
+            <p v-if="address.company_name" class="text-sm text-gray-600">
+              {{ address.company_name }}
+            </p>
+            <p v-if="address.address1" class="text-sm text-gray-600">{{ address.address1 }}</p>
+            <p v-if="address.address2" class="text-sm text-gray-600">{{ address.address2 }}</p>
+            <p class="text-sm text-gray-600">
+              <span v-if="address.city">{{ address.city }}</span>
+              <span v-if="address.city && address.state">, </span>
+              <span v-if="address.state">{{ address.state }}</span>
+              <span v-if="address.zip_code"> {{ address.zip_code }}</span>
+            </p>
+            <p v-if="address.country?.name" class="text-sm text-gray-600">
+              {{ address.country.name }}
+            </p>
+          </div>
+
+          <!-- Edit/Delete Buttons -->
+          <div class="flex items-center justify-end gap-2 mt-3">
+            <Button size="icon" variant="outline" @click="editAddress(address)"> Edit </Button>
+            <Button
+              v-if="!isDefault(address)"
+              size="icon"
+              variant="destructive"
+              @click="confirmDelete(address)"
             >
-              <div class="flex flex-wrap gap-2 justify-center">
-                <Button
-                  v-if="!isDefault(address)"
-                  size="sm"
-                  variant="outline"
-                  @click="useAddress(address)"
-                >
-                  Use this Address
-                </Button>
-                <Button v-else size="sm" variant="outline" disabled> Use this Address </Button>
-                <Button size="sm" variant="outline" @click="editAddress(address)">Edit</Button>
-                <Button
-                  v-if="!isDefault(address)"
-                  size="sm"
-                  variant="destructive"
-                  @click="confirmDelete(address)"
-                >
-                  Delete
-                </Button>
-                <Button v-else size="sm" variant="outline" disabled>Default</Button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              Delete
+            </Button>
+            <Button v-else size="icon" variant="outline" disabled> Default </Button>
+          </div>
+        </div>
+
+        <!-- Add New Address Card -->
+        <div
+          class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 text-gray-500 hover:border-primary hover:text-primary cursor-pointer transition"
+          @click="showAddModal = true"
+        >
+          <span class="text-2xl font-semibold mb-1">+</span>
+          <p class="text-sm font-medium">Add New Address</p>
+        </div>
+      </div>
+    </ScrollArea>
 
     <!-- Add/Edit Modal -->
     <Dialog v-model:open="showAddModal">
@@ -112,7 +109,6 @@
     </Dialog>
   </div>
 </template>
-
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { Button } from '@/components/ui/button'
@@ -127,6 +123,7 @@
   import { API } from '@/services'
   import type { Address, AddressPayload } from '@/services/addresses/types'
   import AddressForm from './AddressForm.vue'
+  import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
 
   const addresses = ref<Address[]>([])
   const isLoading = ref(false)
@@ -153,32 +150,32 @@
     }
   }
 
-  async function useAddress(address: Address) {
-    isLoading.value = true
-    try {
-      const payload: Partial<AddressPayload> = {
-        first_name: address.first_name,
-        last_name: address.last_name,
-        email: address.email,
-        phone_number: address.phone_number,
-        company_name: address.company_name,
-        address1: address.address1,
-        address2: address.address2,
-        city: address.city,
-        state: address.state,
-        zip_code: address.zip_code,
-        country_id: address.country.id
-      }
-      const response = await API.addresses.setDefaultAddress(address.id, payload)
-      if (response.success) {
-        await fetchAddresses()
-      }
-    } catch (error) {
-      console.error('Failed to set default address:', error)
-    } finally {
-      isLoading.value = false
-    }
-  }
+  // async function useAddress(address: Address) {
+  //   isLoading.value = true
+  //   try {
+  //     const payload: Partial<AddressPayload> = {
+  //       first_name: address.first_name,
+  //       last_name: address.last_name,
+  //       email: address.email,
+  //       phone_number: address.phone_number,
+  //       company_name: address.company_name,
+  //       address1: address.address1,
+  //       address2: address.address2,
+  //       city: address.city,
+  //       state: address.state,
+  //       zip_code: address.zip_code,
+  //       country_id: address.country.id
+  //     }
+  //     const response = await API.addresses.setDefaultAddress(address.id, payload)
+  //     if (response.success) {
+  //       await fetchAddresses()
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to set default address:', error)
+  //   } finally {
+  //     isLoading.value = false
+  //   }
+  // }
 
   function editAddress(address: Address) {
     editingAddress.value = address

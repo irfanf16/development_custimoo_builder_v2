@@ -9,7 +9,7 @@
     DropdownMenuItem,
     DropdownMenuSeparator
   } from '@/components/ui/dropdown-menu'
-  import { Filter, Search, X } from 'lucide-vue-next'
+  import { Check, Filter, Search, X } from 'lucide-vue-next'
   import InfiniteScroll from '@/components/ui/infinite-scroll/InfiniteScroll.vue'
   import Loader from '@/components/ui/loader/Loader.vue'
   import OrdersListItem from './OrdersListItem.vue'
@@ -107,13 +107,37 @@
               <Filter class="size-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem @click="store.clearFilter()">Clear Filter</DropdownMenuItem>
-            <DropdownMenuSeparator />
+
+          <DropdownMenuContent
+            align="end"
+            :position-strategy="'absolute'"
+            :collision-padding="32"
+            class="bg-white rounded-lg shadow-md border p-0 mt-1 h-auto max-h-80 overflow-auto"
+          >
+            <!-- Header -->
+            <div class="px-3 py-2.5 font-semibold text-sm">Filter</div>
+
+            <!-- Clear Filter -->
+            <DropdownMenuItem
+              class="rounded-none px-3 py-2.5 text-sm justify-start gap-2 hover:bg-transparent"
+              @click="store.clearFilter()"
+            >
+              <span class="w-4"></span>
+              Clear Filter
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator class="mx-0 my-0 bg-gray-200" />
+
+            <!-- Status Filters -->
             <DropdownMenuItem
               v-for="status in orderStatuses"
               :key="status.value"
-              :class="{ 'bg-accent': status.value === store.ordersParams.filter }"
+              class="rounded-none px-3 py-2.5 text-sm justify-start gap-2 hover:bg-transparent"
+              :class="
+                status.value === store.ordersParams.filter
+                  ? 'bg-transparent text-foreground hover:bg-transparent'
+                  : 'hover:bg-transparent'
+              "
               @click="
                 () => {
                   store.ordersParams.filter = status.value
@@ -121,10 +145,17 @@
                 }
               "
             >
+              <!-- Tick on left, space reserved -->
+              <Check
+                v-if="status.value === store.ordersParams.filter"
+                class="size-4 text-foreground"
+              />
+              <span v-else class="w-4"></span>
               {{ status.text }}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
         <Button
           v-if="store.ordersParams.filter"
           size="sm"
