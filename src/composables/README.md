@@ -158,7 +158,7 @@ initCanvas({ selection: false })
 await addDesignLayer(designUrl, 'svg')
 ```
 
-### useColorScheme.ts
+### useBrandStyling.ts
 
 Manages theme and color scheme application.
 
@@ -171,13 +171,13 @@ Manages theme and color scheme application.
 
 **Key functions:**
 
-- `applyColorScheme(container?, hostTheme?)` - Apply color scheme to container
+- `applyBrandStyling(container?, hostTheme?)` - Apply color scheme to container
 
 **Example:**
 
 ```ts
-const { applyColorScheme } = useColorScheme()
-await applyColorScheme(container, hostTheme)
+const { applyBrandStyling } = useBrandStyling()
+await applyBrandStyling(container, hostTheme)
 ```
 
 ### useParaglideLocale.ts

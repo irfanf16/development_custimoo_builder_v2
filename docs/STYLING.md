@@ -13,7 +13,7 @@ This project ships a self-contained widget that renders inside a Shadow DOM. Our
 
 - [`src/styles.css`](../src/styles.css): Single CSS entry, contains Tailwind import, theme tokens, base/utilities, and transitions.
 - [`tailwind.config.js`](../tailwind.config.js): Tailwind v4 config, plugins, animations, and font families (including `font-brand`).
-- [`src/composables/useColorScheme.ts`](../src/composables/useColorScheme.ts): Applies host theme overrides (colors, radius, fonts) to the Shadow root at runtime.
+- [`src/composables/useBrandStyling.ts`](../src/composables/useBrandStyling.ts): Applies host theme overrides (colors, radius, fonts) to the Shadow root at runtime.
 - [`src/lib/hostThemes.ts`](../src/lib/hostThemes.ts): Declarative host theme definitions (per hostname), used to override the widget's tokens.
 
 #### Design tokens (canonical variables)
@@ -50,7 +50,7 @@ This keeps Tailwind utilities and shadcn components in sync with a single source
 `src/lib/hostThemes.ts` lets you define per-host themes:
 
 - `primary` (hex), optional `radius`, and optional `font` definitions (default and brandAccent).
-- In `useColorScheme.ts`, we load fonts if specified and set CSS variables on the Shadow root:
+- In `useBrandStyling.ts`, we load fonts if specified and set CSS variables on the Shadow root:
   - `--primary`, `--radius`, `--font-sans`, `--font-brand`
 - Dark mode is toggled by adding/removing the `dark` class on the widget root.
 
@@ -79,8 +79,8 @@ This keeps Tailwind utilities and shadcn components in sync with a single source
 
 #### Common recipes
 
-- New host theme: update `hostThemes.ts` and ensure fonts load in `useColorScheme.ts`.
-- Change primary color at runtime (integration): set `--primary` on the widget’s host element or call `applyColorScheme` with a custom theme.
+- New host theme: update `hostThemes.ts` and ensure fonts load in `useBrandStyling.ts`.
+- Change primary color at runtime (integration): set `--primary` on the widget’s host element or call `applyBrandStyling` with a custom theme.
 - Switch to brand font for a title: add `class="font-brand"` on that element.
 
 #### Gotchas

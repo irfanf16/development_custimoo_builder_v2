@@ -39,23 +39,15 @@ export function ensureStylesheet(href: string): void {
 /**
  * Load Google Font dynamically
  */
-export function loadGoogleFont(fontFamily: string, url?: string): Promise<void> {
+function loadFont(url: string, fontFamily: string): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      const family = fontFamily.trim()
-      const quoted = /\s/.test(family) ? `"${family}"` : family
-
-      // Always ensure stylesheet link exists (no early exit)
-      const href = url
-        ? url
-        : `https://fonts.googleapis.com/css2?family=${family.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`
-      // Helpful preconnects
       ensureLink('preconnect', 'https://fonts.googleapis.com')
       ensureLink('preconnect', 'https://fonts.gstatic.com', 'anonymous')
-      ensureStylesheet(href)
+      ensureStylesheet(url)
 
       const timeout = setTimeout(() => {
-        reject(new Error(`Timed out loading font: ${family}`))
+        reject(new Error(`Timed out loading font: ${fontFamily}`))
       }, 7000)
 
       const fontsApi = (
@@ -65,8 +57,8 @@ export function loadGoogleFont(fontFamily: string, url?: string): Promise<void> 
       ).fonts
       const wait = fontsApi?.load
         ? Promise.all([
-            fontsApi.load(`1em ${quoted}`),
-            fontsApi.load(`700 1em ${quoted}`).catch(() => Promise.resolve([]))
+            fontsApi.load(`1em "${fontFamily}"`),
+            fontsApi.load(`700 1em "${fontFamily}"`).catch(() => Promise.resolve([]))
           ])
         : new Promise<void>(res => setTimeout(res, 300))
 
@@ -91,4 +83,34 @@ export function loadGoogleFont(fontFamily: string, url?: string): Promise<void> 
 export function getFontFamilyCSS(fontFamily: string): string {
   // Handle fonts with spaces - always wrap in quotes for consistency
   return `"${fontFamily}", ui-sans-serif, system-ui, sans-serif`
+}
+
+export function loadCustomFont(url: string, fontFamily: string): Promise<void> {
+  const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
+
+  const fileExt = url.split('.').pop()
+  let fontFormat = ''
+  if (fileExt === 'woff2') {
+    fontFormat = 'woff2'
+  } else if (fileExt === 'woff') {
+    fontFormat = 'woff'
+  }
+
+  const style = document.createElement('style')
+  style.textContent = `
+      @font-face {
+        font-family: '${fontFamily}';
+        src: url('${storageBase + url}') format('${fontFormat}');
+        font-display: swap;
+      }
+    `
+  document.head.appendChild(style)
+  return loadFont(url, fontFamily)
+}
+
+export function loadGoogleFont(fontFamily: string): Promise<void> {
+  const family = fontFamily.trim()
+  // Always ensure stylesheet link exists (no early exit)
+  const href = `https://fonts.googleapis.com/css2?family=${family.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`
+  return loadFont(href, fontFamily)
 }
