@@ -119,20 +119,25 @@
                   class="w-3/4 text-xs bg-transparent h-8"
                   variant="outline"
                   @click="
-                    store.editingAddress = address
-                    store.showAddModal = true
+                    () => {
+                      store.editingAddress = address
+                      store.showAddModal = true
+                    }
                   "
                 >
                   <i-flex-line-edit /> Edit
                 </Button>
+
                 <Button
                   class="w-1/4 bg-transparent h-8"
                   size="icon"
                   variant="outline"
                   :disabled="store.isDefault(address)"
                   @click="
-                    store.addressToDelete = address
-                    store.showDeleteConfirm = true
+                    () => {
+                      store.addressToDelete = address
+                      store.showDeleteConfirm = true
+                    }
                   "
                 >
                   <i-flex-line-delete />
