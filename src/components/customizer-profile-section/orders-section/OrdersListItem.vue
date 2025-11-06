@@ -2,15 +2,15 @@
   import { defineProps } from 'vue'
   import type { Order } from '@/services/orders/types'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
-  import { useProfileStore } from '@/stores/profile/profile.store'
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
+  import { useOrdersStore } from '@/stores/orders/orders.store'
 
   defineProps<{
     order: Order
     expanded?: boolean
   }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || '' // Vite-compatible env usage
-  const store = useProfileStore()
+  const store = useOrdersStore()
 
   function showOrderDetails(order: Order) {
     store.openOrderDetails(order)

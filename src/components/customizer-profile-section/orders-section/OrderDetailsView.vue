@@ -144,11 +144,11 @@
   import { getStatusColor } from '@/helpers/orderStatuses'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
   import type { Order } from '@/services/orders/types'
-  import { useProfileStore } from '@/stores/profile/profile.store'
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
+  import { useOrdersStore } from '@/stores/orders/orders.store'
 
   defineProps<{ order: Order }>()
   defineEmits<{ (e: 'back'): void }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
-  const store = useProfileStore()
+  const store = useOrdersStore()
 </script>

@@ -91,8 +91,8 @@
   import type { Order } from '@/services/orders/types'
   import { formatDate } from '@/lib/utils'
   import { getStatusColor } from '@/helpers/orderStatuses'
-  import { useProfileStore } from '@/stores/profile/profile.store'
   import Button from '@/components/ui/button/Button.vue'
+  import { useOrdersStore } from '@/stores/orders/orders.store'
 
   const props = defineProps<{ order: Order; clickableTitle?: boolean; showTimeline?: boolean }>()
   const emit = defineEmits<{
@@ -102,7 +102,7 @@
     (e: 'details', order: Order): void
   }>()
 
-  const store = useProfileStore()
+  const store = useOrdersStore()
   function getTotalQuantity(order: Order): number {
     if (!order?.items?.length) return 0
 

@@ -14,13 +14,14 @@
   import Loader from '@/components/ui/loader/Loader.vue'
   import OrdersListItem from './OrdersListItem.vue'
   import type { Order } from '@/services/orders/types'
-  import { useProfileStore } from '@/stores/profile/profile.store'
   import { getOrderOptions } from '@/helpers/orderStatuses'
   import WorkflowBreadcrumbs from '@/components/customization-workflow/WorkflowBreadcrumbs.vue'
   import OrderDetailsView from './OrderDetailsView.vue'
   import OrderTimeline from './OrderTimeline.vue'
+  import { useOrdersStore } from '@/stores/orders/orders.store'
+  import { ScrollArea } from '@/components/ui/scroll-area'
 
-  const store = useProfileStore()
+  const store = useOrdersStore()
 
   // ✅ Dynamically computed filter options
   const orderStatuses = computed(() => getOrderOptions(store.ordersPageType))
@@ -52,7 +53,7 @@
   async function loadMore() {
     const nextPage = store.pagination.currentPage + 1
     const totalPages = Math.ceil(store.pagination.total / store.pagination.perPage)
-    if (nextPage <= totalPages && !store.isLoading) {
+    if (nextPage <= totalPages && !store.isLoadingOrders) {
       await store.handlePagination(nextPage)
     }
   }
@@ -200,7 +201,7 @@
       </div>
     </div>
     <!-- Orders List -->
-    <div v-if="!store.activeOrder" class="flex-1 overflow-auto">
+    <ScrollArea v-if="!store.activeOrder" class="flex-1 [&>[data-slot=scroll-area]]:h-full">
       <InfiniteScroll @load-more="loadMore">
         <div v-if="store.orders.length">
           <OrdersListItem
@@ -219,14 +220,14 @@
           <Loader />
         </div>
       </InfiniteScroll>
-    </div>
-    <div v-else class="flex-1 overflow-auto">
+    </ScrollArea>
+    <ScrollArea v-else class="flex-1">
       <OrderDetailsView
         v-if="store.activeOrderView === 'details'"
         :order="store.activeOrder"
         @back="store.closeOrderDetails"
       />
       <OrderTimeline v-else :order="store.activeOrder" />
-    </div>
+    </ScrollArea>
   </div>
 </template>
