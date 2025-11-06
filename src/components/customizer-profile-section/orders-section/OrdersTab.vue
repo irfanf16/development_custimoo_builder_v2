@@ -201,7 +201,7 @@
       </div>
     </div>
     <!-- Orders List -->
-    <ScrollArea v-if="!store.activeOrder" class="flex-1 [&>[data-slot=scroll-area]]:h-full">
+    <ScrollArea v-if="!store.activeOrder" class="flex-1 h-full overflow-y-auto">
       <InfiniteScroll @load-more="loadMore">
         <div v-if="store.orders.length">
           <OrdersListItem

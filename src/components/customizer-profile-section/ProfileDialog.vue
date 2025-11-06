@@ -44,7 +44,9 @@
 
 <template>
   <Dialog :open="props.open" @update:open="emit('update:open', $event)">
-    <DialogContent :class="'w-[1200px] h-[760px] max-w-full p-0 overflow-hidden'">
+    <DialogContent
+      :class="'w-[1200px] h-[760px] max-w-full p-0 overflow-hidden overflow-hidden flex flex-col'"
+    >
       <div
         v-if="profileStore.isLoading"
         class="absolute inset-0 flex items-center justify-center bg-white/70 z-50"
