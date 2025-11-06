@@ -3,9 +3,9 @@ import { useUIStore } from '@/stores/ui/ui.store'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { loadCustomFont, loadGoogleFont, getFontFamilyCSS } from '@/lib/utils'
 
-export function useColorScheme() {
+export function useBrandStyling() {
   // ===== BUSINESS LOGIC =====
-  const applyColorScheme = async (container?: HTMLElement) => {
+  const applyBrandStyling = async (container?: HTMLElement) => {
     const target = container || document.documentElement
     const companyStore = useCompanyStore()
     const defaultUiBranding = companyStore.settings?.ui_branding
@@ -104,7 +104,6 @@ export function useColorScheme() {
     const accent = `rgb(from var(--primary) r g b / 0.3)`
     target.style.setProperty('--accent', accent)
 
-    console.log('defaultUiBranding', defaultUiBranding)
     // Apply font variables
     let defaultFontCSS = 'ui-sans-serif, system-ui, sans-serif'
     if (defaultUiBranding?.default_font_is_custom === '1') {
@@ -125,7 +124,7 @@ export function useColorScheme() {
 
   // ===== RETURN =====
   return {
-    applyColorScheme
+    applyBrandStyling
   }
 }
 

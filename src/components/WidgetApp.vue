@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { onMounted, ref } from 'vue'
   // import { useRouter, useRoute } from 'vue-router'
-  import { useColorScheme } from '@/composables/useColorScheme'
+  import { useBrandStyling } from '@/composables/useBrandStyling'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { LayoutWrapper } from '@/layouts'
   // import SignInButton from './SignInButton.vue'
@@ -59,13 +59,13 @@
   const widgetRootContainer = ref<HTMLElement>()
 
   // Initialize color scheme based on host theme
-  const { applyColorScheme } = useColorScheme()
+  const { applyBrandStyling } = useBrandStyling()
 
   // Update colors when component mounts
   onMounted(async () => {
     if (widgetRootContainer.value) {
       uiStore.setWidgetRoot(widgetRootContainer.value)
-      await applyColorScheme(widgetRootContainer.value)
+      await applyBrandStyling(widgetRootContainer.value)
     }
   })
 </script>
