@@ -175,6 +175,19 @@ export function useAppInitialization() {
     } else if (productsStore.activeDesignDetails?.id !== designId) {
       await productsStore.fetchDesignDetailsById(designId)
     }
+
+    // Ensure product_texts are initialized from activeProductDetails
+    // This is a safety measure in case texts weren't initialized during fetchActiveProductDetails
+    if (
+      productId &&
+      productsStore.activeProductDetails?.product_texts &&
+      productsStore.activeProductDetails.product_texts.length > 0
+    ) {
+      customizationStore.initializeProductTextsFromDetails(
+        productId,
+        productsStore.activeProductDetails.product_texts
+      )
+    }
   }
 
   // PHASE 5B: Create default customization

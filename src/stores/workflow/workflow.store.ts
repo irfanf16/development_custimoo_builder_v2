@@ -40,7 +40,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const logosSubStep = ref<LogosSubStep>('list')
   const productsSubStep = ref<ProductsSubStep>('category')
   const textsSubStep = ref<TextsSubStep>('list')
-  const activeTextIndex = ref<number | null>(null)
+  const activeTextId = ref<number | null>(null)
   const activeTextItemIndex = ref<number | null>(null)
   const pendingTextTemplateId = ref<number | null>(null)
   const pendingNumberPreset = ref<string | null>(null)
@@ -235,7 +235,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     window.localStorage.setItem('workflow.logosSubStep', logosSubStep.value)
     window.localStorage.setItem('workflow.productsSubStep', productsSubStep.value)
     window.localStorage.setItem('workflow.textsSubStep', textsSubStep.value)
-    window.localStorage.setItem('workflow.textsActiveIndex', String(activeTextIndex.value ?? ''))
+    window.localStorage.setItem('workflow.textsActiveId', String(activeTextId.value ?? ''))
     window.localStorage.setItem(
       'workflow.textsActiveItemIndex',
       String(activeTextItemIndex.value ?? '')
@@ -274,7 +274,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
         | 'edit'
         | 'number-font'
         | null
-      const textIndex = window.localStorage.getItem('workflow.textsActiveIndex')
+      const textId = window.localStorage.getItem('workflow.textsActiveId')
+      const textIndexLegacy = window.localStorage.getItem('workflow.textsActiveIndex') // Legacy support
       const templateId = window.localStorage.getItem('workflow.textsPendingTemplate')
       const preset = window.localStorage.getItem('workflow.textsPendingPreset')
       const activeItemIndex = window.localStorage.getItem('workflow.textsActiveItemIndex')
@@ -288,7 +289,15 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       if (logos) logosSubStep.value = logos
       if (products) productsSubStep.value = products
       if (texts) textsSubStep.value = texts
-      if (textIndex) activeTextIndex.value = Number(textIndex)
+      if (textId) activeTextId.value = Number(textId)
+      // Legacy: migrate from index to ID if needed
+      else if (textIndexLegacy) {
+        const index = Number(textIndexLegacy)
+        const texts = customization.activeProductTexts
+        if (texts[index]?.id) {
+          activeTextId.value = texts[index].id
+        }
+      }
       if (templateId) pendingTextTemplateId.value = Number(templateId)
       if (preset) pendingNumberPreset.value = preset
       if (activeItemIndex) activeTextItemIndex.value = Number(activeItemIndex)
@@ -333,8 +342,21 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
+  function setActiveTextId(textId: number | null) {
+    activeTextId.value = textId
+    saveSubStepsToLocalStorage()
+  }
+
+  // Legacy function for backward compatibility
   function setActiveTextIndex(index: number | null) {
-    activeTextIndex.value = index
+    if (index === null) {
+      activeTextId.value = null
+      return
+    }
+    const texts = customization.activeProductTexts
+    if (texts[index]?.id) {
+      activeTextId.value = texts[index].id
+    }
     saveSubStepsToLocalStorage()
   }
 
@@ -382,7 +404,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     activePatternGroupName.value = null
     activeLogoId.value = null
     textClipboard.value = null
-    activeTextIndex.value = null
+    activeTextId.value = null
     activeTextItemIndex.value = null
     pendingTextTemplateId.value = null
     pendingNumberPreset.value = null
@@ -491,7 +513,9 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     logosSubStep,
     productsSubStep,
     textsSubStep,
-    activeTextIndex,
+    activeTextId,
+    setActiveTextId,
+    // Legacy compatibility
     pendingTextTemplateId,
     activeTextItemIndex,
     pendingNumberPreset,

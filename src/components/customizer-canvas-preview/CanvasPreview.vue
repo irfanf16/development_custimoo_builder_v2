@@ -7,10 +7,13 @@
   import {
     useRenderQueue,
     usePreviousLogoState,
+    usePreviousTextState,
     parseRenderVersion,
     filterLogosBySide,
-    applyIncrementalLogoUpdates
+    applyIncrementalLogoUpdates,
+    applyIncrementalTextUpdates
   } from '@/composables'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
 
   const workflowStore = useWorkflowStore()
   const {
@@ -29,8 +32,13 @@
     addLogoLayer,
     removeLogoLayer,
     replaceLogoTexture,
-    updateLogoLayerGeometry
+    updateLogoLayerGeometry,
+    addTextLayer,
+    removeTextLayer,
+    replaceTextContent,
+    updateTextLayerGeometry
   } = useFabricPreview()
+  const customizationStore = useCustomizationStore()
   const {
     activeDesignDetails: effectiveDesignDetails,
     activeStyleDetails: effectiveStyleDetails,
@@ -44,9 +52,10 @@
     height: number
   }>()
 
-  // Use composables for render queue and logo state management
+  // Use composables for render queue and logo/text state management
   const { queuedRender } = useRenderQueue()
   const { previousLogoState, reset: resetLogoState, setFromLogos } = usePreviousLogoState()
+  const { previousTextState, reset: resetTextState, setFromTexts } = usePreviousTextState()
   const previousSide = ref(workflowStore.activeCanvasSide)
   const previousRenderParts = ref(parseRenderVersion(renderVersion.value))
   const previousGroupsVersion = ref(groupsVersion.value)
@@ -110,6 +119,23 @@
             }
 
             setFromLogos(logos)
+
+            // Add text layers
+            const texts = customizationStore.activeProductTexts
+            const sideStr = side === 'front' ? 'Front' : 'Back'
+            for (const entry of texts) {
+              if (!entry.items || entry.items.length === 0) continue
+              for (let i = 0; i < entry.items.length; i++) {
+                const item = entry.items[i]
+                if (!item) continue
+                if (item.placement === sideStr) {
+                  await addTextLayer(entry, item, i).catch(err =>
+                    console.warn('Failed to add text layer:', err)
+                  )
+                }
+              }
+            }
+            setFromTexts(texts, side)
           } else {
             const allRelevantLogos = filterLogosBySide(effectiveLogos.value, side)
 
@@ -120,6 +146,18 @@
               removeLogoLayer,
               replaceLogoTexture,
               updateLogoLayerGeometry
+            })
+
+            // Apply incremental text updates
+            const texts = customizationStore.activeProductTexts
+            await applyIncrementalTextUpdates({
+              previousTextState,
+              texts,
+              side,
+              addTextLayer,
+              removeTextLayer,
+              replaceTextContent,
+              updateTextLayerGeometry
             })
           }
 
@@ -140,8 +178,10 @@
       enablePointerEvents: false,
       allowTouchScrolling: true
     })
-    setCanvasSize({ width: props.width, height: props.height })
+    const smallerDimension = Math.min(props.width, props.height)
+    setCanvasSize({ width: smallerDimension, height: smallerDimension })
     resetLogoState()
+    resetTextState()
     void renderPreview(true)
   }
 
@@ -161,6 +201,7 @@
       if (nextSide === previousSide.value) return
       previousSide.value = nextSide
       resetLogoState()
+      resetTextState()
       void renderPreview(true)
     }
   )
@@ -178,6 +219,7 @@
 
       if (designChanged) {
         resetLogoState()
+        resetTextState()
         void renderPreview(true)
       } else if (logosChanged) {
         void renderPreview(false)
@@ -191,6 +233,7 @@
       if (nextVersion === previousGroupsVersion.value) return
       previousGroupsVersion.value = nextVersion
       resetLogoState()
+      resetTextState()
       void renderPreview(true)
     }
   )
@@ -212,6 +255,14 @@
     { deep: true }
   )
 
+  watch(
+    () => customizationStore.activeProductTexts,
+    () => {
+      void renderPreview(false)
+    },
+    { deep: true }
+  )
+
   const handleResizeDebounced = useDebounceFn(() => {
     handleInitCanvas()
   }, 200)
@@ -225,7 +276,7 @@
 </script>
 
 <template>
-  <div class="relative">
+  <div class="flex items-center justify-center">
     <canvas ref="canvasEl" class="rounded-[32px] transition-opacity duration-300 z-10" />
   </div>
 </template>

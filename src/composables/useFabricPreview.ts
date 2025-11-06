@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import {
   Canvas,
   FabricImage,
+  FabricText,
   Group,
   loadSVGFromURL,
   util,
@@ -10,7 +11,10 @@ import {
   Point
 } from 'fabric'
 import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
+import { useProductsStore } from '@/stores/products/products.store'
+import { getFontUrl } from '@/components/customization-workflow/WorkflowSteps/texts/useTextUtils'
 import type { CustomLogo } from '@/services/logos/types'
+import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
 
 type SizeOptions = {
   width: number
@@ -35,6 +39,9 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
   const canvasOptions = ref<Partial<CanvasOptions>>({})
   const logoLayers = ref<Map<string, FabricObject>>(new Map())
   const originalLogoSizes = new Map<string, { width: number; height: number }>()
+  const textLayers = ref<Map<string, FabricObject>>(new Map())
+  const loadedFonts = ref<Set<string>>(new Set())
+  const fontStyles = ref<Map<string, HTMLStyleElement>>(new Map())
 
   // ===== UTILITIES =====
   const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
@@ -76,6 +83,7 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
     if (!options?.silent) c.requestRenderAll()
     mainDesignObject.value = null
     logoLayers.value.clear()
+    textLayers.value.clear()
   }
 
   function requestRender() {
@@ -219,8 +227,8 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
   function fitObject(obj: ScalableFabricObject, options?: FitOptions) {
     if (!canvas.value) return
     const padding = options?.padding ?? 8
-    const targetW = (canvas.value.getWidth?.() || 800) - padding
-    const targetH = (canvas.value.getHeight?.() || 800) - padding
+    const targetW = (canvas.value.width || 800) - padding
+    const targetH = (canvas.value.height || 800) - padding
 
     const widthPercent = options?.widthPercent ?? 1
     const heightPercent = options?.heightPercent ?? 1
@@ -397,7 +405,7 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
       designTopOffset = centerY - (scaledH || 0) / 2
     } else {
       // Fallback: map into full canvas (less precise if design is scaled/centered)
-      const canvasHeight = canvas.value.getHeight?.() || 0
+      const canvasHeight = canvas.value.height || 0
       // Fallback assumes design fills height; inscribed square side equals canvasHeight
       unitScale = canvasHeight / baseSize
       designLeftOffset = 0
@@ -563,7 +571,7 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
       designLeftOffset = centerX - (scaledW || 0) / 2
       designTopOffset = centerY - (scaledH || 0) / 2
     } else {
-      const canvasHeight = canvas.value.getHeight?.() || 0
+      const canvasHeight = canvas.value.height || 0
       unitScale = canvasHeight / baseSize
       designLeftOffset = 0
       designTopOffset = 0
@@ -626,6 +634,391 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
     canvas.value?.requestRenderAll()
   }
 
+  // ===== TEXT LAYER MANAGEMENT =====
+  /**
+   * Get a unique key for a text item (entryId:itemIndex)
+   */
+  function getTextItemKey(entryId: number, itemIndex: number): string {
+    return `${entryId}:${itemIndex}`
+  }
+
+  /**
+   * Compute text placement coordinates
+   * All text item attributes (x_axis, y_axis, height, outline_width) assume a 600x600 canvas.
+   * This function calculates the scale factors to transform from the 600x600 base to the actual canvas size.
+   */
+  function computeTextPlacement(
+    _item: OutputProductTextItem,
+    options?: {
+      originalCanvasSize?: number
+      originalCanvasWidth?: number
+      originalCanvasHeight?: number
+    }
+  ) {
+    if (!canvas.value) return null
+
+    // All attributes assume 600x600 canvas as the base coordinate system
+    const baseCanvasWidth = options?.originalCanvasWidth ?? options?.originalCanvasSize ?? 600
+    const baseCanvasHeight = options?.originalCanvasHeight ?? options?.originalCanvasSize ?? 600
+
+    // Get actual canvas dimensions
+    const canvasWidth = canvas.value.width || 600
+    const canvasHeight = canvas.value.height || 600
+
+    // Calculate scale factors to transform from base (600x600) to actual canvas size
+    const scaleX = canvasWidth / baseCanvasWidth
+    const scaleY = canvasHeight / baseCanvasHeight
+
+    return {
+      scaleX,
+      scaleY,
+      canvasWidth,
+      canvasHeight
+    }
+  }
+
+  /**
+   * Add a text layer to the canvas
+   * Note: Kept as async for future font loading support
+   */
+  async function addTextLayer(
+    entry: OutputProductText,
+    item: OutputProductTextItem,
+    itemIndex?: number,
+    options?: {
+      originalCanvasSize?: number
+    }
+  ): Promise<FabricObject | null> {
+    if (!canvas.value) return null
+    // Keep async for future font loading
+    await Promise.resolve()
+    // Use provided index or find it
+    const idx = itemIndex ?? entry.items.indexOf(item)
+    if (idx === -1) return null
+
+    const key = getTextItemKey(entry.id, idx)
+    const placement = computeTextPlacement(item, options)
+    if (!placement) return null
+
+    const { scaleX, scaleY } = placement
+
+    // Get text value from entry (item doesn't have value)
+    const textValue = entry.value || ''
+    if (!textValue.trim()) {
+      return null
+    }
+
+    // Get font family name (font_family is a font name, not a URL)
+    const fontFamily = entry.font_family || item.font_family || 'Arial'
+
+    // Load custom font if needed
+    // Look up font URL from available fonts and load it if not already loaded
+    if (fontFamily && fontFamily !== 'Arial') {
+      const productsStore = useProductsStore()
+      const namefonts = productsStore.activeProductDetails?.namefonts ?? []
+
+      // Find the font in the available fonts
+      for (const fontGroup of namefonts) {
+        const fontFile = fontGroup.json_data?.find(file => file.name === fontFamily)
+        if (fontFile?.path) {
+          const fontUrl = getFontUrl(fontFile.path)
+          const fontKey = `${fontFamily}-${fontUrl}`
+
+          // Load font if not already loaded
+          // Fabric.js needs fonts loaded via CSS @font-face, not just FontFace API
+          if (!loadedFonts.value.has(fontKey) && fontUrl) {
+            try {
+              // Check if @font-face for this font already exists in document
+              const existingStyle = Array.from(document.head.querySelectorAll('style')).find(
+                styleEl => {
+                  const text = styleEl.textContent || ''
+                  return (
+                    text.includes(`font-family: '${fontFamily}'`) ||
+                    text.includes(`font-family: "${fontFamily}"`)
+                  )
+                }
+              )
+
+              if (!existingStyle) {
+                // Create @font-face style element for Fabric.js
+                const style = document.createElement('style')
+                style.textContent = `
+                  @font-face {
+                    font-family: '${fontFamily}';
+                    src: url('${fontUrl}') format('truetype');
+                    font-display: swap;
+                  }
+                `
+                document.head.appendChild(style)
+                fontStyles.value.set(fontKey, style)
+              } else {
+                // Reuse existing style element
+                fontStyles.value.set(fontKey, existingStyle)
+              }
+
+              // Also use FontFace API for better browser support
+              // Check if font is already loaded via FontFace API
+              const fontFaceLoaded = Array.from(document.fonts).some(
+                font => font.family === fontFamily
+              )
+
+              if (!fontFaceLoaded) {
+                const fontFace = new FontFace(fontFamily, `url(${fontUrl})`)
+                await fontFace.load()
+                document.fonts.add(fontFace)
+              }
+
+              loadedFonts.value.add(fontKey)
+            } catch (error) {
+              console.warn(`Failed to load font ${fontFamily} from ${fontUrl}:`, error)
+            }
+          }
+          break
+        }
+      }
+    }
+
+    // Get text properties from item (with fallbacks to entry)
+    // Match old behavior: fontSize = canvasHeight / mainCanvasHeight * height
+    const fontSize = Number(item.height) || 10
+    const fontSizePx = fontSize * scaleY
+
+    // Create text object
+    const textObj = new FabricText(textValue, {
+      fontFamily: fontFamily || 'Arial',
+      fontSize: fontSizePx,
+      fill: item.color || '#000000',
+      left: 0,
+      top: 0,
+      originX: 'center',
+      originY: 'center',
+      selectable: canvasOptions.value.selection ?? false,
+      evented: canvasOptions.value.enablePointerEvents ?? false,
+      angle: Number(item.rotation) || 0
+    })
+
+    // Apply outline if enabled
+    // All attributes assume 600x600 canvas, so we scale outline_width from base coordinate system
+    if (item.outline_enabled) {
+      // Use base outline_width (in 600x600 space) and scale it to current canvas
+      const outlineWidth = Number(item.outline_width) || 0
+      textObj.set({
+        stroke: item.outline_color || '#FFFFFF',
+        strokeWidth: outlineWidth * scaleY
+      })
+    }
+
+    // Position text - match old behavior: simple linear scaling
+    // Old code: left = canvasWidth / mainCanvasWidth * x_axis
+    const left = (Number(item.x_axis) || 0) * scaleX
+    const top = (Number(item.y_axis) || 0) * scaleY
+
+    // Apply scale if present - default to 1 if 0 or undefined
+    const itemScaleX = item.scaleX && item.scaleX !== 0 ? item.scaleX : 1
+    const itemScaleY = item.scaleY && item.scaleY !== 0 ? item.scaleY : 1
+
+    textObj.set({
+      left,
+      top,
+      scaleX: itemScaleX,
+      scaleY: itemScaleY
+    })
+
+    canvas.value.add(textObj)
+    textObj.setCoords()
+    canvas.value.requestRenderAll()
+    textLayers.value.set(key, textObj)
+
+    return textObj
+  }
+
+  /**
+   * Remove a text layer from the canvas
+   */
+  function removeTextLayer(entryId: number, itemIndex: number) {
+    const key = getTextItemKey(entryId, itemIndex)
+    const layer = textLayers.value.get(key)
+    if (!layer || !canvas.value) return
+    canvas.value.remove(layer as unknown as FabricObject)
+    textLayers.value.delete(key)
+    canvas.value.requestRenderAll()
+  }
+
+  /**
+   * Update text layer geometry (position, rotation, scale)
+   */
+  function updateTextLayerGeometry(
+    entry: OutputProductText,
+    item: OutputProductTextItem,
+    itemIndex?: number,
+    options?: {
+      originalCanvasSize?: number
+    }
+  ) {
+    // Use provided index or find it
+    const idx = itemIndex ?? entry.items.indexOf(item)
+    if (idx === -1) return
+
+    const key = getTextItemKey(entry.id, idx)
+    const layer = textLayers.value.get(key)
+    if (!layer) return
+
+    const placement = computeTextPlacement(item, options)
+    if (!placement) return
+
+    const { scaleX, scaleY } = placement
+
+    // Match old behavior: simple linear scaling
+    const left = (Number(item.x_axis) || 0) * scaleX
+    const top = (Number(item.y_axis) || 0) * scaleY
+
+    const fontSize = Number(item.height) || 10
+    const fontSizePx = fontSize * scaleY
+
+    layer.set({
+      left,
+      top,
+      angle: Number(item.rotation) || 0,
+      fontSize: fontSizePx,
+      scaleX: item.scaleX && item.scaleX !== 0 ? item.scaleX : 1,
+      scaleY: item.scaleY && item.scaleY !== 0 ? item.scaleY : 1,
+      fill: item.color || '#000000'
+    })
+
+    // Update outline - always update to reflect current state
+    // All attributes assume 600x600 canvas, so we scale outline_width from base coordinate system
+    if (item.outline_enabled && 'set' in layer) {
+      // Use base outline_width (in 600x600 space) and scale it to current canvas
+      const outlineWidth = Number(item.outline_width) || 0
+      ;(layer as FabricText).set({
+        stroke: item.outline_color || '#FFFFFF',
+        strokeWidth: outlineWidth * scaleY
+      })
+    } else if ('set' in layer) {
+      // Clear outline if disabled
+      ;(layer as FabricText).set({
+        stroke: undefined,
+        strokeWidth: 0
+      })
+    }
+
+    layer.setCoords()
+    canvas.value?.requestRenderAll()
+  }
+
+  /**
+   * Replace text content and styling
+   * Note: Kept as async for future font loading support
+   */
+  async function replaceTextContent(
+    entry: OutputProductText,
+    item: OutputProductTextItem,
+    itemIndex?: number
+  ): Promise<void> {
+    // Keep async for future font loading
+    await Promise.resolve()
+    // Use provided index or find it
+    const idx = itemIndex ?? entry.items.indexOf(item)
+    if (idx === -1) return
+
+    const key = getTextItemKey(entry.id, idx)
+    const layer = textLayers.value.get(key)
+    if (!layer || !(layer instanceof FabricText)) return
+
+    const textValue = entry.value || ''
+    const fontFamily = entry.font_family || item.font_family || 'Arial'
+
+    // Load custom font if needed
+    if (fontFamily && fontFamily !== 'Arial') {
+      const productsStore = useProductsStore()
+      const namefonts = productsStore.activeProductDetails?.namefonts ?? []
+
+      // Find the font in the available fonts
+      for (const fontGroup of namefonts) {
+        const fontFile = fontGroup.json_data?.find(file => file.name === fontFamily)
+        if (fontFile?.path) {
+          const fontUrl = getFontUrl(fontFile.path)
+          const fontKey = `${fontFamily}-${fontUrl}`
+
+          // Load font if not already loaded
+          // Fabric.js needs fonts loaded via CSS @font-face, not just FontFace API
+          if (!loadedFonts.value.has(fontKey) && fontUrl) {
+            try {
+              // Check if @font-face for this font already exists in document
+              const existingStyle = Array.from(document.head.querySelectorAll('style')).find(
+                styleEl => {
+                  const text = styleEl.textContent || ''
+                  return (
+                    text.includes(`font-family: '${fontFamily}'`) ||
+                    text.includes(`font-family: "${fontFamily}"`)
+                  )
+                }
+              )
+
+              if (!existingStyle) {
+                // Create @font-face style element for Fabric.js
+                const style = document.createElement('style')
+                style.textContent = `
+                  @font-face {
+                    font-family: '${fontFamily}';
+                    src: url('${fontUrl}') format('truetype');
+                    font-display: swap;
+                  }
+                `
+                document.head.appendChild(style)
+                fontStyles.value.set(fontKey, style)
+              } else {
+                // Reuse existing style element
+                fontStyles.value.set(fontKey, existingStyle)
+              }
+
+              // Also use FontFace API for better browser support
+              // Check if font is already loaded via FontFace API
+              const fontFaceLoaded = Array.from(document.fonts).some(
+                font => font.family === fontFamily
+              )
+
+              if (!fontFaceLoaded) {
+                const fontFace = new FontFace(fontFamily, `url(${fontUrl})`)
+                await fontFace.load()
+                document.fonts.add(fontFace)
+              }
+
+              loadedFonts.value.add(fontKey)
+            } catch (error) {
+              console.warn(`Failed to load font ${fontFamily} from ${fontUrl}:`, error)
+            }
+          }
+          break
+        }
+      }
+    }
+
+    layer.set({
+      text: textValue,
+      fontFamily,
+      fill: item.color || '#000000'
+    })
+
+    // Update outline
+    // All attributes assume 600x600 canvas, so we scale outline_width from base coordinate system
+    if (item.outline_enabled) {
+      const placement = computeTextPlacement(item)
+      const scaleY = placement?.scaleY ?? 1
+      // Use base outline_width (in 600x600 space) and scale it to current canvas
+      const outlineWidth = Number(item.outline_width) || 0
+      layer.set({
+        stroke: item.outline_color || '#FFFFFF',
+        strokeWidth: outlineWidth * scaleY
+      })
+    } else {
+      layer.set({ stroke: undefined, strokeWidth: 0 })
+    }
+
+    layer.setCoords()
+    canvas.value?.requestRenderAll()
+  }
+
   // ===== ANIMATION =====
   async function fadeOut(durationMs = 150) {
     if (!canvasEl.value) return
@@ -663,6 +1056,12 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
     replaceLogoTexture,
     logoLayers,
     updateLogoLayerGeometry,
+    // Text Layer Management
+    addTextLayer,
+    removeTextLayer,
+    updateTextLayerGeometry,
+    replaceTextContent,
+    textLayers,
     // Animation
     fadeOut,
     fadeIn

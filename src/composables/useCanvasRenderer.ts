@@ -1,5 +1,7 @@
 import { ref, type Ref } from 'vue'
 import type { CustomLogo } from '@/services/logos/types'
+import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
+import { clone } from '@/components/customization-workflow/WorkflowSteps/texts/useTextUtils'
 
 /**
  * Result of comparing current and previous logo states
@@ -230,5 +232,281 @@ export function usePreviousLogoState() {
     previousLogoState,
     reset,
     setFromLogos
+  }
+}
+
+/**
+ * Text item identifier (entryId:itemIndex)
+ */
+export type TextItemId = string
+
+/**
+ * Text item data for comparison
+ */
+export interface TextItemData {
+  entryId: number
+  itemIndex: number
+  entry: OutputProductText
+  item: OutputProductTextItem
+}
+
+/**
+ * Result of comparing current and previous text states
+ */
+export interface TextDiffResult {
+  added: TextItemData[]
+  updated: TextItemData[]
+  removed: TextItemId[]
+}
+
+/**
+ * Options for applying incremental text updates
+ */
+export interface ApplyTextUpdatesOptions {
+  previousTextState: Ref<Map<TextItemId, TextItemData>>
+  texts: OutputProductText[]
+  side: 'front' | 'back'
+  addTextLayer: (
+    entry: OutputProductText,
+    item: OutputProductTextItem,
+    itemIndex: number
+  ) => Promise<unknown>
+  removeTextLayer: (entryId: number, itemIndex: number) => void
+  replaceTextContent: (
+    entry: OutputProductText,
+    item: OutputProductTextItem,
+    itemIndex: number
+  ) => Promise<unknown>
+  updateTextLayerGeometry: (
+    entry: OutputProductText,
+    item: OutputProductTextItem,
+    itemIndex: number
+  ) => void
+}
+
+/**
+ * Get a unique key for a text item
+ */
+function getTextItemId(entryId: number, itemIndex: number): TextItemId {
+  return `${entryId}:${itemIndex}`
+}
+
+/**
+ * Filter texts by side (front or back)
+ */
+export function filterTextsBySide(
+  texts: OutputProductText[],
+  side: 'front' | 'back'
+): TextItemData[] {
+  const result: TextItemData[] = []
+  const sideStr = side === 'front' ? 'Front' : 'Back'
+
+  for (const entry of texts) {
+    if (!entry.items || entry.items.length === 0) continue
+
+    for (let i = 0; i < entry.items.length; i++) {
+      const item = entry.items[i]
+      // Check if item placement matches the side
+      if (item && item.placement === sideStr) {
+        result.push({
+          entryId: entry.id,
+          itemIndex: i,
+          entry,
+          item
+        })
+      }
+    }
+  }
+
+  return result
+}
+
+/**
+ * Filter texts by opposite side (for small preview)
+ */
+export function filterTextsByOppositeSide(
+  texts: OutputProductText[],
+  currentSide: 'front' | 'back'
+): TextItemData[] {
+  const targetSide = currentSide === 'front' ? 'back' : 'front'
+  return filterTextsBySide(texts, targetSide)
+}
+
+/**
+ * Compare current and previous text states to detect changes
+ */
+export function getTextDiffs(
+  previousTextState: Ref<Map<TextItemId, TextItemData>>,
+  nextTextItems: TextItemData[]
+): TextDiffResult {
+  const added: TextItemData[] = []
+  const updated: TextItemData[] = []
+  const removed: TextItemId[] = []
+
+  const previous = previousTextState.value
+  const nextMap = new Map<TextItemId, TextItemData>()
+
+  for (const textItem of nextTextItems) {
+    const id = getTextItemId(textItem.entryId, textItem.itemIndex)
+    nextMap.set(id, textItem)
+    const prev = previous.get(id)
+
+    if (!prev) {
+      added.push(textItem)
+      continue
+    }
+
+    // Check if any text properties changed
+    // IMPORTANT: Compare against the stored previous state, not the current entry/item
+    // because the entry/item objects are references that may have been mutated
+    const prevItem = prev.item
+    const nextItem = textItem.item
+    const prevEntry = prev.entry
+    const nextEntry = textItem.entry
+
+    // Compare entry-level properties (value, font_family)
+    const entryChanged =
+      prevEntry.value !== nextEntry.value || prevEntry.font_family !== nextEntry.font_family
+
+    // Compare item-level properties (position, styling, etc.)
+    const itemChanged =
+      prevItem.x_axis !== nextItem.x_axis ||
+      prevItem.y_axis !== nextItem.y_axis ||
+      prevItem.rotation !== nextItem.rotation ||
+      prevItem.height !== nextItem.height ||
+      prevItem.color !== nextItem.color ||
+      prevItem.outline_color !== nextItem.outline_color ||
+      prevItem.outline_enabled !== nextItem.outline_enabled ||
+      prevItem.outline_width !== nextItem.outline_width ||
+      prevItem.outline_width_converted !== nextItem.outline_width_converted ||
+      prevItem.scaleX !== nextItem.scaleX ||
+      prevItem.scaleY !== nextItem.scaleY ||
+      prevItem.placement !== nextItem.placement
+
+    if (entryChanged || itemChanged) {
+      updated.push(textItem)
+    }
+  }
+
+  // Find removed texts
+  for (const [id] of previous) {
+    if (!nextMap.has(id)) {
+      removed.push(id)
+    }
+  }
+
+  // Update the state with the new text map
+  previousTextState.value = nextMap
+  return { added, updated, removed }
+}
+
+/**
+ * Apply incremental text updates to the canvas
+ * Handles added, updated, and removed texts efficiently
+ */
+export async function applyIncrementalTextUpdates(options: ApplyTextUpdatesOptions): Promise<void> {
+  const {
+    previousTextState,
+    texts,
+    side,
+    addTextLayer,
+    removeTextLayer,
+    replaceTextContent,
+    updateTextLayerGeometry
+  } = options
+
+  // Get text items for the current side
+  const textItems = filterTextsBySide(texts, side)
+
+  // CRITICAL: Capture previous values BEFORE getTextDiffs updates the state
+  const previousValues = new Map<TextItemId, { value: string; fontFamily: string }>()
+  for (const textItem of textItems) {
+    const id = getTextItemId(textItem.entryId, textItem.itemIndex)
+    const prev = previousTextState.value.get(id)
+    if (prev) {
+      previousValues.set(id, {
+        value: prev.entry.value,
+        fontFamily: prev.entry.font_family || prev.item.font_family || ''
+      })
+    }
+  }
+
+  const { added, updated, removed } = getTextDiffs(previousTextState, textItems)
+
+  // Remove texts that no longer exist
+  for (const id of removed) {
+    const [entryIdStr, itemIndexStr] = id.split(':')
+    const entryId = Number(entryIdStr)
+    const itemIndex = Number(itemIndexStr)
+    if (!Number.isNaN(entryId) && !Number.isNaN(itemIndex)) {
+      removeTextLayer(entryId, itemIndex)
+    }
+  }
+
+  // Add new texts
+  for (const textItem of added) {
+    await addTextLayer(textItem.entry, textItem.item, textItem.itemIndex).catch(err =>
+      console.warn('Failed to add text:', err)
+    )
+  }
+
+  // Update existing texts (content and/or geometry)
+  for (const textItem of updated) {
+    const id = getTextItemId(textItem.entryId, textItem.itemIndex)
+    const prev = previousValues.get(id)
+    const prevItem = previousTextState.value.get(id)?.item
+
+    // If value, font, or color-related properties changed, replace the content
+    const contentChanged =
+      prev &&
+      (prev.value !== textItem.entry.value ||
+        prev.fontFamily !== (textItem.entry.font_family || textItem.item.font_family || '') ||
+        (prevItem &&
+          (prevItem.color !== textItem.item.color ||
+            prevItem.outline_color !== textItem.item.outline_color ||
+            prevItem.outline_enabled !== textItem.item.outline_enabled ||
+            prevItem.outline_width !== textItem.item.outline_width ||
+            prevItem.outline_width_converted !== textItem.item.outline_width_converted)))
+
+    if (contentChanged) {
+      await replaceTextContent(textItem.entry, textItem.item, textItem.itemIndex)
+    }
+
+    // Always update geometry for changed texts (position, rotation, scale, etc.)
+    updateTextLayerGeometry(textItem.entry, textItem.item, textItem.itemIndex)
+  }
+}
+
+/**
+ * Composable: Manages previous text state tracking
+ */
+export function usePreviousTextState() {
+  const previousTextState = ref(new Map<TextItemId, TextItemData>())
+
+  function reset() {
+    previousTextState.value = new Map()
+  }
+
+  function setFromTexts(texts: OutputProductText[], side: 'front' | 'back') {
+    const textItems = filterTextsBySide(texts, side)
+    // Clone entry and item objects to create snapshots for comparison
+    // This ensures we can detect changes even when the original objects are mutated
+    previousTextState.value = new Map(
+      textItems.map(item => [
+        getTextItemId(item.entryId, item.itemIndex),
+        {
+          entryId: item.entryId,
+          itemIndex: item.itemIndex,
+          entry: clone(item.entry),
+          item: clone(item.item)
+        }
+      ])
+    )
+  }
+
+  return {
+    previousTextState,
+    reset,
+    setFromTexts
   }
 }

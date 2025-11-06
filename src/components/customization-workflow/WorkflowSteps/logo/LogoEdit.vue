@@ -236,95 +236,7 @@
       />
     </div>
 
-    <Accordion type="multiple" :default-value="['remove-background', 'recolor']" class="space-y-4">
-      <AccordionItem value="remove-background" class="overflow-hidden">
-        <AccordionTrigger class="mx-4 md:mx-6 py-4">
-          <div
-            class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
-          >
-            <span class="text-base font-semibold">Remove background</span>
-          </div>
-          <template #icon>
-            <svg
-              class="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
-            </svg>
-          </template>
-        </AccordionTrigger>
-        <AccordionContent class="space-y-4 px-4 md:px-6 py-5">
-          <div class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
-              <ContentRemoveIcons type="simple" />
-            </div>
-            <div class="flex flex-1 flex-col gap-2">
-              <p class="text-sm font-semibold">Simple remove</p>
-              <p class="text-xs text-muted-foreground">
-                Removes all pixels matching the top-left colour, even inside the logo.
-              </p>
-              <Button
-                size="sm"
-                variant="default"
-                class="mt-1 self-start px-4"
-                @click.stop="handleRemoveBackground('simple')"
-                >Apply</Button
-              >
-            </div>
-          </div>
-
-          <div class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
-              <ContentRemoveIcons type="smart" />
-            </div>
-            <div class="flex flex-1 flex-col gap-2">
-              <p class="text-sm font-semibold">Content remove</p>
-              <p class="text-xs text-muted-foreground">
-                Removes the top-left colour only from the background, not the logo.
-              </p>
-              <Button
-                size="sm"
-                variant="default"
-                class="mt-1 self-start px-4"
-                @click.stop="handleRemoveBackground('smart')"
-                >Apply</Button
-              >
-            </div>
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-
-      <AccordionItem value="recolor" class="overflow-hidden">
-        <AccordionTrigger class="px-4 md:px-6 py-4">
-          <div
-            class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
-          >
-            <span class="text-base font-semibold">Recolor logo</span>
-          </div>
-          <template #icon>
-            <svg
-              class="ml-2 h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
-            </svg>
-          </template>
-        </AccordionTrigger>
-        <AccordionContent class="px-4 md:px-6 py-5">
-          <PaletteColorSelector
-            :palettes="palettes"
-            :selected-color="colorSwatches[0]"
-            @color-select="handleRecolorLogo"
-          />
-        </AccordionContent>
-      </AccordionItem>
-
+    <Accordion type="multiple" :default-value="['position', 'recolor']" class="space-y-4">
       <AccordionItem value="position" class="overflow-hidden">
         <AccordionTrigger class="mx-4 md:mx-6 py-4">
           <div
@@ -418,6 +330,93 @@
               Pin logo
             </Button>
           </div>
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="remove-background" class="overflow-hidden">
+        <AccordionTrigger class="mx-4 md:mx-6 py-4">
+          <div
+            class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
+          >
+            <span class="text-base font-semibold">Remove background</span>
+          </div>
+          <template #icon>
+            <svg
+              class="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
+          </template>
+        </AccordionTrigger>
+        <AccordionContent class="space-y-4 px-4 md:px-6 py-5">
+          <div class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left">
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
+              <ContentRemoveIcons type="simple" />
+            </div>
+            <div class="flex flex-1 flex-col gap-2">
+              <p class="text-sm font-semibold">Simple remove</p>
+              <p class="text-xs text-muted-foreground">
+                Removes all pixels matching the top-left colour, even inside the logo.
+              </p>
+              <Button
+                size="sm"
+                variant="default"
+                class="mt-1 self-start px-4"
+                @click.stop="handleRemoveBackground('simple')"
+                >Apply</Button
+              >
+            </div>
+          </div>
+
+          <div class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left">
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
+              <ContentRemoveIcons type="smart" />
+            </div>
+            <div class="flex flex-1 flex-col gap-2">
+              <p class="text-sm font-semibold">Content remove</p>
+              <p class="text-xs text-muted-foreground">
+                Removes the top-left colour only from the background, not the logo.
+              </p>
+              <Button
+                size="sm"
+                variant="default"
+                class="mt-1 self-start px-4"
+                @click.stop="handleRemoveBackground('smart')"
+                >Apply</Button
+              >
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem value="recolor" class="overflow-hidden">
+        <AccordionTrigger class="px-4 md:px-6 py-4">
+          <div
+            class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
+          >
+            <span class="text-base font-semibold">Recolor logo</span>
+          </div>
+          <template #icon>
+            <svg
+              class="ml-2 h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
+          </template>
+        </AccordionTrigger>
+        <AccordionContent class="px-4 md:px-6 py-5">
+          <PaletteColorSelector
+            :palettes="palettes"
+            :selected-color="colorSwatches[0]"
+            @color-select="handleRecolorLogo"
+          />
         </AccordionContent>
       </AccordionItem>
     </Accordion>

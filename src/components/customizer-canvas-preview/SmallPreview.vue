@@ -7,9 +7,12 @@
   import {
     useRenderQueue,
     usePreviousLogoState,
+    usePreviousTextState,
     filterLogosByOppositeSide,
-    applyIncrementalLogoUpdates
+    applyIncrementalLogoUpdates,
+    applyIncrementalTextUpdates
   } from '@/composables'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
 
   const workflowStore = useWorkflowStore()
   const {
@@ -26,8 +29,13 @@
     addLogoLayer,
     removeLogoLayer,
     replaceLogoTexture,
-    updateLogoLayerGeometry
+    updateLogoLayerGeometry,
+    addTextLayer,
+    removeTextLayer,
+    replaceTextContent,
+    updateTextLayerGeometry
   } = useFabricPreview()
+  const customizationStore = useCustomizationStore()
   const {
     activeDesignDetails: effectiveDesignDetails,
     activeStyleDetails: effectiveStyleDetails,
@@ -36,9 +44,10 @@
     groupsVersion
   } = useEffectiveSelectors()
 
-  // Use composables for render queue and logo state management
+  // Use composables for render queue and logo/text state management
   const { queuedRender } = useRenderQueue()
   const { previousLogoState, reset: resetLogoState, setFromLogos } = usePreviousLogoState()
+  const { previousTextState, reset: resetTextState, setFromTexts } = usePreviousTextState()
 
   async function renderPreview(full = false) {
     if (!canvas.value) return
@@ -86,6 +95,23 @@
             }
 
             setFromLogos(logos)
+
+            // Add text layers for opposite side
+            const texts = customizationStore.activeProductTexts
+            const oppositeSide = side === 'front' ? 'back' : 'front'
+            const sideStr = oppositeSide === 'front' ? 'Front' : 'Back'
+            for (const entry of texts) {
+              if (!entry.items || entry.items.length === 0) continue
+              for (let i = 0; i < entry.items.length; i++) {
+                const item = entry.items[i]
+                if (item && item.placement === sideStr) {
+                  await addTextLayer(entry, item, i).catch(err =>
+                    console.warn('Failed to add text:', err)
+                  )
+                }
+              }
+            }
+            setFromTexts(texts, oppositeSide)
           } else {
             await applyIncrementalLogoUpdates({
               previousLogoState,
@@ -94,6 +120,19 @@
               removeLogoLayer,
               replaceLogoTexture,
               updateLogoLayerGeometry
+            })
+
+            // Apply incremental text updates for opposite side
+            const texts = customizationStore.activeProductTexts
+            const oppositeSide = side === 'front' ? 'back' : 'front'
+            await applyIncrementalTextUpdates({
+              previousTextState,
+              texts,
+              side: oppositeSide,
+              addTextLayer,
+              removeTextLayer,
+              replaceTextContent,
+              updateTextLayerGeometry
             })
           }
 
@@ -133,6 +172,7 @@
       if (nextVersion === previousRenderVersion.value) return
       previousRenderVersion.value = nextVersion
       resetLogoState()
+      resetTextState()
       void renderPreview(true)
     }
   )
@@ -143,6 +183,7 @@
       if (nextVersion === previousGroupsVersion.value) return
       previousGroupsVersion.value = nextVersion
       resetLogoState()
+      resetTextState()
       void renderPreview(true)
     }
   )
@@ -153,12 +194,21 @@
       if (nextSide === previousSide.value) return
       previousSide.value = nextSide
       resetLogoState()
+      resetTextState()
       void renderPreview(true)
     }
   )
 
   watch(
     () => effectiveLogos.value,
+    () => {
+      void renderPreview(false)
+    },
+    { deep: true }
+  )
+
+  watch(
+    () => customizationStore.activeProductTexts,
     () => {
       void renderPreview(false)
     },

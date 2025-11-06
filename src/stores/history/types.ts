@@ -10,6 +10,16 @@ export type HistoryActionType =
   | 'text.add-entry'
   | 'text.update-entry'
   | 'text.remove-entry'
+  | 'text.update-value'
+  | 'text.update-font'
+  | 'text.update-color'
+  | 'text.update-outline-color'
+  | 'text.update-outline-width'
+  | 'text.update-height'
+  | 'text.update-width'
+  | 'text.update-rotation'
+  | 'text.update-placement'
+  | 'text.update-scale'
   | 'logo.add'
   | 'logo.remove'
   | 'logo.move'
@@ -62,9 +72,100 @@ export type TextRemoveEntryPayload = {
 
 export type TextUpdateEntryPayload = {
   key: string
-  index: number
+  textId: number // ID of the text entry
+  index?: number // Optional index for backward compatibility
   prev?: OutputProductText
   next: OutputProductText
+}
+
+export type TextUpdateValuePayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevValue: string
+  nextValue: string
+}
+
+export type TextUpdateFontPayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevFont: string
+  nextFont: string
+}
+
+export type TextUpdateColorPayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevColor: string
+  nextColor: string
+}
+
+export type TextUpdateOutlineColorPayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevColor: string
+  nextColor: string
+}
+
+export type TextUpdateOutlineEnabledPayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevEnabled: boolean
+  nextEnabled: boolean
+}
+
+export type TextUpdateOutlineWidthPayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevWidth: number
+  nextWidth: number
+}
+
+export type TextUpdateHeightPayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevHeight: string
+  nextHeight: string
+}
+
+export type TextUpdateWidthPayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevWidth: string
+  nextWidth: string
+}
+
+export type TextUpdateRotationPayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevRotation: string
+  nextRotation: string
+}
+
+export type TextUpdatePlacementPayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevPlacement: 'Front' | 'Back'
+  nextPlacement: 'Front' | 'Back'
+}
+
+export type TextUpdateScalePayload = {
+  key: string
+  textId: number
+  itemIndex: number
+  prevScaleX: number
+  prevScaleY: number
+  nextScaleX: number
+  nextScaleY: number
 }
 
 export type LogoAddPayload = {

@@ -152,7 +152,7 @@ export function useCustomizerMenu() {
       },
       {
         step: 'patterns' as CustomizerStep,
-        show: true
+        show: false
       },
       {
         step: 'texts' as CustomizerStep,

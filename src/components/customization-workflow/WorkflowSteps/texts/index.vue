@@ -8,13 +8,11 @@
 
   const workflowStore = useWorkflowStore()
   const { textsSubStep } = storeToRefs(workflowStore)
-  console.log('TextsEntry component mounted')
-  console.log('workflowStore.textsSubStep:', textsSubStep.value)
 </script>
 
 <template>
   <TextsSelection v-if="textsSubStep === 'list'" />
-  <TextPlacement v-else-if="workflowStore.textsSubStep === 'placement'" />
+  <TextPlacement v-else-if="textsSubStep === 'placement'" />
   <TextEdit v-else-if="textsSubStep === 'edit'" />
   <TextNumberFontSelection v-else-if="textsSubStep === 'number-font'" />
 </template>

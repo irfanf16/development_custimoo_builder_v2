@@ -9,11 +9,15 @@ export { useProfileDialogState } from './useProfileDialogState'
 export {
   useRenderQueue,
   usePreviousLogoState,
+  usePreviousTextState,
   parseRenderVersion,
   filterLogosBySide,
   filterLogosByOppositeSide,
   getLogoDiffs,
   applyIncrementalLogoUpdates,
+  applyIncrementalTextUpdates,
+  filterTextsBySide,
+  filterTextsByOppositeSide,
   type LogoDiffResult,
   type ParsedRenderVersion,
   type ApplyLogoUpdatesOptions

@@ -10,20 +10,19 @@
   import type { OutputProductText, OutputProductName } from '@/services/products/types'
   import { useTextPlacements } from './useTextPlacements'
   import { useTexts } from './useTexts'
-  import { onSaveChanges, onCancel } from './useTextActions'
 
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
   const { availablePlacements, isPlacementEnabled } = useTextPlacements()
   const { fontOptions } = useTexts()
 
-  const { activeTextIndex, pendingNumberPreset } = storeToRefs(workflowStore)
+  const { activeTextId, pendingNumberPreset } = storeToRefs(workflowStore)
 
   const textEntries = computed(() => customizationStore.activeProductTexts)
 
   const currentEntry = computed<OutputProductText | null>(() => {
-    if (activeTextIndex.value == null) return null
-    return textEntries.value[activeTextIndex.value] ?? null
+    if (activeTextId.value == null) return null
+    return textEntries.value.find(entry => entry.id === activeTextId.value) ?? null
   })
 
   const selectedNumber = computed(() => {
@@ -43,15 +42,6 @@
 
   function navigateToPlacement(_placement: OutputProductName) {}
   function togglePlacement(_placement: OutputProductName, _enabled: boolean) {}
-
-  onCancel.value = () => {
-    console.log('onCancel from TextNumberFontSelection')
-    workflowStore.setTextsSubStep('list')
-  }
-  onSaveChanges.value = () => {
-    console.log('onSaveChanges from TextNumberFontSelection')
-    workflowStore.setTextsSubStep('list')
-  }
 </script>
 
 <template>

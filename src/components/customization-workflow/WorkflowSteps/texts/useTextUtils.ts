@@ -4,11 +4,19 @@
 
 /**
  * Deep clone utility
+ * Handles objects that may contain non-cloneable properties by falling back to JSON
  */
 export function clone<T>(value: T): T {
-  return typeof structuredClone === 'function'
-    ? structuredClone(value)
-    : (JSON.parse(JSON.stringify(value)) as T)
+  if (typeof structuredClone === 'function') {
+    try {
+      return structuredClone(value)
+    } catch (_error) {
+      // Fallback to JSON if structuredClone fails (e.g., non-cloneable properties)
+      // This can happen with objects containing functions, symbols, or circular references
+      return JSON.parse(JSON.stringify(value)) as T
+    }
+  }
+  return JSON.parse(JSON.stringify(value)) as T
 }
 
 /**

@@ -246,6 +246,13 @@ export const useProductsStore = defineStore('productsStore', () => {
         customization.ensureCustomization()
         saveCustomizationToLocalStorage()
       }
+      // Initialize product_custom_texts from product_texts if available
+      if (details.productDetails?.product_texts) {
+        customization.initializeProductTextsFromDetails(
+          productId,
+          details.productDetails.product_texts
+        )
+      }
     } else {
       setError('Error getting active product details')
     }

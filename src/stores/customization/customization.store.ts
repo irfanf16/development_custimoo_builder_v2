@@ -88,6 +88,51 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
+  /**
+   * Generate a temporary negative ID for new text entries that haven't been saved to the backend
+   * Temporary IDs are negative numbers (e.g., -1, -2, -3) to avoid conflicts with real backend IDs
+   */
+  function generateTemporaryTextId(productId: number): number {
+    if (!customization.value) return -1
+    const key = String(productId)
+    const texts = customization.value.product_custom_texts[key] || []
+
+    // Find the lowest (most negative) temporary ID in use
+    let minId = 0
+    for (const text of texts) {
+      if (text.id < 0 && text.id < minId) {
+        minId = text.id
+      }
+    }
+
+    // Return the next available temporary ID (one less than the current minimum)
+    return minId - 1
+  }
+
+  /**
+   * Initialize product_custom_texts from activeProductDetails.product_texts
+   * Only initializes if the key doesn't exist or the array is empty
+   * Preserves existing customizations to avoid overwriting user edits
+   */
+  function initializeProductTextsFromDetails(productId: number, productTexts: OutputProductText[]) {
+    if (!customization.value || !productTexts || productTexts.length === 0) return
+
+    const key = String(productId)
+    const existing = customization.value.product_custom_texts[key]
+
+    // Only initialize if the key doesn't exist or the array is empty
+    if (!existing || existing.length === 0) {
+      // Deep clone the texts to avoid reference issues
+      customization.value.product_custom_texts[key] = productTexts.map(text => ({
+        ...text,
+        items: text.items ? [...text.items] : [],
+        following_products: text.following_products ? [...text.following_products] : [],
+        following_product_ids: text.following_product_ids ? [...text.following_product_ids] : []
+      }))
+      saveToLocalStorage()
+    }
+  }
+
   // ===== PERSISTENCE =====
   function saveToLocalStorage() {
     if (typeof window === 'undefined') return
@@ -388,6 +433,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     createDefaultCustomization,
     ensureTextEntry,
     upsertTextEntry,
-    removeTextEntry
+    removeTextEntry,
+    initializeProductTextsFromDetails,
+    generateTemporaryTextId
   }
 })

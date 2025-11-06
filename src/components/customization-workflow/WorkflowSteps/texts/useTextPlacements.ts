@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useProductsStore } from '@/stores/products/products.store'
+import { useCustomizationStore } from '@/stores/customization/customization.store'
 import type {
   OutputProductText,
   OutputProductTextItem,
@@ -21,6 +22,7 @@ export const selectedPlacementId = ref<number | null>(null)
 export function useTextPlacements() {
   // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
+  const customizationStore = useCustomizationStore()
 
   // ===== STATE =====
   const { activeProductDetails } = storeToRefs(productsStore)
@@ -59,11 +61,25 @@ export function useTextPlacements() {
     templateItem?: OutputProductTextItem | null
   ): OutputProductTextItem {
     const base = templateItem ? clone(templateItem) : ({} as OutputProductTextItem)
+
+    // Always use placement coordinates (placement values take priority)
+    // Use explicit checks for undefined/null since 0 is a valid coordinate value
     base.label = placement.name_of_placement
-    base.height = String(placement.height ?? Number(base.height ?? 0))
-    base.x_axis = String(placement.x_axis ?? Number(base.x_axis ?? 0))
-    base.y_axis = String(placement.y_axis ?? Number(base.y_axis ?? 0))
-    base.rotation = String(placement.rotation ?? Number(base.rotation ?? 0))
+    base.height = String(placement.height != null ? placement.height : Number(base.height ?? 0))
+    base.x_axis = String(placement.x_axis != null ? placement.x_axis : Number(base.x_axis ?? 0))
+    base.y_axis = String(placement.y_axis != null ? placement.y_axis : Number(base.y_axis ?? 0))
+    base.rotation = String(
+      placement.rotation != null ? placement.rotation : Number(base.rotation ?? 0)
+    )
+
+    // Set width from placement if available, otherwise use height or template value
+    if (placement.width != null) {
+      ;(base as ExtendedTextItem).width = String(placement.width)
+    } else if (!(base as ExtendedTextItem).width) {
+      ;(base as ExtendedTextItem).width = String(placement.height ?? base.height ?? '0')
+    }
+
+    // Use placement properties with fallbacks to template/base values
     base.is_locked = Boolean(placement.is_locked ?? base.is_locked ?? false)
     base.arc_text_allowed = Boolean(placement.arc_text_allowed ?? base.arc_text_allowed ?? false)
     base.outline_enabled = Boolean(base.outline_enabled ?? true)
@@ -87,7 +103,10 @@ export function useTextPlacements() {
     productIdValue: number
   ): OutputProductText {
     const entry = template ? clone(template) : ({} as OutputProductText)
-    entry.id = entry.id ?? 0
+    // Use existing ID if it's a real backend ID (positive), otherwise generate temporary negative ID
+    if (!entry.id || entry.id <= 0) {
+      entry.id = customizationStore.generateTemporaryTextId(productIdValue)
+    }
     entry.product_id = productIdValue
     entry.type = template?.type ?? 'name'
     entry.label = template?.label ?? placement.name_of_placement

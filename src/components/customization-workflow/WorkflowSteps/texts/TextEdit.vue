@@ -1,6 +1,5 @@
 <script setup lang="ts">
   import { computed, watch } from 'vue'
-  import { Button } from '@/components/ui/button'
   import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'
   import { PaletteColorSelector } from '@/components/ui/palette-color-selector'
@@ -19,14 +18,11 @@
     SelectTrigger,
     SelectValue
   } from '@/components/ui/select'
-  import { AlignCenter, Pin } from 'lucide-vue-next'
   import { useTextActions } from './useTextActions'
-  import { useTextPlacements, selectedPlacementId } from './useTextPlacements'
   import { useTexts } from './useTexts'
 
   // ===== COMPOSABLES =====
-  const { form, currentItem } = useTextActions()
-  const { placementMap, currentPlacement, placementOptions } = useTextPlacements()
+  const { form } = useTextActions()
   const { fontOptions, colorPalettes } = useTexts()
 
   // ===== COMPUTED =====
@@ -38,15 +34,11 @@
     }
   })
 
-  // Watch for placement selection changes
-  watch(selectedPlacementId, newPlacementId => {
-    if (newPlacementId && currentItem.value) {
-      const placement = placementMap.value[newPlacementId]
-      if (placement) {
-        // Update text dimensions based on placement
-        form.width = placement.width ?? placement.height ?? form.width
-        form.height = placement.height ?? form.height
-      }
+  // Slider value for outline width (Slider component expects an array)
+  const outlineWidthSliderValue = computed({
+    get: () => [form.outline_width],
+    set: (value: number[]) => {
+      form.outline_width = value[0] || 0
     }
   })
 
@@ -69,27 +61,6 @@
       if (color) return color.name
     }
     return 'Custom'
-  }
-
-  // Text positioning actions
-  function centerText() {
-    if (!currentItem.value) return
-    // Center the text on the placement
-    const placement = currentPlacement.value
-    if (placement) {
-      const centerX = placement.x_axis
-      const centerY = placement.y_axis
-      // Update the text position to center it
-      // This would need to be implemented based on your text positioning logic
-      console.log('Centering text at:', centerX, centerY)
-    }
-  }
-
-  function pinText() {
-    if (!currentItem.value) return
-    // Pin the text to prevent accidental movement
-    // This would need to be implemented based on your text pinning logic
-    console.log('Pinning text')
   }
 </script>
 
@@ -133,7 +104,7 @@
         </AccordionItem>
 
         <!-- Outline Colour Accordion Item -->
-        <AccordionItem value="outline">
+        <AccordionItem v-if="form.outline_enabled" value="outline">
           <AccordionTrigger class="px-4 md:px-6 py-4 hover:no-underline">
             <div class="flex items-center gap-3 w-full">
               <div
@@ -141,14 +112,32 @@
                 :style="{ backgroundColor: form.outline }"
               />
               <div class="flex-1 flex items-center gap-2 text-left">
-                <span class="text-base font-semibold text-foreground">Outline colour</span>
+                <span class="text-base font-semibold text-foreground">Outline</span>
                 <span class="text-base text-muted-foreground">{{
                   getColorName(form.outline)
                 }}</span>
               </div>
             </div>
           </AccordionTrigger>
-          <AccordionContent class="px-4 md:px-6 pb-4">
+          <AccordionContent class="px-4 md:px-6 pb-4 space-y-4">
+            <!-- Outline Width Slider -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <Label class="text-sm font-medium text-foreground">Outline width</Label>
+                <span class="text-sm text-foreground">{{ form.outline_width }}px</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <Slider
+                  v-model="outlineWidthSliderValue"
+                  :max="20"
+                  :min="0"
+                  :step="1"
+                  class="flex-1"
+                />
+              </div>
+            </div>
+
+            <!-- Color Selector -->
             <PaletteColorSelector
               :palettes="colorPalettes"
               :selected-color="form.outline"
@@ -163,9 +152,7 @@
             <div class="flex items-center gap-3 w-full">
               <div class="flex-1 flex items-center gap-2 text-left">
                 <span class="text-base font-semibold text-foreground">Sizing</span>
-                <span class="text-base text-muted-foreground">{{
-                  currentPlacement?.name_of_placement || 'Custom'
-                }}</span>
+                <span class="text-base text-muted-foreground">{{ form.placement }}</span>
               </div>
             </div>
           </AccordionTrigger>
@@ -173,19 +160,13 @@
             <!-- Placement Selector -->
             <div class="space-y-2">
               <Label class="text-sm font-medium text-foreground">Placement</Label>
-              <Select v-model="selectedPlacementId">
+              <Select v-model="form.placement">
                 <SelectTrigger class="w-full">
                   <SelectValue placeholder="Select placement" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem :value="null">Select placement</SelectItem>
-                  <SelectItem
-                    v-for="placement in placementOptions"
-                    :key="placement.id"
-                    :value="placement.id"
-                  >
-                    {{ placement.name_of_placement }}
-                  </SelectItem>
+                  <SelectItem value="Front">Front</SelectItem>
+                  <SelectItem value="Back">Back</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -238,7 +219,7 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex gap-2">
+            <!-- <div class="flex gap-2">
               <Button variant="outline" class="flex-1 h-9 gap-2" @click="centerText">
                 <AlignCenter class="w-4 h-4" />
                 Center text
@@ -247,7 +228,7 @@
                 <Pin class="w-4 h-4" />
                 Pin text
               </Button>
-            </div>
+            </div> -->
           </AccordionContent>
         </AccordionItem>
       </Accordion>

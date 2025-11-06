@@ -8,7 +8,7 @@
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
   import ProductPreviewCanvas from '@/components/customization-workflow/WorkflowSteps/ProductPreviewCanvas.vue'
-  import type { OutputProductName } from '@/services/products/types'
+  import type { OutputProductName, OutputProductText } from '@/services/products/types'
   import { useTextPlacements } from './useTextPlacements'
 
   // ===== STORES =====
@@ -25,7 +25,7 @@
   const { activeProductDetails, activeStyleDetails, activeDesignDetails } =
     storeToRefs(productsStore)
   const { activeProductId } = storeToRefs(customizationStore)
-  const { activeTextIndex, pendingTextTemplateId } = storeToRefs(workflowStore)
+  const { activeTextId, pendingTextTemplateId } = storeToRefs(workflowStore)
 
   // ===== COMPUTED =====
   const PREVIEW_SIZE = 176
@@ -55,31 +55,51 @@
 
   // ===== ACTIONS =====
   const handleSelectPlacement = async (placement: OutputProductName) => {
-    if (activeProductId.value == null || activeTextIndex.value == null) return
+    if (activeProductId.value == null) return
     const key = String(activeProductId.value)
-    const targetIndex = activeTextIndex.value
     const template = pendingTextTemplateId.value
       ? textTemplates.value.find(p => p?.id === pendingTextTemplateId.value)
       : undefined
-    const existing = textEntries.value[targetIndex]
 
-    if (existing) {
+    // Find existing entry by ID if activeTextId is set
+    let existing: OutputProductText | undefined
+    let targetIndex: number | undefined
+
+    if (activeTextId.value != null) {
+      const index = textEntries.value.findIndex(e => e.id === activeTextId.value)
+      if (index !== -1) {
+        existing = textEntries.value[index]
+        targetIndex = index
+      }
+    }
+
+    if (existing && existing.id) {
+      // Update existing entry with new placement coordinates
       const next = updateEntryWithPlacement(existing, placement, template ?? undefined)
       await historyStore.execute('text.update-entry', {
         key,
-        index: targetIndex,
+        textId: existing.id,
         prev: existing,
         next
       })
     } else {
+      // Create a new custom text entry with placement coordinates initialized
+      // buildEntryFromTemplate will use buildItemFromPlacement to set:
+      // - x_axis, y_axis, rotation, height, width from the placement
+      // - All other properties from template or defaults
       const entry = buildEntryFromTemplate(template, placement, activeProductId.value)
-      const insertAt = Math.min(targetIndex, textEntries.value.length)
+      const insertAt =
+        targetIndex !== undefined
+          ? Math.min(targetIndex, textEntries.value.length)
+          : textEntries.value.length
       await historyStore.execute('text.add-entry', {
         key,
         index: insertAt,
         entry
       })
-      workflowStore.setActiveTextIndex(insertAt)
+      if (entry.id) {
+        workflowStore.setActiveTextId(entry.id)
+      }
     }
 
     workflowStore.setActiveTextItemIndex(placement.id)

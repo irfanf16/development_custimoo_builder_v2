@@ -11,6 +11,16 @@ import type {
   TextAddEntryPayload,
   TextUpdateEntryPayload,
   TextRemoveEntryPayload,
+  TextUpdateValuePayload,
+  TextUpdateFontPayload,
+  TextUpdateColorPayload,
+  TextUpdateOutlineColorPayload,
+  TextUpdateOutlineWidthPayload,
+  TextUpdateHeightPayload,
+  TextUpdateWidthPayload,
+  TextUpdateRotationPayload,
+  TextUpdatePlacementPayload,
+  TextUpdateScalePayload,
   LogoAddPayload,
   LogoRemovePayload,
   LogoMovePayload,
@@ -22,7 +32,7 @@ import type {
   LogoRecolorPayload,
   AddonsSetPayload
 } from './types'
-import type { OutputAddon, OutputCompanyAddon } from '@/services/products/types'
+import type { OutputAddon, OutputCompanyAddon, OutputProductText } from '@/services/products/types'
 
 type Handler<T> = {
   apply(ctx: HistoryContext, payload: T): void | Promise<void>
@@ -37,6 +47,16 @@ type Registry = Record<
   | Handler<TextAddEntryPayload>
   | Handler<TextUpdateEntryPayload>
   | Handler<TextRemoveEntryPayload>
+  | Handler<TextUpdateValuePayload>
+  | Handler<TextUpdateFontPayload>
+  | Handler<TextUpdateColorPayload>
+  | Handler<TextUpdateOutlineColorPayload>
+  | Handler<TextUpdateOutlineWidthPayload>
+  | Handler<TextUpdateHeightPayload>
+  | Handler<TextUpdateWidthPayload>
+  | Handler<TextUpdateRotationPayload>
+  | Handler<TextUpdatePlacementPayload>
+  | Handler<TextUpdateScalePayload>
   | Handler<LogoAddPayload>
   | Handler<LogoRemovePayload>
   | Handler<LogoMovePayload>
@@ -74,6 +94,18 @@ function getTextArray(ctx: HistoryContext, key: string) {
   const map = root.product_custom_texts || (root.product_custom_texts = {})
   if (!map[key]) map[key] = []
   return map[key]
+}
+
+function findTextEntryById(
+  ctx: HistoryContext,
+  key: string,
+  textId: number
+): { array: OutputProductText[]; index: number } | null {
+  const array = getTextArray(ctx, key)
+  if (!array) return null
+  const index = array.findIndex(entry => entry.id === textId)
+  if (index === -1) return null
+  return { array, index }
 }
 
 function cloneTextEntry(entry: import('@/services/products/types').OutputProductText) {
@@ -219,51 +251,62 @@ export const registry: Registry = {
   },
   'text.update-entry': {
     apply(ctx: HistoryContext, payload: TextUpdateEntryPayload) {
-      const map = getTextArray(ctx, payload.key)
-      if (!map) return
+      // Find entry by ID (preferred) or fallback to index for backward compatibility
+      let result: { array: OutputProductText[]; index: number } | null = null
 
-      // Ensure the entry exists at the target index
-      while (map.length <= payload.index) {
-        map.push({
-          id: 0,
-          product_id: 0,
-          type: 'name',
-          label: '',
-          value: '',
-          following_products: [],
-          items: [],
-          created_at: null,
-          updated_at: null,
-          deleted_at: null,
-          manually_added: false,
-          font_family: '',
-          following_product_ids: [],
-          active_item_index: 0
-        })
+      if (payload.textId) {
+        result = findTextEntryById(ctx, payload.key, payload.textId)
       }
 
+      // Fallback to index if ID lookup failed or not provided (backward compatibility)
+      if (!result && payload.index !== undefined) {
+        const map = getTextArray(ctx, payload.key)
+        if (map && payload.index >= 0 && payload.index < map.length) {
+          result = { array: map, index: payload.index }
+        }
+      }
+
+      if (!result) return
+      const { array, index } = result
+
       // Capture prev state if not provided
-      const existingEntry = map[payload.index]
+      const existingEntry = array[index]
       if (!payload.prev && existingEntry) {
         payload.prev = cloneTextEntry(existingEntry)
       }
 
       // Apply the update
-      if (map[payload.index]) {
-        map[payload.index] = cloneTextEntry(payload.next)
-        ctx.customizationStore.saveToLocalStorage()
-      }
+      array[index] = cloneTextEntry(payload.next)
+      ctx.customizationStore.saveToLocalStorage()
     },
     revert(ctx: HistoryContext, payload: TextUpdateEntryPayload) {
-      const map = getTextArray(ctx, payload.key)
-      if (!map || payload.index < 0 || payload.index >= map.length || !payload.prev) return
-      if (map[payload.index]) {
-        map[payload.index] = cloneTextEntry(payload.prev)
-        ctx.customizationStore.saveToLocalStorage()
+      if (!payload.prev) return
+
+      // Find entry by ID (preferred) or fallback to index
+      let result: { array: OutputProductText[]; index: number } | null = null
+
+      if (payload.textId) {
+        result = findTextEntryById(ctx, payload.key, payload.textId)
       }
+
+      // Fallback to index if ID lookup failed or not provided
+      if (!result && payload.index !== undefined) {
+        const map = getTextArray(ctx, payload.key)
+        if (map && payload.index >= 0 && payload.index < map.length) {
+          result = { array: map, index: payload.index }
+        }
+      }
+
+      if (!result) return
+      const { array, index } = result
+
+      array[index] = cloneTextEntry(payload.prev)
+      ctx.customizationStore.saveToLocalStorage()
     },
     describe(_: HistoryContext, payload: TextUpdateEntryPayload) {
-      const label = payload.next.label || `#${payload.index + 1}`
+      const label =
+        payload.next.label ||
+        (payload.textId ? `#${payload.textId}` : `#${(payload.index ?? 0) + 1}`)
       return `Update text ${label}`
     }
   },
@@ -286,6 +329,304 @@ export const registry: Registry = {
     },
     describe(_: HistoryContext, _payload: TextRemoveEntryPayload) {
       return `Remove text`
+    }
+  },
+  'text.update-value': {
+    apply(ctx: HistoryContext, payload: TextUpdateValuePayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      if (!entry) return
+      // Create new object reference to trigger reactivity
+      result.array[result.index] = { ...entry, value: payload.nextValue }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdateValuePayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      if (!entry) return
+      // Create new object reference to trigger reactivity
+      result.array[result.index] = { ...entry, value: payload.prevValue }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdateValuePayload) {
+      return `Change text value #${payload.textId}`
+    }
+  },
+  'text.update-font': {
+    apply(ctx: HistoryContext, payload: TextUpdateFontPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      if (!entry) return
+      // Create new object references to trigger reactivity
+      const item = entry.items?.[payload.itemIndex]
+      const updatedItem = item ? { ...item, font_family: payload.nextFont } : item
+      const updatedItems = item && entry.items ? [...entry.items] : entry.items || []
+      if (updatedItem && item) {
+        updatedItems[payload.itemIndex] = updatedItem
+      }
+      result.array[result.index] = { ...entry, font_family: payload.nextFont, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdateFontPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      if (!entry) return
+      // Create new object references to trigger reactivity
+      const item = entry.items?.[payload.itemIndex]
+      const updatedItem = item ? { ...item, font_family: payload.prevFont } : item
+      const updatedItems = item && entry.items ? [...entry.items] : entry.items || []
+      if (updatedItem && item) {
+        updatedItems[payload.itemIndex] = updatedItem
+      }
+      result.array[result.index] = { ...entry, font_family: payload.prevFont, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdateFontPayload) {
+      return `Change text font #${payload.textId}`
+    }
+  },
+  'text.update-color': {
+    apply(ctx: HistoryContext, payload: TextUpdateColorPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, color: payload.nextColor }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdateColorPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, color: payload.prevColor }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdateColorPayload) {
+      return `Change text color #${payload.textId}`
+    }
+  },
+  'text.update-outline-color': {
+    apply(ctx: HistoryContext, payload: TextUpdateOutlineColorPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, outline_color: payload.nextColor }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdateOutlineColorPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, outline_color: payload.prevColor }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdateOutlineColorPayload) {
+      return `Change text outline color #${payload.textId}`
+    }
+  },
+  'text.update-outline-width': {
+    apply(ctx: HistoryContext, payload: TextUpdateOutlineWidthPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, outline_width: payload.nextWidth }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdateOutlineWidthPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, outline_width: payload.prevWidth }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdateOutlineWidthPayload) {
+      return `Change text outline width #${payload.textId}`
+    }
+  },
+  'text.update-height': {
+    apply(ctx: HistoryContext, payload: TextUpdateHeightPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, height: payload.nextHeight }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdateHeightPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, height: payload.prevHeight }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdateHeightPayload) {
+      return `Change text height #${payload.textId}`
+    }
+  },
+  'text.update-width': {
+    apply(ctx: HistoryContext, payload: TextUpdateWidthPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      if (!entry?.items?.[payload.itemIndex]) return
+      const item = entry.items[payload.itemIndex] as { width?: string }
+      item.width = payload.nextWidth
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdateWidthPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      if (!entry?.items?.[payload.itemIndex]) return
+      const item = entry.items[payload.itemIndex] as { width?: string }
+      item.width = payload.prevWidth
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdateWidthPayload) {
+      return `Change text width #${payload.textId}`
+    }
+  },
+  'text.update-rotation': {
+    apply(ctx: HistoryContext, payload: TextUpdateRotationPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, rotation: payload.nextRotation }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdateRotationPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, rotation: payload.prevRotation }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdateRotationPayload) {
+      return `Change text rotation #${payload.textId}`
+    }
+  },
+  'text.update-placement': {
+    apply(ctx: HistoryContext, payload: TextUpdatePlacementPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, placement: payload.nextPlacement }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdatePlacementPayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, placement: payload.prevPlacement }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdatePlacementPayload) {
+      return `Change text placement #${payload.textId}`
+    }
+  },
+  'text.update-scale': {
+    apply(ctx: HistoryContext, payload: TextUpdateScalePayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, scaleX: payload.nextScaleX, scaleY: payload.nextScaleY }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: TextUpdateScalePayload) {
+      const result = findTextEntryById(ctx, payload.key, payload.textId)
+      if (!result) return
+      const entry = result.array[result.index]
+      const item = entry?.items?.[payload.itemIndex]
+      if (!item) return
+      // Create new object references to trigger reactivity
+      const updatedItem = { ...item, scaleX: payload.prevScaleX, scaleY: payload.prevScaleY }
+      const updatedItems = [...(entry.items || [])]
+      updatedItems[payload.itemIndex] = updatedItem
+      result.array[result.index] = { ...entry, items: updatedItems }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, payload: TextUpdateScalePayload) {
+      return `Change text scale #${payload.textId}`
     }
   },
   'logo.add': {

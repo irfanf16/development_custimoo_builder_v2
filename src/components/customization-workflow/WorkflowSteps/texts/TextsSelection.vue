@@ -31,9 +31,10 @@
     workflowStore.setTextsSubStep('edit')
   }
 
-  function goToEdit(customText: OutputProductText, index: number) {
-    if (!customText) return
-    workflowStore.setActiveTextIndex(index)
+  function goToEdit(customText: OutputProductText, _index: number) {
+    // Allow any ID including temporary negative IDs (for unsaved entries)
+    if (!customText || customText.id === undefined || customText.id === null) return
+    workflowStore.setActiveTextId(customText.id)
     if (customText.type === 'number') {
       goToNumberFont()
     } else {
@@ -50,7 +51,15 @@
   function handlePasteStyle(index: number) {
     const clipboard = textClipboard.value
     const entry = activeProductTexts.value[index]
-    if (!clipboard?.style || !entry || !effectiveProductId.value) return
+    // Allow any ID including temporary negative IDs (for unsaved entries)
+    if (
+      !clipboard?.style ||
+      !entry ||
+      !effectiveProductId.value ||
+      entry.id === undefined ||
+      entry.id === null
+    )
+      return
     const key = String(effectiveProductId.value)
     const next = {
       ...entry,
@@ -59,7 +68,7 @@
     }
     history.execute('text.update-entry', {
       key,
-      index,
+      textId: entry.id,
       prev: entry,
       next
     })
