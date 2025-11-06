@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { type Company, type OutputSettings } from '@/services/company/types'
+import {
+  type Company,
+  type OutputSettings,
+  type OutputSettingsResponse
+} from '@/services/company/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
@@ -99,12 +103,12 @@ export const useCompanyStore = defineStore('companyStore', () => {
     return response
   }
 
-  async function fetchSettings(): Promise<APIResponse<OutputSettings>> {
+  async function fetchSettings(): Promise<APIResponse<OutputSettingsResponse>> {
     setLoading(true)
     setError(null)
     const output = await tryCatchApi(API.company.getSettings())
     if (output.success) {
-      setSettings(output.content)
+      setSettings(output.content.result)
     } else {
       setError('Error getting settings')
     }

@@ -30,6 +30,14 @@ export type FactorySetting = {
   value: boolean
 }
 
+export type OutputSettingsResponse = {
+  success: true
+  message: string
+  result: OutputSettings
+  errors: []
+  status_code: number
+}
+
 export type OutputSettings = {
   factory_settings: FactorySetting[]
   settings: {
@@ -86,4 +94,18 @@ export type OutputSettings = {
       zip_code: string | null
     }
   }
+  ui_branding: UIBranding
+}
+
+export type UIBranding = {
+  allow_color_mode_switch: boolean
+  border_radius: number
+  brand_font_family?: string
+  brand_font_file?: string
+  brand_font_is_custom?: string
+  default_font_family?: string
+  default_font_file?: string
+  default_font_is_custom?: string
+  theme: 'light' | 'dark'
+  theme_color: string
 }
