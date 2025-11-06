@@ -5,6 +5,7 @@ import logosService from './logos/logos.service'
 import ordersService from './orders/orders.service'
 import dashboardService from './dashboard/dashboard.service'
 import addressesService from './addresses/addresses.service'
+import preferencesService from './preferences/preferences.service'
 
 export const API = {
   authentication: authenticationService,
@@ -13,5 +14,6 @@ export const API = {
   logos: logosService,
   dashboard: dashboardService,
   orders: ordersService,
-  addresses: addressesService
+  addresses: addressesService,
+  preferences: preferencesService
 }

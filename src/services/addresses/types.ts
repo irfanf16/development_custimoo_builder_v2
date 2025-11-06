@@ -26,6 +26,7 @@ export interface AddressResponse {
 }
 
 export interface AddressPayload {
+  id?: number | string
   first_name: string
   last_name: string
   email?: string
@@ -36,6 +37,6 @@ export interface AddressPayload {
   city?: string
   state?: string
   zip_code?: string
-  country_id: number
+  country: number
   default?: boolean
 }

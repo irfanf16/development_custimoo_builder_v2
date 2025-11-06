@@ -11,6 +11,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { storeToRefs } from 'pinia'
   import Loader from '../ui/loader/Loader.vue'
+  import PreferencesTab from './preferences-section/PreferencesTab.vue'
 
   const props = defineProps<{ open: boolean }>()
   const emit = defineEmits(['update:open'])
@@ -43,7 +44,7 @@
 
 <template>
   <Dialog :open="props.open" @update:open="emit('update:open', $event)">
-    <DialogContent :class="'w-[952px] max-w-full p-0 overflow-hidden'">
+    <DialogContent :class="'w-[1200px] h-[760px] max-w-full p-0 overflow-hidden'">
       <div
         v-if="profileStore.isLoading"
         class="absolute inset-0 flex items-center justify-center bg-white/70 z-50"
@@ -51,7 +52,7 @@
         <Loader variant="spinner" class="text-primary" />
       </div>
 
-      <div class="flex h-[600px]">
+      <div class="flex h-full">
         <Tabs
           v-model="tab"
           orientation="vertical"
@@ -86,6 +87,9 @@
             </TabsContent>
             <TabsContent value="address" class="h-full">
               <AddressTab />
+            </TabsContent>
+            <TabsContent value="preferences" class="h-full px-4">
+              <PreferencesTab />
             </TabsContent>
           </Tabs>
         </div>

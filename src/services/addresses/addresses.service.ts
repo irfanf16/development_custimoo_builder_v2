@@ -13,7 +13,7 @@ async function getCountries(): Promise<{
   const { data } = await http.get<{
     success: boolean
     result: Array<{ id: number; name: string }>
-  }>('/countries')
+  }>('/addresses/countries')
   return data
 }
 
