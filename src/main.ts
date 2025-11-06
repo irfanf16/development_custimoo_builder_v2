@@ -1,6 +1,6 @@
 import { bootstrap } from './bootstrap'
 
-// Font loading is centralized in useColorScheme
+// Font loading is centralized in useBrandStyling
 
 // Define the custom element for embedded widget (primary mode)
 customElements.define(
