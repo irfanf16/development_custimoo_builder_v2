@@ -158,7 +158,7 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   // Set up the widget root with ResizeObserver
   ui.setWidgetRoot(container)
 
-  // Fonts are loaded centrally in useColorScheme; no shadowRoot font loading here
+  // Fonts are loaded centrally in useBrandStyling; no shadowRoot font loading here
 
   // Create a new Vue application instance
   // second argument is object of attributes that will be

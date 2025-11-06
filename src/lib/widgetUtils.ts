@@ -5,7 +5,7 @@
 /**
  * Apply widget color scheme to a container element
  */
-// applyWidgetColors is deprecated in favor of useColorScheme.applyColorScheme
+// applyWidgetColors is deprecated in favor of useBrandStyling.applyBrandStyling
 
 /**
  * Get widget container element
