@@ -9,7 +9,7 @@
   function onScroll(e: Event) {
     const el = e.target as HTMLElement
     const { scrollTop, scrollHeight, clientHeight } = el
-    const nearBottom = scrollTop + clientHeight >= scrollHeight - 200
+    const nearBottom = scrollTop + clientHeight >= scrollHeight - 300
 
     if (nearBottom && !isNearBottom) {
       isNearBottom = true
@@ -28,11 +28,11 @@
 
     if (viewport) {
       scrollTarget = viewport as HTMLElement
-      scrollTarget.addEventListener('scroll', onScroll)
+      scrollTarget.addEventListener('scroll', onScroll, { passive: true })
     } else {
       // fallback: maybe not inside a ScrollArea
       scrollTarget = wrapperRef.value
-      scrollTarget?.addEventListener('scroll', onScroll)
+      scrollTarget?.addEventListener('scroll', onScroll, { passive: true })
     }
   })
 

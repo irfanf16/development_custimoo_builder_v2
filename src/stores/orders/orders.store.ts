@@ -8,6 +8,7 @@ export const useOrdersStore = defineStore('ordersStore', () => {
   const orders = ref<Order[]>([])
   const isLoadingOrders = ref(false)
   const error = ref<string | null>(null)
+  const isLoadingMore = ref(false)
 
   const ordersView = ref<'list' | 'expanded-list'>('list')
   const ordersPageType = ref<'order' | 'quote'>('order')
@@ -142,18 +143,24 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     const { total, perPage, currentPage } = pagination.value
     const totalPages = Math.ceil(total / perPage)
 
-    if (isLoadingOrders.value || page > totalPages || page === currentPage) return
+    if (isLoadingOrders.value || isLoadingMore.value || page > totalPages || page === currentPage)
+      return
 
-    let params = `?page=${page}`
-    const { search, filter } = ordersParams.value
-    if (search) params += `&search=${encodeURIComponent(search)}`
-    if (filter) params += `&filter=${encodeURIComponent(filter)}`
+    isLoadingMore.value = true
+    try {
+      let params = `?page=${page}`
+      const { search, filter } = ordersParams.value
+      if (search) params += `&search=${encodeURIComponent(search)}`
+      if (filter) params += `&filter=${encodeURIComponent(filter)}`
 
-    const res = await API.orders.getOrders(params, ordersPageType.value)
-    const newOrders = (res.data ?? []) as Order[]
-    orders.value.push(...newOrders)
-    makePagination(res)
-    saveToLocalStorage()
+      const res = await API.orders.getOrders(params, ordersPageType.value)
+      const newOrders = (res.data ?? []) as Order[]
+      orders.value.push(...newOrders)
+      makePagination(res)
+      saveToLocalStorage()
+    } finally {
+      isLoadingMore.value = false
+    }
   }
 
   async function filterOrders() {
@@ -269,6 +276,7 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     breadcrumbs,
     activeOrder,
     activeOrderView,
+    isLoadingMore,
 
     // Actions
     fetchOrders,

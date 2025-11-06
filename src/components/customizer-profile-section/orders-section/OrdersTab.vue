@@ -219,6 +219,14 @@
         <div v-if="store.isLoadingOrders" class="flex justify-center py-6">
           <Loader />
         </div>
+        <!-- Smooth bottom loader when fetching more -->
+        <div
+          v-if="store.isLoadingMore && store.orders.length"
+          class="flex justify-center py-4 text-gray-500 transition-all duration-300"
+        >
+          <Loader />
+          <span class="ml-2 text-sm">Loading more orders…</span>
+        </div>
       </InfiniteScroll>
     </ScrollArea>
     <ScrollArea v-else class="flex-1">
