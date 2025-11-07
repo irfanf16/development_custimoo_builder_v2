@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   Canvas,
   FabricImage,
@@ -42,6 +42,129 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
   const textLayers = ref<Map<string, FabricObject>>(new Map())
   const loadedFonts = ref<Set<string>>(new Set())
   const fontStyles = ref<Map<string, HTMLStyleElement>>(new Map())
+  const pendingFontPromises = new Map<string, Promise<void>>()
+
+  const productsStore = useProductsStore()
+  const warnedFontFamilies = new Set<string>()
+
+  function getFontFormat(fontUrl: string): string {
+    const extension = fontUrl.split('?')[0]?.split('.').pop()?.toLowerCase()
+    switch (extension) {
+      case 'otf':
+        return 'opentype'
+      case 'woff2':
+        return 'woff2'
+      case 'woff':
+        return 'woff'
+      case 'ttf':
+      default:
+        return 'truetype'
+    }
+  }
+
+  function findFontUrl(fontFamily: string): string | undefined {
+    const namefonts = productsStore.activeProductDetails?.namefonts ?? []
+    for (const fontGroup of namefonts) {
+      const file = fontGroup.json_data?.find(entry => entry.name === fontFamily)
+      if (file?.path) {
+        return getFontUrl(file.path)
+      }
+    }
+    return undefined
+  }
+
+  async function ensureFontRegistered(fontFamily: string, fontUrl: string): Promise<void> {
+    if (typeof window === 'undefined') return
+    const key = `${fontFamily}::${fontUrl}`
+    if (loadedFonts.value.has(key)) return
+    const existingPromise = pendingFontPromises.get(key)
+    if (existingPromise) {
+      await existingPromise
+      return
+    }
+
+    const loadPromise = (async () => {
+      try {
+        let style = fontStyles.value.get(key)
+        if (!style) {
+          const queriedStyle = document.querySelector(
+            `style[data-font-family="${fontFamily}"][data-font-url="${fontUrl}"]`
+          )
+          if (queriedStyle instanceof HTMLStyleElement) {
+            style = queriedStyle
+          }
+        }
+
+        if (!style) {
+          style = document.createElement('style')
+          style.setAttribute('data-font-family', fontFamily)
+          style.setAttribute('data-font-url', fontUrl)
+          style.textContent = `
+            @font-face {
+              font-family: '${fontFamily}';
+              src: url('${fontUrl}') format('${getFontFormat(fontUrl)}');
+              font-display: swap;
+            }
+          `
+          document.head.appendChild(style)
+        }
+        fontStyles.value.set(key, style)
+
+        const cssFontName = fontFamily.includes(' ') ? `"${fontFamily}"` : fontFamily
+        const isLoaded = document.fonts.check(`1em ${cssFontName}`)
+        if (!isLoaded) {
+          const fontFace = new FontFace(
+            fontFamily,
+            `url('${fontUrl}') format('${getFontFormat(fontUrl)}')`
+          )
+          await fontFace.load()
+          document.fonts.add(fontFace)
+        }
+
+        loadedFonts.value.add(key)
+      } catch (error) {
+        if (!warnedFontFamilies.has(key)) {
+          console.warn(`Failed to load font ${fontFamily} from ${fontUrl}:`, error)
+          warnedFontFamilies.add(key)
+        }
+      } finally {
+        pendingFontPromises.delete(key)
+      }
+    })()
+
+    pendingFontPromises.set(key, loadPromise)
+    await loadPromise
+  }
+
+  async function ensureFontForFamily(fontFamily: string): Promise<void> {
+    const fontUrl = findFontUrl(fontFamily)
+    if (!fontUrl) {
+      const warningKey = `missing::${fontFamily}`
+      if (!warnedFontFamilies.has(warningKey)) {
+        console.warn(`Font URL not found for font family '${fontFamily}'.`)
+        warnedFontFamilies.add(warningKey)
+      }
+      return
+    }
+    await ensureFontRegistered(fontFamily, fontUrl)
+  }
+
+  if (typeof window !== 'undefined') {
+    watch(
+      () => productsStore.activeProductDetails?.namefonts,
+      namefonts => {
+        if (!namefonts || namefonts.length === 0) return
+        for (const fontGroup of namefonts) {
+          for (const file of fontGroup.json_data ?? []) {
+            const fontFamily = file.name
+            const fontUrl = getFontUrl(file.path)
+            void ensureFontRegistered(fontFamily, fontUrl)
+          }
+        }
+      },
+      { immediate: true, deep: true }
+    )
+  }
 
   // ===== UTILITIES =====
   const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
@@ -712,70 +835,8 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
     const fontFamily = entry.font_family || item.font_family || 'Arial'
 
     // Load custom font if needed
-    // Look up font URL from available fonts and load it if not already loaded
     if (fontFamily && fontFamily !== 'Arial') {
-      const productsStore = useProductsStore()
-      const namefonts = productsStore.activeProductDetails?.namefonts ?? []
-
-      // Find the font in the available fonts
-      for (const fontGroup of namefonts) {
-        const fontFile = fontGroup.json_data?.find(file => file.name === fontFamily)
-        if (fontFile?.path) {
-          const fontUrl = getFontUrl(fontFile.path)
-          const fontKey = `${fontFamily}-${fontUrl}`
-
-          // Load font if not already loaded
-          // Fabric.js needs fonts loaded via CSS @font-face, not just FontFace API
-          if (!loadedFonts.value.has(fontKey) && fontUrl) {
-            try {
-              // Check if @font-face for this font already exists in document
-              const existingStyle = Array.from(document.head.querySelectorAll('style')).find(
-                styleEl => {
-                  const text = styleEl.textContent || ''
-                  return (
-                    text.includes(`font-family: '${fontFamily}'`) ||
-                    text.includes(`font-family: "${fontFamily}"`)
-                  )
-                }
-              )
-
-              if (!existingStyle) {
-                // Create @font-face style element for Fabric.js
-                const style = document.createElement('style')
-                style.textContent = `
-                  @font-face {
-                    font-family: '${fontFamily}';
-                    src: url('${fontUrl}') format('truetype');
-                    font-display: swap;
-                  }
-                `
-                document.head.appendChild(style)
-                fontStyles.value.set(fontKey, style)
-              } else {
-                // Reuse existing style element
-                fontStyles.value.set(fontKey, existingStyle)
-              }
-
-              // Also use FontFace API for better browser support
-              // Check if font is already loaded via FontFace API
-              const fontFaceLoaded = Array.from(document.fonts).some(
-                font => font.family === fontFamily
-              )
-
-              if (!fontFaceLoaded) {
-                const fontFace = new FontFace(fontFamily, `url(${fontUrl})`)
-                await fontFace.load()
-                document.fonts.add(fontFace)
-              }
-
-              loadedFonts.value.add(fontKey)
-            } catch (error) {
-              console.warn(`Failed to load font ${fontFamily} from ${fontUrl}:`, error)
-            }
-          }
-          break
-        }
-      }
+      await ensureFontForFamily(fontFamily)
     }
 
     // Get text properties from item (with fallbacks to entry)
@@ -930,68 +991,7 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
 
     // Load custom font if needed
     if (fontFamily && fontFamily !== 'Arial') {
-      const productsStore = useProductsStore()
-      const namefonts = productsStore.activeProductDetails?.namefonts ?? []
-
-      // Find the font in the available fonts
-      for (const fontGroup of namefonts) {
-        const fontFile = fontGroup.json_data?.find(file => file.name === fontFamily)
-        if (fontFile?.path) {
-          const fontUrl = getFontUrl(fontFile.path)
-          const fontKey = `${fontFamily}-${fontUrl}`
-
-          // Load font if not already loaded
-          // Fabric.js needs fonts loaded via CSS @font-face, not just FontFace API
-          if (!loadedFonts.value.has(fontKey) && fontUrl) {
-            try {
-              // Check if @font-face for this font already exists in document
-              const existingStyle = Array.from(document.head.querySelectorAll('style')).find(
-                styleEl => {
-                  const text = styleEl.textContent || ''
-                  return (
-                    text.includes(`font-family: '${fontFamily}'`) ||
-                    text.includes(`font-family: "${fontFamily}"`)
-                  )
-                }
-              )
-
-              if (!existingStyle) {
-                // Create @font-face style element for Fabric.js
-                const style = document.createElement('style')
-                style.textContent = `
-                  @font-face {
-                    font-family: '${fontFamily}';
-                    src: url('${fontUrl}') format('truetype');
-                    font-display: swap;
-                  }
-                `
-                document.head.appendChild(style)
-                fontStyles.value.set(fontKey, style)
-              } else {
-                // Reuse existing style element
-                fontStyles.value.set(fontKey, existingStyle)
-              }
-
-              // Also use FontFace API for better browser support
-              // Check if font is already loaded via FontFace API
-              const fontFaceLoaded = Array.from(document.fonts).some(
-                font => font.family === fontFamily
-              )
-
-              if (!fontFaceLoaded) {
-                const fontFace = new FontFace(fontFamily, `url(${fontUrl})`)
-                await fontFace.load()
-                document.fonts.add(fontFace)
-              }
-
-              loadedFonts.value.add(fontKey)
-            } catch (error) {
-              console.warn(`Failed to load font ${fontFamily} from ${fontUrl}:`, error)
-            }
-          }
-          break
-        }
-      }
+      await ensureFontForFamily(fontFamily)
     }
 
     layer.set({
