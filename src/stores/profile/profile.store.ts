@@ -26,7 +26,8 @@ export const useProfileStore = defineStore('profileStore', () => {
   const showDeleteConfirm = ref(false)
   const addressToDelete = ref<Address | null>(null)
   const addressTabs = ref<'personal' | 'business'>('personal')
-  const addressForm = ref<AddressPayload & { country: number | string }>({
+  const addressForm = ref<Omit<AddressPayload, 'country'> & { country: number | string }>({
+    id: undefined,
     first_name: '',
     last_name: '',
     email: '',

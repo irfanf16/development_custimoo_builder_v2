@@ -12,9 +12,12 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "vee-validate": ["./node_modules/vee-validate/dist/vee-validate"],
+      "@vee-validate/zod": ["./node_modules/@vee-validate/zod/dist/vee-validate-zod"],
+      "zod": ["./node_modules/zod/index"]
     },
-    "types": ["three"],
+    "moduleResolution": "node",
     "allowJs": true,
     "checkJs": false
   },

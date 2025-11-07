@@ -138,13 +138,7 @@
       <!-- Sign In Button with DropdownMenu -->
       <DropdownMenu>
         <ButtonGroup>
-          <DropdownMenuTrigger as-child>
-            <SignInButton />
-            <!-- <Button v-else size="default">
-              <User class="size-4" />
-              <span>Oskar</span>
-            </Button> -->
-          </DropdownMenuTrigger>
+          <SignInButton @open-profile="handleUserProfile" />
           <DropdownMenuTrigger v-if="isLoggedIn" as-child>
             <Button size="icon" aria-label="User menu" class="rounded-l-none rounded-r-md">
               <Menu class="size-4" />

@@ -26,6 +26,8 @@
   const authStore = useAuthStore()
   const profileStore = useProfileStore()
 
+  const emit = defineEmits<{ (e: 'open-profile'): void }>()
+
   const {
     isAuthenticated: isLoggedIn,
     customer: user,
@@ -35,7 +37,6 @@
 
   // Reactive state
   const showSignInDialog = ref(false)
-  const showUserMenu = ref(false)
   const credentials = ref({
     email: '',
     password: ''
@@ -52,9 +53,8 @@
     }
   }
 
-  const toggleUserMenu = (e: MouseEvent) => {
-    e.stopPropagation()
-    showUserMenu.value = !showUserMenu.value
+  const handleProfileClick = () => {
+    emit('open-profile')
   }
 
   // Presentation props for reuse across placements (e.g., topbar)
@@ -77,7 +77,7 @@
     <!-- Sign In Button (when not authenticated) -->
 
     <!-- Sign In Dialog -->
-    <Dialog v-if="!isLoggedIn">
+    <Dialog v-if="!isLoggedIn" v-model:open="showSignInDialog">
       <DialogTrigger as-child>
         <Button :variant="props.variant" :size="props.size" :class="isLoggedIn ?? props.class">
           {{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}
@@ -138,7 +138,7 @@
         :size="props.size"
         :class="['flex items-center space-x-2 px-3 py-2', props.class]"
         :title="`Logged in as ${user?.first_name} ${user?.last_name}`"
-        @click="(e: MouseEvent) => toggleUserMenu(e)"
+        @click.stop.prevent="handleProfileClick"
       >
         <div
           class="w-6 h-6 text-white text-xs font-medium rounded-full flex items-center justify-center"
