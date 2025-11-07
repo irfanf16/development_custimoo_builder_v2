@@ -2,10 +2,10 @@
   import { Button } from '@/components/ui/button'
   import { useRouter } from 'vue-router'
   import { notfound_go_back } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
 
   const router = useRouter()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
 
   const goHome = () => {
     router.push('/')
@@ -28,7 +28,7 @@
       <div class="flex justify-center space-x-4">
         <Button @click="goHome">Go Home</Button>
         <Button variant="default" @click="goBack">{{
-          notfound_go_back({}, { locale: localeStore.currentLocale })
+          notfound_go_back({}, { locale: profileStore.currentLocale })
         }}</Button>
       </div>
     </div>

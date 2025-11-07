@@ -7,19 +7,20 @@
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import { ChevronDown, Globe } from 'lucide-vue-next'
-  import { useLocaleStore, type ParaglideLocale } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import type { ParaglideLocale } from '@/services/preferences/types'
   import { computed } from 'vue'
 
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
 
-  const shouldShowSwitcher = computed(() => localeStore.availableLocales.length > 1)
+  const shouldShowSwitcher = computed(() => profileStore.availableLocales.length > 1)
 
   const handleLanguageChange = (locale: ParaglideLocale) => {
-    localeStore.setCurrentLocale(locale)
+    void profileStore.setCurrentLocale(locale)
   }
 
   const currentLanguageConfig = computed(() => {
-    const currentCode = localeStore.currentLocale
+    const currentCode = profileStore.currentLocale
     // Find the language config from company store or use a fallback
     return {
       code: currentCode,
@@ -54,9 +55,9 @@
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuItem
-        v-for="locale in localeStore.availableLocales"
+        v-for="locale in profileStore.availableLocales"
         :key="locale"
-        :class="{ 'bg-accent': locale === localeStore.currentLocale }"
+        :class="{ 'bg-accent': locale === profileStore.currentLocale }"
         @click="handleLanguageChange(locale)"
       >
         <span>

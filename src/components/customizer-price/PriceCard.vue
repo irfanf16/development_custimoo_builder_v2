@@ -2,10 +2,10 @@
   import { Card, CardContent } from '@/components/ui/card'
   import { Button } from '@/components/ui/button'
   import { price_line, price_add_to_cart } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
 
   defineProps<{ price?: number; qty?: number; eta?: string }>()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
 </script>
 
 <template>
@@ -17,13 +17,13 @@
           {{
             price_line(
               { qty: qty ?? 10, eta: eta ?? '25-27 Feb 2025' },
-              { locale: localeStore.currentLocale }
+              { locale: profileStore.currentLocale }
             )
           }}
         </div>
       </div>
       <Button size="sm" class="rounded-xl px-5">{{
-        price_add_to_cart({}, { locale: localeStore.currentLocale })
+        price_add_to_cart({}, { locale: profileStore.currentLocale })
       }}</Button>
     </CardContent>
   </Card>

@@ -3,18 +3,67 @@
   import DialogContent from '@/components/ui/dialog/DialogContent.vue'
   import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
   import { useProfileDialogState } from '@/composables/useProfileDialogState'
+  import AccountTab from './account-section/AccountTab.vue'
+  import OrdersTab from './orders-section/OrdersTab.vue'
+  import AddressTab from './address-section/AddressTab.vue'
+  // import PreferencesTab from './preferences-section/PreferencesTab.vue'
+  import { watch } from 'vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { storeToRefs } from 'pinia'
+  import Loader from '../ui/loader/Loader.vue'
+  import PreferencesTab from './preferences-section/PreferencesTab.vue'
 
   const props = defineProps<{ open: boolean }>()
   const emit = defineEmits(['update:open'])
 
   const { tab, tabItems } = useProfileDialogState()
+  const profileStore = useProfileStore()
+  const { counters } = storeToRefs(profileStore)
+
+  // Watch tab changes and persist them
+  watch(
+    () => tab.value,
+    newTab => {
+      profileStore.activeTab = newTab as 'account' | 'orders' | 'address' | 'preferences'
+      profileStore.saveToLocalStorage()
+    }
+  )
+  function handleSignOut() {
+    emit('update:open', false)
+    localStorage.clear()
+    useProfileStore().$reset()
+  }
+
+  watch(
+    () => props.open,
+    isOpen => {
+      if (isOpen) {
+        // Load persisted state when dialog opens
+        profileStore.loadFromLocalStorage()
+        // Initialize locale if not already initialized
+        if (!profileStore.isInitialized) {
+          void profileStore.initializeLocale()
+        }
+        profileStore.fetchDashboard()
+      }
+    },
+    { immediate: true }
+  )
 </script>
 
 <template>
   <Dialog :open="props.open" @update:open="emit('update:open', $event)">
-    <DialogContent :class="'w-[952px] max-w-full p-0 overflow-hidden'">
-      <div class="flex h-[600px]">
-        <!-- Left: Tabs -->
+    <DialogContent
+      :class="'w-[1200px] h-[760px] max-w-full p-0 overflow-hidden overflow-hidden flex flex-col'"
+    >
+      <div
+        v-if="profileStore.isLoading"
+        class="absolute inset-0 flex items-center justify-center bg-white/70 z-50"
+      >
+        <Loader variant="spinner" class="text-primary" />
+      </div>
+
+      <div class="flex h-full">
         <Tabs
           v-model="tab"
           orientation="vertical"
@@ -37,24 +86,26 @@
             </TabsList>
           </div>
         </Tabs>
+
         <!-- Right: Content -->
-        <div class="flex-1 relative px-4 py-2">
+        <div class="flex-1 relative py-2">
           <Tabs v-model="tab" orientation="vertical" class="h-full">
-            <TabsContent value="account" class="h-full">
-              <h2 class="text-lg font-semibold mb-4">Account</h2>
-              <p>Account details go here.</p>
+            <TabsContent value="account" class="h-full px-4">
+              <AccountTab
+                title="Account"
+                :counters="counters"
+                @save="() => {}"
+                @sign-out="handleSignOut"
+              />
             </TabsContent>
             <TabsContent value="orders" class="h-full">
-              <h2 class="text-lg font-semibold mb-4">Orders</h2>
-              <p>Order history goes here.</p>
+              <OrdersTab title="Orders" />
             </TabsContent>
             <TabsContent value="address" class="h-full">
-              <h2 class="text-lg font-semibold mb-4">Address Book</h2>
-              <p>Address book goes here.</p>
+              <AddressTab />
             </TabsContent>
-            <TabsContent value="preferences" class="h-full">
-              <h2 class="text-lg font-semibold mb-4">Preferences</h2>
-              <p>Preferences go here.</p>
+            <TabsContent value="preferences" class="h-full px-4">
+              <PreferencesTab />
             </TabsContent>
           </Tabs>
         </div>

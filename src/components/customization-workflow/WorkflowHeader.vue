@@ -31,7 +31,6 @@
   const isExpandable = computed(() => {
     return workflowStore.currentHeaderConfig?.isExpandable
   })
-
   // Get breadcrumbs from current step component
   const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => {
     return workflowStore.currentHeaderConfig?.breadcrumbs ?? workflowStore.navigationItems

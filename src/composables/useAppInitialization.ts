@@ -3,12 +3,12 @@ import { useCompanyStore } from '@/stores/company/company.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
-import { useLocaleStore } from '@/stores/locale/locale.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useWorkflow } from './useWorkflow'
 import { useHistoryStore } from '@/stores/history/history.store'
 import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
 import type { OutputDesignDetails } from '../services/products/types'
+import { useProfileStore } from '@/stores/profile/profile.store'
 
 // Global state to prevent multiple initializations
 // This prevents race conditions when multiple components try to initialize the app simultaneously
@@ -64,13 +64,13 @@ export function useAppInitialization() {
   }
 
   // PHASE 3: Initialize localization and determine effective category
-  const initializeLocalizationAndCategory = (
+  const initializeLocalizationAndCategory = async (
     customizationStore: ReturnType<typeof useCustomizationStore>,
     productsStore: ReturnType<typeof useProductsStore>
   ) => {
     // Initialize locale store after company data is loaded
-    const localeStore = useLocaleStore()
-    localeStore.initializeLocale()
+    const profileStore = useProfileStore()
+    await profileStore.initializeLocale()
 
     // Determine the effective category ID for loading products
     const effectiveCategoryId =
@@ -242,7 +242,7 @@ export function useAppInitialization() {
         await fetchEssentialData()
 
         // PHASE 3: Initialize localization and determine effective category
-        const effectiveCategoryAndSubCategory = initializeLocalizationAndCategory(
+        const effectiveCategoryAndSubCategory = await initializeLocalizationAndCategory(
           customizationStore,
           productsStore
         )
