@@ -247,7 +247,7 @@
         </div>
       </InfiniteScroll>
     </ScrollArea>
-    <ScrollArea v-else class="flex-1">
+    <ScrollArea v-else class="flex-1 h-full overflow-y-auto">
       <OrderDetailsView
         v-if="store.activeOrderView === 'details'"
         :order="store.activeOrder"
