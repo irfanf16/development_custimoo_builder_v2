@@ -90,7 +90,7 @@
         <Card
           v-for="address in store.addresses"
           :key="address.id"
-          class="flex flex-col justify-between"
+          class="flex flex-col justify-between hover:bg-muted/50 transition-colors"
         >
           <CardContent class="flex flex-col h-full justify-between">
             <!-- Top: Company/Name -->
@@ -169,7 +169,10 @@
         </Card>
 
         <!-- Add Address Card -->
-        <Card v-if="store.addresses.length" class="flex flex-col items-center justify-center">
+        <Card
+          v-if="store.addresses.length"
+          class="flex flex-col items-center justify-center hover:bg-muted/50 transition-colors"
+        >
           <CardContent class="flex flex-col items-center justify-center p-4">
             <!-- Increased icon size -->
             <component :is="flexFlatCategoryIcons.AddressIcon" class="size-12 text-primary" />
