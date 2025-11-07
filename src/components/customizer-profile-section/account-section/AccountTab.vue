@@ -75,15 +75,15 @@
 
         <!-- Counters -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4">
+          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 hover:bg-[#FAFAFA]">
             <div class="text-sm text-muted-foreground">{{ t.ordersCount }}</div>
             <div class="text-2xl font-bold">{{ counters.orders_count }}</div>
           </Card>
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4">
+          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 hover:bg-[#FAFAFA]">
             <div class="text-sm text-muted-foreground">{{ t.pendingApprovalCount }}</div>
             <div class="text-2xl font-bold">{{ counters.pending_approval_count }}</div>
           </Card>
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4">
+          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 hover:bg-[#FAFAFA]">
             <div class="text-sm text-muted-foreground">{{ t.trackMyOrdersCount }}</div>
             <div class="text-2xl font-bold">{{ counters.track_my_orders_count }}</div>
           </Card>
@@ -91,7 +91,7 @@
 
         <!-- Name card with edit on right -->
         <Card
-          class="flex flex-row items-center justify-between gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4"
+          class="flex flex-row items-center justify-between gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 hover:bg-[#FAFAFA]"
         >
           <!-- Left side: Name and customer name -->
           <div class="flex flex-col">
@@ -104,10 +104,12 @@
           </div>
 
           <!-- Right side: Edit button -->
-          <Button size="sm" variant="outline" class="self-center">{{ t.edit }}</Button>
+          <Button size="sm" variant="outline" class="self-center"
+            ><i-flex-line-edit /> {{ t.edit }}</Button
+          >
         </Card>
         <!-- Address card (hardcoded for now) -->
-        <Card class="flex flex-col gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4">
+        <Card class="flex flex-col gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 hover:bg-[#FAFAFA]">
           <CardHeader class="px-0 md:px-0 py-0 md:py-0 gap-0">
             <CardTitle class="text-[12px] text-muted-foreground font-normal">{{
               t.address
@@ -120,7 +122,7 @@
         </Card>
 
         <!-- Home number card (hardcoded) -->
-        <Card class="flex flex-col gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4">
+        <Card class="flex flex-col gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 hover:bg-[#FAFAFA]">
           <CardHeader class="px-0 md:px-0 py-0 md:py-0 gap-0">
             <CardTitle class="text-[12px] text-muted-foreground font-normal">{{
               t.homeNumber
@@ -132,7 +134,7 @@
         </Card>
 
         <!-- Email card from customer -->
-        <Card class="flex flex-col gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4">
+        <Card class="flex flex-col gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 hover:bg-[#FAFAFA]">
           <CardHeader class="px-0 md:px-0 py-0 md:py-0 gap-0">
             <CardTitle class="text-[12px] text-muted-foreground font-normal">{{
               t.email
