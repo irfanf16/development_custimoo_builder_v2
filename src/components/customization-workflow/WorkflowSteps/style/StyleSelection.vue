@@ -6,7 +6,7 @@
   import { Checkbox } from '@/components/ui/checkbox'
   import { Label } from '@/components/ui/label'
   import { styles_title, addons_title, styles_alt_icon } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   import type { OutputStylePreviewFront } from '@/services/products/types'
   import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
   import { useCompanyStore } from '@/stores/company/company.store'
@@ -16,7 +16,7 @@
   // no emits
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
   const companyStore = useCompanyStore()
   const historyStore = useHistoryStore()
 
@@ -154,7 +154,7 @@
     </div>
     <div class="flex flex-col gap-3 pt-6 pb-2">
       <div class="text-lg font-semibold font-brand">
-        {{ styles_title({}, { locale: localeStore.currentLocale }) }}
+        {{ styles_title({}, { locale: profileStore.currentLocale }) }}
       </div>
       <div class="grid grid-cols-2 gap-x-8 md:gap-x-16 gap-y-6 md:gap-y-8 px-4 md:px-6">
         <div v-for="s in filteredPreviews" :key="s.id" class="flex flex-col gap-3 items-start">
@@ -168,7 +168,7 @@
               )
             "
             class="w-full aspect-square object-contain rounded-xl border border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/30 hover:border-border transition-colors"
-            :alt="styles_alt_icon({}, { locale: localeStore.currentLocale })"
+            :alt="styles_alt_icon({}, { locale: profileStore.currentLocale })"
             @click="handleStyleSelection((s as OutputStylePreviewFront).id)"
           />
         </div>
@@ -176,7 +176,7 @@
     </div>
     <div v-if="visibleAddons.length" :key="productId as any" class="flex flex-col gap-3 pt-6 pb-2">
       <div class="text-lg font-semibold">
-        {{ addons_title({}, { locale: localeStore.currentLocale }) }}
+        {{ addons_title({}, { locale: profileStore.currentLocale }) }}
       </div>
       <div class="flex flex-col gap-3">
         <div

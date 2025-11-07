@@ -10,11 +10,12 @@
     DialogTitle
   } from '@/components/ui/dialog'
   import AddressForm from './AddressForm.vue'
-  import { onMounted } from 'vue'
+  import { onMounted, computed } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import Card from '@/components/ui/card/Card.vue'
   import CardContent from '@/components/ui/card/CardContent.vue'
   import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
+  import { m as messages } from '@/paraglide/messages'
 
   const store = useProfileStore()
   onMounted(store.fetchAddresses)
@@ -23,12 +24,32 @@
     store.resetAddressForm() // we'll add this method in store
     store.showAddModal = true
   }
+
+  const t = computed(() => ({
+    addressBook: messages.profile_address_book({}, { locale: store.currentLocale }),
+    noAddressesAdded: messages.profile_no_addresses_added({}, { locale: store.currentLocale }),
+    noAddressesMessage: messages.profile_no_addresses_message({}, { locale: store.currentLocale }),
+    addNewAddress: messages.profile_add_new_address({}, { locale: store.currentLocale }),
+    business: messages.profile_business({}, { locale: store.currentLocale }),
+    personal: messages.profile_personal({}, { locale: store.currentLocale }),
+    defaultAddress: messages.profile_default_address({}, { locale: store.currentLocale }),
+    setAsDefault: messages.profile_set_as_default({}, { locale: store.currentLocale }),
+    edit: messages.profile_edit({}, { locale: store.currentLocale }),
+    editAddress: messages.profile_edit_address({}, { locale: store.currentLocale }),
+    confirmDelete: messages.profile_confirm_delete({}, { locale: store.currentLocale }),
+    confirmDeleteMessage: messages.profile_confirm_delete_message(
+      {},
+      { locale: store.currentLocale }
+    ),
+    cancel: messages.profile_cancel({}, { locale: store.currentLocale }),
+    yesDelete: messages.profile_yes_delete({}, { locale: store.currentLocale })
+  }))
 </script>
 <template>
   <div class="flex flex-col h-full px-4">
     <!-- Header -->
     <div class="sticky top-0 z-10 pb-3 w-max">
-      <div class="text-lg font-semibold">Address Book</div>
+      <div class="text-lg font-semibold">{{ t.addressBook }}</div>
     </div>
     <!-- Loader -->
     <div v-if="store.isLoading" class="flex justify-center items-center flex-1">
@@ -47,9 +68,9 @@
 
       <!-- Message -->
       <div>
-        <h2 class="text-lg font-semibold text-[#0A0A0A]">No addresses added yet</h2>
+        <h2 class="text-lg font-semibold text-[#0A0A0A]">{{ t.noAddressesAdded }}</h2>
         <p class="text-sm text-[#737373] mt-1">
-          You haven’t saved any addresses yet. Add one now to make checkout faster.
+          {{ t.noAddressesMessage }}
         </p>
       </div>
 
@@ -58,7 +79,7 @@
         class="bg-primary text-white hover:bg-primary/90 mt-2"
         @click.prevent="openAddAddressModal"
       >
-        + Add New Address
+        + {{ t.addNewAddress }}
       </Button>
     </div>
 
@@ -76,7 +97,7 @@
             <div>
               <div class="flex flex-col gap-2 mb-1">
                 <p class="text-sm font-medium text-[#737373]">
-                  {{ address.company_name ? 'Business' : 'Personal' }}
+                  {{ address.company_name ? t.business : t.personal }}
                 </p>
                 <p class="text-base font-semibold text-[#0A0A0A]">
                   {{
@@ -86,7 +107,7 @@
                   }}
                 </p>
                 <p v-if="store.isDefault(address)" class="text-sm text-[#737373]">
-                  Default address
+                  {{ t.defaultAddress }}
                 </p>
               </div>
 
@@ -111,7 +132,7 @@
                 variant="outline"
                 @click="store.setDefaultAddress(address)"
               >
-                Set as Default
+                {{ t.setAsDefault }}
               </Button>
 
               <div class="flex gap-2">
@@ -125,7 +146,7 @@
                     }
                   "
                 >
-                  <i-flex-line-edit /> Edit
+                  <i-flex-line-edit /> {{ t.edit }}
                 </Button>
 
                 <Button
@@ -157,7 +178,7 @@
               variant="outline"
               @click.prevent="openAddAddressModal"
             >
-              + Add New Address
+              + {{ t.addNewAddress }}
             </Button>
           </CardContent>
         </Card>
@@ -168,7 +189,7 @@
     <Dialog v-model:open="store.showAddModal">
       <DialogContent class="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{{ store.editingAddress ? 'Edit Address' : 'Add New Address' }}</DialogTitle>
+          <DialogTitle>{{ store.editingAddress ? t.editAddress : t.addNewAddress }}</DialogTitle>
         </DialogHeader>
         <AddressForm
           v-if="store.showAddModal"
@@ -183,12 +204,12 @@
     <Dialog v-model:open="store.showDeleteConfirm">
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Confirm Delete</DialogTitle>
-          <DialogDescription>Do you really want to delete this address?</DialogDescription>
+          <DialogTitle>{{ t.confirmDelete }}</DialogTitle>
+          <DialogDescription>{{ t.confirmDeleteMessage }}</DialogDescription>
         </DialogHeader>
         <div class="flex gap-2 justify-end">
-          <Button variant="outline" @click="store.showDeleteConfirm = false">Cancel</Button>
-          <Button variant="destructive" @click="store.deleteAddress">Yes, Delete</Button>
+          <Button variant="outline" @click="store.showDeleteConfirm = false">{{ t.cancel }}</Button>
+          <Button variant="destructive" @click="store.deleteAddress">{{ t.yesDelete }}</Button>
         </div>
       </DialogContent>
     </Dialog>

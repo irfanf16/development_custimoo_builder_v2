@@ -21,10 +21,10 @@
     auth_cancel,
     auth_dialog_title
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
 
   const authStore = useAuthStore()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
 
   const {
     isAuthenticated: isLoggedIn,
@@ -80,13 +80,13 @@
     <Dialog v-if="!isLoggedIn">
       <DialogTrigger as-child>
         <Button :variant="props.variant" :size="props.size" :class="isLoggedIn ?? props.class">
-          {{ auth_sign_in({}, { locale: localeStore.currentLocale }) }}
+          {{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}
         </Button>
       </DialogTrigger>
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{{
-            auth_dialog_title({}, { locale: localeStore.currentLocale })
+            auth_dialog_title({}, { locale: profileStore.currentLocale })
           }}</DialogTitle>
           <DialogDescription> Enter your credentials to access your account. </DialogDescription>
         </DialogHeader>
@@ -118,13 +118,13 @@
           </div>
           <DialogFooter>
             <Button type="button" variant="default" @click="showSignInDialog = false">
-              {{ auth_cancel({}, { locale: localeStore.currentLocale }) }}
+              {{ auth_cancel({}, { locale: profileStore.currentLocale }) }}
             </Button>
             <Button type="submit" :disabled="isLoading">
               <span v-if="isLoading">{{
-                auth_signing_in({}, { locale: localeStore.currentLocale })
+                auth_signing_in({}, { locale: profileStore.currentLocale })
               }}</span>
-              <span v-else>{{ auth_sign_in({}, { locale: localeStore.currentLocale }) }}</span>
+              <span v-else>{{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}</span>
             </Button>
           </DialogFooter>
         </form>

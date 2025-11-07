@@ -35,6 +35,10 @@
       if (isOpen) {
         // Load persisted state when dialog opens
         profileStore.loadFromLocalStorage()
+        // Initialize locale if not already initialized
+        if (!profileStore.isInitialized) {
+          void profileStore.initializeLocale()
+        }
         profileStore.fetchDashboard()
       }
     },

@@ -1,12 +1,14 @@
 import { defineStore } from 'pinia'
-import { ref, type Ref } from 'vue'
+import { ref, computed, watch, type Ref } from 'vue'
 import { API } from '@/services'
 import type { DashboardCounters } from '@/services/dashboard/types'
 import type { Address, AddressPayload } from '@/services/addresses/types'
-import type { UserPreferences } from '@/services/preferences/types'
+import type { UserPreferences, ParaglideLocale } from '@/services/preferences/types'
+import { useCompanyStore } from '../company/company.store'
+import { setLocale } from '@/paraglide/runtime'
 
 export const useProfileStore = defineStore('profileStore', () => {
-  // ✅ Dashboard state
+  // ===== Dashboard =====
   const counters = ref<DashboardCounters>({
     orders_count: 0,
     pending_approval_count: 0,
@@ -16,7 +18,7 @@ export const useProfileStore = defineStore('profileStore', () => {
   const error = ref<string | null>(null)
   const activeTab = ref<'account' | 'orders' | 'address' | 'preferences'>('account')
 
-  // ✅ Addresses state
+  // ===== Addresses =====
   const addresses = ref<Address[]>([])
   const isLoadingAddresses = ref(false)
   const showAddModal = ref(false)
@@ -24,7 +26,6 @@ export const useProfileStore = defineStore('profileStore', () => {
   const showDeleteConfirm = ref(false)
   const addressToDelete = ref<Address | null>(null)
   const addressTabs = ref<'personal' | 'business'>('personal')
-
   const addressForm = ref<AddressPayload & { country: number | string }>({
     first_name: '',
     last_name: '',
@@ -39,50 +40,72 @@ export const useProfileStore = defineStore('profileStore', () => {
     country: 0,
     default: false
   })
+  const countries = ref<{ id: number; name: string }[]>([])
 
-  const countries = ref<Array<{ id: number; name: string }>>([])
-
-  // ✅ Preferences state
+  // ===== Preferences & Localization =====
+  // Hybrid Approach: companyStore defines available/default, profileStore manages user selection
+  const companyStore = useCompanyStore()
   const preferences: Ref<UserPreferences> = ref({
     display: 'system',
     language: 'en'
   })
+  const currentLocale = ref<ParaglideLocale>('en')
+  const isInitialized = ref(false)
 
-  // ===== PERSISTENCE =====
+  // Get available locales from company store
+  const availableLocales = computed(() =>
+    companyStore.localization.availableLanguages.map(lang => lang.code as ParaglideLocale)
+  )
+
+  // Get default locale from company store as fallback
+  const defaultLocale = computed<ParaglideLocale>(() => {
+    const dl = companyStore.localization.defaultLanguage as ParaglideLocale | undefined
+    return dl ?? 'en'
+  })
+
+  function isValidLocale(locale: string): locale is ParaglideLocale {
+    return availableLocales.value.includes(locale as ParaglideLocale)
+  }
+
+  // ===== Persistence =====
   const STORAGE_KEY = 'profileStore'
 
   function saveToLocalStorage() {
     if (typeof window === 'undefined') return
     try {
-      const state = {
-        preferences: preferences.value,
-        activeTab: activeTab.value
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          preferences: preferences.value,
+          activeTab: activeTab.value,
+          currentLocale: currentLocale.value
+        })
+      )
     } catch (e) {
       console.error('Failed to save profile store to localStorage:', e)
     }
   }
 
   function loadFromLocalStorage() {
-    if (typeof window === 'undefined') return false
+    if (typeof window === 'undefined') return
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
-      if (!stored) return false
+      if (!stored) return
       const state = JSON.parse(stored) as {
         preferences?: UserPreferences
         activeTab?: 'account' | 'orders' | 'address' | 'preferences'
+        currentLocale?: ParaglideLocale
       }
-
-      if (state.activeTab) {
-        activeTab.value = state.activeTab
-      }
-
+      console.log('Loaded profile store from localStorage:', state)
+      if (state.activeTab) activeTab.value = state.activeTab
       if (state.preferences) preferences.value = state.preferences
-      return true
+      if (state.currentLocale && isValidLocale(state.currentLocale)) {
+        currentLocale.value = state.currentLocale
+        void setCurrentLocale(state.currentLocale)
+        companyStore.localization.defaultLanguage = state.currentLocale
+      }
     } catch (e) {
       console.error('Failed to load profile store from localStorage:', e)
-      return false
     }
   }
 
@@ -91,7 +114,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     localStorage.removeItem(STORAGE_KEY)
   }
 
-  // ✅ Fetch Dashboard Data
+  // ===== Dashboard Actions =====
   async function fetchDashboard() {
     isLoading.value = true
     error.value = null
@@ -105,9 +128,9 @@ export const useProfileStore = defineStore('profileStore', () => {
     }
   }
 
-  // ✅ Address utilities
+  // ===== Address Actions =====
   function isDefault(address: Address): boolean {
-    return address.default === true || address.default === 1
+    return Boolean(address.default)
   }
 
   async function fetchAddresses() {
@@ -127,7 +150,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     try {
       const payload: Partial<AddressPayload> = {
         ...address,
-        country: address.country.id,
+        country: Number(address.country.id),
         default: !!address.default
       }
       const res = await API.addresses.setDefaultAddress(address.id, payload)
@@ -190,9 +213,7 @@ export const useProfileStore = defineStore('profileStore', () => {
   async function fetchCountries() {
     try {
       const res = await API.addresses.getCountries()
-      if (res.success) {
-        countries.value = res.result || []
-      }
+      if (res.success) countries.value = res.result || []
     } catch (err) {
       console.error('Failed to fetch countries:', err)
     }
@@ -203,7 +224,6 @@ export const useProfileStore = defineStore('profileStore', () => {
       resetAddressForm()
       return
     }
-
     addressForm.value = {
       id: address.id,
       first_name: address.first_name,
@@ -217,7 +237,7 @@ export const useProfileStore = defineStore('profileStore', () => {
       state: address.state || '',
       zip_code: address.zip_code || '',
       country: address.country?.id ?? 0,
-      default: address.default === true || address.default === 1
+      default: Boolean(address.default)
     }
   }
 
@@ -225,44 +245,79 @@ export const useProfileStore = defineStore('profileStore', () => {
     addressTabs.value = tab
   }
 
-  // ✅ Preferences management
-  function setPreferences(newPrefs: Partial<UserPreferences>): void {
+  // ===== Preferences =====
+  function setPreferences(newPrefs: Partial<UserPreferences>) {
     preferences.value = { ...preferences.value, ...newPrefs }
-    localStorage.setItem('userPreferences', JSON.stringify(preferences.value))
-  }
-
-  function loadPreferences(): void {
-    if (typeof window === 'undefined') return
-    const saved = localStorage.getItem('userPreferences')
-    if (!saved) return
-    try {
-      const parsed: UserPreferences = JSON.parse(saved) as UserPreferences
-      preferences.value = parsed
-    } catch (err) {
-      console.error('Failed to parse userPreferences:', err)
+    if (newPrefs.language && isValidLocale(newPrefs.language)) {
+      void setCurrentLocale(newPrefs.language)
     }
+    saveToLocalStorage()
   }
 
-  async function fetchPreferences(): Promise<void> {
-    try {
-      const res = await API.preferences.getPreferences()
-      preferences.value = res
-      localStorage.setItem('userPreferences', JSON.stringify(res))
-    } catch (err) {
-      console.error('Failed to fetch preferences:', err)
+  async function setCurrentLocale(locale: ParaglideLocale) {
+    // Validate the locale is still available
+    if (!isValidLocale(locale)) {
+      console.warn(`Locale ${String(locale)} is no longer available, falling back to default`)
+      locale = defaultLocale.value
     }
+
+    // Update state
+    currentLocale.value = locale
+    preferences.value.language = locale
+
+    // Update Paraglide runtime
+    await setLocale(locale, { reload: false })
+
+    // Update company store to keep UI in sync (optional, for backward compatibility)
+    companyStore.localization.defaultLanguage = locale
+
+    // Persist to localStorage
+    saveToLocalStorage()
   }
 
-  async function savePreferences(): Promise<void> {
-    try {
-      await API.preferences.updatePreferences(preferences.value)
-    } catch (err) {
-      console.error('Failed to save preferences:', err)
+  async function resetToDefault() {
+    await setCurrentLocale(defaultLocale.value)
+  }
+
+  async function initializeLocale() {
+    if (isInitialized.value) return
+
+    // Load persisted user preference from localStorage
+    loadFromLocalStorage()
+
+    // Hybrid approach:
+    // 1. Check if user has a saved preference that's still valid
+    // 2. If invalid or not set, fall back to companyStore.defaultLanguage
+    if (!isValidLocale(currentLocale.value)) {
+      // Use company store default as fallback
+      await setCurrentLocale(defaultLocale.value)
+    } else {
+      // User preference is valid, update Paraglide runtime
+      await setLocale(currentLocale.value, { reload: false })
+      // Update company store for UI sync
+      companyStore.localization.defaultLanguage = currentLocale.value
     }
+
+    isInitialized.value = true
   }
 
+  // Automatically update locale if availableLocales change
+  watch(availableLocales, newLocales => {
+    console.log('Available locales changed:', newLocales, ' default:', defaultLocale.value)
+    if (newLocales.length === 1) {
+      // If only one language available, automatically use it
+      void setCurrentLocale(newLocales[0] as ParaglideLocale)
+      return
+    }
+
+    // If current locale is no longer available, reset to default
+    if (newLocales.length > 0 && !isValidLocale(currentLocale.value)) {
+      console.warn('Current locale is no longer available, resetting to default')
+      void setCurrentLocale(defaultLocale.value ?? 'en')
+    }
+  })
   return {
-    // ✅ State
+    // State
     counters,
     isLoading,
     error,
@@ -273,29 +328,37 @@ export const useProfileStore = defineStore('profileStore', () => {
     editingAddress,
     showDeleteConfirm,
     addressToDelete,
-    isDefault,
     addressTabs,
     addressForm,
     countries,
     preferences,
+    currentLocale,
+    availableLocales,
+    defaultLocale,
+    isInitialized,
 
-    // ✅ Actions
+    // Dashboard
     fetchDashboard,
+
+    // Addresses
+    isDefault,
     fetchAddresses,
     setDefaultAddress,
     saveAddress,
     deleteAddress,
-    setAddressTab,
     resetAddressForm,
     fetchCountries,
     setAddressFromEdit,
+    setAddressTab,
 
+    // Preferences
     setPreferences,
-    loadPreferences,
-    fetchPreferences,
-    savePreferences,
+    setCurrentLocale,
+    resetToDefault,
+    initializeLocale,
+    isValidLocale,
 
-    // ✅ Persistence
+    // Persistence
     saveToLocalStorage,
     loadFromLocalStorage,
     clearLocalStorage

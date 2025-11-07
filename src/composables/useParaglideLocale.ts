@@ -1,21 +1,21 @@
-import { useLocaleStore } from '@/stores/locale/locale.store'
+import { useProfileStore } from '@/stores/profile/profile.store'
 
 export function useParaglideLocale() {
   // ===== DEPENDENCIES =====
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
 
   // ===== INITIALIZATION =====
   // Initialize locale on first use
-  if (!localeStore.isInitialized) {
-    localeStore.initializeLocale()
+  if (!profileStore.isInitialized) {
+    void profileStore.initializeLocale()
   }
 
   // ===== RETURN =====
   return {
-    currentLocale: localeStore.currentLocale,
-    changeLocale: localeStore.setCurrentLocale,
-    availableLocales: localeStore.availableLocales,
-    isValidLocale: localeStore.isValidLocale,
-    resetToDefault: localeStore.resetToDefault
+    currentLocale: profileStore.currentLocale,
+    changeLocale: profileStore.setCurrentLocale,
+    availableLocales: profileStore.availableLocales,
+    isValidLocale: profileStore.isValidLocale,
+    resetToDefault: profileStore.resetToDefault
   }
 }

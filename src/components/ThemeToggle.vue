@@ -12,10 +12,10 @@
   import { watch } from 'vue'
   import { storeToRefs } from 'pinia'
   import { theme_toggle_sr, theme_light, theme_dark } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
 
   const uiStore = useUIStore()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
 
   const { currentTheme: colorMode } = storeToRefs(uiStore)
 
@@ -62,16 +62,16 @@
           class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
         />
         <span class="sr-only">{{
-          theme_toggle_sr({}, { locale: localeStore.currentLocale })
+          theme_toggle_sr({}, { locale: profileStore.currentLocale })
         }}</span>
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuItem @select="setTheme('light')">{{
-        theme_light({}, { locale: localeStore.currentLocale })
+        theme_light({}, { locale: profileStore.currentLocale })
       }}</DropdownMenuItem>
       <DropdownMenuItem @select="setTheme('dark')">{{
-        theme_dark({}, { locale: localeStore.currentLocale })
+        theme_dark({}, { locale: profileStore.currentLocale })
       }}</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

@@ -20,8 +20,26 @@
   import OrderTimeline from './OrderTimeline.vue'
   import { useOrdersStore } from '@/stores/orders/orders.store'
   import { ScrollArea } from '@/components/ui/scroll-area'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { m as messages } from '@/paraglide/messages'
 
   const store = useOrdersStore()
+  const profileStore = useProfileStore()
+
+  const t = computed(() => ({
+    searchOrders: messages.profile_search_orders({}, { locale: profileStore.currentLocale }),
+    filter: messages.profile_filter({}, { locale: profileStore.currentLocale }),
+    clearFilter: messages.profile_clear_filter({}, { locale: profileStore.currentLocale }),
+    clearFilterButton: messages.profile_clear_filter_button(
+      {},
+      { locale: profileStore.currentLocale }
+    ),
+    noOrdersFound: messages.profile_no_orders_found({}, { locale: profileStore.currentLocale }),
+    loadingMoreOrders: messages.profile_loading_more_orders(
+      {},
+      { locale: profileStore.currentLocale }
+    )
+  }))
 
   // ✅ Dynamically computed filter options
   const orderStatuses = computed(() => getOrderOptions(store.ordersPageType))
@@ -79,7 +97,7 @@
       <div class="relative w-full">
         <Input
           v-model="store.ordersParams.search"
-          placeholder="Search orders"
+          :placeholder="t.searchOrders"
           class="h-8 w-full pl-8 pr-8"
           @keydown="onSearchEnter"
         />
@@ -116,7 +134,7 @@
             class="bg-white rounded-lg shadow-md border p-0 mt-1 h-auto max-h-80 overflow-auto"
           >
             <!-- Header -->
-            <div class="px-3 py-2.5 font-semibold text-sm">Filter</div>
+            <div class="px-3 py-2.5 font-semibold text-sm">{{ t.filter }}</div>
 
             <!-- Clear Filter -->
             <DropdownMenuItem
@@ -124,7 +142,7 @@
               @click="store.clearFilter()"
             >
               <span class="w-4"></span>
-              Clear Filter
+              {{ t.clearFilter }}
             </DropdownMenuItem>
 
             <DropdownMenuSeparator class="mx-0 my-0 bg-gray-200" />
@@ -164,7 +182,7 @@
           class="h-8 px-2 text-primary"
           @click="store.clearFilter()"
         >
-          Clear filter
+          {{ t.clearFilterButton }}
         </Button>
         <!-- View Toggle -->
         <div class="flex border border-[#E5E5E5] rounded-[8px] overflow-hidden">
@@ -214,7 +232,7 @@
             @details="() => showOrderDetails(order)"
           />
         </div>
-        <div v-else class="flex justify-center py-10 text-gray-500">No orders found</div>
+        <div v-else class="flex justify-center py-10 text-gray-500">{{ t.noOrdersFound }}</div>
 
         <div v-if="store.isLoadingOrders" class="flex justify-center py-6">
           <Loader />
@@ -225,7 +243,7 @@
           class="flex justify-center py-4 text-gray-500 transition-all duration-300"
         >
           <Loader />
-          <span class="ml-2 text-sm">Loading more orders…</span>
+          <span class="ml-2 text-sm">{{ t.loadingMoreOrders }}</span>
         </div>
       </InfiniteScroll>
     </ScrollArea>
