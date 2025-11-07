@@ -17,6 +17,7 @@
   const auth = useAuthStore()
   const { customer, customerInitials } = storeToRefs(auth)
   const profileStore = useProfileStore()
+  const emit = defineEmits(['sign-out'])
 
   const t = computed(() => ({
     account: messages.profile_account({}, { locale: profileStore.currentLocale }),
@@ -36,6 +37,12 @@
     homeNumber: messages.profile_home_number({}, { locale: profileStore.currentLocale }),
     email: messages.profile_email({}, { locale: profileStore.currentLocale })
   }))
+
+  function handleSignOut() {
+    auth.logout() // logout user
+    localStorage.clear() // clear all localStorage data
+    emit('sign-out') // let parent know to close dialog
+  }
 </script>
 
 <template>
@@ -62,7 +69,7 @@
           </div>
           <div class="flex items-center gap-2">
             <Button size="sm" variant="outline">{{ t.edit }}</Button>
-            <Button size="sm" variant="destructive" @click="auth.logout()">{{ t.signOut }}</Button>
+            <Button size="sm" variant="destructive" @click="handleSignOut">{{ t.signOut }}</Button>
           </div>
         </div>
 
