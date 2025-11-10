@@ -14,7 +14,6 @@
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
   import type { Palette } from '@/composables/useColorActions'
-  import { useWorkflowHeaderConfig } from '@/composables/useWorkflowHeaderConfig'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
     color_shuffle_design_colors,

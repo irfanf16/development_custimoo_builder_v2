@@ -24,7 +24,6 @@
   import { Trash } from 'lucide-vue-next'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import LogoCard from './LogoCard.vue'
-  const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
   const logosStore = useLogosStore()
 
