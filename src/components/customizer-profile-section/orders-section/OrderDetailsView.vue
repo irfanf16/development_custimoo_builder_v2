@@ -25,7 +25,7 @@
         >
           <div class="flex flex-col sm:flex-row gap-4">
             <!-- Images Section -->
-            <div class="grid grid-cols-2 gap-3 bg-accent rounded-md border w-max h-24 p-[12px]">
+            <div class="grid grid-cols-2 gap-3 bg-muted rounded-md border w-max h-24 p-[12px]">
               <!-- Front Image -->
               <div class="flex w-[60px] items-center justify-center overflow-hidden">
                 <img
