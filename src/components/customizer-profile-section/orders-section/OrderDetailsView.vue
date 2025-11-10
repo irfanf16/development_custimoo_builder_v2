@@ -86,7 +86,7 @@
               <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
                 <span
                   >Quantity:
-                  <span class="text-[#0A0A0A]">{{
+                  <span class="text-foreground">{{
                     product.prices?.total_quantity ?? product.roster_quantity ?? 0
                   }}</span></span
                 >

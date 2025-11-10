@@ -53,7 +53,7 @@
       <!-- Created At -->
       <div class="flex flex-col items-start gap-1">
         <div class="font-medium text-gray-400">Created At</div>
-        <div class="text-[#0A0A0A]">{{ formatDate(order.created_at) }}</div>
+        <div class="text-foreground">{{ formatDate(order.created_at) }}</div>
       </div>
 
       <!-- Statuses -->
@@ -81,7 +81,7 @@
       <!-- Total Quantity -->
       <div class="flex flex-col items-start gap-1">
         <div class="font-medium text-gray-400">Total Quantity</div>
-        <div class="text-[#0A0A0A]">{{ getTotalQuantity(order) }}</div>
+        <div class="text-foreground">{{ getTotalQuantity(order) }}</div>
       </div>
     </div>
   </div>

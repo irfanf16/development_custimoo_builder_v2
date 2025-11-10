@@ -68,8 +68,8 @@
 
       <!-- Message -->
       <div>
-        <h2 class="text-lg font-semibold text-[#0A0A0A]">{{ t.noAddressesAdded }}</h2>
-        <p class="text-sm text-[#737373] mt-1">
+        <h2 class="text-lg font-semibold text-foreground">{{ t.noAddressesAdded }}</h2>
+        <p class="text-sm text-muted-foreground mt-1">
           {{ t.noAddressesMessage }}
         </p>
       </div>
@@ -96,23 +96,23 @@
             <!-- Top: Company/Name -->
             <div>
               <div class="flex flex-col gap-2 mb-1">
-                <p class="text-sm font-medium text-[#737373]">
+                <p class="text-sm font-medium text-muted-foreground">
                   {{ address.company_name ? t.business : t.personal }}
                 </p>
-                <p class="text-base font-semibold text-[#0A0A0A]">
+                <p class="text-base font-semibold text-foreground">
                   {{
                     address.company_name
                       ? address.company_name
                       : address.first_name + ' ' + address.last_name
                   }}
                 </p>
-                <p v-if="store.isDefault(address)" class="text-sm text-[#737373]">
+                <p v-if="store.isDefault(address)" class="text-sm text-muted-foreground">
                   {{ t.defaultAddress }}
                 </p>
               </div>
 
               <!-- Address Details -->
-              <div class="text-[14px] text-[#0A0A0A] leading-relaxed mb-4 space-y-0.5">
+              <div class="text-[14px] text-foreground leading-relaxed mb-4 space-y-0.5">
                 <p v-if="address.address1">{{ address.address1 }}</p>
                 <p v-if="address.address2">{{ address.address2 }}</p>
                 <p>
