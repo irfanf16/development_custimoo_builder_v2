@@ -136,7 +136,7 @@
   --secondary-foreground: var(--secondary-foreground);
   /* Base radius used to derive Tailwind radius scale tokens */
   --radius: 0.5rem; /* @see hostThemes.ts */
-  --muted: oklch(0.968 0.007 247.896);
+  --muted: #f5f5f5;
   --muted-foreground: #737373;
   --accent: var(--accent); /* @see hostThemes.ts */
   --accent-foreground: var(--accent-foreground);
@@ -161,7 +161,7 @@
     --primary-foreground: oklch(0.984 0.003 247.858);
     --secondary: var(--secondary);
     --secondary-foreground: oklch(0.984 0.003 247.858);
-    --muted: oklch(0.279 0.041 260.031);
+    --muted: #262626;
     --muted-foreground: #a3a3a3;
     --accent: var(--accent);
     --accent-foreground: oklch(0.984 0.003 247.858);
