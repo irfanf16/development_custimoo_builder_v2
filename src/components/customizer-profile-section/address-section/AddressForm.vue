@@ -413,8 +413,6 @@
       country: Number(values.country),
       default: Boolean(values.default)
     }
-    console.log('payload', payload)
-
     emit('save', payload)
   })
 
@@ -446,7 +444,6 @@
   watch(
     values,
     (newValues: AddressFormValues) => {
-      console.log('newValues', newValues)
       profileStore.addressForm = {
         ...profileStore.addressForm,
         ...newValues,

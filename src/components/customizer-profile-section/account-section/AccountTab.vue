@@ -94,7 +94,6 @@
             <div class="text-2xl font-bold">{{ counters.track_my_orders_count }}</div>
           </Card>
         </div>
-        {{ console.log('cust', customer) }}
         <!-- Name card with edit on right -->
         <Card
           class="flex flex-row items-center justify-between gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 hover:bg-muted/50 transition-colors"

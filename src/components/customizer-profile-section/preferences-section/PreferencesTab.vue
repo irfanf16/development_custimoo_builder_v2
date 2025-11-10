@@ -50,10 +50,6 @@
         return locale
     }
   }
-  console.log(
-    'companyStore.settings?.ui_branding.allow_color_mode_switch',
-    companyStore.settings?.ui_branding.allow_color_mode_switch
-  )
 </script>
 
 <template>

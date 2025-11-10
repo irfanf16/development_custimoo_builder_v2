@@ -298,7 +298,6 @@ export const useProfileStore = defineStore('profileStore', () => {
 
   // Automatically update locale if availableLocales change
   watch(availableLocales, newLocales => {
-    console.log('Available locales changed:', newLocales, ' default:', defaultLocale.value)
     if (newLocales.length === 1) {
       // If only one language available, automatically use it
       void setCurrentLocale(newLocales[0] as ParaglideLocale)
