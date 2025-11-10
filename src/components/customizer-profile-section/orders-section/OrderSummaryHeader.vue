@@ -2,8 +2,8 @@
   <div class="flex flex-col w-full items-start justify-between">
     <div class="flex items-center justify-between w-full">
       <div>
-        <div class="font-semibold text-gray-800">#{{ order.order_no || 'N/A' }}</div>
-        <div class="text-sm text-gray-500">
+        <div class="font-semibold text-foreground">#{{ order.order_no || 'N/A' }}</div>
+        <div class="text-sm text-muted-foreground">
           {{ order.customer_reference_no || '-' }}
         </div>
       </div>
@@ -12,18 +12,13 @@
           v-if="order.items?.some(i => i.status === 'submitted_for_factory_review')"
           size="sm"
           variant="ghost"
-          class="text-xs border border-gray-200 hover:bg-gray-100"
+          class="text-xs border"
           @click="emit('cancel', order)"
         >
           Cancel
         </Button>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          class="text-xs border border-gray-200 hover:bg-gray-100"
-          @click="emit('pdf', order)"
-        >
+        <Button size="sm" variant="ghost" class="text-xs border" @click="emit('pdf', order)">
           PDF
         </Button>
 
@@ -31,7 +26,7 @@
           v-if="!showTimeline"
           size="sm"
           variant="ghost"
-          class="text-xs border border-gray-200 hover:bg-gray-100"
+          class="text-xs border"
           @click="emit('details', order)"
         >
           Order Details
@@ -40,7 +35,7 @@
           v-if="showTimeline"
           size="sm"
           variant="ghost"
-          class="text-xs border border-gray-200 hover:bg-gray-100"
+          class="text-xs border"
           @click="openTimeline()"
         >
           Order Timeline
@@ -52,13 +47,13 @@
     <div class="grid grid-cols-3 gap-4 text-xs text-gray-500 w-full items-start mt-2">
       <!-- Created At -->
       <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-gray-400">Created At</div>
+        <div class="font-medium text-muted-foreground">Created At</div>
         <div class="text-foreground">{{ formatDate(order.created_at) }}</div>
       </div>
 
       <!-- Statuses -->
       <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-gray-400">Order Status</div>
+        <div class="font-medium text-muted-foreground">Order Status</div>
         <div class="flex flex-wrap gap-2">
           <div
             v-for="(item, index) in order.items || []"
@@ -80,7 +75,7 @@
 
       <!-- Total Quantity -->
       <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-gray-400">Total Quantity</div>
+        <div class="font-medium text-muted-foreground">Total Quantity</div>
         <div class="text-foreground">{{ getTotalQuantity(order) }}</div>
       </div>
     </div>

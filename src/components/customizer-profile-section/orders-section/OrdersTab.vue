@@ -101,10 +101,10 @@
           class="h-8 w-full pl-8 pr-8"
           @keydown="onSearchEnter"
         />
-        <Search class="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-500" />
+        <Search class="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-foreground" />
         <button
           v-if="store.ordersParams.search"
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-foreground"
           @click="store.clearSearch()"
         >
           <X class="size-4" />
@@ -117,11 +117,7 @@
               size="sm"
               variant="outline"
               class="px-2 h-8 shadow-none"
-              :class="
-                store.ordersParams.filter
-                  ? 'bg-primary text-white border-primary'
-                  : 'border-[#E5E5E5]'
-              "
+              :class="store.ordersParams.filter ? 'bg-primary text-white border-primary' : 'border'"
             >
               <Filter class="size-4" />
             </Button>
@@ -145,7 +141,7 @@
               {{ t.clearFilter }}
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator class="mx-0 my-0 bg-gray-200" />
+            <DropdownMenuSeparator class="mx-0 my-0 bg-border" />
 
             <!-- Status Filters -->
             <DropdownMenuItem
@@ -185,7 +181,7 @@
           {{ t.clearFilterButton }}
         </Button>
         <!-- View Toggle -->
-        <div class="flex border border-[#E5E5E5] rounded-[8px] overflow-hidden">
+        <div class="flex border rounded-[8px] overflow-hidden">
           <!-- List Button -->
           <Button
             size="sm"
@@ -193,8 +189,8 @@
             class="flex-1 rounded-none px-2 h-8"
             :class="[
               store.ordersView === 'list'
-                ? 'bg-primary text-white rounded-l-[8px]'
-                : 'bg-transparent text-gray-600'
+                ? 'bg-primary text-primary-foreground rounded-l-[8px]'
+                : 'bg-transparent text-foreground'
             ]"
             @click="store.setView('list')"
           >
@@ -205,11 +201,11 @@
           <Button
             size="sm"
             variant="ghost"
-            class="flex-1 rounded-none border-l border-[#E5E5E5] px-2 h-8"
+            class="flex-1 rounded-none border-l px-2 h-8"
             :class="[
               store.ordersView === 'expanded-list'
-                ? 'bg-primary text-white rounded-r-[8px]'
-                : 'bg-transparent text-gray-600'
+                ? 'bg-primary text-primary-foreground rounded-r-[8px]'
+                : 'bg-transparent text-foreground'
             ]"
             @click="store.setView('expanded-list')"
           >
@@ -232,7 +228,7 @@
             @details="() => showOrderDetails(order)"
           />
         </div>
-        <div v-else class="flex justify-center py-10 text-gray-500">{{ t.noOrdersFound }}</div>
+        <div v-else class="flex justify-center py-10 text-foreground">{{ t.noOrdersFound }}</div>
 
         <div v-if="store.isLoadingOrders" class="flex justify-center py-6">
           <Loader />
@@ -240,7 +236,7 @@
         <!-- Smooth bottom loader when fetching more -->
         <div
           v-if="store.isLoadingMore && store.orders.length"
-          class="flex justify-center py-4 text-gray-500 transition-all duration-300"
+          class="flex justify-center py-4 text-forground transition-all duration-300"
         >
           <Loader />
           <span class="ml-2 text-sm">{{ t.loadingMoreOrders }}</span>

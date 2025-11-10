@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <Tabs v-model="profileStore.addressTabs" class="w-full">
-      <TabsList class="flex w-full border-b border-border bg-[#F5F5F5] rounded-lg overflow-hidden">
+      <TabsList class="flex w-full border-b border-border bg-accent rounded-lg overflow-hidden">
         <TabsTrigger
           value="personal"
           class="w-1/2 px-4 py-2 text-center text-sm font-medium transition-colors"

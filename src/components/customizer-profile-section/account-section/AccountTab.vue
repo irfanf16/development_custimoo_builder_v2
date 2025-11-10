@@ -94,7 +94,7 @@
             <div class="text-2xl font-bold">{{ counters.track_my_orders_count }}</div>
           </Card>
         </div>
-
+        {{ console.log('cust', customer) }}
         <!-- Name card with edit on right -->
         <Card
           class="flex flex-row items-center justify-between gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 hover:bg-muted/50 transition-colors"
@@ -124,8 +124,12 @@
             }}</CardTitle>
           </CardHeader>
           <CardContent class="px-0 md:px-0 py-0 md:py-0">
-            <div class="text-sm">Danneskiold-Samsøes Allé 41</div>
-            <div class="text-sm text-muted-foreground">Copenhagen 1434</div>
+            <div class="text-sm">
+              {{ customer?.company.address ?? 'Danneskiold-Samsøes Allé 41' }}
+            </div>
+            <div class="text-sm text-muted-foreground">
+              {{ customer?.company?.post_code }},{{ customer?.company.city }}
+            </div>
           </CardContent>
         </Card>
 
@@ -139,7 +143,7 @@
             }}</CardTitle>
           </CardHeader>
           <CardContent class="px-0 md:px-0 py-0 md:py-0">
-            <div class="text-sm">+45 40 14 11 40</div>
+            <div class="text-sm">{{ customer?.company.phone ?? '+45 40 14 11 40' }}</div>
           </CardContent>
         </Card>
 

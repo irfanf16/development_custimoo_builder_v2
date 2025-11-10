@@ -104,28 +104,28 @@
               <!-- Actions -->
               <div class="flex flex-wrap items-center gap-2">
                 <button
-                  class="flex items-center justify-center gap-1 border border-base text-base text-sm px-4 py-2 rounded-md hover:border-gray-300 transition"
+                  class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
                   title="Save"
                 >
                   <i-flex-line-save class="size-4" /> Save
                 </button>
 
                 <button
-                  class="flex items-center justify-center gap-1 border border-base text-base text-sm px-4 py-2 rounded-md hover:border-gray-300 transition"
+                  class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
                   title="Share"
                 >
                   <i-flex-line-share class="size-4" /> Share
                 </button>
 
                 <button
-                  class="flex items-center justify-center gap-1 border border-base text-base text-sm px-4 py-2 rounded-md hover:border-gray-300 transition"
+                  class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
                   title="Add to Cart"
                 >
                   <i-flex-line-cart class="size-4" /> Cart
                 </button>
 
                 <button
-                  class="flex items-center justify-center gap-1 border border-base text-base text-sm px-4 py-2 rounded-md hover:border-gray-300 transition"
+                  class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
                   title="Reorder"
                 >
                   <i-flex-line-reorder class="size-4" /> Reorder
