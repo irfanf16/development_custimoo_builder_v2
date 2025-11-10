@@ -9,7 +9,7 @@ import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
 
-// Language configuration types
+// ---------------- Language configuration types ----------------
 export interface LanguageConfig {
   code: string
   name: string
@@ -37,16 +37,47 @@ export interface CompanyLocalization {
   currency: CurrencyConfig
 }
 
+// ---------------- Backend response localization type ----------------
+interface BackendLocalization {
+  available_languages: { name: string; short_code: string }[]
+  default_language: { name: string; short_code: string }
+}
+
+// Helper to check if an object has localization data
+function hasLocalization(
+  content: unknown
+): content is { result: { localization: BackendLocalization } } {
+  if (typeof content !== 'object' || content === null || !('result' in content)) {
+    return false
+  }
+
+  const resultValue = (content as Record<string, unknown>).result
+  if (typeof resultValue !== 'object' || resultValue === null || !('localization' in resultValue)) {
+    return false
+  }
+
+  const localizationValue = (resultValue as Record<string, unknown>).localization
+  return typeof localizationValue === 'object' && localizationValue !== null
+}
+
+// ---------------- Helper function ----------------
+function getFlag(code: string): string {
+  const flags: Record<string, string> = {
+    en: '🇺🇸',
+    fr: '🇫🇷',
+    da: '🇩🇰',
+    de: '🇩🇪',
+    es: '🇪🇸'
+  }
+  return flags[code] || '🝳︝'
+}
+
+// ---------------- Pinia Store ----------------
 export const useCompanyStore = defineStore('companyStore', () => {
-  // State
   const company = ref<Company | null>(null)
   const settings = ref<OutputSettings | null>(null)
   const localization = ref<CompanyLocalization>({
-    availableLanguages: [
-      { code: 'en', name: 'English', flag: '🇺🇸' },
-      { code: 'fr', name: 'Français', flag: '🇫🇷' },
-      { code: 'da', name: 'Dansk', flag: '🇩🇰' }
-    ],
+    availableLanguages: [],
     defaultLanguage: 'en',
     datetime: {
       locale: 'en-US',
@@ -64,13 +95,38 @@ export const useCompanyStore = defineStore('companyStore', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  // Actions
+  // ---------------- Actions ----------------
   function setCompany(data: Company) {
     company.value = data
   }
 
   function setSettings(data: OutputSettings) {
     settings.value = data
+  }
+
+  function setLocalization(data: BackendLocalization) {
+    const mappedLocalization: CompanyLocalization = {
+      availableLanguages: data.available_languages.map(lang => ({
+        code: lang.short_code,
+        name: lang.name,
+        flag: getFlag(lang.short_code)
+      })),
+      defaultLanguage: data.default_language?.short_code || 'en',
+      datetime: {
+        locale: 'en-US',
+        timeZone: 'UTC',
+        dateFormat: 'MM/DD/YYYY',
+        timeFormat: 'HH:mm'
+      },
+      currency: {
+        code: 'USD',
+        symbol: '$',
+        position: 'before',
+        decimalPlaces: 2
+      }
+    }
+
+    localization.value = mappedLocalization
   }
 
   function setLoading(loading: boolean) {
@@ -81,7 +137,6 @@ export const useCompanyStore = defineStore('companyStore', () => {
     error.value = errorMessage
   }
 
-  // Consolidated reset function
   function reset() {
     company.value = null
     settings.value = null
@@ -89,7 +144,7 @@ export const useCompanyStore = defineStore('companyStore', () => {
     error.value = null
   }
 
-  // API Functions
+  // ---------------- API Functions ----------------
   async function fetchCompany(): Promise<APIResponse<{ company: Company }>> {
     setLoading(true)
     setError(null)
@@ -107,31 +162,34 @@ export const useCompanyStore = defineStore('companyStore', () => {
     setLoading(true)
     setError(null)
     const output = await tryCatchApi(API.company.getSettings())
+    console.log('output', output)
+
     if (output.success) {
       setSettings(output.content.result)
+
+      if (hasLocalization(output.content)) {
+        setLocalization(output.content.result.localization)
+      }
     } else {
       setError('Error getting settings')
     }
+
     setLoading(false)
     return output
   }
 
   return {
-    // State
     company,
     settings,
     localization,
     isLoading,
     error,
-
-    // Actions
     setCompany,
     setSettings,
+    setLocalization,
     setLoading,
     setError,
     reset,
-
-    // API Functions
     fetchCompany,
     fetchSettings
   }

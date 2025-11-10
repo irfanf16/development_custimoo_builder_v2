@@ -32,7 +32,6 @@
   const isExpanded = computed(() => props.isExpanded ?? false)
 
   const isExpandable = computed(() => props.config?.isExpandable)
-
   // Get breadcrumbs from current step component
   const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => props.config?.breadcrumbs ?? [])
 

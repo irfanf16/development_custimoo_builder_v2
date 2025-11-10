@@ -26,7 +26,7 @@
     topbar_save_options,
     actions_reset_customization
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import SignInButton from '../SignInButton.vue'
@@ -37,13 +37,13 @@
 
   const customizationStore = useCustomizationStore()
   const history = useHistoryStore()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
   const authStore = useAuthStore()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
 
   // Reactive state
-  const showProfileDialog = ref(false)
+  const showProfileDialog = ref(true)
 
   // Methods
   function handleResetCustomization() {
@@ -83,7 +83,7 @@
       <ButtonGroup>
         <Button size="default" @click="handleResetCustomization">
           <RotateCcw class="size-4" />
-          {{ actions_reset_customization({}, { locale: localeStore.currentLocale }) }}
+          {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}
         </Button>
       </ButtonGroup>
       <!-- Save Button Group with DropdownMenu -->
@@ -92,13 +92,13 @@
           <DropdownMenuTrigger as-child>
             <Button size="default">
               <Save class="size-4" />
-              <span>{{ topbar_save({}, { locale: localeStore.currentLocale }) }}</span>
+              <span>{{ topbar_save({}, { locale: profileStore.currentLocale }) }}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuTrigger as-child>
             <Button
               size="icon"
-              :aria-label="topbar_save_options({}, { locale: localeStore.currentLocale })"
+              :aria-label="topbar_save_options({}, { locale: profileStore.currentLocale })"
             >
               <ChevronDown class="size-4" />
             </Button>
@@ -123,7 +123,7 @@
       <!-- Locker Room Button -->
       <ButtonGroup>
         <Button size="default">
-          <span>{{ topbar_locker_room({}, { locale: localeStore.currentLocale }) }}</span>
+          <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
       </ButtonGroup>
 
@@ -131,20 +131,14 @@
       <ButtonGroup>
         <Button size="default">
           <ShoppingCart class="size-4" />
-          <span>{{ topbar_cart({}, { locale: localeStore.currentLocale }) }}</span>
+          <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
       </ButtonGroup>
 
       <!-- Sign In Button with DropdownMenu -->
       <DropdownMenu>
         <ButtonGroup>
-          <DropdownMenuTrigger as-child>
-            <SignInButton />
-            <!-- <Button v-else size="default">
-              <User class="size-4" />
-              <span>Oskar</span>
-            </Button> -->
-          </DropdownMenuTrigger>
+          <SignInButton @open-profile="handleUserProfile" />
           <DropdownMenuTrigger v-if="isLoggedIn" as-child>
             <Button size="icon" aria-label="User menu" class="rounded-l-none rounded-r-md">
               <Menu class="size-4" />

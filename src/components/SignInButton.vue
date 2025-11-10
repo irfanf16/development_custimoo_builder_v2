@@ -21,10 +21,12 @@
     auth_cancel,
     auth_dialog_title
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
 
   const authStore = useAuthStore()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
+
+  const emit = defineEmits<{ (e: 'open-profile'): void }>()
 
   const {
     isAuthenticated: isLoggedIn,
@@ -35,7 +37,6 @@
 
   // Reactive state
   const showSignInDialog = ref(false)
-  const showUserMenu = ref(false)
   const credentials = ref({
     email: '',
     password: ''
@@ -52,9 +53,8 @@
     }
   }
 
-  const toggleUserMenu = (e: MouseEvent) => {
-    e.stopPropagation()
-    showUserMenu.value = !showUserMenu.value
+  const handleProfileClick = () => {
+    emit('open-profile')
   }
 
   // Presentation props for reuse across placements (e.g., topbar)
@@ -77,16 +77,16 @@
     <!-- Sign In Button (when not authenticated) -->
 
     <!-- Sign In Dialog -->
-    <Dialog v-if="!isLoggedIn">
+    <Dialog v-if="!isLoggedIn" v-model:open="showSignInDialog">
       <DialogTrigger as-child>
         <Button :variant="props.variant" :size="props.size" :class="isLoggedIn ?? props.class">
-          {{ auth_sign_in({}, { locale: localeStore.currentLocale }) }}
+          {{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}
         </Button>
       </DialogTrigger>
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{{
-            auth_dialog_title({}, { locale: localeStore.currentLocale })
+            auth_dialog_title({}, { locale: profileStore.currentLocale })
           }}</DialogTitle>
           <DialogDescription> Enter your credentials to access your account. </DialogDescription>
         </DialogHeader>
@@ -118,13 +118,13 @@
           </div>
           <DialogFooter>
             <Button type="button" variant="default" @click="showSignInDialog = false">
-              {{ auth_cancel({}, { locale: localeStore.currentLocale }) }}
+              {{ auth_cancel({}, { locale: profileStore.currentLocale }) }}
             </Button>
             <Button type="submit" :disabled="isLoading">
               <span v-if="isLoading">{{
-                auth_signing_in({}, { locale: localeStore.currentLocale })
+                auth_signing_in({}, { locale: profileStore.currentLocale })
               }}</span>
-              <span v-else>{{ auth_sign_in({}, { locale: localeStore.currentLocale }) }}</span>
+              <span v-else>{{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}</span>
             </Button>
           </DialogFooter>
         </form>
@@ -138,7 +138,7 @@
         :size="props.size"
         :class="['flex items-center space-x-2 px-3 py-2', props.class]"
         :title="`Logged in as ${user?.first_name} ${user?.last_name}`"
-        @click="(e: MouseEvent) => toggleUserMenu(e)"
+        @click.stop.prevent="handleProfileClick"
       >
         <div
           class="w-6 h-6 text-white text-xs font-medium rounded-full flex items-center justify-center"

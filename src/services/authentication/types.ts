@@ -15,6 +15,12 @@ export type Customer = {
   created_at: string
   updated_at: string
   deleted_at: string
+  company: {
+    address: string
+    phone: string
+    post_code: string
+    city: string
+  }
 }
 
 export type OutputLogin =

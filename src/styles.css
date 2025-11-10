@@ -125,7 +125,7 @@
   /* Light theme CSS variables (default values) */
   /* Hosts can override these via runtime (see hostThemes.ts) */
   --background: #fafafa;
-  --foreground: oklch(0.129 0.042 264.695);
+  --foreground: #0a0a0a;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
@@ -137,12 +137,12 @@
   /* Base radius used to derive Tailwind radius scale tokens */
   --radius: 0.5rem; /* @see hostThemes.ts */
   --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
+  --muted-foreground: #737373;
   --accent: var(--accent); /* @see hostThemes.ts */
   --accent-foreground: var(--accent-foreground);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.9705 0.0129 17.38);
-  --border: oklch(0.929 0.013 255.508);
+  --border: #e5e5e5;
   --input: oklch(0.929 0.013 255.508);
   --ring: rgb(from var(--primary) r g b / 0.5);
   /* Optional extras removed: chart-* and sidebar-* tokens (unused) */
@@ -153,7 +153,7 @@
   :host.dark,
   .dark {
     --background: oklch(0.129 0.042 264.695);
-    --foreground: oklch(0.984 0.003 247.858);
+    --foreground: #fafafa;
     --card: oklch(0.208 0.042 265.755);
     --card-foreground: oklch(0.984 0.003 247.858);
     --popover: oklch(0.208 0.042 265.755);
@@ -162,11 +162,11 @@
     --secondary: var(--secondary);
     --secondary-foreground: oklch(0.984 0.003 247.858);
     --muted: oklch(0.279 0.041 260.031);
-    --muted-foreground: oklch(0.704 0.04 256.788);
+    --muted-foreground: #a3a3a3;
     --accent: var(--accent);
     --accent-foreground: oklch(0.984 0.003 247.858);
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
+    --border: #ffffff1a;
     --input: oklch(1 0 0 / 15%);
     --ring: rgb(from var(--primary) r g b / 0.5);
     --chart-1: oklch(0.488 0.243 264.376);

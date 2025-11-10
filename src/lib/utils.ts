@@ -85,6 +85,19 @@ export function getFontFamilyCSS(fontFamily: string): string {
   return `"${fontFamily}", ui-sans-serif, system-ui, sans-serif`
 }
 
+// Format date to "MMM DD, YYYY" (e.g., "Jan 01, 2023")
+export function formatDate(dateStr?: string): string {
+  if (!dateStr) return 'N/A'
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return 'Invalid Date'
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric'
+  })
+}
+
 export function loadCustomFont(url: string, fontFamily: string): Promise<void> {
   const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
 
