@@ -35,7 +35,7 @@
         <div
           v-for="(product, index) in order.items?.flatMap(item => item.factory_products || [])"
           :key="'product-' + index"
-          class="relative group bg-accent border rounded-lg overflow-hidden aspect-square"
+          class="relative group bg-muted border rounded-lg overflow-hidden aspect-square"
         >
           <!-- Product Image -->
           <img

@@ -11,8 +11,10 @@
   import { Label } from '@/components/ui/label'
   import type { DisplayMode, ParaglideLocale } from '@/services/preferences/types'
   import { m as messages } from '@/paraglide/messages'
+  import { useCompanyStore } from '@/stores/company/company.store'
 
   const profileStore = useProfileStore()
+  const companyStore = useCompanyStore()
 
   onMounted(() => {
     profileStore.loadFromLocalStorage()
@@ -48,6 +50,10 @@
         return locale
     }
   }
+  console.log(
+    'companyStore.settings?.ui_branding.allow_color_mode_switch',
+    companyStore.settings?.ui_branding.allow_color_mode_switch
+  )
 </script>
 
 <template>
@@ -58,7 +64,10 @@
 
     <div class="flex-1 overflow-y-auto pr-2 space-y-6">
       <!-- Display Mode -->
-      <div class="flex flex-col gap-1">
+      <div
+        v-if="companyStore.settings?.ui_branding.allow_color_mode_switch"
+        class="flex flex-col gap-1"
+      >
         <Label for="display">{{ t.display }}</Label>
         <Select
           :key="profileStore.currentLocale"
