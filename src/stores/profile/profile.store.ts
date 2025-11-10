@@ -50,7 +50,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     display: 'system',
     language: 'en'
   })
-  const currentLocale = ref<ParaglideLocale>('en')
+  const currentLocale = ref<ParaglideLocale>()
   const isInitialized = ref(false)
 
   // Get available locales from company store
@@ -97,13 +97,12 @@ export const useProfileStore = defineStore('profileStore', () => {
         activeTab?: 'account' | 'orders' | 'address' | 'preferences'
         currentLocale?: ParaglideLocale
       }
-      console.log('Loaded profile store from localStorage:', state)
+
       if (state.activeTab) activeTab.value = state.activeTab
       if (state.preferences) preferences.value = state.preferences
+      // 🧠 Don't override company default unless user explicitly changed it
       if (state.currentLocale && isValidLocale(state.currentLocale)) {
         currentLocale.value = state.currentLocale
-        void setCurrentLocale(state.currentLocale)
-        companyStore.localization.defaultLanguage = state.currentLocale
       }
     } catch (e) {
       console.error('Failed to load profile store from localStorage:', e)
@@ -283,22 +282,17 @@ export const useProfileStore = defineStore('profileStore', () => {
   async function initializeLocale() {
     if (isInitialized.value) return
 
-    // Load persisted user preference from localStorage
+    // 1️⃣ Load saved data first
     loadFromLocalStorage()
 
-    // Hybrid approach:
-    // 1. Check if user has a saved preference that's still valid
-    // 2. If invalid or not set, fall back to companyStore.defaultLanguage
-    if (!isValidLocale(currentLocale.value)) {
-      // Use company store default as fallback
-      await setCurrentLocale(defaultLocale.value)
+    // 2️⃣ Case A: user has no saved locale → use company default
+    if (!currentLocale.value || !isValidLocale(currentLocale.value)) {
+      const fallback = companyStore.localization.defaultLanguage || defaultLocale.value
+      await setCurrentLocale(fallback as ParaglideLocale)
     } else {
-      // User preference is valid, update Paraglide runtime
+      // 3️⃣ Case B: user manually selected one before
       await setLocale(currentLocale.value, { reload: false })
-      // Update company store for UI sync
-      companyStore.localization.defaultLanguage = currentLocale.value
     }
-
     isInitialized.value = true
   }
 
@@ -311,8 +305,8 @@ export const useProfileStore = defineStore('profileStore', () => {
       return
     }
 
-    // If current locale is no longer available, reset to default
-    if (newLocales.length > 0 && !isValidLocale(currentLocale.value)) {
+    // Only check currentLocale if it is defined
+    if (newLocales.length > 0 && currentLocale.value && !isValidLocale(currentLocale.value)) {
       console.warn('Current locale is no longer available, resetting to default')
       void setCurrentLocale(defaultLocale.value ?? 'en')
     }

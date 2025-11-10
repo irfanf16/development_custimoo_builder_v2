@@ -43,7 +43,7 @@
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
 
   // Reactive state
-  const showProfileDialog = ref(false)
+  const showProfileDialog = ref(true)
 
   // Methods
   function handleResetCustomization() {

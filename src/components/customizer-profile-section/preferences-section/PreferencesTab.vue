@@ -79,7 +79,7 @@
       </div>
 
       <!-- Language -->
-      <div class="flex flex-col gap-1">
+      <div v-if="profileStore.availableLocales.length" class="flex flex-col gap-1">
         <Label for="language">{{ t.language }}</Label>
         <Select
           v-model="profileStore.preferences.language"
