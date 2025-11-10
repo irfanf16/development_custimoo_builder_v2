@@ -162,7 +162,6 @@ export const useCompanyStore = defineStore('companyStore', () => {
     setLoading(true)
     setError(null)
     const output = await tryCatchApi(API.company.getSettings())
-    console.log('output', output)
 
     if (output.success) {
       setSettings(output.content.result)
