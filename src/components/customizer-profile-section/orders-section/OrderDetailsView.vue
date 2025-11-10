@@ -21,13 +21,11 @@
         <div
           v-for="(product, pIdx) in item.factory_products || []"
           :key="`prod-${pIdx}`"
-          class="border-b border-[#E5E5E5] px-3 py-4"
+          class="border-b px-3 py-4"
         >
           <div class="flex flex-col sm:flex-row gap-4">
             <!-- Images Section -->
-            <div
-              class="grid grid-cols-2 gap-3 bg-[#F5F5F5] rounded-md border border-[#E5E5E5] w-max h-24 p-[12px]"
-            >
+            <div class="grid grid-cols-2 gap-3 bg-accent rounded-md border w-max h-24 p-[12px]">
               <!-- Front Image -->
               <div class="flex w-[60px] items-center justify-center overflow-hidden">
                 <img
@@ -79,7 +77,7 @@
 
             <!-- Product Info -->
             <div class="flex-1 flex flex-col gap-2">
-              <div class="font-semibold text-gray-800 text-base">
+              <div class="font-semibold text-foreground text-base">
                 {{ product.product_name || 'Unnamed Product' }}
               </div>
 
