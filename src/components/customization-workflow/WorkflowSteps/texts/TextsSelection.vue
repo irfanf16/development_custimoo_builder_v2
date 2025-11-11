@@ -6,7 +6,7 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { Button } from '@/components/ui/button'
   import type { OutputProductText } from '@/services/products/types'
-  import { Copy, Plus, Paintbrush } from 'lucide-vue-next'
+  import { Plus } from 'lucide-vue-next'
   import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
   import { useTexts } from './useTexts'
 
@@ -16,6 +16,20 @@
   const { textClipboard } = storeToRefs(workflowStore)
   const { activeProductTexts } = storeToRefs(customizationStore)
   const { customAndPresetTexts } = useTexts()
+
+  const TEXT_LABELS: Record<OutputProductText['type'], string> = {
+    name: 'Player name',
+    number: 'Player number',
+    team_name: 'Additional text'
+  }
+
+  const ADD_LABELS: Record<OutputProductText['type'], string> = {
+    name: 'Add a player name',
+    number: 'Add a player number',
+    team_name: 'Add additional text'
+  }
+
+  const CLIPBOARD_ENABLED_TYPES: OutputProductText['type'][] = ['name', 'number']
 
   // const productCustomTexts = computed(() => customizationStore.activeProductTexts)
   const effectiveProductId = computed(() => customizationStore.activeProductId)
@@ -74,71 +88,90 @@
     })
   }
 
+  function getSecondaryLabel(text: OutputProductText) {
+    return text.label || TEXT_LABELS[text.type] || 'Custom'
+  }
+
+  function getAddLabel(text: OutputProductText) {
+    if (ADD_LABELS[text.type]) return ADD_LABELS[text.type]
+    const baseLabel = text.label?.trim()
+    if (!baseLabel) return 'Add text'
+    const normalized = baseLabel.toLowerCase()
+    const needsAn = /^[aeiou]/.test(normalized)
+    return `Add ${needsAn ? 'an' : 'a'} ${normalized}`
+  }
+
+  function hasTextValue(text: OutputProductText) {
+    return typeof text.value === 'string' && text.value.trim().length > 0
+  }
+
+  function canUseClipboard(text: OutputProductText) {
+    return CLIPBOARD_ENABLED_TYPES.includes(text.type)
+  }
+
   const headerConfig = { breadcrumbs: [{ label: 'Texts' }] }
   void headerConfig
 </script>
 
 <template>
-  <div class="pb-2">
-    <div class="flex flex-col gap-1 mx-4 md:mx-6">
-      <p class="text-sm text-muted-foreground">Insert and style text.</p>
+  <div class="flex flex-col gap-4 pb-6">
+    <div class="flex flex-col gap-1 px-4 pt-4 md:px-6">
+      <p class="text-base">Insert and style text.</p>
     </div>
 
-    <div class="flex flex-col">
+    <div class="flex flex-col gap-2">
       <PanelNavigationItem
         v-for="(customText, index) in customAndPresetTexts"
         :id="`texts-selection-preset-${customText.id}`"
         :key="customText.id"
+        :class="['h-[60px]']"
         @click="() => goToEdit(customText, index)"
       >
         <template #content>
-          <div
-            v-if="(customText && !customText.value) || customText.value === ''"
-            class="flex items-center gap-3"
-          >
-            <div class="flex flex-col gap-1">
-              <span class="text-sm font-semibold">
-                Add a {{ customText.label.toLowerCase() }}
+          <div v-if="!hasTextValue(customText)" class="flex w-full items-center">
+            <span class="text-sm font-semibold text-foreground">
+              {{ getAddLabel(customText) }}
+            </span>
+          </div>
+          <div v-else class="flex w-full items-center gap-4 group">
+            <div class="flex min-w-0 flex-1 flex-col gap-1 items-start">
+              <span class="truncate text-sm font-semibold text-foreground">
+                {{ customText.value || customText.label || 'Untitled text' }}
+              </span>
+              <span class="text-xs text-muted-foreground">
+                {{ getSecondaryLabel(customText) }}
               </span>
             </div>
-          </div>
-          <div v-else class="flex items-start justify-between gap-3 w-full">
-            <div class="flex flex-col gap-1 flex-1">
-              <div class="text-lg font-semibold text-foreground">
-                {{ customText.value || customText.label || 'Untitled text' }}
-              </div>
-              <div class="text-xs text-muted-foreground">
-                {{ customText.label || customText.type || 'Custom' }}
-              </div>
-            </div>
 
-            <div class="flex items-center gap-2">
+            <div
+              v-if="canUseClipboard(customText)"
+              class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            >
               <Button
                 size="sm"
                 variant="outline"
-                class="gap-1 h-8 px-3 text-xs"
+                class="h-8 px-3"
                 @click.stop="handleCopyStyle(index)"
               >
-                <Copy class="size-3.5" /> Copy style
+                Copy style
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                class="gap-1 h-8 px-3 text-xs"
+                class="h-8 px-3"
                 :disabled="!textClipboard"
                 @click.stop="handlePasteStyle(index)"
               >
-                <Paintbrush class="size-3.5" /> Paste style
+                Paste style
               </Button>
             </div>
           </div>
         </template>
       </PanelNavigationItem>
     </div>
-    <div class="px-4 md:px-6 w-full mt-2">
-      <Button class="w-full" @click="goToPlacement">
-        <Plus class="size-4" />
-        <span class="text-sm font-medium">Add additional text</span>
+    <div class="w-full px-4 pb-4 md:px-6">
+      <Button variant="outline" class="w-full" @click="goToPlacement">
+        <Plus class="size-4" /> <span class="text-sm font-medium">Add additional text</span>
       </Button>
     </div>
   </div>
