@@ -983,8 +983,16 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
     if (idx === -1) return
 
     const key = getTextItemKey(entry.id, idx)
-    const layer = textLayers.value.get(key)
-    if (!layer || !(layer instanceof FabricText)) return
+    let layer = textLayers.value.get(key)
+
+    if (!layer) {
+      // If the layer doesn't exist yet (e.g., text was empty when added), try to create it now
+      const created = await addTextLayer(entry, item, idx)
+      if (!created || !(created instanceof FabricText)) return
+      layer = created
+    }
+
+    if (!(layer instanceof FabricText)) return
 
     const textValue = entry.value || ''
     const fontFamily = entry.font_family || item.font_family || 'Arial'

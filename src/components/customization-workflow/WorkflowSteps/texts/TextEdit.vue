@@ -22,8 +22,9 @@
   import { useTexts } from './useTexts'
 
   // ===== COMPOSABLES =====
-  const { form } = useTextActions()
+  const { form, currentEntry } = useTextActions()
   const { fontOptions, colorPalettes } = useTexts()
+  const isNumberEntry = computed(() => currentEntry.value?.type === 'number')
 
   // ===== COMPUTED =====
   // Slider value for angle (Slider component expects an array)
@@ -68,12 +69,12 @@
   <div class="grid gap-6 md:grid-cols-[360px,1fr] md:gap-8">
     <div class="space-y-0 flex flex-col gap-4">
       <!-- Text Input Section -->
-      <div class="space-y-2 px-4 md:px-6 pt-1">
+      <div v-if="!isNumberEntry" class="space-y-2 px-4 md:px-6 pt-1">
         <Input v-model="form.text" rows="3" placeholder="Enter text" class="text-lg" />
       </div>
 
       <!-- Font Selection Section -->
-      <div class="space-y-2 px-4 md:px-6">
+      <div v-if="!isNumberEntry" class="space-y-2 px-4 md:px-6">
         <Label class="text-sm font-medium text-foreground">Font</Label>
         <FontSelector v-model="form.font" :options="fontOptions" />
       </div>

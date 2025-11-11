@@ -43,7 +43,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const activeTextId = ref<number | null>(null)
   const activeTextItemIndex = ref<number | null>(null)
   const pendingTextTemplateId = ref<number | null>(null)
-  const pendingNumberPreset = ref<string | null>(null)
   const rosterSubStep = ref<RosterSubStep>('list')
   const patternsSubStep = ref<PatternsSubStep>('list')
   const activePatternGroupName = ref<string | null>(null)
@@ -244,7 +243,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       'workflow.textsPendingTemplate',
       String(pendingTextTemplateId.value ?? '')
     )
-    window.localStorage.setItem('workflow.textsPendingPreset', pendingNumberPreset.value ?? '')
     window.localStorage.setItem('workflow.rosterSubStep', rosterSubStep.value)
     window.localStorage.setItem('workflow.patternsSubStep', patternsSubStep.value || '')
     window.localStorage.setItem(
@@ -277,8 +275,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       const textId = window.localStorage.getItem('workflow.textsActiveId')
       const textIndexLegacy = window.localStorage.getItem('workflow.textsActiveIndex') // Legacy support
       const templateId = window.localStorage.getItem('workflow.textsPendingTemplate')
-      const preset = window.localStorage.getItem('workflow.textsPendingPreset')
-      const activeItemIndex = window.localStorage.getItem('workflow.textsActiveItemIndex')
       const roster = window.localStorage.getItem('workflow.rosterSubStep') as 'list' | 'edit' | null
       const patterns = window.localStorage.getItem('workflow.patternsSubStep') as
         | 'list'
@@ -299,8 +295,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
         }
       }
       if (templateId) pendingTextTemplateId.value = Number(templateId)
-      if (preset) pendingNumberPreset.value = preset
-      if (activeItemIndex) activeTextItemIndex.value = Number(activeItemIndex)
       if (roster) rosterSubStep.value = roster
       if (patterns) patternsSubStep.value = patterns
       if (patternGroupName) activePatternGroupName.value = patternGroupName
@@ -370,11 +364,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
-  function setPendingNumberPreset(preset: string | null) {
-    pendingNumberPreset.value = preset
-    saveSubStepsToLocalStorage()
-  }
-
   function setRosterSubStep(step: RosterSubStep) {
     rosterSubStep.value = step
     saveSubStepsToLocalStorage()
@@ -407,7 +396,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     activeTextId.value = null
     activeTextItemIndex.value = null
     pendingTextTemplateId.value = null
-    pendingNumberPreset.value = null
     activeCanvasSide.value = 'front'
     canvasZoom.value = 1
     panelOpen.value = true
@@ -518,7 +506,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     // Legacy compatibility
     pendingTextTemplateId,
     activeTextItemIndex,
-    pendingNumberPreset,
     textClipboard,
     rosterSubStep,
     patternsSubStep,
@@ -547,7 +534,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setActiveTextIndex,
     setPendingTextTemplateId,
     setActiveTextItemIndex,
-    setPendingNumberPreset,
     setRosterSubStep,
     setActivePatternSubStep,
     setActiveLogoId,
