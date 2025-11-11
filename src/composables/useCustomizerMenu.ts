@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useProductsStore } from '@/stores/products/products.store'
-import { useLocaleStore } from '@/stores/locale/locale.store'
+import { useProfileStore } from '@/stores/profile/profile.store'
 import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
 import {
   nav_product,
@@ -18,7 +18,7 @@ import {
 export function useCustomizerMenu() {
   const workflowStore = useWorkflowStore()
   const productsStore = useProductsStore()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
 
   // Determine if we should show Categories step based on available categories
   const shouldShowCategories = computed(() => {
@@ -105,23 +105,23 @@ export function useCustomizerMenu() {
   function getNavText(step: CustomizerStep) {
     switch (step) {
       case 'product':
-        return nav_product({}, { locale: localeStore.currentLocale })
+        return nav_product({}, { locale: profileStore.currentLocale })
       case 'designs':
-        return nav_design({}, { locale: localeStore.currentLocale })
+        return nav_design({}, { locale: profileStore.currentLocale })
       case 'styles':
-        return nav_style({}, { locale: localeStore.currentLocale })
+        return nav_style({}, { locale: profileStore.currentLocale })
       case 'logos':
-        return nav_logo({}, { locale: localeStore.currentLocale })
+        return nav_logo({}, { locale: profileStore.currentLocale })
       case 'colors':
-        return nav_color({}, { locale: localeStore.currentLocale })
+        return nav_color({}, { locale: profileStore.currentLocale })
       case 'patterns':
-        return nav_pattern({}, { locale: localeStore.currentLocale })
+        return nav_pattern({}, { locale: profileStore.currentLocale })
       case 'texts':
-        return nav_text({}, { locale: localeStore.currentLocale })
+        return nav_text({}, { locale: profileStore.currentLocale })
       case 'roster':
-        return nav_roster({}, { locale: localeStore.currentLocale })
+        return nav_roster({}, { locale: profileStore.currentLocale })
       case 'summary':
-        return nav_summary({}, { locale: localeStore.currentLocale })
+        return nav_summary({}, { locale: profileStore.currentLocale })
       default:
         return step
     }

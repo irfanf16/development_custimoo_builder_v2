@@ -20,12 +20,11 @@
     logos_primary,
     logos_more_options
   } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   import { Trash } from 'lucide-vue-next'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import LogoCard from './LogoCard.vue'
-
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
   const logosStore = useLogosStore()
 
   // ===== COMPOSABLES =====
@@ -129,17 +128,17 @@
               <i-other-image class="size-12 text-primary icon-secondary-from-primary-50" />
             </div>
             <div class="text-sm font-medium font-brand">
-              {{ logos_empty_drag_drop({}, { locale: localeStore.currentLocale }) }}
+              {{ logos_empty_drag_drop({}, { locale: profileStore.currentLocale }) }}
               <button
                 type="button"
                 class="text-primary underline underline-offset-2"
                 @click="onClickUpload"
               >
-                {{ logos_empty_click_to_upload({}, { locale: localeStore.currentLocale }) }}
+                {{ logos_empty_click_to_upload({}, { locale: profileStore.currentLocale }) }}
               </button>
             </div>
             <div class="text-xs text-muted-foreground">
-              {{ logos_supported_formats({}, { locale: localeStore.currentLocale }) }}
+              {{ logos_supported_formats({}, { locale: profileStore.currentLocale }) }}
             </div>
 
             <!-- Hidden file input -->
@@ -166,7 +165,7 @@
 
             <div v-if="!logosStore.isLoadingUploadLogo">
               <Button variant="default" class="rounded-lg w-full" @click="onClickUpload">
-                {{ logos_add_logo({}, { locale: localeStore.currentLocale }) }}
+                {{ logos_add_logo({}, { locale: profileStore.currentLocale }) }}
               </Button>
               <input
                 ref="fileInputRef"
@@ -185,7 +184,7 @@
           <div v-if="shouldShowRecentSection" class="flex flex-col gap-2 px-4 md:px-6">
             <div class="flex items-center justify-between">
               <div class="text-base leading-none font-semibold font-brand">
-                {{ logos_recent({}, { locale: localeStore.currentLocale }) }}
+                {{ logos_recent({}, { locale: profileStore.currentLocale }) }}
               </div>
               <Button
                 v-if="
@@ -239,34 +238,34 @@
 
         <div v-else-if="subPanel === 'edit'" class="flex flex-col gap-4">
           <div class="text-sm">
-            {{ logos_editor({}, { locale: localeStore.currentLocale }) }}
+            {{ logos_editor({}, { locale: profileStore.currentLocale }) }}
           </div>
           <div class="flex gap-3">
             <Button variant="default" class="rounded-lg" @click="goToList">{{
-              logos_back({}, { locale: localeStore.currentLocale })
+              logos_back({}, { locale: profileStore.currentLocale })
             }}</Button>
             <Button variant="default" class="rounded-lg" disabled>{{
-              logos_editor({}, { locale: localeStore.currentLocale })
+              logos_editor({}, { locale: profileStore.currentLocale })
             }}</Button>
           </div>
         </div>
 
         <div v-else class="flex flex-col gap-4">
           <div class="text-sm">
-            {{ logos_editor({}, { locale: localeStore.currentLocale }) }}
+            {{ logos_editor({}, { locale: profileStore.currentLocale }) }}
           </div>
           <Accordion type="single" collapsible>
             <AccordionItem value="recolor">
               <template #trigger>{{
-                logos_recolor_logo({}, { locale: localeStore.currentLocale })
+                logos_recolor_logo({}, { locale: profileStore.currentLocale })
               }}</template>
               <div class="flex flex-col gap-2">
                 <div class="text-xs">
-                  {{ logos_primary({}, { locale: localeStore.currentLocale }) }}
+                  {{ logos_primary({}, { locale: profileStore.currentLocale }) }}
                 </div>
                 <div class="h-8 bg-muted rounded" />
                 <div class="text-xs">
-                  {{ logos_more_options({}, { locale: localeStore.currentLocale }) }}
+                  {{ logos_more_options({}, { locale: profileStore.currentLocale }) }}
                 </div>
                 <div class="grid grid-cols-8 gap-1">
                   <div v-for="i in 16" :key="i" class="h-6 bg-muted rounded" />
@@ -276,7 +275,7 @@
           </Accordion>
           <div class="flex gap-3">
             <Button variant="default" class="rounded-lg" @click="goToControls">{{
-              logos_back({}, { locale: localeStore.currentLocale })
+              logos_back({}, { locale: profileStore.currentLocale })
             }}</Button>
           </div>
         </div>

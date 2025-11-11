@@ -14,7 +14,7 @@
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
   import type { Palette } from '@/composables/useColorActions'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   import {
     color_shuffle_design_colors,
     color_shuffle_heading_1,
@@ -31,7 +31,7 @@
   // Store (kept in case we want to wire real data later)
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
   const { effectiveSvgGroups } = useEffectiveSelectors()
   const history = useHistoryStore()
   const { shuffleColors } = useColorActions()
@@ -56,19 +56,19 @@
 
   const shuffleColorsHeadings = computed(() => {
     return [
-      color_shuffle_heading_1({}, { locale: localeStore.currentLocale }),
-      color_shuffle_heading_2({}, { locale: localeStore.currentLocale }),
-      color_shuffle_heading_3({}, { locale: localeStore.currentLocale }),
-      color_shuffle_heading_4({}, { locale: localeStore.currentLocale })
+      color_shuffle_heading_1({}, { locale: profileStore.currentLocale }),
+      color_shuffle_heading_2({}, { locale: profileStore.currentLocale }),
+      color_shuffle_heading_3({}, { locale: profileStore.currentLocale }),
+      color_shuffle_heading_4({}, { locale: profileStore.currentLocale })
     ]
   })
 
   const shuffleColorsTexts = computed(() => {
     return [
-      color_shuffle_text_1({}, { locale: localeStore.currentLocale }),
-      color_shuffle_text_2({}, { locale: localeStore.currentLocale }),
-      color_shuffle_text_3({}, { locale: localeStore.currentLocale }),
-      color_shuffle_text_4({}, { locale: localeStore.currentLocale })
+      color_shuffle_text_1({}, { locale: profileStore.currentLocale }),
+      color_shuffle_text_2({}, { locale: profileStore.currentLocale }),
+      color_shuffle_text_3({}, { locale: profileStore.currentLocale }),
+      color_shuffle_text_4({}, { locale: profileStore.currentLocale })
     ]
   })
 
@@ -148,7 +148,7 @@
         </div>
         <div class="mt-4">
           <Button class="w-full" variant="default" @click="shuffleAll">{{
-            color_shuffle_design_colors({}, { locale: localeStore.currentLocale })
+            color_shuffle_design_colors({}, { locale: profileStore.currentLocale })
           }}</Button>
         </div>
       </div>

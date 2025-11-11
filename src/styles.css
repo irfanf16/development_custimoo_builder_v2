@@ -125,24 +125,24 @@
   /* Light theme CSS variables (default values) */
   /* Hosts can override these via runtime (see hostThemes.ts) */
   --background: #fafafa;
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: var(--secondary);
-  --secondary-foreground: var(--secondary-foreground);
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #14a892;
+  --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
   /* Base radius used to derive Tailwind radius scale tokens */
   --radius: 0.5rem; /* @see hostThemes.ts */
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
   --accent: var(--accent); /* @see hostThemes.ts */
-  --accent-foreground: var(--accent-foreground);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.9705 0.0129 17.38);
-  --border: oklch(0.929 0.013 255.508);
+  --accent-foreground: #171717;
+  --destructive: #dc2626;
+  --destructive-foreground: #fef2f2;
+  --border: #e5e5e5;
   --input: oklch(0.929 0.013 255.508);
   --ring: rgb(from var(--primary) r g b / 0.5);
   /* Optional extras removed: chart-* and sidebar-* tokens (unused) */
@@ -152,21 +152,21 @@
    */
   :host.dark,
   .dark {
-    --background: oklch(0.129 0.042 264.695);
-    --foreground: oklch(0.984 0.003 247.858);
-    --card: oklch(0.208 0.042 265.755);
-    --card-foreground: oklch(0.984 0.003 247.858);
-    --popover: oklch(0.208 0.042 265.755);
-    --popover-foreground: oklch(0.984 0.003 247.858);
-    --primary-foreground: oklch(0.984 0.003 247.858);
-    --secondary: var(--secondary);
-    --secondary-foreground: oklch(0.984 0.003 247.858);
-    --muted: oklch(0.279 0.041 260.031);
-    --muted-foreground: oklch(0.704 0.04 256.788);
+    --background: #0a0a0a;
+    --foreground: #fafafa;
+    --card: #171717;
+    --card-foreground: #fafafa;
+    --popover: #262626;
+    --popover-foreground: #fafafa;
+    --primary-foreground: #171717;
+    --secondary: #262626;
+    --secondary-foreground: #fafafa;
+    --muted: #262626;
+    --muted-foreground: #a3a3a3;
     --accent: var(--accent);
-    --accent-foreground: oklch(0.984 0.003 247.858);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
+    --accent-foreground: #fafafa;
+    --destructive: #f87171;
+    --border: #ffffff1a;
     --input: oklch(1 0 0 / 15%);
     --ring: rgb(from var(--primary) r g b / 0.5);
     --chart-1: oklch(0.488 0.243 264.376);
