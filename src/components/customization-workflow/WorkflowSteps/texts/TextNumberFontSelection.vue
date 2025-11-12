@@ -508,16 +508,16 @@
             <p class="text-sm font-semibold text-foreground">{{ item.label }}</p>
           </div>
           <div class="flex shrink-0 items-center justify-center text-muted-foreground">
+            <div class="shrink-0" @click.stop>
+              <Switch
+                :model-value="item.isChecked"
+                :disabled="!currentEntry"
+                @update:model-value="(checked: boolean) => toggleItem(item, checked)"
+              />
+            </div>
             <ChevronRight class="size-4" />
           </div>
         </button>
-        <div class="shrink-0" @click.stop>
-          <Switch
-            :model-value="item.isChecked"
-            :disabled="!currentEntry"
-            @update:model-value="(checked: boolean) => toggleItem(item, checked)"
-          />
-        </div>
       </div>
     </div>
   </div>
