@@ -61,7 +61,7 @@
               {{ customerInitials }}
             </div>
             <div class="flex flex-col">
-              <div class="font-medium">
+              <div class="font-medium text-foreground">
                 {{ (customer?.first_name || '') + ' ' + (customer?.last_name || '') }}
               </div>
               <div class="text-sm text-muted-foreground">{{ customer?.email }}</div>
@@ -109,7 +109,7 @@
           </div>
 
           <!-- Right side: Edit button -->
-          <Button size="sm" variant="outline" class="self-center"
+          <Button size="sm" variant="default" class="self-center"
             ><i-flex-line-edit /> {{ t.edit }}</Button
           >
         </Card>

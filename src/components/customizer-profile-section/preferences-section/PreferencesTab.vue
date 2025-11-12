@@ -30,7 +30,6 @@
     ),
     light: messages.profile_light({}, { locale: profileStore.currentLocale }),
     dark: messages.profile_dark({}, { locale: profileStore.currentLocale }),
-    systemDefault: messages.profile_system_default({}, { locale: profileStore.currentLocale }),
     language: messages.profile_language({}, { locale: profileStore.currentLocale }),
     selectLanguage: messages.profile_select_language({}, { locale: profileStore.currentLocale }),
     english: messages.profile_language_english({}, { locale: profileStore.currentLocale }),
@@ -60,8 +59,14 @@
 
     <div class="flex-1 overflow-y-auto pr-2 space-y-6">
       <!-- Display Mode -->
+      <!-- Show display mode selector if:
+           1. Branding is available and color mode switch is allowed, OR
+           2. No branding is available (default case - allow light/dark choice) -->
       <div
-        v-if="companyStore.settings?.ui_branding.allow_color_mode_switch"
+        v-if="
+          companyStore.settings?.ui_branding?.allow_color_mode_switch ||
+          !companyStore.settings?.ui_branding
+        "
         class="flex flex-col gap-1"
       >
         <Label for="display">{{ t.display }}</Label>
@@ -78,7 +83,6 @@
           <SelectContent class="max-h-60">
             <SelectItem value="light">{{ t.light }}</SelectItem>
             <SelectItem value="dark">{{ t.dark }}</SelectItem>
-            <SelectItem value="system">{{ t.systemDefault }}</SelectItem>
           </SelectContent>
         </Select>
       </div>

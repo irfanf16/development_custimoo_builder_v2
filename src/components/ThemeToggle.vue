@@ -9,15 +9,11 @@
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import { watch } from 'vue'
-  import { storeToRefs } from 'pinia'
   import { theme_toggle_sr, theme_light, theme_dark } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
-
-  const { currentTheme: colorMode } = storeToRefs(uiStore)
 
   const props = withDefaults(
     defineProps<{
@@ -33,20 +29,9 @@
   )
 
   const setTheme = (theme: 'light' | 'dark') => {
+    // uiStore.setTheme now delegates to profileStore
     uiStore.setTheme(theme)
   }
-
-  watch(colorMode, newVal => {
-    if (uiStore.widgetRoot) {
-      if (newVal === 'dark') {
-        uiStore.widgetRoot.classList.remove('light')
-        uiStore.widgetRoot.classList.add('dark')
-      } else {
-        uiStore.widgetRoot.classList.remove('dark')
-        uiStore.widgetRoot.classList.add('light')
-      }
-    }
-  })
 </script>
 
 <template>
