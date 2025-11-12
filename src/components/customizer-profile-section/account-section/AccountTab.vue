@@ -11,9 +11,14 @@
   import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { m as messages } from '@/paraglide/messages'
-  import { computed, ref } from 'vue'
+  import { computed, ref, onMounted } from 'vue'
 
   defineProps<{ title?: string; counters: DashboardCounters }>()
+
+  onMounted(() => {
+    profileStore.fetchAddresses()
+    profileStore.fetchDashboard()
+  })
 
   const auth = useAuthStore()
   const { customer, customerInitials } = storeToRefs(auth)

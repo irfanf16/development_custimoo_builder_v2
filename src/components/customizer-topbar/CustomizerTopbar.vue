@@ -33,6 +33,7 @@
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { storeToRefs } from 'pinia'
   import ProfileDialog from '@/components/customizer-profile-section/ProfileDialog.vue'
+  import SignInDialog from '@/components/SignInDialog.vue'
   import { ref } from 'vue'
 
   const customizationStore = useCustomizationStore()
@@ -44,6 +45,7 @@
 
   // Reactive state
   const showProfileDialog = ref(false)
+  const showSignInDialog = ref(false)
 
   // Methods
   function handleResetCustomization() {
@@ -72,6 +74,10 @@
 
   function handleSignOut() {
     authStore.logout()
+  }
+
+  function handleSignIn() {
+    showSignInDialog.value = true
   }
 </script>
 
@@ -139,30 +145,35 @@
       <DropdownMenu>
         <ButtonGroup>
           <SignInButton @open-profile="handleUserProfile" />
-          <DropdownMenuTrigger v-if="isLoggedIn" as-child>
-            <Button size="icon" aria-label="User menu" class="rounded-l-none rounded-r-md">
+          <DropdownMenuTrigger as-child>
+            <Button size="icon" aria-label="User menu" class="rounded-l-md rounded-r-md">
               <Menu class="size-4" />
             </Button>
           </DropdownMenuTrigger>
         </ButtonGroup>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>{{ user?.first_name }} {{ user?.last_name }}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem @click="handleUserProfile">
+          <DropdownMenuLabel v-if="isLoggedIn"
+            >{{ user?.first_name }} {{ user?.last_name }}</DropdownMenuLabel
+          >
+          <DropdownMenuSeparator v-if="isLoggedIn" />
+          <DropdownMenuItem v-if="isLoggedIn" @click="handleUserProfile">
             <User class="size-4 mr-2" />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem @click="handleUserSettings">
+          <DropdownMenuItem v-else @click="handleUserProfile"> Preferences </DropdownMenuItem>
+          <DropdownMenuItem v-if="isLoggedIn" @click="handleUserSettings">
             <Settings class="size-4 mr-2" />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem class="text-red-600" @click="handleSignOut">
+          <DropdownMenuSeparator v-if="isLoggedIn" />
+          <DropdownMenuItem v-if="isLoggedIn" class="text-red-600" @click="handleSignOut">
             <LogOut class="size-4 mr-2" />
             Sign Out
           </DropdownMenuItem>
+          <DropdownMenuItem v-else @click="handleSignIn">Sign In</DropdownMenuItem>
         </DropdownMenuContent>
         <ProfileDialog :open="showProfileDialog" @update:open="showProfileDialog = $event" />
+        <SignInDialog v-model:open="showSignInDialog" />
       </DropdownMenu>
     </ButtonGroup>
   </div>
