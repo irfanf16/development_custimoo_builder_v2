@@ -7,6 +7,8 @@ import Components from 'unplugin-vue-components/vite'
 import IconsResolver from 'unplugin-icons/resolver'
 import Icons from 'unplugin-icons/vite'
 import { FileSystemIconLoader } from 'unplugin-icons/loaders'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 export default defineConfig({
   plugins: [
@@ -113,7 +115,15 @@ export default defineConfig({
     }
   },
   define: {
-    'process.env': {}
+    'process.env': {},
+    // Inject app version from package.json at build time
+    __APP_VERSION__: JSON.stringify(
+      (
+        JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8')) as {
+          version: string
+        }
+      ).version
+    )
   },
   publicDir: 'public',
 

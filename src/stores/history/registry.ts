@@ -1,3 +1,4 @@
+import { toRaw } from 'vue'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -109,9 +110,15 @@ function findTextEntryById(
 }
 
 function cloneTextEntry(entry: import('@/services/products/types').OutputProductText) {
-  return typeof structuredClone === 'function'
-    ? structuredClone(entry)
-    : (JSON.parse(JSON.stringify(entry)) as typeof entry)
+  const rawEntry = toRaw(entry)
+  if (typeof structuredClone === 'function') {
+    try {
+      return structuredClone(rawEntry)
+    } catch (_) {
+      // Fall through to JSON clone if structuredClone fails (e.g., due to non-cloneable values)
+    }
+  }
+  return JSON.parse(JSON.stringify(rawEntry)) as typeof entry
 }
 
 function withLogoPatch(base: CustomLogo, patch: Partial<CustomLogo>): CustomLogo {
@@ -242,8 +249,18 @@ export const registry: Registry = {
       const map = getTextArray(ctx, payload.key)
       if (!map) return
       const index = payload.index ?? map.length - 1
-      map.splice(index, 1)
+      const [removed] = map.splice(index, 1)
+      if (removed && !payload.entry) {
+        payload.entry = cloneTextEntry(removed)
+      }
       ctx.customizationStore.saveToLocalStorage()
+
+      const workflowStore = ctx.workflowStore
+      if (removed && workflowStore.activeTextId === removed.id) {
+        workflowStore.setActiveTextId(null)
+      }
+      workflowStore.setActiveTextItemIndex(null)
+      workflowStore.setTextsSubStep('list')
     },
     describe(_: HistoryContext, payload: TextAddEntryPayload) {
       return `Add text ${payload.entry.label || ''}`.trim()

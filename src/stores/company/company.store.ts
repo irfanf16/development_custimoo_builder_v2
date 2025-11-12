@@ -72,12 +72,18 @@ function getFlag(code: string): string {
   return flags[code] || '🝳︝'
 }
 
+// Default languages when no company settings are available
+const DEFAULT_LANGUAGES: LanguageConfig[] = [
+  { code: 'en', name: 'English', flag: getFlag('en') },
+  { code: 'fr', name: 'French', flag: getFlag('fr') }
+]
+
 // ---------------- Pinia Store ----------------
 export const useCompanyStore = defineStore('companyStore', () => {
   const company = ref<Company | null>(null)
   const settings = ref<OutputSettings | null>(null)
   const localization = ref<CompanyLocalization>({
-    availableLanguages: [],
+    availableLanguages: DEFAULT_LANGUAGES, // Default to en and fr
     defaultLanguage: 'en',
     datetime: {
       locale: 'en-US',
@@ -168,9 +174,22 @@ export const useCompanyStore = defineStore('companyStore', () => {
 
       if (hasLocalization(output.content)) {
         setLocalization(output.content.result.localization)
+      } else {
+        // If no localization data from API, set default languages
+        localization.value = {
+          ...localization.value,
+          availableLanguages: DEFAULT_LANGUAGES,
+          defaultLanguage: 'en'
+        }
       }
     } else {
       setError('Error getting settings')
+      // If settings fetch fails, set default languages
+      localization.value = {
+        ...localization.value,
+        availableLanguages: DEFAULT_LANGUAGES,
+        defaultLanguage: 'en'
+      }
     }
 
     setLoading(false)

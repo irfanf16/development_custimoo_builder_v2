@@ -11,7 +11,15 @@ export function useTextsConfig() {
   // ===== COMPUTED =====
   const headerConfig: Ref<HeaderConfiguration> = computed(() => {
     if (workflowStore.textsSubStep === 'number-font') {
-      const label = String(workflowStore.pendingNumberPreset || '1')
+      let label = 'Number'
+      if (workflowStore.activeTextId != null) {
+        const entry = customizationStore.activeProductTexts.find(
+          text => text.id === workflowStore.activeTextId
+        )
+        if (entry?.value) {
+          label = entry.value
+        }
+      }
       return {
         breadcrumbs: [
           { label: 'Texts', action: () => workflowStore.setTextsSubStep('list') },

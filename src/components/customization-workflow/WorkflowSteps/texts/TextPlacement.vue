@@ -5,11 +5,14 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
-  import { Button } from '@/components/ui/button'
-  import { Badge } from '@/components/ui/badge'
+  import { useUIStore } from '@/stores/ui/ui.store'
+
   import ProductPreviewCanvas from '@/components/customization-workflow/WorkflowSteps/ProductPreviewCanvas.vue'
   import type { OutputProductName, OutputProductText } from '@/services/products/types'
   import { useTextPlacements } from './useTextPlacements'
+
+  const uiStore = useUIStore()
+  const { isMobile } = storeToRefs(uiStore)
 
   // ===== STORES =====
   const productsStore = useProductsStore()
@@ -110,41 +113,32 @@
 
 <template>
   <!-- Content -->
-  <div class="p-4 md:p-6 space-y-4">
-    <div v-if="placementsWithOverlay.length" class="grid gap-4 md:grid-cols-2">
+  <div class="flex flex-col gap-4">
+    <div v-if="placementsWithOverlay.length" class="grid grid-cols-2">
       <div
         v-for="item in placementsWithOverlay"
         :key="item.placement.id"
-        class="group flex flex-col gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-primary/40 hover:shadow-sm"
+        class="flex flex-col gap-4 items-center cursor-pointer w-full p-4 group"
+        @click="handleSelectPlacement(item.placement)"
       >
-        <div class="relative rounded-lg border border-dashed border-border bg-muted/40 p-3">
+        <div
+          class="flex-start w-full text-base font-semibold truncate leading-none overflow-visible"
+        >
+          {{ item.placement.name_of_placement
+          }}{{ item.placement.side ? '(' + item.placement.side + ')' : '' }}
+        </div>
+        <div class="relative" width="112" height="112">
           <ProductPreviewCanvas
             v-if="activeProductDetails && activeStyleDetails && activeDesignDetails"
             :product="activeProductDetails"
             :style-base="activeStyleDetails"
             :design-base="activeDesignDetails"
-            :width="PREVIEW_SIZE"
-            :height="PREVIEW_SIZE"
+            :width="isMobile ? 130 : 176"
+            :height="isMobile ? 130 : 176"
             :side="item.placement.side === 'back' ? 'back' : 'front'"
             :overlay-rect="item.overlay"
           />
         </div>
-        <div class="flex items-center justify-between">
-          <div class="flex flex-col">
-            <span class="text-sm font-semibold text-foreground">
-              {{ item.placement.name_of_placement }}
-            </span>
-            <span class="text-xs text-muted-foreground capitalize"
-              >{{ item.placement.side }} • {{ item.placement.type }}</span
-            >
-          </div>
-          <Badge variant="secondary">
-            {{ item.placement.width ?? item.placement.height ?? '-' }} cm
-          </Badge>
-        </div>
-        <Button variant="default" class="mt-1" @click="handleSelectPlacement(item.placement)">
-          Use this placement
-        </Button>
       </div>
     </div>
     <div

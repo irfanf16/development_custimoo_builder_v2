@@ -4,6 +4,7 @@ import { type InputLogin, type Customer, type OutputLogin } from '@/services/aut
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
+import { useLocalStorage } from '@/composables/useLocalStorage'
 
 export const useAuthStore = defineStore('authStore', () => {
   // ===== STATE =====
@@ -18,6 +19,7 @@ export const useAuthStore = defineStore('authStore', () => {
 
   const hasWindow = typeof window !== 'undefined'
   const hasCryptoSupport = hasWindow && !!window.crypto?.subtle
+  const storage = useLocalStorage()
   const CUSTOMER_STORAGE_KEY = 'customer'
   const ACCESS_TOKEN_STORAGE_KEY = 'jwtToken'
   const REFRESH_TOKEN_STORAGE_KEY = 'refreshToken'
@@ -25,7 +27,9 @@ export const useAuthStore = defineStore('authStore', () => {
   const REFRESH_TOKEN_ENC_KEY = 'refreshTokenEncKey'
 
   // ===== COMPUTED =====
-  const isAuthenticated = computed(() => !!accessToken.value)
+  const isAuthenticated = computed(
+    () => !!accessToken.value && !!customer.value && !!refreshToken.value
+  )
   const customerInitials = computed(() => {
     if (!customer.value) return ''
     return `${customer.value?.first_name?.charAt(0)}${customer.value?.last_name?.charAt(0)}`.toUpperCase()
@@ -246,13 +250,12 @@ export const useAuthStore = defineStore('authStore', () => {
   // ===== PERSISTENCE =====
   async function saveToLocalStorage(): Promise<void> {
     if (!hasWindow) return
-    const local = window.localStorage
     const session = window.sessionStorage
 
     if (customer.value) {
-      local.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(customer.value))
+      storage.setItem(CUSTOMER_STORAGE_KEY, customer.value)
     } else {
-      local.removeItem(CUSTOMER_STORAGE_KEY)
+      storage.removeItem(CUSTOMER_STORAGE_KEY)
     }
 
     if (accessToken.value) {
@@ -264,32 +267,30 @@ export const useAuthStore = defineStore('authStore', () => {
     if (refreshToken.value) {
       const encrypted = await encryptRefreshToken(refreshToken.value)
       if (encrypted) {
-        local.setItem(REFRESH_TOKEN_CIPHER_KEY, encrypted)
+        storage.setItemRaw(REFRESH_TOKEN_CIPHER_KEY, encrypted)
       }
     } else {
-      local.removeItem(REFRESH_TOKEN_CIPHER_KEY)
+      storage.removeItem(REFRESH_TOKEN_CIPHER_KEY)
     }
 
     // Remove legacy plain-text storage if present
-    local.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+    storage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
   }
 
   async function loadFromLocalStorage(): Promise<boolean> {
     if (!hasWindow) return false
-    const local = window.localStorage
     const session = window.sessionStorage
 
-    const customerJson = local.getItem(CUSTOMER_STORAGE_KEY)
+    const customer = storage.getItem<Customer>(CUSTOMER_STORAGE_KEY)
     const jwtToken = session.getItem(ACCESS_TOKEN_STORAGE_KEY)
-    const encryptedRefreshToken = local.getItem(REFRESH_TOKEN_CIPHER_KEY)
+    const encryptedRefreshToken = storage.getItemRaw(REFRESH_TOKEN_CIPHER_KEY)
     const legacyRefreshToken = encryptedRefreshToken
       ? null
-      : local.getItem(REFRESH_TOKEN_STORAGE_KEY)
+      : storage.getItemRaw(REFRESH_TOKEN_STORAGE_KEY)
 
-    if (customerJson) {
+    if (customer) {
       try {
-        const parsed = JSON.parse(customerJson) as unknown
-        setCustomer(parsed as Customer)
+        setCustomer(customer)
       } catch (error) {
         console.error('Failed to parse stored customer data:', error)
         clearAuth()
@@ -311,17 +312,16 @@ export const useAuthStore = defineStore('authStore', () => {
       void saveToLocalStorage()
     }
 
-    return !!(customerJson && (jwtToken || encryptedRefreshToken || legacyRefreshToken))
+    return !!(customer && (jwtToken || encryptedRefreshToken || legacyRefreshToken))
   }
 
   function clearLocalStorage() {
     if (!hasWindow) return
-    const local = window.localStorage
     const session = window.sessionStorage
-    local.removeItem(CUSTOMER_STORAGE_KEY)
+    storage.removeItem(CUSTOMER_STORAGE_KEY)
     session.removeItem(ACCESS_TOKEN_STORAGE_KEY)
-    local.removeItem(REFRESH_TOKEN_CIPHER_KEY)
-    local.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+    storage.removeItem(REFRESH_TOKEN_CIPHER_KEY)
+    storage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
     session.removeItem(REFRESH_TOKEN_ENC_KEY)
   }
 

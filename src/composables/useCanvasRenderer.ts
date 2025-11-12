@@ -348,7 +348,12 @@ export function getTextDiffs(
 
   for (const textItem of nextTextItems) {
     const id = getTextItemId(textItem.entryId, textItem.itemIndex)
-    nextMap.set(id, textItem)
+    nextMap.set(id, {
+      entryId: textItem.entryId,
+      itemIndex: textItem.itemIndex,
+      entry: clone(textItem.entry),
+      item: clone(textItem.item)
+    })
     const prev = previous.get(id)
 
     if (!prev) {
@@ -418,18 +423,8 @@ export async function applyIncrementalTextUpdates(options: ApplyTextUpdatesOptio
   // Get text items for the current side
   const textItems = filterTextsBySide(texts, side)
 
-  // CRITICAL: Capture previous values BEFORE getTextDiffs updates the state
-  const previousValues = new Map<TextItemId, { value: string; fontFamily: string }>()
-  for (const textItem of textItems) {
-    const id = getTextItemId(textItem.entryId, textItem.itemIndex)
-    const prev = previousTextState.value.get(id)
-    if (prev) {
-      previousValues.set(id, {
-        value: prev.entry.value,
-        fontFamily: prev.entry.font_family || prev.item.font_family || ''
-      })
-    }
-  }
+  // Capture previous snapshots BEFORE getTextDiffs updates the state
+  const previousSnapshots = new Map<TextItemId, TextItemData>(previousTextState.value)
 
   const { added, updated, removed } = getTextDiffs(previousTextState, textItems)
 
@@ -453,15 +448,17 @@ export async function applyIncrementalTextUpdates(options: ApplyTextUpdatesOptio
   // Update existing texts (content and/or geometry)
   for (const textItem of updated) {
     const id = getTextItemId(textItem.entryId, textItem.itemIndex)
-    const prev = previousValues.get(id)
-    const prevItem = previousTextState.value.get(id)?.item
+    const prevSnapshot = previousSnapshots.get(id)
+    const prevEntry = prevSnapshot?.entry
+    const prevItem = prevSnapshot?.item
 
     // If value, font, or color-related properties changed, replace the content
     const contentChanged =
-      prev &&
-      (prev.value !== textItem.entry.value ||
-        prev.fontFamily !== (textItem.entry.font_family || textItem.item.font_family || '') ||
-        (prevItem &&
+      prevSnapshot != null &&
+      ((prevEntry?.value ?? '') !== textItem.entry.value ||
+        (prevEntry?.font_family || prevItem?.font_family || '') !==
+          (textItem.entry.font_family || textItem.item.font_family || '') ||
+        (prevItem != null &&
           (prevItem.color !== textItem.item.color ||
             prevItem.outline_color !== textItem.item.outline_color ||
             prevItem.outline_enabled !== textItem.item.outline_enabled ||

@@ -10,6 +10,6 @@
 
 <template>
   <DialogRoot v-bind="forwarded">
-    <slot />
+    <slot class="bg-background text-foreground" />
   </DialogRoot>
 </template>

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useProfileStore } from '../profile/profile.store'
 
 export const useUIStore = defineStore('uiStore', () => {
   // State
@@ -9,15 +10,29 @@ export const useUIStore = defineStore('uiStore', () => {
   const isLoading = ref(false)
   const allowColorModeSwitch = ref(false)
   const defaultColorMode = ref<'light' | 'dark'>('light')
-  const currentTheme = ref<'light' | 'dark'>(
-    (localStorage.getItem('customizer-theme') as 'light' | 'dark') || 'light'
-  )
   const widgetRoot = ref<HTMLElement>()
   const containerWidth = ref<number>(0)
   const containerHeight = ref<number>(0)
   let resizeObserver: ResizeObserver | null = null
   // Configurable mobile breakpoint to determine layout behavior
   const mobileBreakpoint = ref<number>(768)
+
+  // ===== Theme Management =====
+  // Get theme from profileStore (source of truth)
+  const profileStore = useProfileStore()
+  const currentTheme = computed<'light' | 'dark'>(() => profileStore.effectiveTheme)
+
+  // Apply theme to widget root when it changes
+  // This is the single point of theme application for Shadow DOM context
+  watch(
+    currentTheme,
+    newTheme => {
+      if (widgetRoot.value) {
+        profileStore.applyTheme(newTheme, widgetRoot.value)
+      }
+    },
+    { immediate: true }
+  )
 
   // Derived state
   const isMobile = computed(() => containerWidth.value < mobileBreakpoint.value)
@@ -27,6 +42,9 @@ export const useUIStore = defineStore('uiStore', () => {
 
   function setWidgetRoot(root: HTMLElement, skipInitialMeasure = false) {
     widgetRoot.value = root
+
+    // Apply current theme to widget root
+    profileStore.applyTheme(currentTheme.value, root)
 
     // Disconnect any previous observer
     if (resizeObserver) {
@@ -123,14 +141,14 @@ export const useUIStore = defineStore('uiStore', () => {
     isLoading.value = loading
   }
 
+  // Theme methods now delegate to profileStore
   function toggleTheme() {
-    currentTheme.value = currentTheme.value === 'light' ? 'dark' : 'light'
-    localStorage.setItem('customizer-theme', currentTheme.value)
+    const newTheme = currentTheme.value === 'light' ? 'dark' : 'light'
+    profileStore.setPreferences({ display: newTheme })
   }
 
   function setTheme(theme: 'light' | 'dark') {
-    currentTheme.value = theme
-    localStorage.setItem('customizer-theme', theme)
+    profileStore.setPreferences({ display: theme })
   }
 
   function setDefaultColorMode(mode: 'light' | 'dark') {

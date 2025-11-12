@@ -1,6 +1,7 @@
 import { hexToHsl } from '@/lib/colorUtils'
 import { useUIStore } from '@/stores/ui/ui.store'
 import { useCompanyStore } from '@/stores/company/company.store'
+import { useProfileStore } from '@/stores/profile/profile.store'
 import { loadCustomFont, loadGoogleFont, getFontFamilyCSS } from '@/lib/utils'
 
 export function useBrandStyling() {
@@ -8,20 +9,15 @@ export function useBrandStyling() {
   const applyBrandStyling = async (container?: HTMLElement) => {
     const target = container || document.documentElement
     const companyStore = useCompanyStore()
+    const profileStore = useProfileStore()
     const defaultUiBranding = companyStore.settings?.ui_branding
     // If no host theme provided, use CSS defaults
     if (!defaultUiBranding) {
       const uiStore = useUIStore()
       uiStore.setAllowColorModeSwitch(true)
       uiStore.setDefaultColorMode('light')
-      uiStore.setTheme(uiStore.currentTheme)
-
-      // Add dark class to widget root
-      if (uiStore.currentTheme === 'dark') {
-        uiStore.widgetRoot?.classList.add('dark')
-      } else {
-        uiStore.widgetRoot?.classList.remove('dark')
-      }
+      // Theme is now managed by profileStore, so we just ensure it's applied
+      // The theme will be applied via uiStore's watch on currentTheme
       return
     }
 
@@ -66,23 +62,21 @@ export function useBrandStyling() {
       }
     }
 
-    // Set the color mode FIRST
+    // Set the color mode configuration
     const uiStore = useUIStore()
     uiStore.setAllowColorModeSwitch(defaultUiBranding?.allow_color_mode_switch || true)
     uiStore.setDefaultColorMode(defaultUiBranding?.theme || 'light')
 
-    // Apply theme based on configuration
+    // Apply theme based on configuration and user preferences
+    // If color mode switch is allowed, respect user preference from profileStore
+    // Otherwise, use the default from company settings
     if (defaultUiBranding?.allow_color_mode_switch) {
-      uiStore.setTheme(defaultUiBranding?.theme)
+      // User preference takes precedence (already set in profileStore)
+      // Theme will be applied via uiStore's watch on currentTheme
     } else {
-      uiStore.setTheme(uiStore.defaultColorMode)
-    }
-
-    // Add dark class to widget root BEFORE setting CSS variables
-    if (defaultUiBranding?.theme === 'dark') {
-      uiStore.widgetRoot?.classList.add('dark')
-    } else {
-      uiStore.widgetRoot?.classList.remove('dark')
+      // If switching is not allowed, force the default theme
+      const forcedTheme = defaultUiBranding?.theme || uiStore.defaultColorMode
+      profileStore.setPreferences({ display: forcedTheme })
     }
 
     // Clear existing variables before applying new ones
