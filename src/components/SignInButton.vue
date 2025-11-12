@@ -2,26 +2,11 @@
   import { ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useAuthStore } from '@/stores/auth/auth.store'
-  import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger
-  } from '@/components/ui/dialog'
   import { Button } from '@/components/ui/button'
   import type { ButtonVariants } from '@/components/ui/button'
-  import { Input } from '@/components/ui/input'
-  import { Label } from '@/components/ui/label'
-  import {
-    auth_sign_in,
-    auth_signing_in,
-    auth_cancel,
-    auth_dialog_title
-  } from '@/paraglide/messages'
+  import { auth_sign_in } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import SignInDialog from './SignInDialog.vue'
 
   const authStore = useAuthStore()
   const profileStore = useProfileStore()
@@ -31,28 +16,13 @@
   const {
     isAuthenticated: isLoggedIn,
     customer: user,
-    customerInitials: userInitials,
-    isLoading
+    customerInitials: userInitials
   } = storeToRefs(authStore)
 
   // Reactive state
   const showSignInDialog = ref(false)
-  const credentials = ref({
-    email: '',
-    password: ''
-  })
-  const error = ref('')
 
   // Methods
-  const handleSignIn = async () => {
-    error.value = ''
-    const result = await authStore.login(credentials.value)
-    if (result.success) {
-      showSignInDialog.value = false
-      credentials.value = { email: '', password: '' }
-    }
-  }
-
   const handleProfileClick = () => {
     emit('open-profile')
   }
@@ -67,7 +37,7 @@
     {
       variant: 'outline',
       size: 'default',
-      class: '!rounded-l-md rounded-r-none'
+      class: '!rounded-l-md !rounded-r-none'
     }
   )
 </script>
@@ -75,61 +45,17 @@
 <template>
   <div class="flex items-center">
     <!-- Sign In Button (when not authenticated) -->
-
-    <!-- Sign In Dialog -->
-    <Dialog v-if="!isLoggedIn" v-model:open="showSignInDialog">
-      <DialogTrigger as-child>
-        <Button :variant="props.variant" :size="props.size" :class="isLoggedIn ?? props.class">
-          {{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}
-        </Button>
-      </DialogTrigger>
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{{
-            auth_dialog_title({}, { locale: profileStore.currentLocale })
-          }}</DialogTitle>
-          <DialogDescription> Enter your credentials to access your account. </DialogDescription>
-        </DialogHeader>
-        <form class="space-y-4" @submit.prevent="handleSignIn">
-          <div class="grid gap-2">
-            <Label for="email">Email</Label>
-            <Input
-              id="email"
-              v-model="credentials.email"
-              type="email"
-              required
-              placeholder="Enter your email"
-              autocomplete="email"
-            />
-          </div>
-          <div class="grid gap-2">
-            <Label for="password">Password</Label>
-            <Input
-              id="password"
-              v-model="credentials.password"
-              type="password"
-              required
-              placeholder="Enter your password"
-              autocomplete="current-password"
-            />
-          </div>
-          <div v-if="error" class="text-sm text-red-600">
-            {{ error }}
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="default" @click="showSignInDialog = false">
-              {{ auth_cancel({}, { locale: profileStore.currentLocale }) }}
-            </Button>
-            <Button type="submit" :disabled="isLoading">
-              <span v-if="isLoading">{{
-                auth_signing_in({}, { locale: profileStore.currentLocale })
-              }}</span>
-              <span v-else>{{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}</span>
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <template v-if="!isLoggedIn">
+      <Button
+        :variant="props.variant"
+        :size="props.size"
+        :class="props.class"
+        @click="showSignInDialog = true"
+      >
+        {{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}
+      </Button>
+      <SignInDialog v-model:open="showSignInDialog" />
+    </template>
 
     <!-- User Menu (when authenticated) -->
     <div v-else class="relative">

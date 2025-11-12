@@ -7,7 +7,7 @@
   import OrdersTab from './orders-section/OrdersTab.vue'
   import AddressTab from './address-section/AddressTab.vue'
   // import PreferencesTab from './preferences-section/PreferencesTab.vue'
-  import { onMounted, watch } from 'vue'
+  import { watch } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { storeToRefs } from 'pinia'
   import Loader from '../ui/loader/Loader.vue'
@@ -19,9 +19,6 @@
   const { tab, tabItems } = useProfileDialogState()
   const profileStore = useProfileStore()
   const { counters } = storeToRefs(profileStore)
-
-  // Fetch addresses when dialog opens
-  onMounted(profileStore.fetchAddresses)
 
   // Watch tab changes and persist them
   watch(
@@ -47,7 +44,6 @@
         if (!profileStore.isInitialized) {
           void profileStore.initializeLocale()
         }
-        profileStore.fetchDashboard()
       }
     },
     { immediate: true }
@@ -56,9 +52,7 @@
 
 <template>
   <Dialog :open="props.open" @update:open="emit('update:open', $event)">
-    <DialogContent
-      :class="'w-[1200px] h-[760px] max-w-full p-0 overflow-hidden overflow-hidden flex flex-col'"
-    >
+    <DialogContent :class="'w-[1200px] h-[760px] max-w-full p-0 overflow-hidden flex flex-col'">
       <div
         v-if="profileStore.isLoading"
         class="absolute inset-0 flex items-center justify-center bg-white/70 z-50"
