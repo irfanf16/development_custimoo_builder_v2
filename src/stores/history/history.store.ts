@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { registry, createHistoryContext } from './registry'
 import type { HistoryEntry, HistoryActionType, HistoryContext } from './types'
+import { useLocalStorage } from '@/composables/useLocalStorage'
 
 export const useHistoryStore = defineStore('historyStore', () => {
   const undoStack = ref<HistoryEntry[]>([])
@@ -9,25 +10,24 @@ export const useHistoryStore = defineStore('historyStore', () => {
   const isApplying = ref(false)
 
   const ctx = createHistoryContext()
+  const { getItem, setItem } = useLocalStorage()
 
   const KEY_UNDO = 'history.undo'
   const KEY_REDO = 'history.redo'
 
   function saveStacks() {
-    if (typeof window === 'undefined') return
     try {
-      window.localStorage.setItem(KEY_UNDO, JSON.stringify(undoStack.value))
-      window.localStorage.setItem(KEY_REDO, JSON.stringify(redoStack.value))
+      setItem(KEY_UNDO, undoStack.value)
+      setItem(KEY_REDO, redoStack.value)
     } catch (_) {}
   }
 
   function load() {
-    if (typeof window === 'undefined') return
     try {
-      const u = JSON.parse(window.localStorage.getItem(KEY_UNDO) || '[]') as unknown
-      const r = JSON.parse(window.localStorage.getItem(KEY_REDO) || '[]') as unknown
-      if (Array.isArray(u)) undoStack.value = u as HistoryEntry[]
-      if (Array.isArray(r)) redoStack.value = r as HistoryEntry[]
+      const u = getItem<HistoryEntry[]>(KEY_UNDO) || []
+      const r = getItem<HistoryEntry[]>(KEY_REDO) || []
+      if (Array.isArray(u)) undoStack.value = u
+      if (Array.isArray(r)) redoStack.value = r
     } catch {
       undoStack.value = []
       redoStack.value = []

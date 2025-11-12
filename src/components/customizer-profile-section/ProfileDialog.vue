@@ -12,6 +12,7 @@
   import { storeToRefs } from 'pinia'
   import Loader from '../ui/loader/Loader.vue'
   import PreferencesTab from './preferences-section/PreferencesTab.vue'
+  import { useLocalStorage } from '@/composables/useLocalStorage'
 
   const props = defineProps<{ open: boolean }>()
   const emit = defineEmits(['update:open'])
@@ -19,6 +20,7 @@
   const { tab, tabItems } = useProfileDialogState()
   const profileStore = useProfileStore()
   const { counters } = storeToRefs(profileStore)
+  const { clearAll } = useLocalStorage()
 
   // Watch tab changes and persist them
   watch(
@@ -30,7 +32,7 @@
   )
   function handleSignOut() {
     emit('update:open', false)
-    localStorage.clear()
+    clearAll()
     useProfileStore().$reset()
   }
 

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API } from '@/services'
 import type { Order, OrderDetailResponse } from '@/services/orders/types'
+import { useLocalStorage } from '@/composables/useLocalStorage'
 
 export const useOrdersStore = defineStore('ordersStore', () => {
   // --- STATE ---
@@ -35,9 +36,9 @@ export const useOrdersStore = defineStore('ordersStore', () => {
 
   // --- LOCAL STORAGE PERSISTENCE ---
   const STORAGE_KEY = 'ordersStore'
+  const { getItem, setItem, removeItem } = useLocalStorage()
 
   function saveToLocalStorage() {
-    if (typeof window === 'undefined') return
     try {
       const state = {
         ordersView: ordersView.value,
@@ -49,19 +50,15 @@ export const useOrdersStore = defineStore('ordersStore', () => {
         pagination: pagination.value,
         orders: orders.value
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+      setItem(STORAGE_KEY, state)
     } catch (e) {
       console.error('Failed to save ordersStore to localStorage:', e)
     }
   }
 
   function loadFromLocalStorage() {
-    if (typeof window === 'undefined') return false
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (!stored) return false
-
-      const state = JSON.parse(stored) as {
+      const state = getItem<{
         ordersView?: 'list' | 'expanded-list'
         ordersPageType?: 'order' | 'quote'
         ordersParams?: { search: string; filter: string | null }
@@ -75,7 +72,9 @@ export const useOrdersStore = defineStore('ordersStore', () => {
           next_page_url?: string | null
         }
         orders?: Order[]
-      }
+      }>(STORAGE_KEY)
+
+      if (!state) return false
 
       if (state.ordersView) ordersView.value = state.ordersView
       if (state.ordersPageType) ordersPageType.value = state.ordersPageType
@@ -112,8 +111,7 @@ export const useOrdersStore = defineStore('ordersStore', () => {
   }
 
   function clearLocalStorage() {
-    if (typeof window === 'undefined') return
-    localStorage.removeItem(STORAGE_KEY)
+    removeItem(STORAGE_KEY)
   }
 
   // --- ACTIONS ---

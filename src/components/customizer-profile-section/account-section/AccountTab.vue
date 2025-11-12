@@ -11,12 +11,14 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { m as messages } from '@/paraglide/messages'
   import { computed } from 'vue'
+  import { useLocalStorage } from '@/composables/useLocalStorage'
 
   defineProps<{ title?: string; counters: DashboardCounters }>()
 
   const auth = useAuthStore()
   const { customer, customerInitials } = storeToRefs(auth)
   const profileStore = useProfileStore()
+  const { clearAll } = useLocalStorage()
   const emit = defineEmits(['sign-out'])
 
   const t = computed(() => ({
@@ -40,7 +42,7 @@
 
   function handleSignOut() {
     auth.logout() // logout user
-    localStorage.clear() // clear all localStorage data
+    clearAll() // clear all localStorage data
     emit('sign-out') // let parent know to close dialog
   }
 </script>
@@ -61,7 +63,7 @@
               {{ customerInitials }}
             </div>
             <div class="flex flex-col">
-              <div class="font-medium">
+              <div class="font-medium text-foreground">
                 {{ (customer?.first_name || '') + ' ' + (customer?.last_name || '') }}
               </div>
               <div class="text-sm text-muted-foreground">{{ customer?.email }}</div>
@@ -109,7 +111,7 @@
           </div>
 
           <!-- Right side: Edit button -->
-          <Button size="sm" variant="outline" class="self-center"
+          <Button size="sm" variant="default" class="self-center"
             ><i-flex-line-edit /> {{ t.edit }}</Button
           >
         </Card>

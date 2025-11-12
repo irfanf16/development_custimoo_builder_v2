@@ -1,4 +1,4 @@
-export type DisplayMode = 'light' | 'dark' | 'system'
+export type DisplayMode = 'light' | 'dark'
 
 export interface UserPreferences {
   display: DisplayMode

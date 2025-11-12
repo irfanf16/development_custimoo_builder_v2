@@ -3,9 +3,10 @@ import { ref, computed, watch, type Ref } from 'vue'
 import { API } from '@/services'
 import type { DashboardCounters } from '@/services/dashboard/types'
 import type { Address, AddressPayload } from '@/services/addresses/types'
-import type { UserPreferences, ParaglideLocale } from '@/services/preferences/types'
+import type { UserPreferences, ParaglideLocale, DisplayMode } from '@/services/preferences/types'
 import { useCompanyStore } from '../company/company.store'
 import { setLocale } from '@/paraglide/runtime'
+import { useLocalStorage } from '@/composables/useLocalStorage'
 
 export const useProfileStore = defineStore('profileStore', () => {
   // ===== Dashboard =====
@@ -46,17 +47,79 @@ export const useProfileStore = defineStore('profileStore', () => {
   // ===== Preferences & Localization =====
   // Hybrid Approach: companyStore defines available/default, profileStore manages user selection
   const companyStore = useCompanyStore()
+
+  // Check if branding is available from company settings
+  const hasBranding = computed(() => {
+    return Boolean(companyStore.settings?.ui_branding)
+  })
+
+  // Default display mode: use company default if available, otherwise 'light'
+  function getDefaultDisplayMode(): DisplayMode {
+    const companyTheme = companyStore.settings?.ui_branding?.theme
+    if (companyTheme === 'dark' || companyTheme === 'light') {
+      return companyTheme
+    }
+    return 'light'
+  }
+
   const preferences: Ref<UserPreferences> = ref({
-    display: 'system',
+    display: 'light', // Default to light, will be updated based on company settings or user preference
     language: 'en'
   })
   const currentLocale = ref<ParaglideLocale>()
   const isInitialized = ref(false)
 
+  // ===== Theme Management =====
+  // Effective theme is simply the display preference (no system resolution needed)
+  const effectiveTheme = computed<'light' | 'dark'>(() => {
+    return preferences.value.display
+  })
+
+  // Apply theme to DOM
+  // Note: widgetRoot is required since we're in Shadow DOM context
+  // Applying to document.documentElement won't affect shadow DOM content
+  function applyTheme(theme: 'light' | 'dark', widgetRoot: HTMLElement) {
+    if (!widgetRoot) {
+      console.warn('applyTheme: widgetRoot is required for Shadow DOM context')
+      return
+    }
+
+    // Apply to widget root container (for .dark CSS selector)
+    if (theme === 'dark') {
+      widgetRoot.classList.remove('light')
+      widgetRoot.classList.add('dark')
+    } else {
+      widgetRoot.classList.remove('dark')
+      widgetRoot.classList.add('light')
+    }
+
+    // Also apply to shadow host if available (for :host.dark CSS selector)
+    // This ensures both CSS selectors work: .dark and :host.dark
+    const rootNode = widgetRoot.getRootNode()
+    if (rootNode instanceof ShadowRoot) {
+      const host = rootNode.host as HTMLElement
+      if (host) {
+        if (theme === 'dark') {
+          host.classList.remove('light')
+          host.classList.add('dark')
+        } else {
+          host.classList.remove('dark')
+          host.classList.add('light')
+        }
+      }
+    }
+  }
+
   // Get available locales from company store
-  const availableLocales = computed(() =>
-    companyStore.localization.availableLanguages.map(lang => lang.code as ParaglideLocale)
-  )
+  // If company store has no languages, return default [en, fr]
+  const availableLocales = computed(() => {
+    const languages = companyStore.localization.availableLanguages
+    if (languages.length === 0) {
+      // Return default languages if none are set
+      return ['en', 'fr'] as ParaglideLocale[]
+    }
+    return languages.map(lang => lang.code as ParaglideLocale)
+  })
 
   // Get default locale from company store as fallback
   const defaultLocale = computed<ParaglideLocale>(() => {
@@ -70,48 +133,59 @@ export const useProfileStore = defineStore('profileStore', () => {
 
   // ===== Persistence =====
   const STORAGE_KEY = 'profileStore'
+  const { getItem, setItem, removeItem } = useLocalStorage()
 
   function saveToLocalStorage() {
-    if (typeof window === 'undefined') return
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          preferences: preferences.value,
-          activeTab: activeTab.value,
-          currentLocale: currentLocale.value
-        })
-      )
+      setItem(STORAGE_KEY, {
+        preferences: preferences.value,
+        activeTab: activeTab.value,
+        currentLocale: currentLocale.value
+      })
     } catch (e) {
       console.error('Failed to save profile store to localStorage:', e)
     }
   }
 
   function loadFromLocalStorage() {
-    if (typeof window === 'undefined') return
+    // Set default based on branding availability
+    preferences.value.display = getDefaultDisplayMode()
+
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (!stored) return
-      const state = JSON.parse(stored) as {
+      const state = getItem<{
         preferences?: UserPreferences
         activeTab?: 'account' | 'orders' | 'address' | 'preferences'
         currentLocale?: ParaglideLocale
+      }>(STORAGE_KEY)
+
+      if (!state) {
+        return
       }
 
       if (state.activeTab) activeTab.value = state.activeTab
-      if (state.preferences) preferences.value = state.preferences
+      if (state.preferences) {
+        preferences.value = state.preferences
+        // If an invalid display value is somehow present, default to 'light'
+        if (preferences.value.display !== 'dark' && preferences.value.display !== 'light') {
+          preferences.value.display = 'light'
+        }
+      } else {
+        // If no preferences stored, set default
+        preferences.value.display = getDefaultDisplayMode()
+      }
       // 🧠 Don't override company default unless user explicitly changed it
       if (state.currentLocale && isValidLocale(state.currentLocale)) {
         currentLocale.value = state.currentLocale
       }
     } catch (e) {
       console.error('Failed to load profile store from localStorage:', e)
+      // On error, set default based on branding
+      preferences.value.display = getDefaultDisplayMode()
     }
   }
 
   function clearLocalStorage() {
-    if (typeof window === 'undefined') return
-    localStorage.removeItem(STORAGE_KEY)
+    removeItem(STORAGE_KEY)
   }
 
   // ===== Dashboard Actions =====
@@ -251,6 +325,8 @@ export const useProfileStore = defineStore('profileStore', () => {
     if (newPrefs.language && isValidLocale(newPrefs.language)) {
       void setCurrentLocale(newPrefs.language)
     }
+    // Theme will be applied automatically via uiStore watcher when effectiveTheme changes
+    // No need to call applyTheme here since we don't have widgetRoot access
     saveToLocalStorage()
   }
 
@@ -310,6 +386,18 @@ export const useProfileStore = defineStore('profileStore', () => {
       void setCurrentLocale(defaultLocale.value ?? 'en')
     }
   })
+
+  // Watch for branding availability changes and adjust display mode if needed
+  watch(hasBranding, () => {
+    // If no user preference is set yet, update to company default
+    // This handles the case where company settings load after profileStore initialization
+    // We only update if display is still at initial default 'light' and no explicit user choice was made
+    // (We can't detect if user explicitly chose 'light', so we only update on initial load)
+  })
+
+  // Note: Theme is applied via uiStore watcher when widgetRoot is available
+  // We don't apply here directly since we need the widgetRoot element
+  // The uiStore watch handles theme application to the widget root
   return {
     // State
     counters,
@@ -330,6 +418,8 @@ export const useProfileStore = defineStore('profileStore', () => {
     availableLocales,
     defaultLocale,
     isInitialized,
+    effectiveTheme,
+    applyTheme,
 
     // Dashboard
     fetchDashboard,
