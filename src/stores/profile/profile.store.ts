@@ -6,6 +6,7 @@ import type { Address, AddressPayload } from '@/services/addresses/types'
 import type { UserPreferences, ParaglideLocale, DisplayMode } from '@/services/preferences/types'
 import { useCompanyStore } from '../company/company.store'
 import { setLocale } from '@/paraglide/runtime'
+import { useLocalStorage } from '@/composables/useLocalStorage'
 
 export const useProfileStore = defineStore('profileStore', () => {
   // ===== Dashboard =====
@@ -132,40 +133,33 @@ export const useProfileStore = defineStore('profileStore', () => {
 
   // ===== Persistence =====
   const STORAGE_KEY = 'profileStore'
+  const { getItem, setItem, removeItem } = useLocalStorage()
 
   function saveToLocalStorage() {
-    if (typeof window === 'undefined') return
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          preferences: preferences.value,
-          activeTab: activeTab.value,
-          currentLocale: currentLocale.value
-        })
-      )
+      setItem(STORAGE_KEY, {
+        preferences: preferences.value,
+        activeTab: activeTab.value,
+        currentLocale: currentLocale.value
+      })
     } catch (e) {
       console.error('Failed to save profile store to localStorage:', e)
     }
   }
 
   function loadFromLocalStorage() {
-    if (typeof window === 'undefined') {
-      // Set default based on branding availability
-      preferences.value.display = getDefaultDisplayMode()
-      return
-    }
+    // Set default based on branding availability
+    preferences.value.display = getDefaultDisplayMode()
+
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (!stored) {
-        // If no stored preferences, set default based on branding availability
-        preferences.value.display = getDefaultDisplayMode()
-        return
-      }
-      const state = JSON.parse(stored) as {
+      const state = getItem<{
         preferences?: UserPreferences
         activeTab?: 'account' | 'orders' | 'address' | 'preferences'
         currentLocale?: ParaglideLocale
+      }>(STORAGE_KEY)
+
+      if (!state) {
+        return
       }
 
       if (state.activeTab) activeTab.value = state.activeTab
@@ -191,8 +185,7 @@ export const useProfileStore = defineStore('profileStore', () => {
   }
 
   function clearLocalStorage() {
-    if (typeof window === 'undefined') return
-    localStorage.removeItem(STORAGE_KEY)
+    removeItem(STORAGE_KEY)
   }
 
   // ===== Dashboard Actions =====

@@ -13,10 +13,12 @@ import type {
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
 import type { CustomLogo, LogoColor } from '@/services/logos/types'
+import { useLocalStorage } from '@/composables/useLocalStorage'
 
 export const useCustomizationStore = defineStore('customizationStore', () => {
   // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
+  const { getItem, setItem, removeItem } = useLocalStorage()
 
   // ===== STATE =====
   const customization = ref<ActiveProductCustomization | null>(null)
@@ -135,29 +137,18 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
   // ===== PERSISTENCE =====
   function saveToLocalStorage() {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem('activeProductCustomization', JSON.stringify(customization.value))
+    setItem('activeProductCustomization', customization.value)
   }
 
   function loadFromLocalStorage(): boolean {
-    if (typeof window === 'undefined') return false
-    const raw = window.localStorage.getItem('activeProductCustomization')
-    if (!raw) return false
-    try {
-      const parsed = JSON.parse(raw) as unknown
-      if (parsed) {
-        customization.value = parsed as ActiveProductCustomization
-        return true
-      }
-    } catch {
-      // Ignore parsing errors
-    }
-    return false
+    const parsed = getItem<ActiveProductCustomization>('activeProductCustomization')
+    if (!parsed) return false
+    customization.value = parsed
+    return true
   }
 
   function clearLocalStorage() {
-    if (typeof window === 'undefined') return
-    window.localStorage.removeItem('activeProductCustomization')
+    removeItem('activeProductCustomization')
   }
 
   // ===== ACTIONS =====

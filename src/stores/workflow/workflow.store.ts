@@ -18,6 +18,7 @@ import type {
   HeaderConfiguration
 } from '@/components/customization-workflow/types'
 import type { Ref } from 'vue'
+import { useLocalStorage } from '@/composables/useLocalStorage'
 
 // Internal store type that includes refs
 type HeaderConfigWithRefs = HeaderConfiguration & {
@@ -28,13 +29,11 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
   const productsStore = useProductsStore()
+  const { getItem, setItem, getItemRaw, setItemRaw } = useLocalStorage()
 
   // ===== STATE =====
-  const activeStep = ref<CustomizerStep | null | undefined>(
-    typeof window !== 'undefined'
-      ? (window.localStorage.getItem('activeStep') as CustomizerStep | null)
-      : null
-  )
+  // Initialize to null - will be loaded from localStorage after company is fetched
+  const activeStep = ref<CustomizerStep | null | undefined>(null)
 
   // Workflow UI state
   const logosSubStep = ref<LogosSubStep>('list')
@@ -224,68 +223,56 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   // ===== PERSISTENCE =====
   function saveToLocalStorage() {
-    if (typeof window === 'undefined') return
     if (activeStep.value) {
-      window.localStorage.setItem('activeStep', activeStep.value)
+      setItemRaw('activeStep', activeStep.value)
     }
   }
 
   function saveSubStepsToLocalStorage() {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem('workflow.logosSubStep', logosSubStep.value)
-    window.localStorage.setItem('workflow.productsSubStep', productsSubStep.value)
-    window.localStorage.setItem('workflow.textsSubStep', textsSubStep.value)
-    window.localStorage.setItem('workflow.textsActiveId', String(activeTextId.value ?? ''))
-    window.localStorage.setItem(
-      'workflow.textsActiveItemIndex',
-      String(activeTextItemIndex.value ?? '')
-    )
-    window.localStorage.setItem(
-      'workflow.textsPendingTemplate',
-      String(pendingTextTemplateId.value ?? '')
-    )
-    window.localStorage.setItem('workflow.textsPendingPreset', pendingNumberPreset.value ?? '')
-    window.localStorage.setItem('workflow.rosterSubStep', rosterSubStep.value)
-    window.localStorage.setItem('workflow.patternsSubStep', patternsSubStep.value || '')
-    window.localStorage.setItem(
-      'workflow.activePatternGroupName',
-      activePatternGroupName.value || ''
-    )
-    window.localStorage.setItem('workflow.activeLogoId', activeLogoId.value || '')
-    window.localStorage.setItem('workflow.textClipboard', JSON.stringify(textClipboard.value))
+    setItemRaw('workflow.logosSubStep', logosSubStep.value)
+    setItemRaw('workflow.productsSubStep', productsSubStep.value)
+    setItemRaw('workflow.textsSubStep', textsSubStep.value)
+    setItemRaw('workflow.textsActiveId', String(activeTextId.value ?? ''))
+    setItemRaw('workflow.textsActiveItemIndex', String(activeTextItemIndex.value ?? ''))
+    setItemRaw('workflow.textsPendingTemplate', String(pendingTextTemplateId.value ?? ''))
+    setItemRaw('workflow.textsPendingPreset', pendingNumberPreset.value ?? '')
+    setItemRaw('workflow.rosterSubStep', rosterSubStep.value)
+    setItemRaw('workflow.patternsSubStep', patternsSubStep.value || '')
+    setItemRaw('workflow.activePatternGroupName', activePatternGroupName.value || '')
+    setItemRaw('workflow.activeLogoId', activeLogoId.value || '')
+    setItem('workflow.textClipboard', textClipboard.value)
   }
 
   function loadFromLocalStorage() {
-    if (typeof window === 'undefined') return
     try {
-      const logos = window.localStorage.getItem('workflow.logosSubStep') as
-        | 'list'
-        | 'placement'
-        | 'edit'
-        | null
-      const products = window.localStorage.getItem('workflow.productsSubStep') as
+      // Load activeStep first (this is the main workflow step)
+      const storedActiveStep = getItemRaw('activeStep') as CustomizerStep | null
+      if (storedActiveStep) {
+        activeStep.value = storedActiveStep
+      }
+
+      // Load all sub-steps
+      const logos = getItemRaw('workflow.logosSubStep') as 'list' | 'placement' | 'edit' | null
+      const products = getItemRaw('workflow.productsSubStep') as
         | 'category'
         | 'subcategory'
         | 'product'
         | null
-      const texts = window.localStorage.getItem('workflow.textsSubStep') as
+      const texts = getItemRaw('workflow.textsSubStep') as
         | 'list'
         | 'placement'
         | 'edit'
         | 'number-font'
         | null
-      const textId = window.localStorage.getItem('workflow.textsActiveId')
-      const textIndexLegacy = window.localStorage.getItem('workflow.textsActiveIndex') // Legacy support
-      const templateId = window.localStorage.getItem('workflow.textsPendingTemplate')
-      const preset = window.localStorage.getItem('workflow.textsPendingPreset')
-      const activeItemIndex = window.localStorage.getItem('workflow.textsActiveItemIndex')
-      const roster = window.localStorage.getItem('workflow.rosterSubStep') as 'list' | 'edit' | null
-      const patterns = window.localStorage.getItem('workflow.patternsSubStep') as
-        | 'list'
-        | 'edit'
-        | null
-      const patternGroupName = window.localStorage.getItem('workflow.activePatternGroupName')
-      const logoId = window.localStorage.getItem('workflow.activeLogoId')
+      const textId = getItemRaw('workflow.textsActiveId')
+      const textIndexLegacy = getItemRaw('workflow.textsActiveIndex') // Legacy support
+      const templateId = getItemRaw('workflow.textsPendingTemplate')
+      const preset = getItemRaw('workflow.textsPendingPreset')
+      const activeItemIndex = getItemRaw('workflow.textsActiveItemIndex')
+      const roster = getItemRaw('workflow.rosterSubStep') as 'list' | 'edit' | null
+      const patterns = getItemRaw('workflow.patternsSubStep') as 'list' | 'edit' | null
+      const patternGroupName = getItemRaw('workflow.activePatternGroupName')
+      const logoId = getItemRaw('workflow.activeLogoId')
       if (logos) logosSubStep.value = logos
       if (products) productsSubStep.value = products
       if (texts) textsSubStep.value = texts
@@ -305,13 +292,9 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       if (patterns) patternsSubStep.value = patterns
       if (patternGroupName) activePatternGroupName.value = patternGroupName
       if (logoId) activeLogoId.value = logoId
-      const clipboardRaw = window.localStorage.getItem('workflow.textClipboard')
+      const clipboardRaw = getItem<{ style: unknown } | null>('workflow.textClipboard')
       if (clipboardRaw) {
-        try {
-          textClipboard.value = JSON.parse(clipboardRaw) as { style: unknown } | null
-        } catch (_) {
-          textClipboard.value = null
-        }
+        textClipboard.value = clipboardRaw
       }
     } catch (_) {}
   }
