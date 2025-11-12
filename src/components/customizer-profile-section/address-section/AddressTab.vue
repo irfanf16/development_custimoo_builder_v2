@@ -10,7 +10,7 @@
     DialogTitle
   } from '@/components/ui/dialog'
   import AddressForm from './AddressForm.vue'
-  import { onMounted, computed } from 'vue'
+  import { computed } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import Card from '@/components/ui/card/Card.vue'
   import CardContent from '@/components/ui/card/CardContent.vue'
@@ -18,7 +18,6 @@
   import { m as messages } from '@/paraglide/messages'
 
   const store = useProfileStore()
-  onMounted(store.fetchAddresses)
   function openAddAddressModal() {
     store.editingAddress = null
     store.resetAddressForm() // we'll add this method in store

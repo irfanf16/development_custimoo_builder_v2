@@ -2,10 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch, type Ref } from 'vue'
 import { API } from '@/services'
 import type { DashboardCounters } from '@/services/dashboard/types'
-import type { Address, AddressPayload } from '@/services/addresses/types'
+import type { Address, AddressPayload } from '@/services/customers/types'
 import type { UserPreferences, ParaglideLocale } from '@/services/preferences/types'
 import { useCompanyStore } from '../company/company.store'
 import { setLocale } from '@/paraglide/runtime'
+import { useAuthStore } from '../auth/auth.store'
 
 export const useProfileStore = defineStore('profileStore', () => {
   // ===== Dashboard =====
@@ -46,6 +47,7 @@ export const useProfileStore = defineStore('profileStore', () => {
   // ===== Preferences & Localization =====
   // Hybrid Approach: companyStore defines available/default, profileStore manages user selection
   const companyStore = useCompanyStore()
+  const authStore = useAuthStore()
   const preferences: Ref<UserPreferences> = ref({
     display: 'system',
     language: 'en'
@@ -136,7 +138,7 @@ export const useProfileStore = defineStore('profileStore', () => {
   async function fetchAddresses() {
     isLoadingAddresses.value = true
     try {
-      const res = await API.addresses.getAddresses()
+      const res = await API.customer.getAddresses()
       if (res.success) addresses.value = res.result || []
     } catch (e) {
       console.error('Fetch addresses error:', e)
@@ -153,20 +155,22 @@ export const useProfileStore = defineStore('profileStore', () => {
         country: Number(address.country.id),
         default: !!address.default
       }
-      const res = await API.addresses.setDefaultAddress(address.id, payload)
+      const res = await API.customer.setDefaultAddress(address.id, payload)
       if (res.success) await fetchAddresses()
     } finally {
       isLoadingAddresses.value = false
     }
   }
 
+  const defaultAddress = computed(() => addresses.value.find(address => address.default))
+
   async function saveAddress(payload: AddressPayload) {
     isLoadingAddresses.value = true
     try {
       let res
       if (editingAddress.value)
-        res = await API.addresses.updateAddress(editingAddress.value.id, payload)
-      else res = await API.addresses.createAddress(payload)
+        res = await API.customer.updateAddress(editingAddress.value.id, payload)
+      else res = await API.customer.createAddress(payload)
 
       if (res.success) {
         showAddModal.value = false
@@ -182,7 +186,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     if (!addressToDelete.value) return
     isLoadingAddresses.value = true
     try {
-      const res = await API.addresses.deleteAddress(addressToDelete.value.id)
+      const res = await API.customer.deleteAddress(addressToDelete.value.id)
       if (res.success) {
         showDeleteConfirm.value = false
         addressToDelete.value = null
@@ -212,13 +216,24 @@ export const useProfileStore = defineStore('profileStore', () => {
 
   async function fetchCountries() {
     try {
-      const res = await API.addresses.getCountries()
+      const res = await API.customer.getCountries()
       if (res.success) countries.value = res.result || []
     } catch (err) {
       console.error('Failed to fetch countries:', err)
     }
   }
 
+  async function updateCustomerName(payload: { first_name: string; last_name: string }) {
+    try {
+      const res = await API.customer.updateCustomerName(payload)
+      if (res.success) {
+        authStore.setCustomer(res.result)
+        await authStore.saveToLocalStorage()
+      }
+    } catch (e) {
+      console.error('Failed to update customer name:', e)
+    }
+  }
   function setAddressFromEdit(address: Address | null) {
     if (!address) {
       resetAddressForm()
@@ -344,6 +359,10 @@ export const useProfileStore = defineStore('profileStore', () => {
     fetchCountries,
     setAddressFromEdit,
     setAddressTab,
+    defaultAddress,
+
+    // Customer
+    updateCustomerName,
 
     // Preferences
     setPreferences,

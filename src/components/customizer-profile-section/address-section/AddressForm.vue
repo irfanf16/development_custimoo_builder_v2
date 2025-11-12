@@ -283,7 +283,7 @@
   import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
   import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import type { Address, AddressPayload } from '@/services/addresses/types'
+  import type { Address, AddressPayload } from '@/services/customers/types'
   import { m as messages } from '@/paraglide/messages'
 
   const props = defineProps<{ address?: Address | null }>()

@@ -1,3 +1,5 @@
+import type { Customer } from '../authentication/types'
+
 export interface Country {
   id: number
   name: string
@@ -22,6 +24,12 @@ export interface Address {
 export interface AddressResponse {
   success: boolean
   result: Address[]
+  message?: string
+}
+
+export interface CustomerResponse {
+  success: boolean
+  result: Customer
   message?: string
 }
 

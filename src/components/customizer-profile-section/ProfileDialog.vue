@@ -7,7 +7,7 @@
   import OrdersTab from './orders-section/OrdersTab.vue'
   import AddressTab from './address-section/AddressTab.vue'
   // import PreferencesTab from './preferences-section/PreferencesTab.vue'
-  import { watch } from 'vue'
+  import { onMounted, watch } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { storeToRefs } from 'pinia'
   import Loader from '../ui/loader/Loader.vue'
@@ -19,6 +19,9 @@
   const { tab, tabItems } = useProfileDialogState()
   const profileStore = useProfileStore()
   const { counters } = storeToRefs(profileStore)
+
+  // Fetch addresses when dialog opens
+  onMounted(profileStore.fetchAddresses)
 
   // Watch tab changes and persist them
   watch(
