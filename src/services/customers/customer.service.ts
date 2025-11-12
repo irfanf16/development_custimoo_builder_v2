@@ -1,5 +1,5 @@
 import http from '../api'
-import type { AddressResponse, AddressPayload } from './types'
+import type { AddressResponse, AddressPayload, CustomerResponse } from './types'
 
 async function getAddresses(): Promise<AddressResponse> {
   const { data } = await http.get<AddressResponse>('/addresses')
@@ -46,11 +46,20 @@ async function setDefaultAddress(
   return data
 }
 
+async function updateCustomerName(payload: {
+  first_name: string
+  last_name: string
+}): Promise<CustomerResponse> {
+  const { data } = await http.put<CustomerResponse>('/customer/update-name', payload)
+  return data
+}
+
 export default {
   getAddresses,
   getCountries,
   createAddress,
   updateAddress,
   deleteAddress,
-  setDefaultAddress
+  setDefaultAddress,
+  updateCustomerName
 }
