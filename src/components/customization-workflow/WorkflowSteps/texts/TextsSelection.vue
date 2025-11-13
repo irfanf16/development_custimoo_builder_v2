@@ -45,12 +45,6 @@
     team_name: 'Add additional text'
   }
 
-  /**
-   * Text types that support copy/paste style functionality
-   * Only name and number types can copy/paste styles
-   */
-  const CLIPBOARD_ENABLED_TYPES: OutputProductText['type'][] = ['name', 'number']
-
   // ===== COMPUTED =====
 
   const effectiveProductId = computed(() => customizationStore.activeProductId)
@@ -104,24 +98,56 @@
   // ===== CLIPBOARD OPERATIONS =====
 
   /**
+   * Type definition for clipboard style data
+   * Contains the style properties that can be copied and pasted
+   */
+  type ClipboardStyle = {
+    font_family: string
+    color: string
+    outline_width: number
+    outline_color: string
+  }
+
+  /**
    * Copies a text entry's style to the clipboard
-   * Style includes font_family and items (placement configurations)
+   *
+   * Style includes:
+   * - font_family from the product_text entry
+   * - color, outline_width, outline_color from the first item (if available)
+   *
+   * The clipboard is runtime-only and not persisted to localStorage.
    *
    * @param index - Index of the text entry in activeProductTexts
    */
   function handleCopyStyle(index: number) {
     const entry = activeProductTexts.value[index]
     if (!entry) return
-    workflowStore.setTextClipboard({ style: entry })
+
+    // Get the first item to extract style properties
+    const firstItem = entry.items?.[0]
+
+    const style: ClipboardStyle = {
+      font_family: entry.font_family || '',
+      color: firstItem?.color || '#000000',
+      outline_width: firstItem?.outline_width ?? 0,
+      outline_color: firstItem?.outline_color || '#FFFFFF'
+    }
+
+    workflowStore.setTextClipboard({ style })
   }
 
   /**
    * Pastes a copied style to a text entry
-   * Applies font_family and items from the clipboard to the target entry
+   *
+   * Applies the copied style to ALL items in the target entry:
+   * - font_family is set on the entry level
+   * - color, outline_width, outline_color are applied to all items
+   *
+   * The paste operation is added to history for undo/redo support.
    *
    * @param index - Index of the target text entry in activeProductTexts
    */
-  function handlePasteStyle(index: number) {
+  async function handlePasteStyle(index: number) {
     const clipboard = textClipboard.value
     const entry = activeProductTexts.value[index]
 
@@ -138,19 +164,35 @@
     }
 
     const key = String(effectiveProductId.value)
-    const next = {
+    const copiedStyle = clipboard.style as ClipboardStyle
+
+    // Create updated entry with style applied to all items
+    const next: OutputProductText = {
       ...entry,
-      font_family: (clipboard.style as OutputProductText).font_family,
-      items: (clipboard.style as OutputProductText).items
+      font_family: copiedStyle.font_family,
+      items: entry.items.map(item => ({
+        ...item,
+        color: copiedStyle.color,
+        outline_width: copiedStyle.outline_width,
+        outline_color: copiedStyle.outline_color
+      }))
     }
 
-    history.execute('text.update-entry', {
+    // Add to history for undo/redo support
+    await history.execute('text.update-entry', {
       key,
       textId: entry.id,
       prev: entry,
       next
     })
   }
+
+  /**
+   * Checks if clipboard has a style available for pasting
+   */
+  const hasClipboardStyle = computed(() => {
+    return textClipboard.value?.style != null
+  })
 
   // ===== LABEL HELPERS =====
 
@@ -187,14 +229,6 @@
     return typeof text.value === 'string' && text.value.trim().length > 0
   }
 
-  /**
-   * Checks if a text type supports clipboard operations
-   * Only name and number types support copy/paste style
-   */
-  function canUseClipboard(text: OutputProductText): boolean {
-    return CLIPBOARD_ENABLED_TYPES.includes(text.type)
-  }
-
   const headerConfig = { breadcrumbs: [{ label: 'Texts' }] }
   void headerConfig
 </script>
@@ -224,9 +258,7 @@
                 {{ getSecondaryLabel(customText) }}
               </span>
             </div>
-
             <div
-              v-if="canUseClipboard(customText)"
               class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             >
               <Button
@@ -238,10 +270,10 @@
                 Copy style
               </Button>
               <Button
+                v-if="hasClipboardStyle"
                 size="sm"
                 variant="outline"
                 class="h-8 px-3"
-                :disabled="!textClipboard"
                 @click.stop="handlePasteStyle(index)"
               >
                 Paste style

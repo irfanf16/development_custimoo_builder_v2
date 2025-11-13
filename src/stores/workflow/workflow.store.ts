@@ -29,7 +29,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
   const productsStore = useProductsStore()
-  const { getItem, getItemRaw, setItemRaw } = useLocalStorage()
+  const { getItemRaw, setItemRaw } = useLocalStorage()
 
   // ===== STATE =====
   // Initialize to null - will be loaded from localStorage after company is fetched
@@ -238,7 +238,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setItemRaw('workflow.patternsSubStep', patternsSubStep.value || '')
     setItemRaw('workflow.activePatternGroupName', activePatternGroupName.value || '')
     setItemRaw('workflow.activeLogoId', activeLogoId.value || '')
-    setItemRaw('workflow.textClipboard', JSON.stringify(textClipboard.value))
+    // Note: textClipboard is not persisted - it's runtime-only
   }
 
   function loadFromLocalStorage() {
@@ -286,10 +286,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       if (patterns) patternsSubStep.value = patterns
       if (patternGroupName) activePatternGroupName.value = patternGroupName
       if (logoId) activeLogoId.value = logoId
-      const clipboardRaw = getItem<{ style: unknown } | null>('workflow.textClipboard')
-      if (clipboardRaw) {
-        textClipboard.value = clipboardRaw
-      }
+      // Note: textClipboard is not loaded from localStorage - it's runtime-only
     } catch (_) {}
   }
 
@@ -364,7 +361,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   function setTextClipboard(payload: { style: unknown } | null) {
     textClipboard.value = payload
-    saveSubStepsToLocalStorage()
+    // Note: textClipboard is not persisted to localStorage - it's runtime-only
   }
 
   function resetWorkflowSubSteps() {
