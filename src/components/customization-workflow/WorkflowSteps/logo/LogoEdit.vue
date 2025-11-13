@@ -227,7 +227,7 @@
 
 <template>
   <div class="flex flex-col gap-5 w-full">
-    <div class="mt-5 flex flex-col items-center mx-4 md:mx-6 gap-4">
+    <div class="flex flex-col items-center mx-4 md:mx-6 gap-4">
       <LogoCard
         v-if="customLogo"
         :logo="customLogo"

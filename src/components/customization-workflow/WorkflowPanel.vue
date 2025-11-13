@@ -52,10 +52,10 @@
 
   const cardClasses = computed(() => {
     if (uiStore.isMobile) {
-      return 'justify-start gap-0 overflow-hidden flex flex-col py-0 max-h-full'
+      return 'justify-start gap-0 overflow-hidden flex flex-col max-h-full'
     }
     const baseClasses =
-      'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col py-0 max-h-full'
+      'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col max-h-full'
     return [baseClasses, isExpanded.value ? 'w-[75vw]' : 'w-[470px]']
   })
 
@@ -69,7 +69,7 @@
         baseMinus += 4
       }
       if (props.headerConfig?.helpText?.label) {
-        baseMinus += 4
+        baseMinus += 3
       }
       return `calc(65vh - ${baseMinus}rem)`
     }
@@ -182,7 +182,7 @@
       <!-- Header slot - panels can provide their own header content -->
       <template v-if="$slots.header">
         <CardHeader
-          class="pb-4 pt-0 px-4 md:pb-6 md:px-6 flex flex-row items-center justify-between gap-2 min-h-[4.5rem] max-h-[18rem] flex-shrink-0"
+          class="pb-4 pt-0 px-4 md:pb-6 md:px-6 flex flex-row items-center justify-between gap-2 min-h-5 max-h-[18rem]"
         >
           <slot name="header" :is-expanded="isExpanded" />
         </CardHeader>

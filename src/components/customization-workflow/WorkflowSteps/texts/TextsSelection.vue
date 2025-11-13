@@ -115,10 +115,6 @@
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex flex-col gap-1 px-4 md:px-6">
-      <p class="text-base">Insert and style text.</p>
-    </div>
-
     <div class="flex flex-col gap-2">
       <PanelNavigationItem
         v-for="(customText, index) in customAndPresetTexts"

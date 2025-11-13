@@ -4,7 +4,10 @@ import type { HeaderConfiguration, FooterConfiguration } from '../../types'
 export function useColorsConfig() {
   // ===== COMPUTED =====
   const headerConfig = computed<HeaderConfiguration>(() => {
-    return { breadcrumbs: [{ label: 'Color' }] }
+    return {
+      breadcrumbs: [{ label: 'Color' }],
+      helpText: { label: "Adjust your product's colors." }
+    }
   })
 
   const footerConfig = computed<FooterConfiguration>(() => {

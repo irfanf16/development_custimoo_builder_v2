@@ -13,7 +13,8 @@ export function useLogoConfig() {
         breadcrumbs: [
           { label: 'Logos', action: () => workflowStore.setLogosSubStep('list') },
           { label: 'Controls' }
-        ]
+        ],
+        helpText: { label: 'Add and adjust logos or graphics.' }
       }
     }
     if (workflowStore.logosSubStep === 'placement') {

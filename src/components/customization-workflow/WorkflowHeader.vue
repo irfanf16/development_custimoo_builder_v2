@@ -64,8 +64,11 @@
 </script>
 
 <template>
-  <div class="w-full flex flex-col gap-2">
-    <div class="flex items-center gap-2 h-9 justify-center">
+  <div class="w-full flex flex-col gap-1">
+    <div
+      class="flex items-center gap-2 h-7 justify-center"
+      :class="props.config?.isExpandable ? 'h-9' : ''"
+    >
       <div class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden">
         <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
       </div>
