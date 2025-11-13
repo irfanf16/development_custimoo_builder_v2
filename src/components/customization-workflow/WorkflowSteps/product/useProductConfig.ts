@@ -94,13 +94,28 @@ export function useProductConfig() {
       }
     }
 
+    const helpText = computed<{ label: string; tooltip?: string } | undefined>(() => {
+      if (workflowStore.productsSubStep === 'category') {
+        return {
+          label: 'Select a category to find your product.'
+        }
+      }
+      if (workflowStore.productsSubStep === 'subcategory') {
+        return {
+          label: 'Select a subcategory to find your product.'
+        }
+      }
+      return undefined
+    })
+
     return {
       breadcrumbs: trail,
       search: search.value ?? undefined,
       isExpandable: true,
       customizableStockFilter: showCustomizerStockFilter.value
         ? customizableStockFilter.value
-        : undefined
+        : undefined,
+      helpText: helpText.value ?? undefined
     }
   })
 

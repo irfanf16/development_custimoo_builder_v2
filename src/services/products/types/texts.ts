@@ -44,27 +44,6 @@ export type OutputProductText = {
   is_default?: boolean
 }
 
-export type OutputProductName = {
-  id: number
-  product_id: number
-  x_axis: number
-  y_axis: number
-  rotation: number
-  width: number | null
-  height: number
-  name_of_placement: string
-  side: string
-  type: string
-  arc_text_allowed: number
-  outline_enabled: number
-  is_locked: number
-  text_follows_product: number
-  following_product_ids: number[] | null
-  created_at: string | null
-  updated_at: string | null
-  deleted_at: string | null
-}
-
 export type OutputFontFile = {
   name: string
   path: string

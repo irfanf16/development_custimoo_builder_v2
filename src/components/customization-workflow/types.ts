@@ -32,6 +32,10 @@ export type HeaderConfiguration = {
     tooltip?: string
     callback: () => void
   }
+  helpText?: {
+    label: string
+    tooltip?: string
+  }
   isExpandable?: boolean
   designCategories?: DesignCategoriesConfig
   customizableStockFilter?: CustomizableStockFilterConfiguration

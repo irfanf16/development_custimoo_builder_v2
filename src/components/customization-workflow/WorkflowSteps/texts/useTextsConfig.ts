@@ -52,7 +52,10 @@ export function useTextsConfig() {
         ]
       }
     }
-    return { breadcrumbs: [{ label: 'Texts' }] }
+    return {
+      breadcrumbs: [{ label: 'Texts' }],
+      helpText: { label: 'Insert and style text.' }
+    }
   })
 
   const footerConfig: Ref<FooterConfiguration> = computed(() => {

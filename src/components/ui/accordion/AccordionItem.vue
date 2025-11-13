@@ -16,7 +16,7 @@
   <AccordionItem
     data-slot="accordion-item"
     v-bind="forwardedProps"
-    :class="cn('border-b last:border-b-0', props.class)"
+    :class="cn('border-b last:border-b-0 first:border-t', props.class)"
   >
     <slot />
   </AccordionItem>

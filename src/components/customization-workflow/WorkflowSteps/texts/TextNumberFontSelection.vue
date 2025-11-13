@@ -461,9 +461,9 @@
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <div class="flex flex-col gap-4">
     <!-- Header Section -->
-    <div class="p-6 space-y-5">
+    <div class="px-6 space-y-5">
       <!-- Number Input -->
       <div class="space-y-2">
         <div class="h-14">

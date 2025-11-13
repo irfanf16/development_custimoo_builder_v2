@@ -2,7 +2,7 @@ import type { OutputProductColor } from './colors'
 import type { OutputAddon, OutputCompanyAddon } from './addons'
 import type { OutputProductLogosSetting } from './logos'
 import type { OutputProductPattern } from './patterns'
-import type { OutputFont, OutputSize, OutputProductText, OutputProductName } from './texts'
+import type { OutputFont, OutputSize, OutputProductText } from './texts'
 
 export type OutputProductPreview = {
   allowed_logos_count: number
@@ -26,6 +26,7 @@ export type OutputProductDesignCategory = {
 export type OutputProductDetails = OutputProductPreview & {
   allow_fixed_logo: number
   allow_name_number: number
+  allow_extra_text: number
   company_id: number
   created_by: number
   deleted_at: string | null
@@ -79,7 +80,6 @@ export type OutputProductDetails = OutputProductPreview & {
   product_texts: OutputProductText[]
   namefonts: OutputFont[]
   sizes: OutputSize[]
-  productnames: OutputProductName[]
 }
 
 export type ProductPreviewItem = {
