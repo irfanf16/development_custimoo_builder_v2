@@ -10,7 +10,12 @@
     type CanvasOptions
   } from 'fabric'
   import { useProductsStore } from '@/stores/products/products.store'
-  import { filterFields } from '@/lib/utils'
+  import {
+    filterFields,
+    getSelectedProductPantones,
+    getClosestColor,
+    getColorType
+  } from '@/lib/utils'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
   import type { OutputSvgGroupColor } from '@/services/products/types'
 
@@ -58,6 +63,8 @@
   interface Props {
     models?: ModelData[]
     design?: DesignData
+    // Product ID - defaults to active product from store
+    productId?: number | null
     // Canvas dimensions
     canvasWidth?: number
     canvasHeight?: number
@@ -74,6 +81,8 @@
   const props = withDefaults(defineProps<Props>(), {
     models: undefined,
     design: undefined,
+    // Product ID - will default to active product from store via computed
+    productId: undefined,
     // Canvas dimensions
     canvasWidth: 600,
     canvasHeight: 600,
@@ -84,6 +93,11 @@
     side: 'front',
     // Canvas class
     canvasClass: 'rounded-[32px] transition-opacity duration-300 z-10'
+  })
+
+  // Computed product ID: use prop if provided, otherwise use active product from store
+  const effectiveProductId = computed(() => {
+    return props.productId ?? productsStore.activeProductDetails?.id ?? null
   })
 
   // Computed properties that react to store changes
@@ -478,9 +492,16 @@
               }
             }
 
-            // For now, set pantone and name to empty strings
-            // TODO: Implement getSelectedProductPantones, getClosestColor, getColorType helpers
-            const pantoneColor = { pantone: '', name: '' }
+            // Get pantone color match
+            const selectProductPantonesList = getSelectedProductPantones(
+              effectiveProductId.value,
+              itemId
+            )
+            const pantoneColor = getClosestColor(
+              color,
+              selectProductPantonesList,
+              getColorType(itemId, effectiveProductId.value)
+            )
 
             gradient_colors.push({
               color,
@@ -511,9 +532,16 @@
           }
         }
 
-        // For now, set pantone and name to empty strings
-        // TODO: Implement getSelectedProductPantones, getClosestColor, getColorType helpers
-        const pantoneColor = { pantone: '', name: '' }
+        // Get pantone color match
+        const selectProductPantonesList = getSelectedProductPantones(
+          effectiveProductId.value,
+          itemId
+        )
+        const pantoneColor = getClosestColor(
+          fillColor,
+          selectProductPantonesList,
+          getColorType(itemId, effectiveProductId.value)
+        )
 
         svgGroups.value.push({
           id: itemId,

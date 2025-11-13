@@ -181,6 +181,9 @@
                 :style="{ background: svgGroup.color ?? '' }"
               /> -->
               <span class="text-base">{{ svgGroup.id }}</span>
+              <span class="text-muted-foreground leading-normal capitalize">
+                {{ svgGroup.pantone }} {{ svgGroup.name }}
+              </span>
             </div>
             <div
               class="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-hover:no-underline transition-opacity"

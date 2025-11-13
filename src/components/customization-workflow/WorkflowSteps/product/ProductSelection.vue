@@ -178,6 +178,7 @@
           :canvas-width="isMobile ? 130 : 176"
           :canvas-height="isMobile ? 130 : 176"
           :canvas-class="'rounded-xl'"
+          :product-id="item.productPreview.id"
         />
 
         <!-- Hover actions -->
