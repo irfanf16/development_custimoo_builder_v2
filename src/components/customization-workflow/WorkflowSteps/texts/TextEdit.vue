@@ -24,10 +24,20 @@
   // ===== COMPOSABLES =====
   const { form, currentEntry } = useTextActions()
   const { fontOptions, colorPalettes } = useTexts()
-  const isNumberEntry = computed(() => currentEntry.value?.type === 'number')
 
   // ===== COMPUTED =====
-  // Slider value for angle (Slider component expects an array)
+
+  /**
+   * Checks if the current entry is a number type
+   * Number entries have a different UI flow (TextNumberFontSelection)
+   */
+  const isNumberEntry = computed(() => currentEntry.value?.type === 'number')
+
+  /**
+   * Slider value adapter for angle
+   * The Slider component expects an array, but form.angle is a number
+   * This computed property bridges the gap
+   */
   const angleSliderValue = computed({
     get: () => [form.angle],
     set: (value: number[]) => {
@@ -35,7 +45,11 @@
     }
   })
 
-  // Slider value for outline width (Slider component expects an array)
+  /**
+   * Slider value adapter for outline width
+   * The Slider component expects an array, but form.outline_width is a number
+   * This computed property bridges the gap
+   */
   const outlineWidthSliderValue = computed({
     get: () => [form.outline_width],
     set: (value: number[]) => {
@@ -43,7 +57,12 @@
     }
   })
 
-  // Watch for font options to set default
+  // ===== WATCHERS =====
+
+  /**
+   * Auto-select first font option if no font is selected
+   * Ensures the form always has a valid font value
+   */
   watch(
     () => fontOptions.value,
     options => {
@@ -55,7 +74,14 @@
   )
 
   // ===== UTILITIES =====
-  // Color name lookup
+
+  /**
+   * Looks up the display name for a color value
+   * Searches through all color palettes to find a matching color
+   *
+   * @param colorValue - The hex color value to look up
+   * @returns The color name if found, 'Custom' otherwise
+   */
   function getColorName(colorValue: string): string {
     for (const palette of colorPalettes.value) {
       const color = palette.colors.find(c => c.value === colorValue)

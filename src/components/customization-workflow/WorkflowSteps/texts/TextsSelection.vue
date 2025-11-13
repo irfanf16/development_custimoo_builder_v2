@@ -9,46 +9,91 @@
   import { Plus } from 'lucide-vue-next'
   import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
   import { useTexts } from './useTexts'
+  import { useProductsStore } from '@/stores/products/products.store'
 
   const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
   const history = useHistoryStore()
   const { textClipboard } = storeToRefs(workflowStore)
   const { activeProductTexts } = storeToRefs(customizationStore)
+  const productsStore = useProductsStore()
+  const { activeProductDetails } = storeToRefs(productsStore)
+  const allowExtraText = computed(() =>
+    activeProductDetails.value?.allow_extra_text === 1 ? true : false
+  )
   const { customAndPresetTexts } = useTexts()
 
+  // ===== CONSTANTS =====
+
+  /**
+   * Display labels for different text types
+   * Used to show secondary labels in the text list
+   */
   const TEXT_LABELS: Record<OutputProductText['type'], string> = {
     name: 'Player name',
     number: 'Player number',
     team_name: 'Additional text'
   }
 
+  /**
+   * Labels for "Add" buttons/placeholders for different text types
+   * Used when a text entry has no value yet
+   */
   const ADD_LABELS: Record<OutputProductText['type'], string> = {
     name: 'Add a player name',
     number: 'Add a player number',
     team_name: 'Add additional text'
   }
 
+  /**
+   * Text types that support copy/paste style functionality
+   * Only name and number types can copy/paste styles
+   */
   const CLIPBOARD_ENABLED_TYPES: OutputProductText['type'][] = ['name', 'number']
 
-  // const productCustomTexts = computed(() => customizationStore.activeProductTexts)
+  // ===== COMPUTED =====
+
   const effectiveProductId = computed(() => customizationStore.activeProductId)
 
+  // ===== NAVIGATION =====
+
+  /**
+   * Navigate to placement selection step
+   * Used when user clicks "Add additional text" button
+   */
   function goToPlacement() {
     workflowStore.setTextsSubStep('placement')
   }
 
+  /**
+   * Navigate to number font selection step
+   * Used for number type texts (they have a special font selection step)
+   */
   function goToNumberFont() {
     workflowStore.setTextsSubStep('number-font')
   }
+
+  /**
+   * Navigate to text edit step
+   * Used for name and team_name type texts
+   */
   function goToEditText() {
     workflowStore.setTextsSubStep('edit')
   }
 
+  /**
+   * Navigate to the appropriate edit step based on text type
+   *
+   * @param customText - The text entry to edit
+   * @param _index - Index in the list (unused, kept for consistency)
+   */
   function goToEdit(customText: OutputProductText, _index: number) {
-    // Allow any ID including temporary negative IDs (for unsaved entries)
+    // Validate: allow any ID including temporary negative IDs (for unsaved entries)
     if (!customText || customText.id === undefined || customText.id === null) return
+
     workflowStore.setActiveTextId(customText.id)
+
+    // Navigate to appropriate step based on text type
     if (customText.type === 'number') {
       goToNumberFont()
     } else {
@@ -56,15 +101,31 @@
     }
   }
 
+  // ===== CLIPBOARD OPERATIONS =====
+
+  /**
+   * Copies a text entry's style to the clipboard
+   * Style includes font_family and items (placement configurations)
+   *
+   * @param index - Index of the text entry in activeProductTexts
+   */
   function handleCopyStyle(index: number) {
     const entry = activeProductTexts.value[index]
     if (!entry) return
     workflowStore.setTextClipboard({ style: entry })
   }
 
+  /**
+   * Pastes a copied style to a text entry
+   * Applies font_family and items from the clipboard to the target entry
+   *
+   * @param index - Index of the target text entry in activeProductTexts
+   */
   function handlePasteStyle(index: number) {
     const clipboard = textClipboard.value
     const entry = activeProductTexts.value[index]
+
+    // Validate all required data is present
     // Allow any ID including temporary negative IDs (for unsaved entries)
     if (
       !clipboard?.style ||
@@ -72,14 +133,17 @@
       !effectiveProductId.value ||
       entry.id === undefined ||
       entry.id === null
-    )
+    ) {
       return
+    }
+
     const key = String(effectiveProductId.value)
     const next = {
       ...entry,
       font_family: (clipboard.style as OutputProductText).font_family,
       items: (clipboard.style as OutputProductText).items
     }
+
     history.execute('text.update-entry', {
       key,
       textId: entry.id,
@@ -88,24 +152,46 @@
     })
   }
 
-  function getSecondaryLabel(text: OutputProductText) {
+  // ===== LABEL HELPERS =====
+
+  /**
+   * Gets the secondary label for a text entry
+   * Used to display the text type or custom label below the main value
+   */
+  function getSecondaryLabel(text: OutputProductText): string {
     return text.label || TEXT_LABELS[text.type] || 'Custom'
   }
 
-  function getAddLabel(text: OutputProductText) {
+  /**
+   * Gets the "Add" label for a text entry
+   * Used when the text has no value yet
+   * Handles proper article (a/an) based on label starting letter
+   */
+  function getAddLabel(text: OutputProductText): string {
+    // Use predefined label if available
     if (ADD_LABELS[text.type]) return ADD_LABELS[text.type]
+
+    // Generate label from text.label with proper article
     const baseLabel = text.label?.trim()
     if (!baseLabel) return 'Add text'
+
     const normalized = baseLabel.toLowerCase()
     const needsAn = /^[aeiou]/.test(normalized)
     return `Add ${needsAn ? 'an' : 'a'} ${normalized}`
   }
 
-  function hasTextValue(text: OutputProductText) {
+  /**
+   * Checks if a text entry has a non-empty value
+   */
+  function hasTextValue(text: OutputProductText): boolean {
     return typeof text.value === 'string' && text.value.trim().length > 0
   }
 
-  function canUseClipboard(text: OutputProductText) {
+  /**
+   * Checks if a text type supports clipboard operations
+   * Only name and number types support copy/paste style
+   */
+  function canUseClipboard(text: OutputProductText): boolean {
     return CLIPBOARD_ENABLED_TYPES.includes(text.type)
   }
 
@@ -165,7 +251,7 @@
         </template>
       </PanelNavigationItem>
     </div>
-    <div class="w-full px-4 md:px-6">
+    <div v-if="allowExtraText" class="w-full px-4 md:px-6">
       <Button variant="default" class="w-full" @click="goToPlacement">
         <Plus class="size-4" /> <span class="text-sm font-medium">Add additional text</span>
       </Button>
