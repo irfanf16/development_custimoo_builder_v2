@@ -5,12 +5,12 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
   import type { OutputDesignDetails } from '@/services/products/types'
   import { useProductConfig } from './useProductConfig'
   import { PRODUCT_TYPE } from './useProductConfig'
+  import LazyTwoDScene from '../LazyTwoDScene.vue'
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -172,14 +172,12 @@
         </div>
       </div>
       <div class="px-2">
-        <ProductPreviewCanvas
-          :product="item.productPreview"
-          :style-base="item.stylePreview"
-          :design-base="item.designPreview"
-          :width="isMobile ? 130 : 176"
-          :height="isMobile ? 130 : 176"
-          :apply-customization-overrides="false"
-          class="rounded-xl"
+        <LazyTwoDScene
+          :models="item.stylePreview.front_models"
+          :design="item.designPreview.front_design"
+          :canvas-width="isMobile ? 130 : 176"
+          :canvas-height="isMobile ? 130 : 176"
+          :canvas-class="'rounded-xl'"
         />
 
         <!-- Hover actions -->
