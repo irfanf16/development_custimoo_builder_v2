@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed } from 'vue'
-import { loadSVGFromURL, util, type FabricObject, type Group } from 'fabric'
 import type {
   OutputProductCategories,
   GetProductCategoriesParams,
@@ -27,7 +26,19 @@ export const useProductsStore = defineStore('productsStore', () => {
   const activeProductDetails = ref<OutputProductDetails | null>(null)
   const activeStyleDetails = ref<OutputStyleDetails | null>(null)
   const activeDesignDetails = ref<OutputDesignDetails | null>(null)
-  const svgGroups = ref<OutputSvgGroupColor[] | null>(null)
+  const svgGroupsFront = ref<OutputSvgGroupColor[]>([])
+  const svgGroupsBack = ref<OutputSvgGroupColor[]>([])
+  const svgGroups = computed<OutputSvgGroupColor[]>(() => {
+    // Merge front and back groups, removing duplicates by id
+    const allGroups = [...svgGroupsFront.value, ...svgGroupsBack.value]
+    const uniqueGroups = new Map<string, OutputSvgGroupColor>()
+    allGroups.forEach(group => {
+      if (!uniqueGroups.has(group.id)) {
+        uniqueGroups.set(group.id, group)
+      }
+    })
+    return Array.from(uniqueGroups.values())
+  })
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
   const stylePreviews = ref<OutputStylePreviewFront[] | null>(null)
   const designPreviews = ref<OutputDesignPreviewFront[] | null>(null)
@@ -43,24 +54,6 @@ export const useProductsStore = defineStore('productsStore', () => {
   const customizedCount = computed(() => categories.value?.customized_count ?? 0)
   const personalizedCount = computed(() => categories.value?.personalized_count ?? 0)
   const privateProductCount = computed(() => categories.value?.private_product_count ?? 0)
-
-  // ===== UTILITIES =====
-  const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
-  function fromStorage(path: string): string {
-    const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
-    const clean = path?.startsWith('/') ? path.slice(1) : path
-    return base + clean
-  }
-
-  type CustomFabricGroup = Group & { _objects: FabricObject & { id: string }[] }
-  async function getSvgGroup(url: string, ext?: string) {
-    if (ext?.toLowerCase() === 'svg' && !url.toLowerCase().endsWith('.svg')) {
-      url += '.svg'
-    }
-    const { objects } = await loadSVGFromURL(fromStorage(url))
-    const safeObjects = (objects || []).filter(Boolean) as FabricObject[]
-    return util.groupSVGElements(safeObjects) as CustomFabricGroup
-  }
 
   // ===== ACTIONS =====
   function setLoading(loading: boolean) {
@@ -101,42 +94,21 @@ export const useProductsStore = defineStore('productsStore', () => {
   //   }
   // }
   // ===== BUSINESS LOGIC =====
-  async function setSvgGroups(): Promise<void> {
-    const frontDesignUrl = activeDesignDetails.value?.front_design.file_url
-    const fileExtension = activeDesignDetails.value?.front_design.file_extension
-    if (!frontDesignUrl || !fileExtension) return
-    const group = await getSvgGroup(frontDesignUrl, fileExtension)
-    if (!group?._objects) return
-    type FillWithToHex = { toHex: () => string }
-    type FillWithColor = { color: string }
-    const getColorString = (fill: unknown): string => {
-      if (typeof fill === 'string') return fill
-      if (fill && typeof (fill as FillWithToHex).toHex === 'function')
-        return (fill as FillWithToHex).toHex()
-      if (fill && typeof (fill as FillWithColor).color === 'string')
-        return (fill as FillWithColor).color
-      return '#000000'
+
+  function setSvgGroups(
+    groups: OutputSvgGroupColor[] | null | undefined,
+    side: 'front' | 'back' = 'front'
+  ): void {
+    const targetGroups = side === 'front' ? svgGroupsFront : svgGroupsBack
+
+    if (!groups || !Array.isArray(groups)) {
+      targetGroups.value = []
+      return
     }
-    svgGroups.value = group._objects
-      .filter(obj => {
-        const id = (obj as { id?: string }).id?.toLowerCase() || ''
-        return !id.includes('noncustomizable') && !id.includes('inside') && !id.includes('anchor')
-      })
-      .map(obj => {
-        const id = (obj as { id?: string }).id || 'unknown'
-        return {
-          id,
-          color: getColorString((obj as { fill?: unknown }).fill),
-          pantone: '',
-          name: '',
-          count: id === 'base' ? 10000 : 1,
-          gradient_colors: [] as Array<{
-            color: string
-            pantone: string
-            name: string
-          }>
-        }
-      })
+
+    const uniqueGroups = Array.from(new Map(groups.map(g => [g.id, g])).values())
+
+    targetGroups.value = uniqueGroups
   }
 
   function reset() {
@@ -221,7 +193,6 @@ export const useProductsStore = defineStore('productsStore', () => {
       setActiveDesignDetailsState(payload.designDetails)
       customization.setStyle(styleId)
       customization.setDesign(payload.designDetails)
-      void setSvgGroups()
     } else {
       setError('Error getting active style details')
     }
@@ -241,7 +212,6 @@ export const useProductsStore = defineStore('productsStore', () => {
       customization.setProduct(productId)
       customization.setStyle(details.styleDetails.id)
       customization.setDesign(details.designDetails)
-      await setSvgGroups()
       if (!customization.customization) {
         customization.ensureCustomization()
         saveCustomizationToLocalStorage()
@@ -267,13 +237,11 @@ export const useProductsStore = defineStore('productsStore', () => {
     customization: ActiveProductCustomization | null
   } | null>(null)
 
-  async function resetToDefaultsSnapshot() {
+  function resetToDefaultsSnapshot() {
     if (defaultActiveDetails.value) {
       activeProductDetails.value = defaultActiveDetails.value.product
       activeStyleDetails.value = defaultActiveDetails.value.style
       activeDesignDetails.value = defaultActiveDetails.value.design
-      svgGroups.value = []
-      await setSvgGroups()
       customization.setCustomization(
         (defaultActiveDetails.value.customization ||
           (null as unknown)) as ActiveProductCustomization
@@ -337,7 +305,6 @@ export const useProductsStore = defineStore('productsStore', () => {
       // Explicit design selection overrides current
       if (designId && activeDesignDetails.value?.id !== designId) {
         await fetchDesignDetailsById(designId)
-        await setSvgGroups()
       }
     },
     { immediate: true }

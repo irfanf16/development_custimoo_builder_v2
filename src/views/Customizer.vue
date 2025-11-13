@@ -5,12 +5,19 @@
   import { WorkflowLayout } from '@/components/customization-workflow'
   import RightToolbar from '@/components/customizer-canvas-preview/RightToolbar.vue'
   import { CustomizerTopbar } from '@/components/customizer-topbar'
-  import SmallPreview from '@/components/customizer-canvas-preview/SmallPreview.vue'
+  import TwoDScene from '@/components/scene/TwoDScene.vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { storeToRefs } from 'pinia'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 
   const uiStore = useUIStore()
   const { isMobile } = storeToRefs(uiStore)
+  const workflowStore = useWorkflowStore()
+
+  function handleClick() {
+    console.log('handleClick')
+    workflowStore.toggleActiveCanvasSide()
+  }
 </script>
 
 <template>
@@ -49,7 +56,17 @@
                 class="flex flex-col gap-9 items-end justify-between h-full"
               >
                 <RightToolbar />
-                <SmallPreview />
+                <Card class="w-fit h-fit p-0 cursor-pointer" @click="handleClick">
+                  <CardContent class="p-3">
+                    <TwoDScene
+                      :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
+                      :main-preview="true"
+                      :canvas-width="300"
+                      :canvas-height="300"
+                      canvas-class="w-[8.25rem] h-[8.25rem] rounded-lg transition-opacity duration-300 cursor-pointer"
+                    />
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
