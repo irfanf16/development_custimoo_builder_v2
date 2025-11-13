@@ -36,6 +36,32 @@ export function ensureStylesheet(href: string): void {
   } catch (_) {}
 }
 
+export function filterFields<T extends Record<string, unknown>>(
+  data: T | T[] | null | undefined,
+  fields: (keyof T)[]
+): T | T[] | undefined {
+  if (data == null) return undefined
+
+  // If it's an array — return array of filtered objects
+  if (Array.isArray(data)) {
+    return data.map(item => filterObject(item, fields))
+  }
+
+  // If it's a single object — return single filtered object
+  return filterObject(data, fields)
+}
+
+// helper for filtering a single object
+function filterObject<T extends Record<string, unknown>>(obj: T, fields: (keyof T)[]): T {
+  const filtered: Partial<T> = {}
+  for (const field of fields) {
+    if (field in obj) {
+      filtered[field] = obj[field]
+    }
+  }
+  return filtered as T
+}
+
 /**
  * Load Google Font dynamically
  */

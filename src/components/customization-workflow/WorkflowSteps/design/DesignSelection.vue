@@ -8,6 +8,7 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useDesignConfig } from './useDesignConfig'
   import type { DesignCategoriesConfig } from '../../types'
+  import LazyTwoDScene from '../LazyTwoDScene.vue'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
@@ -17,8 +18,7 @@
   const { isMobile } = storeToRefs(uiStore)
   const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
   const { selectedDesignCategoryId } = storeToRefs(workflowStore)
-  const { designSearchModel, applyCustomizationOverrides, designCategoriesConfig } =
-    useDesignConfig()
+  const { designSearchModel, designCategoriesConfig } = useDesignConfig()
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -119,15 +119,11 @@
         {{ item.front_design.design_name }}
       </div>
       <div>
-        <ProductPreviewCanvas
-          v-if="productsStore.activeProductDetails && productsStore.activeStyleDetails"
-          :product="productsStore.activeProductDetails!"
-          :style-base="productsStore.activeStyleDetails!"
-          :design-base="item as any"
-          :width="isMobile ? 130 : 176"
-          :height="isMobile ? 130 : 176"
-          :apply-customization-overrides="applyCustomizationOverrides"
-          class="rounded-xl"
+        <LazyTwoDScene
+          :design="item.front_design"
+          :canvas-width="isMobile ? 130 : 176"
+          :canvas-height="isMobile ? 130 : 176"
+          :canvas-class="'rounded-xl'"
         />
       </div>
     </div>
