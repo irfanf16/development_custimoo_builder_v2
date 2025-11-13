@@ -111,6 +111,23 @@ export const useProductsStore = defineStore('productsStore', () => {
     targetGroups.value = uniqueGroups
   }
 
+  /**
+   * Get product by ID from the store
+   * @param productId - Product ID to retrieve
+   * @returns Product details if found, null otherwise
+   * Note: This only checks the active product. For other products, use fetchActiveProductDetails first.
+   */
+  function getProductById(productId: number): OutputProductDetails | null {
+    // Check if the active product matches the requested ID
+    if (activeProductDetails.value?.id === productId) {
+      return activeProductDetails.value
+    }
+
+    // Product previews don't have full details, so we can't use them
+    // If the product isn't active, it needs to be fetched first
+    return null
+  }
+
   function reset() {
     categories.value = null
     isLoading.value = false
@@ -367,6 +384,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveDesignDetailsState,
     // Business Logic
     setSvgGroups,
+    getProductById,
     reset,
     initActiveSelectionFromLocalStorage,
     setActiveStep,
