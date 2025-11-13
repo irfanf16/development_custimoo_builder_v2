@@ -114,8 +114,8 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 pb-6">
-    <div class="flex flex-col gap-1 px-4 pt-4 md:px-6">
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-1 px-4 md:px-6">
       <p class="text-base">Insert and style text.</p>
     </div>
 
@@ -169,8 +169,8 @@
         </template>
       </PanelNavigationItem>
     </div>
-    <div class="w-full px-4 pb-4 md:px-6">
-      <Button variant="outline" class="w-full" @click="goToPlacement">
+    <div class="w-full px-4 md:px-6">
+      <Button variant="default" class="w-full" @click="goToPlacement">
         <Plus class="size-4" /> <span class="text-sm font-medium">Add additional text</span>
       </Button>
     </div>

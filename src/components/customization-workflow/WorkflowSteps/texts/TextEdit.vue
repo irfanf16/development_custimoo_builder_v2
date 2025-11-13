@@ -66,11 +66,11 @@
 </script>
 
 <template>
-  <div class="grid gap-6 md:grid-cols-[360px,1fr] md:gap-8">
+  <div class="grid gap-4 md:grid-cols-[360px,1fr] md:gap-8">
     <div class="space-y-0 flex flex-col gap-4">
       <!-- Text Input Section -->
       <div v-if="!isNumberEntry" class="space-y-2 px-4 md:px-6 pt-1">
-        <Input v-model="form.text" rows="3" placeholder="Enter text" class="text-lg" />
+        <Input v-model="form.text" rows="3" placeholder="Enter text" class="text-lg h-[3.5rem]" />
       </div>
 
       <!-- Font Selection Section -->

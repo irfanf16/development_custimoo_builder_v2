@@ -162,10 +162,9 @@
           v-show="workflowStore.isPanelOpen"
           ref="menuPanelRef"
           :content-key="workflowStore.contentKey || ''"
-          :expandable="false"
+          :header-config="headerConfig"
           :is-expanded="true"
           :has-footer="footerConfig?.buttons?.length > 0"
-          :has-search="!!headerConfig?.search"
         >
           <template #header>
             <WorkflowHeader
@@ -208,10 +207,9 @@
       v-else
       ref="menuPanelRef"
       :content-key="workflowStore.contentKey || ''"
-      :expandable="workflowStore.currentHeaderConfig?.isExpandable"
+      :header-config="headerConfig"
       :is-expanded="isExpanded"
       :has-footer="footerConfig?.buttons?.length > 0"
-      :has-search="!!headerConfig?.search"
       @update:is-expanded="isExpanded = $event"
     >
       <template #header>

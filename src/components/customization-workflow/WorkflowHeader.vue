@@ -5,7 +5,7 @@
   import { Switch } from '@/components/ui/switch'
   import { InputSearchGroup } from '@/components/ui/input-search-group'
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-  import { Maximize2, Minimize2 } from 'lucide-vue-next'
+  import { Info, Maximize2, Minimize2 } from 'lucide-vue-next'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import { DesignCategoryTabs } from './WorkflowSteps'
   import type { BreadcrumbItem } from './types'
@@ -64,8 +64,8 @@
 </script>
 
 <template>
-  <div class="w-full flex flex-col gap-5">
-    <div class="flex items-center gap-3 h-9 justify-center">
+  <div class="w-full flex flex-col gap-2">
+    <div class="flex items-center gap-2 h-9 justify-center">
       <div class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden">
         <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
       </div>
@@ -104,8 +104,11 @@
       </Button>
     </div>
 
-    <div :class="!uiStore.isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-3'">
-      <div v-if="props.config?.search" class="flex items-center flex-1">
+    <div
+      v-if="props.config?.search"
+      :class="!uiStore.isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-3'"
+    >
+      <div class="flex items-center flex-1">
         <div class="relative w-full">
           <InputSearchGroup
             :model-value="searchModelValue"
@@ -132,6 +135,28 @@
           :default-label="props.config?.designCategories?.defaultLabel"
         />
       </div>
+    </div>
+
+    <!-- Improved: Help Text label with an optional tooltip; now more compact and accessible -->
+    <div v-if="props.config?.helpText?.label" class="flex items-center gap-2">
+      <span class="text-sm">{{ props.config?.helpText?.label }}</span>
+      <TooltipProvider v-if="props.config?.helpText?.tooltip">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <button
+              type="button"
+              aria-label="More information"
+              tabindex="0"
+              class="flex items-center focus:outline-none"
+            >
+              <component :is="Info" class="size-4 text-muted-foreground" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <span class="text-xs">{{ props.config?.helpText?.tooltip }}</span>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   </div>
 </template>

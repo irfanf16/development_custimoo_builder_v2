@@ -3,13 +3,13 @@
   import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import type { HeaderConfiguration } from './types'
 
   interface Props {
-    expandable?: boolean
+    headerConfig?: HeaderConfiguration
     isExpanded?: boolean
     contentKey?: string | number
     hasFooter?: boolean
-    hasSearch?: boolean
   }
 
   interface Emits {
@@ -17,7 +17,7 @@
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    expandable: false,
+    headerConfig: undefined,
     isExpanded: false,
     contentKey: undefined,
     hasFooter: false
@@ -65,7 +65,10 @@
       if (props.hasFooter) {
         baseMinus += 3
       }
-      if (props.hasSearch) {
+      if (props.headerConfig?.search) {
+        baseMinus += 4
+      }
+      if (props.headerConfig?.helpText?.label) {
         baseMinus += 4
       }
       return `calc(65vh - ${baseMinus}rem)`
