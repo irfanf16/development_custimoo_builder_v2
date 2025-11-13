@@ -17,7 +17,8 @@
     },
     canvasWidth: { type: Number, default: 176 },
     canvasHeight: { type: Number, default: 176 },
-    canvasClass: { type: String, default: 'rounded-xl' }
+    canvasClass: { type: String, default: 'rounded-xl' },
+    productId: { type: Number, default: undefined }
   })
 
   const containerEl = ref<HTMLElement | null>(null)
@@ -60,6 +61,7 @@
       :canvas-width="canvasWidth"
       :canvas-height="canvasHeight"
       :canvas-class="canvasClass"
+      :product-id="productId"
     />
 
     <!-- Skeleton loader matching canvas dimensions -->
