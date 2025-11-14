@@ -2,6 +2,7 @@
   import type { DialogContentEmits, DialogContentProps } from 'reka-ui'
   import type { HTMLAttributes } from 'vue'
   import { reactiveOmit } from '@vueuse/core'
+  import { computed } from 'vue'
   import { X } from 'lucide-vue-next'
   import {
     DialogClose,
@@ -13,12 +14,17 @@
   import { cn } from '@/lib/utils'
   import { useUIStore } from '@/stores/ui/ui.store'
 
-  const props = defineProps<DialogContentProps & { class?: HTMLAttributes['class'] }>()
+  const props = defineProps<
+    DialogContentProps & { class?: HTMLAttributes['class']; style?: HTMLAttributes['style'] }
+  >()
   const emits = defineEmits<DialogContentEmits>()
 
   const delegatedProps = reactiveOmit(props, 'class')
 
   const forwarded = useForwardPropsEmits(delegatedProps, emits)
+
+  // Ensure style is properly forwarded
+  const styleProps = computed(() => props.style)
 
   const uiStore = useUIStore()
 </script>
@@ -30,6 +36,7 @@
     />
     <DialogContent
       v-bind="forwarded"
+      :style="styleProps"
       :class="
         cn(
           'fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg text-foreground',

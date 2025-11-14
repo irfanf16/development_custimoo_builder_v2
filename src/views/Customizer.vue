@@ -27,7 +27,7 @@
     <!-- Mobile layout -->
     <template v-if="isMobile">
       <div id="main-content" class="mobile-layout flex flex-col gap-2 w-full h-full">
-        <CustomizerTopbar class="z-20" />
+        <CustomizerTopbar class="z-40" />
         <ProductPreview />
         <WorkflowLayout class="z-30" />
         <CustomizerMenuMobile />
