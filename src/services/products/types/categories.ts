@@ -6,6 +6,7 @@ export type Category = {
   factory_id: number | null
   id: number
   image_url: string | null
+  icon_name: string | null
   parent_id: number | null
   searchable: number
   sort_order: number
@@ -20,6 +21,7 @@ export type OutputSubCategory = {
   factory_id: number | null
   company_id: number
   image_url: string
+  icon_name: string | null
   searchable: number
   sort_order: number
   created_at: string

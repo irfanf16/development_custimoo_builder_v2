@@ -44,7 +44,7 @@ import Backpack from 'virtual:icons/flex-flat/backpack'
 import ShoppingBagHandBag from 'virtual:icons/flex-flat/shopping-bag-hand-bag'
 import ModuleThree from 'virtual:icons/flex-flat/module-three'
 import Boots from 'virtual:icons/flex-flat/boots'
-import CapFrozen from 'virtual:icons/flex-flat/cap-front'
+import CapFront from 'virtual:icons/flex-flat/cap-front'
 import CapSide from 'virtual:icons/flex-flat/cap-side'
 import Brightness from 'virtual:icons/flex-flat/brightness'
 import PottedFlowerTulip from 'virtual:icons/flex-flat/potted-flower-tulip'
@@ -55,7 +55,9 @@ import UserIcon from 'virtual:icons/flex-flat/user-circle'
 import SettingsIcon from 'virtual:icons/flex-flat/settings-icon'
 import OrderIcon from 'virtual:icons/flex-flat/orders-icon'
 import AddressIcon from 'virtual:icons/flex-flat/address-book-icon'
-
+import NotificationIcon from 'virtual:icons/flex-flat/notification-icon'
+import OrdersIcon from 'virtual:icons/flex-flat/orders-icon'
+import UserCircle from 'virtual:icons/flex-flat/user-circle'
 export const flexFlatCategoryIcons = {
   Ball,
   Baseball,
@@ -102,7 +104,7 @@ export const flexFlatCategoryIcons = {
   ShoppingBagHandBag,
   ModuleThree,
   Boots,
-  CapFrozen,
+  CapFront,
   CapSide,
   Brightness,
   PottedFlowerTulip,
@@ -112,7 +114,10 @@ export const flexFlatCategoryIcons = {
   UserIcon,
   SettingsIcon,
   OrderIcon,
-  AddressIcon
+  AddressIcon,
+  NotificationIcon,
+  OrdersIcon,
+  UserCircle
 }
 
 // Keep a reference so tree-shaking can't drop them

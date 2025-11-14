@@ -16,23 +16,28 @@
     // Do not commit category or preload products here; ProductSelection will handle fetching
     props.onSelectCategory?.(categoryId)
   }
+  const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
 </script>
 
 <template>
   <div class="flex flex-col">
     <PanelNavigationItem
-      v-for="(item, index) in categories"
+      v-for="item in categories"
       :id="item.id.toString()"
       :key="item.id"
       @click="() => handleSelectCategory(item.id)"
     >
       <template #content>
         <div class="flex items-center gap-3">
+          <img v-if="item.image_url" :src="storage_url + item.image_url" class="max-h-6" />
           <component
-            :is="getCategoryIcon(index)"
+            :is="getCategoryIcon(item.icon_name)"
+            v-else-if="item.icon_name"
             class="size-6 text-primary icon-secondary-from-primary-50"
           />
-          <span class="text-base font-semibold text-card-foreground">{{ item.category_name }}</span>
+          <span class="text-base font-semibold text-card-foreground whitespace-nowrap">{{
+            item.category_name
+          }}</span>
         </div>
       </template>
     </PanelNavigationItem>
