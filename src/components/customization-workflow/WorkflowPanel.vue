@@ -187,7 +187,7 @@
 
       <CardContent class="h-full p-0 px-0 md:p-0 md:px-0 min-h-0">
         <ScrollArea>
-          <div id="TEST HEREE" :style="{ maxHeight: scrollAreaMaxHeight }">
+          <div :style="{ maxHeight: scrollAreaMaxHeight }">
             <!-- Content slot for different panel types -->
             <Transition name="panel-slide" mode="out-in" appear>
               <div ref="cardContentRef" :key="props.contentKey" class="overflow-y-auto">

@@ -62,5 +62,6 @@
   "profile_account": "Compte",
   "profile_orders": "Commandes",
   "profile_address_book": "Carnet d'adresses",
-  "profile_preferences": "Préférences"
+  "profile_preferences": "Préférences",
+  "profile_my_profile": "Mon profil"
 }

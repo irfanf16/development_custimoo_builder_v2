@@ -17,7 +17,9 @@
     Menu,
     User,
     Settings,
-    LogOut
+    LogOut,
+    LogIn,
+    LayoutGrid
   } from 'lucide-vue-next'
   import {
     topbar_save,
@@ -35,7 +37,9 @@
   import ProfileDialog from '@/components/customizer-profile-section/ProfileDialog.vue'
   import SignInDialog from '@/components/SignInDialog.vue'
   import { ref } from 'vue'
+  import { useUIStore } from '@/stores/ui/ui.store'
 
+  const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const history = useHistoryStore()
   const profileStore = useProfileStore()
@@ -84,9 +88,9 @@
 <template>
   <!-- Right aligned action group using ButtonGroup -->
   <div class="flex items-center gap-2">
-    <ButtonGroup>
+    <ButtonGroup class="flex w-full justify-between md:w-auto md:justify-normal">
       <!-- Reset Button -->
-      <ButtonGroup>
+      <ButtonGroup v-if="!uiStore.isMobile">
         <Button size="default" @click="handleResetCustomization">
           <RotateCcw class="size-4" />
           {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}
@@ -127,14 +131,15 @@
       </DropdownMenu>
 
       <!-- Locker Room Button -->
-      <ButtonGroup>
+      <ButtonGroup v-if="!uiStore.isMobile">
         <Button size="default">
+          <LayoutGrid class="size-4" />
           <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
       </ButtonGroup>
 
       <!-- Cart Button -->
-      <ButtonGroup>
+      <ButtonGroup v-if="!uiStore.isMobile">
         <Button size="default">
           <ShoppingCart class="size-4" />
           <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
@@ -156,11 +161,27 @@
             >{{ user?.first_name }} {{ user?.last_name }}</DropdownMenuLabel
           >
           <DropdownMenuSeparator v-if="isLoggedIn" />
+
+          <!-- Mobile only -->
+          <DropdownMenuItem v-if="uiStore.isMobile">
+            <ShoppingCart class="size-4 mr-2" />
+            Cart
+          </DropdownMenuItem>
+          <DropdownMenuItem v-if="uiStore.isMobile">
+            <LayoutGrid class="size-4 mr-2" />
+            Locker Room
+          </DropdownMenuItem>
+          <DropdownMenuSeparator v-if="uiStore.isMobile" />
+
+          <!-- Always visible -->
           <DropdownMenuItem v-if="isLoggedIn" @click="handleUserProfile">
             <User class="size-4 mr-2" />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem v-else @click="handleUserProfile"> Preferences </DropdownMenuItem>
+          <DropdownMenuItem v-else @click="handleUserProfile">
+            <Settings class="size-4 mr-2" />
+            Preferences
+          </DropdownMenuItem>
           <DropdownMenuItem v-if="isLoggedIn" @click="handleUserSettings">
             <Settings class="size-4 mr-2" />
             Settings
@@ -170,7 +191,10 @@
             <LogOut class="size-4 mr-2" />
             Sign Out
           </DropdownMenuItem>
-          <DropdownMenuItem v-else @click="handleSignIn">Sign In</DropdownMenuItem>
+          <DropdownMenuItem v-else @click="handleSignIn">
+            <LogIn class="size-4 mr-2" />
+            Sign In
+          </DropdownMenuItem>
         </DropdownMenuContent>
         <ProfileDialog :open="showProfileDialog" @update:open="showProfileDialog = $event" />
         <SignInDialog v-model:open="showSignInDialog" />
