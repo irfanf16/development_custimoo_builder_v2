@@ -17,6 +17,13 @@ import type {
   FooterConfiguration,
   HeaderConfiguration
 } from '@/components/customization-workflow/types'
+import {
+  buildColorsBreadcrumbs,
+  buildDesignBreadcrumbs,
+  buildLogoBreadcrumbs,
+  buildProductBreadcrumbs,
+  buildTextsBreadcrumbs
+} from '@/components/customization-workflow/breadcrumbs'
 import type { Ref } from 'vue'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 
@@ -111,65 +118,25 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     const step = activeStep.value || 'product'
 
     if (step === 'product') {
-      if (productsSubStep.value === 'category') {
-        return [{ label: 'Category' }]
-      }
-
-      const categoryIdForTrail = selectedCategoryId.value ?? customization.activeCategoryId ?? null
-
-      const category = productsStore.categories?.data?.find(c => c.id === categoryIdForTrail)
-
-      const subId = selectedSubCategoryId.value ?? customization.activeSubCategoryId ?? null
-
-      if (productsSubStep.value === 'subcategory') {
-        return [
-          {
-            label: 'Category',
-            action: () => {
-              setProductsSubStep('category')
-            }
-          },
-          { label: category?.category_name || '—' }
-        ]
-      }
-
-      const hasSubs = !!(category && category.subcategories && category.subcategories.length)
-
-      const trail: NavigationItem[] = [
-        {
-          label: 'Category',
-          action: () => {
-            setProductsSubStep('category')
-          }
+      return buildProductBreadcrumbs({
+        hasCategories: !!productsStore.categories?.data?.length,
+        productsSubStep: productsSubStep.value,
+        categories: productsStore.categories?.data,
+        selectedCategoryId: selectedCategoryId.value,
+        activeCategoryId: customization.activeCategoryId,
+        selectedSubCategoryId: selectedSubCategoryId.value,
+        activeSubCategoryId: customization.activeSubCategoryId,
+        onCategoryStep: () => {
+          setProductsSubStep('category')
+        },
+        onSubCategoryStep: () => {
+          setProductsSubStep('subcategory')
         }
-      ]
-
-      const categoryLabel = category?.category_name || '—'
-
-      if (categoryLabel) {
-        trail.push({
-          label: categoryLabel,
-          action: hasSubs
-            ? () => {
-                setProductsSubStep('subcategory')
-              }
-            : undefined
-        })
-      }
-
-      if (hasSubs) {
-        const selectedSub =
-          subId && category ? category.subcategories?.find(s => s.id === subId) : undefined
-        if (selectedSub) {
-          trail.push({ label: selectedSub.category_name })
-        }
-      }
-
-      return trail
+      })
     }
 
     if (step === 'designs') {
-      return [{ label: 'Designs' }]
+      return buildDesignBreadcrumbs()
     }
 
     if (step === 'styles') {
@@ -178,27 +145,17 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     }
 
     if (step === 'logos') {
-      const map: Record<LogosSubStep, string> = {
-        list: 'Logos',
-        placement: 'Placement',
-        edit: 'Controls'
-      }
-      const trail: NavigationItem[] = [
-        {
-          label: 'Logos',
-          action: () => {
-            setLogosSubStep('list')
-          }
+      return buildLogoBreadcrumbs({
+        logosSubStep: logosSubStep.value,
+        hasActiveLogo: !!activeLogoId.value,
+        onBackToList: () => {
+          setLogosSubStep('list')
         }
-      ]
-      if (logosSubStep.value && logosSubStep.value !== 'list') {
-        trail.push({ label: map[logosSubStep.value] })
-      }
-      return trail
+      })
     }
 
     if (step === 'colors') {
-      return [{ label: 'Color' }]
+      return buildColorsBreadcrumbs()
     }
 
     if (step === 'patterns') {
@@ -206,7 +163,20 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     }
 
     if (step === 'texts') {
-      return [{ label: 'Texts' }]
+      const activeText =
+        activeTextId.value != null
+          ? customization.activeProductTexts.find(text => text.id === activeTextId.value)
+          : null
+
+      return buildTextsBreadcrumbs({
+        textsSubStep: textsSubStep.value,
+        activeTextMeta: activeText
+          ? { value: activeText.value, label: activeText.label }
+          : undefined,
+        onBackToList: () => {
+          setTextsSubStep('list')
+        }
+      })
     }
 
     if (step === 'roster') {

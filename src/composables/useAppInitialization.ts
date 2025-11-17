@@ -31,6 +31,8 @@ type CategoryInfo = {
   subCategoryId?: number
 }
 
+const COMPANY_ID_STORAGE_KEY = '__customizer_company_id__'
+
 // ============================================================================
 // Main Composable
 // ============================================================================
@@ -44,6 +46,58 @@ export function useAppInitialization() {
   const wf = useWorkflowStore()
   const storage = useLocalStorage()
   const categoryParamsComposable = useCategoryParams()
+
+  const handleCompanyContextChange = (
+    previousCompanyId: number | null,
+    currentCompanyId: number | null,
+    stores: {
+      productsStore: ReturnType<typeof useProductsStore>
+      customizationStore: ReturnType<typeof useCustomizationStore>
+    }
+  ): void => {
+    const hasPreviousCompany = previousCompanyId != null
+    const isDifferentCompany =
+      hasPreviousCompany && (currentCompanyId == null || currentCompanyId !== previousCompanyId)
+
+    if (isDifferentCompany) {
+      storage.clearAll()
+
+      stores.customizationStore.customization = null
+      stores.customizationStore.clearLocalStorage()
+
+      stores.productsStore.reset()
+
+      wf.resetWorkflowSubSteps()
+      wf.setActiveStep('product')
+
+      try {
+        const authStore = useAuthStore()
+        authStore.clearLocalStorage()
+      } catch {
+        // Ignore auth reset errors
+      }
+
+      try {
+        const historyStore = useHistoryStore()
+        historyStore.clear()
+      } catch {
+        // Ignore history reset errors
+      }
+
+      try {
+        const profileStore = useProfileStore()
+        profileStore.clearLocalStorage()
+      } catch {
+        // Ignore profile reset errors
+      }
+    }
+
+    if (currentCompanyId != null) {
+      storage.setItemRaw(COMPANY_ID_STORAGE_KEY, String(currentCompanyId))
+    } else {
+      storage.removeItem(COMPANY_ID_STORAGE_KEY)
+    }
+  }
 
   // ============================================================================
   // Phase 1: Load Initial State from localStorage
@@ -83,14 +137,31 @@ export function useAppInitialization() {
   // Phase 2: Fetch Essential Data from API
   // ============================================================================
   // Fetches company data, settings, and product categories.
-  // This must complete before we can use company-specific localStorage prefixes.
-  const fetchEssentialData = async (): Promise<void> => {
+  // Company is fetched first so we can clear stale state if the tenant changed.
+  const fetchEssentialData = async (
+    productsStore: ReturnType<typeof useProductsStore>,
+    customizationStore: ReturnType<typeof useCustomizationStore>
+  ): Promise<void> => {
     const companyStore = useCompanyStore()
-    const productsStore = useProductsStore()
 
-    // Fetch in parallel for better performance
+    const previousCompanyIdRaw = storage.getItemRaw(COMPANY_ID_STORAGE_KEY)
+    const previousCompanyId = (() => {
+      if (!previousCompanyIdRaw || previousCompanyIdRaw.trim().length === 0) return null
+      const parsed = Number(previousCompanyIdRaw)
+      return Number.isNaN(parsed) ? null : parsed
+    })()
+
+    const companyResponse = await companyStore.fetchCompany()
+
+    if (companyResponse.success) {
+      const currentCompanyId = companyResponse.content.company?.id ?? null
+      handleCompanyContextChange(previousCompanyId, currentCompanyId, {
+        productsStore,
+        customizationStore
+      })
+    }
+
     await Promise.all([
-      companyStore.fetchCompany(),
       companyStore.fetchSettings(),
       productsStore.fetchCustomizedCategories(categoryParamsComposable.categoryParams.value)
     ])
@@ -120,6 +191,13 @@ export function useAppInitialization() {
     // Initialize user locale preferences
     const profileStore = useProfileStore()
     await profileStore.initializeLocale()
+
+    const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
+    if (!hasCategories) {
+      return {
+        categoryId: null
+      }
+    }
 
     // Determine effective category (priority order)
     const effectiveCategoryId =
@@ -160,6 +238,21 @@ export function useAppInitialization() {
     categoryInfo: CategoryInfo
   ): Promise<void> => {
     await productsStore.fetchProductPreviews(categoryInfo.categoryId, categoryInfo.subCategoryId)
+  }
+
+  const syncWorkflowForCategoryAvailability = (hasCategories: boolean): void => {
+    if (hasCategories) return
+
+    wf.setSelectedCategoryForPreview(null)
+    wf.setSelectedSubCategoryForPreview(null)
+
+    if (wf.productsSubStep !== 'product') {
+      wf.setProductsSubStep('product')
+    }
+
+    if (wf.activeStep !== 'product') {
+      wf.setActiveStep('product')
+    }
   }
 
   // ============================================================================
@@ -243,6 +336,8 @@ export function useAppInitialization() {
     productsStore: ReturnType<typeof useProductsStore>,
     categoryInfo: CategoryInfo
   ): Promise<void> => {
+    const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
+
     // Clear history when starting fresh
     try {
       const history = useHistoryStore()
@@ -279,8 +374,9 @@ export function useAppInitialization() {
       wf.setActiveStep('product')
     }
     if (wf.activeStep === 'product') {
-      wf.setProductsSubStep('category')
+      wf.setProductsSubStep(hasCategories ? 'category' : 'product')
     }
+    syncWorkflowForCategoryAvailability(hasCategories)
   }
 
   // ============================================================================
@@ -324,10 +420,16 @@ export function useAppInitialization() {
         const { productsStore, customizationStore } = await loadInitialStateFromLocalStorage()
 
         // Phase 2: Fetch company and product data
-        await fetchEssentialData()
+        await fetchEssentialData(productsStore, customizationStore)
+
+        const hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
 
         // Phase 3: Reload state with correct company prefix
         const hasActiveCustomization = reloadStateWithCorrectPrefix(customizationStore)
+
+        if (!hasCategoriesAvailable) {
+          syncWorkflowForCategoryAvailability(false)
+        }
 
         // Phase 4: Initialize locale and determine category
         const categoryInfo = await initializeLocalizationAndCategory(

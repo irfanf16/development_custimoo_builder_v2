@@ -8,6 +8,7 @@ import type {
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { buildProductBreadcrumbs } from '@/components/customization-workflow/breadcrumbs'
 
 // Constants
 export const PRODUCT_TYPE = {
@@ -28,6 +29,7 @@ export function useProductConfig() {
   const workflowStore = useWorkflowStore()
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
+  const hasCategories = computed(() => (productsStore.categories?.data?.length ?? 0) > 0)
 
   // ===== COMPUTED =====
   const headerConfig = computed<HeaderConfiguration>(() => {
@@ -40,8 +42,6 @@ export function useProductConfig() {
       }
       return null
     })
-    const trail: { label: string; action?: () => void }[] = []
-
     const customizableStockFilter = computed<CustomizableStockFilterConfiguration | undefined>(
       () => {
         return {
@@ -53,48 +53,10 @@ export function useProductConfig() {
       }
     )
 
-    if (workflowStore.productsSubStep === 'category') {
-      trail.push({ label: 'Category' })
-    } else {
-      const categoryIdForTrail =
-        workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId ?? null
-      const category = productsStore.categories?.data?.find(c => c.id === categoryIdForTrail)
-      const subId =
-        workflowStore.selectedSubCategoryId ?? customizationStore.activeSubCategoryId ?? null
-
-      if (workflowStore.productsSubStep === 'subcategory') {
-        trail.push({
-          label: 'Category',
-          action: () => workflowStore.setProductsSubStep('category')
-        })
-        trail.push({ label: category?.category_name || '—' })
-      } else {
-        // productsSubStep === 'product'
-        trail.push({
-          label: 'Category',
-          action: () => workflowStore.setProductsSubStep('category')
-        })
-
-        const hasSubs = !!(category && category.subcategories && category.subcategories.length)
-        const categoryLabel = category?.category_name || '—'
-        if (categoryLabel) {
-          trail.push({
-            label: categoryLabel,
-            action: hasSubs ? () => workflowStore.setProductsSubStep('subcategory') : undefined
-          })
-        }
-
-        if (hasSubs) {
-          const selectedSub =
-            subId && category ? category.subcategories?.find(s => s.id === subId) : undefined
-          if (selectedSub) {
-            trail.push({ label: selectedSub.category_name })
-          }
-        }
-      }
-    }
-
     const helpText = computed<{ label: string; tooltip?: string } | undefined>(() => {
+      if (!hasCategories.value) {
+        return undefined
+      }
       if (workflowStore.productsSubStep === 'category') {
         return {
           label: 'Select a category to find your product.'
@@ -109,7 +71,17 @@ export function useProductConfig() {
     })
 
     return {
-      breadcrumbs: trail,
+      breadcrumbs: buildProductBreadcrumbs({
+        hasCategories: hasCategories.value,
+        productsSubStep: workflowStore.productsSubStep,
+        categories: productsStore.categories?.data,
+        selectedCategoryId: workflowStore.selectedCategoryId,
+        activeCategoryId: customizationStore.activeCategoryId,
+        selectedSubCategoryId: workflowStore.selectedSubCategoryId,
+        activeSubCategoryId: customizationStore.activeSubCategoryId,
+        onCategoryStep: () => workflowStore.setProductsSubStep('category'),
+        onSubCategoryStep: () => workflowStore.setProductsSubStep('subcategory')
+      }),
       search: search.value ?? undefined,
       isExpandable: true,
       customizableStockFilter: showCustomizerStockFilter.value

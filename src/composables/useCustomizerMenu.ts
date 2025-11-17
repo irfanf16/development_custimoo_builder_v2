@@ -20,9 +20,9 @@ export function useCustomizerMenu() {
   const productsStore = useProductsStore()
   const profileStore = useProfileStore()
 
-  // Determine if we should show Categories step based on available categories
-  const shouldShowCategories = computed(() => {
-    return productsStore.categories?.data && productsStore.categories.data.length > 0
+  // Ensure the product menu entry stays visible even when category data is missing
+  const shouldShowProductsMenuItem = computed(() => {
+    return true
   })
 
   // Styles visibility: show if more than one style OR addons available
@@ -39,7 +39,7 @@ export function useCustomizerMenu() {
 
   function isActive(label: CustomizerStep) {
     // Handle the case when no categories are available
-    if (!shouldShowCategories.value && label === 'product') {
+    if (!shouldShowProductsMenuItem.value && label === 'product') {
       return false
     }
     if (label === 'product') {
@@ -132,7 +132,7 @@ export function useCustomizerMenu() {
     const items = [
       {
         step: 'product' as CustomizerStep,
-        show: shouldShowCategories.value
+        show: shouldShowProductsMenuItem.value
       },
       {
         step: 'designs' as CustomizerStep,
@@ -172,7 +172,7 @@ export function useCustomizerMenu() {
   })
 
   return {
-    shouldShowCategories,
+    shouldShowProductsMenuItem,
     shouldShowStyles,
     isActive,
     goTo,

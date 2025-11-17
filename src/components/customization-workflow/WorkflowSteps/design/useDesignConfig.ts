@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import type { HeaderConfiguration, FooterConfiguration, DesignCategoriesConfig } from '../../types'
+import { buildDesignBreadcrumbs } from '@/components/customization-workflow/breadcrumbs'
 
 // ===== SHARED STATE =====
 // These refs are shared across all component instances
@@ -27,7 +28,7 @@ export function useDesignConfig() {
     },
     designCategories: designCategoriesConfig.value,
     isExpandable: true,
-    breadcrumbs: [{ label: 'Designs' }]
+    breadcrumbs: buildDesignBreadcrumbs()
   }))
 
   const footerConfig = computed<FooterConfiguration>(() => {
