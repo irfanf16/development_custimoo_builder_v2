@@ -47,7 +47,7 @@
           <CustomizerTopbar class="z-20" />
           <div
             id="canvas-controls-container"
-            class="flex flex-row w-full h-full justify-center items-center"
+            class="flex flex-row w-full h-full justify-start items-center"
           >
             <ProductPreview />
             <div class="absolute w-0 ml-[50%] z-10">
@@ -57,7 +57,7 @@
               >
                 <RightToolbar />
                 <Card class="w-fit h-fit p-0 cursor-pointer" @click="handleClick">
-                  <CardContent class="p-3">
+                  <CardContent class="p-3 w-[180px] h-auto">
                     <TwoDScene
                       :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
                       :main-preview="true"
