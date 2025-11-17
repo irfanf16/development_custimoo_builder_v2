@@ -37,7 +37,7 @@
       // Override default grid layout and centering - use flex instead of grid
       // Completely override default centering (left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2)
       // Use explicit overrides with !important to force removal of default centering
-      return 'fixed w-full max-w-full h-full h-[calc(100dvh-5rem)] bottom-0 left-0 right-0 inset-x-0 -translate-x-0 translate-y-0 transform-none rounded-t-2xl rounded-b-none p-0 overflow-hidden flex flex-col grid-cols-none top-auto'
+      return 'fixed w-full max-w-full h-full max-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] bottom-0 left-0 right-0 inset-x-0 -translate-x-0 translate-y-0 transform-none rounded-t-2xl rounded-b-none p-0 overflow-hidden flex flex-col grid-cols-none top-auto'
     }
     return 'w-[1200px] h-[760px] max-w-full p-0 overflow-hidden flex flex-col'
   })
@@ -225,7 +225,7 @@
               </div>
 
               <!-- Content - Scrollable on Mobile -->
-              <Tabs v-model="tab" orientation="vertical" class="h-full">
+              <Tabs v-model="tab" orientation="vertical" class="h-full overflow-hidden">
                 <TabsContent value="account" class="mt-0 h-full">
                   <AccountTab
                     title="Account"
@@ -234,13 +234,13 @@
                     @sign-out="handleSignOut"
                   />
                 </TabsContent>
-                <TabsContent value="orders" class="mt-0">
+                <TabsContent value="orders" class="mt-0 h-full">
                   <OrdersTab title="Orders" />
                 </TabsContent>
-                <TabsContent value="address" class="mt-0">
+                <TabsContent value="address" class="mt-0 h-full">
                   <AddressTab />
                 </TabsContent>
-                <TabsContent value="preferences" class="px-4 py-4 mt-0">
+                <TabsContent value="preferences" class="px-4 py-4 mt-0 h-full">
                   <PreferencesTab />
                 </TabsContent>
               </Tabs>

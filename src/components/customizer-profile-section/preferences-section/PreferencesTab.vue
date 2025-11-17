@@ -77,7 +77,7 @@
             value => profileStore.setPreferences({ display: value as DisplayMode })
           "
         >
-          <SelectTrigger class="w-[360px]">
+          <SelectTrigger class="w-[10rem]">
             <SelectValue :placeholder="t.selectDisplayMode" />
           </SelectTrigger>
           <SelectContent class="max-h-60">
@@ -96,7 +96,7 @@
             value => profileStore.setPreferences({ language: value as ParaglideLocale })
           "
         >
-          <SelectTrigger class="w-[360px]">
+          <SelectTrigger class="w-[10rem]">
             <SelectValue :placeholder="t.selectLanguage" />
           </SelectTrigger>
           <SelectContent class="max-h-60">
