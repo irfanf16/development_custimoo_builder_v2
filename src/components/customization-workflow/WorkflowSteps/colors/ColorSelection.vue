@@ -47,12 +47,38 @@
   // Local clipboard for copy/paste between slots
   const clipboardHex = ref<string | null>(null)
 
+  // Track selected gradient index for each group
+  const selectedGradientIndex = ref<Record<string, number>>({})
+
   const shuffleColorsHeadingIndex: Ref<0 | 1 | 2 | 3> = ref(
     Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3
   )
   const shuffleColorsTextIndex: Ref<0 | 1 | 2 | 3> = ref(
     Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3
   )
+
+  // Generate gradient CSS string from gradient_colors array
+  function gradientColorString(
+    gradientColors: Array<{ color: string; pantone: string; name: string }>
+  ): string {
+    if (!gradientColors || gradientColors.length === 0) return ''
+    let cssColor = 'linear-gradient(90deg'
+    gradientColors.forEach(gradientColor => {
+      cssColor += ',' + gradientColor.color
+    })
+    cssColor += ')'
+    return cssColor
+  }
+
+  // Get the current gradient index for a group (defaults to 0 if not set)
+  function getGradientIndex(groupId: string): number {
+    return selectedGradientIndex.value[groupId] ?? 0
+  }
+
+  // Set the gradient index for a group
+  function setGradientIndex(groupId: string, index: number) {
+    selectedGradientIndex.value[groupId] = index
+  }
 
   const shuffleColorsHeadings = computed(() => {
     return [
@@ -72,28 +98,55 @@
     ]
   })
 
-  function setGroupColor(colorGroupId: string, color: OutputColor) {
+  function setGroupColor(colorGroupId: string, color: OutputColor, gradientIndex?: number) {
     const prevRaw = customizationStore.customization?.group_colors?.[colorGroupId]
     const prevColor = prevRaw
       ? { name: prevRaw.name || '', value: prevRaw.color || '', position: 0 }
       : null
+
+    // If this is a gradient color, get the previous gradient color
+    let prevGradientColor = null
+    if (gradientIndex !== undefined && prevRaw?.gradient_colors?.[gradientIndex]) {
+      const gradColor = prevRaw.gradient_colors[gradientIndex]
+      prevGradientColor = { name: gradColor.name || '', value: gradColor.color || '', position: 0 }
+    }
+
     history.execute('color.set-group', {
       groupId: colorGroupId,
-      prevColor,
-      nextColor: color
+      prevColor: gradientIndex !== undefined ? prevGradientColor : prevColor,
+      nextColor: color,
+      gradientIndex
     })
   }
 
   function copyFrom(groupId: string) {
     // Find the color value for the given groupId from effectiveSvgGroups
     const group = effectiveSvgGroups.value?.find(g => g.id === groupId)
-    clipboardHex.value = group?.color ?? null
+    if (!group) return
+
+    // If it's a gradient color, copy the selected gradient color
+    if (group.gradient_colors) {
+      const gradientIndex = getGradientIndex(groupId)
+      const gradientColor = group.gradient_colors[gradientIndex]
+      clipboardHex.value = gradientColor?.color ?? null
+    } else {
+      clipboardHex.value = group.color ?? null
+    }
   }
 
   function pasteTo(groupId: string) {
     if (!clipboardHex.value) return
-    // Use setGroupColor to update the color for the group
-    setGroupColor(groupId, { name: '', value: clipboardHex.value, position: 0 })
+
+    const group = effectiveSvgGroups.value?.find(g => g.id === groupId)
+    if (!group) return
+
+    // If it's a gradient color, paste to the selected gradient index
+    if (group.gradient_colors) {
+      const gradientIndex = getGradientIndex(groupId)
+      setGroupColor(groupId, { name: '', value: clipboardHex.value, position: 0 }, gradientIndex)
+    } else {
+      setGroupColor(groupId, { name: '', value: clipboardHex.value, position: 0 })
+    }
   }
 
   function shuffleAll() {
@@ -175,14 +228,28 @@
         <AccordionTrigger>
           <div class="flex justify-between gap-3 w-full group">
             <div class="flex items-center gap-3 w-full">
-              <ColorSelector :color="svgGroup.color" :disabled="true" :size="'sm'" />
-              <!-- <span
-                class="inline-block size-7 rounded-full border border-border"
-                :style="{ background: svgGroup.color ?? '' }"
-              /> -->
+              <!-- Show gradient color if available, otherwise show solid color -->
+              <ColorSelector
+                :color="
+                  svgGroup.gradient_colors
+                    ? gradientColorString(svgGroup.gradient_colors)
+                    : svgGroup.color
+                "
+                :disabled="true"
+                :size="'sm'"
+              />
               <span class="text-base">{{ svgGroup.id }}</span>
               <span class="text-muted-foreground leading-normal capitalize">
-                {{ svgGroup.pantone }} {{ svgGroup.name }}
+                <template v-if="svgGroup.gradient_colors">
+                  <template
+                    v-for="(gradientColor, gIndex) in svgGroup.gradient_colors"
+                    :key="gIndex"
+                  >
+                    {{ gradientColor.pantone }} {{ gradientColor.name }}
+                    <template v-if="gIndex < svgGroup.gradient_colors.length - 1"> / </template>
+                  </template>
+                </template>
+                <template v-else> {{ svgGroup.pantone }} {{ svgGroup.name }} </template>
               </span>
             </div>
             <div
@@ -202,11 +269,37 @@
           </div>
         </AccordionTrigger>
         <AccordionContent>
+          <!-- Gradient color selection buttons -->
+          <div v-if="svgGroup.gradient_colors" class="flex flex-wrap gap-2 mb-4">
+            <Button
+              v-for="(_, gIndex) in svgGroup.gradient_colors"
+              :key="gIndex"
+              size="sm"
+              variant="outline"
+              :class="{
+                'bg-primary text-primary-foreground': getGradientIndex(svgGroup.id) === gIndex
+              }"
+              @click="setGradientIndex(svgGroup.id, gIndex)"
+            >
+              Gradient {{ gIndex + 1 }}
+            </Button>
+          </div>
           <PaletteColorSelector
             v-if="computedPalettes"
             :palettes="computedPalettes"
-            :selected-color="svgGroup.color"
-            @color-select="color => setGroupColor(svgGroup.id, color)"
+            :selected-color="
+              svgGroup.gradient_colors
+                ? svgGroup.gradient_colors[getGradientIndex(svgGroup.id)]?.color
+                : svgGroup.color
+            "
+            @color-select="
+              color =>
+                setGroupColor(
+                  svgGroup.id,
+                  color,
+                  svgGroup.gradient_colors ? getGradientIndex(svgGroup.id) : undefined
+                )
+            "
           />
         </AccordionContent>
       </AccordionItem>

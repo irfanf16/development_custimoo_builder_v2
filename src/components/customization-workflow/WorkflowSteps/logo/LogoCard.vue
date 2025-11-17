@@ -5,17 +5,26 @@
   import type { CustomLogo } from '@/services/logos/types'
   import { computed } from 'vue'
   import { Badge } from '@/components/ui/badge'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
+  const customizationStore = useCustomizationStore()
 
   const props = defineProps<{
     logo: CustomLogo
   }>()
 
+  // Check if default colors exist (have at least one color set)
+  const hasDefaultColors = computed(() => {
+    const defaultColors = customizationStore.customization?.default_colors || []
+    return defaultColors.some((color: { color?: string | null }) => color.color)
+  })
+
   const emit = defineEmits<{
     (e: 'click', logo: CustomLogo): void
     (e: 'delete', logo: CustomLogo): void
     (e: 'apply-colors', logo: CustomLogo): void
+    (e: 'shuffle-colors'): void
   }>()
 </script>
 <template>
@@ -34,19 +43,29 @@
       </div>
       <div
         v-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
-        class="flex flex-row justify-between w-full"
+        class="flex flex-row justify-between w-full items-center gap-2"
       >
         <ColorsPreview
           :colors="props.logo.logo_colors.map(c => `rgb(${(c as number[]).join(',')})`) || []"
         />
-        <Button
-          v-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
-          size="sm"
-          variant="default"
-          @click.stop="emit('apply-colors', props.logo)"
-        >
-          Apply colors
-        </Button>
+        <div class="flex gap-2">
+          <Button
+            v-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
+            size="sm"
+            variant="default"
+            @click.stop="emit('apply-colors', props.logo)"
+          >
+            Apply colors
+          </Button>
+          <Button
+            v-if="hasDefaultColors"
+            size="sm"
+            variant="outline"
+            @click.stop="emit('shuffle-colors')"
+          >
+            Shuffle colors
+          </Button>
+        </div>
       </div>
       <div v-else class="flex flex-row justify-between w-full">
         <div class="text-sm text-muted-foreground">No colors detected</div>

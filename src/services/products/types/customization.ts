@@ -13,6 +13,7 @@ export type APCustomizationDefaultColor = {
 export type APCustomizationGroupColor = {
   color: string | null
   name: string | null
+  gradient_colors?: Array<{ color: string; pantone: string; name: string }>
 }
 
 export type APCustomizationRosterEntry = {

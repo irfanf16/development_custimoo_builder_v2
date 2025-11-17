@@ -39,6 +39,19 @@ export const useProductsStore = defineStore('productsStore', () => {
     })
     return Array.from(uniqueGroups.values())
   })
+  const initialSvgGroupsFront = ref<OutputSvgGroupColor[]>([])
+  const initialSvgGroupsBack = ref<OutputSvgGroupColor[]>([])
+  const initialSvgGroups = computed<OutputSvgGroupColor[]>(() => {
+    // Merge front and back initial groups, removing duplicates by id
+    const allGroups = [...initialSvgGroupsFront.value, ...initialSvgGroupsBack.value]
+    const uniqueGroups = new Map<string, OutputSvgGroupColor>()
+    allGroups.forEach(group => {
+      if (!uniqueGroups.has(group.id)) {
+        uniqueGroups.set(group.id, group)
+      }
+    })
+    return Array.from(uniqueGroups.values())
+  })
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
   const stylePreviews = ref<OutputStylePreviewFront[] | null>(null)
   const designPreviews = ref<OutputDesignPreviewFront[] | null>(null)
@@ -97,18 +110,27 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function setSvgGroups(
     groups: OutputSvgGroupColor[] | null | undefined,
-    side: 'front' | 'back' = 'front'
+    side: 'front' | 'back' = 'front',
+    setInitial = false
   ): void {
     const targetGroups = side === 'front' ? svgGroupsFront : svgGroupsBack
+    const targetInitialGroups = side === 'front' ? initialSvgGroupsFront : initialSvgGroupsBack
 
     if (!groups || !Array.isArray(groups)) {
       targetGroups.value = []
+      if (setInitial) {
+        targetInitialGroups.value = []
+      }
       return
     }
 
     const uniqueGroups = Array.from(new Map(groups.map(g => [g.id, g])).values())
 
     targetGroups.value = uniqueGroups
+    if (setInitial) {
+      // Store a deep copy as the initial state
+      targetInitialGroups.value = JSON.parse(JSON.stringify(uniqueGroups)) as OutputSvgGroupColor[]
+    }
   }
 
   /**
@@ -359,6 +381,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     activeDesignDetails,
     activeRenderMode,
     svgGroups,
+    initialSvgGroups,
     //activeAddons,
     //productAddons,
     //companyAddons,

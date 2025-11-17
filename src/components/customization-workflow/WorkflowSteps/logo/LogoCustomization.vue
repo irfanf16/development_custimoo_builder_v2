@@ -29,7 +29,7 @@
 
   // ===== COMPOSABLES =====
   const { customLogos } = useLogos()
-  const { applyLogoColors, removeLogo, setActiveLogo } = useLogoActions()
+  const { applyLogoColors, shuffleColors, removeLogo, setActiveLogo } = useLogoActions()
   const { isDragOver, fileInputRef, onClickUpload, onDragOver, onDragLeave, doUpload } =
     useLogoUpload()
 
@@ -160,6 +160,7 @@
               :logo="logo"
               @click="handleLogoClick(logo)"
               @apply-colors="applyLogoColors(logo)"
+              @shuffle-colors="shuffleColors()"
               @delete="removeLogo(logo)"
             />
 

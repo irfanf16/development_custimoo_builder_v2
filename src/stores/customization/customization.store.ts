@@ -224,11 +224,62 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  function setGroupColor(groupName: string, groupColor: OutputColor) {
+  function setGroupColor(groupName: string, groupColor: OutputColor, gradientIndex?: number) {
     if (!customization.value) return
-    customization.value.group_colors[groupName] = {
-      color: groupColor.value,
-      name: groupColor.name
+
+    const existing = customization.value.group_colors[groupName]
+
+    // If gradient index is provided, update gradient_colors
+    if (gradientIndex !== undefined) {
+      let gradient_colors: Array<{ color: string; pantone: string; name: string }>
+
+      if (existing?.gradient_colors) {
+        // Use existing gradient_colors
+        gradient_colors = [...existing.gradient_colors]
+      } else {
+        // Initialize from base svgGroup if available
+        const baseSvgGroup = productsStore.svgGroups.find(g => g.id === groupName)
+        if (baseSvgGroup?.gradient_colors) {
+          gradient_colors = baseSvgGroup.gradient_colors.map(
+            (gc): { color: string; pantone: string; name: string } => ({
+              color: gc.color,
+              pantone: gc.pantone,
+              name: gc.name
+            })
+          )
+        } else {
+          // Fallback: create a new array with the current color
+          const pantoneValue: string = (groupColor as { pantone?: string }).pantone || ''
+          gradient_colors = [
+            {
+              color: groupColor.value,
+              pantone: pantoneValue,
+              name: groupColor.name || ''
+            }
+          ]
+        }
+      }
+
+      // Update the specific gradient color
+      const pantoneValue: string = (groupColor as { pantone?: string }).pantone || ''
+      gradient_colors[gradientIndex] = {
+        color: groupColor.value,
+        pantone: pantoneValue,
+        name: groupColor.name || ''
+      }
+
+      customization.value.group_colors[groupName] = {
+        ...existing,
+        gradient_colors,
+        color: existing?.color ?? null,
+        name: existing?.name ?? null
+      }
+    } else {
+      // Regular color update
+      customization.value.group_colors[groupName] = {
+        color: groupColor.value,
+        name: groupColor.name
+      }
     }
     saveToLocalStorage()
   }
@@ -347,15 +398,27 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const categoryId = (existing && Number(existing.category_id)) || 0
     const subCategoryId = existing?.sub_category_id ?? null
 
-    setCustomization(
-      createDefaultCustomization({
-        productId,
-        styleId,
-        designId,
-        categoryId,
-        subCategoryId
-      })
-    )
+    const newCustomization = createDefaultCustomization({
+      productId,
+      styleId,
+      designId,
+      categoryId,
+      subCategoryId
+    })
+
+    // Explicitly reset colors
+    newCustomization.default_colors = [
+      { color: null, pantone: null, name: null },
+      { color: null, pantone: null, name: null },
+      { color: null, pantone: null, name: null },
+      { color: null, pantone: null, name: null }
+    ]
+    newCustomization.group_colors = {}
+    newCustomization.shuffle_color_number = 0
+
+    console.log('newCustomization', newCustomization)
+
+    setCustomization(newCustomization)
   }
 
   // ===== BUSINESS LOGIC =====
@@ -379,6 +442,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const designId = productsStore.activeDesignDetails?.id ?? 0
     const categoryId = customization.value?.category_id ?? 0
 
+    console.log('productId', productId)
     setCustomization(
       createDefaultCustomization({
         productId,

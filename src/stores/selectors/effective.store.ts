@@ -41,12 +41,24 @@ export function useEffectiveSelectors() {
     return base.map(svgGroup => {
       const customized = overrides[svgGroup.id]
       if (customized) {
+        // If customized has gradient_colors, preserve them
+        if (customized.gradient_colors) {
+          return {
+            id: svgGroup.id,
+            name: customized.name ?? '',
+            color: customized.color ?? svgGroup.color,
+            pantone: '',
+            count: svgGroup.count ?? 0,
+            gradient_colors: customized.gradient_colors
+          }
+        }
+        // Regular color override
         return {
           id: svgGroup.id,
           name: customized.name ?? '',
           color: customized.color ?? '',
           pantone: '',
-          count: 0
+          count: svgGroup.count ?? 0
         }
       }
       return svgGroup

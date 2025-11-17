@@ -161,12 +161,12 @@ export const registry: Registry = {
   'color.set-group': {
     apply(ctx: HistoryContext, payload: ColorSetGroupPayload) {
       const customizationStore = ctx.customizationStore
-      customizationStore.setGroupColor(payload.groupId, payload.nextColor)
+      customizationStore.setGroupColor(payload.groupId, payload.nextColor, payload.gradientIndex)
     },
     revert(ctx: HistoryContext, payload: ColorSetGroupPayload) {
       const customizationStore = ctx.customizationStore
       if (payload.prevColor) {
-        customizationStore.setGroupColor(payload.groupId, payload.prevColor)
+        customizationStore.setGroupColor(payload.groupId, payload.prevColor, payload.gradientIndex)
       } else {
         const c = customizationStore.customization as ActiveProductCustomization | null
         const colors = c?.group_colors
@@ -178,7 +178,9 @@ export const registry: Registry = {
     },
     describe(_: HistoryContext, p: ColorSetGroupPayload) {
       const label = p.nextColor?.name || p.nextColor?.value || '—'
-      return `Set color for ${p.groupId} to ${label}`
+      const gradientLabel =
+        p.gradientIndex !== undefined ? ` (Gradient ${p.gradientIndex + 1})` : ''
+      return `Set color for ${p.groupId} to ${label}${gradientLabel}`
     }
   },
   'text.set-value': {

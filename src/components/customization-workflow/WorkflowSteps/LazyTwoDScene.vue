@@ -15,6 +15,10 @@
       type: Object as PropType<{ file_url: string; file_extension: string }>,
       default: undefined
     },
+    svgParts: {
+      type: Array as PropType<string[]>,
+      default: () => []
+    },
     canvasWidth: { type: Number, default: 176 },
     canvasHeight: { type: Number, default: 176 },
     canvasClass: { type: String, default: 'rounded-xl' },
@@ -58,6 +62,7 @@
       v-if="isVisible"
       :models="models"
       :design="design"
+      :svg-parts="svgParts"
       :canvas-width="canvasWidth"
       :canvas-height="canvasHeight"
       :canvas-class="canvasClass"

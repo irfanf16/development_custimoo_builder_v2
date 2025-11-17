@@ -175,6 +175,7 @@
         <LazyTwoDScene
           :models="item.stylePreview.front_models"
           :design="item.designPreview.front_design"
+          :svg-parts="item.designPreview.svg_parts"
           :canvas-width="isMobile ? 130 : 176"
           :canvas-height="isMobile ? 130 : 176"
           :canvas-class="'rounded-xl'"

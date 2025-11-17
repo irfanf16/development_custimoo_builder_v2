@@ -49,6 +49,7 @@ export type ColorSetGroupPayload = {
   groupId: string
   prevColor: OutputColor | null
   nextColor: OutputColor
+  gradientIndex?: number
 }
 
 export type TextSetValuePayload = {

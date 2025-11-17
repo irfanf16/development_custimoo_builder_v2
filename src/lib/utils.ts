@@ -439,3 +439,61 @@ export function getColorType(
 
   return 'pantone-tcx' // Default fallback
 }
+
+/**
+ * Convert hex color to RGB object
+ * @param hex - Hex color string (with or without #)
+ * @returns RGB object with red, green, blue properties
+ */
+export function hexToRgbObject(hex: string): { red: number; green: number; blue: number } | null {
+  const cleanHex = hex.replace('#', '')
+  if (cleanHex.length !== 6) return null
+
+  const r = parseInt(cleanHex.substring(0, 2), 16)
+  const g = parseInt(cleanHex.substring(2, 4), 16)
+  const b = parseInt(cleanHex.substring(4, 6), 16)
+
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return null
+
+  return { red: r, green: g, blue: b }
+}
+
+/**
+ * Calculate factorial for permutation calculation
+ */
+function factorial(n: number): number {
+  return n <= 1 ? 1 : n * factorial(n - 1)
+}
+
+/**
+ * Get permutation sequence for color shuffling
+ * @param n - Permutation index (1-based, will be converted to 0-based)
+ * @param number_of_parts - Total number of parts
+ * @returns Array of part indices
+ */
+export function getPermutation(n: number, number_of_parts: number): number[] {
+  const result: number[] = []
+  const sequences: number[] = []
+  const nums = [1, 2, 3, 4]
+  let k = n - 1 // Convert to 0-based index
+
+  while (nums.length > 0) {
+    const fact = factorial(nums.length - 1)
+    const index = Math.floor(k / fact)
+    const spliced = nums.splice(index, 1)[0]
+    if (spliced !== undefined) {
+      sequences.push(spliced)
+    }
+    k %= fact
+  }
+
+  for (let i = 0; i < Math.ceil(number_of_parts / 4); i++) {
+    sequences.forEach((sequence: number) => {
+      const value = sequence + i * 4 - 1 // Scale and adjust the sequence value
+      if (value < number_of_parts) {
+        result.push(value)
+      }
+    })
+  }
+  return result
+}
