@@ -16,7 +16,6 @@
   import { Button } from '@/components/ui/button'
   import { ArrowLeft } from 'lucide-vue-next'
   import { m as messages } from '@/paraglide/messages'
-  import { ScrollArea } from '@/components/ui/scroll-area'
   import { DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
   const props = defineProps<{ open: boolean }>()
@@ -38,31 +37,9 @@
       // Override default grid layout and centering - use flex instead of grid
       // Completely override default centering (left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2)
       // Use explicit overrides with !important to force removal of default centering
-      return 'w-full max-w-full h-auto max-h-[calc(100vh-1rem)] !top-4 !left-0 !right-0 !inset-x-0 !-translate-x-0 !translate-y-0 !transform-none rounded-t-2xl rounded-b-none p-0 overflow-hidden !flex !flex-col !grid-cols-none'
+      return 'fixed w-full max-w-full h-full h-[calc(100dvh-5rem)] bottom-0 left-0 right-0 inset-x-0 -translate-x-0 translate-y-0 transform-none rounded-t-2xl rounded-b-none p-0 overflow-hidden flex flex-col grid-cols-none top-auto'
     }
     return 'w-[1200px] h-[760px] max-w-full p-0 overflow-hidden flex flex-col'
-  })
-
-  // Computed styles for mobile positioning - use inline styles to override default
-  // Inline styles have higher specificity than classes (inline styles > classes)
-  const dialogStyles = computed(() => {
-    if (uiStore.isMobile) {
-      return {
-        position: 'fixed' as const,
-        marginLeft: '0px',
-        marginRight: '0px',
-        transform: 'none',
-        maxHeight: 'calc(100vh - 8rem)',
-        height: 'calc(100vh - 8rem)',
-        minHeight: 'calc(100vh - 8rem)',
-        width: '100%',
-        maxWidth: '100%',
-        display: 'flex',
-        marginTop: '8rem',
-        flexDirection: 'column' as const
-      }
-    }
-    return undefined
   })
 
   // Get current tab label for mobile header
@@ -127,7 +104,7 @@
 
 <template>
   <Dialog :open="props.open" @update:open="emit('update:open', $event)">
-    <DialogContent :class="dialogClasses" :style="dialogStyles">
+    <DialogContent :class="dialogClasses">
       <DialogTitle class="sr-only">{{ myProfileLabel }}</DialogTitle>
       <DialogDescription class="sr-only">
         {{ messages.profile_my_profile({}, { locale: profileStore.currentLocale }) }}
@@ -154,7 +131,7 @@
                 <template v-for="item in tabItems" :key="item.value">
                   <TabsTrigger
                     :value="item.value"
-                    class="flex py-4 px-4 items-center justify-start gap-3 w-full rounded-[6px] transition-colors text-left"
+                    class="flex py-4 items-center justify-start gap-3 w-full rounded-[6px] transition-colors text-left"
                     :class="
                       tab === item.value ? '!bg-primary/30' : 'bg-transparent text-foreground'
                     "
@@ -170,7 +147,7 @@
           <!-- Desktop Content -->
           <div class="flex-1 relative py-2">
             <Tabs v-model="tab" orientation="vertical" class="h-full">
-              <TabsContent value="account" class="h-full px-4">
+              <TabsContent value="account" class="h-full">
                 <AccountTab
                   title="Account"
                   :counters="counters"
@@ -210,28 +187,26 @@
               </div>
 
               <!-- Tab List - Scrollable -->
-              <ScrollArea class="flex-1 min-h-0">
-                <div class="flex flex-col gap-0 py-0">
-                  <template v-for="item in tabItems" :key="item.value">
-                    <button
-                      class="flex py-4 px-4 items-center justify-start gap-3 w-full rounded-[6px] transition-colors text-left"
-                      :class="
-                        tab === item.value
-                          ? '!bg-primary/30'
-                          : 'bg-transparent text-foreground hover:bg-muted/50'
-                      "
-                      @click="
-                        handleMobileTabClick(
-                          item.value as 'account' | 'orders' | 'address' | 'preferences'
-                        )
-                      "
-                    >
-                      <component :is="item.icon" class="size-6 text-primary" />
-                      <span class="text-sm font-semibold">{{ item.label }}</span>
-                    </button>
-                  </template>
-                </div>
-              </ScrollArea>
+              <div class="flex flex-col gap-0 py-0">
+                <template v-for="item in tabItems" :key="item.value">
+                  <button
+                    class="flex py-4 px-4 items-center justify-start gap-3 w-full rounded-[6px] transition-colors text-left"
+                    :class="
+                      tab === item.value
+                        ? '!bg-primary/30'
+                        : 'bg-transparent text-foreground hover:bg-muted/50'
+                    "
+                    @click="
+                      handleMobileTabClick(
+                        item.value as 'account' | 'orders' | 'address' | 'preferences'
+                      )
+                    "
+                  >
+                    <component :is="item.icon" class="size-6 text-primary" />
+                    <span class="text-sm font-semibold">{{ item.label }}</span>
+                  </button>
+                </template>
+              </div>
             </div>
 
             <!-- Mobile Content View -->
@@ -250,27 +225,25 @@
               </div>
 
               <!-- Content - Scrollable on Mobile -->
-              <ScrollArea class="flex-1 min-h-0">
-                <Tabs v-model="tab" orientation="vertical" class="h-full">
-                  <TabsContent value="account" class="px-4 py-4 mt-0">
-                    <AccountTab
-                      title="Account"
-                      :counters="counters"
-                      @save="() => {}"
-                      @sign-out="handleSignOut"
-                    />
-                  </TabsContent>
-                  <TabsContent value="orders" class="mt-0">
-                    <OrdersTab title="Orders" />
-                  </TabsContent>
-                  <TabsContent value="address" class="mt-0">
-                    <AddressTab />
-                  </TabsContent>
-                  <TabsContent value="preferences" class="px-4 py-4 mt-0">
-                    <PreferencesTab />
-                  </TabsContent>
-                </Tabs>
-              </ScrollArea>
+              <Tabs v-model="tab" orientation="vertical" class="h-full">
+                <TabsContent value="account" class="mt-0 h-full">
+                  <AccountTab
+                    title="Account"
+                    :counters="counters"
+                    @save="() => {}"
+                    @sign-out="handleSignOut"
+                  />
+                </TabsContent>
+                <TabsContent value="orders" class="mt-0">
+                  <OrdersTab title="Orders" />
+                </TabsContent>
+                <TabsContent value="address" class="mt-0">
+                  <AddressTab />
+                </TabsContent>
+                <TabsContent value="preferences" class="px-4 py-4 mt-0">
+                  <PreferencesTab />
+                </TabsContent>
+              </Tabs>
             </div>
           </Transition>
         </div>
