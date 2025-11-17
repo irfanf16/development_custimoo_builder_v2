@@ -1,270 +1,3 @@
-<template>
-  <div class="space-y-6">
-    <Tabs v-model="profileStore.addressTabs" class="w-full">
-      <TabsList class="flex w-full border-b border-border bg-muted rounded-lg overflow-hidden">
-        <TabsTrigger
-          value="personal"
-          class="w-1/2 px-4 py-2 text-center text-sm font-medium transition-colors"
-          :class="tabClass('personal')"
-        >
-          {{ t.personal }}
-        </TabsTrigger>
-        <TabsTrigger
-          value="business"
-          class="w-1/2 px-4 py-2 text-center text-sm font-medium transition-colors"
-          :class="tabClass('business')"
-        >
-          {{ t.business }}
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
-
-    <form class="space-y-4" @submit.prevent="onSubmit">
-      <div class="grid gap-4 md:grid-cols-2">
-        <FormField v-slot="{ field }" name="first_name">
-          <FormItem>
-            <FormLabel>
-              {{ t.firstName }}
-              <span v-if="isPersonal" class="text-destructive">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input
-                id="first_name"
-                type="text"
-                autocomplete="given-name"
-                :model-value="field.value"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-
-        <FormField v-slot="{ field }" name="last_name">
-          <FormItem>
-            <FormLabel>
-              {{ t.lastName }}
-              <span v-if="isPersonal" class="text-destructive">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input
-                id="last_name"
-                type="text"
-                autocomplete="family-name"
-                :model-value="field.value"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-      </div>
-
-      <div class="grid gap-4 md:grid-cols-2">
-        <FormField v-slot="{ field }" name="email">
-          <FormItem>
-            <FormLabel>{{ t.email }}</FormLabel>
-            <FormControl>
-              <Input
-                id="email"
-                type="email"
-                autocomplete="email"
-                :model-value="field.value"
-                placeholder="name@example.com"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-
-        <FormField v-slot="{ field }" name="phone_number">
-          <FormItem>
-            <FormLabel>{{ t.phoneNumber }}</FormLabel>
-            <FormControl>
-              <Input
-                id="phone_number"
-                type="tel"
-                autocomplete="tel"
-                :model-value="field.value"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-      </div>
-
-      <TransitionGroup name="fade" tag="div">
-        <FormField v-if="isBusiness" v-slot="{ field }" key="company" name="company_name">
-          <FormItem>
-            <FormLabel>
-              {{ t.companyName }}
-              <span class="text-destructive">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input
-                id="company_name"
-                type="text"
-                autocomplete="organization"
-                :model-value="field.value"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-      </TransitionGroup>
-
-      <FormField v-slot="{ field }" name="address1">
-        <FormItem>
-          <FormLabel>
-            {{ t.addressLine1 }}
-            <span class="text-destructive">*</span>
-          </FormLabel>
-          <FormControl>
-            <Input
-              id="address1"
-              type="text"
-              autocomplete="address-line1"
-              :model-value="field.value"
-              @update:model-value="field.onChange"
-              @blur="field.onBlur"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <FormField v-slot="{ field }" name="address2">
-        <FormItem>
-          <FormLabel>{{ t.addressLine2 }}</FormLabel>
-          <FormControl>
-            <Input
-              id="address2"
-              type="text"
-              autocomplete="address-line2"
-              :model-value="field.value"
-              @update:model-value="field.onChange"
-              @blur="field.onBlur"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <div class="grid gap-4 md:grid-cols-2">
-        <FormField v-slot="{ field }" name="city">
-          <FormItem>
-            <FormLabel>
-              {{ t.city }}
-              <span class="text-destructive">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input
-                id="city"
-                type="text"
-                autocomplete="address-level2"
-                :model-value="field.value"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField v-slot="{ field }" name="zip_code">
-          <FormItem>
-            <FormLabel>
-              {{ t.zipCode }}
-              <span class="text-destructive">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input
-                id="zip_code"
-                type="text"
-                inputmode="numeric"
-                autocomplete="postal-code"
-                :model-value="field.value"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-      </div>
-      <FormField v-slot="{ field }" name="country">
-        <FormItem>
-          <FormLabel>
-            {{ t.country }}
-            <span class="text-destructive">*</span>
-          </FormLabel>
-          <Select :model-value="field.value" @update:model-value="field.onChange">
-            <FormControl>
-              <SelectTrigger class="w-full" @blur="field.onBlur">
-                <SelectValue :placeholder="t.selectCountry" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent class="max-h-60">
-              <SelectItem
-                v-for="country in profileStore.countries"
-                :key="country.id"
-                :value="String(country.id)"
-              >
-                {{ country.name }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-      <FormField v-slot="{ field }" name="state">
-        <FormItem>
-          <FormLabel>{{ t.state }}</FormLabel>
-          <FormControl>
-            <Input
-              id="state"
-              type="text"
-              autocomplete="address-level1"
-              :model-value="field.value"
-              @update:model-value="field.onChange"
-              @blur="field.onBlur"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-      <FormField v-if="!props.address || !props.address.default" v-slot="{ field }" name="default">
-        <FormItem class="flex flex-row items-center gap-3 space-y-0">
-          <FormControl>
-            <Checkbox
-              id="checkbox-default"
-              :checked="field.value"
-              @update:checked="field.onChange"
-              @blur="field.onBlur"
-            />
-          </FormControl>
-          <FormLabel for="checkbox-default" class="cursor-pointer">
-            {{ t.setAsDefaultAddress }}
-          </FormLabel>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <div class="flex gap-2 justify-end">
-        <Button type="button" variant="outline" @click="handleCancel">{{ t.cancel }}</Button>
-        <Button type="submit" class="bg-primary text-white hover:text-white">{{ t.save }}</Button>
-      </div>
-    </form>
-  </div>
-</template>
-
 <script setup lang="ts">
   import { computed, onMounted, watch } from 'vue'
   import { useForm } from 'vee-validate/dist/vee-validate'
@@ -285,6 +18,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import type { Address, AddressPayload } from '@/services/customers/types'
   import { m as messages } from '@/paraglide/messages'
+  import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
 
   const props = defineProps<{ address?: Address | null }>()
   const emit = defineEmits<{
@@ -462,3 +196,276 @@
     }
   )
 </script>
+
+<template>
+  <div class="space-y-6 flex flex-col h-full overflow-hidden">
+    <Tabs v-model="profileStore.addressTabs" class="w-full">
+      <TabsList class="flex w-full border-b border-border bg-muted rounded-lg overflow-hidden">
+        <TabsTrigger
+          value="personal"
+          class="w-1/2 px-4 py-2 text-center text-sm font-medium transition-colors"
+          :class="tabClass('personal')"
+        >
+          {{ t.personal }}
+        </TabsTrigger>
+        <TabsTrigger
+          value="business"
+          class="w-1/2 px-4 py-2 text-center text-sm font-medium transition-colors"
+          :class="tabClass('business')"
+        >
+          {{ t.business }}
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
+
+    <ScrollArea class="flex-1 h-full overflow-y-auto">
+      <form class="space-y-4 h-full" @submit.prevent="onSubmit">
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormField v-slot="{ field }" name="first_name">
+            <FormItem>
+              <FormLabel>
+                {{ t.firstName }}
+                <span v-if="isPersonal" class="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  id="first_name"
+                  type="text"
+                  autocomplete="given-name"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <FormField v-slot="{ field }" name="last_name">
+            <FormItem>
+              <FormLabel>
+                {{ t.lastName }}
+                <span v-if="isPersonal" class="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  id="last_name"
+                  type="text"
+                  autocomplete="family-name"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormField v-slot="{ field }" name="email">
+            <FormItem>
+              <FormLabel>{{ t.email }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="email"
+                  type="email"
+                  autocomplete="email"
+                  :model-value="field.value"
+                  placeholder="name@example.com"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <FormField v-slot="{ field }" name="phone_number">
+            <FormItem>
+              <FormLabel>{{ t.phoneNumber }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="phone_number"
+                  type="tel"
+                  autocomplete="tel"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+        </div>
+
+        <TransitionGroup name="fade" tag="div">
+          <FormField v-if="isBusiness" v-slot="{ field }" key="company" name="company_name">
+            <FormItem>
+              <FormLabel>
+                {{ t.companyName }}
+                <span class="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  id="company_name"
+                  type="text"
+                  autocomplete="organization"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+        </TransitionGroup>
+
+        <FormField v-slot="{ field }" name="address1">
+          <FormItem>
+            <FormLabel>
+              {{ t.addressLine1 }}
+              <span class="text-destructive">*</span>
+            </FormLabel>
+            <FormControl>
+              <Input
+                id="address1"
+                type="text"
+                autocomplete="address-line1"
+                :model-value="field.value"
+                @update:model-value="field.onChange"
+                @blur="field.onBlur"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <FormField v-slot="{ field }" name="address2">
+          <FormItem>
+            <FormLabel>{{ t.addressLine2 }}</FormLabel>
+            <FormControl>
+              <Input
+                id="address2"
+                type="text"
+                autocomplete="address-line2"
+                :model-value="field.value"
+                @update:model-value="field.onChange"
+                @blur="field.onBlur"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormField v-slot="{ field }" name="city">
+            <FormItem>
+              <FormLabel>
+                {{ t.city }}
+                <span class="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  id="city"
+                  type="text"
+                  autocomplete="address-level2"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ field }" name="zip_code">
+            <FormItem>
+              <FormLabel>
+                {{ t.zipCode }}
+                <span class="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  id="zip_code"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="postal-code"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+        </div>
+        <FormField v-slot="{ field }" name="country">
+          <FormItem>
+            <FormLabel>
+              {{ t.country }}
+              <span class="text-destructive">*</span>
+            </FormLabel>
+            <Select :model-value="field.value" @update:model-value="field.onChange">
+              <FormControl>
+                <SelectTrigger class="w-full" @blur="field.onBlur">
+                  <SelectValue :placeholder="t.selectCountry" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent class="max-h-60">
+                <SelectItem
+                  v-for="country in profileStore.countries"
+                  :key="country.id"
+                  :value="String(country.id)"
+                >
+                  {{ country.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+        <FormField v-slot="{ field }" name="state">
+          <FormItem>
+            <FormLabel>{{ t.state }}</FormLabel>
+            <FormControl>
+              <Input
+                id="state"
+                type="text"
+                autocomplete="address-level1"
+                :model-value="field.value"
+                @update:model-value="field.onChange"
+                @blur="field.onBlur"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+        <FormField
+          v-if="!props.address || !props.address.default"
+          v-slot="{ field }"
+          name="default"
+        >
+          <FormItem class="flex flex-row items-center gap-3 space-y-0">
+            <FormControl>
+              <Checkbox
+                id="checkbox-default"
+                :checked="field.value"
+                @update:checked="field.onChange"
+                @blur="field.onBlur"
+              />
+            </FormControl>
+            <FormLabel for="checkbox-default" class="cursor-pointer">
+              {{ t.setAsDefaultAddress }}
+            </FormLabel>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <div class="flex gap-2 justify-end">
+          <Button type="button" variant="outline" @click="handleCancel">{{ t.cancel }}</Button>
+          <Button type="submit" class="bg-primary text-white hover:text-white">{{ t.save }}</Button>
+        </div>
+      </form>
+    </ScrollArea>
+  </div>
+</template>
