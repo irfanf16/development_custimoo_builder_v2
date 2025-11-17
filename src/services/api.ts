@@ -8,6 +8,12 @@ const instance = axios.create({
 // Request Interceptor: Check token expiration and refresh if needed
 instance.interceptors.request.use(
   async config => {
+    // Skip token refresh logic for the refresh token endpoint itself to avoid infinite loop
+    const isRefreshTokenEndpoint = config.url?.includes('customer/from/token')
+    if (isRefreshTokenEndpoint) {
+      return config
+    }
+
     const authStore = useAuthStore()
 
     let tokenToUse: string | null = authStore.accessToken

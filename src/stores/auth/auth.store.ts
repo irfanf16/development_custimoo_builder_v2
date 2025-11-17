@@ -138,7 +138,9 @@ export const useAuthStore = defineStore('authStore', () => {
 
   async function decryptRefreshToken(payload: string | null): Promise<string | null> {
     if (!payload) return null
-    if (!hasCryptoSupport) return payload
+    if (!hasCryptoSupport) {
+      return payload
+    }
     const key = await ensureEncryptionKey()
     if (!key) return null
 
@@ -278,7 +280,9 @@ export const useAuthStore = defineStore('authStore', () => {
   }
 
   async function loadFromLocalStorage(): Promise<boolean> {
-    if (!hasWindow) return false
+    if (!hasWindow) {
+      return false
+    }
     const session = window.sessionStorage
 
     const customer = storage.getItem<Customer>(CUSTOMER_STORAGE_KEY)

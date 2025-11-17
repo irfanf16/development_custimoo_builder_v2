@@ -43,6 +43,7 @@ export function useAppInitialization() {
   // Store instances
   const wf = useWorkflowStore()
   const storage = useLocalStorage()
+  const categoryParamsComposable = useCategoryParams()
 
   // ============================================================================
   // Phase 1: Load Initial State from localStorage
@@ -86,13 +87,12 @@ export function useAppInitialization() {
   const fetchEssentialData = async (): Promise<void> => {
     const companyStore = useCompanyStore()
     const productsStore = useProductsStore()
-    const { categoryParams } = useCategoryParams()
 
     // Fetch in parallel for better performance
     await Promise.all([
       companyStore.fetchCompany(),
       companyStore.fetchSettings(),
-      productsStore.fetchCustomizedCategories(categoryParams.value)
+      productsStore.fetchCustomizedCategories(categoryParamsComposable.categoryParams.value)
     ])
   }
 
