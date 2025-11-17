@@ -228,6 +228,17 @@
             @details="() => showOrderDetails(order)"
           />
         </div>
+        <div v-if="store.orders.length">
+          <OrdersListItem
+            v-for="order in store.orders"
+            :key="order.id"
+            :order="order"
+            :expanded="store.ordersView === 'expanded-list'"
+            @cancel="store.cancelOrder"
+            @pdf="() => {}"
+            @details="() => showOrderDetails(order)"
+          />
+        </div>
         <div v-else class="flex justify-center py-10 text-foreground">{{ t.noOrdersFound }}</div>
 
         <div v-if="store.isLoadingOrders" class="flex justify-center py-6">

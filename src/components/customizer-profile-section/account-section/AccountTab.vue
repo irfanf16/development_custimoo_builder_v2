@@ -13,7 +13,7 @@
   import { m as messages } from '@/paraglide/messages'
   import { computed, ref, onMounted } from 'vue'
   import { useLocalStorage } from '@/composables/useLocalStorage'
-
+  import { useUIStore } from '@/stores/ui/ui.store'
   defineProps<{ title?: string; counters: DashboardCounters }>()
 
   onMounted(() => {
@@ -26,7 +26,7 @@
   const profileStore = useProfileStore()
   const { clearAll } = useLocalStorage()
   const emit = defineEmits(['sign-out'])
-
+  const uiStore = useUIStore()
   const defaultAddress = computed(() => profileStore.defaultAddress)
 
   // Edit mode state for customer name
@@ -87,11 +87,11 @@
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    <div class="sticky top-0 z-1 pb-3 max-w-max">
+    <div v-if="!uiStore.isMobile" class="sticky top-0 z-1 px-4 pb-3 max-w-max">
       <div class="text-lg font-semibold">{{ title || t.account }}</div>
     </div>
-    <ScrollArea>
-      <div class="flex-1 overflow-y-auto py-2 space-y-3">
+    <ScrollArea class="flex-1 h-full overflow-y-auto">
+      <div class="flex-1 py-2 px-4 space-y-3">
         <!-- Profile header with avatar and actions -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
@@ -119,6 +119,21 @@
           </div>
         </div>
 
+        <!-- Counters -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
+            <div class="text-sm text-muted-foreground">{{ t.ordersCount }}</div>
+            <div class="text-2xl font-bold">{{ counters.orders_count }}</div>
+          </Card>
+          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
+            <div class="text-sm text-muted-foreground">{{ t.pendingApprovalCount }}</div>
+            <div class="text-2xl font-bold">{{ counters.pending_approval_count }}</div>
+          </Card>
+          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
+            <div class="text-sm text-muted-foreground">{{ t.trackMyOrdersCount }}</div>
+            <div class="text-2xl font-bold">{{ counters.track_my_orders_count }}</div>
+          </Card>
+        </div>
         <!-- Counters -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">

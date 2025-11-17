@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import type { DialogRootEmits, DialogRootProps } from 'reka-ui'
-  import { DialogRoot, useForwardPropsEmits } from 'reka-ui'
+  import { ConfigProvider, DialogRoot, useForwardPropsEmits } from 'reka-ui'
 
   const props = defineProps<DialogRootProps>()
   const emits = defineEmits<DialogRootEmits>()
@@ -9,7 +9,11 @@
 </script>
 
 <template>
-  <DialogRoot v-bind="forwarded">
-    <slot class="bg-background text-foreground" />
-  </DialogRoot>
+  <!-- Wrap every dialog in a ConfigProvider so Reka skips the global body scroll lock.
+       This keeps modals modal, but allows touch scrolling within our shadow-root widget. -->
+  <ConfigProvider :scroll-body="false">
+    <DialogRoot v-bind="forwarded">
+      <slot class="bg-background text-foreground" />
+    </DialogRoot>
+  </ConfigProvider>
 </template>

@@ -16,7 +16,7 @@
   import CardContent from '@/components/ui/card/CardContent.vue'
   import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
   import { m as messages } from '@/paraglide/messages'
-
+  import { useUIStore } from '@/stores/ui/ui.store'
   const store = useProfileStore()
   onMounted(() => {
     store.fetchAddresses()
@@ -46,6 +46,7 @@
     cancel: messages.profile_cancel({}, { locale: store.currentLocale }),
     yesDelete: messages.profile_yes_delete({}, { locale: store.currentLocale })
   }))
+  const uiStore = useUIStore()
 </script>
 <template>
   <div class="flex flex-col h-full px-4">
@@ -192,7 +193,13 @@
 
     <!-- Add/Edit Modal -->
     <Dialog v-model:open="store.showAddModal">
-      <DialogContent class="max-w-2xl">
+      <DialogContent
+        class="max-w-2xl"
+        :class="{
+          'fixed w-full max-w-full max-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] bottom-0 left-0 right-0 inset-x-0 -translate-x-0 translate-y-0 transform-none rounded-t-2xl rounded-b-none p-4 overflow-hidden flex flex-col grid-cols-none top-auto':
+            uiStore.isMobile
+        }"
+      >
         <DialogHeader>
           <DialogTitle>{{ store.editingAddress ? t.editAddress : t.addNewAddress }}</DialogTitle>
         </DialogHeader>
