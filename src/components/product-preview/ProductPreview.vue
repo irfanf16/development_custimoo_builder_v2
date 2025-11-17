@@ -13,7 +13,7 @@
 </script>
 
 <template>
-  <div id="3d-or-2d-preview" ref="previewContainer" class="w-full h-full max-w-full">
+  <div id="3d-or-2d-preview" ref="previewContainer" class="ml-24">
     <TwoDScene :side="workflowStore.activeCanvasSide" :main-preview="true" />
   </div>
 

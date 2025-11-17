@@ -299,6 +299,11 @@ customizer-widget {
   touch-action: manipulation;
 }
 
+.canvas-container {
+  width: 100% !important;
+  height: auto !important;
+}
+
 /* Ensure widget components are properly styled */
 customizer-widget * {
   box-sizing: border-box;

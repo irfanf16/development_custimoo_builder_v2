@@ -568,6 +568,12 @@
 
 <template>
   <div class="relative">
-    <canvas ref="canvasEl" :width="canvasWidth" :height="canvasHeight" :class="canvasClass" />
+    <canvas
+      ref="canvasEl"
+      class="!w-full !h-auto"
+      :width="canvasWidth"
+      :height="canvasHeight"
+      :class="canvasClass"
+    />
   </div>
 </template>
