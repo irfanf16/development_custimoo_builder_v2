@@ -21,9 +21,7 @@
 </script>
 
 <template>
-  <div
-    class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10 py-2 shadow-lg md:hidden"
-  >
+  <div class="fixed bottom-0 left-0 right-0 bg-background z-10 py-2 shadow-lg md:hidden">
     <div class="flex overflow-x-auto overflow-y-hidden gap-2 px-4 scrollbar-hide whitespace-nowrap">
       <CustomizerMenuItem
         v-for="item in menuItems"

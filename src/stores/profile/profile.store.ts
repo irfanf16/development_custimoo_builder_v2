@@ -86,13 +86,23 @@ export const useProfileStore = defineStore('profileStore', () => {
       return
     }
 
+    const applyThemeClass = (el: HTMLElement) => {
+      if (theme === 'dark') {
+        el.classList.remove('light')
+        el.classList.add('dark')
+      } else {
+        el.classList.remove('dark')
+        el.classList.add('light')
+      }
+    }
+
     // Apply to widget root container (for .dark CSS selector)
-    if (theme === 'dark') {
-      widgetRoot.classList.remove('light')
-      widgetRoot.classList.add('dark')
-    } else {
-      widgetRoot.classList.remove('dark')
-      widgetRoot.classList.add('light')
+    applyThemeClass(widgetRoot)
+
+    // Ensure the top-level widget shell (mount container) stays in sync for utility classes
+    const shellContainer = widgetRoot.closest('#customizer-widget-container')
+    if (shellContainer && shellContainer !== widgetRoot) {
+      applyThemeClass(shellContainer as HTMLElement)
     }
 
     // Also apply to shadow host if available (for :host.dark CSS selector)

@@ -41,6 +41,12 @@ export const useUIStore = defineStore('uiStore', () => {
   // Actions
 
   function setWidgetRoot(root: HTMLElement, skipInitialMeasure = false) {
+    const previousRoot = widgetRoot.value
+
+    if (previousRoot && previousRoot !== root) {
+      previousRoot.classList.remove('light', 'dark')
+    }
+
     widgetRoot.value = root
 
     // Apply current theme to widget root
