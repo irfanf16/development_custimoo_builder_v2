@@ -14,12 +14,23 @@
   import { cn } from '@/lib/utils'
   import { useUIStore } from '@/stores/ui/ui.store'
 
-  const props = defineProps<
-    DialogContentProps & { class?: HTMLAttributes['class']; style?: HTMLAttributes['style'] }
-  >()
+  const props = withDefaults(
+    defineProps<
+      DialogContentProps & {
+        class?: HTMLAttributes['class']
+        style?: HTMLAttributes['style']
+        variant?: 'default' | 'large'
+      }
+    >(),
+    {
+      variant: 'default',
+      class: undefined,
+      style: undefined
+    }
+  )
   const emits = defineEmits<DialogContentEmits>()
 
-  const delegatedProps = reactiveOmit(props, 'class')
+  const delegatedProps = reactiveOmit(props, 'class', 'style', 'variant')
 
   const forwarded = useForwardPropsEmits(delegatedProps, emits)
 
@@ -29,23 +40,19 @@
   const uiStore = useUIStore()
 
   const BASE_CONTENT_CLASSES = [
-    // shared dialog presentation
-    'fixed z-50 bg-background text-foreground duration-200',
+    'fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg',
+    '-translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6',
+    'shadow-lg duration-200 text-foreground sm:rounded-lg',
     'data-[state=open]:animate-in data-[state=closed]:animate-out',
     'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
     'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
     'data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]',
-    'data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
-    // shared structure
-    'flex flex-col overflow-hidden',
-    'p-0'
+    'data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]'
   ].join(' ')
 
   const MOBILE_CONTENT_CLASSES = [
     // mobile-first layout (defaults)
     'inset-x-0 bottom-0 top-auto',
-    'w-full max-w-full',
-    'h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)]',
     'translate-x-0 translate-y-0',
     'transform-none',
     'rounded-t-2xl rounded-b-none',
@@ -56,14 +63,24 @@
     // desktop layout overrides (md and up)
     'md:inset-auto md:left-1/2 md:top-1/2',
     'md:bottom-auto md:right-auto',
-    'md:w-[1192px] md:h-[760px] md:max-w-full',
     'md:-translate-x-1/2 md:-translate-y-1/2 md:transform',
     'md:rounded-lg',
     'md:shadow-none md:border-0'
   ].join(' ')
 
+  const LARGE_CONTENT_CLASSES_MOBILE = [
+    'w-full h-full h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)]'
+  ].join(' ')
+  const LARGE_CONTENT_CLASSES = ['md:w-[1192px] md:h-[760px] md:max-w-full'].join(' ')
+
   const contentClasses = computed(() =>
-    cn(BASE_CONTENT_CLASSES, MOBILE_CONTENT_CLASSES, DESKTOP_CONTENT_CLASSES, props.class)
+    cn(
+      BASE_CONTENT_CLASSES,
+      MOBILE_CONTENT_CLASSES,
+      DESKTOP_CONTENT_CLASSES,
+      props.variant === 'large' ? [LARGE_CONTENT_CLASSES, LARGE_CONTENT_CLASSES_MOBILE] : [],
+      props.class
+    )
   )
 
   /**
