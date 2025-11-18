@@ -1364,10 +1364,10 @@
   <div class="relative">
     <canvas
       ref="canvasEl"
-      class="!w-full !h-auto"
+      class="!w-full !aspect-square !h-auto"
+      :class="`max-h-[${canvasHeight}px] ${canvasClass}`"
       :width="canvasWidth"
       :height="canvasHeight"
-      :class="canvasClass"
     />
   </div>
 </template>
