@@ -103,8 +103,8 @@
 </script>
 
 <template>
-  <Dialog :open="props.open" @update:open="emit('update:open', $event)">
-    <DialogContent>
+  <Dialog :open="props.open" variant="large" @update:open="emit('update:open', $event)">
+    <DialogContent variant="large" class="p-0">
       <DialogTitle class="sr-only">{{ myProfileLabel }}</DialogTitle>
       <DialogDescription class="sr-only">
         {{ messages.profile_my_profile({}, { locale: profileStore.currentLocale }) }}
