@@ -137,6 +137,8 @@ export function loadCustomFont(url: string, fontFamily: string): Promise<void> {
     fontFormat = 'woff2'
   } else if (fileExt === 'woff') {
     fontFormat = 'woff'
+  } else if (fileExt === 'ttf') {
+    fontFormat = 'truetype'
   }
 
   const style = document.createElement('style')
