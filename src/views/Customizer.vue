@@ -57,7 +57,7 @@
               >
                 <RightToolbar />
                 <Card class="w-fit h-fit p-0 cursor-pointer" @click="handleClick">
-                  <CardContent class="p-3 w-[180px] h-auto">
+                  <CardContent class="w-[180px] h-auto">
                     <TwoDScene
                       :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
                       :main-preview="true"

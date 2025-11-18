@@ -1365,9 +1365,10 @@
     <canvas
       ref="canvasEl"
       class="!w-full !aspect-square !h-auto"
-      :class="`max-h-[${canvasHeight}px] ${canvasClass}`"
+      :class="canvasClass"
       :width="canvasWidth"
       :height="canvasHeight"
+      :style="{ maxHeight: `${canvasHeight}px !important` }"
     />
   </div>
 </template>
