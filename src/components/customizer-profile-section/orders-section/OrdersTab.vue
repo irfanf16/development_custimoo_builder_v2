@@ -11,7 +11,7 @@
   } from '@/components/ui/dropdown-menu'
   import { Check, Filter, Search, X } from 'lucide-vue-next'
   import InfiniteScroll from '@/components/ui/infinite-scroll/InfiniteScroll.vue'
-  import Loader from '@/components/ui/loader/Loader.vue'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
   import OrdersListItem from './OrdersListItem.vue'
   import type { Order } from '@/services/orders/types'
   import { getOrderOptions } from '@/helpers/orderStatuses'
@@ -231,14 +231,14 @@
         <div v-else class="flex justify-center py-10 text-foreground">{{ t.noOrdersFound }}</div>
 
         <div v-if="store.isLoadingOrders" class="flex justify-center py-6">
-          <Loader />
+          <Spinner class="text-primary size-6" />
         </div>
         <!-- Smooth bottom loader when fetching more -->
         <div
           v-if="store.isLoadingMore && store.orders.length"
           class="flex justify-center py-4 text-forground transition-all duration-300"
         >
-          <Loader />
+          <Spinner class="text-primary size-4" />
           <span class="ml-2 text-sm">{{ t.loadingMoreOrders }}</span>
         </div>
       </InfiniteScroll>

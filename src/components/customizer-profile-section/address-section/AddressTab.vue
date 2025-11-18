@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
-  import Loader from '@/components/ui/loader/Loader.vue'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
   import { Button } from '@/components/ui/button'
   import {
     Dialog,
@@ -54,9 +54,9 @@
     <div class="sticky top-0 z-10 pb-3 w-max">
       <div class="text-lg font-semibold">{{ t.addressBook }}</div>
     </div>
-    <!-- Loader -->
+    <!-- Spinner -->
     <div v-if="store.isLoading" class="flex justify-center items-center flex-1">
-      <Loader />
+      <Spinner class="text-primary size-6" />
     </div>
 
     <!-- Empty State -->

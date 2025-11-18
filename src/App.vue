@@ -2,6 +2,7 @@
   import WidgetApp from '@/components/WidgetApp.vue'
   import { useAppInitialization } from '@/composables'
   import { Button } from '@/components/ui/button'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
 
   // Initialize app data (company and settings)
   const appInit = useAppInitialization()
@@ -14,7 +15,7 @@
   <!-- Loading state while initializing -->
   <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
     <div class="text-center">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+      <Spinner class="size-8 text-primary mx-auto mb-4" />
       <p class="text-muted-foreground">Initializing app...</p>
     </div>
   </div>

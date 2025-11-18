@@ -9,7 +9,7 @@
   import { ref, watch, computed } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { storeToRefs } from 'pinia'
-  import Loader from '../ui/loader/Loader.vue'
+  import Spinner from '../ui/spinner/Spinner.vue'
   import PreferencesTab from './preferences-section/PreferencesTab.vue'
   import { useLocalStorage } from '@/composables/useLocalStorage'
   import { useUIStore } from '@/stores/ui/ui.store'
@@ -113,7 +113,7 @@
         v-if="profileStore.isLoading"
         class="absolute inset-0 flex items-center justify-center bg-white/70 z-50"
       >
-        <Loader variant="spinner" class="text-primary" />
+        <Spinner class="text-primary size-6" />
       </div>
 
       <!-- Desktop Layout -->
