@@ -33,6 +33,24 @@
   import { Slider } from '@/components/ui/slider'
   import { LocateFixed, Pin } from 'lucide-vue-next'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    logos_position_section_title,
+    logos_placement_label,
+    logos_select_placement_placeholder,
+    logos_height_label,
+    logos_angle_label,
+    logos_center_logo_button,
+    logos_pin_logo_button,
+    logos_remove_background_title,
+    logos_remove_background_simple_title,
+    logos_remove_background_simple_description,
+    logos_remove_background_smart_title,
+    logos_remove_background_smart_description,
+    logos_applying,
+    logos_apply,
+    logos_recolor_logo
+  } from '@/paraglide/messages'
 
   interface Props {
     logoId: string
@@ -45,6 +63,7 @@
   const logosStore = useLogosStore()
   const productsStore = useProductsStore()
   const historyStore = useHistoryStore()
+  const profileStore = useProfileStore()
 
   // ===== COMPOSABLES =====
   const { productKey, getLogoById, getActiveLogoIndex } = useLogos()
@@ -256,7 +275,9 @@
           <div
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
-            <span class="text-base font-semibold">Position</span>
+            <span class="text-base font-semibold">{{
+              logos_position_section_title({}, { locale: profileStore.currentLocale })
+            }}</span>
           </div>
           <template #icon>
             <svg
@@ -272,9 +293,9 @@
         </AccordionTrigger>
         <AccordionContent class="space-y-6 px-4 md:px-6 py-5">
           <div class="space-y-1 text-left">
-            <Label for="logo-placement" class="text-xs font-medium text-muted-foreground"
-              >Placement</Label
-            >
+            <Label for="logo-placement" class="text-xs font-medium text-muted-foreground">
+              {{ logos_placement_label({}, { locale: profileStore.currentLocale }) }}
+            </Label>
             <Select
               :model-value="positionForm.placementOption?.value ?? null"
               @update:model-value="handlePlacementChangeById"
@@ -282,7 +303,9 @@
               <SelectTrigger id="logo-placement" class="h-9 w-full">
                 <SelectValue
                   :value="positionForm.placementOption?.label"
-                  placeholder="Select placement"
+                  :placeholder="
+                    logos_select_placement_placeholder({}, { locale: profileStore.currentLocale })
+                  "
                 />
               </SelectTrigger>
               <SelectContent>
@@ -301,9 +324,9 @@
 
           <div class="grid grid-cols-1 gap-4">
             <div class="space-y-1">
-              <Label for="logo-height" class="text-xs font-medium text-muted-foreground"
-                >Height</Label
-              >
+              <Label for="logo-height" class="text-xs font-medium text-muted-foreground">
+                {{ logos_height_label({}, { locale: profileStore.currentLocale }) }}
+              </Label>
               <InputGroup>
                 <InputGroupInput
                   id="logo-height"
@@ -319,9 +342,9 @@
 
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <Label for="logo-angle" class="text-xs font-medium text-muted-foreground"
-                >Angle</Label
-              >
+              <Label for="logo-angle" class="text-xs font-medium text-muted-foreground">
+                {{ logos_angle_label({}, { locale: profileStore.currentLocale }) }}
+              </Label>
               <span class="text-sm text-foreground">{{ angleText }}</span>
             </div>
             <Slider
@@ -337,11 +360,11 @@
           <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Button variant="outline" class="h-9" @click="resetPositionToCenter">
               <LocateFixed class="size-4" />
-              Center logo
+              {{ logos_center_logo_button({}, { locale: profileStore.currentLocale }) }}
             </Button>
             <Button variant="outline" class="h-9" @click="pinLogo">
               <Pin class="size-4" />
-              Pin logo
+              {{ logos_pin_logo_button({}, { locale: profileStore.currentLocale }) }}
             </Button>
           </div>
         </AccordionContent>
@@ -351,7 +374,9 @@
           <div
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
-            <span class="text-base font-semibold">Remove background</span>
+            <span class="text-base font-semibold">{{
+              logos_remove_background_title({}, { locale: profileStore.currentLocale })
+            }}</span>
           </div>
           <template #icon>
             <svg
@@ -371,9 +396,18 @@
               <ContentRemoveIcons type="simple" />
             </div>
             <div class="flex flex-1 flex-col gap-2">
-              <p class="text-sm font-semibold">Simple remove</p>
+              <p class="text-sm font-semibold">
+                {{
+                  logos_remove_background_simple_title({}, { locale: profileStore.currentLocale })
+                }}
+              </p>
               <p class="text-xs text-muted-foreground">
-                Removes all pixels matching the top-left colour, even inside the logo.
+                {{
+                  logos_remove_background_simple_description(
+                    {},
+                    { locale: profileStore.currentLocale }
+                  )
+                }}
               </p>
               <Button
                 size="sm"
@@ -383,7 +417,11 @@
                 @click.stop="handleRemoveBackground('simple')"
               >
                 <Spinner v-if="removingBackgroundMode === 'simple'" class="mr-2 size-3.5" />
-                <span>{{ removingBackgroundMode === 'simple' ? 'Applying…' : 'Apply' }}</span>
+                <span>{{
+                  removingBackgroundMode === 'simple'
+                    ? logos_applying({}, { locale: profileStore.currentLocale })
+                    : logos_apply({}, { locale: profileStore.currentLocale })
+                }}</span>
               </Button>
             </div>
           </div>
@@ -393,9 +431,18 @@
               <ContentRemoveIcons type="smart" />
             </div>
             <div class="flex flex-1 flex-col gap-2">
-              <p class="text-sm font-semibold">Content remove</p>
+              <p class="text-sm font-semibold">
+                {{
+                  logos_remove_background_smart_title({}, { locale: profileStore.currentLocale })
+                }}
+              </p>
               <p class="text-xs text-muted-foreground">
-                Removes the top-left colour only from the background, not the logo.
+                {{
+                  logos_remove_background_smart_description(
+                    {},
+                    { locale: profileStore.currentLocale }
+                  )
+                }}
               </p>
               <Button
                 size="sm"
@@ -405,7 +452,11 @@
                 @click.stop="handleRemoveBackground('smart')"
               >
                 <Spinner v-if="removingBackgroundMode === 'smart'" class="mr-2 size-3.5" />
-                <span>{{ removingBackgroundMode === 'smart' ? 'Applying…' : 'Apply' }}</span>
+                <span>{{
+                  removingBackgroundMode === 'smart'
+                    ? logos_applying({}, { locale: profileStore.currentLocale })
+                    : logos_apply({}, { locale: profileStore.currentLocale })
+                }}</span>
               </Button>
             </div>
           </div>
@@ -417,7 +468,9 @@
           <div
             class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
           >
-            <span class="text-base font-semibold">Recolor logo</span>
+            <span class="text-base font-semibold">{{
+              logos_recolor_logo({}, { locale: profileStore.currentLocale })
+            }}</span>
           </div>
           <template #icon>
             <svg

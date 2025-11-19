@@ -6,9 +6,17 @@
   import { computed } from 'vue'
   import { Badge } from '@/components/ui/badge'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    logos_uploaded_logo_alt,
+    logos_apply_colors,
+    logos_shuffle_colors,
+    logos_no_colors_detected
+  } from '@/paraglide/messages'
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const customizationStore = useCustomizationStore()
+  const profileStore = useProfileStore()
 
   const props = defineProps<{
     logo: CustomLogo
@@ -38,7 +46,7 @@
         <img
           :src="baseStorageUrl + props.logo.url"
           class="max-h-full object-contain"
-          alt="uploaded logo"
+          :alt="logos_uploaded_logo_alt({}, { locale: profileStore.currentLocale })"
         />
       </div>
       <div
@@ -55,7 +63,7 @@
             variant="default"
             @click.stop="emit('apply-colors', props.logo)"
           >
-            Apply colors
+            {{ logos_apply_colors({}, { locale: profileStore.currentLocale }) }}
           </Button>
           <Button
             v-if="hasDefaultColors"
@@ -63,12 +71,14 @@
             variant="outline"
             @click.stop="emit('shuffle-colors')"
           >
-            Shuffle colors
+            {{ logos_shuffle_colors({}, { locale: profileStore.currentLocale }) }}
           </Button>
         </div>
       </div>
       <div v-else class="flex flex-row justify-between w-full">
-        <div class="text-sm text-muted-foreground">No colors detected</div>
+        <div class="text-sm text-muted-foreground">
+          {{ logos_no_colors_detected({}, { locale: profileStore.currentLocale }) }}
+        </div>
       </div>
     </div>
     <Badge variant="outline" class="text-xs absolute top-1 left-1 bg-card">

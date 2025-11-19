@@ -13,12 +13,15 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useLogosStore } from '@/stores/logos/logos.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { nav_logo, logos_choose_placement } from '@/paraglide/messages'
 
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
   const historyStore = useHistoryStore()
   const logosStore = useLogosStore()
+  const profileStore = useProfileStore()
 
   // Emit events for parent component
   const emit = defineEmits<{
@@ -44,10 +47,13 @@
     workflowStore.setLogosSubStep('list')
   }
 
-  const headerConfig = {
-    breadcrumbs: [{ label: 'Logos', action: () => emit('back') }, { label: 'Placement' }]
-  }
-  void headerConfig
+  const headerConfig = computed(() => ({
+    breadcrumbs: [
+      { label: nav_logo({}, { locale: profileStore.currentLocale }), action: () => emit('back') },
+      { label: logos_choose_placement({}, { locale: profileStore.currentLocale }) }
+    ]
+  }))
+  void headerConfig.value
 
   function addActiveLogoToCustomization(_logo: CustomLogo, _placement: OutputProductLogosSetting) {
     const res = customizationStore.addLogoToCustomizationFromSource(

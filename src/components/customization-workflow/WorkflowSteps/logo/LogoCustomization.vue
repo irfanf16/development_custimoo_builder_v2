@@ -18,7 +18,11 @@
     logos_editor,
     logos_recolor_logo,
     logos_primary,
-    logos_more_options
+    logos_more_options,
+    logos_recent_show_less,
+    logos_recent_view_all,
+    logos_recent_thumbnail_alt,
+    nav_logo
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { Trash } from 'lucide-vue-next'
@@ -106,8 +110,10 @@
   }
 
   // Breadcrumbs only
-  const headerConfig = { breadcrumbs: [{ label: 'Logos' }] }
-  void headerConfig
+  const headerConfig = computed(() => ({
+    breadcrumbs: [{ label: nav_logo({}, { locale: profileStore.currentLocale }) }]
+  }))
+  void headerConfig.value
 </script>
 
 <template>
@@ -196,7 +202,11 @@
                 variant="default"
                 class="px-2 py-1 h-7"
                 @click="showAllRecent = !showAllRecent"
-                >{{ showAllRecent ? 'Show less' : 'View all' }}</Button
+                >{{
+                  showAllRecent
+                    ? logos_recent_show_less({}, { locale: profileStore.currentLocale })
+                    : logos_recent_view_all({}, { locale: profileStore.currentLocale })
+                }}</Button
               >
             </div>
             <!-- Loading skeleton -->
@@ -221,7 +231,7 @@
                 <img
                   :src="baseStorageUrl + logo.url"
                   class="w-full h-full object-cover"
-                  alt="recent logo"
+                  :alt="logos_recent_thumbnail_alt({}, { locale: profileStore.currentLocale })"
                 />
                 <Button
                   as="div"

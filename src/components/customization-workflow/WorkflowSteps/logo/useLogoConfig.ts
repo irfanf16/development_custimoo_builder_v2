@@ -3,6 +3,7 @@ import type { HeaderConfiguration, FooterConfiguration } from '../../types'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { buildLogoBreadcrumbs } from '@/components/customization-workflow/breadcrumbs'
 import { useProfileStore } from '@/stores/profile/profile.store'
+import { logos_help_add_adjust } from '@/paraglide/messages'
 
 export function useLogoConfig() {
   // ===== DEPENDENCIES =====
@@ -21,7 +22,9 @@ export function useLogoConfig() {
     if (workflowStore.logosSubStep === 'edit' && workflowStore.activeLogoId) {
       return {
         breadcrumbs,
-        helpText: { label: 'Add and adjust logos or graphics.' }
+        helpText: {
+          label: logos_help_add_adjust({}, { locale: profileStore.currentLocale })
+        }
       }
     }
 
