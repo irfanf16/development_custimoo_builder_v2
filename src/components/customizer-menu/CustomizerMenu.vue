@@ -1,12 +1,19 @@
 <script setup lang="ts">
+  import { computed } from 'vue'
   import CustomizerMenuItem from './MenuItem.vue'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { customizer_menu_label } from '@/paraglide/messages'
 
   const { isActive, goTo, getNavText, menuItems } = useCustomizerMenu()
+  const profileStore = useProfileStore()
+  const menuLabel = computed(() =>
+    customizer_menu_label({}, { locale: profileStore.currentLocale })
+  )
 </script>
 
 <template>
-  <div class="flex flex-col gap-1 p-1">
+  <nav class="flex flex-col gap-1 p-1" role="navigation" :aria-label="menuLabel">
     <CustomizerMenuItem
       v-for="item in menuItems"
       :key="item.step"
@@ -53,5 +60,5 @@
         />
       </template>
     </CustomizerMenuItem>
-  </div>
+  </nav>
 </template>

@@ -1,11 +1,18 @@
 <script setup lang="ts">
+  import { computed } from 'vue'
   import CustomizerMenuItem from './MenuItem.vue'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { customizer_menu_label } from '@/paraglide/messages'
 
   const { isActive, goTo, getNavText, menuItems } = useCustomizerMenu()
   const workflow = useWorkflowStore()
+  const profileStore = useProfileStore()
+  const menuLabel = computed(() =>
+    customizer_menu_label({}, { locale: profileStore.currentLocale })
+  )
 
   async function handleGoTo(step: string) {
     // Toggle panel if tapping current step again
@@ -21,7 +28,11 @@
 </script>
 
 <template>
-  <div class="fixed bottom-0 left-0 right-0 bg-background z-10 py-2 shadow-lg md:hidden">
+  <nav
+    class="fixed bottom-0 left-0 right-0 bg-background z-10 py-2 shadow-lg md:hidden"
+    role="navigation"
+    :aria-label="menuLabel"
+  >
     <div class="flex overflow-x-auto overflow-y-hidden gap-2 px-4 scrollbar-hide whitespace-nowrap">
       <CustomizerMenuItem
         v-for="item in menuItems"
@@ -71,7 +82,7 @@
         </template>
       </CustomizerMenuItem>
     </div>
-  </div>
+  </nav>
 </template>
 
 <style scoped>

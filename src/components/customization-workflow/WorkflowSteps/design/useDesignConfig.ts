@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import type { HeaderConfiguration, FooterConfiguration, DesignCategoriesConfig } from '../../types'
 import { buildDesignBreadcrumbs } from '@/components/customization-workflow/breadcrumbs'
 import { useProfileStore } from '@/stores/profile/profile.store'
+import { design_search_placeholder, design_apply_overrides_label } from '@/paraglide/messages'
 
 // ===== SHARED STATE =====
 // These refs are shared across all component instances
@@ -22,13 +23,13 @@ export function useDesignConfig() {
   // ===== COMPUTED =====
   const headerConfig = computed<HeaderConfiguration>(() => ({
     search: {
-      placeholder: 'Search designs...',
+      placeholder: design_search_placeholder({}, { locale: profileStore.currentLocale }),
       onInput: onDesignSearchInput
     },
     applyOverrides: {
       value: applyCustomizationOverrides.value,
       onInput: (val: boolean) => (applyCustomizationOverrides.value = val),
-      label: 'Preview with customization'
+      label: design_apply_overrides_label({}, { locale: profileStore.currentLocale })
     },
     designCategories: designCategoriesConfig.value,
     isExpandable: true,

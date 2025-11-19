@@ -9,11 +9,14 @@
   import { useDesignConfig } from './useDesignConfig'
   import type { DesignCategoriesConfig } from '../../types'
   import LazyTwoDScene from '../LazyTwoDScene.vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { design_categories_default_label } from '@/paraglide/messages'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
+  const profileStore = useProfileStore()
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
@@ -84,7 +87,7 @@
       categories: productsStore.activeProductDetails?.design_categories || [],
       selectedId: selectedDesignCategoryId.value,
       onSelect: (id: number | null) => workflowStore.setSelectedDesignCategory(id ?? null),
-      defaultLabel: 'All Categories'
+      defaultLabel: design_categories_default_label({}, { locale: profileStore.currentLocale })
     }
   }).value
 

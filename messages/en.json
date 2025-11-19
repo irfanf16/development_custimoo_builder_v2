@@ -130,5 +130,14 @@
   "breadcrumbs_placement": "Placement",
   "breadcrumbs_texts": "Texts",
   "breadcrumbs_number": "Number",
-  "breadcrumbs_edit": "Edit"
+  "breadcrumbs_edit": "Edit",
+  "design_search_placeholder": "Search designs...",
+  "design_apply_overrides_label": "Preview with customization",
+  "design_categories_default_label": "All categories",
+  "design_categories_all_button": "All",
+  "design_categories_more_button": "More",
+  "design_categories_filters_button": "Filters",
+  "design_categories_filter_heading": "Filter",
+  "design_categories_filter_all_option": "All designs",
+  "customizer_menu_label": "Workflow navigation"
 }

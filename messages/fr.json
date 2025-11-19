@@ -80,5 +80,14 @@
   "breadcrumbs_placement": "Placement",
   "breadcrumbs_texts": "Textes",
   "breadcrumbs_number": "Numéro",
-  "breadcrumbs_edit": "Modifier"
+  "breadcrumbs_edit": "Modifier",
+  "design_search_placeholder": "Rechercher des designs...",
+  "design_apply_overrides_label": "Prévisualiser avec personnalisation",
+  "design_categories_default_label": "Toutes les catégories",
+  "design_categories_all_button": "Tous",
+  "design_categories_more_button": "Plus",
+  "design_categories_filters_button": "Filtres",
+  "design_categories_filter_heading": "Filtrer",
+  "design_categories_filter_all_option": "Tous les designs",
+  "customizer_menu_label": "Navigation du configurateur"
 }

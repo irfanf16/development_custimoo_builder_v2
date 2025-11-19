@@ -130,5 +130,14 @@
   "breadcrumbs_placement": "Placering",
   "breadcrumbs_texts": "Tekster",
   "breadcrumbs_number": "Nummer",
-  "breadcrumbs_edit": "Rediger"
+  "breadcrumbs_edit": "Rediger",
+  "design_search_placeholder": "Søg efter designs...",
+  "design_apply_overrides_label": "Forhåndsvis med tilpasning",
+  "design_categories_default_label": "Alle kategorier",
+  "design_categories_all_button": "Alle",
+  "design_categories_more_button": "Flere",
+  "design_categories_filters_button": "Filtre",
+  "design_categories_filter_heading": "Filter",
+  "design_categories_filter_all_option": "Alle designs",
+  "customizer_menu_label": "Workflowsnavigation"
 }

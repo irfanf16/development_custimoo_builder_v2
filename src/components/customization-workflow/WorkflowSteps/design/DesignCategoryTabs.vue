@@ -11,6 +11,14 @@
   } from '@/components/ui/dropdown-menu'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    design_categories_all_button,
+    design_categories_more_button,
+    design_categories_filters_button,
+    design_categories_filter_heading,
+    design_categories_filter_all_option
+  } from '@/paraglide/messages'
 
   interface Props {
     isExpanded?: boolean
@@ -27,6 +35,7 @@
 
   const uiStore = useUIStore()
   const workflowStore = useWorkflowStore()
+  const profileStore = useProfileStore()
   const selectedDesignCategoryId = computed(() => workflowStore.selectedDesignCategoryId)
   const props = defineProps<Props>()
 
@@ -57,6 +66,22 @@
   const isActive = computed(() => {
     return props.selectedId ?? selectedDesignCategoryId.value
   })
+
+  const allLabel = computed(() =>
+    design_categories_all_button({}, { locale: profileStore.currentLocale })
+  )
+  const moreLabel = computed(() =>
+    design_categories_more_button({}, { locale: profileStore.currentLocale })
+  )
+  const filtersButtonLabel = computed(() =>
+    design_categories_filters_button({}, { locale: profileStore.currentLocale })
+  )
+  const filterHeadingLabel = computed(() =>
+    design_categories_filter_heading({}, { locale: profileStore.currentLocale })
+  )
+  const filterAllOptionLabel = computed(() =>
+    design_categories_filter_all_option({}, { locale: profileStore.currentLocale })
+  )
 </script>
 
 <template>
@@ -75,7 +100,7 @@
         size="sm"
         @click="handleCategoryChange(null)"
       >
-        All
+        {{ allLabel }}
       </Button>
       <Button
         v-for="category in visibleCategories"
@@ -100,7 +125,7 @@
             class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
           >
             <MoreHorizontal class="ml-1 size-4" />
-            More
+            {{ moreLabel }}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" :align-offset="-45" :position-strategy="'absolute'">
@@ -121,7 +146,7 @@
         <DropdownMenuTrigger as-child>
           <Button size="sm" class="hover:bg-transparent">
             <Funnel class="size-4 mr-1" />
-            Filters
+            {{ filtersButtonLabel }}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -130,7 +155,7 @@
           :collision-padding="32"
           class="w-[248px] bg-white rounded-lg shadow-md border p-0 mt-1"
         >
-          <div class="px-3 py-2.5 font-semibold text-sm">Filter</div>
+          <div class="px-3 py-2.5 font-semibold text-sm">{{ filterHeadingLabel }}</div>
           <DropdownMenuItem
             class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
             :class="
@@ -142,7 +167,7 @@
           >
             <Check v-if="isActive === null" class="size-4 text-foreground" />
             <span v-else class="w-4"></span>
-            All designs
+            {{ filterAllOptionLabel }}
           </DropdownMenuItem>
           <DropdownMenuSeparator class="mx-0 my-0 bg-gray-200" />
           <DropdownMenuItem
