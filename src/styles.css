@@ -284,6 +284,11 @@
   .icon-secondary-from-primary-50 {
     --icon-secondary: rgb(from currentColor r g b / 0.5);
   }
+  .shadow-xs {
+    box-shadow: var(--shadow-xs-offset-x, 0) var(--shadow-xs-offset-y, 1px)
+      var(--shadow-xs-blur-radius, 2px) var(--shadow-xs-spread-radius, 0)
+      var(--shadow-xs-color, rgba(0, 0, 0, 0.05));
+  }
 }
 
 /* Removed .widget-theme blocks (unused) */
