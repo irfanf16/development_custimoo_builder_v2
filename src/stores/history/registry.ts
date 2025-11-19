@@ -309,19 +309,42 @@ export const registry: Registry = {
     revert(ctx: HistoryContext, payload: TextAddEntryPayload) {
       const map = getTextArray(ctx, payload.key)
       if (!map) return
-      const index = payload.index ?? map.length - 1
-      const [removed] = map.splice(index, 1)
-      if (removed && !payload.entry) {
+
+      // Prefer removal by ID to avoid stale indices when arrays shift
+      let removeIndex = -1
+      const entryId = payload.entry?.id
+      if (entryId !== undefined) {
+        removeIndex = map.findIndex(item => item.id === entryId)
+      }
+
+      // Fallback to original index if ID lookup failed
+      if (removeIndex === -1) {
+        const fallbackIndex = payload.index ?? map.length - 1
+        if (fallbackIndex >= 0 && fallbackIndex < map.length) {
+          removeIndex = fallbackIndex
+        }
+      }
+
+      if (removeIndex === -1) return
+      const [removed] = map.splice(removeIndex, 1)
+      if (!removed) return
+
+      if (!payload.entry) {
         payload.entry = cloneTextEntry(removed)
       }
       ctx.customizationStore.saveToLocalStorage()
 
       const workflowStore = ctx.workflowStore
-      if (removed && workflowStore.activeTextId === removed.id) {
+      const removedWasActive = workflowStore.activeTextId === removed.id
+
+      if (removedWasActive) {
         workflowStore.setActiveTextId(null)
+        workflowStore.setActiveTextItemIndex(null)
+
+        if (workflowStore.textsSubStep === 'edit') {
+          workflowStore.setTextsSubStep('list')
+        }
       }
-      workflowStore.setActiveTextItemIndex(null)
-      workflowStore.setTextsSubStep('list')
     },
     describe(_: HistoryContext, payload: TextAddEntryPayload) {
       const label = formatTextLabel(payload.entry, 'text')
