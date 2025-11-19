@@ -5,6 +5,19 @@ import type {
   TextsSubStep
 } from '@/stores/workflow/workflow.store.types'
 import type { Category } from '@/services/products/types/categories'
+import type { ParaglideLocale } from '@/services/preferences/types'
+import {
+  breadcrumbs_select_product,
+  breadcrumbs_category,
+  breadcrumbs_designs,
+  breadcrumbs_logos,
+  breadcrumbs_controls,
+  breadcrumbs_placement,
+  breadcrumbs_texts,
+  breadcrumbs_number,
+  breadcrumbs_edit,
+  nav_color
+} from '@/paraglide/messages'
 
 type MaybeNumber = number | null | undefined
 
@@ -18,6 +31,7 @@ export type ProductBreadcrumbParams = {
   activeSubCategoryId: MaybeNumber
   onCategoryStep?: () => void
   onSubCategoryStep?: () => void
+  locale?: ParaglideLocale
 }
 
 export function buildProductBreadcrumbs({
@@ -29,14 +43,17 @@ export function buildProductBreadcrumbs({
   selectedSubCategoryId,
   activeSubCategoryId,
   onCategoryStep,
-  onSubCategoryStep
+  onSubCategoryStep,
+  locale
 }: ProductBreadcrumbParams): BreadcrumbItem[] {
   if (!hasCategories) {
-    return [{ label: 'Select Product' }]
+    return [{ label: breadcrumbs_select_product({}, { locale }) }]
   }
 
+  const categoryLabelTranslation = breadcrumbs_category({}, { locale })
+
   if (productsSubStep === 'category') {
-    return [{ label: 'Category' }]
+    return [{ label: categoryLabelTranslation }]
   }
 
   const categoryId = selectedCategoryId ?? activeCategoryId ?? null
@@ -47,17 +64,19 @@ export function buildProductBreadcrumbs({
 
   if (productsSubStep === 'subcategory') {
     return [
-      { label: 'Category', action: onCategoryStep },
+      { label: categoryLabelTranslation, action: onCategoryStep },
       { label: category?.category_name || '—' }
     ]
   }
 
-  const breadcrumbs: BreadcrumbItem[] = [{ label: 'Category', action: onCategoryStep }]
+  const breadcrumbs: BreadcrumbItem[] = [
+    { label: categoryLabelTranslation, action: onCategoryStep }
+  ]
 
-  const categoryLabel = category?.category_name || '—'
-  if (categoryLabel) {
+  const selectedCategoryLabel = category?.category_name || '—'
+  if (selectedCategoryLabel) {
     breadcrumbs.push({
-      label: categoryLabel,
+      label: selectedCategoryLabel,
       action: hasSubcategories ? onSubCategoryStep : undefined
     })
   }
@@ -76,37 +95,44 @@ export function buildProductBreadcrumbs({
   return breadcrumbs
 }
 
-export function buildDesignBreadcrumbs(): BreadcrumbItem[] {
-  return [{ label: 'Designs' }]
+export function buildDesignBreadcrumbs(locale?: ParaglideLocale): BreadcrumbItem[] {
+  return [{ label: breadcrumbs_designs({}, { locale }) }]
 }
 
 export function buildLogoBreadcrumbs({
   logosSubStep,
   hasActiveLogo,
-  onBackToList
+  onBackToList,
+  locale
 }: {
   logosSubStep: LogosSubStep
   hasActiveLogo: boolean
   onBackToList?: () => void
+  locale?: ParaglideLocale
 }): BreadcrumbItem[] {
+  const logosLabel = breadcrumbs_logos({}, { locale })
+  const controlsLabel = breadcrumbs_controls({}, { locale })
+  const placementLabel = breadcrumbs_placement({}, { locale })
+
   if (logosSubStep === 'edit') {
     if (!hasActiveLogo) {
-      return [{ label: 'Logos' }]
+      return [{ label: logosLabel }]
     }
-    return [{ label: 'Logos', action: onBackToList }, { label: 'Controls' }]
+    return [{ label: logosLabel, action: onBackToList }, { label: controlsLabel }]
   }
 
   if (logosSubStep === 'placement') {
-    return [{ label: 'Logos', action: onBackToList }, { label: 'Placement' }]
+    return [{ label: logosLabel, action: onBackToList }, { label: placementLabel }]
   }
 
-  return [{ label: 'Logos' }]
+  return [{ label: logosLabel }]
 }
 
 export function buildTextsBreadcrumbs({
   textsSubStep,
   activeTextMeta,
-  onBackToList
+  onBackToList,
+  locale
 }: {
   textsSubStep: TextsSubStep
   activeTextMeta?: {
@@ -114,27 +140,33 @@ export function buildTextsBreadcrumbs({
     label?: string | null
   } | null
   onBackToList?: () => void
+  locale?: ParaglideLocale
 }): BreadcrumbItem[] {
+  const textsLabel = breadcrumbs_texts({}, { locale })
+  const placementLabel = breadcrumbs_placement({}, { locale })
+  const numberLabel = breadcrumbs_number({}, { locale })
+  const editLabel = breadcrumbs_edit({}, { locale })
+
   const metaValue = activeTextMeta?.value ?? ''
   const metaLabel = activeTextMeta?.label ?? ''
 
   if (textsSubStep === 'number-font') {
-    const label = metaValue?.trim() ? metaValue : 'Number'
-    return [{ label: 'Texts', action: onBackToList }, { label }]
+    const label = metaValue?.trim() ? metaValue : numberLabel
+    return [{ label: textsLabel, action: onBackToList }, { label }]
   }
 
   if (textsSubStep === 'edit') {
-    const label = metaValue?.trim() || metaLabel?.trim() || 'Edit'
-    return [{ label: 'Texts', action: onBackToList }, { label }]
+    const label = metaValue?.trim() || metaLabel?.trim() || editLabel
+    return [{ label: textsLabel, action: onBackToList }, { label }]
   }
 
   if (textsSubStep === 'placement') {
-    return [{ label: 'Texts', action: onBackToList }, { label: 'Placement' }]
+    return [{ label: textsLabel, action: onBackToList }, { label: placementLabel }]
   }
 
-  return [{ label: 'Texts' }]
+  return [{ label: textsLabel }]
 }
 
-export function buildColorsBreadcrumbs(): BreadcrumbItem[] {
-  return [{ label: 'Color' }]
+export function buildColorsBreadcrumbs(locale?: ParaglideLocale): BreadcrumbItem[] {
+  return [{ label: nav_color({}, { locale }) }]
 }

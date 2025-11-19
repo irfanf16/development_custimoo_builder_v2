@@ -3,11 +3,13 @@ import type { HeaderConfiguration, FooterConfiguration } from '../../types'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { buildTextsBreadcrumbs } from '@/components/customization-workflow/breadcrumbs'
+import { useProfileStore } from '@/stores/profile/profile.store'
 
 export function useTextsConfig() {
   // ===== DEPENDENCIES =====
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
+  const profileStore = useProfileStore()
 
   // ===== COMPUTED =====
   const headerConfig: Ref<HeaderConfiguration> = computed(() => {
@@ -19,7 +21,8 @@ export function useTextsConfig() {
     const breadcrumbs = buildTextsBreadcrumbs({
       textsSubStep: workflowStore.textsSubStep,
       activeTextMeta: activeText ? { value: activeText.value, label: activeText.label } : undefined,
-      onBackToList: () => workflowStore.setTextsSubStep('list')
+      onBackToList: () => workflowStore.setTextsSubStep('list'),
+      locale: profileStore.currentLocale
     })
 
     if (workflowStore.textsSubStep === 'list') {

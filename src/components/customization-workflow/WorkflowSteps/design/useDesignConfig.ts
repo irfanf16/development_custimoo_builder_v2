@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import type { HeaderConfiguration, FooterConfiguration, DesignCategoriesConfig } from '../../types'
 import { buildDesignBreadcrumbs } from '@/components/customization-workflow/breadcrumbs'
+import { useProfileStore } from '@/stores/profile/profile.store'
 
 // ===== SHARED STATE =====
 // These refs are shared across all component instances
@@ -15,6 +16,9 @@ export function useDesignConfig() {
     designSearchModel.value = val
   }
 
+  // ===== DEPENDENCIES =====
+  const profileStore = useProfileStore()
+
   // ===== COMPUTED =====
   const headerConfig = computed<HeaderConfiguration>(() => ({
     search: {
@@ -28,7 +32,7 @@ export function useDesignConfig() {
     },
     designCategories: designCategoriesConfig.value,
     isExpandable: true,
-    breadcrumbs: buildDesignBreadcrumbs()
+    breadcrumbs: buildDesignBreadcrumbs(profileStore.currentLocale)
   }))
 
   const footerConfig = computed<FooterConfiguration>(() => {

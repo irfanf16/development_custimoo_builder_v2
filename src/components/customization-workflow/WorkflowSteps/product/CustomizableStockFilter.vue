@@ -12,8 +12,16 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import { storeToRefs } from 'pinia'
   import type { StockFilterOption } from './useProductConfig'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    products_filter_label,
+    products_filter_option_all,
+    products_product_type_customized,
+    products_product_type_personalized
+  } from '@/paraglide/messages'
 
   const uiStore = useUIStore()
+  const profileStore = useProfileStore()
   const { isMobile } = storeToRefs(uiStore)
 
   interface Props {
@@ -52,7 +60,9 @@
       :collision-padding="32"
       class="w-[248px] bg-white rounded-lg shadow-md border p-0 mt-1"
     >
-      <div class="px-3 py-2.5 font-semibold text-sm">Filter</div>
+      <div class="px-3 py-2.5 font-semibold text-sm">
+        {{ products_filter_label({}, { locale: profileStore.currentLocale }) }}
+      </div>
       <DropdownMenuItem
         class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
         :class="
@@ -64,7 +74,7 @@
       >
         <Check v-if="isActive === 'all'" class="size-4 text-foreground" />
         <span v-else class="w-4"></span>
-        All
+        {{ products_filter_option_all({}, { locale: profileStore.currentLocale }) }}
       </DropdownMenuItem>
       <DropdownMenuSeparator class="mx-0 my-0 bg-gray-200" />
       <DropdownMenuItem
@@ -79,7 +89,7 @@
       >
         <Check v-if="isActive === 'customized'" class="size-4 text-foreground" />
         <span v-else class="w-4"></span>
-        Bespoke
+        {{ products_product_type_customized({}, { locale: profileStore.currentLocale }) }}
       </DropdownMenuItem>
       <DropdownMenuItem
         :key="'personalized'"
@@ -93,7 +103,7 @@
       >
         <Check v-if="isActive === 'personalized'" class="size-4 text-foreground" />
         <span v-else class="w-4"></span>
-        Stock
+        {{ products_product_type_personalized({}, { locale: profileStore.currentLocale }) }}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
@@ -104,21 +114,21 @@
         :variant="isActive === 'all' ? 'primary' : 'outline'"
         @click="handleFilterChange('all')"
       >
-        All
+        {{ products_filter_option_all({}, { locale: profileStore.currentLocale }) }}
       </Button>
       <Button
         size="sm"
         :variant="isActive === 'customized' ? 'primary' : 'outline'"
         @click="handleFilterChange('customized')"
       >
-        Bespoke
+        {{ products_product_type_customized({}, { locale: profileStore.currentLocale }) }}
       </Button>
       <Button
         size="sm"
         :variant="isActive === 'personalized' ? 'primary' : 'outline'"
         @click="handleFilterChange('personalized')"
       >
-        Stock
+        {{ products_product_type_personalized({}, { locale: profileStore.currentLocale }) }}
       </Button>
     </div>
   </div>

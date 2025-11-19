@@ -5,12 +5,14 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
   import type { OutputDesignDetails } from '@/services/products/types'
   import { useProductConfig } from './useProductConfig'
   import { PRODUCT_TYPE } from './useProductConfig'
   import LazyTwoDScene from '../LazyTwoDScene.vue'
+  import { products_product_details, products_product_type_customized } from '@/paraglide/messages'
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -21,6 +23,7 @@
   const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
   const uiStore = useUIStore()
+  const profileStore = useProfileStore()
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeProductId: selectedProductId } = storeToRefs(customizationStore)
@@ -155,7 +158,7 @@
           variant="outline"
           class="font-normal self-start"
         >
-          Bespoke
+          {{ products_product_type_customized({}, { locale: profileStore.currentLocale }) }}
         </Badge>
         <span
           v-else-if="
@@ -192,7 +195,7 @@
             class="bg-card"
             @click="handleSelectProduct(item.productPreview.id)"
           >
-            Product details
+            {{ products_product_details({}, { locale: profileStore.currentLocale }) }}
           </Button>
         </div>
       </div>

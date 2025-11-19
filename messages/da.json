@@ -113,5 +113,22 @@
   "profile_select_language": "Vælg et sprog",
   "profile_language_english": "Engelsk",
   "profile_language_french": "Fransk",
-  "profile_language_danish": "Dansk"
+  "profile_language_danish": "Dansk",
+  "products_search_placeholder": "Søg efter produkter...",
+  "products_help_select_category": "Vælg en kategori for at finde dit produkt.",
+  "products_help_select_subcategory": "Vælg en underkategori for at finde dit produkt.",
+  "products_product_details": "Produktdetaljer",
+  "products_product_type_customized": "Skræddersyet",
+  "products_product_type_personalized": "Lager",
+  "products_filter_label": "Filter",
+  "products_filter_option_all": "Alle",
+  "breadcrumbs_select_product": "Vælg produkt",
+  "breadcrumbs_category": "Kategori",
+  "breadcrumbs_designs": "Designs",
+  "breadcrumbs_logos": "Logoer",
+  "breadcrumbs_controls": "Kontroller",
+  "breadcrumbs_placement": "Placering",
+  "breadcrumbs_texts": "Tekster",
+  "breadcrumbs_number": "Nummer",
+  "breadcrumbs_edit": "Rediger"
 }

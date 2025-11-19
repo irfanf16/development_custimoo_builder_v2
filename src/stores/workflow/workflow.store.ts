@@ -24,6 +24,7 @@ import {
   buildProductBreadcrumbs,
   buildTextsBreadcrumbs
 } from '@/components/customization-workflow/breadcrumbs'
+import { useProfileStore } from '@/stores/profile/profile.store'
 import type { Ref } from 'vue'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 
@@ -37,6 +38,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const customization = useCustomizationStore()
   const productsStore = useProductsStore()
   const { getItemRaw, setItemRaw } = useLocalStorage()
+  const profileStore = useProfileStore()
 
   // ===== STATE =====
   // Initialize to null - will be loaded from localStorage after company is fetched
@@ -117,6 +119,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const navigationItems = computed<NavigationItem[]>(() => {
     const step = activeStep.value || 'product'
 
+    const locale = profileStore.currentLocale
+
     if (step === 'product') {
       return buildProductBreadcrumbs({
         hasCategories: !!productsStore.categories?.data?.length,
@@ -131,12 +135,13 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
         },
         onSubCategoryStep: () => {
           setProductsSubStep('subcategory')
-        }
+        },
+        locale
       })
     }
 
     if (step === 'designs') {
-      return buildDesignBreadcrumbs()
+      return buildDesignBreadcrumbs(locale)
     }
 
     if (step === 'styles') {
@@ -150,12 +155,13 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
         hasActiveLogo: !!activeLogoId.value,
         onBackToList: () => {
           setLogosSubStep('list')
-        }
+        },
+        locale
       })
     }
 
     if (step === 'colors') {
-      return buildColorsBreadcrumbs()
+      return buildColorsBreadcrumbs(locale)
     }
 
     if (step === 'patterns') {
@@ -175,7 +181,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
           : undefined,
         onBackToList: () => {
           setTextsSubStep('list')
-        }
+        },
+        locale
       })
     }
 

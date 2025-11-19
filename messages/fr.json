@@ -63,5 +63,22 @@
   "profile_orders": "Commandes",
   "profile_address_book": "Carnet d'adresses",
   "profile_preferences": "Préférences",
-  "profile_my_profile": "Mon profil"
+  "profile_my_profile": "Mon profil",
+  "products_search_placeholder": "Rechercher des produits...",
+  "products_help_select_category": "Sélectionnez une catégorie pour trouver votre produit.",
+  "products_help_select_subcategory": "Sélectionnez une sous-catégorie pour trouver votre produit.",
+  "products_product_details": "Détails du produit",
+  "products_product_type_customized": "Sur mesure",
+  "products_product_type_personalized": "Stock",
+  "products_filter_label": "Filtrer",
+  "products_filter_option_all": "Tous",
+  "breadcrumbs_select_product": "Sélectionner un produit",
+  "breadcrumbs_category": "Catégorie",
+  "breadcrumbs_designs": "Designs",
+  "breadcrumbs_logos": "Logos",
+  "breadcrumbs_controls": "Contrôles",
+  "breadcrumbs_placement": "Placement",
+  "breadcrumbs_texts": "Textes",
+  "breadcrumbs_number": "Numéro",
+  "breadcrumbs_edit": "Modifier"
 }

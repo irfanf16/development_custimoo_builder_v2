@@ -8,7 +8,13 @@ import type {
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useProfileStore } from '@/stores/profile/profile.store'
 import { buildProductBreadcrumbs } from '@/components/customization-workflow/breadcrumbs'
+import {
+  products_search_placeholder,
+  products_help_select_category,
+  products_help_select_subcategory
+} from '@/paraglide/messages'
 
 // Constants
 export const PRODUCT_TYPE = {
@@ -29,6 +35,7 @@ export function useProductConfig() {
   const workflowStore = useWorkflowStore()
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
+  const profileStore = useProfileStore()
   const hasCategories = computed(() => (productsStore.categories?.data?.length ?? 0) > 0)
 
   // ===== COMPUTED =====
@@ -36,7 +43,7 @@ export function useProductConfig() {
     const search = computed<SearchConfiguration | null>(() => {
       if (workflowStore.productsSubStep === 'product') {
         return {
-          placeholder: 'Search products...',
+          placeholder: products_search_placeholder({}, { locale: profileStore.currentLocale }),
           onInput: (val: string) => (productSearchModel.value = val)
         }
       }
@@ -59,12 +66,12 @@ export function useProductConfig() {
       }
       if (workflowStore.productsSubStep === 'category') {
         return {
-          label: 'Select a category to find your product.'
+          label: products_help_select_category({}, { locale: profileStore.currentLocale })
         }
       }
       if (workflowStore.productsSubStep === 'subcategory') {
         return {
-          label: 'Select a subcategory to find your product.'
+          label: products_help_select_subcategory({}, { locale: profileStore.currentLocale })
         }
       }
       return undefined
@@ -80,7 +87,8 @@ export function useProductConfig() {
         selectedSubCategoryId: workflowStore.selectedSubCategoryId,
         activeSubCategoryId: customizationStore.activeSubCategoryId,
         onCategoryStep: () => workflowStore.setProductsSubStep('category'),
-        onSubCategoryStep: () => workflowStore.setProductsSubStep('subcategory')
+        onSubCategoryStep: () => workflowStore.setProductsSubStep('subcategory'),
+        locale: profileStore.currentLocale
       }),
       search: search.value ?? undefined,
       isExpandable: true,
