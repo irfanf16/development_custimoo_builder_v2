@@ -162,5 +162,11 @@
   "logos_remove_background_smart_title": "Intelligent fjernelse",
   "logos_remove_background_smart_description": "Fjerner farven i øverste venstre hjørne kun fra baggrunden, ikke fra logoet.",
   "logos_applying": "Anvender…",
-  "logos_apply": "Anvend"
+  "logos_apply": "Anvend",
+  "colors_help_adjust": "Tilpas dit produkts farver.",
+  "colors_separator_or": "eller",
+  "colors_choose_from_locker": "Vælg fra locker",
+  "colors_copy": "Kopiér",
+  "colors_paste": "Indsæt",
+  "colors_gradient_label": "Farveforløb {index}"
 }

@@ -24,7 +24,13 @@
     color_shuffle_text_1,
     color_shuffle_text_2,
     color_shuffle_text_3,
-    color_shuffle_text_4
+    color_shuffle_text_4,
+    colors_separator_or,
+    colors_choose_from_locker,
+    colors_copy,
+    colors_paste,
+    colors_gradient_label,
+    nav_color
   } from '@/paraglide/messages'
   // no emits
 
@@ -161,8 +167,14 @@
   }
 
   // Breadcrumb logic for color selection
-  const headerConfig = { breadcrumbs: [{ label: 'Color' }] }
-  void headerConfig
+  const headerConfig = computed(() => ({
+    breadcrumbs: [{ label: nav_color({}, { locale: profileStore.currentLocale }) }]
+  }))
+  void headerConfig.value
+
+  function gradientButtonLabel(index: number) {
+    return colors_gradient_label({ index: String(index) }, { locale: profileStore.currentLocale })
+  }
 </script>
 
 <template>
@@ -208,11 +220,15 @@
       <div class="flex flex-col gap-3 px-4 md:px-6">
         <div class="flex items-center justify-center text-xs text-muted-foreground gap-2">
           <div class="flex-1 h-px bg-border" />
-          <span class="px-3 text-foreground font-medium">or</span>
+          <span class="px-3 text-foreground font-medium">{{
+            colors_separator_or({}, { locale: profileStore.currentLocale })
+          }}</span>
           <div class="flex-1 h-px bg-border" />
         </div>
         <div>
-          <Button class="w-full bg-card" variant="default">Choose from locker</Button>
+          <Button class="w-full bg-card" variant="default">
+            {{ colors_choose_from_locker({}, { locale: profileStore.currentLocale }) }}
+          </Button>
         </div>
       </div>
     </div>
@@ -256,14 +272,18 @@
               class="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-hover:no-underline transition-opacity"
             >
               <Button size="sm" variant="default" @click.stop="copyFrom(svgGroup.id)"
-                ><span class="no-underline">Copy</span></Button
+                ><span class="no-underline">{{
+                  colors_copy({}, { locale: profileStore.currentLocale })
+                }}</span></Button
               >
               <Button
                 size="sm"
                 variant="default"
                 :disabled="!clipboardHex"
                 @click.stop="pasteTo(svgGroup.id)"
-                ><span class="no-underline">Paste</span>
+                ><span class="no-underline">{{
+                  colors_paste({}, { locale: profileStore.currentLocale })
+                }}</span>
               </Button>
             </div>
           </div>
@@ -281,7 +301,7 @@
               }"
               @click="setGradientIndex(svgGroup.id, gIndex)"
             >
-              Gradient {{ gIndex + 1 }}
+              {{ gradientButtonLabel(gIndex + 1) }}
             </Button>
           </div>
           <PaletteColorSelector

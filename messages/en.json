@@ -162,5 +162,11 @@
   "logos_remove_background_smart_title": "Content remove",
   "logos_remove_background_smart_description": "Removes the top-left colour only from the background, not the logo.",
   "logos_applying": "Applying…",
-  "logos_apply": "Apply"
+  "logos_apply": "Apply",
+  "colors_help_adjust": "Adjust your product's colors.",
+  "colors_separator_or": "or",
+  "colors_choose_from_locker": "Choose from locker",
+  "colors_copy": "Copy",
+  "colors_paste": "Paste",
+  "colors_gradient_label": "Gradient {index}"
 }

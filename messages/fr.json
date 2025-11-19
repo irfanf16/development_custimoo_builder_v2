@@ -112,5 +112,11 @@
   "logos_remove_background_smart_title": "Suppression intelligente",
   "logos_remove_background_smart_description": "Supprime la couleur du coin supérieur gauche uniquement sur l'arrière-plan, pas sur le logo.",
   "logos_applying": "Application…",
-  "logos_apply": "Appliquer"
+  "logos_apply": "Appliquer",
+  "colors_help_adjust": "Ajustez les couleurs de votre produit.",
+  "colors_separator_or": "ou",
+  "colors_choose_from_locker": "Choisir depuis le casier",
+  "colors_copy": "Copier",
+  "colors_paste": "Coller",
+  "colors_gradient_label": "Dégradé {index}"
 }
