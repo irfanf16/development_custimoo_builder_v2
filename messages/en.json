@@ -139,5 +139,6 @@
   "design_categories_filters_button": "Filters",
   "design_categories_filter_heading": "Filter",
   "design_categories_filter_all_option": "All designs",
-  "customizer_menu_label": "Workflow navigation"
+  "customizer_menu_label": "Workflow navigation",
+  "styles_description_fallback": "Choose a style to continue customizing."
 }

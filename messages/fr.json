@@ -89,5 +89,6 @@
   "design_categories_filters_button": "Filtres",
   "design_categories_filter_heading": "Filtrer",
   "design_categories_filter_all_option": "Tous les designs",
-  "customizer_menu_label": "Navigation du configurateur"
+  "customizer_menu_label": "Navigation du configurateur",
+  "styles_description_fallback": "Choisissez un style pour continuer la personnalisation."
 }

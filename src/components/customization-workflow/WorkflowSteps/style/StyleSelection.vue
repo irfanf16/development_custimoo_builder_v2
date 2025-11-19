@@ -5,7 +5,12 @@
   // Style previews use static icons (PNG) from style_icon_url, so no canvas is needed
   import { Checkbox } from '@/components/ui/checkbox'
   import { Label } from '@/components/ui/label'
-  import { styles_title, addons_title, styles_alt_icon } from '@/paraglide/messages'
+  import {
+    styles_title,
+    addons_title,
+    styles_alt_icon,
+    styles_description_fallback
+  } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import type { OutputStylePreviewFront } from '@/services/products/types'
   import { useCompanyStore } from '@/stores/company/company.store'
@@ -25,7 +30,9 @@
   const previews = computed(() => (productsStore.stylePreviews as OutputStylePreviewFront[]) || [])
   const headerDescription = computed(() => {
     const p = productsStore.activeProductDetails
-    return p?.sku?.description || ''
+    const description = p?.sku?.description?.trim()
+    if (description) return description
+    return styles_description_fallback({}, { locale: profileStore.currentLocale })
   })
 
   const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
