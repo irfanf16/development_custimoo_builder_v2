@@ -10,6 +10,23 @@
   import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
   import { useTexts } from './useTexts'
   import { useProductsStore } from '@/stores/products/products.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    texts_label_player_name,
+    texts_label_player_number,
+    texts_label_team_name,
+    texts_label_custom,
+    texts_add_label_player_name,
+    texts_add_label_player_number,
+    texts_add_label_team_name,
+    texts_add_label_default,
+    texts_add_label_generic,
+    texts_additional_text_button,
+    texts_untitled_entry,
+    texts_copy_style,
+    texts_paste_style,
+    nav_text
+  } from '@/paraglide/messages'
 
   const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
@@ -22,32 +39,14 @@
     activeProductDetails.value?.allow_extra_text === 1 ? true : false
   )
   const { customAndPresetTexts } = useTexts()
+  const profileStore = useProfileStore()
 
   // ===== CONSTANTS =====
-
-  /**
-   * Display labels for different text types
-   * Used to show secondary labels in the text list
-   */
-  const TEXT_LABELS: Record<OutputProductText['type'], string> = {
-    name: 'Player name',
-    number: 'Player number',
-    team_name: 'Additional text'
-  }
-
-  /**
-   * Labels for "Add" buttons/placeholders for different text types
-   * Used when a text entry has no value yet
-   */
-  const ADD_LABELS: Record<OutputProductText['type'], string> = {
-    name: 'Add a player name',
-    number: 'Add a player number',
-    team_name: 'Add additional text'
-  }
 
   // ===== COMPUTED =====
 
   const effectiveProductId = computed(() => customizationStore.activeProductId)
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   // ===== NAVIGATION =====
 
@@ -201,7 +200,17 @@
    * Used to display the text type or custom label below the main value
    */
   function getSecondaryLabel(text: OutputProductText): string {
-    return text.label || TEXT_LABELS[text.type] || 'Custom'
+    if (text.label) return text.label
+    switch (text.type) {
+      case 'name':
+        return texts_label_player_name({}, { locale: locale.value })
+      case 'number':
+        return texts_label_player_number({}, { locale: locale.value })
+      case 'team_name':
+        return texts_label_team_name({}, { locale: locale.value })
+      default:
+        return texts_label_custom({}, { locale: locale.value })
+    }
   }
 
   /**
@@ -211,15 +220,20 @@
    */
   function getAddLabel(text: OutputProductText): string {
     // Use predefined label if available
-    if (ADD_LABELS[text.type]) return ADD_LABELS[text.type]
+    switch (text.type) {
+      case 'name':
+        return texts_add_label_player_name({}, { locale: locale.value })
+      case 'number':
+        return texts_add_label_player_number({}, { locale: locale.value })
+      case 'team_name':
+        return texts_add_label_team_name({}, { locale: locale.value })
+    }
 
-    // Generate label from text.label with proper article
     const baseLabel = text.label?.trim()
-    if (!baseLabel) return 'Add text'
-
-    const normalized = baseLabel.toLowerCase()
-    const needsAn = /^[aeiou]/.test(normalized)
-    return `Add ${needsAn ? 'an' : 'a'} ${normalized}`
+    if (!baseLabel) {
+      return texts_add_label_default({}, { locale: locale.value })
+    }
+    return texts_add_label_generic({ label: baseLabel }, { locale: locale.value })
   }
 
   /**
@@ -229,8 +243,10 @@
     return typeof text.value === 'string' && text.value.trim().length > 0
   }
 
-  const headerConfig = { breadcrumbs: [{ label: 'Texts' }] }
-  void headerConfig
+  const headerConfig = computed(() => ({
+    breadcrumbs: [{ label: nav_text({}, { locale: locale.value }) }]
+  }))
+  void headerConfig.value
 </script>
 
 <template>
@@ -252,7 +268,7 @@
           <div v-else class="flex w-full items-center gap-4 group">
             <div class="flex min-w-0 flex-1 flex-col gap-1 items-start">
               <span class="truncate text-sm font-semibold text-foreground">
-                {{ customText.value || customText.label || 'Untitled text' }}
+                {{ customText.value || customText.label || texts_untitled_entry({}, { locale }) }}
               </span>
               <span class="text-xs text-muted-foreground">
                 {{ getSecondaryLabel(customText) }}
@@ -267,7 +283,7 @@
                 class="h-8 px-3"
                 @click.stop="handleCopyStyle(index)"
               >
-                Copy style
+                {{ texts_copy_style({}, { locale }) }}
               </Button>
               <Button
                 v-if="hasClipboardStyle"
@@ -276,7 +292,7 @@
                 class="h-8 px-3"
                 @click.stop="handlePasteStyle(index)"
               >
-                Paste style
+                {{ texts_paste_style({}, { locale }) }}
               </Button>
             </div>
           </div>
@@ -285,7 +301,8 @@
     </div>
     <div v-if="allowExtraText" class="w-full px-4 md:px-6">
       <Button variant="default" class="w-full" @click="goToPlacement">
-        <Plus class="size-4" /> <span class="text-sm font-medium">Add additional text</span>
+        <Plus class="size-4" />
+        <span class="text-sm font-medium">{{ texts_additional_text_button({}, { locale }) }}</span>
       </Button>
     </div>
   </div>

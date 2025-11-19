@@ -4,6 +4,7 @@ import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { buildTextsBreadcrumbs } from '@/components/customization-workflow/breadcrumbs'
 import { useProfileStore } from '@/stores/profile/profile.store'
+import { texts_help_insert_style } from '@/paraglide/messages'
 
 export function useTextsConfig() {
   // ===== DEPENDENCIES =====
@@ -28,7 +29,9 @@ export function useTextsConfig() {
     if (workflowStore.textsSubStep === 'list') {
       return {
         breadcrumbs,
-        helpText: { label: 'Insert and style text.' }
+        helpText: {
+          label: texts_help_insert_style({}, { locale: profileStore.currentLocale })
+        }
       }
     }
 

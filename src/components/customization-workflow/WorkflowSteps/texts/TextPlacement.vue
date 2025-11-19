@@ -6,6 +6,12 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    nav_text,
+    logos_choose_placement,
+    texts_no_product_placements
+  } from '@/paraglide/messages'
 
   import ProductPreviewCanvas from '@/components/customization-workflow/WorkflowSteps/ProductPreviewCanvas.vue'
   import type { OutputProductText } from '@/services/products/types'
@@ -19,6 +25,12 @@
   const workflowStore = useWorkflowStore()
   const customizationStore = useCustomizationStore()
   const historyStore = useHistoryStore()
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
+
+  const emit = defineEmits<{
+    back: []
+  }>()
 
   // ===== COMPOSABLES =====
   const { buildEntryFromTemplate, updateEntryWithPlacement, availableTextPlacements } =
@@ -88,6 +100,14 @@
       return { placement, overlay }
     })
   })
+
+  const headerConfig = computed(() => ({
+    breadcrumbs: [
+      { label: nav_text({}, { locale: locale.value }), action: () => emit('back') },
+      { label: logos_choose_placement({}, { locale: locale.value }) }
+    ]
+  }))
+  void headerConfig.value
 
   // ===== ACTIONS =====
 
@@ -204,7 +224,7 @@
       v-else
       class="flex min-h-[9rem] items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground"
     >
-      No placements available for this product.
+      {{ texts_no_product_placements({}, { locale }) }}
     </div>
   </div>
 </template>

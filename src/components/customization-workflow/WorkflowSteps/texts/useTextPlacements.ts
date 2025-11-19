@@ -4,6 +4,9 @@ import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
 import { clone } from './useTextUtils'
+import { useProfileStore } from '@/stores/profile/profile.store'
+import type { ParaglideLocale } from '@/services/preferences/types'
+import { texts_fixed_text_label } from '@/paraglide/messages'
 
 // ===== TYPES =====
 
@@ -63,6 +66,7 @@ export function useTextPlacements() {
   // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
+  const profileStore = useProfileStore()
 
   // ===== STATE =====
   const { activeProductDetails } = storeToRefs(productsStore)
@@ -251,6 +255,16 @@ export function useTextPlacements() {
     return base
   }
 
+  const locale = computed<ParaglideLocale>(() => profileStore.currentLocale ?? 'en')
+  const translateFixedText = texts_fixed_text_label as (
+    inputs?: Record<string, never>,
+    options?: { locale?: ParaglideLocale }
+  ) => string
+
+  function fixedTextLabel(): string {
+    return translateFixedText({}, { locale: locale.value })
+  }
+
   /**
    * Creates a new text entry from a template and placement
    *
@@ -277,7 +291,7 @@ export function useTextPlacements() {
       id: customizationStore.generateTemporaryTextId(productIdValue),
       product_id: productIdValue,
       type: 'name', // All new entries are type 'name'
-      label: 'fixed text',
+      label: fixedTextLabel(),
       placeholder: template?.placeholder ?? null,
       following_products: template?.following_products ?? [],
       items: [],
@@ -326,7 +340,7 @@ export function useTextPlacements() {
       id: customizationStore.generateTemporaryTextId(current.product_id),
       product_id: current.product_id,
       type: 'name',
-      label: 'fixed text',
+      label: fixedTextLabel(),
       placeholder: template?.placeholder ?? null,
       following_products: template?.following_products ?? [],
       items: [],

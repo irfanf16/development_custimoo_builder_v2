@@ -13,6 +13,13 @@
   import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
   import { useTexts } from './useTexts'
   import { clone } from './useTextUtils'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    texts_number_input_placeholder,
+    texts_font_label,
+    texts_no_text_placements,
+    texts_placement_generic_label
+  } from '@/paraglide/messages'
 
   type ManagedTextItem = OutputProductTextItem & {
     placement_id?: number
@@ -34,6 +41,8 @@
   const historyStore = useHistoryStore()
   const productsStore = useProductsStore()
   const { fontOptions } = useTexts()
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   const { activeTextId } = storeToRefs(workflowStore)
   const { activeProductId } = storeToRefs(customizationStore)
@@ -128,12 +137,16 @@
           entry.templateItem = managedItem
         }
         if (!entry.label) {
-          entry.label = managedItem.label || `Placement ${index + 1}`
+          entry.label =
+            managedItem.label ||
+            texts_placement_generic_label({ index: String(index + 1) }, { locale: locale.value })
         }
       } else {
         lookup.set(key, {
           key,
-          label: managedItem.label || `Placement ${index + 1}`,
+          label:
+            managedItem.label ||
+            texts_placement_generic_label({ index: String(index + 1) }, { locale: locale.value }),
           isChecked: true,
           templateItem: null,
           templateIndex: templateIndexMap.value.get(key) ?? null,
@@ -469,7 +482,7 @@
         <div class="h-14">
           <Input
             v-model="form.number"
-            placeholder="Enter number"
+            :placeholder="texts_number_input_placeholder({}, { locale })"
             class="h-full text-lg"
             inputmode="numeric"
           />
@@ -478,7 +491,9 @@
 
       <!-- Font Selection -->
       <div class="space-y-2">
-        <Label class="text-sm font-medium text-foreground">Font</Label>
+        <Label class="text-sm font-medium text-foreground">{{
+          texts_font_label({}, { locale })
+        }}</Label>
         <div class="h-14">
           <FontSelector v-model="form.font" :options="fontOptions" />
         </div>
@@ -488,7 +503,7 @@
     <!-- Placement List -->
     <div class="border-t border-border">
       <p v-if="!displayItems.length" class="px-4 py-6 text-sm text-muted-foreground">
-        No placements available for this text.
+        {{ texts_no_text_placements({}, { locale }) }}
       </p>
       <div
         v-for="item in displayItems"
