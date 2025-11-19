@@ -239,7 +239,7 @@
                 :size="'sm'"
               />
               <span class="text-base">{{ svgGroup.id }}</span>
-              <span class="text-muted-foreground leading-normal capitalize">
+              <span class="text-muted-foreground leading-normal capitalize font-normal">
                 <template v-if="svgGroup.gradient_colors">
                   <template
                     v-for="(gradientColor, gIndex) in svgGroup.gradient_colors"

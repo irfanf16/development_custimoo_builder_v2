@@ -38,6 +38,14 @@
   import SignInDialog from '@/components/SignInDialog.vue'
   import { ref } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+  } from '@/components/ui/dialog'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
@@ -50,11 +58,21 @@
   // Reactive state
   const showProfileDialog = ref(false)
   const showSignInDialog = ref(false)
+  const showResetDialog = ref(false)
 
   // Methods
   function handleResetCustomization() {
+    showResetDialog.value = true
+  }
+
+  function confirmResetCustomization() {
     customizationStore.clearCustomization()
     history.clear()
+    showResetDialog.value = false
+  }
+
+  function cancelResetCustomization() {
+    showResetDialog.value = false
   }
 
   function handleSaveAsDraft() {
@@ -200,6 +218,22 @@
         <SignInDialog v-model:open="showSignInDialog" />
       </DropdownMenu>
     </ButtonGroup>
+    <Dialog v-model:open="showResetDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}?
+          </DialogTitle>
+          <DialogDescription>
+            This will clear all current selections and history. You can't undo this action.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="cancelResetCustomization">Cancel</Button>
+          <Button variant="destructive" @click="confirmResetCustomization">Confirm</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
