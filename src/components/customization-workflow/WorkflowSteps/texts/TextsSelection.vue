@@ -55,6 +55,10 @@
    * Used when user clicks "Add additional text" button
    */
   function goToPlacement() {
+    // Reset active text context so selecting a placement creates a brand-new entry
+    workflowStore.setActiveTextId(null)
+    workflowStore.setActiveTextItemIndex(null)
+    workflowStore.setPendingTextTemplateId(null)
     workflowStore.setTextsSubStep('placement')
   }
 

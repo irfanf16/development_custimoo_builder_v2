@@ -121,6 +121,63 @@ function cloneTextEntry(entry: import('@/services/products/types').OutputProduct
   return JSON.parse(JSON.stringify(rawEntry)) as typeof entry
 }
 
+const TEXT_PREVIEW_LIMIT = 40
+
+function truncateTextLabel(value: string, max = TEXT_PREVIEW_LIMIT) {
+  const trimmed = value.trim()
+  if (trimmed.length <= max) return trimmed
+  return `${trimmed.slice(0, max - 3)}...`
+}
+
+function formatTextLabel(
+  source?: {
+    value?: string | null
+    label?: string | null
+    type?: string | null
+  } | null,
+  fallback = 'text'
+): string {
+  if (!source) return fallback
+  const rawValue = typeof source.value === 'string' ? source.value.trim() : ''
+  if (rawValue) return `"${truncateTextLabel(rawValue)}"`
+  const rawLabel = typeof source.label === 'string' ? source.label.trim() : ''
+  if (rawLabel) return truncateTextLabel(rawLabel)
+  const type = typeof source.type === 'string' ? source.type.replace(/_/g, ' ') : ''
+  if (type) return `${type} text`
+  return fallback
+}
+
+function formatTextValue(value: string | null | undefined, fallback = 'text'): string {
+  if (typeof value !== 'string') return fallback
+  const trimmed = value.trim()
+  if (!trimmed) return fallback
+  return `"${truncateTextLabel(trimmed)}"`
+}
+
+function describeTextById(
+  ctx: HistoryContext,
+  key: string,
+  textId: number,
+  fallback?: string
+): string {
+  const result = findTextEntryById(ctx, key, textId)
+  const fallbackLabel = fallback ?? `#${textId}`
+  if (!result) return fallbackLabel
+  return formatTextLabel(result.array[result.index], fallbackLabel)
+}
+
+function describeTextByIndex(
+  ctx: HistoryContext,
+  key: string,
+  index: number,
+  fallback?: string
+): string {
+  const array = getTextArray(ctx, key)
+  const fallbackLabel = fallback ?? `#${index + 1}`
+  if (!array || index < 0 || index >= array.length) return fallbackLabel
+  return formatTextLabel(array[index], fallbackLabel)
+}
+
 function withLogoPatch(base: CustomLogo, patch: Partial<CustomLogo>): CustomLogo {
   return {
     ...base,
@@ -235,8 +292,10 @@ export const registry: Registry = {
         customizationStore.saveToLocalStorage()
       }
     },
-    describe(_: HistoryContext, p: TextSetValuePayload) {
-      return `Change text #${p.index + 1}`
+    describe(ctx: HistoryContext, p: TextSetValuePayload) {
+      const fallback = formatTextValue(p.nextValue, `#${p.index + 1}`)
+      const label = describeTextByIndex(ctx, p.key, p.index, fallback)
+      return `Change text ${label}`
     }
   },
   'text.add-entry': {
@@ -265,7 +324,8 @@ export const registry: Registry = {
       workflowStore.setTextsSubStep('list')
     },
     describe(_: HistoryContext, payload: TextAddEntryPayload) {
-      return `Add text ${payload.entry.label || ''}`.trim()
+      const label = formatTextLabel(payload.entry, 'text')
+      return `Add text ${label}`
     }
   },
   'text.update-entry': {
@@ -323,9 +383,9 @@ export const registry: Registry = {
       ctx.customizationStore.saveToLocalStorage()
     },
     describe(_: HistoryContext, payload: TextUpdateEntryPayload) {
-      const label =
-        payload.next.label ||
-        (payload.textId ? `#${payload.textId}` : `#${(payload.index ?? 0) + 1}`)
+      const fallback =
+        payload.textId != null ? `#${payload.textId}` : `#${(payload.index ?? 0) + 1}`
+      const label = formatTextLabel(payload.next, fallback)
       return `Update text ${label}`
     }
   },
@@ -346,8 +406,9 @@ export const registry: Registry = {
       map.splice(payload.index, 0, cloneTextEntry(payload.entry))
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, _payload: TextRemoveEntryPayload) {
-      return `Remove text`
+    describe(ctx: HistoryContext, payload: TextRemoveEntryPayload) {
+      const label = describeTextByIndex(ctx, payload.key, payload.index, `#${payload.index + 1}`)
+      return `Remove text ${label}`
     }
   },
   'text.update-value': {
@@ -369,8 +430,10 @@ export const registry: Registry = {
       result.array[result.index] = { ...entry, value: payload.prevValue }
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdateValuePayload) {
-      return `Change text value #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdateValuePayload) {
+      const baseLabel = describeTextById(ctx, payload.key, payload.textId)
+      const label = formatTextValue(payload.nextValue, baseLabel)
+      return `Change text value ${label}`
     }
   },
   'text.update-font': {
@@ -404,8 +467,9 @@ export const registry: Registry = {
       result.array[result.index] = { ...entry, font_family: payload.prevFont, items: updatedItems }
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdateFontPayload) {
-      return `Change text font #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdateFontPayload) {
+      const label = describeTextById(ctx, payload.key, payload.textId)
+      return `Change font for text ${label}`
     }
   },
   'text.update-color': {
@@ -435,8 +499,9 @@ export const registry: Registry = {
       result.array[result.index] = { ...entry, items: updatedItems }
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdateColorPayload) {
-      return `Change text color #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdateColorPayload) {
+      const label = describeTextById(ctx, payload.key, payload.textId)
+      return `Change color for text ${label}`
     }
   },
   'text.update-outline-color': {
@@ -466,8 +531,9 @@ export const registry: Registry = {
       result.array[result.index] = { ...entry, items: updatedItems }
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdateOutlineColorPayload) {
-      return `Change text outline color #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdateOutlineColorPayload) {
+      const label = describeTextById(ctx, payload.key, payload.textId)
+      return `Change outline color for text ${label}`
     }
   },
   'text.update-outline-width': {
@@ -497,8 +563,9 @@ export const registry: Registry = {
       result.array[result.index] = { ...entry, items: updatedItems }
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdateOutlineWidthPayload) {
-      return `Change text outline width #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdateOutlineWidthPayload) {
+      const label = describeTextById(ctx, payload.key, payload.textId)
+      return `Change outline width for text ${label}`
     }
   },
   'text.update-height': {
@@ -528,8 +595,9 @@ export const registry: Registry = {
       result.array[result.index] = { ...entry, items: updatedItems }
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdateHeightPayload) {
-      return `Change text height #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdateHeightPayload) {
+      const label = describeTextById(ctx, payload.key, payload.textId)
+      return `Change height for text ${label}`
     }
   },
   'text.update-width': {
@@ -551,8 +619,9 @@ export const registry: Registry = {
       item.width = payload.prevWidth
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdateWidthPayload) {
-      return `Change text width #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdateWidthPayload) {
+      const label = describeTextById(ctx, payload.key, payload.textId)
+      return `Change width for text ${label}`
     }
   },
   'text.update-rotation': {
@@ -582,8 +651,9 @@ export const registry: Registry = {
       result.array[result.index] = { ...entry, items: updatedItems }
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdateRotationPayload) {
-      return `Change text rotation #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdateRotationPayload) {
+      const label = describeTextById(ctx, payload.key, payload.textId)
+      return `Change rotation for text ${label}`
     }
   },
   'text.update-placement': {
@@ -613,8 +683,9 @@ export const registry: Registry = {
       result.array[result.index] = { ...entry, items: updatedItems }
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdatePlacementPayload) {
-      return `Change text placement #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdatePlacementPayload) {
+      const label = describeTextById(ctx, payload.key, payload.textId)
+      return `Change placement for text ${label}`
     }
   },
   'text.update-scale': {
@@ -644,8 +715,9 @@ export const registry: Registry = {
       result.array[result.index] = { ...entry, items: updatedItems }
       ctx.customizationStore.saveToLocalStorage()
     },
-    describe(_: HistoryContext, payload: TextUpdateScalePayload) {
-      return `Change text scale #${payload.textId}`
+    describe(ctx: HistoryContext, payload: TextUpdateScalePayload) {
+      const label = describeTextById(ctx, payload.key, payload.textId)
+      return `Change scale for text ${label}`
     }
   },
   'logo.add': {
