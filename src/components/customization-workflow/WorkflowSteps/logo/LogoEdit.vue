@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, watch, onMounted } from 'vue'
+  import { computed, watch, onMounted, ref } from 'vue'
   import type { AcceptableValue } from 'reka-ui'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useProductsStore } from '@/stores/products/products.store'
@@ -32,6 +32,7 @@
   import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
   import { Slider } from '@/components/ui/slider'
   import { LocateFixed, Pin } from 'lucide-vue-next'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
 
   interface Props {
     logoId: string
@@ -109,10 +110,15 @@
     logosStore.setActiveLogo(null)
   }
 
+  const removingBackgroundMode = ref<BackgroundRemovalMode | null>(null)
+  const isRecoloring = ref(false)
+
   async function handleRemoveBackground(type: BackgroundRemovalMode) {
     if (!customLogo.value || !productKey.value) return
     const logoIndex = getActiveLogoIndex(customLogo.value.id)
     if (logoIndex === -1) return
+    if (removingBackgroundMode.value) return
+    removingBackgroundMode.value = type
 
     try {
       const logo = await removeBackground(
@@ -127,6 +133,8 @@
       }
     } catch (error) {
       console.error('Error removing background:', error)
+    } finally {
+      removingBackgroundMode.value = null
     }
   }
 
@@ -137,7 +145,13 @@
 
   async function handleRecolorLogo(color: OutputColor) {
     if (!customLogo.value) return
-    await recolorLogo(customLogo.value, color)
+    if (isRecoloring.value) return
+    isRecoloring.value = true
+    try {
+      await recolorLogo(customLogo.value, color)
+    } finally {
+      isRecoloring.value = false
+    }
   }
 
   function handleDeleteLogo() {
@@ -365,9 +379,12 @@
                 size="sm"
                 variant="default"
                 class="mt-1 self-start px-4"
+                :disabled="Boolean(removingBackgroundMode)"
                 @click.stop="handleRemoveBackground('simple')"
-                >Apply</Button
               >
+                <Spinner v-if="removingBackgroundMode === 'simple'" class="mr-2 size-3.5" />
+                <span>{{ removingBackgroundMode === 'simple' ? 'Applying…' : 'Apply' }}</span>
+              </Button>
             </div>
           </div>
 
@@ -384,9 +401,12 @@
                 size="sm"
                 variant="default"
                 class="mt-1 self-start px-4"
+                :disabled="Boolean(removingBackgroundMode)"
                 @click.stop="handleRemoveBackground('smart')"
-                >Apply</Button
               >
+                <Spinner v-if="removingBackgroundMode === 'smart'" class="mr-2 size-3.5" />
+                <span>{{ removingBackgroundMode === 'smart' ? 'Applying…' : 'Apply' }}</span>
+              </Button>
             </div>
           </div>
         </AccordionContent>
@@ -415,6 +435,7 @@
           <PaletteColorSelector
             :palettes="palettes"
             :selected-color="colorSwatches[0]"
+            :loading="isRecoloring"
             @color-select="handleRecolorLogo"
           />
         </AccordionContent>

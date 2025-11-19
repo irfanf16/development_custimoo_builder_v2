@@ -4,6 +4,7 @@
   import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
   import type { HTMLAttributes } from 'vue'
   import { cn } from '@/lib/utils'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
 
   type OutputColor = {
     position: number
@@ -21,13 +22,18 @@
     class?: HTMLAttributes['class']
     palettes: Palette[]
     selectedColor?: string
+    loading?: boolean
   }
 
   interface Emits {
     (e: 'color-select', color: OutputColor): void
   }
 
-  const props = defineProps<Props>()
+  const props = withDefaults(defineProps<Props>(), {
+    class: undefined,
+    selectedColor: undefined,
+    loading: false
+  })
   const emit = defineEmits<Emits>()
 
   // Initialize with the first palette's ID
@@ -74,11 +80,21 @@
 
       <!-- Only render the active tab content for better performance -->
       <TabsContent v-if="activePalette" :value="String(activePalette.id)">
-        <ColorGrid
-          :colors="activePalette.colors"
-          :selected-color="selectedColor"
-          @color-select="handleColorSelect"
-        />
+        <div class="relative">
+          <ColorGrid
+            :colors="activePalette.colors"
+            :selected-color="selectedColor"
+            :disabled="props.loading"
+            class="transition-opacity"
+            :class="{ 'opacity-50 pointer-events-none': props.loading }"
+            @color-select="handleColorSelect"
+          />
+          <div v-if="props.loading" class="absolute inset-0 flex items-center justify-center">
+            <div class="rounded-full bg-background/80 p-2 shadow-sm">
+              <Spinner class="size-5 text-primary" />
+            </div>
+          </div>
+        </div>
       </TabsContent>
     </Tabs>
   </div>
