@@ -17,7 +17,7 @@ const MOBILE_CONTENT_CLASSES = [
   'translate-x-0 translate-y-0',
   'transform-none',
   'rounded-t-2xl rounded-b-none',
-  'shadow-none border-0'
+  'shadow-none border-0 border-t-1'
 ].join(' ')
 
 export const dialogContentVariants = cva(
