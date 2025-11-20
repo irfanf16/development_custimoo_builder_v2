@@ -60,6 +60,7 @@
     setTimeout(() => {
       emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
     }, 100)
+    workflowStore.setActiveStep('styles')
   }
 
   const filteredPreviews = computed(() => {
