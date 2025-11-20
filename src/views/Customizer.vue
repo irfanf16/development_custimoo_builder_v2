@@ -47,26 +47,28 @@
           <CustomizerTopbar class="z-20" />
           <div
             id="canvas-controls-container"
-            class="flex flex-row w-full h-full justify-start items-center"
+            class="flex flex-row w-full h-full justify-center 2xl:justify-start items-center p-[64px]"
           >
             <ProductPreview />
-            <div class="absolute w-0 ml-[50%] z-10">
-              <div
-                id="canvas-controls-container-inner"
-                class="flex flex-col gap-9 items-end justify-between h-full"
-              >
-                <RightToolbar />
-                <Card class="w-fit h-fit p-0 cursor-pointer" @click="handleClick">
-                  <CardContent class="w-[180px] h-auto">
-                    <TwoDScene
-                      :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
-                      :main-preview="true"
-                      :canvas-width="300"
-                      :canvas-height="300"
-                      canvas-class="w-[8.25rem] h-[8.25rem] rounded-lg transition-opacity duration-300 cursor-pointer"
-                    />
-                  </CardContent>
-                </Card>
+            <div class="w-0 z-10 self-start ml-[-50px]">
+              <div class="absolute">
+                <div
+                  id="canvas-controls-container-inner"
+                  class="flex flex-col gap-9 items-end justify-between h-full"
+                >
+                  <RightToolbar />
+                  <Card class="w-fit h-fit p-0 cursor-pointer" @click="handleClick">
+                    <CardContent class="w-[180px] h-auto">
+                      <TwoDScene
+                        :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
+                        :main-preview="true"
+                        :canvas-width="300"
+                        :canvas-height="300"
+                        canvas-class="w-[8.25rem] h-[8.25rem] rounded-lg transition-opacity duration-300 cursor-pointer"
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
           </div>

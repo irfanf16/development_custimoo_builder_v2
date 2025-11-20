@@ -50,6 +50,10 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
 
+  /* Custom screen sizes */
+  --breakpoint-3xl: 1920px; /* 3xl */
+  --breakpoint-4xl: 2560px; /* 4xl */
+
   /* Animations - available as animate-* utilities */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;

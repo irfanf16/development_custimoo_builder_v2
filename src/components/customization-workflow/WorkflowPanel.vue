@@ -47,7 +47,7 @@
     if (uiStore.isMobile) {
       return 'h-full w-full'
     }
-    return ['h-full', 'w-[28rem]', isExpanded.value ? 'z-20 max-w-none' : '']
+    return ['h-full', 'w-[29rem]', isExpanded.value ? 'z-20 max-w-none' : '']
   })
 
   const cardClasses = computed(() => {
@@ -56,7 +56,7 @@
     }
     const baseClasses =
       'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col max-h-full'
-    return [baseClasses, isExpanded.value ? 'w-[75vw]' : 'w-[470px]']
+    return [baseClasses, isExpanded.value ? 'w-[75vw]' : 'w-[29rem]']
   })
 
   const scrollAreaMaxHeight = computed(() => {
