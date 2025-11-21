@@ -111,7 +111,7 @@
       </DialogDescription>
       <div
         v-if="profileStore.isLoading"
-        class="absolute inset-0 flex items-center justify-center bg-white/70 z-50"
+        class="absolute inset-0 flex items-center justify-center z-50"
       >
         <Spinner class="text-primary size-6" />
       </div>

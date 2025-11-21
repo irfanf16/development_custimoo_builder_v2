@@ -10,7 +10,6 @@
   import { Button } from '@/components/ui/button'
   import { Check, Funnel } from 'lucide-vue-next'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import { storeToRefs } from 'pinia'
   import type { StockFilterOption } from './useProductConfig'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
@@ -22,7 +21,6 @@
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
-  const { isMobile } = storeToRefs(uiStore)
 
   interface Props {
     activeFilter: StockFilterOption | null
@@ -48,7 +46,7 @@
   }
 </script>
 <template>
-  <DropdownMenu v-if="isMobile">
+  <DropdownMenu v-if="uiStore.isMobile">
     <DropdownMenuTrigger as-child>
       <Button size="sm" :variant="isActive === 'all' ? 'outline' : 'primary'">
         <Funnel class="size-4" />
@@ -58,7 +56,7 @@
       align="start"
       :position-strategy="'absolute'"
       :collision-padding="32"
-      class="w-[248px] bg-white rounded-lg shadow-md border p-0 mt-1"
+      class="w-[248px] rounded-lg shadow-md border p-0 mt-1"
     >
       <div class="px-3 py-2.5 font-semibold text-sm">
         {{ products_filter_label({}, { locale: profileStore.currentLocale }) }}
@@ -76,7 +74,7 @@
         <span v-else class="w-4"></span>
         {{ products_filter_option_all({}, { locale: profileStore.currentLocale }) }}
       </DropdownMenuItem>
-      <DropdownMenuSeparator class="mx-0 my-0 bg-gray-200" />
+      <DropdownMenuSeparator class="mx-0 my-0" />
       <DropdownMenuItem
         :key="'customized'"
         class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
