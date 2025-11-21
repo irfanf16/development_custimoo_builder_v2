@@ -77,17 +77,22 @@
                   class="flex flex-col gap-9 items-end justify-between h-full"
                 >
                   <RightToolbar />
-                  <Card class="w-fit h-fit p-0 cursor-pointer" @click="handleClick">
-                    <CardContent class="w-[180px] h-auto">
-                      <TwoDScene
-                        :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
-                        :main-preview="true"
-                        :canvas-width="300"
-                        :canvas-height="300"
-                        canvas-class="w-[8.25rem] h-[8.25rem] rounded-lg transition-opacity duration-300 cursor-pointer"
-                      />
-                    </CardContent>
-                  </Card>
+                  <div
+                    class="w-fit h-fit p-1 rounded-2xl backdrop-blur-sm bg-white/20 cursor-pointer"
+                    @click="handleClick"
+                  >
+                    <div class="bg-card border border-border rounded-[14px] p-3 relative">
+                      <div class="w-[9.75rem] h-[9.75rem] flex items-center justify-center">
+                        <TwoDScene
+                          :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
+                          :main-preview="true"
+                          :canvas-width="300"
+                          :canvas-height="300"
+                          canvas-class="w-full h-full object-contain rounded-lg transition-opacity duration-300"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
