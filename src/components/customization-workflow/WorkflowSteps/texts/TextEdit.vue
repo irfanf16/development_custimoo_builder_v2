@@ -146,9 +146,9 @@
           <AccordionTrigger
             class="w-full overflow-hidden items-center no-underline hover:no-underline"
           >
-            <div class="flex justify-between gap-3 w-full group overflow-hidden">
+            <div class="flex justify-between gap-2 md:gap-3 w-full group overflow-hidden">
               <div
-                class="flex items-center gap-3 shrink overflow-hidden md:overflow-visible md:group-hover:overflow-hidden"
+                class="flex items-center gap-2 md:gap-3 shrink overflow-hidden md:overflow-visible md:group-hover:overflow-hidden"
               >
                 <ColorSelector
                   class="flex-shrink-0"
@@ -156,16 +156,17 @@
                   :disabled="true"
                   :size="'sm'"
                 />
-                <span class="text-base font-semibold text-foreground whitespace-nowrap">{{
-                  texts_fill_color_label({}, { locale })
-                }}</span>
                 <span
-                  class="text-muted-foreground leading-normal capitalize font-normal whitespace-nowrap text-ellipsis overflow-hidden shrink"
+                  class="text-base font-semibold whitespace-nowrap text-ellipsis overflow-hidden shrink"
+                  >{{ texts_fill_color_label({}, { locale }) }}</span
+                >
+                <span
+                  class="text-muted-foreground leading-normal capitalize font-normal whitespace-nowrap text-ellipsis overflow-hidden shrink-999"
                   >{{ getColorName(form.fill) }}</span
                 >
               </div>
               <div
-                class="flex items-center w-[122px] shrink-0 gap-2 md:opacity-0 md:group-hover:opacity-100 md:group-hover:no-underline md:transition-opacity"
+                class="flex items-center shrink-0 gap-1 md:opacity-0 md:group-hover:opacity-100 md:group-hover:no-underline md:transition-opacity"
               >
                 <Button size="sm" variant="default" @click.stop="copyColor(form.fill)"
                   ><span>{{ colors_copy({}, { locale }) }}</span></Button
@@ -198,9 +199,9 @@
           <AccordionTrigger
             class="w-full overflow-hidden items-center no-underline hover:no-underline"
           >
-            <div class="flex justify-between gap-3 w-full group overflow-hidden">
+            <div class="flex justify-between gap-2 md:gap-3 w-full group overflow-hidden">
               <div
-                class="flex items-center gap-3 shrink overflow-hidden md:overflow-visible md:group-hover:overflow-hidden"
+                class="flex items-center gap-2 md:gap-3 shrink overflow-hidden md:overflow-visible md:group-hover:overflow-hidden"
               >
                 <ColorSelector
                   class="flex-shrink-0"
@@ -208,16 +209,17 @@
                   :disabled="true"
                   :size="'sm'"
                 />
-                <span class="text-base font-semibold text-foreground whitespace-nowrap">{{
-                  texts_outline_label({}, { locale })
-                }}</span>
                 <span
-                  class="text-muted-foreground leading-normal capitalize font-normal whitespace-nowrap text-ellipsis overflow-hidden shrink"
+                  class="text-base font-semibold whitespace-nowrap text-ellipsis overflow-hidden shrink"
+                  >{{ texts_outline_label({}, { locale }) }}</span
+                >
+                <span
+                  class="text-muted-foreground leading-normal capitalize font-normal whitespace-nowrap text-ellipsis overflow-hidden shrink-999"
                   >{{ getColorName(form.outline) }}</span
                 >
               </div>
               <div
-                class="flex items-center w-[122px] shrink-0 gap-2 md:opacity-0 md:group-hover:opacity-100 md:group-hover:no-underline md:transition-opacity"
+                class="flex items-center shrink-0 gap-1 md:opacity-0 md:group-hover:opacity-100 md:group-hover:no-underline md:transition-opacity"
               >
                 <Button size="sm" variant="default" @click.stop="copyColor(form.outline)"
                   ><span>{{ colors_copy({}, { locale }) }}</span></Button
