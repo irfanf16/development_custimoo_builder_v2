@@ -25,7 +25,7 @@ export function isWidgetMode(): boolean {
  * Widget-specific Tailwind classes
  */
 export const widgetClasses = {
-  container: 'widget-theme font-sans border rounded-lg p-4 shadow-sm w-full min-h-[400px]',
+  container: 'widget-theme font-sans border rounded-lg p-4 w-full min-h-[400px]',
   primary: 'bg-primary text-primary-foreground',
   secondary: 'bg-secondary text-secondary-foreground',
   accent: 'bg-accent text-accent-foreground',

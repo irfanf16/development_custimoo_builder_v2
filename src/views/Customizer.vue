@@ -9,6 +9,7 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import { storeToRefs } from 'pinia'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import MobileActionBar from '@/components/customizer-canvas-preview/MobileActionBar.vue'
 
   const uiStore = useUIStore()
   const { isMobile } = storeToRefs(uiStore)
@@ -28,7 +29,26 @@
     <template v-if="isMobile">
       <div id="main-content" class="mobile-layout flex flex-col gap-2 w-full h-full">
         <CustomizerTopbar class="z-40" />
-        <ProductPreview />
+        <div class="flex flex-col">
+          <ProductPreview />
+          <div
+            class="w-fit h-fit mt-[-3.5rem] p-0.5 rounded-2xl backdrop-blur-sm bg-white/20 cursor-pointer self-end z-10"
+            @click="handleClick"
+          >
+            <div class="bg-card border border-border rounded-[14px] overflow-hidden">
+              <div class="p-2 w-[4.5rem] h-[4.5rem]">
+                <TwoDScene
+                  :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
+                  :main-preview="true"
+                  :canvas-width="300"
+                  :canvas-height="300"
+                  canvas-class="rounded-lg transition-opacity duration-300 cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <MobileActionBar />
         <WorkflowLayout class="z-30" />
         <CustomizerMenuMobile />
       </div>

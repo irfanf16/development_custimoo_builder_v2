@@ -21,33 +21,41 @@
 
 <template>
   <div
-    class="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 bg-foreground text-background rounded-full px-3 py-2 md:px-4 shadow-lg flex items-center gap-4 md:gap-6"
+    class="fixed bottom-[6.5rem] left-1/2 -translate-x-1/2 z-30 bg-foreground text-background rounded-full px-4 shadow-lg flex items-center"
   >
-    <Button variant="ghost" class="text-background hover:text-background" @click="shuffleColors()">
-      <Shuffle class="size-5" />
-      <span class="ml-2">Shuffle</span>
+    <Button
+      variant="ghost"
+      class="flex flex-col items-center justify-center h-14 w-[60px] gap-0.5 p-0 hover:bg-transparent hover:text-background"
+      @click="shuffleColors()"
+    >
+      <Shuffle class="size-4" />
+      <span class="text-xs font-normal">Shuffle</span>
     </Button>
     <Button
       variant="ghost"
-      class="text-background hover:text-background"
+      class="flex flex-col items-center justify-center h-14 w-[60px] gap-0.5 p-0 hover:bg-transparent hover:text-background"
       :disabled="!canUndo"
       @click="history.undo()"
     >
-      <Undo2 class="size-5" />
-      <span class="ml-2">Undo</span>
+      <Undo2 class="size-4" />
+      <span class="text-xs font-normal">Undo</span>
     </Button>
     <Button
       variant="ghost"
-      class="text-background hover:text-background"
+      class="flex flex-col items-center justify-center h-14 w-[60px] gap-0.5 p-0 hover:bg-transparent hover:text-background"
       :disabled="!canRedo"
       @click="history.redo()"
     >
-      <Redo2 class="size-5" />
-      <span class="ml-2">Redo</span>
+      <Redo2 class="size-4" />
+      <span class="text-xs font-normal">Redo</span>
     </Button>
-    <Button variant="ghost" class="text-background hover:text-background" @click="centerCanvas()">
-      <Crosshair class="size-5" />
-      <span class="ml-2">Centre</span>
+    <Button
+      variant="ghost"
+      class="flex flex-col items-center justify-center h-14 w-[60px] gap-0.5 p-0 hover:bg-transparent hover:text-background"
+      @click="centerCanvas()"
+    >
+      <Crosshair class="size-4" />
+      <span class="text-xs font-normal">Centre</span>
     </Button>
   </div>
 </template>
