@@ -1,6 +1,8 @@
 <script setup lang="ts">
   import { computed, watch } from 'vue'
   import { Input } from '@/components/ui/input'
+  import { Button } from '@/components/ui/button'
+  import ColorSelector from '@/components/ui/color-selector/ColorSelector.vue'
   import { Label } from '@/components/ui/label'
   import { PaletteColorSelector } from '@/components/ui/palette-color-selector'
   import { FontSelector } from '@/components/ui/font-selector'
@@ -21,6 +23,7 @@
   import { useTextActions } from './useTextActions'
   import { useTexts } from './useTexts'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useColorClipboard } from '@/composables/useColorClipboard'
   import {
     texts_text_input_placeholder,
     texts_font_label,
@@ -37,12 +40,15 @@
     texts_unit_cm,
     texts_unit_px,
     texts_side_front,
-    texts_side_back
+    texts_side_back,
+    colors_copy,
+    colors_paste
   } from '@/paraglide/messages'
 
   // ===== COMPOSABLES =====
   const { form, currentEntry } = useTextActions()
   const { fontOptions, colorPalettes } = useTexts()
+  const { clipboardColor, copyColor } = useColorClipboard()
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
 
@@ -113,7 +119,7 @@
 </script>
 
 <template>
-  <div class="grid gap-4 md:grid-cols-[360px,1fr] md:gap-8">
+  <div class="flex flex-col gap-4 md:gap-6">
     <div class="space-y-0 flex flex-col gap-4">
       <!-- Text Input Section -->
       <div v-if="!isNumberEntry" class="space-y-2 px-4 md:px-6 pt-1">
@@ -134,24 +140,47 @@
       </div>
 
       <!-- Color and Sizing Accordion -->
-      <Accordion type="multiple" :default-value="['sizing']" class="w-full">
+      <Accordion type="multiple" :default-value="['sizing']">
         <!-- Fill Colour Accordion Item -->
-        <AccordionItem value="fill">
-          <AccordionTrigger class="px-4 md:px-6 py-4 hover:no-underline">
-            <div class="flex items-center gap-3 w-full">
+        <AccordionItem value="fill" class="px-4 md:px-6 max-w-full">
+          <AccordionTrigger
+            class="w-full overflow-hidden items-center no-underline hover:no-underline"
+          >
+            <div class="flex justify-between gap-3 w-full group overflow-hidden">
               <div
-                class="w-7 h-7 rounded-full border border-input shrink-0"
-                :style="{ backgroundColor: form.fill }"
-              />
-              <div class="flex-1 flex items-center gap-2 text-left">
-                <span class="text-base font-semibold text-foreground">{{
+                class="flex items-center gap-3 shrink overflow-hidden md:overflow-visible md:group-hover:overflow-hidden"
+              >
+                <ColorSelector
+                  class="flex-shrink-0"
+                  :color="form.fill"
+                  :disabled="true"
+                  :size="'sm'"
+                />
+                <span class="text-base font-semibold text-foreground whitespace-nowrap">{{
                   texts_fill_color_label({}, { locale })
                 }}</span>
-                <span class="text-base text-muted-foreground">{{ getColorName(form.fill) }}</span>
+                <span
+                  class="text-muted-foreground leading-normal capitalize font-normal whitespace-nowrap text-ellipsis overflow-hidden shrink"
+                  >{{ getColorName(form.fill) }}</span
+                >
+              </div>
+              <div
+                class="flex items-center w-[122px] shrink-0 gap-2 md:opacity-0 md:group-hover:opacity-100 md:group-hover:no-underline md:transition-opacity"
+              >
+                <Button size="sm" variant="default" @click.stop="copyColor(form.fill)"
+                  ><span>{{ colors_copy({}, { locale }) }}</span></Button
+                >
+                <Button
+                  size="sm"
+                  variant="default"
+                  :disabled="!clipboardColor"
+                  @click.stop="form.fill = clipboardColor || form.fill"
+                  ><span>{{ colors_paste({}, { locale }) }}</span>
+                </Button>
               </div>
             </div>
           </AccordionTrigger>
-          <AccordionContent class="px-4 md:px-6 pb-4">
+          <AccordionContent class="pb-4">
             <PaletteColorSelector
               :palettes="colorPalettes"
               :selected-color="form.fill"
@@ -161,24 +190,49 @@
         </AccordionItem>
 
         <!-- Outline Colour Accordion Item -->
-        <AccordionItem v-if="form.outline_enabled" value="outline">
-          <AccordionTrigger class="px-4 md:px-6 py-4 hover:no-underline">
-            <div class="flex items-center gap-3 w-full">
+        <AccordionItem
+          v-if="form.outline_enabled"
+          value="outline"
+          class="px-4 md:px-6 max-w-full hover:bg-primary/10"
+        >
+          <AccordionTrigger
+            class="w-full overflow-hidden items-center no-underline hover:no-underline"
+          >
+            <div class="flex justify-between gap-3 w-full group overflow-hidden">
               <div
-                class="w-7 h-7 rounded-full border border-input shrink-0"
-                :style="{ backgroundColor: form.outline }"
-              />
-              <div class="flex-1 flex items-center gap-2 text-left">
-                <span class="text-base font-semibold text-foreground">{{
+                class="flex items-center gap-3 shrink overflow-hidden md:overflow-visible md:group-hover:overflow-hidden"
+              >
+                <ColorSelector
+                  class="flex-shrink-0"
+                  :color="form.outline"
+                  :disabled="true"
+                  :size="'sm'"
+                />
+                <span class="text-base font-semibold text-foreground whitespace-nowrap">{{
                   texts_outline_label({}, { locale })
                 }}</span>
-                <span class="text-base text-muted-foreground">{{
-                  getColorName(form.outline)
-                }}</span>
+                <span
+                  class="text-muted-foreground leading-normal capitalize font-normal whitespace-nowrap text-ellipsis overflow-hidden shrink"
+                  >{{ getColorName(form.outline) }}</span
+                >
+              </div>
+              <div
+                class="flex items-center w-[122px] shrink-0 gap-2 md:opacity-0 md:group-hover:opacity-100 md:group-hover:no-underline md:transition-opacity"
+              >
+                <Button size="sm" variant="default" @click.stop="copyColor(form.outline)"
+                  ><span>{{ colors_copy({}, { locale }) }}</span></Button
+                >
+                <Button
+                  size="sm"
+                  variant="default"
+                  :disabled="!clipboardColor"
+                  @click.stop="form.outline = clipboardColor || form.outline"
+                  ><span>{{ colors_paste({}, { locale }) }}</span>
+                </Button>
               </div>
             </div>
           </AccordionTrigger>
-          <AccordionContent class="px-4 md:px-6 pb-4 space-y-4">
+          <AccordionContent class="pb-4 space-y-4">
             <!-- Outline Width Slider -->
             <div class="space-y-2">
               <div class="flex items-center justify-between">

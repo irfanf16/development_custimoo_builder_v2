@@ -15,6 +15,7 @@
   import { useColorActions } from '@/composables/useColorActions'
   import type { Palette } from '@/composables/useColorActions'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useColorClipboard } from '@/composables/useColorClipboard'
   import {
     color_shuffle_design_colors,
     color_shuffle_heading_1,
@@ -41,6 +42,7 @@
   const { effectiveSvgGroups } = useEffectiveSelectors()
   const history = useHistoryStore()
   const { shuffleColors } = useColorActions()
+  const { clipboardColor, copyColor } = useColorClipboard()
 
   const computedPalettes = computed<Palette[] | undefined>(() => {
     return productsStore.activeProductDetails?.namecolors.map(colorGroup => ({
@@ -49,9 +51,6 @@
       colors: colorGroup.json_data
     }))
   })
-
-  // Local clipboard for copy/paste between slots
-  const clipboardHex = ref<string | null>(null)
 
   // Track selected gradient index for each group
   const selectedGradientIndex = ref<Record<string, number>>({})
@@ -134,14 +133,14 @@
     if (group.gradient_colors) {
       const gradientIndex = getGradientIndex(groupId)
       const gradientColor = group.gradient_colors[gradientIndex]
-      clipboardHex.value = gradientColor?.color ?? null
+      copyColor(gradientColor?.color ?? null)
     } else {
-      clipboardHex.value = group.color ?? null
+      copyColor(group.color ?? null)
     }
   }
 
   function pasteTo(groupId: string) {
-    if (!clipboardHex.value) return
+    if (!clipboardColor.value) return
 
     const group = effectiveSvgGroups.value?.find(g => g.id === groupId)
     if (!group) return
@@ -149,9 +148,9 @@
     // If it's a gradient color, paste to the selected gradient index
     if (group.gradient_colors) {
       const gradientIndex = getGradientIndex(groupId)
-      setGroupColor(groupId, { name: '', value: clipboardHex.value, position: 0 }, gradientIndex)
+      setGroupColor(groupId, { name: '', value: clipboardColor.value, position: 0 }, gradientIndex)
     } else {
-      setGroupColor(groupId, { name: '', value: clipboardHex.value, position: 0 })
+      setGroupColor(groupId, { name: '', value: clipboardColor.value, position: 0 })
     }
   }
 
@@ -239,13 +238,18 @@
         v-for="(svgGroup, idx) in effectiveSvgGroups"
         :key="svgGroup.id"
         :value="String(idx)"
-        class="px-4 md:px-6"
+        class="px-4 md:px-6 max-w-full"
       >
-        <AccordionTrigger>
-          <div class="flex justify-between gap-3 w-full group">
-            <div class="flex items-center gap-3 w-full">
+        <AccordionTrigger
+          class="w-full overflow-hidden items-center no-underline hover:no-underline"
+        >
+          <div class="flex justify-between gap-3 w-full group overflow-hidden">
+            <div
+              class="flex items-center gap-3 shrink overflow-hidden md:overflow-visible md:group-hover:overflow-hidden"
+            >
               <!-- Show gradient color if available, otherwise show solid color -->
               <ColorSelector
+                class="flex-shrink-0"
                 :color="
                   svgGroup.gradient_colors
                     ? gradientColorString(svgGroup.gradient_colors)
@@ -254,8 +258,10 @@
                 :disabled="true"
                 :size="'sm'"
               />
-              <span class="text-base">{{ svgGroup.id }}</span>
-              <span class="text-muted-foreground leading-normal capitalize font-normal">
+              <span class="text-base whitespace-nowrap">{{ svgGroup.id }}</span>
+              <span
+                class="text-muted-foreground leading-normal capitalize font-normal whitespace-nowrap text-ellipsis overflow-hidden shrink"
+              >
                 <template v-if="svgGroup.gradient_colors">
                   <template
                     v-for="(gradientColor, gIndex) in svgGroup.gradient_colors"
@@ -269,21 +275,17 @@
               </span>
             </div>
             <div
-              class="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-hover:no-underline transition-opacity"
+              class="flex items-center w-[122px] shrink-0 gap-2 md:opacity-0 md:group-hover:opacity-100 md:group-hover:no-underline md:transition-opacity"
             >
               <Button size="sm" variant="default" @click.stop="copyFrom(svgGroup.id)"
-                ><span class="no-underline">{{
-                  colors_copy({}, { locale: profileStore.currentLocale })
-                }}</span></Button
+                ><span>{{ colors_copy({}, { locale: profileStore.currentLocale }) }}</span></Button
               >
               <Button
                 size="sm"
                 variant="default"
-                :disabled="!clipboardHex"
+                :disabled="!clipboardColor"
                 @click.stop="pasteTo(svgGroup.id)"
-                ><span class="no-underline">{{
-                  colors_paste({}, { locale: profileStore.currentLocale })
-                }}</span>
+                ><span>{{ colors_paste({}, { locale: profileStore.currentLocale }) }}</span>
               </Button>
             </div>
           </div>
