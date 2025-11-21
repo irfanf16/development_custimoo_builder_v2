@@ -104,7 +104,7 @@
 
 <template>
   <!-- Content -->
-  <div ref="designSelectionContainer" class="flex flex-wrap mb-4 md:mb-6">
+  <div ref="designSelectionContainer" class="flex flex-wrap justify-around mb-4 md:mb-6">
     <div
       v-for="item in filteredPreviews"
       :id="`design-${item.design_name}`"

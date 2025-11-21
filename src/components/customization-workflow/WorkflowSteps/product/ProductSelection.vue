@@ -136,7 +136,7 @@
 </script>
 
 <template>
-  <div class="flex flex-wrap mb-4 md:mb-6">
+  <div class="flex flex-wrap justify-around mb-4 md:mb-6">
     <div
       v-for="item in filteredPreviews"
       :id="`product-${item.productPreview.id}`"
