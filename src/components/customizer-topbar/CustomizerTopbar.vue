@@ -19,7 +19,8 @@
     Settings,
     LogOut,
     LogIn,
-    LayoutGrid
+    LayoutGrid,
+    Fullscreen
   } from 'lucide-vue-next'
   import {
     topbar_save,
@@ -101,6 +102,10 @@
   function handleSignIn() {
     showSignInDialog.value = true
   }
+
+  function handleFullscreen() {
+    uiStore.toggleFullscreen()
+  }
 </script>
 
 <template>
@@ -114,40 +119,47 @@
           {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}
         </Button>
       </ButtonGroup>
-      <!-- Save Button Group with DropdownMenu -->
-      <DropdownMenu>
-        <ButtonGroup>
-          <DropdownMenuTrigger as-child>
-            <Button size="default">
-              <Save class="size-4" />
-              <span>{{ topbar_save({}, { locale: profileStore.currentLocale }) }}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuTrigger as-child>
-            <Button
-              size="icon"
-              :aria-label="topbar_save_options({}, { locale: profileStore.currentLocale })"
-            >
-              <ChevronDown class="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
+      <ButtonGroup>
+        <!-- Fullscreen Button for mobile only -->
+        <ButtonGroup v-if="uiStore.isMobile">
+          <Button size="icon" @click="handleFullscreen">
+            <Fullscreen class="size-4" />
+          </Button>
         </ButtonGroup>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem @click="handleSaveAsDraft">
-            <Save class="size-4 mr-2" />
-            Save as Draft
-          </DropdownMenuItem>
-          <DropdownMenuItem @click="handleSaveAndShare">
-            <Save class="size-4 mr-2" />
-            Save and Share
-          </DropdownMenuItem>
-          <DropdownMenuItem @click="handleExportDesign">
-            <Save class="size-4 mr-2" />
-            Export Design
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
+        <!-- Save Button Group with DropdownMenu -->
+        <DropdownMenu>
+          <ButtonGroup>
+            <DropdownMenuTrigger as-child>
+              <Button size="default">
+                <Save class="size-4" />
+                <span>{{ topbar_save({}, { locale: profileStore.currentLocale }) }}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuTrigger as-child>
+              <Button
+                size="icon"
+                :aria-label="topbar_save_options({}, { locale: profileStore.currentLocale })"
+              >
+                <ChevronDown class="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+          </ButtonGroup>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem @click="handleSaveAsDraft">
+              <Save class="size-4 mr-2" />
+              Save as Draft
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="handleSaveAndShare">
+              <Save class="size-4 mr-2" />
+              Save and Share
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="handleExportDesign">
+              <Save class="size-4 mr-2" />
+              Export Design
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ButtonGroup>
       <!-- Locker Room Button -->
       <ButtonGroup v-if="!uiStore.isMobile">
         <Button size="default">
