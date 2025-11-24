@@ -137,6 +137,7 @@ declare module 'vue' {
     ProductSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/product/ProductSelection.vue')['default']
     ProductsEntry: typeof import('./src/components/customization-workflow/WorkflowSteps/product/ProductsEntry.vue')['default']
     ProfileDialog: typeof import('./src/components/customizer-profile-section/ProfileDialog.vue')['default']
+    ResetCustomizationDialog: typeof import('./src/components/customizer/ResetCustomizationDialog.vue')['default']
     RightToolbar: typeof import('./src/components/customizer-canvas-preview/RightToolbar.vue')['default']
     RosterEdit: typeof import('./src/components/customization-workflow/WorkflowSteps/roster/RosterEdit.vue')['default']
     RosterEntry: typeof import('./src/components/customization-workflow/WorkflowSteps/roster/RosterEntry.vue')['default']
