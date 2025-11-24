@@ -158,6 +158,7 @@ declare module 'vue' {
     Separator: typeof import('./src/components/ui/separator/Separator.vue')['default']
     SignInButton: typeof import('./src/components/SignInButton.vue')['default']
     SignInDialog: typeof import('./src/components/SignInDialog.vue')['default']
+    SignUpDialog: typeof import('./src/components/SignUpDialog.vue')['default']
     Slider: typeof import('./src/components/ui/slider/Slider.vue')['default']
     SmallPreview: typeof import('./src/components/customizer-canvas-preview/SmallPreview.vue')['default']
     Spinner: typeof import('./src/components/ui/spinner/Spinner.vue')['default']

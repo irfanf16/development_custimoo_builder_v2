@@ -119,10 +119,11 @@
   // Watch for prop changes
   watch(
     () => props.open,
-    newValue => {
+    (newValue, oldValue) => {
       isOpen.value = newValue
-      if (newValue) {
-        // Reset form when dialog opens
+
+      // Only reset when transitioning from closed -> open to avoid wiping inputs mid-typing
+      if (newValue && !oldValue) {
         resetForm({
           values: {
             first_name: '',
@@ -135,7 +136,6 @@
           }
         })
         authStore.setError(null)
-        // Fetch countries if not already loaded
         if (countries.value.length === 0) {
           fetchCountries()
         }
@@ -198,7 +198,7 @@
         <DialogDescription> Enter your information to create a new account. </DialogDescription>
       </DialogHeader>
       <form class="space-y-4" @submit.prevent="onSubmit">
-        <FormField v-slot="{ field }" name="first_name">
+        <FormField v-slot="{ componentField }" name="first_name">
           <FormItem>
             <FormLabel>First Name</FormLabel>
             <FormControl>
@@ -207,13 +207,13 @@
                 type="text"
                 placeholder="Enter your first name"
                 autocomplete="given-name"
-                v-bind="field"
+                v-bind="componentField"
               />
             </FormControl>
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="last_name">
+        <FormField v-slot="{ componentField }" name="last_name">
           <FormItem>
             <FormLabel>Last Name</FormLabel>
             <FormControl>
@@ -222,13 +222,13 @@
                 type="text"
                 placeholder="Enter your last name"
                 autocomplete="family-name"
-                v-bind="field"
+                v-bind="componentField"
               />
             </FormControl>
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="email">
+        <FormField v-slot="{ componentField }" name="email">
           <FormItem>
             <FormLabel>Email</FormLabel>
             <FormControl>
@@ -237,13 +237,13 @@
                 type="email"
                 placeholder="Enter your email"
                 autocomplete="email"
-                v-bind="field"
+                v-bind="componentField"
               />
             </FormControl>
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="company_name">
+        <FormField v-slot="{ componentField }" name="company_name">
           <FormItem>
             <FormLabel>Company Name</FormLabel>
             <FormControl>
@@ -252,7 +252,7 @@
                 type="text"
                 placeholder="Enter your company name"
                 autocomplete="organization"
-                v-bind="field"
+                v-bind="componentField"
               />
             </FormControl>
             <FormMessage />
@@ -280,7 +280,7 @@
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="password">
+        <FormField v-slot="{ componentField }" name="password">
           <FormItem>
             <FormLabel>Password</FormLabel>
             <FormControl>
@@ -289,13 +289,13 @@
                 type="password"
                 placeholder="Create a password"
                 autocomplete="new-password"
-                v-bind="field"
+                v-bind="componentField"
               />
             </FormControl>
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="confirmPassword">
+        <FormField v-slot="{ componentField }" name="confirmPassword">
           <FormItem>
             <FormLabel>Confirm Password</FormLabel>
             <FormControl>
@@ -304,7 +304,7 @@
                 type="password"
                 placeholder="Confirm your password"
                 autocomplete="new-password"
-                v-bind="field"
+                v-bind="componentField"
               />
             </FormControl>
             <FormMessage />
