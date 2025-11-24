@@ -20,6 +20,7 @@
     auth_dialog_title
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import SignUpDialog from '@/components/SignUpDialog.vue'
 
   const props = withDefaults(
     defineProps<{
@@ -42,6 +43,7 @@
 
   // Reactive state
   const isOpen = ref(props.open)
+  const isSignUpDialogOpen = ref(false)
   const credentials = ref({
     email: '',
     password: ''
@@ -78,6 +80,16 @@
 
   const handleCancel = () => {
     isOpen.value = false
+  }
+
+  const handleOpenSignUp = () => {
+    isOpen.value = false
+    isSignUpDialogOpen.value = true
+  }
+
+  const handleSignUpSuccess = () => {
+    isSignUpDialogOpen.value = false
+    emit('success')
   }
 </script>
 
@@ -116,7 +128,7 @@
         <div v-if="authError" class="text-sm text-red-600">
           {{ authError }}
         </div>
-        <DialogFooter>
+        <DialogFooter class="flex-col gap-2 sm:flex-row">
           <Button type="button" variant="default" @click="handleCancel">
             {{ auth_cancel({}, { locale: profileStore.currentLocale }) }}
           </Button>
@@ -127,7 +139,23 @@
             <span v-else>{{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}</span>
           </Button>
         </DialogFooter>
+        <div class="text-center text-sm text-muted-foreground pt-2">
+          Not a user?
+          <Button
+            type="button"
+            variant="link"
+            class="p-0 h-auto font-semibold text-primary underline-offset-4 hover:underline"
+            @click="handleOpenSignUp"
+          >
+            Register now
+          </Button>
+        </div>
       </form>
     </DialogContent>
   </Dialog>
+  <SignUpDialog
+    :open="isSignUpDialogOpen"
+    @update:open="isSignUpDialogOpen = $event"
+    @success="handleSignUpSuccess"
+  />
 </template>

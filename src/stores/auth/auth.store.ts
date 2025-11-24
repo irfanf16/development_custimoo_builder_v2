@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { type InputLogin, type Customer, type OutputLogin } from '@/services/authentication/types'
+import {
+  type InputLogin,
+  type Customer,
+  type OutputLogin,
+  type InputSignup,
+  type OutputSignup
+} from '@/services/authentication/types'
 import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
@@ -360,6 +366,19 @@ export const useAuthStore = defineStore('authStore', () => {
     return output
   }
 
+  async function register(input: InputSignup): Promise<APIResponse<OutputSignup>> {
+    setLoading(true)
+    setError(null)
+    const output = await tryCatchApi(API.authentication.postRegister(input))
+    if (output.success) {
+      await initCustomerAndAccessToken(output.content)
+    } else {
+      setError('Registration error')
+    }
+    setLoading(false)
+    return output
+  }
+
   // ===== RETURN =====
   return {
     // State
@@ -390,6 +409,7 @@ export const useAuthStore = defineStore('authStore', () => {
     // Business Logic
     initCustomerAndAccessToken,
     login,
-    logout
+    logout,
+    register
   }
 })
