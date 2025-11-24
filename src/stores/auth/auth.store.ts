@@ -325,13 +325,32 @@ export const useAuthStore = defineStore('authStore', () => {
     return !!(customer && (jwtToken || encryptedRefreshToken || legacyRefreshToken))
   }
 
+  /**
+   * Clears all authentication-related data from localStorage and sessionStorage
+   * This includes:
+   * - Customer data (localStorage)
+   * - Access token (sessionStorage)
+   * - Refresh token cipher (localStorage)
+   * - Legacy refresh token (localStorage)
+   * - Encryption key (sessionStorage)
+   */
   function clearLocalStorage() {
     if (!hasWindow) return
     const session = window.sessionStorage
+
+    // Clear customer data from localStorage (uses prefix-aware storage)
     storage.removeItem(CUSTOMER_STORAGE_KEY)
+
+    // Clear tokens from sessionStorage (no prefix, stored directly)
     session.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+
+    // Clear encrypted refresh token from localStorage
     storage.removeItem(REFRESH_TOKEN_CIPHER_KEY)
+
+    // Clear legacy plain-text refresh token (if exists)
     storage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+
+    // Clear encryption key from sessionStorage
     session.removeItem(REFRESH_TOKEN_ENC_KEY)
   }
 
@@ -348,6 +367,16 @@ export const useAuthStore = defineStore('authStore', () => {
     }
   }
 
+  /**
+   * Logs out the user by clearing all authentication state
+   *
+   * This performs a complete auth cleanup:
+   * 1. Clears in-memory auth state (customer, tokens, etc.)
+   * 2. Clears auth-related data from localStorage and sessionStorage
+   *
+   * Note: For additional cleanup (e.g., clearing all localStorage or resetting stores),
+   * use the `handleLogout` method from `useSignIn` composable instead.
+   */
   function logout() {
     clearAuth()
     clearLocalStorage()

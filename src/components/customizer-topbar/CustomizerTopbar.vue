@@ -32,11 +32,12 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
-  import SignInButton from '../SignInButton.vue'
+  import SignInButton from '@/components/auth/SignInButton.vue'
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { storeToRefs } from 'pinia'
   import ProfileDialog from '@/components/customizer-profile-section/ProfileDialog.vue'
-  import SignInDialog from '@/components/SignInDialog.vue'
+  import SignInDialog from '@/components/auth/SignInDialog.vue'
+  import { useSignIn } from '@/composables/useSignIn'
   import { ref } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import {
@@ -53,12 +54,12 @@
   const history = useHistoryStore()
   const profileStore = useProfileStore()
   const authStore = useAuthStore()
+  const { openSignInDialog, handleLogout } = useSignIn()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
 
   // Reactive state
   const showProfileDialog = ref(false)
-  const showSignInDialog = ref(false)
   const showResetDialog = ref(false)
 
   // Methods
@@ -96,11 +97,11 @@
   }
 
   function handleSignOut() {
-    authStore.logout()
+    handleLogout()
   }
 
   function handleSignIn() {
-    showSignInDialog.value = true
+    openSignInDialog()
   }
 
   function handleFullscreen() {
@@ -227,7 +228,7 @@
           </DropdownMenuItem>
         </DropdownMenuContent>
         <ProfileDialog :open="showProfileDialog" @update:open="showProfileDialog = $event" />
-        <SignInDialog v-model:open="showSignInDialog" />
+        <SignInDialog />
       </DropdownMenu>
     </ButtonGroup>
     <Dialog v-model:open="showResetDialog">
