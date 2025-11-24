@@ -1,9 +1,13 @@
 // the axios instance and types
 import http from '../api'
-import { type InputLogin, type OutputLogin } from './types'
+import { type InputLogin, type OutputLogin, type InputSignup, type OutputSignup } from './types'
 
 async function postLogin(data: InputLogin) {
   return await http.post<OutputLogin>('customer/login', data)
+}
+
+async function postRegister(data: InputSignup) {
+  return await http.post<OutputSignup>('customer/signup', data)
 }
 
 async function refreshToken(refreshToken: string) {
@@ -19,5 +23,6 @@ async function refreshToken(refreshToken: string) {
 
 export default {
   postLogin,
+  postRegister,
   refreshToken
 }
