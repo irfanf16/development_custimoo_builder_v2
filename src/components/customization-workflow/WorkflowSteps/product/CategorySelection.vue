@@ -29,7 +29,7 @@
     >
       <template #content>
         <div class="flex items-center gap-3">
-          <img v-if="item.image_url" :src="storage_url + item.image_url" class="max-h-6" />
+          <img v-if="item.image_url" :src="storage_url + item.image_url" class="size-6" />
           <component
             :is="getCategoryIcon(item.icon_name)"
             v-else-if="item.icon_name"
