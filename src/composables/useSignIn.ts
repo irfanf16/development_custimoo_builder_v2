@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { useProfileStore } from '@/stores/profile/profile.store'
 import { useLocalStorage } from '@/composables/useLocalStorage'
+import { useCompanyStore } from '@/stores/company/company.store'
 
 // ============================================================================
 // Shared Singleton State - Single source of truth for dialog visibility
@@ -53,7 +54,7 @@ export function useSignIn() {
   const authStore = useAuthStore()
   const profileStore = useProfileStore()
   const { clearAll } = useLocalStorage()
-
+  const companyStore = useCompanyStore()
   const {
     isLoading,
     error: authError,
@@ -68,8 +69,18 @@ export function useSignIn() {
   // ============================================================================
 
   const openSignInDialog = () => {
-    isSignInDialogOpen.value = true
-    resetCredentials(authStore)
+    if (companyStore.company?.platform === 'self') {
+      isSignInDialogOpen.value = true
+      resetCredentials(authStore)
+    } else if (companyStore.loginCode?.type === 'url') {
+      window.location.href = companyStore.loginCode?.action || ''
+    } else if (companyStore.loginCode?.type === 'code') {
+      try {
+        eval(companyStore.loginCode?.action || '')
+      } catch (error) {
+        console.error('Error evaluating login code:', error)
+      }
+    }
   }
 
   const closeSignInDialog = () => {
@@ -131,19 +142,35 @@ export function useSignIn() {
    * handleLogout({ clearAllStorage: true, resetProfileStore: true })
    */
   const handleLogout = (options?: LogoutOptions) => {
-    // Step 1: Close all authentication dialogs
+    const { company } = companyStore
+    const loginCode = companyStore.loginCode
+
+    // Determine platform-specific logout action
+    if (company?.platform === 'self') {
+      authStore.logout()
+    } else if (loginCode?.type === 'url') {
+      window.location.href = loginCode.logout_action || ''
+      return // Redirecting, no further actions needed
+    } else if (loginCode?.type === 'code') {
+      try {
+        eval(loginCode.logout_action || '')
+      } catch (error) {
+        console.error('Error evaluating logout code:', error)
+      }
+    }
+
+    // Close any opened authentication dialogs
     closeAllDialogs()
 
-    // Step 2: Clear auth state and auth-related localStorage
-    // This handles: customer, accessToken, refreshToken, and auth localStorage keys
+    // Perform standard logout operations on the auth store
     authStore.logout()
 
-    // Step 3: Optional - Clear all localStorage (including non-auth data)
+    // Optionally clear all of localStorage
     if (options?.clearAllStorage) {
       clearAll()
     }
 
-    // Step 4: Optional - Reset profile store state
+    // Optionally reset the profile store's state
     if (options?.resetProfileStore) {
       profileStore.$reset()
     }
