@@ -19,6 +19,7 @@
     SelectTrigger,
     SelectValue
   } from '@/components/ui/select'
+  import { ScrollArea } from '@/components/ui/scroll-area'
   import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
   import { useForm } from 'vee-validate'
   import { toTypedSchema } from '@vee-validate/zod'
@@ -192,135 +193,141 @@
 
 <template>
   <Dialog :open="isOpen" @update:open="isOpen = $event">
-    <DialogContent class="sm:max-w-md">
+    <DialogContent class="sm:max-w-md h-full md:h-fit">
       <DialogHeader>
         <DialogTitle>Create Account</DialogTitle>
         <DialogDescription> Enter your information to create a new account. </DialogDescription>
       </DialogHeader>
-      <form class="space-y-4" @submit.prevent="onSubmit">
-        <FormField v-slot="{ componentField }" name="first_name">
-          <FormItem>
-            <FormLabel>First Name</FormLabel>
-            <FormControl>
-              <Input
-                id="first_name"
-                type="text"
-                placeholder="Enter your first name"
-                autocomplete="given-name"
-                v-bind="componentField"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField v-slot="{ componentField }" name="last_name">
-          <FormItem>
-            <FormLabel>Last Name</FormLabel>
-            <FormControl>
-              <Input
-                id="last_name"
-                type="text"
-                placeholder="Enter your last name"
-                autocomplete="family-name"
-                v-bind="componentField"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField v-slot="{ componentField }" name="email">
-          <FormItem>
-            <FormLabel>Email</FormLabel>
-            <FormControl>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                autocomplete="email"
-                v-bind="componentField"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField v-slot="{ componentField }" name="company_name">
-          <FormItem>
-            <FormLabel>Company Name</FormLabel>
-            <FormControl>
-              <Input
-                id="company_name"
-                type="text"
-                placeholder="Enter your company name"
-                autocomplete="organization"
-                v-bind="componentField"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField v-slot="{ field }" name="countryId">
-          <FormItem>
-            <FormLabel>Country</FormLabel>
-            <Select :model-value="field.value" @update:model-value="field.onChange">
+      <ScrollArea class="h-full overflow-y-auto">
+        <form class="space-y-4" @submit.prevent="onSubmit">
+          <FormField v-slot="{ componentField }" name="first_name">
+            <FormItem>
+              <FormLabel>First Name</FormLabel>
               <FormControl>
-                <SelectTrigger id="country" class="w-full" @blur="field.onBlur">
-                  <SelectValue placeholder="Select your country" />
-                </SelectTrigger>
+                <Input
+                  id="first_name"
+                  type="text"
+                  placeholder="Enter your first name"
+                  autocomplete="given-name"
+                  v-bind="componentField"
+                />
               </FormControl>
-              <SelectContent class="max-h-60">
-                <SelectItem
-                  v-for="country in countries"
-                  :key="country.id"
-                  :value="String(country.id)"
-                >
-                  {{ country.name }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField v-slot="{ componentField }" name="password">
-          <FormItem>
-            <FormLabel>Password</FormLabel>
-            <FormControl>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Create a password"
-                autocomplete="new-password"
-                v-bind="componentField"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField v-slot="{ componentField }" name="confirmPassword">
-          <FormItem>
-            <FormLabel>Confirm Password</FormLabel>
-            <FormControl>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                autocomplete="new-password"
-                v-bind="componentField"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <div v-if="authError" class="text-sm text-red-600">
-          {{ authError }}
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="default" @click="handleCancel"> Cancel </Button>
-          <Button type="submit" :disabled="isLoading">
-            <span v-if="isLoading">Creating Account...</span>
-            <span v-else>Create Account</span>
-          </Button>
-        </DialogFooter>
-      </form>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="last_name">
+            <FormItem>
+              <FormLabel>Last Name</FormLabel>
+              <FormControl>
+                <Input
+                  id="last_name"
+                  type="text"
+                  placeholder="Enter your last name"
+                  autocomplete="family-name"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="email">
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  autocomplete="email"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="company_name">
+            <FormItem>
+              <FormLabel>Company Name</FormLabel>
+              <FormControl>
+                <Input
+                  id="company_name"
+                  type="text"
+                  placeholder="Enter your company name"
+                  autocomplete="organization"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ field }" name="countryId">
+            <FormItem>
+              <FormLabel>Country</FormLabel>
+              <Select :model-value="field.value" @update:model-value="field.onChange">
+                <FormControl>
+                  <SelectTrigger id="country" class="w-full" @blur="field.onBlur">
+                    <SelectValue placeholder="Select your country" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent class="max-h-60">
+                  <SelectItem
+                    v-for="country in countries"
+                    :key="country.id"
+                    :value="String(country.id)"
+                  >
+                    {{ country.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="password">
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Create a password"
+                  autocomplete="new-password"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="confirmPassword">
+            <FormItem>
+              <FormLabel>Confirm Password</FormLabel>
+              <FormControl>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  autocomplete="new-password"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <div v-if="authError" class="text-sm text-red-600">
+            {{ authError }}
+          </div>
+          <DialogFooter>
+            <div class="flex flex-row gap-4 md:flex-col md:w-full">
+              <Button class="w-full" type="button" variant="default" @click="handleCancel">
+                Cancel
+              </Button>
+              <Button class="w-full" type="submit" :disabled="isLoading">
+                <span v-if="isLoading">Creating Account...</span>
+                <span v-else>Create Account</span>
+              </Button>
+            </div>
+          </DialogFooter>
+        </form>
+      </ScrollArea>
       <div class="text-center text-xs text-muted-foreground px-6 pb-4">
         By signing up, you agree to our
         <a href="#" class="text-primary hover:underline">Terms of Service</a>
