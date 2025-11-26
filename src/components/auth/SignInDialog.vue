@@ -1,7 +1,4 @@
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
-  import { storeToRefs } from 'pinia'
-  import { useAuthStore } from '@/stores/auth/auth.store'
   import {
     Dialog,
     DialogContent,
@@ -19,90 +16,49 @@
     auth_cancel,
     auth_dialog_title
   } from '@/paraglide/messages'
-  import { useProfileStore } from '@/stores/profile/profile.store'
-  import SignUpDialog from '@/components/SignUpDialog.vue'
-
-  const props = withDefaults(
-    defineProps<{
-      open?: boolean
-    }>(),
-    {
-      open: false
-    }
-  )
+  import { useSignIn } from '@/composables/useSignIn'
+  import SignUpDialog from './SignUpDialog.vue'
 
   const emit = defineEmits<{
-    (e: 'update:open', value: boolean): void
     (e: 'success'): void
   }>()
 
-  const authStore = useAuthStore()
-  const profileStore = useProfileStore()
-
-  const { isLoading, error: authError } = storeToRefs(authStore)
-
-  // Reactive state
-  const isOpen = ref(props.open)
-  const isSignUpDialogOpen = ref(false)
-  const credentials = ref({
-    email: '',
-    password: ''
-  })
-
-  // Watch for prop changes
-  watch(
-    () => props.open,
-    newValue => {
-      isOpen.value = newValue
-      if (newValue) {
-        // Reset form when dialog opens
-        credentials.value = { email: '', password: '' }
-        authStore.setError(null)
-      }
-    }
-  )
-
-  // Watch for internal state changes and emit
-  watch(isOpen, newValue => {
-    emit('update:open', newValue)
-  })
+  const {
+    isSignInDialogOpen,
+    isSignUpDialogOpen,
+    credentials,
+    isLoading,
+    authError,
+    currentLocale,
+    setSignInDialogOpen,
+    handleSignIn,
+    handleCancel,
+    handleOpenSignUp,
+    handleSignUpSuccess: handleSignUpSuccessBase
+  } = useSignIn()
 
   // Methods
-  const handleSignIn = async () => {
-    authStore.setError(null)
-    const result = await authStore.login(credentials.value)
-    if (result.success) {
-      isOpen.value = false
-      credentials.value = { email: '', password: '' }
+  const handleSignInSubmit = async () => {
+    const success = await handleSignIn()
+    if (success) {
       emit('success')
     }
   }
 
-  const handleCancel = () => {
-    isOpen.value = false
-  }
-
-  const handleOpenSignUp = () => {
-    isOpen.value = false
-    isSignUpDialogOpen.value = true
-  }
-
   const handleSignUpSuccess = () => {
-    isSignUpDialogOpen.value = false
+    handleSignUpSuccessBase()
     emit('success')
   }
 </script>
 
 <template>
-  <Dialog :open="isOpen" @update:open="isOpen = $event">
+  <Dialog :open="isSignInDialogOpen" @update:open="setSignInDialogOpen">
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>{{
-          auth_dialog_title({}, { locale: profileStore.currentLocale })
-        }}</DialogTitle>
+        <DialogTitle>{{ auth_dialog_title({}, { locale: currentLocale }) }}</DialogTitle>
         <DialogDescription> Enter your credentials to access your account. </DialogDescription>
       </DialogHeader>
-      <form class="space-y-4" @submit.prevent="handleSignIn">
+      <form class="space-y-4" @submit.prevent="handleSignInSubmit">
         <div class="grid gap-2">
           <Label for="email">Email</Label>
           <Input
@@ -130,13 +86,11 @@
         </div>
         <DialogFooter class="flex-col gap-2 sm:flex-row">
           <Button type="button" variant="default" @click="handleCancel">
-            {{ auth_cancel({}, { locale: profileStore.currentLocale }) }}
+            {{ auth_cancel({}, { locale: currentLocale }) }}
           </Button>
           <Button type="submit" :disabled="isLoading">
-            <span v-if="isLoading">{{
-              auth_signing_in({}, { locale: profileStore.currentLocale })
-            }}</span>
-            <span v-else>{{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}</span>
+            <span v-if="isLoading">{{ auth_signing_in({}, { locale: currentLocale }) }}</span>
+            <span v-else>{{ auth_sign_in({}, { locale: currentLocale }) }}</span>
           </Button>
         </DialogFooter>
         <div class="text-center text-sm text-muted-foreground pt-2">

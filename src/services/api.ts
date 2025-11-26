@@ -8,6 +8,10 @@ const instance = axios.create({
 // Request Interceptor: Check token expiration and refresh if needed
 instance.interceptors.request.use(
   async config => {
+    // set custom subpage url if it is present in the config
+    if (config.headers) {
+      config.headers['subpageurl'] = window.location.pathname
+    }
     // Skip token refresh logic for the refresh token endpoint itself to avoid infinite loop
     const isRefreshTokenEndpoint = config.url?.includes('customer/from/token')
     if (isRefreshTokenEndpoint) {

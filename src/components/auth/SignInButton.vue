@@ -1,30 +1,27 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
-  import { storeToRefs } from 'pinia'
-  import { useAuthStore } from '@/stores/auth/auth.store'
   import { Button } from '@/components/ui/button'
   import type { ButtonVariants } from '@/components/ui/button'
   import { auth_sign_in } from '@/paraglide/messages'
-  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useSignIn } from '@/composables/useSignIn'
   import SignInDialog from './SignInDialog.vue'
-
-  const authStore = useAuthStore()
-  const profileStore = useProfileStore()
 
   const emit = defineEmits<{ (e: 'open-profile'): void }>()
 
   const {
     isAuthenticated: isLoggedIn,
     customer: user,
-    customerInitials: userInitials
-  } = storeToRefs(authStore)
-
-  // Reactive state
-  const showSignInDialog = ref(false)
+    customerInitials: userInitials,
+    currentLocale,
+    openSignInDialog
+  } = useSignIn()
 
   // Methods
   const handleProfileClick = () => {
     emit('open-profile')
+  }
+
+  const handleSignInClick = () => {
+    openSignInDialog()
   }
 
   // Presentation props for reuse across placements (e.g., topbar)
@@ -50,11 +47,11 @@
         :variant="props.variant"
         :size="props.size"
         :class="props.class"
-        @click="showSignInDialog = true"
+        @click="handleSignInClick"
       >
-        {{ auth_sign_in({}, { locale: profileStore.currentLocale }) }}
+        {{ auth_sign_in({}, { locale: currentLocale }) }}
       </Button>
-      <SignInDialog v-model:open="showSignInDialog" />
+      <SignInDialog />
     </template>
 
     <!-- User Menu (when authenticated) -->
