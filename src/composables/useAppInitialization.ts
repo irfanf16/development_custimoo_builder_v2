@@ -10,6 +10,7 @@ import { useCategoryParams } from './useCategoryParams'
 import type { OutputDesignDetails } from '../services/products/types'
 import { useProfileStore } from '@/stores/profile/profile.store'
 import { useLocalStorage } from './useLocalStorage'
+import { useAppStore } from '@/stores/app/app.store'
 
 // ============================================================================
 // Global State Management
@@ -46,7 +47,7 @@ export function useAppInitialization() {
   const wf = useWorkflowStore()
   const storage = useLocalStorage()
   const categoryParamsComposable = useCategoryParams()
-
+  const appStore = useAppStore()
   const handleCompanyContextChange = (
     previousCompanyId: number | null,
     currentCompanyId: number | null,
@@ -100,7 +101,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 1: Load Initial State from localStorage
+  // Phase 2: Load Initial State from localStorage
   // ============================================================================
   // Loads state from localStorage before company data is available.
   // This provides immediate UI feedback, but data will be reloaded with correct
@@ -134,7 +135,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 2: Fetch Essential Data from API
+  // Phase 3: Fetch Essential Data from API
   // ============================================================================
   // Fetches company data, settings, and product categories.
   // Company is fetched first so we can clear stale state if the tenant changed.
@@ -168,7 +169,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 3: Reload State with Correct Prefix
+  // Phase 4: Reload State with Correct Prefix
   // ============================================================================
   // Now that company data is available, reload localStorage data with the
   // correct company-specific prefix to ensure we're using the right keys.
@@ -180,7 +181,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 4: Initialize Localization and Determine Category
+  // Phase 5: Initialize Localization and Determine Category
   // ============================================================================
   // Sets up user locale and determines which category/subcategory to use.
   // Priority: URL params > localStorage > API defaults
@@ -230,7 +231,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 5: Load Product Data
+  // Phase 6: Load Product Data
   // ============================================================================
   // Fetches product previews for the selected category/subcategory.
   const loadProductData = async (
@@ -256,7 +257,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 6A: Restore Existing Customization
+  // Phase 7A: Restore Existing Customization
   // ============================================================================
   // Restores user's saved customization and ensures all related data is loaded.
   // Preserves all user changes while syncing with current API state.
@@ -327,7 +328,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 6B: Create Default Customization
+  // Phase 7B: Create Default Customization
   // ============================================================================
   // Creates a new customization when no saved state exists.
   // Sets up default product, style, and design selections.
@@ -380,7 +381,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 7: Initialize Workflow Effects
+  // Phase 8: Initialize Workflow Effects
   // ============================================================================
   // Sets up reactive watchers for workflow state changes.
   const initializeWorkflowEffects = (): void => {
@@ -413,41 +414,44 @@ export function useAppInitialization() {
     // Create global promise to prevent concurrent initializations
     globalInitializationPromise = (async () => {
       try {
-        // Phase 0: Version check (must be first)
+        // Phase 0: Get app info
+        await appStore.getAppInfo()
+
+        // Phase 1: Version check of package.json
         storage.checkVersion()
 
-        // Phase 1: Load initial state (before company data)
+        // Phase 2: Load initial state (before company data)
         const { productsStore, customizationStore } = await loadInitialStateFromLocalStorage()
 
-        // Phase 2: Fetch company and product data
+        // Phase 3: Fetch company and product data
         await fetchEssentialData(productsStore, customizationStore)
 
         const hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
 
-        // Phase 3: Reload state with correct company prefix
+        // Phase 4: Reload state with correct company prefix
         const hasActiveCustomization = reloadStateWithCorrectPrefix(customizationStore)
 
         if (!hasCategoriesAvailable) {
           syncWorkflowForCategoryAvailability(false)
         }
 
-        // Phase 4: Initialize locale and determine category
+        // Phase 5: Initialize locale and determine category
         const categoryInfo = await initializeLocalizationAndCategory(
           customizationStore,
           productsStore
         )
 
-        // Phase 5: Load product previews
+        // Phase 6: Load product previews
         await loadProductData(productsStore, categoryInfo)
 
-        // Phase 6: Restore or create customization
+        // Phase 7: Restore or create customization
         if (hasActiveCustomization) {
           await restoreExistingCustomization(customizationStore, productsStore)
         } else {
           await createDefaultCustomization(customizationStore, productsStore, categoryInfo)
         }
 
-        // Phase 7: Initialize workflow watchers
+        // Phase 8: Initialize workflow watchers
         initializeWorkflowEffects()
 
         // Mark as complete

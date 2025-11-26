@@ -289,10 +289,24 @@ export const useAuthStore = defineStore('authStore', () => {
     if (!hasWindow) {
       return false
     }
-    const session = window.sessionStorage
+
+    // If the query string url has params jwtToken or adminToken, set them in localStorage
+    const checkForQueryStringParams = () => {
+      const url = new URL(window.location.href)
+      const jwtToken = url.searchParams.get('jwtToken')
+      const adminToken = url.searchParams.get('adminToken')
+      if (jwtToken) {
+        storage.setItemRaw('jwtToken', jwtToken)
+      }
+      if (adminToken) {
+        storage.setItemRaw('jwtToken', adminToken)
+      }
+    }
+
+    checkForQueryStringParams()
 
     const customer = storage.getItem<Customer>(CUSTOMER_STORAGE_KEY)
-    const jwtToken = session.getItem(ACCESS_TOKEN_STORAGE_KEY)
+    const jwtToken = storage.getItemRaw(ACCESS_TOKEN_STORAGE_KEY)
     const encryptedRefreshToken = storage.getItemRaw(REFRESH_TOKEN_CIPHER_KEY)
     const legacyRefreshToken = encryptedRefreshToken
       ? null

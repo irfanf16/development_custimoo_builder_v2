@@ -1,5 +1,8 @@
-import { computed } from 'vue'
-import { useCompanyStore } from '@/stores/company/company.store'
+import { useAppStore } from '@/stores/app/app.store'
+import {
+  CUSTIMOO_APPLICATION_SUBPAGE_URL_KEY,
+  getKeyWithSubPageSuffix
+} from '@/helpers/subPageUrlHelper'
 
 /**
  * App version injected at build time
@@ -11,38 +14,10 @@ const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '
 const VERSION_KEY = '__customizer_version__'
 
 /**
- * Normalize a URL to a key-friendly string
- * Replaces special characters with safe alternatives for use in localStorage keys
- * @param url - The URL to normalize
- * @returns A normalized, key-friendly string
- */
-function normalizeUrlToKey(url: string): string {
-  return (
-    url
-      // Remove protocol (http://, https://)
-      .replace(/^https?:\/\//i, '')
-      // Replace common URL separators with underscores
-      .replace(/\//g, '_')
-      .replace(/:/g, '_')
-      // Replace query string and fragment separators
-      .replace(/\?/g, '_')
-      .replace(/#/g, '_')
-      .replace(/&/g, '_')
-      .replace(/=/g, '_')
-      // Replace other special characters that might cause issues
-      .replace(/[^a-zA-Z0-9_\-]/g, '_')
-      // Remove multiple consecutive underscores
-      .replace(/_+/g, '_')
-      // Remove leading/trailing underscores
-      .replace(/^_+|_+$/g, '')
-  )
-}
-
-/**
- * Composable for managing localStorage with company-specific prefixing and version tracking
+ * Composable for managing localStorage with app-specific prefixing and version tracking
  *
  * Features:
- * - Automatically prefixes keys with company's customizer_page_url if available
+ * - Automatically prefixes keys with app's subpage_url if available
  * - Tracks app version and clears localStorage on version change
  * - Provides type-safe getItem, setItem, removeItem, and clear methods
  *
@@ -54,24 +29,7 @@ function normalizeUrlToKey(url: string): string {
  * ```
  */
 export function useLocalStorage() {
-  const companyStore = useCompanyStore()
-
-  // Get the prefix from company's customizer_page_url
-  const prefix = computed(() => {
-    const url = companyStore.company?.customizer_page_url
-    // Only add prefix if customizer_page_url exists and is not null/undefined
-    if (!url || url.trim() === '') return ''
-    // Normalize the URL to a key-friendly string
-    const normalized = normalizeUrlToKey(url.trim())
-    return normalized ? `${normalized}:` : ''
-  })
-
-  /**
-   * Get the full key with prefix
-   */
-  function getKey(key: string): string {
-    return `${prefix.value}${key}`
-  }
+  const appStore = useAppStore()
 
   /**
    * Check version and clear localStorage if version changed
@@ -102,7 +60,9 @@ export function useLocalStorage() {
     if (typeof window === 'undefined') return null
 
     try {
-      const fullKey = getKey(key)
+      const fullKey = appStore.appInfo?.is_subpage
+        ? getKeyWithSubPageSuffix(key, appStore.appInfo?.suppage_url ?? '')
+        : key
       const item = localStorage.getItem(fullKey)
       if (item === null) return null
       return JSON.parse(item) as T
@@ -121,7 +81,9 @@ export function useLocalStorage() {
     if (typeof window === 'undefined') return
 
     try {
-      const fullKey = getKey(key)
+      const fullKey = appStore.appInfo?.is_subpage
+        ? getKeyWithSubPageSuffix(key, appStore.appInfo?.suppage_url ?? '')
+        : key
       const serialized = JSON.stringify(value)
       localStorage.setItem(fullKey, serialized)
     } catch (e) {
@@ -137,7 +99,9 @@ export function useLocalStorage() {
     if (typeof window === 'undefined') return
 
     try {
-      const fullKey = getKey(key)
+      const fullKey = appStore.appInfo?.is_subpage
+        ? getKeyWithSubPageSuffix(key, appStore.appInfo?.suppage_url ?? '')
+        : key
       localStorage.removeItem(fullKey)
     } catch (e) {
       console.error(`Failed to remove item from localStorage: ${key}`, e)
@@ -152,7 +116,12 @@ export function useLocalStorage() {
     if (typeof window === 'undefined') return
 
     try {
-      const currentPrefix = prefix.value
+      const currentPrefix = appStore.appInfo?.is_subpage
+        ? getKeyWithSubPageSuffix(
+            CUSTIMOO_APPLICATION_SUBPAGE_URL_KEY,
+            appStore.appInfo?.suppage_url ?? ''
+          )
+        : ''
 
       if (!currentPrefix) {
         // No prefix - clear everything
@@ -203,7 +172,9 @@ export function useLocalStorage() {
     if (typeof window === 'undefined') return null
 
     try {
-      const fullKey = getKey(key)
+      const fullKey = appStore.appInfo?.is_subpage
+        ? getKeyWithSubPageSuffix(key, appStore.appInfo?.suppage_url ?? '')
+        : key
       return localStorage.getItem(fullKey)
     } catch (e) {
       console.error(`Failed to get raw item from localStorage: ${key}`, e)
@@ -219,7 +190,9 @@ export function useLocalStorage() {
     if (typeof window === 'undefined') return
 
     try {
-      const fullKey = getKey(key)
+      const fullKey = appStore.appInfo?.is_subpage
+        ? getKeyWithSubPageSuffix(key, appStore.appInfo?.suppage_url ?? '')
+        : key
       localStorage.setItem(fullKey, value)
     } catch (e) {
       console.error(`Failed to set raw item in localStorage: ${key}`, e)
@@ -234,7 +207,6 @@ export function useLocalStorage() {
     clearAll,
     getItemRaw,
     setItemRaw,
-    checkVersion,
-    prefix: computed(() => prefix.value)
+    checkVersion
   }
 }
