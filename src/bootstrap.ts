@@ -5,6 +5,7 @@ import App from './App.vue'
 import '@/icons/flex-flat-categories'
 import { useUIStore } from '@/stores/ui/ui.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
+import { WIDGET_CONTAINER_ID } from './lib/widgetUtils'
 
 // Import CSS styles
 import widgetStyles from './styles.css?inline'
@@ -104,7 +105,7 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
 
   // Create a container element within the shadow root
   const container = document.createElement('div')
-  container.id = 'customizer-widget-container'
+  container.id = WIDGET_CONTAINER_ID
   // Teleport target for UI portals (e.g., tooltips) inside the widget's Shadow DOM
   ;(window as unknown as { __CUSTOMIZER_CONTAINER__?: HTMLElement }).__CUSTOMIZER_CONTAINER__ =
     container

@@ -8,6 +8,7 @@ import { useCompanyStore } from '../company/company.store'
 import { setLocale } from '@/paraglide/runtime'
 import { useAuthStore } from '../auth/auth.store'
 import { useLocalStorage } from '@/composables/useLocalStorage'
+import { WIDGET_CONTAINER_ID } from '@/lib/widgetUtils'
 
 export const useProfileStore = defineStore('profileStore', () => {
   // ===== Dashboard =====
@@ -100,7 +101,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     applyThemeClass(widgetRoot)
 
     // Ensure the top-level widget shell (mount container) stays in sync for utility classes
-    const shellContainer = widgetRoot.closest('#customizer-widget-container')
+    const shellContainer = widgetRoot.closest(`#${WIDGET_CONTAINER_ID}`)
     if (shellContainer && shellContainer !== widgetRoot) {
       applyThemeClass(shellContainer as HTMLElement)
     }
