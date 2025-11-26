@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth/auth.store'
+import { isWidgetMode } from '@/lib/widgetUtils'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -33,7 +34,6 @@ const routes: RouteRecordRaw[] = [
 ]
 
 // Determine router mode based on environment
-const isWidgetMode = () => document.querySelector('customizer-widget') !== null
 const isSPAMode = () => document.getElementById('app') !== null
 
 // Use hash mode for widgets (default), history mode for SPA

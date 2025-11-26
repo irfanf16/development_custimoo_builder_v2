@@ -1,5 +1,5 @@
 /* Widget Styles - All CSS bundled into one file
- * This stylesheet is injected into the Shadow DOM of <customizer-widget>,
+ * This stylesheet is injected into the Shadow DOM of <v-customizer>,
  * so it must be self-contained and define its own tokens.
  *
  * Variable groups:
@@ -409,7 +409,7 @@
 /* Removed .widget-theme blocks (unused) */
 
 /* ===== WIDGET SPECIFIC STYLES ===== */
-customizer-widget {
+v-customizer {
   display: block;
   font-family: var(--font-sans);
   line-height: 1.5;
@@ -426,13 +426,13 @@ customizer-widget {
 }
 
 /* Ensure widget components are properly styled */
-customizer-widget * {
+v-customizer * {
   box-sizing: border-box;
   font-family: var(--font-sans);
 }
 
 /* Container height management */
-#customizer-widget-container {
+#v-customizer-container {
   min-height: 800px; /* Mobile minimum */
   height: 800px; /* Let content determine height */
   display: flex;
@@ -441,7 +441,7 @@ customizer-widget * {
 
 /* Desktop minimum height override */
 @media (min-width: 768px) {
-  #customizer-widget-container {
+  #v-customizer-container {
     min-height: 800px;
     height: 800px;
   }
