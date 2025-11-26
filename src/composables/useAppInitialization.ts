@@ -415,7 +415,7 @@ export function useAppInitialization() {
     globalInitializationPromise = (async () => {
       try {
         // Phase 0: Get app info
-        await appStore.getAppInfo()
+        appStore.loadAppInfoFromGlobalVariable()
 
         // Phase 1: Version check of package.json
         storage.checkVersion()

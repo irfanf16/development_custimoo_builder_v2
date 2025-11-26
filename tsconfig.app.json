@@ -22,5 +22,5 @@
     "checkJs": false
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
-  "exclude": ["src/paraglide/**/*"]
+  "exclude": ["src/paraglide/**/*", "public/**"]
 }
