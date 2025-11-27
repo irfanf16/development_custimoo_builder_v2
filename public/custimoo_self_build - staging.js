@@ -12,12 +12,8 @@ xhttp.onload = function () {
     s.src = `https://builder-v2.custimoo.com/widget.js`
     custimoo_app_info = pageRes
   } else {
-    let build_directory = 'self'
-    let build_url = 'cdn'
-    if (testing_mode && (pageRes.testing_mode == 'true' || pageRes.testing_mode)) {
-      build_directory = 'self_staging'
-      build_url = 'devcdn'
-    }
+    let build_directory = 'self_staging'
+    let build_url = 'devcdn'
     s.src = `https://${build_url}.custimoo.com/${build_directory}/v-customizer.min.js?build=${pageRes.app_version}`
     if (pageRes.is_subpage) {
       let subpage = trimAndreplaceSlashesWithDashes(pageRes.suppage_url)
@@ -27,7 +23,7 @@ xhttp.onload = function () {
 
   document.body.appendChild(s)
 }
-xhttp.open('GET', 'https://api.custimoo.com/api/get_app_version')
+xhttp.open('GET', 'https://devapi.custimoo.com/api/get_app_version')
 xhttp.setRequestHeader('subpageurl', window.location.pathname)
 xhttp.send()
 
