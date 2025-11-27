@@ -29,7 +29,7 @@ xhttp.onload = function () {
 
   document.body.appendChild(s)
 }
-xhttp.open('GET', 'https://api.custimoo.com/api/get_app_version')
+xhttp.open('GET', 'https://devapi.custimoo.com/api/get_app_version')
 xhttp.setRequestHeader('subpageurl', window.location.pathname)
 xhttp.send()
 
