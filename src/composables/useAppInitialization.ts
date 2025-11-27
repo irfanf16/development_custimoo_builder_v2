@@ -414,6 +414,7 @@ export function useAppInitialization() {
     // Create global promise to prevent concurrent initializations
     globalInitializationPromise = (async () => {
       try {
+        // Phase 0: Check if the app has been loaded in an iframe
         // Phase 0: Get app info
         appStore.loadAppInfoFromGlobalVariable()
 
