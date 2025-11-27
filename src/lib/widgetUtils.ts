@@ -31,6 +31,29 @@ export function isWidgetMode(): boolean {
   return document.querySelector(WIDGET_ELEMENT_SELECTOR) !== null
 }
 
+const getWindowObject = () => {
+  try {
+    return window.parent
+  } catch (error) {
+    console.info('Error while getting window object', error)
+    return window
+  }
+}
+
+export const getCustomizerIframe = (): HTMLIFrameElement | null => {
+  const iframes = getWindowObject().document.querySelectorAll('iframe')
+  let customizer_iframe: HTMLIFrameElement | null = null
+  Array.from(iframes).forEach(iframe => {
+    // Narrow type to HTMLIFrameElement
+    if (!(iframe instanceof HTMLIFrameElement)) return
+    const get_customizer = iframe.contentDocument?.querySelector('v-customizer')
+    if (get_customizer) {
+      customizer_iframe = iframe
+    }
+  })
+  return customizer_iframe
+}
+
 /**
  * Widget-specific Tailwind classes
  */

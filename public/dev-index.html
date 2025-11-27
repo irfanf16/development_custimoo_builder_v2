@@ -395,11 +395,17 @@
     </footer>
 
     <!-- Load the widget script -->
-    <script>
+    <script type="module">
       const xhttp = new XMLHttpRequest()
       var custimoo_application_suppage_url = '' // used by customizer v1
       var custimoo_app_info = undefined // used by customizer_v2.js
       let testing_mode = localStorage.getItem('cutimoo_testing_mode')
+      let API_ENDPOINT = 'http://localhost:8000'
+      if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_ENDPOINT) {
+        API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT
+      } else if (window.__ENV?.VITE_API_ENDPOINT) {
+        API_ENDPOINT = window.__ENV.VITE_API_ENDPOINT
+      }
       xhttp.onload = function () {
         let pageRes = JSON.parse(this.response)
         const s = document.createElement('script')
@@ -425,7 +431,7 @@
 
         document.body.appendChild(s)
       }
-      xhttp.open('GET', 'http://localhost:8000/api/get_app_version')
+      xhttp.open('GET', `${API_ENDPOINT}/api/get_app_version`)
       xhttp.setRequestHeader('subpageurl', window.location.pathname)
       xhttp.send()
 
