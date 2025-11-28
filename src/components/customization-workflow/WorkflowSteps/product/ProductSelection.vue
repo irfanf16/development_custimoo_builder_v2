@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, watch, nextTick, onUnmounted } from 'vue'
+  import { computed, onMounted, watch, nextTick, onUnmounted, ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -13,6 +13,7 @@
   import { PRODUCT_TYPE } from './useProductConfig'
   import LazyTwoDScene from '../LazyTwoDScene.vue'
   import { products_product_details, products_product_type_customized } from '@/paraglide/messages'
+  import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -30,7 +31,7 @@
   const { productSearchModel, showCustomizerStockFilter, customizerStockFilterModel } =
     useProductConfig()
   const previews = computed(() => productsStore.productPreviews || [])
-
+  const isDetailsDialogOpen = ref(false)
   // Constants
   const SCROLL_DELAY_MS = 100
 
@@ -192,14 +193,21 @@
           <Button
             variant="default"
             size="sm"
-            class="bg-card"
-            @click="handleSelectProduct(item.productPreview.id)"
+            class="hover:bg-primary"
+            @click.stop="isDetailsDialogOpen = true"
           >
             {{ products_product_details({}, { locale: profileStore.currentLocale }) }}
           </Button>
         </div>
       </div>
     </div>
+    <ProductDetailsDialog :open="isDetailsDialogOpen" @update:open="isDetailsDialogOpen = $event">
+      <template #content>
+        <div>
+          <h1>Product Details</h1>
+        </div>
+      </template>
+    </ProductDetailsDialog>
   </div>
 </template>
 

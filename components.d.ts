@@ -132,6 +132,7 @@ declare module 'vue' {
     PatternSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/patterns/PatternSelection.vue')['default']
     PreferencesTab: typeof import('./src/components/customizer-profile-section/preferences-section/PreferencesTab.vue')['default']
     PriceCard: typeof import('./src/components/customizer-price/PriceCard.vue')['default']
+    ProductDetailsDialog: typeof import('./src/components/customizer/ProductDetailsDialog.vue')['default']
     ProductPreview: typeof import('./src/components/product-preview/ProductPreview.vue')['default']
     ProductPreviewCanvas: typeof import('./src/components/customization-workflow/WorkflowSteps/ProductPreviewCanvas.vue')['default']
     ProductSelection: typeof import('./src/components/customization-workflow/WorkflowSteps/product/ProductSelection.vue')['default']
