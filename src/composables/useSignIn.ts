@@ -169,11 +169,6 @@ export function useSignIn() {
     if (options?.clearAllStorage) {
       clearAll()
     }
-
-    // Optionally reset the profile store's state
-    if (options?.resetProfileStore) {
-      profileStore.$reset()
-    }
   }
 
   return {
