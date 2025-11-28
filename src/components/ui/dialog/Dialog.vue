@@ -11,7 +11,7 @@
 <template>
   <!-- Wrap every dialog in a ConfigProvider so Reka skips the global body scroll lock.
        This keeps modals modal, but allows touch scrolling within our shadow-root widget. -->
-  <ConfigProvider :scroll-body="false">
+  <ConfigProvider>
     <DialogRoot v-bind="forwarded">
       <slot class="bg-background text-foreground" />
     </DialogRoot>
