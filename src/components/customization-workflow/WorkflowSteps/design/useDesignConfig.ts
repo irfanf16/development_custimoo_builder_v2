@@ -9,6 +9,7 @@ import { design_search_placeholder, design_apply_overrides_label } from '@/parag
 const designSearchModel = ref('')
 const applyCustomizationOverrides = ref(false)
 const designCategoriesConfig = ref<DesignCategoriesConfig | undefined>(undefined)
+const selectedDesigns = ref<number[]>([])
 
 export function useDesignConfig() {
   // ===== UTILITIES =====
@@ -36,7 +37,40 @@ export function useDesignConfig() {
     breadcrumbs: buildDesignBreadcrumbs(profileStore.currentLocale)
   }))
 
+  const hasSelectedDesigns = computed<boolean>(() => {
+    return selectedDesigns.value.length > 0
+  })
+
+  const toggleDesignSelection = (designId: number) => {
+    if (selectedDesigns.value.includes(designId)) {
+      selectedDesigns.value = selectedDesigns.value.filter(id => id !== designId)
+    } else {
+      selectedDesigns.value.push(designId)
+    }
+  }
+
   const footerConfig = computed<FooterConfiguration>(() => {
+    console.log('footerConfig hasSelectedDesigns: ', hasSelectedDesigns.value)
+    if (hasSelectedDesigns.value) {
+      return {
+        buttons: [
+          {
+            label: 'Deselect all',
+            variant: 'secondary',
+            onClick: () => {
+              selectedDesigns.value = []
+            }
+          },
+          {
+            label: 'Add to locker',
+            variant: 'primary',
+            onClick: () => {
+              console.log('add to locker: ', selectedDesigns.value)
+            }
+          }
+        ]
+      }
+    }
     return { buttons: [] }
   })
 
@@ -46,6 +80,8 @@ export function useDesignConfig() {
     designSearchModel,
     applyCustomizationOverrides,
     designCategoriesConfig,
+    selectedDesigns,
+    toggleDesignSelection,
     // Computed
     headerConfig,
     footerConfig

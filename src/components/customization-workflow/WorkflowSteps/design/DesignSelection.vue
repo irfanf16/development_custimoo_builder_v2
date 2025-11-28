@@ -23,7 +23,8 @@
   const { isMobile } = storeToRefs(uiStore)
   const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
   const { selectedDesignCategoryId } = storeToRefs(workflowStore)
-  const { designSearchModel, designCategoriesConfig } = useDesignConfig()
+  const { designSearchModel, designCategoriesConfig, selectedDesigns, toggleDesignSelection } =
+    useDesignConfig()
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -136,6 +137,13 @@
           :canvas-class="'rounded-xl'"
         />
       </div>
+      <Checkbox
+        :id="`checkbox-design-${item.id}`"
+        :class="'absolute bottom-2 right-2 size-6'"
+        :model-value="!!selectedDesigns.find(id => id === item.id)"
+        @click.stop
+        @update:model-value="toggleDesignSelection(item.id)"
+      />
     </div>
   </div>
 </template>

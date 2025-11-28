@@ -47,7 +47,7 @@
     if (uiStore.isMobile) {
       return 'h-full w-full'
     }
-    return ['h-full', 'w-[29rem]', isExpanded.value ? 'z-20 max-w-none' : '']
+    return ['h-full max-h-full', 'w-[29rem]', isExpanded.value ? 'z-20 max-w-none' : '']
   })
 
   const cardClasses = computed(() => {
@@ -55,34 +55,25 @@
       return 'justify-start gap-0 overflow-hidden flex flex-col max-h-full'
     }
     const baseClasses =
-      'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col max-h-full'
+      'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col max-h-full transition-width duration-200'
     return [baseClasses, isExpanded.value ? 'w-[75vw]' : 'w-[29rem]']
   })
 
   const scrollAreaMaxHeight = computed(() => {
     if (uiStore.isMobile) {
-      let baseMinus = 7
       if (props.hasFooter) {
-        baseMinus += 3
+        return 'calc(65vh - 10rem)'
       }
-      if (props.headerConfig?.search) {
-        baseMinus += 4
-      }
-      if (props.headerConfig?.helpText?.label) {
-        baseMinus += 3
-      }
-      return `calc(65vh - ${baseMinus}rem)`
+      return 'calc(65vh - 7rem)'
     }
-    return props.hasFooter ? '33rem' : '38rem'
+    return props.hasFooter ? '31rem' : '38rem'
   })
 
   const footerClasses = computed(() => {
     if (uiStore.isMobile) {
-      return ''
+      return 'border-t pt-4'
     }
-    return props.hasFooter
-      ? 'px-4 md:px-6 flex-shrink-0 pt-4 md:pt-6 border-t'
-      : 'px-4 md:px-6 flex-shrink-0 py-4 md:py-6 border-t'
+    return 'px-4 md:px-6 flex-shrink-0 pt-4 md:pt-6 border-t'
   })
 
   /**
@@ -182,7 +173,7 @@
       <!-- Header slot - panels can provide their own header content -->
       <template v-if="$slots.header">
         <CardHeader
-          class="pb-4 pt-0 px-4 md:pb-6 md:px-6 flex flex-row items-center justify-between gap-2 min-h-5 max-h-[18rem]"
+          class="pb-4 pt-0 px-4 md:pb-6 md:px-6 flex flex-row items-center justify-between gap-2"
         >
           <slot name="header" :is-expanded="isExpanded" />
         </CardHeader>
@@ -190,7 +181,7 @@
 
       <CardContent class="h-full p-0 px-0 md:p-0 md:px-0 min-h-0">
         <ScrollArea>
-          <div :style="{ maxHeight: scrollAreaMaxHeight }">
+          <div class="transition-height duration-200" :style="{ maxHeight: scrollAreaMaxHeight }">
             <!-- Content slot for different panel types -->
             <Transition name="panel-slide" mode="out-in" appear>
               <div ref="cardContentRef" :key="props.contentKey" class="overflow-y-auto">
@@ -202,11 +193,13 @@
       </CardContent>
 
       <!-- Footer actions -->
-      <template v-if="$slots.footer">
-        <CardFooter :class="footerClasses">
-          <slot name="footer" :is-expanded="isExpanded" />
-        </CardFooter>
-      </template>
+      <Transition name="fade" mode="out-in" appear>
+        <template v-if="$slots.footer">
+          <CardFooter :class="footerClasses">
+            <slot name="footer" :is-expanded="isExpanded" />
+          </CardFooter>
+        </template>
+      </Transition>
     </Card>
   </div>
 </template>
