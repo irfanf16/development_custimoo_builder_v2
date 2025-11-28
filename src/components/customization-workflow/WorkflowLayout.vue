@@ -223,7 +223,7 @@
         />
       </template>
       <template v-if="footerConfig?.buttons?.length > 0" #footer>
-        <WorkflowFooter :config="footerConfig" />
+        <WorkflowFooter :config="footerConfig" :is-expanded="isExpanded" />
       </template>
 
       <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
