@@ -20,7 +20,7 @@
 
 <template>
   <Dialog :open="props.open" variant="large" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="p-0">
+    <DialogContent variant="large">
       <DialogHeader>
         <DialogTitle>{{
           products_product_details({}, { locale: profileStore.currentLocale })
