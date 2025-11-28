@@ -208,7 +208,12 @@ export const useCompanyStore = defineStore('companyStore', () => {
   const loginCode = computed<LoginCode | null>(() => {
     if (!company.value) return null
     if (!company.value.login_code) return null
-    return JSON.parse(company.value.login_code) as LoginCode
+    try {
+      const parsed = JSON.parse(company.value.login_code) as LoginCode
+      return typeof parsed === 'object' && parsed !== null ? parsed : null
+    } catch {
+      return null
+    }
   })
 
   return {
