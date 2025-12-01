@@ -269,6 +269,52 @@ export const useProductsStore = defineStore('productsStore', () => {
     return result
   }
 
+  async function fetchDesignPreviewsByStyleId(styleId: number) {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.getDesignPreviewsByStyleId(styleId))
+    if (resp.success) {
+      designPreviews.value = resp.content as OutputDesignPreviewFront[]
+    } else {
+      setError('Error getting design previews')
+    }
+    setLoading(false)
+    return resp
+  }
+
+  async function fetchProductDetailsAndDesignsForProductPreview(productId: number) {
+    setLoading(true)
+    setError(null)
+
+    console.log('fetchProductDetailsAndDesignsForProductPreview', productId)
+    const productDetailsPromise = tryCatchApi(API.products.getActiveProductDetails(productId))
+    const designPreviewsByStyleIdPromise = tryCatchApi(
+      API.products.getDesignPreviewsByStyleId(
+        productPreviews.value?.find(preview => preview.productPreview.id === productId)
+          ?.stylePreview.id ?? 0
+      )
+    )
+    const [responseProductDetails, responseDesignPreviewsByStyleId] = await Promise.all([
+      productDetailsPromise,
+      designPreviewsByStyleIdPromise
+    ])
+    if (
+      responseProductDetails.success &&
+      responseProductDetails.content &&
+      responseDesignPreviewsByStyleId.success &&
+      responseDesignPreviewsByStyleId.content
+    ) {
+      return {
+        productDetails: responseProductDetails.content,
+        designDetails: responseDesignPreviewsByStyleId.content
+      }
+    } else {
+      setError('Error getting product details and design previews')
+    }
+    setLoading(false)
+    return null
+  }
+
   const defaultActiveDetails = ref<{
     product: OutputProductDetails | null
     style: OutputStyleDetails | null
@@ -293,19 +339,6 @@ export const useProductsStore = defineStore('productsStore', () => {
       customization.setDesign(designPreview)
       saveCustomizationToLocalStorage()
     }
-  }
-
-  async function fetchDesignPreviewsByStyleId(styleId: number) {
-    setLoading(true)
-    setError(null)
-    const resp = await tryCatchApi(API.products.getDesignPreviewsByStyleId(styleId))
-    if (resp.success) {
-      designPreviews.value = resp.content as OutputDesignPreviewFront[]
-    } else {
-      setError('Error getting design previews')
-    }
-    setLoading(false)
-    return resp
   }
 
   async function fetchDesignDetailsById(designId: number) {
@@ -420,6 +453,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     fetchStylePreviews,
     fetchActiveProductDetails,
     fetchActiveStyleDetails,
+    fetchProductDetailsAndDesignsForProductPreview,
     //fetchProductAddons,
     fetchDesignPreviewsByStyleId,
     fetchDesignDetailsById

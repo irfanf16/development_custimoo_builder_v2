@@ -32,6 +32,7 @@
     useProductConfig()
   const previews = computed(() => productsStore.productPreviews || [])
   const isDetailsDialogOpen = ref(false)
+  const selectedProductIdToPreview = ref<number>(0)
   // Constants
   const SCROLL_DELAY_MS = 100
 
@@ -95,6 +96,11 @@
       console.error('Error selecting product:', error)
       // TODO: Add user-facing error notification
     }
+  }
+
+  function handleOpenDetailsDialog(productId: number) {
+    selectedProductIdToPreview.value = productId
+    isDetailsDialogOpen.value = true
   }
 
   // Search and filtering
@@ -194,19 +200,18 @@
             variant="default"
             size="sm"
             class="hover:bg-primary"
-            @click.stop="isDetailsDialogOpen = true"
+            @click.stop="handleOpenDetailsDialog(item.productPreview.id)"
           >
             {{ products_product_details({}, { locale: profileStore.currentLocale }) }}
           </Button>
         </div>
       </div>
     </div>
-    <ProductDetailsDialog :open="isDetailsDialogOpen" @update:open="isDetailsDialogOpen = $event">
-      <template #content>
-        <div>
-          <h1>Product Details</h1>
-        </div>
-      </template>
+    <ProductDetailsDialog
+      :open="isDetailsDialogOpen"
+      :product-id="selectedProductIdToPreview"
+      @update:open="isDetailsDialogOpen = $event"
+    >
     </ProductDetailsDialog>
   </div>
 </template>
