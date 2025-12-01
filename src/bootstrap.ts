@@ -5,6 +5,7 @@ import App from './App.vue'
 import '@/icons/flex-flat-categories'
 import { useUIStore } from '@/stores/ui/ui.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
+import { useAppStore } from '@/stores/app/app.store'
 import { WIDGET_CONTAINER_ID } from './lib/widgetUtils'
 
 // Import CSS styles
@@ -113,10 +114,13 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   // Initialize Pinia and UI store early to manage viewport state
   const pinia = createPinia()
   const ui = useUIStore(pinia)
+  const appStore = useAppStore(pinia)
+  // Ensure app info is loaded before any store relies on prefixed storage keys
+  appStore.loadAppInfoFromGlobalVariable()
 
   // Load auth state from localStorage on app start
   const authStore = useAuthStore(pinia)
-  void authStore.loadFromLocalStorage()
+  void authStore.ensureHydrated()
 
   // Set container height with responsive minimum heights from the UI store
   const setContainerHeight = () => {

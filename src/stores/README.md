@@ -171,6 +171,7 @@ Manages user authentication state and session.
 
 **Key functions:**
 
+- `ensureHydrated()` - Deduplicated localStorage hydration
 - `loadFromLocalStorage()` / `saveToLocalStorage()` - Persistence
 - `login(credentials)` - Authenticate user
 - `logout()` - Clear authentication state

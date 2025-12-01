@@ -134,7 +134,7 @@ export function useAppInitialization() {
     // Load authentication state
     try {
       const authStore = useAuthStore()
-      await authStore.loadFromLocalStorage()
+      await authStore.ensureHydrated()
     } catch {
       // Store may not be available in rare cases; continue initialization
     }
