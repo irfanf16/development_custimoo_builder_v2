@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import {
   type Company,
   type OutputSettings,
@@ -35,13 +35,6 @@ export interface CompanyLocalization {
   defaultLanguage: string
   datetime: DateTimeConfig
   currency: CurrencyConfig
-}
-
-export type LoginCode = {
-  type: 'url' | 'code'
-  action: string
-  logout_type: 'url' | 'code'
-  logout_action: string
 }
 
 // ---------------- Backend response localization type ----------------
@@ -203,19 +196,6 @@ export const useCompanyStore = defineStore('companyStore', () => {
     return output
   }
 
-  // ---------------- Computed Properties ----------------
-
-  const loginCode = computed<LoginCode | null>(() => {
-    if (!company.value) return null
-    if (!company.value.login_code) return null
-    try {
-      const parsed = JSON.parse(company.value.login_code) as LoginCode
-      return typeof parsed === 'object' && parsed !== null ? parsed : null
-    } catch {
-      return null
-    }
-  })
-
   return {
     company,
     settings,
@@ -229,7 +209,6 @@ export const useCompanyStore = defineStore('companyStore', () => {
     setError,
     reset,
     fetchCompany,
-    fetchSettings,
-    loginCode
+    fetchSettings
   }
 })

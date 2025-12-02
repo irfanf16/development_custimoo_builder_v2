@@ -72,11 +72,11 @@ export function useSignIn() {
     if (companyStore.company?.platform === 'self') {
       isSignInDialogOpen.value = true
       resetCredentials(authStore)
-    } else if (companyStore.loginCode?.type === 'url') {
-      window.location.href = companyStore.loginCode?.action || ''
-    } else if (companyStore.loginCode?.type === 'code') {
+    } else if (companyStore.company?.login_code?.type === 'url') {
+      window.location.href = companyStore.company?.login_code?.action || ''
+    } else if (companyStore.company?.login_code?.type === 'code') {
       try {
-        eval(companyStore.loginCode?.action || '')
+        eval(companyStore.company?.login_code?.action || '')
       } catch (error) {
         console.error('Error evaluating login code:', error)
       }
@@ -143,7 +143,7 @@ export function useSignIn() {
    */
   const handleLogout = (options?: LogoutOptions) => {
     const { company } = companyStore
-    const loginCode = companyStore.loginCode
+    const loginCode = companyStore.company?.login_code
 
     // Determine platform-specific logout action
     if (company?.platform === 'self') {
