@@ -1,9 +1,16 @@
 export type Platform = 'self' | 'shopify' | 'wordpress' | 'cdnExceptLogin'
 
+export type LoginCode = {
+  type: 'url' | 'code'
+  action: string
+  logout_type: 'url' | 'code'
+  logout_action: string
+}
+
 export type Company = {
   id: number
   platform: Platform
-  login_code: string | null
+  login_code: LoginCode | null
   customizer_page_url: string | null
   status: number
   pending_payment: number
