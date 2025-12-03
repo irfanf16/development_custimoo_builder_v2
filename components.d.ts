@@ -116,6 +116,7 @@ declare module 'vue' {
     InputGroupTextarea: typeof import('./src/components/ui/input-group/InputGroupTextarea.vue')['default']
     InputSearchGroup: typeof import('./src/components/ui/input-search-group/InputSearchGroup.vue')['default']
     IOtherImage: typeof import('~icons/other/image')['default']
+    IOtherWarrantyBadgeHighlight: typeof import('~icons/other/warranty-badge-highlight')['default']
     Label: typeof import('./src/components/ui/label/Label.vue')['default']
     LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
     LazyTwoDScene: typeof import('./src/components/customization-workflow/WorkflowSteps/LazyTwoDScene.vue')['default']

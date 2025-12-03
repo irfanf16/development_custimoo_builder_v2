@@ -304,10 +304,15 @@ export const useProductsStore = defineStore('productsStore', () => {
       responseDesignPreviewsByStyleId.success &&
       responseDesignPreviewsByStyleId.content
     ) {
-      return {
-        productDetails: responseProductDetails.content,
-        designDetails: responseDesignPreviewsByStyleId.content
+      const productResponse = responseProductDetails.content
+      const payload = {
+        productDetails: productResponse.productDetails,
+        styleDetails: productResponse.styleDetails,
+        defaultDesignDetails: productResponse.designDetails,
+        designPreviews: responseDesignPreviewsByStyleId.content
       }
+      setLoading(false)
+      return payload
     } else {
       setError('Error getting product details and design previews')
     }
