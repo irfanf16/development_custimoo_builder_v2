@@ -37,6 +37,7 @@
   import { storeToRefs } from 'pinia'
   import ProfileDialog from '@/components/customizer-profile-section/ProfileDialog.vue'
   import SignInDialog from '@/components/auth/SignInDialog.vue'
+  import { CartDialog } from '@/components/cart'
   import { useSignIn } from '@/composables/useSignIn'
   import { ref } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
@@ -54,6 +55,7 @@
   // Reactive state
   const showProfileDialog = ref(false)
   const showResetDialog = ref(false)
+  const showCartDialog = ref(false)
 
   // Methods
   function handleResetCustomization() {
@@ -95,6 +97,10 @@
 
   function handleFullscreen() {
     uiStore.toggleFullscreen()
+  }
+
+  function handleCartClick() {
+    showCartDialog.value = true
   }
 </script>
 
@@ -160,7 +166,7 @@
 
       <!-- Cart Button -->
       <ButtonGroup v-if="!uiStore.isMobile">
-        <Button size="default">
+        <Button size="default" @click="handleCartClick">
           <ShoppingCart class="size-4" />
           <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
@@ -183,7 +189,7 @@
           <DropdownMenuSeparator v-if="isLoggedIn" />
 
           <!-- Mobile only -->
-          <DropdownMenuItem v-if="uiStore.isMobile">
+          <DropdownMenuItem v-if="uiStore.isMobile" @click="handleCartClick">
             <ShoppingCart class="size-4 mr-2" />
             Cart
           </DropdownMenuItem>
@@ -221,6 +227,23 @@
       </DropdownMenu>
     </ButtonGroup>
     <ResetCustomizationDialog v-model:open="showResetDialog" @confirm="confirmResetCustomization" />
+    <CartDialog :open="showCartDialog" @update:open="showCartDialog = $event" />
+    <Dialog v-model:open="showResetDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}?
+          </DialogTitle>
+          <DialogDescription>
+            This will clear all current selections and history. You can't undo this action.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="cancelResetCustomization">Cancel</Button>
+          <Button variant="destructive" @click="confirmResetCustomization">Confirm</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
