@@ -61,6 +61,9 @@
   function handleResetCustomization() {
     showResetDialog.value = true
   }
+  function cancelResetCustomization() {
+    showResetDialog.value = false
+  }
 
   function confirmResetCustomization() {
     customizationStore.clearCustomization()

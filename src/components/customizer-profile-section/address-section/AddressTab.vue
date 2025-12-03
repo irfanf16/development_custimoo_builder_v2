@@ -102,15 +102,20 @@
                 <p class="text-sm font-medium text-muted-foreground">
                   {{ address.company_name ? t.business : t.personal }}
                 </p>
+                <Badge
+                  v-if="store.isDefault(address)"
+                  variant="default"
+                  class="font-normal self-start"
+                >
+                  {{ t.defaultAddress }}
+                </Badge>
+
                 <p class="text-base font-semibold text-foreground">
                   {{
                     address.company_name
                       ? address.company_name
                       : address.first_name + ' ' + address.last_name
                   }}
-                </p>
-                <p v-if="store.isDefault(address)" class="text-sm text-muted-foreground">
-                  {{ t.defaultAddress }}
                 </p>
               </div>
 
