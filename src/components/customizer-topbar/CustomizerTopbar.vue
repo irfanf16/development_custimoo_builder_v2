@@ -126,7 +126,7 @@
           </Button>
         </ButtonGroup>
         <!-- Save Button Group with DropdownMenu -->
-        <DropdownMenu>
+        <DropdownMenu v-if="authStore.isAuthenticated">
           <ButtonGroup>
             <DropdownMenuTrigger as-child>
               <Button size="default">
@@ -160,7 +160,7 @@
         </DropdownMenu>
       </ButtonGroup>
       <!-- Locker Room Button -->
-      <ButtonGroup v-if="!uiStore.isMobile">
+      <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
         <Button size="default">
           <LayoutGrid class="size-4" />
           <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
@@ -168,7 +168,7 @@
       </ButtonGroup>
 
       <!-- Cart Button -->
-      <ButtonGroup v-if="!uiStore.isMobile">
+      <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
         <Button size="default" @click="handleCartClick">
           <ShoppingCart class="size-4" />
           <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
@@ -192,15 +192,18 @@
           <DropdownMenuSeparator v-if="isLoggedIn" />
 
           <!-- Mobile only -->
-          <DropdownMenuItem v-if="uiStore.isMobile" @click="handleCartClick">
+          <DropdownMenuItem
+            v-if="uiStore.isMobile && authStore.isAuthenticated"
+            @click="handleCartClick"
+          >
             <ShoppingCart class="size-4 mr-2" />
-            Cart
+            <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
           </DropdownMenuItem>
-          <DropdownMenuItem v-if="uiStore.isMobile">
+          <DropdownMenuItem v-if="uiStore.isMobile && authStore.isAuthenticated">
             <LayoutGrid class="size-4 mr-2" />
-            Locker Room
+            <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
           </DropdownMenuItem>
-          <DropdownMenuSeparator v-if="uiStore.isMobile" />
+          <DropdownMenuSeparator v-if="uiStore.isMobile && authStore.isAuthenticated" />
 
           <!-- Always visible -->
           <DropdownMenuItem v-if="isLoggedIn" @click="handleUserProfile">
