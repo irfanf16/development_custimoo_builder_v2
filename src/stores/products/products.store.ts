@@ -285,8 +285,6 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchProductDetailsAndDesignsForProductPreview(productId: number) {
     setLoading(true)
     setError(null)
-
-    console.log('fetchProductDetailsAndDesignsForProductPreview', productId)
     const productDetailsPromise = tryCatchApi(API.products.getActiveProductDetails(productId))
     const designPreviewsByStyleIdPromise = tryCatchApi(
       API.products.getDesignPreviewsByStyleId(
