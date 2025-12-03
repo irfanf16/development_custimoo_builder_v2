@@ -1,0 +1,88 @@
+{
+  "products": [
+    {
+      "product_id": 1,
+      "product_name": "2000 - series hockey jersey",
+      "design_id": 43,
+      "quantity": 3,
+      "price": 100,
+      "style": "Diamond",
+      "addons": [
+        {
+          "id": 1,
+          "name": "Fight strap"
+        },
+        {
+          "id": 2,
+          "name": "Sublimated name patch"
+        },
+        {
+          "id": 3,
+          "name": "Double shoulders"
+        }
+      ]
+    },
+    {
+      "product_id": 2,
+      "product_name": "2000 - series hockey jersey",
+      "design_id": 44,
+      "quantity": 1,
+      "price": 100,
+      "style": "Diamond",
+      "addons": [
+        {
+          "id": 1,
+          "name": "Fight strap"
+        },
+        {
+          "id": 2,
+          "name": "Sublimated name patch"
+        },
+        {
+          "id": 3,
+          "name": "Double shoulders"
+        }
+      ]
+    },
+    {
+      "product_id": 3,
+      "product_name": "2000 - series hockey jersey",
+      "design_id": 45,
+      "quantity": 1,
+      "price": 100,
+      "style": "Diamond",
+      "addons": []
+    },
+    {
+      "product_id": 4,
+      "product_name": "2000 - series hockey jersey",
+      "design_id": 46,
+      "quantity": 1,
+      "price": 100,
+      "style": "Diamond",
+      "addons": []
+    },
+    {
+      "product_id": 5,
+      "product_name": "2000 - series hockey jersey",
+      "design_id": 48,
+      "quantity": 1,
+      "price": 100,
+      "style": "Diamond",
+      "addons": [
+        {
+          "id": 1,
+          "name": "Fight strap"
+        },
+        {
+          "id": 2,
+          "name": "Sublimated name patch"
+        },
+        {
+          "id": 3,
+          "name": "Double shoulders"
+        }
+      ]
+    }
+  ]
+}
