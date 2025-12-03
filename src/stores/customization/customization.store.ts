@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type {
   ActiveProductCustomization,
+  APCustomizationRosterEntry,
   OutputAddon,
   OutputColor,
   OutputDesignDetails,
@@ -37,6 +38,11 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (!prodId) return []
     const key = String(prodId)
     return customization.value?.product_custom_texts?.[key] || []
+  })
+
+  const rosterEntries = computed<APCustomizationRosterEntry[]>(() => {
+    if (!customization.value?.roster_detail) return []
+    return customization.value.roster_detail
   })
 
   const ensureTextEntry = (productId: number, index: number, seed?: OutputProductText) => {
@@ -133,6 +139,74 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       }))
       saveToLocalStorage()
     }
+  }
+
+  // ===== ROSTER HELPERS =====
+  function ensureRosterEntries(): APCustomizationRosterEntry[] | null {
+    if (!customization.value) return null
+    if (!Array.isArray(customization.value.roster_detail)) {
+      customization.value.roster_detail = []
+    }
+    return customization.value.roster_detail
+  }
+
+  function normalizeRosterEntry(
+    partial?: Partial<APCustomizationRosterEntry>
+  ): APCustomizationRosterEntry {
+    return {
+      text: partial?.text ?? '',
+      number: partial?.number ?? '',
+      size: partial?.size ?? '',
+      quantity: partial?.quantity ?? 1,
+      information: partial?.information ?? ''
+    }
+  }
+
+  function setRosterEntries(entries: APCustomizationRosterEntry[]) {
+    const bucket = ensureRosterEntries()
+    if (!bucket || !customization.value) return
+    customization.value.roster_detail = entries.map(entry => normalizeRosterEntry(entry))
+    saveToLocalStorage()
+  }
+
+  function addRosterEntry(entry?: Partial<APCustomizationRosterEntry>) {
+    const bucket = ensureRosterEntries()
+    if (!bucket || !customization.value) return
+    customization.value.roster_detail = [...bucket, normalizeRosterEntry(entry)]
+    saveToLocalStorage()
+  }
+
+  function updateRosterEntry(index: number, payload: Partial<APCustomizationRosterEntry>) {
+    const bucket = ensureRosterEntries()
+    if (!bucket || !customization.value) return
+    if (!bucket[index]) return
+    const next = [...bucket]
+    const existing = next[index]!
+    next[index] = {
+      text: payload.text ?? existing.text,
+      number: payload.number ?? existing.number,
+      size: payload.size ?? existing.size,
+      quantity: payload.quantity ?? existing.quantity,
+      information: payload.information ?? existing.information
+    }
+    customization.value.roster_detail = next
+    saveToLocalStorage()
+  }
+
+  function removeRosterEntry(index: number) {
+    const bucket = ensureRosterEntries()
+    if (!bucket || !customization.value) return
+    if (index < 0 || index >= bucket.length) return
+    const next = [...bucket]
+    next.splice(index, 1)
+    customization.value.roster_detail = next
+    saveToLocalStorage()
+  }
+
+  function clearRosterEntries() {
+    if (!customization.value) return
+    customization.value.roster_detail = []
+    saveToLocalStorage()
   }
 
   // ===== PERSISTENCE =====
@@ -465,6 +539,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     activeCategoryId,
     activeSubCategoryId,
     activeProductTexts,
+    rosterEntries,
     // Persistence
     saveToLocalStorage,
     loadFromLocalStorage,
@@ -489,6 +564,11 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     ensureTextEntry,
     upsertTextEntry,
     removeTextEntry,
+    setRosterEntries,
+    addRosterEntry,
+    updateRosterEntry,
+    removeRosterEntry,
+    clearRosterEntries,
     initializeProductTextsFromDetails,
     generateTemporaryTextId
   }

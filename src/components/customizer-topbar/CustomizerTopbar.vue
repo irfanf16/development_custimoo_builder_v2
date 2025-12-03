@@ -42,6 +42,14 @@
   import { ref } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import ResetCustomizationDialog from '@/components/customizer/ResetCustomizationDialog.vue'
+  import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+  } from '@/components/ui/dialog'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()

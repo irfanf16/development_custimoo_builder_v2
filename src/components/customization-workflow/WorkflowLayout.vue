@@ -12,7 +12,6 @@
     ColorSelection,
     PatternSelection,
     RosterEntry,
-    RosterEdit,
     SummaryPanel
   } from '@/components/customization-workflow/WorkflowSteps'
   import TextsEntry from '@/components/customization-workflow/WorkflowSteps/texts/index.vue'
@@ -187,16 +186,7 @@
           <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" />
           <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
           <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" />
-          <RosterEntry
-            v-else-if="
-              workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'list'
-            "
-          />
-          <RosterEdit
-            v-else-if="
-              workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'edit'
-            "
-          />
+          <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" />
           <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" />
         </WorkflowPanel>
       </transition>
@@ -236,12 +226,7 @@
       <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" />
       <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
       <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" ref="currentStepRef" />
-      <RosterEntry
-        v-else-if="workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'list'"
-      />
-      <RosterEdit
-        v-else-if="workflowStore.currentStep === 'roster' && workflowStore.rosterSubStep === 'edit'"
-      />
+      <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" />
       <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" />
     </WorkflowPanel>
   </div>
