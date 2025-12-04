@@ -92,9 +92,9 @@
         <Plus class="size-4" />
         {{ roster_add_player({}, { locale }) }}
       </Button>
-      <div class="flex items-center gap-3 text-xs font-semibold uppercase text-muted-foreground">
+      <div class="flex items-center gap-3 text-sm font-semibold text-muted-foreground">
         <Separator class="flex-1 bg-border" />
-        <span class="tracking-[0.3em]">{{ colors_separator_or({}, { locale }) }}</span>
+        <span class="text-foreground font-medium">{{ colors_separator_or({}, { locale }) }}</span>
         <Separator class="flex-1 bg-border" />
       </div>
       <Button

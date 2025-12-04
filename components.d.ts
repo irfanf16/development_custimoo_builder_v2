@@ -29,6 +29,7 @@ declare module 'vue' {
     IFlexLineTable: typeof import('~icons/flex-line/table')['default']
     IFlexLineTextFile: typeof import('~icons/flex-line/text-file')['default']
     IFlexLineTextStyle: typeof import('~icons/flex-line/text-style')['default']
+    IOtherExcel: typeof import('~icons/other/excel')['default']
     IOtherImage: typeof import('~icons/other/image')['default']
     IOtherWarrantyBadgeHighlight: typeof import('~icons/other/warranty-badge-highlight')['default']
   }

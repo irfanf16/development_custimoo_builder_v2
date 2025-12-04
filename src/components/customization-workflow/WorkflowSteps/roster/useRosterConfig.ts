@@ -7,7 +7,8 @@ import {
   nav_roster,
   roster_reset_action,
   roster_template_button,
-  roster_reset_action_tooltip
+  roster_reset_action_tooltip,
+  roster_description
 } from '@/paraglide/messages'
 import { useRoster } from './useRoster'
 import { Download, Info } from 'lucide-vue-next'
@@ -52,9 +53,14 @@ export function useRosterConfig() {
       }
     }
 
+    const helpText: HeaderConfiguration['helpText'] = {
+      label: roster_description({}, { locale: profileStore.currentLocale })
+    }
+
     return {
       breadcrumbs,
-      actionButton
+      actionButton,
+      helpText
     }
   })
 
