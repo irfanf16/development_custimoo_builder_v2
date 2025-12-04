@@ -66,7 +66,7 @@
     await queuedRender(
       async () => {
         await withCanvasBatch(async () => {
-          const side = workflowStore.activeCanvasSide
+          const side = workflowStore.activeCanvasSide as 'front' | 'back'
           const design = effectiveDesignDetails.value
           const style = effectiveStyleDetails.value
           if (!design || !style) return

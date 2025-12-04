@@ -4,7 +4,6 @@
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useDesignConfig } from './useDesignConfig'
@@ -14,7 +13,6 @@
   import { design_categories_default_label } from '@/paraglide/messages'
 
   const uiStore = useUIStore()
-  const { shouldShowStyles } = useCustomizerMenu()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
