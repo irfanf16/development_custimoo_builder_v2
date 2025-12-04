@@ -25,6 +25,7 @@
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
   const fileInputRef = ref<HTMLInputElement | null>(null)
+  const uploadInputId = `roster-upload-${Math.random().toString(36).slice(2)}`
   const { ensureEditableRoster } = useRoster()
   const {
     isDragging,
@@ -83,29 +84,34 @@
         </div>
         <p class="text-base font-medium">
           {{ logos_empty_drag_drop({}, { locale }) }}
-          <button
-            type="button"
-            class="text-primary underline underline-offset-4"
-            @click.stop.prevent="openFilePicker"
+          <label
+            :for="uploadInputId"
+            class="cursor-pointer text-primary underline underline-offset-4 hover:text-primary/80"
+            @click.stop
           >
             {{ logos_empty_click_to_upload({}, { locale }) }}
-          </button>
+          </label>
         </p>
         <p class="text-sm text-muted-foreground">
           {{ roster_drop_helper({}, { locale }) }}
         </p>
+        <p class="text-xs text-muted-foreground">
+          Columns: <span class="font-semibold">NAME ON PRODUCT</span>,
+          <span class="font-semibold">NUMBER</span>, <span class="font-semibold">SIZE*</span>,
+          <span class="font-semibold">QUANTITY*</span>
+        </p>
         <div v-if="isImporting" class="mt-4 flex justify-center">
           <Spinner class="size-5 text-primary" />
         </div>
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept=".csv,.tsv,text/csv,text/tab-separated-values"
-          class="hidden"
-          @change="handleFileChange"
-        />
       </div>
-
+      <input
+        :id="uploadInputId"
+        ref="fileInputRef"
+        type="file"
+        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        class="hidden"
+        @change="handleFileChange"
+      />
       <p
         v-if="importError"
         class="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"

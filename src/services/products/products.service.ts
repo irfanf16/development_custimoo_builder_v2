@@ -55,6 +55,13 @@ async function getDesignDetailsById(designId: number) {
   return await http.get<OutputDesignDetails>(`product/style/design/${designId}`)
 }
 
+// Download roster template for a product
+async function downloadRosterTemplate(productId: number) {
+  return await http.get<Blob>(`template/download/${productId}`, {
+    responseType: 'blob'
+  })
+}
+
 export default {
   getProductCategories,
   getActiveProductDetails,
@@ -62,5 +69,6 @@ export default {
   getDesignPreviewsByStyleId,
   getStylePreviewsByProduct,
   getActiveStyleDetails,
-  getDesignDetailsById
+  getDesignDetailsById,
+  downloadRosterTemplate
 }

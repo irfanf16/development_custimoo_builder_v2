@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
   import { Button } from '@/components/ui/button'
   import { Separator } from '@/components/ui/separator'
   import { CheckCircle2, Plus, X } from 'lucide-vue-next'
@@ -45,33 +46,35 @@
 <template>
   <div class="flex flex-col gap-4 px-4 py-6 md:px-6">
     <transition name="fade">
-      <div
+      <Alert
         v-if="showInlineMessage"
-        class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-emerald-900"
+        class="relative flex items-start gap-3 rounded-2xl border-primary/20 bg-primary/10"
       >
-        <CheckCircle2 class="mt-0.5 size-5 text-emerald-600" aria-hidden="true" />
-        <div class="flex-1 text-sm">
-          <p class="font-semibold">
-            {{
-              roster_import_success(
-                { count: lastImportSummary?.totalRows ?? playersCount },
-                { locale }
-              )
-            }}
-          </p>
-          <p class="text-emerald-900/80">
-            {{ roster_import_ready({}, { locale }) }}
-          </p>
+        <div class="flex flex-row gap-2">
+          <CheckCircle2 class="size-9 text-primary" aria-hidden="true" />
+          <div class="flex flex-col">
+            <AlertTitle>
+              {{
+                roster_import_success(
+                  { count: lastImportSummary?.totalRows ?? playersCount },
+                  { locale }
+                )
+              }}
+            </AlertTitle>
+            <AlertDescription class="text-muted-foreground">
+              {{ roster_import_ready({}, { locale }) }}
+            </AlertDescription>
+          </div>
         </div>
         <button
           type="button"
-          class="text-emerald-600 transition hover:text-emerald-800"
+          class="absolute right-4 top-4 text-primary transition hover:text-primary/80"
           :aria-label="ui_close({}, { locale })"
           @click="handleDismissInline"
         >
           <X class="size-4" aria-hidden="true" />
         </button>
-      </div>
+      </Alert>
     </transition>
 
     <div v-if="hasEntries" class="space-y-4">

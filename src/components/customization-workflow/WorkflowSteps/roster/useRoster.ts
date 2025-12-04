@@ -3,6 +3,7 @@ import type { APCustomizationRosterEntry } from '@/services/products/types'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+import { API } from '@/services'
 
 type RosterImportSummary = {
   fileName: string
@@ -75,26 +76,32 @@ export function useRoster() {
     lastImportSummary.value = summary
   }
 
-  function downloadTemplate() {
+  async function downloadTemplate() {
     if (typeof window === 'undefined') return
-    const header = ['Name', 'Number', 'Size', 'Quantity']
-    const sizes = availableSizes.value.length > 0 ? availableSizes.value : FALLBACK_SIZES
-    const sampleRows = sizes
-      .slice(0, 3)
-      .map((size, index) => [`Player ${index + 1}`, `${index + 10}`, size, '1'])
-    const csv = [header, ...sampleRows]
-      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
-      .join('\n')
+    const productId = productsStore.activeProductDetails?.id
+    if (!productId) {
+      console.error('No active product found')
+      return
+    }
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = 'custimoo-roster-template.csv'
-    document.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
-    URL.revokeObjectURL(url)
+    try {
+      const response = await API.products.downloadRosterTemplate(productId)
+      if (response.status === 200 && response.data) {
+        const blob = new Blob([response.data], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        })
+        const url = URL.createObjectURL(blob)
+        const anchor = document.createElement('a')
+        anchor.href = url
+        anchor.download = 'custimoo-roster-template.xlsx'
+        document.body.appendChild(anchor)
+        anchor.click()
+        anchor.remove()
+        URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      console.error('Failed to download template:', error)
+    }
   }
 
   return {
