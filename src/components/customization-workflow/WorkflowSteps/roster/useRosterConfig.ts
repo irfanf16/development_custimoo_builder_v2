@@ -10,7 +10,7 @@ import {
   roster_reset_action_tooltip
 } from '@/paraglide/messages'
 import { useRoster } from './useRoster'
-import { Download } from 'lucide-vue-next'
+import { Download, Info } from 'lucide-vue-next'
 
 export function useRosterConfig() {
   const workflowStore = useWorkflowStore()
@@ -41,6 +41,7 @@ export function useRosterConfig() {
     } else if (hasEntries.value) {
       actionButton = {
         label: roster_reset_action({}, { locale: profileStore.currentLocale }),
+        icon: Info,
         callback: resetRoster,
         tooltip: (
           roster_reset_action_tooltip as (

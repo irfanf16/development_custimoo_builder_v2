@@ -12,6 +12,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { design_categories_default_label } from '@/paraglide/messages'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
+  import { Checkbox } from '@/components/ui/checkbox'
   const { shouldShowStyles } = useCustomizerMenu()
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
