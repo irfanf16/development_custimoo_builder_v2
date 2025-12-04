@@ -246,6 +246,7 @@
                   >
                     <LazyTwoDScene
                       :design="design.front_design"
+                      :models="productPreviewDetails?.styleDetails?.front_models"
                       :svg-parts="design.svg_parts"
                       :product-id="previewProductId ?? undefined"
                       :canvas-width="CANVAS_DIMENSION"

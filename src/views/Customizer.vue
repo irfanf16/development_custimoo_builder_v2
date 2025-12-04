@@ -10,13 +10,13 @@
   import { storeToRefs } from 'pinia'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import MobileActionBar from '@/components/customizer-canvas-preview/MobileActionBar.vue'
-
+  import { useProductsStore } from '@/stores/products/products.store'
   const uiStore = useUIStore()
   const { isMobile } = storeToRefs(uiStore)
   const workflowStore = useWorkflowStore()
-
+  const productsStore = useProductsStore()
+  const { activeProductDetails } = storeToRefs(productsStore)
   function handleClick() {
-    console.log('handleClick')
     workflowStore.toggleActiveCanvasSide()
   }
 </script>
@@ -32,6 +32,7 @@
         <div class="flex flex-col">
           <ProductPreview />
           <div
+            v-if="!activeProductDetails?.is_3d_product"
             class="w-fit h-fit mt-[-3.5rem] p-0.5 rounded-2xl backdrop-blur-sm bg-white/20 cursor-pointer self-end z-10"
             @click="handleClick"
           >
@@ -40,8 +41,8 @@
                 <TwoDScene
                   :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
                   :main-preview="true"
-                  :canvas-width="300"
-                  :canvas-height="300"
+                  :canvas-width="600"
+                  :canvas-height="600"
                   canvas-class="rounded-lg transition-opacity duration-300 cursor-pointer"
                 />
               </div>
@@ -70,7 +71,7 @@
             class="flex flex-row w-full h-full justify-center 2xl:justify-start items-center p-[64px]"
           >
             <ProductPreview />
-            <div class="w-0 z-10 self-start ml-[-50px]">
+            <div v-if="!activeProductDetails?.is_3d_product" class="w-0 z-10 self-start ml-[-50px]">
               <div class="absolute">
                 <div
                   id="canvas-controls-container-inner"
@@ -86,8 +87,8 @@
                         <TwoDScene
                           :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
                           :main-preview="true"
-                          :canvas-width="300"
-                          :canvas-height="300"
+                          :canvas-width="600"
+                          :canvas-height="600"
                           canvas-class="w-full h-full object-contain rounded-lg transition-opacity duration-300"
                         />
                       </div>
