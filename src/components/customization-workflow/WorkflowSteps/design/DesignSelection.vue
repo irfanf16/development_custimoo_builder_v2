@@ -11,7 +11,8 @@
   import LazyTwoDScene from '../LazyTwoDScene.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { design_categories_default_label } from '@/paraglide/messages'
-
+  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
+  const { shouldShowStyles } = useCustomizerMenu()
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()

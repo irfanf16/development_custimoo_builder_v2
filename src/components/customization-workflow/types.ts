@@ -1,4 +1,5 @@
 import type { ButtonVariants } from '../ui/button'
+import type { LucideIcon } from 'lucide-vue-next'
 
 export type BreadcrumbItem = { label: string; action?: () => void }
 
@@ -30,7 +31,8 @@ export type HeaderConfiguration = {
   actionButton?: {
     label: string
     tooltip?: string
-    callback: () => void
+    icon?: LucideIcon
+    callback: () => void | Promise<void>
   }
   helpText?: {
     label: string
