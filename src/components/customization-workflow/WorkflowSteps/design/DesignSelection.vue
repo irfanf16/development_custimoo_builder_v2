@@ -132,6 +132,7 @@
       <div>
         <LazyTwoDScene
           :design="item.front_design"
+          :svg-parts="item.svg_parts"
           :canvas-width="isMobile ? 130 : 176"
           :canvas-height="isMobile ? 130 : 176"
           :canvas-class="'rounded-xl'"
