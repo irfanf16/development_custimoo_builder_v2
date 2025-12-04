@@ -43,7 +43,7 @@
 
 <template>
   <Breadcrumb v-if="breadcrumbs && breadcrumbs.length > 0" class="min-w-0 overflow-hidden">
-    <BreadcrumbList class="flex-wrap-nowrap">
+    <BreadcrumbList class="flex-wrap-nowrap!">
       <template v-for="(item, index) in breadcrumbs" :key="index">
         <Transition name="breadcrumb-item" appear>
           <BreadcrumbItem
