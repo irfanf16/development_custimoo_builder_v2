@@ -17,6 +17,7 @@ import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
 import { useCustomizationStore } from '../customization/customization.store'
+import type { CanvasSide } from '../workflow/workflow.store.types'
 export const useProductsStore = defineStore('productsStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
@@ -110,7 +111,7 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function setSvgGroups(
     groups: OutputSvgGroupColor[] | null | undefined,
-    side: 'front' | 'back' = 'front',
+    side: CanvasSide = 'front',
     setInitial = false
   ): void {
     const targetGroups = side === 'front' ? svgGroupsFront : svgGroupsBack
