@@ -87,6 +87,7 @@
         <Tooltip>
           <TooltipTrigger as-child>
             <Button variant="default" size="sm" @click="headerActionButton.callback">
+              <component :is="headerActionButton.icon" class="size-4" />
               {{ headerActionButton.label }}
             </Button>
           </TooltipTrigger>

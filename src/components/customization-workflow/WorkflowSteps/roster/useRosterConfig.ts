@@ -6,9 +6,11 @@ import {
   breadcrumbs_edit,
   nav_roster,
   roster_reset_action,
-  roster_template_button
+  roster_template_button,
+  roster_reset_action_tooltip
 } from '@/paraglide/messages'
 import { useRoster } from './useRoster'
+import { Download } from 'lucide-vue-next'
 
 export function useRosterConfig() {
   const workflowStore = useWorkflowStore()
@@ -33,12 +35,19 @@ export function useRosterConfig() {
     if (workflowStore.rosterSubStep === 'list') {
       actionButton = {
         label: roster_template_button({}, { locale: profileStore.currentLocale }),
+        icon: Download,
         callback: downloadTemplate
       }
     } else if (hasEntries.value) {
       actionButton = {
         label: roster_reset_action({}, { locale: profileStore.currentLocale }),
-        callback: resetRoster
+        callback: resetRoster,
+        tooltip: (
+          roster_reset_action_tooltip as (
+            inputs?: Record<string, never>,
+            options?: { locale?: string }
+          ) => string
+        )({}, { locale: profileStore.currentLocale })
       }
     }
 
