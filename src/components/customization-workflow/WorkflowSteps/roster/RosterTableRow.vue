@@ -66,7 +66,9 @@
 </script>
 
 <template>
-  <div class="grid grid-cols-[20px_minmax(0,1fr)_64px_112px_56px_32px] items-center gap-2 py-2">
+  <div
+    class="grid grid-cols-[16px_86px_44px_96px_40px_32px] md:grid-cols-[16px_minmax(0,1fr)_44px_96px_40px_32px] items-center gap-2 py-2"
+  >
     <button
       type="button"
       class="flex items-center justify-center text-muted-foreground"
@@ -138,4 +140,17 @@
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+  .quantity-input {
+    /* Hide spinner arrows in Firefox */
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .quantity-input::-webkit-outer-spin-button,
+  .quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+</style>

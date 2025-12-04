@@ -44,7 +44,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 px-4 py-6 md:px-6">
+  <div class="flex flex-col gap-4 px-4 pb-4 md:px-6 md:pb-6">
     <transition name="fade">
       <Alert
         v-if="showInlineMessage"
@@ -85,8 +85,8 @@
         @remove="removeRow"
       />
       <Button
-        variant="secondary"
-        class="h-11 w-full justify-center gap-2 rounded-xl border border-border bg-background font-medium"
+        variant="outline"
+        class="w-full justify-center gap-2 font-medium"
         @click="handleAddRow"
       >
         <Plus class="size-4" />
@@ -97,12 +97,7 @@
         <span class="text-foreground font-medium">{{ colors_separator_or({}, { locale }) }}</span>
         <Separator class="flex-1 bg-border" />
       </div>
-      <Button
-        variant="secondary"
-        class="h-11 w-full rounded-xl border border-dashed border-border bg-muted/30"
-        disabled
-        aria-disabled="true"
-      >
+      <Button variant="outline" class="w-full bg-muted/30" disabled aria-disabled="true">
         {{ colors_choose_from_locker({}, { locale }) }}
       </Button>
     </div>

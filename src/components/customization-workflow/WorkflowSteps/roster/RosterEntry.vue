@@ -60,7 +60,7 @@
   <div v-if="rosterSubStep === 'list'" class="flex flex-col gap-6 px-4 pb-4 md:px-6 md:pb-6">
     <div class="space-y-4">
       <div
-        class="rounded-2xl border border-dashed px-6 py-10 text-center transition-all bg-background"
+        class="rounded-2xl border border-dashed px-6 py-10 text-center transition-all bg-background m-0"
         :class="[
           isDragging ? 'border-primary bg-primary/5' : 'border-border',
           isImporting ? 'pointer-events-none opacity-70' : 'cursor-pointer'
@@ -108,20 +108,18 @@
       </p>
     </div>
 
-    <div class="flex flex-col gap-3">
-      <div class="flex items-center gap-3 text-sm font-semibold text-muted-foreground">
-        <Separator class="flex-1 bg-border" />
-        <span class="text-foreground font-medium">{{ colors_separator_or({}, { locale }) }}</span>
-        <Separator class="flex-1 bg-border" />
-      </div>
-      <div class="grid gap-3 sm:grid-cols-2">
-        <Button variant="secondary" :disabled="!isAuthenticated" aria-disabled="true">
-          {{ colors_choose_from_locker({}, { locale }) }}
-        </Button>
-        <Button variant="default" @click="handleManualCreate">
-          {{ roster_manual_create({}, { locale }) }}
-        </Button>
-      </div>
+    <div class="flex items-center gap-3 text-sm font-semibold text-muted-foreground">
+      <Separator class="flex-1 bg-border" />
+      <span class="text-foreground font-medium">{{ colors_separator_or({}, { locale }) }}</span>
+      <Separator class="flex-1 bg-border" />
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <Button variant="secondary" :disabled="!isAuthenticated" aria-disabled="true">
+        {{ colors_choose_from_locker({}, { locale }) }}
+      </Button>
+      <Button variant="default" @click="handleManualCreate">
+        {{ roster_manual_create({}, { locale }) }}
+      </Button>
     </div>
   </div>
   <RosterEdit v-else />

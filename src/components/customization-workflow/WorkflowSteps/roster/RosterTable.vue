@@ -65,17 +65,17 @@
 <template>
   <div class="flex flex-col gap-1">
     <div
-      class="grid grid-cols-[20px_minmax(0,1fr)_64px_112px_56px_32px] items-center gap-3 px-4 py-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground"
+      class="grid grid-cols-[16px_86px_44px_96px_40px_16px] md:grid-cols-[16px_minmax(0,1fr)_44px_96px_40px_32px] items-center gap-2 text-xs font-medium text-muted-foreground"
     >
       <span aria-hidden="true" class="justify-self-center" />
       <span>{{ roster_table_name({}, { locale }) }}</span>
-      <span class="text-center">{{ roster_table_number({}, { locale }) }}</span>
-      <span class="text-center">{{ roster_table_size({}, { locale }) }}</span>
-      <span class="text-right">{{ roster_table_quantity({}, { locale }) }}</span>
+      <span class="text-left">{{ roster_table_number({}, { locale }) }}</span>
+      <span class="text-left">{{ roster_table_size({}, { locale }) }}</span>
+      <span class="text-left">{{ roster_table_quantity({}, { locale }) }}</span>
       <span aria-hidden="true" class="justify-self-center" />
     </div>
     <ScrollArea class="max-h-[420px]">
-      <div class="flex flex-col gap-1 px-1 pb-2">
+      <div class="flex flex-col gap-1">
         <RosterTableRow
           v-for="(entry, index) in entries"
           :key="`roster-row-${index}`"
