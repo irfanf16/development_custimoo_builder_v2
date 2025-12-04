@@ -13,7 +13,11 @@
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
   import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
   import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-  import { Canvas, FabricImage, type FabricObject } from 'fabric'
+  import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+  import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+  import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
+  import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
+  import { Canvas, FabricImage, Group, type FabricObject } from 'fabric'
   import { useSceneCommon } from '@/composables/scene'
   import { useSvgGroups } from '@/composables/scene'
   import { useColorCustomization } from '@/composables/scene'
@@ -187,6 +191,9 @@
   const originalCameraPosition = shallowRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0))
   const outerMaterial = shallowRef<THREE.MeshPhysicalMaterial | null>(null)
   const canvasRenderHandler = ref<(() => void) | null>(null)
+  const composer = shallowRef<EffectComposer | null>(null)
+  const renderPass = shallowRef<RenderPass | null>(null)
+  const smaaPass = shallowRef<SMAAPass | null>(null)
 
   // ===== LIFECYCLE =====
   onMounted(() => {
@@ -198,6 +205,119 @@
   })
 
   // ===== UTILITIES =====
+  /**
+   * Clone fabric objects
+   */
+  async function cloneFabricObjects(objects: FabricObject[]): Promise<FabricObject[]> {
+    return await Promise.all(objects.map(o => o.clone()))
+  }
+
+  /**
+   * Find the most left and top elements in a design group
+   * Adapted from old ThreeDScene.vue
+   */
+  function findMostLeftAndTopElements(design: Group): { maxLeft: number; maxTop: number } {
+    if (!design || !design._objects) {
+      return { maxLeft: 0, maxTop: 0 }
+    }
+
+    let maxLeft = Infinity
+    let maxTop = Infinity
+
+    design._objects.forEach((obj: FabricObject) => {
+      const left = obj.left ?? 0
+      const top = obj.top ?? 0
+
+      if (left < maxLeft) {
+        maxLeft = left
+      }
+      if (top < maxTop) {
+        maxTop = top
+      }
+    })
+
+    return {
+      maxLeft: maxLeft === Infinity ? 0 : maxLeft,
+      maxTop: maxTop === Infinity ? 0 : maxTop
+    }
+  }
+
+  /**
+   * Apply anchor differences to balance the view
+   * Adapted from old ThreeDScene.vue
+   */
+  async function applyAnchorDifferences(design: Group): Promise<void> {
+    if (!canvas.value) return
+
+    // Find all objects with ID containing 'anchor' and group them
+    const anchorObjects = design._objects?.filter(obj => {
+      const objWithId = obj as FabricObject & { id?: string }
+      return objWithId.id?.toLowerCase().includes('anchor')
+    }) as FabricImage[]
+
+    if (anchorObjects && anchorObjects.length > 0) {
+      const anchorGroup = new Group(
+        await cloneFabricObjects(anchorObjects as unknown as FabricObject[]),
+        {
+          hasControls: false,
+          selectable: false,
+          evented: false,
+          lockMovementX: true,
+          lockMovementY: true,
+          flipY: true
+        }
+      )
+
+      // Scale the anchor group to match the canvas resolution
+      anchorGroup.scaleToHeight(props.canvasResolution)
+      anchorGroup.set({
+        left: 0x0,
+        top: 0x0
+      })
+      anchorGroup.setCoords()
+
+      // Apply the anchor group's scale to the design (matching old codebase)
+      design
+        .set({
+          scaleX: anchorGroup.scaleX,
+          scaleY: anchorGroup.scaleY
+        })
+        .setCoords()
+
+      // Get the most left and top elements AFTER scaling the design
+      const { maxLeft, maxTop } = findMostLeftAndTopElements(design)
+      let diffX = 0
+      let diffY = 0
+      const anchorLeft = anchorObjects[0]?.left ?? 0
+      const anchorTop = anchorObjects[0]?.top ?? 0
+
+      // Calculate difference ensuring maxLeft/maxTop is treated as the smaller number
+      if (maxLeft < 0 && anchorLeft < 0) {
+        diffX = Math.abs(maxLeft - anchorLeft) * (anchorGroup.scaleX ?? 1)
+      } else {
+        diffX = Math.abs(anchorLeft - maxLeft) * (anchorGroup.scaleX ?? 1)
+      }
+
+      if (maxTop < 0 && anchorTop < 0) {
+        diffY = Math.abs(maxTop - anchorTop) * (anchorGroup.scaleY ?? 1)
+      } else {
+        diffY = Math.abs(anchorTop - maxTop) * (anchorGroup.scaleY ?? 1)
+      }
+
+      // Adjust the design position to center it relative to the anchor
+      const currentLeft = design.left ?? 0
+      const currentTop = design.top ?? 0
+      const designAndCanvasHeightDiff = design.getScaledHeight() - props.canvasResolution
+
+      design
+        .set({
+          left: currentLeft - diffX,
+          top: currentTop - (designAndCanvasHeightDiff - diffY)
+        })
+        .setCoords()
+    }
+  }
+
   function cleanup() {
     // Cancel animation
     if (animationId.value !== null) {
@@ -337,6 +457,9 @@
     // Load model and design
     loadScene()
 
+    // Initialize shader passes (will be called again in loadScene after model loads)
+    addShaderPasses()
+
     // Start animation
     animate()
   }
@@ -426,7 +549,13 @@
             // Design is automatically stored in design ref from useSceneCommon
             // SVG groups are automatically extracted if it's an SVG design
             // Customization is automatically applied if colorCustomization is provided
-            // Add any ThreeDScene-specific post-load operations here if needed
+            // Apply anchor differences to balance the view
+            if (designObject.value && designObject.value instanceof Group) {
+              await applyAnchorDifferences(designObject.value)
+              if (canvas.value) {
+                canvas.value.requestRenderAll()
+              }
+            }
           }
         })
       ])
@@ -714,6 +843,96 @@
     })
   }
 
+  // ===== SHADER PASSES =====
+  /**
+   * Add shader passes for post-processing (brightness, contrast, saturation, SMAA)
+   * Adapted from old ThreeDScene.vue
+   */
+  function addShaderPasses(
+    activeCamera?: THREE.OrthographicCamera | THREE.PerspectiveCamera
+  ): void {
+    if (!renderer.value || !scene.value) return
+
+    const cam = activeCamera || camera.value
+    if (!cam) return
+
+    if (!composer.value) {
+      composer.value = new EffectComposer(renderer.value)
+      renderPass.value = new RenderPass(scene.value, cam)
+      composer.value.addPass(renderPass.value)
+
+      // SMAAPass constructor - in newer Three.js versions it takes no arguments
+      smaaPass.value = new SMAAPass()
+
+      const BrightnessContrastShader = {
+        uniforms: {
+          tDiffuse: { value: null },
+          brightness: { value: 0 },
+          contrast: { value: 0 },
+          saturation: { value: 0 }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          precision mediump float;
+
+          uniform sampler2D tDiffuse;
+          uniform float brightness;
+          uniform float contrast;
+          uniform float saturation;
+          varying vec2 vUv;
+
+          vec3 applySaturation(vec3 color, float sat) {
+            float gray = dot(color, vec3(0.2126, 0.7152, 0.0722));
+            return mix(vec3(gray), color, 1.0 + sat);
+          }
+
+          void main() {
+            vec4 color = texture2D(tDiffuse, vUv);
+
+            color.rgb += brightness;
+
+            if (contrast > 0.0) {
+              color.rgb = (color.rgb - 0.5) / (1.0 - contrast) + 0.5;
+            } else {
+              color.rgb = (color.rgb - 0.5) * (1.0 + contrast) + 0.5;
+            }
+
+            color.rgb = applySaturation(color.rgb, saturation);
+
+            gl_FragColor = color;
+          }
+        `
+      }
+
+      const brightnessContrastPass = new ShaderPass(BrightnessContrastShader)
+      const uniforms = brightnessContrastPass.uniforms as
+        | Record<string, { value: number }>
+        | undefined
+      if (uniforms && uniforms['brightness'] && uniforms['contrast'] && uniforms['saturation']) {
+        // Adjust brightness to make it lighter - increase from original -0.05
+        // Positive values make it lighter, negative values make it darker
+        uniforms['brightness'].value = 0.05 // Increased to make it lighter than original
+        uniforms['contrast'].value = 0.3
+        uniforms['saturation'].value = -0.12
+      }
+      composer.value.addPass(brightnessContrastPass)
+      if (smaaPass.value) {
+        composer.value.addPass(smaaPass.value)
+      }
+    } else {
+      // Ensure the RenderPass uses the active camera when switching views
+      if (renderPass.value && renderPass.value.camera !== cam) {
+        renderPass.value.camera = cam
+      }
+    }
+  }
+
   // ===== ANIMATION =====
   function animate() {
     if (!renderer.value || !scene.value || !camera.value || !controls.value) return
@@ -723,7 +942,18 @@
     if (texture.value) {
       texture.value.needsUpdate = true
     }
-    renderer.value.render(scene.value, camera.value)
+
+    // Use composer for rendering if available (with shader passes)
+    if (composer.value) {
+      // Ensure default perspective camera is used in the main loop
+      if (renderPass.value && renderPass.value.camera !== camera.value) {
+        renderPass.value.camera = camera.value
+      }
+      composer.value.render()
+    } else {
+      // Fallback to direct renderer if composer not initialized
+      renderer.value.render(scene.value, camera.value)
+    }
   }
 
   // ===== WATCHERS =====
@@ -749,7 +979,13 @@
               // Design is automatically stored in design ref from useSceneCommon
               // SVG groups are automatically extracted if it's an SVG design
               // Customization is automatically applied if colorCustomization is provided
-              // Add any ThreeDScene-specific post-load operations here if needed
+              // Apply anchor differences to balance the view
+              if (designObject.value && designObject.value instanceof Group) {
+                await applyAnchorDifferences(designObject.value)
+                if (canvas.value) {
+                  canvas.value.requestRenderAll()
+                }
+              }
             }
           })
 

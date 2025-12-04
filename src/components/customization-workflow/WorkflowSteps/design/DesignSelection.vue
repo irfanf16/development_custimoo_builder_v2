@@ -11,8 +11,6 @@
   import LazyTwoDScene from '../LazyTwoDScene.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { design_categories_default_label } from '@/paraglide/messages'
-  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
-  const { shouldShowStyles } = useCustomizerMenu()
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
@@ -59,14 +57,14 @@
   async function selectDesign(item: import('@/services/products/types').OutputDesignPreviewFront) {
     productsStore.applyDesignPreview(item)
     // Scroll to selected design with smooth animation
-    setTimeout(() => {
-      emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
-    }, 100)
-    if (shouldShowStyles.value) {
-      workflowStore.setActiveStep('styles')
-    } else {
-      workflowStore.setActiveStep('logos')
-    }
+    // setTimeout(() => {
+    //   emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
+    // }, 100)
+    // if (shouldShowStyles.value) {
+    //   workflowStore.setActiveStep('styles')
+    // } else {
+    //   workflowStore.setActiveStep('logos')
+    // }
   }
 
   const filteredPreviews = computed(() => {
