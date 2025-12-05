@@ -11,6 +11,7 @@
   import LazyTwoDScene from '../LazyTwoDScene.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { design_categories_default_label } from '@/paraglide/messages'
+  import { Checkbox } from '@/components/ui/checkbox'
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
