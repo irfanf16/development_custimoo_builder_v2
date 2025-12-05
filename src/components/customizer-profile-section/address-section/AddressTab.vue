@@ -14,6 +14,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import Card from '@/components/ui/card/Card.vue'
   import CardContent from '@/components/ui/card/CardContent.vue'
+  import Badge from '@/components/ui/badge/Badge.vue'
   import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
   import { m as messages } from '@/paraglide/messages'
   import { useUIStore } from '@/stores/ui/ui.store'
