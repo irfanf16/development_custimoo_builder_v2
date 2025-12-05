@@ -513,3 +513,12 @@ v-customizer * {
  * - animate-accordion-down
  * - animate-accordion-up
  */
+
+#three-container {
+  position: relative;
+}
+
+#three-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}

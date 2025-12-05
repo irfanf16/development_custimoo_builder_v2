@@ -72,8 +72,8 @@
 
   const props = withDefaults(defineProps<Props>(), {
     productId: undefined,
-    containerWidth: 512,
-    containerHeight: 512,
+    containerWidth: 700,
+    containerHeight: 700,
     canvasResolution: 2048,
     mainCanvasResolution: 2048,
     mainPreview: false,
@@ -408,7 +408,11 @@
     scene.value = new THREE.Scene()
 
     // Create camera
-    camera.value = new THREE.PerspectiveCamera(20, 1, 0.25, 10)
+    const width = props.containerWidth
+    const height = props.containerHeight
+
+    camera.value = new THREE.PerspectiveCamera(20, width / height, 0.25, 10)
+    // camera.value = new THREE.PerspectiveCamera(20, 1, 0.25, 10)
     camera.value.position.set(0, 0.5, 11.5)
 
     // Create renderer
@@ -418,7 +422,7 @@
       logarithmicDepthBuffer: true
     })
     renderer.value.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.value.setSize(props.containerWidth, props.containerHeight)
+    renderer.value.setSize(width, height)
     renderer.value.setPixelRatio(window.devicePixelRatio)
     rendererEl.value.appendChild(renderer.value.domElement)
 
@@ -1224,7 +1228,12 @@
 <template>
   <div class="relative">
     <!-- Three.js Renderer Container -->
-    <div ref="rendererEl" class="w-full h-full" />
+    <div
+      id="three-container"
+      ref="rendererEl"
+      class="w-full h-full"
+      :style="`max-width: ${containerWidth}px; max-height: ${containerHeight}px;`"
+    />
 
     <!-- Hidden Fabric.js Canvas -->
     <canvas ref="canvasEl" class="hidden" />
@@ -1232,5 +1241,12 @@
 </template>
 
 <style scoped>
+  #three-container {
+    position: relative;
+  }
+  #three-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
   /* Component-specific styles */
 </style>
