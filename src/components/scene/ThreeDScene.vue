@@ -921,7 +921,7 @@
       if (uniforms && uniforms['brightness'] && uniforms['contrast'] && uniforms['saturation']) {
         // Adjust brightness to make it lighter - increase from original -0.05
         // Positive values make it lighter, negative values make it darker
-        uniforms['brightness'].value = 0.05 // Increased to make it lighter than original
+        uniforms['brightness'].value = -0.05
         uniforms['contrast'].value = 0.3
         uniforms['saturation'].value = -0.12
       }
