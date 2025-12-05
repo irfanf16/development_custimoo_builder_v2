@@ -1,21 +1,11 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-  import { Button } from '@/components/ui/button'
-  import { Separator } from '@/components/ui/separator'
-  import { CheckCircle2, Plus, X } from 'lucide-vue-next'
+  import { CheckCircle2, X } from 'lucide-vue-next'
   import RosterTable from './RosterTable.vue'
   import { useRoster } from './useRoster'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import {
-    colors_choose_from_locker,
-    colors_separator_or,
-    roster_add_player,
-    roster_empty_state,
-    roster_import_ready,
-    roster_import_success,
-    ui_close
-  } from '@/paraglide/messages'
+  import { roster_import_ready, roster_import_success, ui_close } from '@/paraglide/messages'
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
@@ -23,7 +13,6 @@
   const {
     rosterEntries,
     availableSizes,
-    addEmptyRow,
     removeRow,
     updateRow,
     hasEntries,
@@ -33,10 +22,6 @@
 
   const playersCount = computed(() => rosterEntries.value.length)
   const showInlineMessage = computed(() => lastImportSummary.value != null)
-
-  function handleAddRow() {
-    addEmptyRow()
-  }
 
   function handleDismissInline() {
     setLastImportSummary(null)
@@ -84,38 +69,14 @@
         @update:entry="updateRow"
         @remove="removeRow"
       />
-      <Button
-        variant="outline"
-        class="w-full justify-center gap-2 font-medium"
-        @click="handleAddRow"
-      >
-        <Plus class="size-4" />
-        {{ roster_add_player({}, { locale }) }}
-      </Button>
-      <div class="flex items-center gap-3 text-sm font-semibold text-muted-foreground">
+      <!-- <div class="flex items-center gap-3 text-sm font-semibold text-muted-foreground">
         <Separator class="flex-1 bg-border" />
         <span class="text-foreground font-medium">{{ colors_separator_or({}, { locale }) }}</span>
         <Separator class="flex-1 bg-border" />
       </div>
       <Button variant="outline" class="w-full bg-muted/30" disabled aria-disabled="true">
         {{ colors_choose_from_locker({}, { locale }) }}
-      </Button>
-    </div>
-
-    <div
-      v-else
-      class="rounded-2xl border border-dashed border-border/80 px-4 py-8 text-center text-sm text-muted-foreground"
-    >
-      {{ roster_empty_state({}, { locale }) }}
-      <Separator class="my-4 bg-border" />
-      <Button
-        variant="secondary"
-        class="h-11 w-full justify-center gap-2 rounded-xl border border-border bg-background"
-        @click="handleAddRow"
-      >
-        <Plus class="size-4" />
-        {{ roster_add_player({}, { locale }) }}
-      </Button>
+      </Button> -->
     </div>
   </div>
 </template>

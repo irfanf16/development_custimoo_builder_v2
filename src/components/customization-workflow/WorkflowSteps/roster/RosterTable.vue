@@ -2,7 +2,6 @@
   import { computed } from 'vue'
   import type { APCustomizationRosterEntry } from '@/services/products/types'
   import RosterTableRow from './RosterTableRow.vue'
-  import { ScrollArea } from '@/components/ui/scroll-area'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
     roster_table_name,
@@ -74,20 +73,18 @@
       <span class="text-left">{{ roster_table_quantity({}, { locale }) }}</span>
       <span aria-hidden="true" class="justify-self-center" />
     </div>
-    <ScrollArea class="max-h-[420px]">
-      <div class="flex flex-col gap-1">
-        <RosterTableRow
-          v-for="(entry, index) in entries"
-          :key="`roster-row-${index}`"
-          :entry="entry"
-          :index="index"
-          :size-options="sizeOptions"
-          @update="handleUpdate"
-          @remove="handleRemove"
-          @cell-keydown="handleCellKeydown"
-        />
-      </div>
-    </ScrollArea>
+    <div class="flex flex-col gap-1">
+      <RosterTableRow
+        v-for="(entry, index) in entries"
+        :key="`roster-row-${index}`"
+        :entry="entry"
+        :index="index"
+        :size-options="sizeOptions"
+        @update="handleUpdate"
+        @remove="handleRemove"
+        @cell-keydown="handleCellKeydown"
+      />
+    </div>
   </div>
 </template>
 

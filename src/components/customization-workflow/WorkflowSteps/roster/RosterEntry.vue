@@ -9,6 +9,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useAuthStore } from '@/stores/auth/auth.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import RosterEdit from './RosterEdit.vue'
   import {
     colors_choose_from_locker,
@@ -18,16 +19,21 @@
     roster_drop_helper,
     roster_manual_create
   } from '@/paraglide/messages'
+  import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
+  import { useRosterConfig } from './useRosterConfig'
 
   const workflowStore = useWorkflowStore()
   const authStore = useAuthStore()
   const { isAuthenticated } = storeToRefs(authStore)
+  const uiStore = useUIStore()
+  const { isMobile } = storeToRefs(uiStore)
   const { rosterSubStep } = storeToRefs(workflowStore)
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
   const fileInputRef = ref<HTMLInputElement | null>(null)
   const uploadInputId = `roster-upload-${Math.random().toString(36).slice(2)}`
   const { ensureEditableRoster } = useRoster()
+  const { footerConfig } = useRosterConfig()
   const {
     isDragging,
     importError,
@@ -54,6 +60,13 @@
     }
     if (target) target.value = ''
   }
+
+  function handleUpdateOpenMobileEditRoster(open: boolean) {
+    if (!open) {
+      workflowStore.setRosterSubStep('list')
+    }
+  }
+  const isMobileEditRosterOpen = ref(rosterSubStep.value === 'edit' && isMobile.value)
 </script>
 
 <template>
@@ -122,7 +135,29 @@
       </Button>
     </div>
   </div>
-  <RosterEdit v-else />
+  <RosterEdit v-else-if="rosterSubStep === 'edit' && !isMobile" />
+  <Dialog
+    v-else
+    :open="isMobileEditRosterOpen"
+    variant="large"
+    @update:open="handleUpdateOpenMobileEditRoster"
+  >
+    <DialogContent variant="large" class="p-0 flex flex-col h-full">
+      <h1 class="text-lg font-semibold leading-none p-4 bg-background w-full">Roster</h1>
+      <RosterEdit class="flex flex-col h-full pt-7 overflow-y-scroll" />
+      <DialogFooter class="p-4 border-t">
+        <Button
+          v-for="button in footerConfig.buttons"
+          :key="button.label"
+          :variant="button.variant"
+          :disabled="button.disabled ?? false"
+          class="flex-1"
+          @click="button.onClick"
+          ><component :is="button.icon" class="size-4" /> <span>{{ button.label }}</span></Button
+        >
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <style scoped></style>

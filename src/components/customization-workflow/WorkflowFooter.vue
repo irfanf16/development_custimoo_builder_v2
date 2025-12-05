@@ -2,7 +2,6 @@
   import { Button } from '@/components/ui/button'
   import type { FooterButton } from './types'
   import { useUIStore } from '@/stores/ui/ui.store'
-
   const uiStore = useUIStore()
   const props = defineProps<{ config?: { buttons?: FooterButton[] }; isExpanded?: boolean }>()
 </script>
@@ -21,8 +20,10 @@
         :size="uiStore.isMobile ? 'sm' : 'default'"
         class="flex-1"
         @click="button.onClick"
-        >{{ button.label }}</Button
       >
+        <component :is="button.icon" class="size-4" />
+        <span>{{ button.label }}</span>
+      </Button>
     </div>
   </div>
 </template>

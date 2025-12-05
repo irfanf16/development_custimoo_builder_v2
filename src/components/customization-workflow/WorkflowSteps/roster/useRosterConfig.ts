@@ -8,15 +8,16 @@ import {
   roster_reset_action,
   roster_template_button,
   roster_reset_action_tooltip,
-  roster_description
+  roster_description,
+  roster_add_player
 } from '@/paraglide/messages'
 import { useRoster } from './useRoster'
-import { Download, Info } from 'lucide-vue-next'
+import { Download, Info, Plus } from 'lucide-vue-next'
 
 export function useRosterConfig() {
   const workflowStore = useWorkflowStore()
   const profileStore = useProfileStore()
-  const { resetRoster, hasEntries, downloadTemplate } = useRoster()
+  const { resetRoster, hasEntries, downloadTemplate, addEmptyRow } = useRoster()
 
   const headerConfig = computed<HeaderConfiguration>(() => {
     const breadcrumbs = [
@@ -65,7 +66,19 @@ export function useRosterConfig() {
   })
 
   const footerConfig = computed<FooterConfiguration>(() => {
-    return { buttons: [] }
+    return {
+      buttons:
+        workflowStore.rosterSubStep === 'list'
+          ? []
+          : [
+              {
+                label: roster_add_player({}, { locale: profileStore.currentLocale }),
+                variant: 'default',
+                icon: Plus,
+                onClick: () => addEmptyRow()
+              }
+            ]
+    }
   })
 
   return {

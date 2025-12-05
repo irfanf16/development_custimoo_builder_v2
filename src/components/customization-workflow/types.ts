@@ -45,6 +45,7 @@ export type HeaderConfiguration = {
 
 export type FooterButton = {
   label: string
+  icon?: LucideIcon
   variant: ButtonVariants['variant']
   disabled?: boolean
   onClick: () => void
