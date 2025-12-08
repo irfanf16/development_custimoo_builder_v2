@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import type { APCustomizationRosterEntry } from '@/services/products/types'
   import { Trash2 } from 'lucide-vue-next'
   import { Input } from '@/components/ui/input'
@@ -28,6 +28,26 @@
   }
 
   const props = defineProps<Props>()
+
+  const entryLocal = ref<APCustomizationRosterEntry>({ ...props.entry })
+
+  watch(
+    () => props.entry,
+    newVal => {
+      // Only update if the values actually differ to avoid unnecessary reactivity cycles
+      if (
+        newVal.text !== entryLocal.value.text ||
+        newVal.number !== entryLocal.value.number ||
+        newVal.size !== entryLocal.value.size ||
+        newVal.quantity !== entryLocal.value.quantity ||
+        newVal.information !== entryLocal.value.information
+      ) {
+        entryLocal.value = { ...newVal }
+      }
+    },
+    { deep: true }
+  )
+
   const emit = defineEmits<{
     (e: 'update', index: number, payload: Partial<APCustomizationRosterEntry>): void
     (e: 'remove', index: number): void
@@ -51,6 +71,13 @@
   const cellId = (column: RosterColumnKey) => `roster-cell-${props.index}-${column}`
 
   function updateField(field: keyof APCustomizationRosterEntry, value: string | number) {
+    // Update local state immediately for responsive UI
+    entryLocal.value = {
+      ...entryLocal.value,
+      [field]: value
+    } as APCustomizationRosterEntry
+
+    // Emit update to parent (which will call async updateRow)
     emit('update', props.index, {
       [field]: value
     } as Partial<APCustomizationRosterEntry>)
@@ -80,7 +107,7 @@
     </button>
 
     <Input
-      :model-value="entry.text"
+      :model-value="entryLocal.text"
       :data-roster-cell="cellId('text')"
       class="h-10"
       :placeholder="roster_table_name({}, { locale })"
@@ -89,7 +116,7 @@
     />
 
     <Input
-      :model-value="entry.number"
+      :model-value="entryLocal.number"
       :data-roster-cell="cellId('number')"
       class="h-10 text-center"
       inputmode="numeric"
@@ -99,7 +126,7 @@
     />
 
     <Select
-      :model-value="entry.size"
+      :model-value="entryLocal.size"
       @update:model-value="value => updateField('size', value as string)"
     >
       <SelectTrigger
@@ -117,7 +144,7 @@
     </Select>
 
     <Input
-      :model-value="entry.quantity"
+      :model-value="entryLocal.quantity"
       :data-roster-cell="cellId('quantity')"
       class="h-10 text-right"
       min="1"

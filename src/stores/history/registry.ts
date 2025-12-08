@@ -2,7 +2,10 @@ import { toRaw } from 'vue'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-import type { ActiveProductCustomization } from '@/services/products/types/customization'
+import type {
+  ActiveProductCustomization,
+  APCustomizationRosterEntry
+} from '@/services/products/types/customization'
 import type { CustomLogo } from '@/services/logos/types'
 import type {
   HistoryContext,
@@ -31,7 +34,13 @@ import type {
   LogoUpdateSizePayload,
   LogoUpdateRotationPayload,
   LogoRecolorPayload,
-  AddonsSetPayload
+  AddonsSetPayload,
+  RosterUpdateQuantityPayload,
+  RosterUpdateSizePayload,
+  RosterUpdateNumberPayload,
+  RosterUpdateNamePayload,
+  RosterRemoveEntryPayload,
+  RosterAddEntryPayload
 } from './types'
 import type { OutputAddon, OutputCompanyAddon, OutputProductText } from '@/services/products/types'
 
@@ -64,6 +73,12 @@ type Registry = Record<
   | Handler<LogoUpdateUrlPayload>
   | Handler<LogoRecolorPayload>
   | Handler<PatternSetGroupPayload>
+  | Handler<RosterAddEntryPayload>
+  | Handler<RosterRemoveEntryPayload>
+  | Handler<RosterUpdateNamePayload>
+  | Handler<RosterUpdateNumberPayload>
+  | Handler<RosterUpdateSizePayload>
+  | Handler<RosterUpdateQuantityPayload>
   | Handler<{
       productId: number
       prevIds: number[]
@@ -95,6 +110,26 @@ function getTextArray(ctx: HistoryContext, key: string) {
   const map = root.product_custom_texts || (root.product_custom_texts = {})
   if (!map[key]) map[key] = []
   return map[key]
+}
+
+function getRosterArray(ctx: HistoryContext, key: string) {
+  const root = ctx.customizationStore.customization
+  if (!root) return null
+  const map = root.products_rosters || (root.products_rosters = {})
+  if (!map[key]) map[key] = []
+  return map[key]
+}
+
+function cloneRosterEntry(entry: APCustomizationRosterEntry): APCustomizationRosterEntry {
+  const rawEntry = toRaw(entry)
+  if (typeof structuredClone === 'function') {
+    try {
+      return structuredClone(rawEntry)
+    } catch (_) {
+      // Fall through to JSON clone if structuredClone fails (e.g., due to non-cloneable values)
+    }
+  }
+  return JSON.parse(JSON.stringify(rawEntry)) as typeof entry
 }
 
 function findTextEntryById(
@@ -1062,6 +1097,140 @@ export const registry: Registry = {
       if (added.length) return `Added ${addedWord}: ${addedLabels.join(', ')}`
       if (removed.length) return `Removed ${removedWord}: ${removedLabels.join(', ')}`
       return `No addon changes`
+    }
+  },
+  'roster.add-entry': {
+    apply(ctx: HistoryContext, payload: RosterAddEntryPayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      // Insert a clone, as is done for text/logo
+      const entryClone = cloneRosterEntry(payload.entry)
+      arr.splice(payload.index ?? arr.length, 0, entryClone)
+      // Also store the (cloned) entry for revert symmetry
+      payload.entry = entryClone
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: RosterAddEntryPayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      // Find the index of the entry to remove, but default to payload.index if present
+      const idx = payload.index ?? arr.length - 1
+      arr.splice(idx, 1)
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(_: HistoryContext, _payload: RosterAddEntryPayload) {
+      return `Add roster entry`
+    }
+  },
+  'roster.remove-entry': {
+    apply(ctx: HistoryContext, payload: RosterRemoveEntryPayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      const entry = arr[payload.index]
+      if (entry) {
+        payload.entry = cloneRosterEntry(entry)
+        arr.splice(payload.index, 1)
+        ctx.customizationStore.saveToLocalStorage()
+      }
+    },
+    revert(ctx: HistoryContext, payload: RosterRemoveEntryPayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr || payload.entry == null) return
+      arr.splice(payload.index, 0, cloneRosterEntry(payload.entry))
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(ctx: HistoryContext, payload: RosterRemoveEntryPayload) {
+      const entry = getRosterArray(ctx, payload.key)?.[payload.index]
+      return `Remove roster entry ${entry?.text}`
+    }
+  },
+  'roster.update-name': {
+    apply(ctx: HistoryContext, payload: RosterUpdateNamePayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      const entry = arr[payload.index]
+      if (!entry) return
+      // Create new object reference to trigger reactivity, similar to text.update-value
+      arr[payload.index] = { ...entry, text: payload.nextName }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: RosterUpdateNamePayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      const entry = arr[payload.index]
+      if (!entry) return
+      arr[payload.index] = { ...entry, text: payload.prevName }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(ctx: HistoryContext, payload: RosterUpdateNamePayload) {
+      const entry = getRosterArray(ctx, payload.key)?.[payload.index]
+      return `Update roster name ${entry?.text}`
+    }
+  },
+  'roster.update-number': {
+    apply(ctx: HistoryContext, payload: RosterUpdateNumberPayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      const entry = arr[payload.index]
+      if (!entry) return
+      arr[payload.index] = { ...entry, number: payload.nextNumber }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: RosterUpdateNumberPayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      const entry = arr[payload.index]
+      if (!entry) return
+      arr[payload.index] = { ...entry, number: payload.prevNumber }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(ctx: HistoryContext, payload: RosterUpdateNumberPayload) {
+      const entry = getRosterArray(ctx, payload.key)?.[payload.index]
+      return `Update roster number ${entry?.number}`
+    }
+  },
+  'roster.update-size': {
+    apply(ctx: HistoryContext, payload: RosterUpdateSizePayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      const entry = arr[payload.index]
+      if (!entry) return
+      arr[payload.index] = { ...entry, size: payload.nextSize }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: RosterUpdateSizePayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      const entry = arr[payload.index]
+      if (!entry) return
+      arr[payload.index] = { ...entry, size: payload.prevSize }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(ctx: HistoryContext, payload: RosterUpdateSizePayload) {
+      const entry = getRosterArray(ctx, payload.key)?.[payload.index]
+      return `Update roster size ${entry?.size}`
+    }
+  },
+  'roster.update-quantity': {
+    apply(ctx: HistoryContext, payload: RosterUpdateQuantityPayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      const entry = arr[payload.index]
+      if (!entry) return
+      arr[payload.index] = { ...entry, quantity: payload.nextQuantity }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    revert(ctx: HistoryContext, payload: RosterUpdateQuantityPayload) {
+      const arr = getRosterArray(ctx, payload.key)
+      if (!arr) return
+      const entry = arr[payload.index]
+      if (!entry) return
+      arr[payload.index] = { ...entry, quantity: payload.prevQuantity }
+      ctx.customizationStore.saveToLocalStorage()
+    },
+    describe(ctx: HistoryContext, payload: RosterUpdateQuantityPayload) {
+      const entry = getRosterArray(ctx, payload.key)?.[payload.index]
+      return `Update roster quantity ${entry?.quantity}`
     }
   },
   batch: {

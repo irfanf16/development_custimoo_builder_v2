@@ -1,4 +1,8 @@
-import type { OutputColor, OutputProductText } from '@/services/products/types'
+import type {
+  APCustomizationRosterEntry,
+  OutputColor,
+  OutputProductText
+} from '@/services/products/types'
 import type { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { useProductsStore } from '@/stores/products/products.store'
 import type { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -30,6 +34,12 @@ export type HistoryActionType =
   | 'logo.recolor'
   | 'pattern.set-group'
   | 'addons.set'
+  | 'roster.add-entry'
+  | 'roster.remove-entry'
+  | 'roster.update-name'
+  | 'roster.update-number'
+  | 'roster.update-size'
+  | 'roster.update-quantity'
   | 'batch'
 
 export interface HistoryEntry<T = unknown> {
@@ -167,6 +177,46 @@ export type TextUpdateScalePayload = {
   prevScaleY: number
   nextScaleX: number
   nextScaleY: number
+}
+
+export type RosterAddEntryPayload = {
+  key: string
+  entry: APCustomizationRosterEntry
+  index?: number
+}
+
+export type RosterRemoveEntryPayload = {
+  key: string
+  index: number
+  entry?: APCustomizationRosterEntry
+}
+
+export type RosterUpdateNamePayload = {
+  key: string
+  index: number
+  prevName: string
+  nextName: string
+}
+
+export type RosterUpdateNumberPayload = {
+  key: string
+  index: number
+  prevNumber: string
+  nextNumber: string
+}
+
+export type RosterUpdateSizePayload = {
+  key: string
+  index: number
+  prevSize: string
+  nextSize: string
+}
+
+export type RosterUpdateQuantityPayload = {
+  key: string
+  index: number
+  prevQuantity: number
+  nextQuantity: number
 }
 
 export type LogoAddPayload = {

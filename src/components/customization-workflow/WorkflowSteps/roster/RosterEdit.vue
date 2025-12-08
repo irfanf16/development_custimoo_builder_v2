@@ -69,14 +69,6 @@
         @update:entry="updateRow"
         @remove="removeRow"
       />
-      <!-- <div class="flex items-center gap-3 text-sm font-semibold text-muted-foreground">
-        <Separator class="flex-1 bg-border" />
-        <span class="text-foreground font-medium">{{ colors_separator_or({}, { locale }) }}</span>
-        <Separator class="flex-1 bg-border" />
-      </div>
-      <Button variant="outline" class="w-full bg-muted/30" disabled aria-disabled="true">
-        {{ colors_choose_from_locker({}, { locale }) }}
-      </Button> -->
     </div>
   </div>
 </template>
