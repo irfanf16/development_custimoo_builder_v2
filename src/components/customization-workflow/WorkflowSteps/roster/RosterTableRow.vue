@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
+  import { useDebounceFn } from '@vueuse/core'
   import type { APCustomizationRosterEntry } from '@/services/products/types'
   import { Trash2 } from 'lucide-vue-next'
   import { Input } from '@/components/ui/input'
@@ -70,14 +71,39 @@
 
   const cellId = (column: RosterColumnKey) => `roster-cell-${props.index}-${column}`
 
-  function updateField(field: keyof APCustomizationRosterEntry, value: string | number) {
-    // Update local state immediately for responsive UI
+  // Immediate update function for local state (for responsive UI)
+  function updateLocalField(field: keyof APCustomizationRosterEntry, value: string | number) {
     entryLocal.value = {
       ...entryLocal.value,
       [field]: value
     } as APCustomizationRosterEntry
+  }
 
-    // Emit update to parent (which will call async updateRow)
+  // Debounced update function that emits to parent (saves to history)
+  const debouncedUpdateField = useDebounceFn(
+    (field: keyof APCustomizationRosterEntry, value: string | number) => {
+      emit('update', props.index, {
+        [field]: value
+      } as Partial<APCustomizationRosterEntry>)
+    },
+    500
+  )
+
+  // Combined function that updates local state immediately and debounces the emit
+  function updateField(field: keyof APCustomizationRosterEntry, value: string | number) {
+    // Update local state immediately for responsive UI
+    updateLocalField(field, value)
+    // Debounce the emit to parent (which will call async updateRow)
+    debouncedUpdateField(field, value)
+  }
+
+  // Handle blur events to ensure value is saved immediately when user leaves the field
+  function handleBlur(field: keyof APCustomizationRosterEntry, value: string | number) {
+    // Cancel any pending debounced calls if cancel method exists
+    if ('cancel' in debouncedUpdateField && typeof debouncedUpdateField.cancel === 'function') {
+      debouncedUpdateField.cancel()
+    }
+    // Immediately emit the update
     emit('update', props.index, {
       [field]: value
     } as Partial<APCustomizationRosterEntry>)
@@ -112,6 +138,7 @@
       class="h-10"
       :placeholder="roster_table_name({}, { locale })"
       @update:model-value="value => updateField('text', value as string)"
+      @blur="(event: FocusEvent) => handleBlur('text', (event.target as HTMLInputElement).value)"
       @keydown.capture="(event: KeyboardEvent) => handleKeydown(event, 'text')"
     />
 
@@ -122,6 +149,7 @@
       inputmode="numeric"
       :placeholder="roster_table_number({}, { locale })"
       @update:model-value="value => updateField('number', value as string)"
+      @blur="(event: FocusEvent) => handleBlur('number', (event.target as HTMLInputElement).value)"
       @keydown.capture="(event: KeyboardEvent) => handleKeydown(event, 'number')"
     />
 
@@ -152,6 +180,10 @@
       inputmode="numeric"
       :placeholder="roster_table_quantity({}, { locale })"
       @update:model-value="value => updateField('quantity', Number(value))"
+      @blur="
+        (event: FocusEvent) =>
+          handleBlur('quantity', Number((event.target as HTMLInputElement).value))
+      "
       @keydown.capture="(event: KeyboardEvent) => handleKeydown(event, 'quantity')"
     />
 
