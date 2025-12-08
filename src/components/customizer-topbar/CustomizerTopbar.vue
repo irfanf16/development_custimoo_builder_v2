@@ -198,7 +198,10 @@
             <ShoppingCart class="size-4 mr-2" />
             <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
           </DropdownMenuItem>
-          <DropdownMenuItem v-if="uiStore.isMobile && authStore.isAuthenticated">
+          <DropdownMenuItem
+            v-if="uiStore.isMobile && authStore.isAuthenticated"
+            @click="showLockerBrowser = true"
+          >
             <LayoutGrid class="size-4 mr-2" />
             <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
           </DropdownMenuItem>

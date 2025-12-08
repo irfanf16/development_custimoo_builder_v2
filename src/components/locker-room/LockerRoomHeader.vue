@@ -1,21 +1,22 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-import { ButtonGroup } from '@/components/ui/button-group'
-import { DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { InputSearchGroup } from '@/components/ui/input-search-group'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import type { Locker } from '@/services/lockers/types'
-import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-import { ArrowLeft, ArrowUpDown, Check, ChevronDown, PencilLine, Plus, X } from 'lucide-vue-next'
-import { storeToRefs } from 'pinia'
-import { ref } from 'vue'
+  import { ButtonGroup } from '@/components/ui/button-group'
+  import { DialogHeader, DialogTitle } from '@/components/ui/dialog'
+  import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+  } from '@/components/ui/dropdown-menu'
+  import { Input } from '@/components/ui/input'
+  import { InputSearchGroup } from '@/components/ui/input-search-group'
+  import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+  import type { Locker } from '@/services/lockers/types'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
+  import { ArrowLeft, ArrowUpDown, Check, ChevronDown, PencilLine, Plus, X } from 'lucide-vue-next'
+  import { storeToRefs } from 'pinia'
+  import { computed, ref } from 'vue'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
@@ -24,16 +25,21 @@ import { ref } from 'vue'
       currentMode: 'list' | 'detail'
       sortOption: SortOption
       currentLocker: Locker | null
+      mainTab: 'lockers' | 'collections'
+      lockerDetailTab: 'products' | 'assets' | 'colours' | 'rosters'
     }>(),
     {
       currentMode: 'list',
       sortOption: 'lastModified',
-      currentLocker: null
+      currentLocker: null,
+      mainTab: 'lockers',
+      lockerDetailTab: 'products'
     }
   )
 
-  const tab = ref<'lockers' | 'collections'>('lockers')
-  const lockerTab = ref<'products' | 'assets' | 'colours' | 'rosters'>('products')
+  const tab = computed(() => props.mainTab)
+  const lockerTab = computed(() => props.lockerDetailTab)
+  const uiStore = useUIStore()
   const search = ref('')
   const isEditingLocker = ref(false)
   const lockerRoomStore = useLockerRoomStore()
@@ -116,39 +122,100 @@ import { ref } from 'vue'
     <DialogTitle v-if="currentMode === 'list'" class="text-xl font-semibold">
       Locker Room
     </DialogTitle>
-    <div class="flex items-center justify-between pb-4 border-b h-fit">
-      <template v-if="currentMode === 'list'">
-        <Tabs
-          v-model="tab"
-          default-value="lockers"
-          class="space-x-2 w-[50%]"
-          @update:model-value="val => emit('tab-change', val)"
-        >
-          <TabsList class="w-full">
-            <TabsTrigger class="w-full" value="lockers">Lockers</TabsTrigger>
-            <TabsTrigger class="w-full" value="collections">Collections</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </template>
-      <template v-else-if="currentMode === 'detail'">
-        <Tabs
-          v-model="lockerTab"
-          default-value="products"
-          class="space-x-2 w-[50%]"
-          @update:model-value="val => emit('change-locker-tab', val)"
-        >
-          <TabsList class="w-full">
-            <TabsTrigger class="w-full" value="products">Products</TabsTrigger>
-            <TabsTrigger class="w-full" value="assets">Assets</TabsTrigger>
-            <TabsTrigger class="w-full" value="colours">Colours</TabsTrigger>
-            <TabsTrigger class="w-full" value="rosters">Rosters</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </template>
-      <div class="flex items-center gap-2">
+    <div class="flex flex-col md:flex-row items-center justify-between pb-4 border-b h-fit gap-2">
+      <div class="flex w-full items-center justify-between gap-2">
+        <template v-if="!uiStore.isMobile && currentMode === 'list'">
+          <Tabs
+            v-model="tab"
+            default-value="lockers"
+            class="space-x-2 w-[50%]"
+            @update:model-value="val => emit('tab-change', val)"
+          >
+            <TabsList class="w-full">
+              <TabsTrigger class="w-full" value="lockers">Lockers</TabsTrigger>
+              <TabsTrigger class="w-full" value="collections">Collections</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </template>
+        <template v-else-if="uiStore.isMobile && currentMode === 'list'">
+          <DropdownMenu v-model="tab" default-value="lockers" class="space-x-2 w-[50%]">
+            <DropdownMenuTrigger as-child>
+              <Button variant="outline" class="flex items-center gap-2">
+                {{ tab.charAt(0).toUpperCase() + tab.slice(1) }}
+                <ChevronDown class="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="w-full">
+              <DropdownMenuItem
+                class="w-full"
+                value="lockers"
+                @click="emit('tab-change', 'lockers')"
+                >Lockers</DropdownMenuItem
+              >
+              <DropdownMenuItem
+                class="w-full"
+                value="collections"
+                @click="emit('tab-change', 'collections')"
+                >Collections</DropdownMenuItem
+              >
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </template>
+        <template v-else-if="!uiStore.isMobile && currentMode === 'detail'">
+          <Tabs
+            v-model="lockerTab"
+            default-value="products"
+            class="space-x-2 w-[50%]"
+            @update:model-value="val => emit('change-locker-tab', val)"
+          >
+            <TabsList class="w-full">
+              <TabsTrigger class="w-full" value="products">Products</TabsTrigger>
+              <TabsTrigger class="w-full" value="assets">Assets</TabsTrigger>
+              <TabsTrigger class="w-full" value="colours">Colours</TabsTrigger>
+              <TabsTrigger class="w-full" value="rosters">Rosters</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </template>
+        <template v-else-if="uiStore.isMobile && currentMode === 'detail'">
+          <DropdownMenu v-model="lockerTab" default-value="products" class="space-x-2 w-[50%]">
+            <DropdownMenuTrigger as-child>
+              <Button variant="outline" class="flex items-center gap-2">
+                {{ lockerTab.charAt(0).toUpperCase() + lockerTab.slice(1) }}
+                <ChevronDown class="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="w-full">
+              <DropdownMenuItem
+                class="w-full"
+                value="products"
+                @click="emit('change-locker-tab', 'products')"
+                >Products</DropdownMenuItem
+              >
+              <DropdownMenuItem
+                class="w-full"
+                value="assets"
+                @click="emit('change-locker-tab', 'assets')"
+                >Assets</DropdownMenuItem
+              >
+              <DropdownMenuItem
+                class="w-full"
+                value="colours"
+                @click="emit('change-locker-tab', 'colours')"
+                >Colours</DropdownMenuItem
+              >
+              <DropdownMenuItem
+                class="w-full"
+                value="rosters"
+                @click="emit('change-locker-tab', 'rosters')"
+                >Rosters</DropdownMenuItem
+              >
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </template>
         <InputSearchGroup
           v-model="search"
           placeholder="Search..."
+          class="w-full md:w-[30%]"
           @update:model-value="
             (val: string | number) => {
               emit('search', val)
@@ -156,6 +223,8 @@ import { ref } from 'vue'
             }
           "
         />
+      </div>
+      <div class="flex items-center justify-end gap-2 w-full md:w-fit">
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button variant="outline" class="flex items-center gap-2">
@@ -191,7 +260,7 @@ import { ref } from 'vue'
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="primary" @click="emit('create-locker')">
+        <Button variant="primary" class="w-full md:w-fit" @click="emit('create-locker')">
           <Plus class="w-4 h-4" /> Create locker
         </Button>
       </div>

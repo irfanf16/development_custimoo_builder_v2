@@ -81,7 +81,7 @@
 
 <template>
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
-  <div v-else class="grid grid-cols-4 gap-6 relative group">
+  <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(locker, lockerIndex) in filteredLockers"
       :key="locker.id"

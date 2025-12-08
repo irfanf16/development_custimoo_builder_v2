@@ -1,11 +1,11 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Spinner } from '@/components/ui/spinner'
-import type { Logo } from '@/services/lockers/types'
-import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-import { storeToRefs } from 'pinia'
-import { computed } from 'vue'
+  import { Card } from '@/components/ui/card'
+  import { Spinner } from '@/components/ui/spinner'
+  import type { Logo } from '@/services/lockers/types'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { storeToRefs } from 'pinia'
+  import { computed } from 'vue'
 
   defineProps<{ assets: Logo[] }>()
 
@@ -14,7 +14,7 @@ import { computed } from 'vue'
 </script>
 <template>
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
-  <div else class="grid grid-cols-4 gap-6 relative group">
+  <div else class="grid grid-cols-2 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(logo, logoIndex) in assets"
       :key="logoIndex"

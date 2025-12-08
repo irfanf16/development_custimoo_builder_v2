@@ -85,6 +85,8 @@
         :current-mode="currentMode"
         :sort-option="sortOption"
         :current-locker="currentLocker"
+        :main-tab="tab"
+        :locker-detail-tab="lockerTab"
         @change-current-locker="getLockerDetail"
         @sort="setSort"
         @search="(val: string) => (search = val)"

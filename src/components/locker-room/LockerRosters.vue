@@ -20,7 +20,7 @@
 
     <div v-else class="flex flex-col gap-4 h-full p-4">
       <!-- Rosters Grid -->
-      <div class="grid grid-cols-4 gap-6 relative group">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 relative group">
         <template v-for="(roster, rosterIndex) in rosters">
           <Card
             v-if="roster.roster_group"

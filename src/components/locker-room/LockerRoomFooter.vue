@@ -11,6 +11,7 @@
   import { confirmDialog } from '@/lib/confirm-dialog'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import type LockerProductsListing from './LockerProductsListing.vue'
+  import { useUIStore } from '@/stores/ui/ui.store'
   type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
   interface FooterProps {
     currentTab: 'lockers' | 'collections'
@@ -30,6 +31,7 @@
   })
 
   const emit = defineEmits(['back'])
+  const uiStore = useUIStore()
   const lockerRoomStore = useLockerRoomStore()
   const products = computed(() => props.selectedProducts)
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
@@ -74,9 +76,12 @@
         <ShoppingBasket class="w-4 h-4" /> Add to cart
       </Button>
     </div>
-    <div v-else-if="currentMode === 'detail'" class="flex pt-4 border-t w-full gap-5">
-      <div class="flex items-center gap-3">
-        <span v-if="products.length > 0" class="flex items-center">
+    <div
+      v-else-if="currentMode === 'detail'"
+      class="flex pt-4 border-t w-full flex-col md:flex-row gap-2"
+    >
+      <div class="flex items-center justify-between">
+        <span v-if="products.length > 0" class="flex items-center mr-3">
           <AvatarQueue
             :images="products.map(prod => baseStorageUrl + prod.product_front_url)"
             :max="3"
@@ -98,36 +103,40 @@
             </Tooltip>
           </TooltipProvider>
         </span>
-        <Button variant="outline" @click="props.lockerProductsRef?.selecteAllProducts()"
+        <Button
+          class="mr-3"
+          variant="outline"
+          @click="props.lockerProductsRef?.selecteAllProducts()"
           >Select all</Button
         >
+        <div class="flex items-center gap-1">
+          <Button :disabled="products.length === 0" variant="outline">
+            <FolderArchive class="size-4" /> Move
+          </Button>
+          <Button :disabled="products.length !== 1" variant="outline">
+            <Copy class="size-4" /> Copy
+          </Button>
+        </div>
       </div>
-      <div class="flex items-center gap-1">
-        <Button :disabled="products.length === 0" variant="outline">
-          <FolderArchive class="size-4" /> Move
-        </Button>
-        <Button :disabled="products.length !== 1" variant="outline">
-          <Copy class="size-4" /> Copy
-        </Button>
-      </div>
-      <Separator orientation="vertical" class="h-full" />
+      <Separator v-if="!uiStore.isMobile" orientation="vertical" class="h-full mx-5" />
 
-      <div class="flex items-center gap-1">
-        <Button variant="outline" :disabled="selectedProducts.length === 0"
+      <div class="flex items-center justify-end">
+        <Button variant="outline" class="ml-1" :disabled="selectedProducts.length === 0"
           ><PlusIcon class="size-4" /> Add to collection</Button
         >
-        <Button variant="primary" :disabled="selectedProducts.length === 0">
+        <Button variant="primary" class="ml-1" :disabled="selectedProducts.length === 0">
           <ShoppingBasket class="w-4 h-4" /> Add to cart
         </Button>
+
+        <Separator v-if="!uiStore.isMobile" orientation="vertical" class="h-full mx-5" />
+        <Button
+          variant="ghost"
+          class="text-destructive"
+          @click="products.length === 0 ? deleteLockers() : deleteProducts()"
+        >
+          <TrashIcon class="size-4 text-destructive" /> Delete
+        </Button>
       </div>
-      <Separator orientation="vertical" class="h-full" />
-      <Button
-        variant="ghost"
-        class="text-destructive"
-        @click="products.length === 0 ? deleteLockers() : deleteProducts()"
-      >
-        <TrashIcon class="size-4 text-destructive" /> Delete
-      </Button>
     </div>
   </DialogFooter>
 </template>

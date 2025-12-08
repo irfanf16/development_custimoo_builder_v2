@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import type { Colour } from '@/services/lockers/types'
+  import { Card } from '@/components/ui/card'
+  import type { Colour } from '@/services/lockers/types'
 
   type ColourProps = {
     colour_group: Colour[]
@@ -11,7 +11,7 @@ import type { Colour } from '@/services/lockers/types'
   defineProps<{ colours: ColourProps[] }>()
 </script>
 <template>
-  <div class="grid grid-cols-4 gap-6 relative group">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(color, group_index) in colours"
       :key="group_index"

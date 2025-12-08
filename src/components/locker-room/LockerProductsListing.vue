@@ -1,13 +1,13 @@
 <script setup lang="ts">
   import { Card } from '@/components/ui/card'
-import { DotSeparator } from '@/components/ui/separator'
-import type { LockerProduct } from '@/services/lockers/types'
-import { computed, ref } from 'vue'
+  import { DotSeparator } from '@/components/ui/separator'
+  import type { LockerProduct } from '@/services/lockers/types'
+  import { computed, ref } from 'vue'
 
   import { Checkbox } from '@/components/ui/checkbox'
-import { Spinner } from '@/components/ui/spinner'
-import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-import { storeToRefs } from 'pinia'
+  import { Spinner } from '@/components/ui/spinner'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { storeToRefs } from 'pinia'
 
   const props = defineProps<{ products: LockerProduct[] }>()
   const emit = defineEmits(['select-product'])
@@ -45,7 +45,7 @@ import { storeToRefs } from 'pinia'
 </script>
 <template>
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
-  <div v-else class="grid grid-cols-4 gap-6 relative group">
+  <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(prod, prodIndex) in products"
       :key="prodIndex"
