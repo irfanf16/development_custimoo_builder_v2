@@ -55,7 +55,6 @@ export type ActiveProductCustomization = {
   default_colors: APCustomizationDefaultColor[]
   group_colors: Record<string, APCustomizationGroupColor>
   logo_colors: import('@/services/types').LogoColor[]
-  roster_detail: APCustomizationRosterEntry[]
   products_rosters: APCustomizationProductsRosters
   shuffle_color_number: number
   addons_info: APCustomizationAddonsInfo

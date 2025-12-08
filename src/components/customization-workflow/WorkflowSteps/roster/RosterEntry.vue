@@ -44,8 +44,8 @@
     importFile
   } = useRosterImporter()
 
-  function handleManualCreate() {
-    ensureEditableRoster()
+  async function handleManualCreate() {
+    await ensureEditableRoster()
   }
 
   function openFilePicker() {

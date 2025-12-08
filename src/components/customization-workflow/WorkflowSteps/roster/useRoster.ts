@@ -3,6 +3,7 @@ import type { APCustomizationRosterEntry } from '@/services/products/types'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+import { useHistoryStore } from '@/stores/history/history.store'
 import { API } from '@/services'
 
 type RosterImportSummary = {
@@ -18,9 +19,15 @@ export function useRoster() {
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
+  const historyStore = useHistoryStore()
 
   const rosterEntries = computed(() => customizationStore.rosterEntries)
   const hasEntries = computed(() => rosterEntries.value.length > 0)
+
+  const productId = computed(
+    () => customizationStore.activeProductId ?? productsStore.activeProductDetails?.id ?? null
+  )
+  const rosterKey = computed(() => (productId.value ? String(productId.value) : ''))
 
   const availableSizes = computed(() => {
     const sizeSet = new Set<string>()
@@ -36,33 +43,127 @@ export function useRoster() {
     return Array.from(sizeSet)
   })
 
-  function addEmptyRow(payload?: Partial<APCustomizationRosterEntry>) {
-    customizationStore.addRosterEntry({
-      text: '',
-      number: '',
-      size: availableSizes.value[0] || '',
-      quantity: 1,
-      information: '',
-      ...payload
+  async function addEmptyRow(payload?: Partial<APCustomizationRosterEntry>) {
+    if (!rosterKey.value) return
+
+    const entry: APCustomizationRosterEntry = {
+      text: payload?.text ?? '',
+      number: payload?.number ?? '',
+      size: payload?.size ?? availableSizes.value[0] ?? '',
+      quantity: payload?.quantity ?? 1,
+      information: payload?.information ?? ''
+    }
+
+    await historyStore.execute('roster.add-entry', {
+      key: rosterKey.value,
+      entry,
+      index: rosterEntries.value.length
     })
   }
 
-  function updateRow(index: number, payload: Partial<APCustomizationRosterEntry>) {
-    customizationStore.updateRosterEntry(index, payload)
+  async function updateRow(index: number, payload: Partial<APCustomizationRosterEntry>) {
+    if (!rosterKey.value) return
+    if (index < 0 || index >= rosterEntries.value.length) return
+
+    const currentEntry = rosterEntries.value[index]
+    if (!currentEntry) return
+
+    // Update each field that changed using the appropriate history action
+    if (payload.text !== undefined && payload.text !== currentEntry.text) {
+      await historyStore.execute('roster.update-name', {
+        key: rosterKey.value,
+        index,
+        prevName: currentEntry.text,
+        nextName: payload.text
+      })
+    }
+
+    if (payload.number !== undefined && payload.number !== currentEntry.number) {
+      await historyStore.execute('roster.update-number', {
+        key: rosterKey.value,
+        index,
+        prevNumber: currentEntry.number,
+        nextNumber: payload.number
+      })
+    }
+
+    if (payload.size !== undefined && payload.size !== currentEntry.size) {
+      await historyStore.execute('roster.update-size', {
+        key: rosterKey.value,
+        index,
+        prevSize: currentEntry.size,
+        nextSize: payload.size
+      })
+    }
+
+    if (payload.quantity !== undefined && payload.quantity !== currentEntry.quantity) {
+      await historyStore.execute('roster.update-quantity', {
+        key: rosterKey.value,
+        index,
+        prevQuantity: currentEntry.quantity,
+        nextQuantity: payload.quantity
+      })
+    }
+
+    // Note: 'information' field updates are not tracked in history
+    // If needed, we could add a 'roster.update-information' action to the registry
+    // if (payload.information !== undefined && payload.information !== currentEntry.information) {
+    //   // Direct update without history tracking
+    //   const root = customizationStore.customization
+    //   if (!root) return
+    //   const arr = root.products_rosters[rosterKey.value]
+    //   if (!arr || index < 0 || index >= arr.length) return
+    //   const current = arr[index]
+    //   if (!current) return
+    //   arr[index] = {
+    //     text: current.text,
+    //     number: current.number,
+    //     size: current.size,
+    //     quantity: current.quantity,
+    //     information: payload.information
+    //   }
+    //   customizationStore.saveToLocalStorage()
+    // }
   }
 
-  function removeRow(index: number) {
-    customizationStore.removeRosterEntry(index)
+  async function removeRow(index: number) {
+    if (!rosterKey.value) return
+    if (index < 0 || index >= rosterEntries.value.length) return
+
+    await historyStore.execute('roster.remove-entry', {
+      key: rosterKey.value,
+      index
+    })
   }
 
-  function replaceRoster(entries: APCustomizationRosterEntry[]) {
-    customizationStore.setRosterEntries(entries)
+  async function replaceRoster(entries: APCustomizationRosterEntry[]) {
+    if (!rosterKey.value) return
+
+    // Use batch operation to replace all entries atomically
+    await historyStore.runBatch('Replace roster', add => {
+      // Remove all existing entries (in reverse order to maintain indices)
+      for (let i = rosterEntries.value.length - 1; i >= 0; i--) {
+        add('roster.remove-entry', {
+          key: rosterKey.value,
+          index: i
+        })
+      }
+
+      // Add all new entries
+      entries.forEach((entry, index) => {
+        add('roster.add-entry', {
+          key: rosterKey.value,
+          entry,
+          index
+        })
+      })
+    })
   }
 
-  function ensureEditableRoster() {
+  async function ensureEditableRoster() {
     workflowStore.setRosterSubStep('edit')
     if (!hasEntries.value) {
-      addEmptyRow()
+      await addEmptyRow()
     }
   }
 

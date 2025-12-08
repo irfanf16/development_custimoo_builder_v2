@@ -125,13 +125,13 @@ export function useRosterImporter() {
         importError.value = roster_error_no_rows({}, { locale: locale.value })
         return
       }
-      replaceRoster(parsed)
+      await replaceRoster(parsed)
       setLastImportSummary({
         fileName: file.name,
         totalRows: parsed.length,
         importedAt: new Date()
       })
-      ensureEditableRoster()
+      await ensureEditableRoster()
     } catch (error) {
       console.error(error)
       if (error instanceof Error && error.message === 'missing_headers') {

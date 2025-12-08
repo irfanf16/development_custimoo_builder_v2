@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type {
   ActiveProductCustomization,
-  APCustomizationRosterEntry,
   OutputAddon,
   OutputColor,
   OutputDesignDetails,
@@ -40,9 +39,12 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     return customization.value?.product_custom_texts?.[key] || []
   })
 
-  const rosterEntries = computed<APCustomizationRosterEntry[]>(() => {
-    if (!customization.value?.roster_detail) return []
-    return customization.value.roster_detail
+  const rosterEntries = computed(() => {
+    const prodId = customization.value?.product_id
+    if (!prodId) return []
+    const key = String(prodId)
+    if (!customization.value?.products_rosters[key]) return []
+    return customization.value.products_rosters[key]
   })
 
   const ensureTextEntry = (productId: number, index: number, seed?: OutputProductText) => {
@@ -142,70 +144,73 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   }
 
   // ===== ROSTER HELPERS =====
-  function ensureRosterEntries(): APCustomizationRosterEntry[] | null {
-    if (!customization.value) return null
-    if (!Array.isArray(customization.value.roster_detail)) {
-      customization.value.roster_detail = []
-    }
-    return customization.value.roster_detail
-  }
+  // function ensureRosterEntries(): APCustomizationRosterEntry[] | null {
+  //   if (!customization.value) return null
+  //   const prodId = customization.value?.product_id
+  //   if (!prodId) return null
+  //   const key = String(prodId)
+  //   if (!Array.isArray(customization.value.products_rosters[key])) {
+  //     customization.value.products_rosters[key] = []
+  //   }
+  //   return customization.value.products_rosters[key]
+  // }
 
-  function normalizeRosterEntry(
-    partial?: Partial<APCustomizationRosterEntry>
-  ): APCustomizationRosterEntry {
-    return {
-      text: partial?.text ?? '',
-      number: partial?.number ?? '',
-      size: partial?.size ?? '',
-      quantity: partial?.quantity ?? 1,
-      information: partial?.information ?? ''
-    }
-  }
+  // function normalizeRosterEntry(
+  //   partial?: Partial<APCustomizationRosterEntry>
+  // ): APCustomizationRosterEntry {
+  //   return {
+  //     text: partial?.text ?? '',
+  //     number: partial?.number ?? '',
+  //     size: partial?.size ?? '',
+  //     quantity: partial?.quantity ?? 1,
+  //     information: partial?.information ?? ''
+  //   }
+  // }
 
-  function setRosterEntries(entries: APCustomizationRosterEntry[]) {
-    const bucket = ensureRosterEntries()
-    if (!bucket || !customization.value) return
-    customization.value.roster_detail = entries.map(entry => normalizeRosterEntry(entry))
-    saveToLocalStorage()
-  }
+  // function setRosterEntries(entries: APCustomizationRosterEntry[]) {
+  //   const bucket = ensureRosterEntries()
+  //   if (!bucket || !customization.value) return
+  //   customization.value.roster_detail = entries.map(entry => normalizeRosterEntry(entry))
+  //   saveToLocalStorage()
+  // }
 
-  function addRosterEntry(entry?: Partial<APCustomizationRosterEntry>) {
-    const bucket = ensureRosterEntries()
-    if (!bucket || !customization.value) return
-    customization.value.roster_detail = [...bucket, normalizeRosterEntry(entry)]
-    saveToLocalStorage()
-  }
+  // function addRosterEntry(entry?: Partial<APCustomizationRosterEntry>) {
+  //   const bucket = ensureRosterEntries()
+  //   if (!bucket || !customization.value) return
+  //   customization.value.roster_detail = [...bucket, normalizeRosterEntry(entry)]
+  //   saveToLocalStorage()
+  // }
 
-  function updateRosterEntry(index: number, payload: Partial<APCustomizationRosterEntry>) {
-    const bucket = ensureRosterEntries()
-    if (!bucket || !customization.value) return
-    if (!bucket[index]) return
-    const next = [...bucket]
-    const existing = next[index]!
-    next[index] = {
-      text: payload.text ?? existing.text,
-      number: payload.number ?? existing.number,
-      size: payload.size ?? existing.size,
-      quantity: payload.quantity ?? existing.quantity,
-      information: payload.information ?? existing.information
-    }
-    customization.value.roster_detail = next
-    saveToLocalStorage()
-  }
+  // function updateRosterEntry(index: number, payload: Partial<APCustomizationRosterEntry>) {
+  //   const bucket = ensureRosterEntries()
+  //   if (!bucket || !customization.value) return
+  //   if (!bucket[index]) return
+  //   const next = [...bucket]
+  //   const existing = next[index]!
+  //   next[index] = {
+  //     text: payload.text ?? existing.text,
+  //     number: payload.number ?? existing.number,
+  //     size: payload.size ?? existing.size,
+  //     quantity: payload.quantity ?? existing.quantity,
+  //     information: payload.information ?? existing.information
+  //   }
+  //   customization.value.roster_detail = next
+  //   saveToLocalStorage()
+  // }
 
-  function removeRosterEntry(index: number) {
-    const bucket = ensureRosterEntries()
-    if (!bucket || !customization.value) return
-    if (index < 0 || index >= bucket.length) return
-    const next = [...bucket]
-    next.splice(index, 1)
-    customization.value.roster_detail = next
-    saveToLocalStorage()
-  }
+  // function removeRosterEntry(index: number) {
+  //   const bucket = ensureRosterEntries()
+  //   if (!bucket || !customization.value) return
+  //   if (index < 0 || index >= bucket.length) return
+  //   const next = [...bucket]
+  //   next.splice(index, 1)
+  //   customization.value.roster_detail = next
+  //   saveToLocalStorage()
+  // }
 
   function clearRosterEntries() {
     if (!customization.value) return
-    customization.value.roster_detail = []
+    customization.value.products_rosters = {}
     saveToLocalStorage()
   }
 
@@ -451,7 +456,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       ],
       group_colors: {},
       logo_colors: [],
-      roster_detail: [],
       products_rosters: {},
       shuffle_color_number: 0,
       addons_info: {},
@@ -564,10 +568,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     ensureTextEntry,
     upsertTextEntry,
     removeTextEntry,
-    setRosterEntries,
-    addRosterEntry,
-    updateRosterEntry,
-    removeRosterEntry,
     clearRosterEntries,
     initializeProductTextsFromDetails,
     generateTemporaryTextId

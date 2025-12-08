@@ -71,7 +71,7 @@
             class="flex flex-row w-full h-full justify-center 2xl:justify-start items-center p-[64px]"
           >
             <ProductPreview />
-            <div v-if="!activeProductDetails?.is_3d_product" class="w-0 z-10 self-start ml-[-50px]">
+            <div class="w-0 z-10 self-start ml-[-50px]">
               <div class="absolute">
                 <div
                   id="canvas-controls-container-inner"
@@ -79,6 +79,7 @@
                 >
                   <RightToolbar />
                   <div
+                    v-if="!activeProductDetails?.is_3d_product"
                     class="w-fit h-fit p-1 rounded-2xl backdrop-blur-sm bg-white/20 cursor-pointer"
                     @click="handleClick"
                   >
