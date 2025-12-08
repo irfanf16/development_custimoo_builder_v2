@@ -1,9 +1,4 @@
 <script setup lang="ts">
-  import SignInButton from '@/components/auth/SignInButton.vue'
-  import SignInDialog from '@/components/auth/SignInDialog.vue'
-  import { CartDialog } from '@/components/cart'
-  import ProfileDialog from '@/components/customizer-profile-section/ProfileDialog.vue'
-  // import ResetCustomizationDialog from '@/components/customizer/ResetCustomizationDialog.vue'
   import { Button } from '@/components/ui/button'
   import { ButtonGroup } from '@/components/ui/button-group'
   import {
@@ -14,36 +9,49 @@
     DropdownMenuSeparator,
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
-  import { useSignIn } from '@/composables/useSignIn'
-  import { confirmDialog } from '@/lib/confirm-dialog'
   import {
-    actions_reset_customization,
-    topbar_cart,
-    topbar_locker_room,
+    Save,
+    ShoppingCart,
+    RotateCcw,
+    ChevronDown,
+    Menu,
+    User,
+    Settings,
+    LogOut,
+    LogIn,
+    LayoutGrid,
+    Fullscreen
+  } from 'lucide-vue-next'
+  import {
     topbar_save,
-    topbar_save_options
+    topbar_locker_room,
+    topbar_cart,
+    topbar_save_options,
+    actions_reset_customization
   } from '@/paraglide/messages'
-  import { useAuthStore } from '@/stores/auth/auth.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
-  import { useProfileStore } from '@/stores/profile/profile.store'
-  import { useUIStore } from '@/stores/ui/ui.store'
-  import {
-    ChevronDown,
-    Fullscreen,
-    LayoutGrid,
-    LogIn,
-    LogOut,
-    Menu,
-    RotateCcw,
-    Save,
-    Settings,
-    ShoppingCart,
-    User
-  } from 'lucide-vue-next'
+  import SignInButton from '@/components/auth/SignInButton.vue'
+  import { useAuthStore } from '@/stores/auth/auth.store'
   import { storeToRefs } from 'pinia'
+  import ProfileDialog from '@/components/customizer-profile-section/ProfileDialog.vue'
+  import SignInDialog from '@/components/auth/SignInDialog.vue'
+  import { CartDialog } from '@/components/cart'
+  import { useSignIn } from '@/composables/useSignIn'
   import { ref } from 'vue'
-  import LockerBrowser from '../LockerBrowser.vue'
+  import { useUIStore } from '@/stores/ui/ui.store'
+  import { confirmDialog } from '@/lib/confirm-dialog'
+  import LockerBrowser from '@/components/LockerBrowser.vue'
+  // import ResetCustomizationDialog from '@/components/customizer/ResetCustomizationDialog.vue'
+  // import {
+  //   Dialog,
+  //   DialogContent,
+  //   DialogHeader,
+  //   DialogTitle,
+  //   DialogDescription,
+  //   DialogFooter
+  // } from '@/components/ui/dialog'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
