@@ -397,8 +397,7 @@
     <!-- Load the widget script -->
     <script type="module">
       const xhttp = new XMLHttpRequest()
-      var custimoo_application_suppage_url = '' // used by customizer v1
-      var custimoo_app_info = undefined // used by customizer_v2.js
+      window.custimoo_app_info = undefined // used by customizer_v2.js
       let testing_mode = localStorage.getItem('cutimoo_testing_mode')
       let API_ENDPOINT = 'http://localhost:8000'
       if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_ENDPOINT) {
@@ -414,7 +413,7 @@
         if (customizer_version && customizer_version === 2) {
           s.type = 'module'
           s.src = `/src/main.ts`
-          custimoo_app_info = pageRes
+          window.custimoo_app_info = pageRes
         } else {
           let build_directory = 'self'
           let build_url = 'cdn'
@@ -425,7 +424,6 @@
           s.src = `https://${build_url}.custimoo.com/${build_directory}/v-customizer.min.js?build=${pageRes.app_version}`
           if (pageRes.is_subpage) {
             let subpage = trimAndreplaceSlashesWithDashes(pageRes.suppage_url)
-            custimoo_application_suppage_url = pageRes.suppage_url
           }
         }
 

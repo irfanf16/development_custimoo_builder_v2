@@ -22,6 +22,18 @@ export const useProductsStore = defineStore('productsStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
 
+  // ===== INTERNAL FLAGS =====
+  let customizationAutoSyncSuspendCount = 0
+  const isCustomizationAutoSyncSuspended = () => customizationAutoSyncSuspendCount > 0
+
+  function suspendCustomizationAutoSync() {
+    customizationAutoSyncSuspendCount += 1
+  }
+
+  function resumeCustomizationAutoSync() {
+    customizationAutoSyncSuspendCount = Math.max(0, customizationAutoSyncSuspendCount - 1)
+  }
+
   // ===== STATE =====
   const categories = ref<OutputProductCategories | null>(null)
   const activeProductDetails = ref<OutputProductDetails | null>(null)
@@ -155,10 +167,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     categories.value = null
     isLoading.value = false
     error.value = null
-  }
-
-  function initActiveSelectionFromLocalStorage() {
-    customization.loadFromLocalStorage()
   }
 
   function setActiveStep(_: string | null) {}
@@ -366,6 +374,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       () => customization.activeDesignId
     ],
     async ([productId, styleId, designId], [prevProductId, prevStyleId, prevDesignId]) => {
+      if (isCustomizationAutoSyncSuspended()) return
       // No changes detected
       if (productId === prevProductId && styleId === prevStyleId && designId === prevDesignId)
         return
@@ -446,7 +455,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     setSvgGroups,
     getProductById,
     reset,
-    initActiveSelectionFromLocalStorage,
     setActiveStep,
     saveCustomizationToLocalStorage,
     applyDesignPreview,
@@ -460,6 +468,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     fetchProductDetailsAndDesignsForProductPreview,
     //fetchProductAddons,
     fetchDesignPreviewsByStyleId,
-    fetchDesignDetailsById
+    fetchDesignDetailsById,
+    suspendCustomizationAutoSync,
+    resumeCustomizationAutoSync
   }
 })

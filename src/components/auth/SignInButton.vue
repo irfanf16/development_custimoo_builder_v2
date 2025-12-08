@@ -3,7 +3,6 @@
   import type { ButtonVariants } from '@/components/ui/button'
   import { auth_sign_in } from '@/paraglide/messages'
   import { useSignIn } from '@/composables/useSignIn'
-  import SignInDialog from './SignInDialog.vue'
 
   const emit = defineEmits<{ (e: 'open-profile'): void }>()
 
@@ -51,7 +50,6 @@
       >
         {{ auth_sign_in({}, { locale: currentLocale }) }}
       </Button>
-      <SignInDialog />
     </template>
 
     <!-- User Menu (when authenticated) -->

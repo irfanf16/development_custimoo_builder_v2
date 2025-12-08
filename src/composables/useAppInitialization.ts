@@ -34,6 +34,25 @@ type CategoryInfo = {
   subCategoryId?: number
 }
 
+type InitializationContext = {
+  stores: StoreInstances
+  hasPersistedCustomization: boolean
+  categoryInfo: CategoryInfo | null
+  hasCategoriesAvailable: boolean
+  companyChanged: boolean
+}
+
+type InitializationPhase =
+  | 'sync-query-params'
+  | 'load-app-info'
+  | 'check-storage-version'
+  | 'hydrate-persistent-stores'
+  | 'fetch-essential-data'
+  | 'determine-category'
+  | 'load-product-previews'
+  | 'hydrate-customization'
+  | 'initialize-workflow-effects'
+
 const COMPANY_ID_STORAGE_KEY = '__customizer_company_id__'
 
 // ============================================================================
@@ -57,12 +76,14 @@ export function useAppInitialization() {
       productsStore: ReturnType<typeof useProductsStore>
       customizationStore: ReturnType<typeof useCustomizationStore>
     }
-  ): void => {
+  ): boolean => {
     const hasPreviousCompany = previousCompanyId != null
     const isDifferentCompany =
       hasPreviousCompany && (currentCompanyId == null || currentCompanyId !== previousCompanyId)
+    let tenantChanged = false
 
     if (isDifferentCompany) {
+      tenantChanged = true
       storage.clearAll()
 
       stores.customizationStore.customization = null
@@ -100,28 +121,42 @@ export function useAppInitialization() {
     } else {
       storage.removeItem(COMPANY_ID_STORAGE_KEY)
     }
+
+    return tenantChanged
   }
 
   // ============================================================================
   // Phase 0: Check if the app has been loaded in an iframe and forward url params if needed
   // ============================================================================
-  const checkIfAppIsLoadedInIframeAndForwardUrlParamsIfNeeded = async (): Promise<void> => {
+  const syncQueryParamsIfEmbedded = async (): Promise<void> => {
+    if (typeof window === 'undefined') return
     const iframe = getCustomizerIframe()
-    if (iframe) {
-      // push url params to the iframe and push them to the route query params
-      const url = new URL(window.location.href)
-      // Collect all current query params and merge with url params
-      const query: Record<string, string> = {}
+    if (!iframe) return
 
-      url.searchParams.forEach((value, key) => {
-        query[key] = value
-      })
+    // Propagate host query params into the widget route so a shadow DOM host stays in sync.
+    const url = new URL(window.location.href)
+    const nextQuery: Record<string, string> = {}
+    url.searchParams.forEach((value, key) => {
+      nextQuery[key] = value
+    })
 
-      // Set all URL params at once; return a promise
-      await router.push({ query }).catch(error => {
-        console.error('Error forwarding url params to iframe:', error)
-      })
-    }
+    const currentQuery = router.currentRoute.value.query
+    const normalizedCurrent = Object.entries(currentQuery).reduce<Record<string, string>>(
+      (acc, [key, value]) => {
+        acc[key] = Array.isArray(value) ? value.join(',') : String(value)
+        return acc
+      },
+      {}
+    )
+    const queryMatches =
+      Object.keys(nextQuery).length === Object.keys(normalizedCurrent).length &&
+      Object.entries(nextQuery).every(([key, value]) => normalizedCurrent[key] === value)
+
+    if (queryMatches) return
+
+    await router.push({ query: nextQuery }).catch(error => {
+      console.error('Error forwarding url params to iframe:', error)
+    })
   }
 
   // ============================================================================
@@ -130,24 +165,20 @@ export function useAppInitialization() {
   // Loads state from localStorage before company data is available.
   // This provides immediate UI feedback, but data will be reloaded with correct
   // prefix after company is fetched.
-  const loadInitialStateFromLocalStorage = async (): Promise<StoreInstances> => {
-    // Load authentication state
+  const hydratePersistentStores = async (): Promise<InitializationContext> => {
     try {
       const authStore = useAuthStore()
       await authStore.ensureHydrated()
     } catch {
-      // Store may not be available in rare cases; continue initialization
+      // Ignore hydration errors so the rest of the pipeline can continue.
     }
 
-    // Load stores
     const productsStore = useProductsStore()
+    productsStore.suspendCustomizationAutoSync()
     const customizationStore = useCustomizationStore()
-    customizationStore.loadFromLocalStorage()
 
-    // Load workflow state (will be reloaded with correct prefix later)
     wf.loadFromLocalStorage()
 
-    // Load history stacks for immediate UI feedback
     try {
       const history = useHistoryStore()
       history.load()
@@ -155,7 +186,15 @@ export function useAppInitialization() {
       // Ignore errors when loading history
     }
 
-    return { productsStore, customizationStore }
+    const hasPersistedCustomization = customizationStore.loadFromLocalStorage()
+
+    return {
+      stores: { productsStore, customizationStore },
+      hasPersistedCustomization,
+      categoryInfo: null,
+      hasCategoriesAvailable: false,
+      companyChanged: false
+    }
   }
 
   // ============================================================================
@@ -163,10 +202,8 @@ export function useAppInitialization() {
   // ============================================================================
   // Fetches company data, settings, and product categories.
   // Company is fetched first so we can clear stale state if the tenant changed.
-  const fetchEssentialData = async (
-    productsStore: ReturnType<typeof useProductsStore>,
-    customizationStore: ReturnType<typeof useCustomizationStore>
-  ): Promise<void> => {
+  const fetchEssentialData = async (context: InitializationContext): Promise<void> => {
+    const { productsStore, customizationStore } = context.stores
     const companyStore = useCompanyStore()
 
     const previousCompanyIdRaw = storage.getItemRaw(COMPANY_ID_STORAGE_KEY)
@@ -180,16 +217,22 @@ export function useAppInitialization() {
 
     if (companyResponse.success) {
       const currentCompanyId = companyResponse.content.company?.id ?? null
-      handleCompanyContextChange(previousCompanyId, currentCompanyId, {
+      const companyChanged = handleCompanyContextChange(previousCompanyId, currentCompanyId, {
         productsStore,
         customizationStore
       })
+      context.companyChanged = companyChanged
+      if (companyChanged) {
+        context.hasPersistedCustomization = false
+      }
     }
 
     await Promise.all([
       companyStore.fetchSettings(),
       productsStore.fetchCustomizedCategories(categoryParamsComposable.categoryParams.value)
     ])
+
+    context.hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
   }
 
   // ============================================================================
@@ -197,11 +240,18 @@ export function useAppInitialization() {
   // ============================================================================
   // Now that company data is available, reload localStorage data with the
   // correct company-specific prefix to ensure we're using the right keys.
-  const reloadStateWithCorrectPrefix = (
-    customizationStore: ReturnType<typeof useCustomizationStore>
-  ): boolean => {
-    wf.loadFromLocalStorage()
-    return customizationStore.loadFromLocalStorage()
+  const hydrateCustomizationState = async (
+    context: InitializationContext,
+    categoryInfo: CategoryInfo
+  ): Promise<void> => {
+    const { customizationStore, productsStore } = context.stores
+
+    if (context.hasPersistedCustomization) {
+      await restoreExistingCustomization(customizationStore, productsStore)
+      return
+    }
+
+    await createDefaultCustomization(customizationStore, productsStore, categoryInfo)
   }
 
   // ============================================================================
@@ -413,6 +463,68 @@ export function useAppInitialization() {
     initializeEffects()
   }
 
+  const reportInitializationError = (phase: InitializationPhase, err: unknown): Error => {
+    const normalizedError = err instanceof Error ? err : new Error(String(err))
+    const phaseAwareError = new Error(`[${phase}] ${normalizedError.message}`)
+    phaseAwareError.stack = normalizedError.stack
+    console.error(`App initialization error during ${phase}:`, normalizedError)
+    return phaseAwareError
+  }
+
+  const executePhase = async <T>(
+    phase: InitializationPhase,
+    action: () => Promise<T> | T
+  ): Promise<T> => {
+    try {
+      return await action()
+    } catch (err) {
+      throw reportInitializationError(phase, err)
+    }
+  }
+
+  const runInitializationPipeline = async (): Promise<void> => {
+    await executePhase('sync-query-params', syncQueryParamsIfEmbedded)
+    await executePhase('load-app-info', () => {
+      appStore.loadAppInfoFromGlobalVariable()
+    })
+    await executePhase('check-storage-version', () => {
+      storage.checkVersion()
+    })
+
+    let context: InitializationContext | null = null
+
+    try {
+      const pipelineContext = await executePhase(
+        'hydrate-persistent-stores',
+        hydratePersistentStores
+      )
+      context = pipelineContext
+
+      await executePhase('fetch-essential-data', () => fetchEssentialData(pipelineContext))
+      pipelineContext.categoryInfo = await executePhase('determine-category', () =>
+        initializeLocalizationAndCategory(
+          pipelineContext.stores.customizationStore,
+          pipelineContext.stores.productsStore
+        )
+      )
+      syncWorkflowForCategoryAvailability(pipelineContext.hasCategoriesAvailable)
+
+      const categoryInfo = pipelineContext.categoryInfo ?? { categoryId: null }
+
+      await executePhase('load-product-previews', () =>
+        loadProductData(pipelineContext.stores.productsStore, categoryInfo)
+      )
+      await executePhase('hydrate-customization', () =>
+        hydrateCustomizationState(pipelineContext, categoryInfo)
+      )
+      await executePhase('initialize-workflow-effects', () => {
+        initializeWorkflowEffects()
+      })
+    } finally {
+      context?.stores.productsStore.resumeCustomizationAutoSync()
+    }
+  }
+
   // ============================================================================
   // Main Initialization Function
   // ============================================================================
@@ -438,54 +550,13 @@ export function useAppInitialization() {
     // Create global promise to prevent concurrent initializations
     globalInitializationPromise = (async () => {
       try {
-        // Phase 0: Check if the app has been loaded in an iframe
-        await checkIfAppIsLoadedInIframeAndForwardUrlParamsIfNeeded()
-        // Phase 1: Get app info
-        appStore.loadAppInfoFromGlobalVariable()
-
-        // Phase 2: Version check of package.json
-        storage.checkVersion()
-
-        // Phase 3: Load initial state (before company data)
-        const { productsStore, customizationStore } = await loadInitialStateFromLocalStorage()
-
-        // Phase 4: Fetch company and product data
-        await fetchEssentialData(productsStore, customizationStore)
-
-        const hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
-
-        // Phase 5: Reload state with correct company prefix
-        const hasActiveCustomization = reloadStateWithCorrectPrefix(customizationStore)
-
-        if (!hasCategoriesAvailable) {
-          syncWorkflowForCategoryAvailability(false)
-        }
-
-        // Phase 6: Initialize locale and determine category
-        const categoryInfo = await initializeLocalizationAndCategory(
-          customizationStore,
-          productsStore
-        )
-
-        // Phase 7: Load product previews
-        await loadProductData(productsStore, categoryInfo)
-
-        // Phase 8: Restore or create customization
-        if (hasActiveCustomization) {
-          await restoreExistingCustomization(customizationStore, productsStore)
-        } else {
-          await createDefaultCustomization(customizationStore, productsStore, categoryInfo)
-        }
-
-        // Phase 9: Initialize workflow watchers
-        initializeWorkflowEffects()
+        await runInitializationPipeline()
 
         // Mark as complete
         isInitialized.value = true
         globalIsInitialized = true
       } catch (err) {
         error.value = err instanceof Error ? err.message : 'Failed to initialize app'
-        console.error('App initialization error:', err)
       } finally {
         isLoading.value = false
         globalInitializationPromise = null
