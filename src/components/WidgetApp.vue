@@ -1,13 +1,9 @@
 <script setup lang="ts">
   import { onMounted, ref } from 'vue'
-  // import { useRouter, useRoute } from 'vue-router'
   import { useBrandStyling } from '@/composables/useBrandStyling'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { LayoutWrapper } from '@/layouts'
   import ConfirmDialog from '@/components/global/ConfirmDialog.vue'
-  // import SignInButton from './SignInButton.vue'
-  // import ThemeToggle from './ThemeToggle.vue'
-  // import { Button } from '@/components/ui/button'
 
   // Define props for the widget component
   defineProps({
@@ -53,8 +49,6 @@
     }
   })
 
-  // const router = useRouter()
-  // const route = useRoute()
   const uiStore = useUIStore()
 
   const widgetRootContainer = ref<HTMLElement>()

@@ -43,15 +43,6 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import LockerBrowser from '@/components/LockerBrowser.vue'
-  // import ResetCustomizationDialog from '@/components/customizer/ResetCustomizationDialog.vue'
-  // import {
-  //   Dialog,
-  //   DialogContent,
-  //   DialogHeader,
-  //   DialogTitle,
-  //   DialogDescription,
-  //   DialogFooter
-  // } from '@/components/ui/dialog'
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
@@ -64,7 +55,6 @@
 
   // Reactive state
   const showProfileDialog = ref(false)
-  // const showResetDialog = ref(false)
   const showLockerBrowser = ref(false)
   const showCartDialog = ref(false)
 
@@ -79,12 +69,6 @@
       history.clear()
     }
   }
-  // function cancelResetCustomization() {
-  //   showResetDialog.value = false
-  // }
-
-  // function confirmResetCustomization() {
-  // }
 
   function handleSaveAsDraft() {
     // Handle save as draft
@@ -248,24 +232,7 @@
       </DropdownMenu>
     </ButtonGroup>
     <LockerBrowser :open="showLockerBrowser" @update:open="showLockerBrowser = $event" />
-    <!-- <ResetCustomizationDialog v-model:open="showResetDialog" @confirm="confirmResetCustomization" /> -->
     <CartDialog :open="showCartDialog" @update:open="showCartDialog = $event" />
-    <!-- <Dialog v-model:open="showResetDialog">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}?
-          </DialogTitle>
-          <DialogDescription>
-            This will clear all current selections and history. You can't undo this action.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" @click="cancelResetCustomization">Cancel</Button>
-          <Button variant="destructive" @click="confirmResetCustomization">Confirm</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog> -->
   </div>
 </template>
 

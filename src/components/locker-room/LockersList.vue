@@ -1,24 +1,24 @@
 <script setup lang="ts">
   import { Card } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { DotSeparator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref } from 'vue'
+  import { Checkbox } from '@/components/ui/checkbox'
+  import { DotSeparator } from '@/components/ui/separator'
+  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { storeToRefs } from 'pinia'
+  import { computed, onMounted, ref } from 'vue'
 
   import { Button } from '@/components/ui/button'
-import { ButtonGroup } from '@/components/ui/button-group'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Spinner } from '@/components/ui/spinner'
-import { PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
-import { Check, Copy, MoreVertical, Pencil, X } from 'lucide-vue-next'
+  import { ButtonGroup } from '@/components/ui/button-group'
+  import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+  } from '@/components/ui/dropdown-menu'
+  import { Input } from '@/components/ui/input'
+  import { Spinner } from '@/components/ui/spinner'
+  import { PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
+  import { Check, Copy, MoreVertical, Pencil, X, Calendar, SwatchBook } from 'lucide-vue-next'
   const props = withDefaults(
     defineProps<{
       search: null | string
@@ -185,12 +185,12 @@ import { Check, Copy, MoreVertical, Pencil, X } from 'lucide-vue-next'
         <div class="mt-2 text-sm font-medium">{{ locker.room_name }}</div>
         <div class="text-xs text-muted-foreground flex gap-1 items-center">
           <span class="flex items-center gap-1">
-            <IFlexLineSwatchBook class="size-3.5 inline-block" />
+            <SwatchBook class="size-3.5 inline-block" />
             {{ locker.product_count }} designs
           </span>
           <DotSeparator class="bg-muted-foreground" />
           <span class="flex items-center gap-1">
-            <IFlexLineCalendar class="size-3.5 inline-block" />
+            <Calendar class="size-3.5 inline-block" />
             2 days ago
           </span>
         </div>

@@ -1,17 +1,18 @@
 <script setup lang="ts">
   import LockerDetail from '@/components/locker-room/LockerDetail.vue'
-import LockersList from '@/components/locker-room/LockersList.vue'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import type { Locker, LockerProduct } from '@/services/lockers/types'
-import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-import { ref } from 'vue'
-import LockerRoomFooter from './locker-room/LockerRoomFooter.vue'
-import LockerRoomHeader from './locker-room/LockerRoomHeader.vue'
+  import LockersList from '@/components/locker-room/LockersList.vue'
+  import { Dialog, DialogContent } from '@/components/ui/dialog'
+  import { ScrollArea } from '@/components/ui/scroll-area'
+  import type { Locker, LockerProduct } from '@/services/lockers/types'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { ref, watch } from 'vue'
+  import LockerRoomFooter from './locker-room/LockerRoomFooter.vue'
+  import LockerRoomHeader from './locker-room/LockerRoomHeader.vue'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
   type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
-  defineProps<{
+
+  const props = defineProps<{
     open: boolean
   }>()
 
@@ -61,6 +62,20 @@ import LockerRoomHeader from './locker-room/LockerRoomHeader.vue'
     lockerRoomStore.updateLockers({ ...locker })
     currentLocker.value = locker
   }
+  watch(
+    () => props.open,
+    newVal => {
+      if (!newVal) {
+        currentMode.value = 'list'
+        tab.value = 'lockers'
+        lockerTab.value = 'products'
+        sortOption.value = 'lastModified'
+        search.value = ''
+        selectedLocker.value = []
+        selectedProducts.value = []
+      }
+    }
+  )
 </script>
 
 <template>

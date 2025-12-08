@@ -1,11 +1,11 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Spinner } from '@/components/ui/spinner'
-import type { ProductRosterDetail } from '@/services/lockers/types'
-import { UsersIcon } from 'lucide-vue-next'
-import { ref } from 'vue'
+  import { Card } from '@/components/ui/card'
+  import { ScrollArea } from '@/components/ui/scroll-area'
+  import { Spinner } from '@/components/ui/spinner'
+  import type { ProductRosterDetail } from '@/services/lockers/types'
+  import { UsersIcon } from 'lucide-vue-next'
+  import { ref } from 'vue'
   type RosterProps = {
     roster_group: ProductRosterDetail[] | undefined
     group_name: string
@@ -71,23 +71,3 @@ import { ref } from 'vue'
     </div>
   </div>
 </template>
-
-<style scoped>
-  /* Custom scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: rgb(200, 200, 200);
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgb(150, 150, 150);
-  }
-</style>
