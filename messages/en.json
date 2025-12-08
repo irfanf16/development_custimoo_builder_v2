@@ -26,9 +26,6 @@
   "styles_alt_icon": "Style icon",
   "actions_size_guide": "Size guide",
   "actions_reset_customization": "Reset",
-  "actions_reset_customization_description": "This will clear all current selections and history. You can't undo this action.",
-  "actions_reset_customization_cancel": "Cancel",
-  "actions_reset_customization_confirm": "Confirm",
   "actions_share_design": "Share design",
   "actions_generate_pdf": "Generate PDF",
   "price_line": "for {qty} pcs · Delivered by {eta}",
@@ -207,5 +204,8 @@
   "texts_side_back": "Back",
   "texts_color_custom": "Custom",
   "texts_placement_generic_label": "Placement {index}",
-  "texts_fixed_text_label": "Fixed text"
+  "texts_fixed_text_label": "Fixed text",
+  "actions_reset_customization_description": "This will clear all current selections and history. You can't undo this action.",
+  "actions_reset_customization_cancel": "Cancel",
+  "actions_reset_customization_confirm": "Confirm"
 }
