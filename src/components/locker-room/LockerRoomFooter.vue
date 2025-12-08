@@ -1,0 +1,120 @@
+<script setup lang="ts">
+  import { AvatarQueue } from '@/components/ui/avatar-queue'
+import { Button } from '@/components/ui/button'
+import { DialogFooter } from '@/components/ui/dialog'
+import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import type { Locker, LockerProduct } from '@/services/lockers/types'
+import { Copy, FolderArchive, PlusIcon, ShoppingBasket, TrashIcon, X } from 'lucide-vue-next'
+import { computed } from 'vue'
+
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+import type LockerProductsListing from './LockerProductsListing.vue'
+  type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
+  interface FooterProps {
+    currentTab: 'lockers' | 'collections'
+    detailsTab: LockerTab
+    currentMode: 'list' | 'detail'
+    selectedProducts: LockerProduct[]
+    selectedLockers: Array<string | number>
+    lockerProductsRef?: InstanceType<typeof LockerProductsListing> | null
+    currentLocker: Locker | null
+  }
+  const props = withDefaults(defineProps<FooterProps>(), {
+    currentTab: 'lockers',
+    detailsTab: 'products',
+    currentMode: 'list',
+    selectedProducts: () => [],
+    lockerProductsRef: null
+  })
+
+  const emit = defineEmits(['back'])
+  const lockerRoomStore = useLockerRoomStore()
+  const products = computed(() => props.selectedProducts)
+  const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
+  const lockerRoom = computed(() => props.currentLocker)
+
+  const deleteProducts = () => {
+    if (products.value.length) {
+      lockerRoomStore.deleteProducts(
+        products.value.map(prod => prod.id),
+        lockerRoom.value!.id
+      )
+    }
+  }
+  const deleteLockers = () => {
+    if (lockerRoom.value) {
+      emit('back')
+      lockerRoomStore.deleteLocker(lockerRoom.value.id)
+    }
+  }
+</script>
+<template>
+  <DialogFooter class="w-full">
+    <div v-if="props.currentMode === 'list'" class="flex justify-end gap-2 pt-4 border-t w-full">
+      <Button variant="ghost">Cancel</Button>
+      <Button
+        :disabled="selectedLockers.length === 0"
+        class="disabled:opacity-25"
+        variant="primary"
+      >
+        <ShoppingBasket class="w-4 h-4" /> Add to cart
+      </Button>
+    </div>
+    <div v-else-if="currentMode === 'detail'" class="flex pt-4 border-t w-full gap-5">
+      <div class="flex items-center gap-3">
+        <span v-if="products.length > 0" class="flex items-center">
+          <AvatarQueue
+            :images="products.map(prod => baseStorageUrl + prod.product_front_url)"
+            :max="3"
+            :class="'overflow-hidden mr-2'"
+            :avatar-class="'!rounded-[13px] border p-1 !ring-0 !bg-secondary !shadow-none '"
+          />
+          <span class="ml-1">{{ products.length }} selected</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  variant="ghost"
+                  class="p-0"
+                  @click="props.lockerProductsRef?.unSelectAllProducts()"
+                  ><X class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent align="center" side="bottom"> Unselect all products </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </span>
+        <Button variant="outline" @click="props.lockerProductsRef?.selecteAllProducts()"
+          >Select all</Button
+        >
+      </div>
+      <div class="flex items-center gap-1">
+        <Button :disabled="products.length === 0" variant="outline">
+          <FolderArchive class="size-4" /> Move
+        </Button>
+        <Button :disabled="products.length !== 1" variant="outline">
+          <Copy class="size-4" /> Copy
+        </Button>
+      </div>
+      <Separator orientation="vertical" class="h-full" />
+
+      <div class="flex items-center gap-1">
+        <Button variant="outline" :disabled="selectedProducts.length === 0"
+          ><PlusIcon class="size-4" /> Add to collection</Button
+        >
+        <Button variant="primary" :disabled="selectedProducts.length === 0">
+          <ShoppingBasket class="w-4 h-4" /> Add to cart
+        </Button>
+      </div>
+      <Separator orientation="vertical" class="h-full" />
+      <Button
+        variant="ghost"
+        class="text-destructive"
+        @click="products.length === 0 ? deleteLockers() : deleteProducts()"
+      >
+        <TrashIcon class="size-4 text-destructive" /> Delete
+      </Button>
+    </div>
+  </DialogFooter>
+</template>

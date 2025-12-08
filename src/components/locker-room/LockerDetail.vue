@@ -1,0 +1,59 @@
+<script setup lang="ts">
+  import type { Colour, Locker, LockerProduct, ProductRosterDetail } from '@/services/lockers/types'
+import { computed, ref, type ComputedRef } from 'vue'
+import LockerAssetsListing from './LockerAssetsListing.vue'
+import LockerColoursListing from './LockerColoursListing.vue'
+import LockerProductsListing from './LockerProductsListing.vue'
+import LockerRosters from './LockerRosters.vue'
+  type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
+  type ColourProps = {
+    colour_group: Colour[]
+    group_name: string
+  }
+  type RosterProps = {
+    roster_group: ProductRosterDetail[] | undefined
+    group_name: string
+  }
+  const props = defineProps<{ locker: Locker; lockerTab: LockerTab }>()
+  const emit = defineEmits(['select-product'])
+  const lockerProductsRef = ref<InstanceType<typeof LockerProductsListing> | null>(null)
+
+  const colours: ComputedRef<ColourProps[]> = computed(() =>
+    props.locker.folders.map(folder => ({
+      colour_group: JSON.parse(folder.color),
+      group_name: folder.folder_name
+    }))
+  )
+  const rosters_groups: ComputedRef<RosterProps[]> = computed(() =>
+    props.locker.product.map(prod => ({
+      roster_group: prod.product_roster_detail,
+      group_name: prod.product_name
+    }))
+  )
+  defineExpose({ lockerProductsRef })
+</script>
+
+<template>
+  <Transition name="slide-horizontal" mode="out-in">
+    <div v-if="lockerTab === 'products'" key="products" class="absolute inset-0">
+      <LockerProductsListing
+        ref="lockerProductsRef"
+        :products="locker.product"
+        @select-product="
+          (locker_products: LockerProduct[]) => emit('select-product', locker_products)
+        "
+      />
+    </div>
+
+    <div v-else-if="lockerTab === 'assets'" key="assets" class="absolute inset-0">
+      <LockerAssetsListing :assets="locker.logos" />
+    </div>
+
+    <div v-else-if="lockerTab === 'colours'" key="colours" class="absolute inset-0">
+      <LockerColoursListing :colours="colours" />
+    </div>
+    <div v-else-if="lockerTab === 'rosters'" key="rosters" class="absolute inset-0">
+      <LockerRosters :rosters="rosters_groups" />
+    </div>
+  </Transition>
+</template>

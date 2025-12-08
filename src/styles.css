@@ -501,3 +501,21 @@ customizer-widget * {
  * - animate-accordion-down
  * - animate-accordion-up
  */
+
+
+
+  .slide-horizontal-enter-active,
+  .slide-horizontal-leave-active {
+    transition: all 0.25s ease;
+    background-color: red;
+  }
+
+  .slide-horizontal-enter-from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  .slide-horizontal-leave-to {
+    transform: translateX(-30%);
+    opacity: 0;
+  }

@@ -1,45 +1,47 @@
 <script setup lang="ts">
-  import { Button } from '@/components/ui/button'
-  import { ButtonGroup } from '@/components/ui/button-group'
-  import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger
-  } from '@/components/ui/dropdown-menu'
-  import {
-    Save,
-    ShoppingCart,
-    RotateCcw,
-    ChevronDown,
-    Menu,
-    User,
-    Settings,
-    LogOut,
-    LogIn,
-    LayoutGrid,
-    Fullscreen
-  } from 'lucide-vue-next'
-  import {
-    topbar_save,
-    topbar_locker_room,
-    topbar_cart,
-    topbar_save_options,
-    actions_reset_customization
-  } from '@/paraglide/messages'
-  import { useProfileStore } from '@/stores/profile/profile.store'
-  import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { useHistoryStore } from '@/stores/history/history.store'
-  import SignInButton from '../SignInButton.vue'
-  import { useAuthStore } from '@/stores/auth/auth.store'
-  import { storeToRefs } from 'pinia'
   import ProfileDialog from '@/components/customizer-profile-section/ProfileDialog.vue'
-  import SignInDialog from '@/components/SignInDialog.vue'
-  import { ref } from 'vue'
-  import { useUIStore } from '@/stores/ui/ui.store'
-  import ResetCustomizationDialog from '@/components/customizer/ResetCustomizationDialog.vue'
+import ResetCustomizationDialog from '@/components/customizer/ResetCustomizationDialog.vue'
+import SignInDialog from '@/components/SignInDialog.vue'
+import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import {
+  actions_reset_customization,
+  topbar_cart,
+  topbar_locker_room,
+  topbar_save,
+  topbar_save_options
+} from '@/paraglide/messages'
+import { useAuthStore } from '@/stores/auth/auth.store'
+import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useHistoryStore } from '@/stores/history/history.store'
+import { useProfileStore } from '@/stores/profile/profile.store'
+import { useUIStore } from '@/stores/ui/ui.store'
+import {
+  ChevronDown,
+  Fullscreen,
+  LayoutGrid,
+  LogIn,
+  LogOut,
+  Menu,
+  RotateCcw,
+  Save,
+  Settings,
+  ShoppingCart,
+  User
+} from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
+import { ref } from 'vue'
+import LockerBrowser from '../LockerBrowser.vue'
+import SignInButton from '../SignInButton.vue'
+
 
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
@@ -53,6 +55,7 @@
   const showProfileDialog = ref(false)
   const showSignInDialog = ref(false)
   const showResetDialog = ref(false)
+  const showLockerBrowser = ref(false)
 
   // Methods
   function handleResetCustomization() {
@@ -151,7 +154,7 @@
       </ButtonGroup>
       <!-- Locker Room Button -->
       <ButtonGroup v-if="!uiStore.isMobile">
-        <Button size="default">
+        <Button size="default" @click="showLockerBrowser = true">
           <LayoutGrid class="size-4" />
           <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
@@ -219,6 +222,10 @@
         <SignInDialog v-model:open="showSignInDialog" />
       </DropdownMenu>
     </ButtonGroup>
+    <LockerBrowser
+      :open="showLockerBrowser"
+      @update:open="showLockerBrowser = $event"
+    />
     <ResetCustomizationDialog v-model:open="showResetDialog" @confirm="confirmResetCustomization" />
   </div>
 </template>
