@@ -5,6 +5,8 @@ import App from './App.vue'
 import '@/icons/flex-flat-categories'
 import { useUIStore } from '@/stores/ui/ui.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
+import { useAppStore } from '@/stores/app/app.store'
+import { WIDGET_CONTAINER_ID } from './lib/widgetUtils'
 
 // Import CSS styles
 import widgetStyles from './styles.css?inline'
@@ -104,7 +106,7 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
 
   // Create a container element within the shadow root
   const container = document.createElement('div')
-  container.id = 'customizer-widget-container'
+  container.id = WIDGET_CONTAINER_ID
   // Teleport target for UI portals (e.g., tooltips) inside the widget's Shadow DOM
   ;(window as unknown as { __CUSTOMIZER_CONTAINER__?: HTMLElement }).__CUSTOMIZER_CONTAINER__ =
     container
@@ -112,10 +114,13 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   // Initialize Pinia and UI store early to manage viewport state
   const pinia = createPinia()
   const ui = useUIStore(pinia)
+  const appStore = useAppStore(pinia)
+  // Ensure app info is loaded before any store relies on prefixed storage keys
+  appStore.loadAppInfoFromGlobalVariable()
 
   // Load auth state from localStorage on app start
   const authStore = useAuthStore(pinia)
-  void authStore.loadFromLocalStorage()
+  void authStore.ensureHydrated()
 
   // Set container height with responsive minimum heights from the UI store
   const setContainerHeight = () => {

@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { GetProductCategoriesParams } from '@/services/products/types'
+import { isWidgetMode } from '@/lib/widgetUtils'
 
 /**
  * Composable to determine the appropriate category query parameters
@@ -11,7 +12,6 @@ export function useCategoryParams() {
 
   // In widget mode, we need to check the parent window's URL for query params
   // since the widget uses hash routing
-  const isWidgetMode = () => document.querySelector('customizer-widget') !== null
 
   /**
    * Get query parameters from the appropriate location

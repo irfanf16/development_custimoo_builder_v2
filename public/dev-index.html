@@ -333,14 +333,14 @@
 
     <div class="demo-section">
       <div class="widget-demo">
-        <customizer-widget
+        <v-customizer
           title=""
           theme="dark"
           mode="default"
           show-navigation="true"
           date="2024-01-15"
           end="Widget session ended"
-        ></customizer-widget>
+        ></v-customizer>
       </div>
     </div>
 
@@ -395,9 +395,55 @@
     </footer>
 
     <!-- Load the widget script -->
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module">
+      const xhttp = new XMLHttpRequest()
+      var custimoo_application_suppage_url = '' // used by customizer v1
+      var custimoo_app_info = undefined // used by customizer_v2.js
+      let testing_mode = localStorage.getItem('cutimoo_testing_mode')
+      let API_ENDPOINT = 'http://localhost:8000'
+      if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_ENDPOINT) {
+        API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT
+      } else if (window.__ENV?.VITE_API_ENDPOINT) {
+        API_ENDPOINT = window.__ENV.VITE_API_ENDPOINT
+      }
+      xhttp.onload = function () {
+        let pageRes = JSON.parse(this.response)
+        const s = document.createElement('script')
+
+        let customizer_version = pageRes.customizer_version
+        if (customizer_version && customizer_version === 2) {
+          s.type = 'module'
+          s.src = `/src/main.ts`
+          custimoo_app_info = pageRes
+        } else {
+          let build_directory = 'self'
+          let build_url = 'cdn'
+          if (testing_mode && (pageRes.testing_mode == 'true' || pageRes.testing_mode)) {
+            build_directory = 'self_staging'
+            build_url = 'devcdn'
+          }
+          s.src = `https://${build_url}.custimoo.com/${build_directory}/v-customizer.min.js?build=${pageRes.app_version}`
+          if (pageRes.is_subpage) {
+            let subpage = trimAndreplaceSlashesWithDashes(pageRes.suppage_url)
+            custimoo_application_suppage_url = pageRes.suppage_url
+          }
+        }
+
+        document.body.appendChild(s)
+      }
+      xhttp.open('GET', `${API_ENDPOINT}/api/get_app_version`)
+      xhttp.setRequestHeader('subpageurl', window.location.pathname)
+      xhttp.send()
+
+      function trimAndreplaceSlashesWithDashes(inputString) {
+        let trimmedString = inputString.replace(/^\/+|\/+$/g, '')
+        let resultString = trimmedString.replace(/\//g, '-')
+        return resultString
+      }
+    </script>
 
     <!-- Mobile menu toggle script -->
+    <!-- <script type="module" src="/src/main.ts"></script> -->
     <script>
       function toggleMobileMenu() {
         const mobileMenu = document.getElementById('mobileMenu')

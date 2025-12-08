@@ -3,7 +3,7 @@ export type ProductsSubStep = 'category' | 'subcategory' | 'product'
 export type PatternsSubStep = 'list' | 'edit'
 export type TextsSubStep = 'list' | 'placement' | 'edit' | 'number-font'
 export type RosterSubStep = 'list' | 'edit'
-export type CanvasSide = 'front' | 'back'
+export type CanvasSide = 'front' | 'back' | '3d'
 
 export type WorkflowBaseStep =
   | 'product'

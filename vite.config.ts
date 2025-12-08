@@ -19,6 +19,14 @@ export default defineConfig({
     vue(),
     tailwindcss(),
     Components({
+      // Watch only our icon sources so Vue components stay manual
+      dirs: [
+        'src/icons/streamline/flex-line',
+        'src/icons/streamline/flex-flat',
+        'src/icons/other',
+        'src/icons/other-fixed-color'
+      ],
+      types: [],
       resolvers: [
         IconsResolver({
           customCollections: ['flex-line', 'flex-flat', 'other', 'other-fixed-color'],

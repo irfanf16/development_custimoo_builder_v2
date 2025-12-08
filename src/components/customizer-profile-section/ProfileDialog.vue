@@ -11,12 +11,12 @@
   import { storeToRefs } from 'pinia'
   import Spinner from '../ui/spinner/Spinner.vue'
   import PreferencesTab from './preferences-section/PreferencesTab.vue'
-  import { useLocalStorage } from '@/composables/useLocalStorage'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { Button } from '@/components/ui/button'
   import { ArrowLeft } from 'lucide-vue-next'
   import { m as messages } from '@/paraglide/messages'
   import { DialogTitle, DialogDescription } from '@/components/ui/dialog'
+  import { useSignIn } from '@/composables/useSignIn'
 
   const props = defineProps<{ open: boolean }>()
   const emit = defineEmits(['update:open'])
@@ -24,7 +24,7 @@
   const { tab, tabItems } = useProfileDialogState()
   const profileStore = useProfileStore()
   const { counters } = storeToRefs(profileStore)
-  const { clearAll } = useLocalStorage()
+  const { handleLogout } = useSignIn()
   const uiStore = useUIStore()
 
   // Mobile state: true = showing tab list, false = showing content
@@ -68,8 +68,10 @@
 
   function handleSignOut() {
     emit('update:open', false)
-    clearAll()
-    useProfileStore().$reset()
+    handleLogout({
+      clearAllStorage: true,
+      resetProfileStore: true
+    })
   }
 
   function handleMobileTabClick(tabValue: 'account' | 'orders' | 'address' | 'preferences') {

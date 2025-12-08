@@ -1,21 +1,21 @@
 <script setup lang="ts">
-  import { computed, nextTick, onMounted, ref } from 'vue'
-  import { storeToRefs } from 'pinia'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
-  import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
+  import { useCustomizerMenu } from '@/composables'
+  import { design_categories_default_label } from '@/paraglide/messages'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
+  import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  import { useDesignConfig } from './useDesignConfig'
+  import { storeToRefs } from 'pinia'
+  import { computed, nextTick, onMounted, ref } from 'vue'
   import type { DesignCategoriesConfig } from '../../types'
   import LazyTwoDScene from '../LazyTwoDScene.vue'
-  import { useProfileStore } from '@/stores/profile/profile.store'
-  import { design_categories_default_label } from '@/paraglide/messages'
+  import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
+  import { useDesignConfig } from './useDesignConfig'
 
   const uiStore = useUIStore()
-  const { shouldShowStyles } = useCustomizerMenu()
   const customizationStore = useCustomizationStore()
+  const { shouldShowStyles } = useCustomizerMenu()
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const profileStore = useProfileStore()
@@ -23,7 +23,8 @@
   const { isMobile } = storeToRefs(uiStore)
   const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
   const { selectedDesignCategoryId } = storeToRefs(workflowStore)
-  const { designSearchModel, designCategoriesConfig } = useDesignConfig()
+  const { designSearchModel, designCategoriesConfig, selectedDesigns, toggleDesignSelection } =
+    useDesignConfig()
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -131,11 +132,19 @@
       <div>
         <LazyTwoDScene
           :design="item.front_design"
+          :svg-parts="item.svg_parts"
           :canvas-width="isMobile ? 130 : 176"
           :canvas-height="isMobile ? 130 : 176"
           :canvas-class="'rounded-xl'"
         />
       </div>
+      <Checkbox
+        :id="`checkbox-design-${item.id}`"
+        :class="'absolute bottom-2 right-2 size-6'"
+        :model-value="!!selectedDesigns.find(id => id === item.id)"
+        @click.stop
+        @update:model-value="toggleDesignSelection(item.id)"
+      />
     </div>
   </div>
 </template>

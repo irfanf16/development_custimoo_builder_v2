@@ -3,6 +3,16 @@
  */
 
 /**
+ * Widget element selector (custom element tag name)
+ */
+export const WIDGET_ELEMENT_SELECTOR = 'v-customizer'
+
+/**
+ * Widget container element ID
+ */
+export const WIDGET_CONTAINER_ID = 'v-customizer-container'
+
+/**
  * Apply widget color scheme to a container element
  */
 // applyWidgetColors is deprecated in favor of useBrandStyling.applyBrandStyling
@@ -11,14 +21,37 @@
  * Get widget container element
  */
 export function getWidgetContainer(): HTMLElement | null {
-  return document.querySelector('#customizer-widget-container')
+  return document.querySelector(`#${WIDGET_CONTAINER_ID}`)
 }
 
 /**
  * Check if we're in widget mode
  */
 export function isWidgetMode(): boolean {
-  return document.querySelector('customizer-widget') !== null
+  return document.querySelector(WIDGET_ELEMENT_SELECTOR) !== null
+}
+
+const getWindowObject = () => {
+  try {
+    return window.parent
+  } catch (error) {
+    console.info('Error while getting window object', error)
+    return window
+  }
+}
+
+export const getCustomizerIframe = (): HTMLIFrameElement | null => {
+  const iframes = getWindowObject().document.querySelectorAll('iframe')
+  let customizer_iframe: HTMLIFrameElement | null = null
+  Array.from(iframes).forEach(iframe => {
+    // Narrow type to HTMLIFrameElement
+    if (!(iframe instanceof HTMLIFrameElement)) return
+    const get_customizer = iframe.contentDocument?.querySelector('v-customizer')
+    if (get_customizer) {
+      customizer_iframe = iframe
+    }
+  })
+  return customizer_iframe
 }
 
 /**

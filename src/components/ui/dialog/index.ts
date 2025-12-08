@@ -26,7 +26,7 @@ export const dialogContentVariants = cva(
     variants: {
       variant: {
         default: '',
-        large: `${MOBILE_CONTENT_CLASSES} max-w-none w-full h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] md:h-[760px] md:w-[1192px] md:max-w-full md:max-h-full md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:transform md:rounded-lg md:shadow-lg md:border`
+        large: `${MOBILE_CONTENT_CLASSES} max-w-none w-full h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] md:max-h-[760px] md:w-[1192px] md:max-w-full md:max-h-full md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:transform md:rounded-lg md:shadow-lg md:border`
       }
     },
     defaultVariants: {

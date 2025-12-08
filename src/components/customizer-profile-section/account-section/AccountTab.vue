@@ -12,8 +12,8 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { m as messages } from '@/paraglide/messages'
   import { computed, ref, onMounted } from 'vue'
-  import { useLocalStorage } from '@/composables/useLocalStorage'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useSignIn } from '@/composables/useSignIn'
   defineProps<{ title?: string; counters: DashboardCounters }>()
 
   onMounted(() => {
@@ -24,7 +24,7 @@
   const auth = useAuthStore()
   const { customer, customerInitials } = storeToRefs(auth)
   const profileStore = useProfileStore()
-  const { clearAll } = useLocalStorage()
+  const { handleLogout } = useSignIn()
   const emit = defineEmits(['sign-out'])
   const uiStore = useUIStore()
   const defaultAddress = computed(() => profileStore.defaultAddress)
@@ -55,8 +55,10 @@
   }))
 
   function handleSignOut() {
-    auth.logout() // logout user
-    clearAll() // clear all localStorage data
+    handleLogout({
+      clearAllStorage: true,
+      resetProfileStore: true
+    })
     emit('sign-out') // let parent know to close dialog
   }
 

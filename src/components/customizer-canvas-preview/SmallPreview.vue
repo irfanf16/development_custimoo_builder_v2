@@ -57,7 +57,7 @@
         await withCanvasBatch(async () => {
           const design = effectiveDesignDetails.value
           const style = effectiveStyleDetails.value
-          const side = workflowStore.activeCanvasSide
+          const side = workflowStore.activeCanvasSide as 'front' | 'back'
           const logos = filterLogosByOppositeSide(effectiveLogos.value, side)
 
           if (!design || !style) return

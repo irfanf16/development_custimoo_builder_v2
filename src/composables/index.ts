@@ -7,6 +7,7 @@ export { useParaglideLocale } from './useParaglideLocale'
 export { useWorkflow } from './useWorkflow'
 export { useProfileDialogState } from './useProfileDialogState'
 export { useLocalStorage } from './useLocalStorage'
+export { useSignIn, type LogoutOptions } from './useSignIn'
 export {
   useRenderQueue,
   usePreviousLogoState,
