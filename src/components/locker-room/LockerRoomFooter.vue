@@ -1,15 +1,16 @@
 <script setup lang="ts">
   import { AvatarQueue } from '@/components/ui/avatar-queue'
-import { Button } from '@/components/ui/button'
-import { DialogFooter } from '@/components/ui/dialog'
-import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import type { Locker, LockerProduct } from '@/services/lockers/types'
-import { Copy, FolderArchive, PlusIcon, ShoppingBasket, TrashIcon, X } from 'lucide-vue-next'
-import { computed } from 'vue'
+  import { Button } from '@/components/ui/button'
+  import { DialogFooter } from '@/components/ui/dialog'
+  import { Separator } from '@/components/ui/separator'
+  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+  import type { Locker, LockerProduct } from '@/services/lockers/types'
+  import { Copy, FolderArchive, PlusIcon, ShoppingBasket, TrashIcon, X } from 'lucide-vue-next'
+  import { computed } from 'vue'
 
+  import { confirmDialog } from '@/lib/confirm-dialog'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-import type LockerProductsListing from './LockerProductsListing.vue'
+  import type LockerProductsListing from './LockerProductsListing.vue'
   type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
   interface FooterProps {
     currentTab: 'lockers' | 'collections'
@@ -34,18 +35,30 @@ import type LockerProductsListing from './LockerProductsListing.vue'
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const lockerRoom = computed(() => props.currentLocker)
 
-  const deleteProducts = () => {
+  const deleteProducts = async () => {
     if (products.value.length) {
-      lockerRoomStore.deleteProducts(
-        products.value.map(prod => prod.id),
-        lockerRoom.value!.id
-      )
+      const ok = await confirmDialog({
+        title: `Delete ${products.value.length} Product${products.value.length > 1 ? 's' : ''}`,
+        description: `Are you sure you want to delete ${products.value.length > 1 ? 'all these products' : 'this product'}? This action cannot be undone.`
+      })
+      if (ok) {
+        lockerRoomStore.deleteProducts(
+          products.value.map(prod => prod.id),
+          lockerRoom.value!.id
+        )
+      }
     }
   }
-  const deleteLockers = () => {
+  const deleteLockers = async () => {
     if (lockerRoom.value) {
-      emit('back')
-      lockerRoomStore.deleteLocker(lockerRoom.value.id)
+      const ok = await confirmDialog({
+        title: 'Delete Locker?',
+        description: 'This action cannot be undone.'
+      })
+      if (ok) {
+        emit('back')
+        lockerRoomStore.deleteLocker(lockerRoom.value.id)
+      }
     }
   }
 </script>

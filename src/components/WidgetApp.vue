@@ -4,6 +4,7 @@
   import { useBrandStyling } from '@/composables/useBrandStyling'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { LayoutWrapper } from '@/layouts'
+  import ConfirmDialog from '@/components/global/ConfirmDialog.vue'
   // import SignInButton from './SignInButton.vue'
   // import ThemeToggle from './ThemeToggle.vue'
   // import { Button } from '@/components/ui/button'
@@ -78,6 +79,7 @@
     <!-- Widget content -->
     <LayoutWrapper class="bg-background text-foreground flex-1 flex flex-col">
       <router-view class="flex-1 flex flex-col" />
+      <ConfirmDialog />
     </LayoutWrapper>
   </div>
 </template>
