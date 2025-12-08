@@ -3,19 +3,17 @@
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useColorActions } from '@/composables/useColorActions'
+  import { useResetCustomization } from '@/composables/useResetCustomization'
   import { Shuffle, Undo2, Redo2, Crosshair, RotateCcw } from 'lucide-vue-next'
-  import { computed, ref } from 'vue'
-  import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import ResetCustomizationDialog from '@/components/customizer/ResetCustomizationDialog.vue'
+  import { computed } from 'vue'
 
   const history = useHistoryStore()
   const workflow = useWorkflowStore()
-  const customizationStore = useCustomizationStore()
   const { shuffleColors } = useColorActions()
+  const { openResetDialog } = useResetCustomization()
 
   const canUndo = computed(() => history.undoStack.length > 0)
   const canRedo = computed(() => history.redoStack.length > 0)
-  const showResetDialog = ref(false)
 
   function centerCanvas() {
     // Center current canvas view
@@ -23,13 +21,7 @@
   }
 
   function handleResetCustomization() {
-    showResetDialog.value = true
-  }
-
-  function confirmResetCustomization() {
-    customizationStore.clearCustomization()
-    history.clear()
-    showResetDialog.value = false
+    openResetDialog()
   }
 </script>
 
@@ -79,7 +71,6 @@
       <Crosshair class="size-4" />
       <span class="text-xs font-normal">Centre</span>
     </Button>
-    <ResetCustomizationDialog v-model:open="showResetDialog" @confirm="confirmResetCustomization" />
   </div>
 </template>
 

@@ -163,7 +163,9 @@
   const tabClass = (tab: string) =>
     profileStore.addressTabs === tab ? 'text-primary' : 'text-muted-foreground'
 
-  onMounted(profileStore.fetchCountries)
+  onMounted(() => {
+    profileStore.fetchCountries()
+  })
 
   watch(
     () => props.address,

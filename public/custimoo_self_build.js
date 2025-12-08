@@ -1,6 +1,6 @@
 const xhttp = new XMLHttpRequest()
 var custimoo_application_suppage_url = '' // used by customizer v1
-var custimoo_app_info = undefined // used by customizer_v2.js
+window.custimoo_app_info = undefined // used by customizer_v2.js
 let testing_mode = localStorage.getItem('cutimoo_testing_mode')
 xhttp.onload = function () {
   let pageRes = JSON.parse(this.response)
@@ -11,7 +11,7 @@ xhttp.onload = function () {
     s.type = 'module'
     s.src = `/widget.js`
     s.crossOrigin = 'anonymous'
-    custimoo_app_info = pageRes
+    window.custimoo_app_info = pageRes
   } else {
     let build_directory = 'self'
     let build_url = 'cdn'

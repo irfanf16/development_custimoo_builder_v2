@@ -17,7 +17,6 @@
   const companyStore = useCompanyStore()
 
   onMounted(() => {
-    profileStore.loadFromLocalStorage()
     void profileStore.initializeLocale()
   })
 

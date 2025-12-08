@@ -45,9 +45,6 @@
   const orderStatuses = computed(() => getOrderOptions(store.ordersPageType))
 
   onMounted(() => {
-    // Load persisted state
-    store.loadFromLocalStorage()
-
     // If on timeline view and activeOrder exists, fetch fresh details
     if (store.activeOrder?.id && store.activeOrderView === 'timeline') {
       store.fetchOrderDetails(store.activeOrder.id)

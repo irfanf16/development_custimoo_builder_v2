@@ -8,6 +8,7 @@ export { useWorkflow } from './useWorkflow'
 export { useProfileDialogState } from './useProfileDialogState'
 export { useLocalStorage } from './useLocalStorage'
 export { useSignIn, type LogoutOptions } from './useSignIn'
+export { useResetCustomization } from './useResetCustomization'
 export {
   useRenderQueue,
   usePreviousLogoState,

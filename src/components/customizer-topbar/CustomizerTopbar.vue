@@ -30,8 +30,6 @@
     actions_reset_customization
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { useHistoryStore } from '@/stores/history/history.store'
   import SignInButton from '@/components/auth/SignInButton.vue'
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { storeToRefs } from 'pinia'
@@ -39,44 +37,27 @@
   import SignInDialog from '@/components/auth/SignInDialog.vue'
   import { CartDialog } from '@/components/cart'
   import { useSignIn } from '@/composables/useSignIn'
+  import { useResetCustomization } from '@/composables/useResetCustomization'
   import { ref } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import ResetCustomizationDialog from '@/components/customizer/ResetCustomizationDialog.vue'
-  import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter
-  } from '@/components/ui/dialog'
 
   const uiStore = useUIStore()
-  const customizationStore = useCustomizationStore()
-  const history = useHistoryStore()
   const profileStore = useProfileStore()
   const authStore = useAuthStore()
   const { openSignInDialog, handleLogout } = useSignIn()
+  const { isResetDialogOpen, openResetDialog, handleConfirmReset, setResetDialogOpen } =
+    useResetCustomization()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
 
   // Reactive state
   const showProfileDialog = ref(false)
-  const showResetDialog = ref(false)
   const showCartDialog = ref(false)
 
   // Methods
   function handleResetCustomization() {
-    showResetDialog.value = true
-  }
-  function cancelResetCustomization() {
-    showResetDialog.value = false
-  }
-
-  function confirmResetCustomization() {
-    customizationStore.clearCustomization()
-    history.clear()
-    showResetDialog.value = false
+    openResetDialog()
   }
 
   function handleSaveAsDraft() {
@@ -246,24 +227,12 @@
         <SignInDialog />
       </DropdownMenu>
     </ButtonGroup>
-    <ResetCustomizationDialog v-model:open="showResetDialog" @confirm="confirmResetCustomization" />
+    <ResetCustomizationDialog
+      :open="isResetDialogOpen"
+      @update:open="setResetDialogOpen"
+      @confirm="handleConfirmReset"
+    />
     <CartDialog :open="showCartDialog" @update:open="showCartDialog = $event" />
-    <Dialog v-model:open="showResetDialog">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}?
-          </DialogTitle>
-          <DialogDescription>
-            This will clear all current selections and history. You can't undo this action.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" @click="cancelResetCustomization">Cancel</Button>
-          <Button variant="destructive" @click="confirmResetCustomization">Confirm</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   </div>
 </template>
 
