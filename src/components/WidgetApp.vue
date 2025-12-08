@@ -76,7 +76,7 @@
     :class="['widget-theme w-full min-h-full', { dark: uiStore.currentTheme === 'dark' }]"
   >
     <!-- Widget content -->
-    <LayoutWrapper class="bg-background text-foreground flex-1 flex flex-col">
+    <LayoutWrapper class="bg-accent text-foreground flex-1 flex flex-col">
       <router-view class="flex-1 flex flex-col" />
     </LayoutWrapper>
   </div>

@@ -121,7 +121,7 @@
     <ButtonGroup class="flex w-full justify-between md:w-auto md:justify-normal">
       <!-- Reset Button -->
       <ButtonGroup v-if="!uiStore.isMobile">
-        <Button size="default" @click="handleResetCustomization">
+        <Button variant="outline" size="default" @click="handleResetCustomization">
           <RotateCcw class="size-4" />
           {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}
         </Button>
@@ -129,7 +129,7 @@
       <ButtonGroup>
         <!-- Fullscreen Button for mobile only -->
         <ButtonGroup v-if="uiStore.isMobile">
-          <Button size="icon" @click="handleFullscreen">
+          <Button variant="outline" size="icon" @click="handleFullscreen">
             <Fullscreen class="size-4" />
           </Button>
         </ButtonGroup>
@@ -137,13 +137,14 @@
         <DropdownMenu v-if="authStore.isAuthenticated">
           <ButtonGroup>
             <DropdownMenuTrigger as-child>
-              <Button size="default">
+              <Button variant="outline" size="default">
                 <Save class="size-4" />
                 <span>{{ topbar_save({}, { locale: profileStore.currentLocale }) }}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuTrigger as-child>
               <Button
+                variant="outline"
                 size="icon"
                 :aria-label="topbar_save_options({}, { locale: profileStore.currentLocale })"
               >
@@ -169,7 +170,7 @@
       </ButtonGroup>
       <!-- Locker Room Button -->
       <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <Button size="default">
+        <Button variant="outline" size="default">
           <LayoutGrid class="size-4" />
           <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
@@ -177,7 +178,7 @@
 
       <!-- Cart Button -->
       <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <Button size="default" @click="handleCartClick">
+        <Button variant="outline" size="default" @click="handleCartClick">
           <ShoppingCart class="size-4" />
           <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
@@ -188,7 +189,12 @@
         <ButtonGroup>
           <SignInButton @open-profile="handleUserProfile" />
           <DropdownMenuTrigger as-child>
-            <Button size="icon" aria-label="User menu" class="rounded-l-md rounded-r-md">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="User menu"
+              class="rounded-l-md rounded-r-md"
+            >
               <Menu class="size-4" />
             </Button>
           </DropdownMenuTrigger>

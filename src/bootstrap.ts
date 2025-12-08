@@ -129,7 +129,7 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
     // Set minHeight BEFORE measuring to ensure it's applied
     container.style.minHeight = `${minHeight}px`
     container.style.height = 'auto'
-    container.classList.add('bg-background')
+    container.classList.add('bg-accent')
 
     // Force a reflow to ensure styles are applied
 

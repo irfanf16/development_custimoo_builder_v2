@@ -95,8 +95,6 @@ export function useBrandStyling() {
     )
     const ring = `rgb(from var(--primary) r g b / 0.5)`
     target.style.setProperty('--ring', ring)
-    const accent = `rgb(from var(--primary) r g b / 0.3)`
-    target.style.setProperty('--accent', accent)
 
     // Apply font variables
     let defaultFontCSS = 'ui-sans-serif, system-ui, sans-serif'
