@@ -1,4 +1,5 @@
 import { computed, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import type { APCustomizationRosterEntry } from '@/services/products/types'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsStore } from '@/stores/products/products.store'
@@ -20,6 +21,7 @@ export function useRoster() {
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const historyStore = useHistoryStore()
+  const { selectedRosterPreviewIndex } = storeToRefs(customizationStore)
 
   const rosterEntries = computed(() => customizationStore.rosterEntries)
   const hasEntries = computed(() => rosterEntries.value.length > 0)
@@ -71,6 +73,54 @@ export function useRoster() {
       workflowStore.setRosterSubStep('list')
     }
   })
+
+  function setRosterPreviewIndex(index: number | null) {
+    customizationStore.setSelectedRosterPreviewIndex(index)
+  }
+
+  watch(
+    () => rosterEntries.value.length,
+    newLength => {
+      if (newLength === 0) {
+        setRosterPreviewIndex(null)
+        return
+      }
+      const current = selectedRosterPreviewIndex.value
+      if (current == null || current >= newLength) {
+        setRosterPreviewIndex(0)
+      }
+    },
+    { immediate: true }
+  )
+
+  function syncRosterPreviewTexts() {
+    if (workflowStore.rosterSubStep !== 'edit') return
+    const entries = rosterEntries.value
+    if (!entries.length) return
+    const currentIndex = selectedRosterPreviewIndex.value ?? 0
+    const clampedIndex = Math.min(Math.max(currentIndex, 0), entries.length - 1)
+    const entry = entries[clampedIndex]
+    if (!entry) return
+
+    if (presetNameId.value) {
+      customizationStore.updateProductTextValueById(presetNameId.value, entry.text || '', {
+        persist: false
+      })
+    }
+    if (presetNumberId.value) {
+      customizationStore.updateProductTextValueById(presetNumberId.value, entry.number || '', {
+        persist: false
+      })
+    }
+  }
+
+  watch(
+    [selectedRosterPreviewIndex, rosterEntries, () => workflowStore.rosterSubStep],
+    () => {
+      syncRosterPreviewTexts()
+    },
+    { immediate: true, deep: true }
+  )
 
   async function addEmptyRow(payload?: Partial<APCustomizationRosterEntry>) {
     if (!rosterKey.value) return
@@ -220,6 +270,8 @@ export function useRoster() {
     rosterEntries,
     availableSizes,
     hasEntries,
+    selectedRosterPreviewIndex,
+    setRosterPreviewIndex,
     addEmptyRow,
     updateRow,
     removeRow,

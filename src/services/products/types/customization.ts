@@ -25,6 +25,7 @@ export type APCustomizationRosterEntry = {
 }
 
 export type APCustomizationProductsRosters = Record<string, APCustomizationRosterEntry[]>
+export type APCustomizationRosterPreviewSelection = Record<string, number>
 
 export type APCustomizationAddonsInfoEntry = {
   grouped_addons: Record<string, import('./addons').OutputAddon[]>
@@ -56,6 +57,7 @@ export type ActiveProductCustomization = {
   group_colors: Record<string, APCustomizationGroupColor>
   logo_colors: import('@/services/types').LogoColor[]
   products_rosters: APCustomizationProductsRosters
+  roster_preview_selection: APCustomizationRosterPreviewSelection
   shuffle_color_number: number
   addons_info: APCustomizationAddonsInfo
   group_patterns: Record<string, unknown>

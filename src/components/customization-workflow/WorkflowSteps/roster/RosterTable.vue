@@ -10,6 +10,7 @@
     roster_table_size
   } from '@/paraglide/messages'
   import type { RosterColumnKey } from './types'
+  import { RadioGroup } from '@/components/ui/radio-group'
 
   interface Props {
     entries: APCustomizationRosterEntry[]
@@ -23,6 +24,18 @@
     (e: 'update:entry', index: number, payload: Partial<APCustomizationRosterEntry>): void
     (e: 'remove', index: number): void
   }>()
+
+  const selectedRowIndexModel = defineModel<number | null>('selectedRowIndex', {
+    default: null
+  })
+
+  const radioGroupValue = computed<string | undefined>({
+    get: () =>
+      selectedRowIndexModel.value != null ? String(selectedRowIndexModel.value) : undefined,
+    set: value => {
+      selectedRowIndexModel.value = value != null ? Number(value) : null
+    }
+  })
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
@@ -106,7 +119,7 @@
       <span class="text-left">{{ roster_table_quantity({}, { locale }) }}</span>
       <span aria-hidden="true" class="justify-self-center" />
     </div>
-    <div class="flex flex-col gap-1">
+    <RadioGroup v-model="radioGroupValue" class="flex flex-col gap-1">
       <RosterTableRow
         v-for="(entry, index) in entries"
         :key="`roster-row-${index}`"
@@ -115,11 +128,12 @@
         :size-options="sizeOptions"
         :show-name-column="showNameColumn"
         :show-number-column="showNumberColumn"
+        :value="String(index)"
         @update="handleUpdate"
         @remove="handleRemove"
         @cell-keydown="handleCellKeydown"
       />
-    </div>
+    </RadioGroup>
   </div>
 </template>
 

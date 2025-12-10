@@ -12,6 +12,7 @@
     SelectValue
   } from '@/components/ui/select'
   import { Button } from '@/components/ui/button'
+  import { RadioGroupItem } from '@/components/ui/radio-group'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
     roster_remove_row,
@@ -28,6 +29,7 @@
     sizeOptions: string[]
     showNameColumn: boolean
     showNumberColumn: boolean
+    value: string
   }
 
   const props = defineProps<Props>()
@@ -148,15 +150,11 @@
 
 <template>
   <div :class="['grid items-center gap-2 py-2', gridColumnWidthClass]">
-    <button
-      type="button"
-      class="flex items-center justify-center text-muted-foreground"
+    <RadioGroupItem
+      :value="props.value"
+      class="flex items-center justify-center"
       aria-label="Select row"
-    >
-      <span class="flex size-4 items-center justify-center rounded-full border border-input">
-        <span class="size-2 rounded-full bg-foreground" />
-      </span>
-    </button>
+    />
 
     <Input
       v-if="showNameColumn"
