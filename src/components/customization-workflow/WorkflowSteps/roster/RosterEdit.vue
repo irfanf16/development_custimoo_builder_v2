@@ -17,7 +17,9 @@
     updateRow,
     hasEntries,
     lastImportSummary,
-    setLastImportSummary
+    setLastImportSummary,
+    presetNameId,
+    presetNumberId
   } = useRoster()
 
   const playersCount = computed(() => rosterEntries.value.length)
@@ -65,6 +67,8 @@
     <div v-if="hasEntries" class="space-y-4">
       <RosterTable
         :entries="rosterEntries"
+        :show-name-column="!!presetNameId"
+        :show-number-column="!!presetNumberId"
         :size-options="availableSizes"
         @update:entry="updateRow"
         @remove="removeRow"

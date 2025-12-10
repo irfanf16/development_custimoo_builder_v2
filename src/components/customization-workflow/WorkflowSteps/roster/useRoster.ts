@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { APCustomizationRosterEntry } from '@/services/products/types'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsStore } from '@/stores/products/products.store'
@@ -24,6 +24,29 @@ export function useRoster() {
   const rosterEntries = computed(() => customizationStore.rosterEntries)
   const hasEntries = computed(() => rosterEntries.value.length > 0)
 
+  const presetNameId = computed(() => {
+    const productTexts = productsStore.activeProductDetails?.product_texts
+    if (!productTexts) return undefined
+    return productTexts.find(text => text.type === 'name' && text.is_first_name)?.id
+  })
+
+  const presetNumberId = computed(() => {
+    const productTexts = productsStore.activeProductDetails?.product_texts
+    if (!productTexts) return undefined
+    return productTexts.find(text => text.type === 'number' && text.is_first_number)?.id
+  })
+
+  const customizedPresetName = computed(() => {
+    if (!presetNameId.value) return undefined
+    return customizationStore.activeProductTexts.find(text => text.id === presetNameId.value)?.value
+  })
+
+  const customizedPresetNumber = computed(() => {
+    if (!presetNumberId.value) return undefined
+    return customizationStore.activeProductTexts.find(text => text.id === presetNumberId.value)
+      ?.value
+  })
+
   const productId = computed(
     () => customizationStore.activeProductId ?? productsStore.activeProductDetails?.id ?? null
   )
@@ -41,6 +64,12 @@ export function useRoster() {
     })
     if (sizeSet.size === 0) return FALLBACK_SIZES
     return Array.from(sizeSet)
+  })
+
+  watch(hasEntries, () => {
+    if (!hasEntries.value) {
+      workflowStore.setRosterSubStep('list')
+    }
   })
 
   async function addEmptyRow(payload?: Partial<APCustomizationRosterEntry>) {
@@ -104,26 +133,6 @@ export function useRoster() {
         nextQuantity: payload.quantity
       })
     }
-
-    // Note: 'information' field updates are not tracked in history
-    // If needed, we could add a 'roster.update-information' action to the registry
-    // if (payload.information !== undefined && payload.information !== currentEntry.information) {
-    //   // Direct update without history tracking
-    //   const root = customizationStore.customization
-    //   if (!root) return
-    //   const arr = root.products_rosters[rosterKey.value]
-    //   if (!arr || index < 0 || index >= arr.length) return
-    //   const current = arr[index]
-    //   if (!current) return
-    //   arr[index] = {
-    //     text: current.text,
-    //     number: current.number,
-    //     size: current.size,
-    //     quantity: current.quantity,
-    //     information: payload.information
-    //   }
-    //   customizationStore.saveToLocalStorage()
-    // }
   }
 
   async function removeRow(index: number) {
@@ -163,13 +172,15 @@ export function useRoster() {
   async function ensureEditableRoster() {
     workflowStore.setRosterSubStep('edit')
     if (!hasEntries.value) {
-      await addEmptyRow()
+      await addEmptyRow({
+        text: customizedPresetName.value,
+        number: customizedPresetNumber.value
+      })
     }
   }
 
   function resetRoster() {
     customizationStore.clearRosterEntries()
-    workflowStore.setRosterSubStep('list')
     lastImportSummary.value = null
   }
 
@@ -217,7 +228,11 @@ export function useRoster() {
     resetRoster,
     lastImportSummary,
     setLastImportSummary,
-    downloadTemplate
+    downloadTemplate,
+    presetNameId,
+    presetNumberId,
+    customizedPresetName,
+    customizedPresetNumber
   }
 }
 

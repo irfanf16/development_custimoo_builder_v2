@@ -14,6 +14,8 @@
   interface Props {
     entries: APCustomizationRosterEntry[]
     sizeOptions: string[]
+    showNameColumn: boolean
+    showNumberColumn: boolean
   }
 
   const props = defineProps<Props>()
@@ -59,16 +61,47 @@
   function handleRemove(index: number) {
     emit('remove', index)
   }
+
+  const GRID_TEMPLATE_CLASS_MAP = {
+    'true-true': {
+      base: 'grid-cols-[16px_86px_44px_96px_40px_16px]',
+      desktop: 'md:grid-cols-[16px_minmax(0,1fr)_44px_96px_40px_32px]'
+    },
+    'true-false': {
+      base: 'grid-cols-[16px_86px_96px_40px_16px]',
+      desktop: 'md:grid-cols-[16px_minmax(0,1fr)_96px_40px_32px]'
+    },
+    'false-true': {
+      base: 'grid-cols-[16px_44px_96px_40px_16px]',
+      desktop: 'md:grid-cols-[16px_44px_96px_40px_32px]'
+    },
+    'false-false': {
+      base: 'grid-cols-[16px_96px_40px_16px]',
+      desktop: 'md:grid-cols-[16px_96px_40px_32px]'
+    }
+  } as const
+
+  const gridColumnWidthClass = computed(() => {
+    const key =
+      `${props.showNameColumn}-${props.showNumberColumn}` as keyof typeof GRID_TEMPLATE_CLASS_MAP
+    const template = GRID_TEMPLATE_CLASS_MAP[key] ?? GRID_TEMPLATE_CLASS_MAP['false-false']
+    return `${template.base} ${template.desktop}`
+  })
 </script>
 
 <template>
   <div class="flex flex-col gap-1">
     <div
-      class="grid grid-cols-[16px_86px_44px_96px_40px_16px] md:grid-cols-[16px_minmax(0,1fr)_44px_96px_40px_32px] items-center gap-2 text-xs font-medium text-muted-foreground"
+      :class="[
+        'grid items-center gap-2 text-xs font-medium text-muted-foreground',
+        gridColumnWidthClass
+      ]"
     >
       <span aria-hidden="true" class="justify-self-center" />
-      <span>{{ roster_table_name({}, { locale }) }}</span>
-      <span class="text-left">{{ roster_table_number({}, { locale }) }}</span>
+      <span v-if="showNameColumn">{{ roster_table_name({}, { locale }) }}</span>
+      <span v-if="showNumberColumn" class="text-left">{{
+        roster_table_number({}, { locale })
+      }}</span>
       <span class="text-left">{{ roster_table_size({}, { locale }) }}</span>
       <span class="text-left">{{ roster_table_quantity({}, { locale }) }}</span>
       <span aria-hidden="true" class="justify-self-center" />
@@ -80,6 +113,8 @@
         :entry="entry"
         :index="index"
         :size-options="sizeOptions"
+        :show-name-column="showNameColumn"
+        :show-number-column="showNumberColumn"
         @update="handleUpdate"
         @remove="handleRemove"
         @cell-keydown="handleCellKeydown"
