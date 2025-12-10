@@ -10,7 +10,7 @@
   import ColorSelector from '@/components/ui/color-selector/ColorSelector.vue'
   import { PaletteColorSelector } from '@/components/ui/palette-color-selector'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
-  import type { OutputColor } from '@/services/products/types'
+  import type { GradientColor, OutputColor } from '@/services/products/types'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
   import type { Palette } from '@/composables/useColorActions'
@@ -30,7 +30,6 @@
     colors_choose_from_locker,
     colors_copy,
     colors_paste,
-    colors_gradient_label,
     nav_color
   } from '@/paraglide/messages'
   // no emits
@@ -63,9 +62,7 @@
   )
 
   // Generate gradient CSS string from gradient_colors array
-  function gradientColorString(
-    gradientColors: Array<{ color: string; pantone: string; name: string }>
-  ): string {
+  function gradientColorString(gradientColors: GradientColor[]): string {
     if (!gradientColors || gradientColors.length === 0) return ''
     let cssColor = 'linear-gradient(90deg'
     gradientColors.forEach(gradientColor => {
@@ -170,10 +167,6 @@
     breadcrumbs: [{ label: nav_color({}, { locale: profileStore.currentLocale }) }]
   }))
   void headerConfig.value
-
-  function gradientButtonLabel(index: number) {
-    return colors_gradient_label({ index: String(index) }, { locale: profileStore.currentLocale })
-  }
 </script>
 
 <template>
@@ -297,7 +290,7 @@
           <!-- Gradient color selection buttons -->
           <div v-if="svgGroup.gradient_colors" class="flex flex-wrap gap-2 mb-4">
             <Button
-              v-for="(_, gIndex) in svgGroup.gradient_colors"
+              v-for="(gradientColor, gIndex) in svgGroup.gradient_colors"
               :key="gIndex"
               size="sm"
               variant="outline"
@@ -306,7 +299,7 @@
               }"
               @click="setGradientIndex(svgGroup.id, gIndex)"
             >
-              {{ gradientButtonLabel(gIndex + 1) }}
+              {{ gradientColor.percentage }}%
             </Button>
           </div>
           <PaletteColorSelector

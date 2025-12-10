@@ -17,6 +17,7 @@
   import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
   import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
   import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
+  import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
   import { Canvas, FabricImage, Group, type FabricObject } from 'fabric'
   import { useSceneCommon } from '@/composables/scene'
   import { useSvgGroups } from '@/composables/scene'
@@ -194,6 +195,7 @@
   const composer = shallowRef<EffectComposer | null>(null)
   const renderPass = shallowRef<RenderPass | null>(null)
   const smaaPass = shallowRef<SMAAPass | null>(null)
+  const outputPass = shallowRef<OutputPass | null>(null)
 
   // ===== LIFECYCLE =====
   onMounted(() => {
@@ -418,10 +420,10 @@
     // Create renderer
     renderer.value = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: false,
+      premultipliedAlpha: false,
+      antialias: true,
       logarithmicDepthBuffer: true
     })
-    renderer.value.toneMapping = THREE.ACESFilmicToneMapping
     renderer.value.setSize(width, height)
     renderer.value.setPixelRatio(window.devicePixelRatio)
     rendererEl.value.appendChild(renderer.value.domElement)
@@ -471,27 +473,28 @@
   function setupLights() {
     if (!scene.value) return
 
-    const directionalLight1 = new THREE.RectAreaLight(0xffffff, 6, 10, 10)
+    const intensity = 0.68
+    const directionalLight1 = new THREE.RectAreaLight(0xffffff, 6 * intensity, 10, 10)
     directionalLight1.lookAt(0, 0, -60)
     directionalLight1.position.set(10, 0, 6)
     scene.value.add(directionalLight1)
 
-    const directionalLight2 = new THREE.RectAreaLight(0xffffff, 6, 10, 10)
+    const directionalLight2 = new THREE.RectAreaLight(0xffffff, 6 * intensity, 10, 10)
     directionalLight2.lookAt(0, 0, -60)
     directionalLight2.position.set(-10, 0, 6)
     scene.value.add(directionalLight2)
 
-    const directionalLight3 = new THREE.RectAreaLight(0xffffff, 6, 10, 10)
+    const directionalLight3 = new THREE.RectAreaLight(0xffffff, 6 * intensity, 10, 10)
     directionalLight3.lookAt(0, 0, 180)
     directionalLight3.position.set(0, 0, -13.5)
     scene.value.add(directionalLight3)
 
-    const directionalLight4 = new THREE.RectAreaLight(0xffffff, 11, 20, 20)
+    const directionalLight4 = new THREE.RectAreaLight(0xffffff, 11 * intensity, 20, 20)
     directionalLight4.lookAt(-45, 0, 180)
     directionalLight4.position.set(0, 28.75, -21)
     scene.value.add(directionalLight4)
 
-    const directionalLight5 = new THREE.RectAreaLight(0xffffff, 11, 20, 20)
+    const directionalLight5 = new THREE.RectAreaLight(0xffffff, 11 * intensity, 20, 20)
     directionalLight5.lookAt(-45, 0, -180)
     directionalLight5.position.set(0, 28.75, 21)
     scene.value.add(directionalLight5)
@@ -860,6 +863,10 @@
     const cam = activeCamera || camera.value
     if (!cam) return
 
+    renderer.value.toneMapping = THREE.NoToneMapping
+    // renderer.value.toneMappingExposure = 1.0
+    // renderer.value.outputColorSpace = THREE.SRGBColorSpace
+
     if (!composer.value) {
       composer.value = new EffectComposer(renderer.value)
       renderPass.value = new RenderPass(scene.value, cam)
@@ -914,6 +921,10 @@
         `
       }
 
+      if (smaaPass.value) {
+        composer.value.addPass(smaaPass.value)
+      }
+
       const brightnessContrastPass = new ShaderPass(BrightnessContrastShader)
       const uniforms = brightnessContrastPass.uniforms as
         | Record<string, { value: number }>
@@ -921,14 +932,17 @@
       if (uniforms && uniforms['brightness'] && uniforms['contrast'] && uniforms['saturation']) {
         // Adjust brightness to make it lighter - increase from original -0.05
         // Positive values make it lighter, negative values make it darker
-        uniforms['brightness'].value = -0.05
-        uniforms['contrast'].value = 0.3
-        uniforms['saturation'].value = -0.12
+        uniforms['brightness'].value = -0.12
+        uniforms['contrast'].value = 0
+        uniforms['saturation'].value = -0.08
       }
       composer.value.addPass(brightnessContrastPass)
-      if (smaaPass.value) {
-        composer.value.addPass(smaaPass.value)
-      }
+
+      // Add OutputPass LAST to apply tone mapping (required when using EffectComposer)
+      // EffectComposer bypasses renderer's toneMapping, so we need OutputPass
+      // OutputPass performs final tone mapping and gamma correction, so it must be last
+      outputPass.value = new OutputPass()
+      composer.value.addPass(outputPass.value)
     } else {
       // Ensure the RenderPass uses the active camera when switching views
       if (renderPass.value && renderPass.value.camera !== cam) {

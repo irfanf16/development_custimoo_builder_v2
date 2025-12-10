@@ -8,7 +8,8 @@ import type {
   OutputDesignPreviewFront,
   OutputDesignPreviewBack,
   OutputProductLogosSetting,
-  OutputProductText
+  OutputProductText,
+  GradientColor
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
@@ -253,22 +254,21 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
     // If gradient index is provided, update gradient_colors
     if (gradientIndex !== undefined) {
-      let gradient_colors: Array<{ color: string; pantone: string; name: string }>
+      let gradient_colors: GradientColor[]
 
       if (existing?.gradient_colors) {
-        // Use existing gradient_colors
-        gradient_colors = [...existing.gradient_colors]
+        // Use existing gradient_colors (preserve percentage if present)
+        gradient_colors = existing.gradient_colors.map(gc => ({ ...gc }))
       } else {
-        // Initialize from base svgGroup if available
+        // Initialize from base svgGroup if available (preserve percentage)
         const baseSvgGroup = productsStore.svgGroups.find(g => g.id === groupName)
         if (baseSvgGroup?.gradient_colors) {
-          gradient_colors = baseSvgGroup.gradient_colors.map(
-            (gc): { color: string; pantone: string; name: string } => ({
-              color: gc.color,
-              pantone: gc.pantone,
-              name: gc.name
-            })
-          )
+          gradient_colors = baseSvgGroup.gradient_colors.map(gc => ({
+            color: gc.color,
+            pantone: gc.pantone,
+            name: gc.name,
+            percentage: gc.percentage
+          }))
         } else {
           // Fallback: create a new array with the current color
           const pantoneValue: string = (groupColor as { pantone?: string }).pantone || ''
@@ -282,12 +282,14 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
         }
       }
 
-      // Update the specific gradient color
+      // Update the specific gradient color (preserve existing percentage)
       const pantoneValue: string = (groupColor as { pantone?: string }).pantone || ''
+      const existingGradientColor = gradient_colors[gradientIndex]
       gradient_colors[gradientIndex] = {
         color: groupColor.value,
         pantone: pantoneValue,
-        name: groupColor.name || ''
+        name: groupColor.name || '',
+        percentage: existingGradientColor?.percentage
       }
 
       customization.value.group_colors[groupName] = {
