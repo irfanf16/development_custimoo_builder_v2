@@ -17,7 +17,11 @@
     updateRow,
     hasEntries,
     lastImportSummary,
-    setLastImportSummary
+    setLastImportSummary,
+    presetNameId,
+    presetNumberId,
+    selectedRosterPreviewIndex,
+    setRosterPreviewIndex
   } = useRoster()
 
   const playersCount = computed(() => rosterEntries.value.length)
@@ -26,6 +30,13 @@
   function handleDismissInline() {
     setLastImportSummary(null)
   }
+
+  const selectedRosterIndexModel = computed<number | null>({
+    get: () => selectedRosterPreviewIndex.value ?? null,
+    set: value => {
+      setRosterPreviewIndex(value ?? null)
+    }
+  })
 </script>
 
 <template>
@@ -64,7 +75,10 @@
 
     <div v-if="hasEntries" class="space-y-4">
       <RosterTable
+        v-model:selected-row-index="selectedRosterIndexModel"
         :entries="rosterEntries"
+        :show-name-column="!!presetNameId"
+        :show-number-column="!!presetNumberId"
         :size-options="availableSizes"
         @update:entry="updateRow"
         @remove="removeRow"
