@@ -7,7 +7,10 @@
     toRef,
     computed,
     watch,
-    type Ref
+    nextTick,
+    getCurrentInstance,
+    type Ref,
+    type ComponentPublicInstance
   } from 'vue'
   import * as THREE from 'three'
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -22,8 +25,13 @@
   import { useSceneCommon } from '@/composables/scene'
   import { useSvgGroups } from '@/composables/scene'
   import { useColorCustomization } from '@/composables/scene'
+  import {
+    getImageFrom3DCanvas,
+    type GetImageFromCanvasOptions
+  } from '@/composables/scene/useCanvasImage'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
+  import { useSceneStore } from '@/stores/scene/scene.store'
   import type { DesignData } from '@/composables/scene'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
 
@@ -109,6 +117,7 @@
   // ===== STORES =====
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
+  const sceneStore = useSceneStore()
 
   // ===== SVG GROUPS COMPOSABLE =====
   const svgGroupsComposable = useSvgGroups(
@@ -952,6 +961,8 @@
   }
 
   // ===== ANIMATION =====
+  const isAnimationRunning = ref(true)
+
   function animate() {
     if (!renderer.value || !scene.value || !camera.value || !controls.value) return
 
@@ -973,6 +984,57 @@
       renderer.value.render(scene.value, camera.value)
     }
   }
+
+  /**
+   * Get image from canvas
+   * Handles side internally - renders with appropriate camera, gets image, then restores
+   * Adapted from old Helpers.ts getImageFromCanvas function
+   */
+  function getImageFromCanvas(
+    side: CanvasSide = 'front',
+    options: GetImageFromCanvasOptions = {}
+  ): string {
+    if (!renderer.value || !composer.value) return ''
+    return getImageFrom3DCanvas(
+      renderer.value,
+      side,
+      frontCamera.value,
+      backCamera.value,
+      camera.value,
+      composer.value,
+      renderPass.value,
+      addShaderPasses,
+      animate,
+      animationId,
+      isAnimationRunning,
+      (canvas.value && typeof canvas.value !== 'boolean' ? canvas.value : null) as Canvas | null,
+      options
+    )
+  }
+
+  // Store component reference in global store if mainPreview
+  onMounted(() => {
+    if (props.mainPreview) {
+      nextTick(() => {
+        const componentInstance = getCurrentInstance()?.proxy as ComponentPublicInstance | null
+        if (componentInstance) {
+          sceneStore.setThreeDSceneRef(componentInstance)
+        }
+      })
+    }
+  })
+
+  onBeforeUnmount(() => {
+    // Clear reference when component unmounts
+    if (props.mainPreview) {
+      sceneStore.setThreeDSceneRef(null)
+    }
+  })
+
+  // Expose only getImageFromCanvas for external use
+  defineExpose({
+    getImageFromCanvas
+  })
 
   // ===== WATCHERS =====
   // Watch for changes in effectiveDesign and reload design

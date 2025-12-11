@@ -41,15 +41,26 @@ export function useEffectiveSelectors() {
     return base.map(svgGroup => {
       const customized = overrides[svgGroup.id]
       if (customized) {
-        // If customized has gradient_colors, preserve them
+        // If customized has gradient_colors, preserve them and merge with base percentage if missing
         if (customized.gradient_colors) {
+          // Merge customized gradient_colors with base to preserve percentage
+          const baseGradientColors = svgGroup.gradient_colors || []
+          const mergedGradientColors = customized.gradient_colors.map((customGc, index) => {
+            const baseGc = baseGradientColors[index]
+            return {
+              ...customGc,
+              // Preserve percentage from base if not in customized
+              percentage: (customGc as { percentage?: number }).percentage ?? baseGc?.percentage
+            }
+          })
+
           return {
             id: svgGroup.id,
             name: customized.name ?? '',
             color: customized.color ?? svgGroup.color,
             pantone: '',
             count: svgGroup.count ?? 0,
-            gradient_colors: customized.gradient_colors
+            gradient_colors: mergedGradientColors
           }
         }
         // Regular color override

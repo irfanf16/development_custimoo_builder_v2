@@ -2,7 +2,7 @@ import { ref, computed, watch, type Ref } from 'vue'
 import { Group, type FabricObject } from 'fabric'
 import { useProductsStore } from '@/stores/products/products.store'
 import { getSelectedProductPantones, getClosestColor, getColorType } from '@/lib/utils'
-import type { OutputSvgGroupColor } from '@/services/products/types'
+import type { OutputSvgGroupColor, GradientColor } from '@/services/products/types'
 import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
 
 /**
@@ -160,33 +160,48 @@ export function useSvgGroups(
         'gradientUnits' in itemWithId.fill &&
         itemWithId.fill.gradientUnits
       ) {
-        const gradient_colors: Array<{ color: string; pantone: string; name: string }> = []
+        const gradient_colors: GradientColor[] = []
 
         if (itemWithId.fill.colorStops) {
-          itemWithId.fill.colorStops.forEach((color_stop: { color: string }) => {
-            let color = color_stop.color
+          const totalStops = itemWithId.fill.colorStops.length
+          itemWithId.fill.colorStops.forEach(
+            (color_stop: { color: string; offset?: number }, index: number) => {
+              // Get offset percentage: offset is 0-1, convert to 0-100%
+              // If offset is not provided, calculate based on index position
+              const offset = color_stop.offset ?? (totalStops > 1 ? index / (totalStops - 1) : 0)
+              const percentage = offset * 100
+              let color = color_stop.color
 
-            // Convert RGB to hex if needed
-            if (color.includes('rgb')) {
-              color = rgbToHex(color)
-              if (!color.startsWith('#')) {
-                color = '#' + color
+              // Convert RGB to hex if needed
+              if (color.includes('rgb')) {
+                color = rgbToHex(color)
+                if (!color.startsWith('#')) {
+                  color = '#' + color
+                }
               }
+
+              // Get pantone color match (only for main preview)
+              const selectProductPantonesList = getSelectedProductPantones(effectiveId, itemId)
+              const pantoneColor = mainPreview
+                ? getClosestColor(
+                    color,
+                    selectProductPantonesList,
+                    getColorType(itemId, effectiveId)
+                  )
+                : { pantone: '', name: '' }
+
+              gradient_colors.push({
+                color,
+                pantone: pantoneColor.pantone,
+                name: pantoneColor.name,
+                percentage: percentage
+              })
             }
-
-            // Get pantone color match (only for main preview)
-            const selectProductPantonesList = getSelectedProductPantones(effectiveId, itemId)
-            const pantoneColor = mainPreview
-              ? getClosestColor(color, selectProductPantonesList, getColorType(itemId, effectiveId))
-              : { pantone: '', name: '' }
-
-            gradient_colors.push({
-              color,
-              pantone: pantoneColor.pantone,
-              name: pantoneColor.name
-            })
-          })
+          )
         }
+
+        // Sort gradient_colors by percentage before pushing to svgGroups
+        gradient_colors.sort((a, b) => (a.percentage ?? 0) - (b.percentage ?? 0))
 
         svgGroups.value.push({
           id: itemId,

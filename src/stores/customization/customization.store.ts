@@ -8,7 +8,8 @@ import type {
   OutputDesignPreviewFront,
   OutputDesignPreviewBack,
   OutputProductLogosSetting,
-  OutputProductText
+  OutputProductText,
+  GradientColor
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
@@ -45,6 +46,14 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const key = String(prodId)
     if (!customization.value?.products_rosters[key]) return []
     return customization.value.products_rosters[key]
+  })
+
+  const selectedRosterPreviewIndex = computed(() => {
+    const prodId = customization.value?.product_id
+    if (!prodId) return null
+    const key = String(prodId)
+    const selection = customization.value?.roster_preview_selection?.[key]
+    return typeof selection === 'number' && selection >= 0 ? selection : null
   })
 
   const ensureTextEntry = (productId: number, index: number, seed?: OutputProductText) => {
@@ -142,71 +151,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       saveToLocalStorage()
     }
   }
-
-  // ===== ROSTER HELPERS =====
-  // function ensureRosterEntries(): APCustomizationRosterEntry[] | null {
-  //   if (!customization.value) return null
-  //   const prodId = customization.value?.product_id
-  //   if (!prodId) return null
-  //   const key = String(prodId)
-  //   if (!Array.isArray(customization.value.products_rosters[key])) {
-  //     customization.value.products_rosters[key] = []
-  //   }
-  //   return customization.value.products_rosters[key]
-  // }
-
-  // function normalizeRosterEntry(
-  //   partial?: Partial<APCustomizationRosterEntry>
-  // ): APCustomizationRosterEntry {
-  //   return {
-  //     text: partial?.text ?? '',
-  //     number: partial?.number ?? '',
-  //     size: partial?.size ?? '',
-  //     quantity: partial?.quantity ?? 1,
-  //     information: partial?.information ?? ''
-  //   }
-  // }
-
-  // function setRosterEntries(entries: APCustomizationRosterEntry[]) {
-  //   const bucket = ensureRosterEntries()
-  //   if (!bucket || !customization.value) return
-  //   customization.value.roster_detail = entries.map(entry => normalizeRosterEntry(entry))
-  //   saveToLocalStorage()
-  // }
-
-  // function addRosterEntry(entry?: Partial<APCustomizationRosterEntry>) {
-  //   const bucket = ensureRosterEntries()
-  //   if (!bucket || !customization.value) return
-  //   customization.value.roster_detail = [...bucket, normalizeRosterEntry(entry)]
-  //   saveToLocalStorage()
-  // }
-
-  // function updateRosterEntry(index: number, payload: Partial<APCustomizationRosterEntry>) {
-  //   const bucket = ensureRosterEntries()
-  //   if (!bucket || !customization.value) return
-  //   if (!bucket[index]) return
-  //   const next = [...bucket]
-  //   const existing = next[index]!
-  //   next[index] = {
-  //     text: payload.text ?? existing.text,
-  //     number: payload.number ?? existing.number,
-  //     size: payload.size ?? existing.size,
-  //     quantity: payload.quantity ?? existing.quantity,
-  //     information: payload.information ?? existing.information
-  //   }
-  //   customization.value.roster_detail = next
-  //   saveToLocalStorage()
-  // }
-
-  // function removeRosterEntry(index: number) {
-  //   const bucket = ensureRosterEntries()
-  //   if (!bucket || !customization.value) return
-  //   if (index < 0 || index >= bucket.length) return
-  //   const next = [...bucket]
-  //   next.splice(index, 1)
-  //   customization.value.roster_detail = next
-  //   saveToLocalStorage()
-  // }
 
   function clearRosterEntries() {
     if (!customization.value) return
@@ -310,22 +254,21 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
     // If gradient index is provided, update gradient_colors
     if (gradientIndex !== undefined) {
-      let gradient_colors: Array<{ color: string; pantone: string; name: string }>
+      let gradient_colors: GradientColor[]
 
       if (existing?.gradient_colors) {
-        // Use existing gradient_colors
-        gradient_colors = [...existing.gradient_colors]
+        // Use existing gradient_colors (preserve percentage if present)
+        gradient_colors = existing.gradient_colors.map(gc => ({ ...gc }))
       } else {
-        // Initialize from base svgGroup if available
+        // Initialize from base svgGroup if available (preserve percentage)
         const baseSvgGroup = productsStore.svgGroups.find(g => g.id === groupName)
         if (baseSvgGroup?.gradient_colors) {
-          gradient_colors = baseSvgGroup.gradient_colors.map(
-            (gc): { color: string; pantone: string; name: string } => ({
-              color: gc.color,
-              pantone: gc.pantone,
-              name: gc.name
-            })
-          )
+          gradient_colors = baseSvgGroup.gradient_colors.map(gc => ({
+            color: gc.color,
+            pantone: gc.pantone,
+            name: gc.name,
+            percentage: gc.percentage
+          }))
         } else {
           // Fallback: create a new array with the current color
           const pantoneValue: string = (groupColor as { pantone?: string }).pantone || ''
@@ -339,12 +282,14 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
         }
       }
 
-      // Update the specific gradient color
+      // Update the specific gradient color (preserve existing percentage)
       const pantoneValue: string = (groupColor as { pantone?: string }).pantone || ''
+      const existingGradientColor = gradient_colors[gradientIndex]
       gradient_colors[gradientIndex] = {
         color: groupColor.value,
         pantone: pantoneValue,
-        name: groupColor.name || ''
+        name: groupColor.name || '',
+        percentage: existingGradientColor?.percentage
       }
 
       customization.value.group_colors[groupName] = {
@@ -460,6 +405,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       shuffle_color_number: 0,
       addons_info: {},
       group_patterns: {},
+      roster_preview_selection: {},
       sub_category_id: preservedIds.subCategoryId ?? null,
       sub_category_index: null
     } as ActiveProductCustomization
@@ -531,6 +477,54 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     )
   }
 
+  function ensureRosterPreviewSelectionMap() {
+    if (!customization.value) return null
+    if (!customization.value.roster_preview_selection) {
+      customization.value.roster_preview_selection = {}
+    }
+    return customization.value.roster_preview_selection
+  }
+
+  function setSelectedRosterPreviewIndex(index: number | null) {
+    if (!customization.value) return
+    const prodId = customization.value.product_id
+    if (!prodId) return
+    const key = String(prodId)
+    const map = ensureRosterPreviewSelectionMap()
+    if (!map) return
+    if (index == null || index < 0) {
+      delete map[key]
+    } else {
+      map[key] = index
+    }
+    saveToLocalStorage()
+  }
+
+  function updateProductTextValueById(
+    textId: number,
+    value: string,
+    options?: { persist?: boolean }
+  ): boolean {
+    const prodId = customization.value?.product_id
+    if (!prodId || !customization.value) return false
+    const key = String(prodId)
+    const texts = customization.value.product_custom_texts[key]
+    if (!texts) return false
+    const entryIndex = texts.findIndex(text => text.id === textId)
+    if (entryIndex === -1) return false
+    const targetEntry = texts[entryIndex]
+    if (!targetEntry) return false
+    if (targetEntry.value === value) return true
+    texts[entryIndex] = {
+      ...targetEntry,
+      value
+    }
+    if (options?.persist) {
+      saveToLocalStorage()
+    }
+    return true
+  }
+
   // ===== RETURN =====
   return {
     // State
@@ -544,6 +538,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     activeSubCategoryId,
     activeProductTexts,
     rosterEntries,
+    selectedRosterPreviewIndex,
     // Persistence
     saveToLocalStorage,
     loadFromLocalStorage,
@@ -570,6 +565,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     removeTextEntry,
     clearRosterEntries,
     initializeProductTextsFromDetails,
-    generateTemporaryTextId
+    generateTemporaryTextId,
+    setSelectedRosterPreviewIndex,
+    updateProductTextValueById
   }
 })

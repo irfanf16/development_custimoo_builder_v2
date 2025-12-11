@@ -12,6 +12,7 @@
     SelectValue
   } from '@/components/ui/select'
   import { Button } from '@/components/ui/button'
+  import { RadioGroupItem } from '@/components/ui/radio-group'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
     roster_remove_row,
@@ -26,6 +27,9 @@
     entry: APCustomizationRosterEntry
     index: number
     sizeOptions: string[]
+    showNameColumn: boolean
+    showNumberColumn: boolean
+    value: string
   }
 
   const props = defineProps<Props>()
@@ -116,23 +120,44 @@
   function removeRow() {
     emit('remove', props.index)
   }
+
+  const GRID_TEMPLATE_CLASS_MAP = {
+    'true-true': {
+      base: 'grid-cols-[16px_86px_44px_96px_40px_32px]',
+      desktop: 'md:grid-cols-[16px_minmax(0,1fr)_44px_96px_40px_32px]'
+    },
+    'true-false': {
+      base: 'grid-cols-[16px_86px_96px_40px_32px]',
+      desktop: 'md:grid-cols-[16px_minmax(0,1fr)_96px_40px_32px]'
+    },
+    'false-true': {
+      base: 'grid-cols-[16px_44px_96px_40px_32px]',
+      desktop: 'md:grid-cols-[16px_44px_96px_40px_32px]'
+    },
+    'false-false': {
+      base: 'grid-cols-[16px_96px_40px_32px]',
+      desktop: 'md:grid-cols-[16px_96px_40px_32px]'
+    }
+  } as const
+
+  const gridColumnWidthClass = computed(() => {
+    const key =
+      `${props.showNameColumn}-${props.showNumberColumn}` as keyof typeof GRID_TEMPLATE_CLASS_MAP
+    const template = GRID_TEMPLATE_CLASS_MAP[key] ?? GRID_TEMPLATE_CLASS_MAP['false-false']
+    return `${template.base} ${template.desktop}`
+  })
 </script>
 
 <template>
-  <div
-    class="grid grid-cols-[16px_86px_44px_96px_40px_32px] md:grid-cols-[16px_minmax(0,1fr)_44px_96px_40px_32px] items-center gap-2 py-2"
-  >
-    <button
-      type="button"
-      class="flex items-center justify-center text-muted-foreground"
+  <div :class="['grid items-center gap-2 py-2', gridColumnWidthClass]">
+    <RadioGroupItem
+      :value="props.value"
+      class="flex items-center justify-center"
       aria-label="Select row"
-    >
-      <span class="flex size-4 items-center justify-center rounded-full border border-input">
-        <span class="size-2 rounded-full bg-foreground" />
-      </span>
-    </button>
+    />
 
     <Input
+      v-if="showNameColumn"
       :model-value="entryLocal.text"
       :data-roster-cell="cellId('text')"
       class="h-10"
@@ -143,6 +168,7 @@
     />
 
     <Input
+      v-if="showNumberColumn"
       :model-value="entryLocal.number"
       :data-roster-cell="cellId('number')"
       class="h-10 text-center"

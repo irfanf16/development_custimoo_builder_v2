@@ -1,4 +1,5 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import type { APCustomizationRosterEntry } from '@/services/products/types'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsStore } from '@/stores/products/products.store'
@@ -20,9 +21,33 @@ export function useRoster() {
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const historyStore = useHistoryStore()
+  const { selectedRosterPreviewIndex } = storeToRefs(customizationStore)
 
   const rosterEntries = computed(() => customizationStore.rosterEntries)
   const hasEntries = computed(() => rosterEntries.value.length > 0)
+
+  const presetNameId = computed(() => {
+    const productTexts = productsStore.activeProductDetails?.product_texts
+    if (!productTexts) return undefined
+    return productTexts.find(text => text.type === 'name' && text.is_first_name)?.id
+  })
+
+  const presetNumberId = computed(() => {
+    const productTexts = productsStore.activeProductDetails?.product_texts
+    if (!productTexts) return undefined
+    return productTexts.find(text => text.type === 'number' && text.is_first_number)?.id
+  })
+
+  const customizedPresetName = computed(() => {
+    if (!presetNameId.value) return undefined
+    return customizationStore.activeProductTexts.find(text => text.id === presetNameId.value)?.value
+  })
+
+  const customizedPresetNumber = computed(() => {
+    if (!presetNumberId.value) return undefined
+    return customizationStore.activeProductTexts.find(text => text.id === presetNumberId.value)
+      ?.value
+  })
 
   const productId = computed(
     () => customizationStore.activeProductId ?? productsStore.activeProductDetails?.id ?? null
@@ -42,6 +67,60 @@ export function useRoster() {
     if (sizeSet.size === 0) return FALLBACK_SIZES
     return Array.from(sizeSet)
   })
+
+  watch(hasEntries, () => {
+    if (!hasEntries.value) {
+      workflowStore.setRosterSubStep('list')
+    }
+  })
+
+  function setRosterPreviewIndex(index: number | null) {
+    customizationStore.setSelectedRosterPreviewIndex(index)
+  }
+
+  watch(
+    () => rosterEntries.value.length,
+    newLength => {
+      if (newLength === 0) {
+        setRosterPreviewIndex(null)
+        return
+      }
+      const current = selectedRosterPreviewIndex.value
+      if (current == null || current >= newLength) {
+        setRosterPreviewIndex(0)
+      }
+    },
+    { immediate: true }
+  )
+
+  function syncRosterPreviewTexts() {
+    if (workflowStore.rosterSubStep !== 'edit') return
+    const entries = rosterEntries.value
+    if (!entries.length) return
+    const currentIndex = selectedRosterPreviewIndex.value ?? 0
+    const clampedIndex = Math.min(Math.max(currentIndex, 0), entries.length - 1)
+    const entry = entries[clampedIndex]
+    if (!entry) return
+
+    if (presetNameId.value) {
+      customizationStore.updateProductTextValueById(presetNameId.value, entry.text || '', {
+        persist: false
+      })
+    }
+    if (presetNumberId.value) {
+      customizationStore.updateProductTextValueById(presetNumberId.value, entry.number || '', {
+        persist: false
+      })
+    }
+  }
+
+  watch(
+    [selectedRosterPreviewIndex, rosterEntries, () => workflowStore.rosterSubStep],
+    () => {
+      syncRosterPreviewTexts()
+    },
+    { immediate: true, deep: true }
+  )
 
   async function addEmptyRow(payload?: Partial<APCustomizationRosterEntry>) {
     if (!rosterKey.value) return
@@ -104,26 +183,6 @@ export function useRoster() {
         nextQuantity: payload.quantity
       })
     }
-
-    // Note: 'information' field updates are not tracked in history
-    // If needed, we could add a 'roster.update-information' action to the registry
-    // if (payload.information !== undefined && payload.information !== currentEntry.information) {
-    //   // Direct update without history tracking
-    //   const root = customizationStore.customization
-    //   if (!root) return
-    //   const arr = root.products_rosters[rosterKey.value]
-    //   if (!arr || index < 0 || index >= arr.length) return
-    //   const current = arr[index]
-    //   if (!current) return
-    //   arr[index] = {
-    //     text: current.text,
-    //     number: current.number,
-    //     size: current.size,
-    //     quantity: current.quantity,
-    //     information: payload.information
-    //   }
-    //   customizationStore.saveToLocalStorage()
-    // }
   }
 
   async function removeRow(index: number) {
@@ -163,13 +222,15 @@ export function useRoster() {
   async function ensureEditableRoster() {
     workflowStore.setRosterSubStep('edit')
     if (!hasEntries.value) {
-      await addEmptyRow()
+      await addEmptyRow({
+        text: customizedPresetName.value,
+        number: customizedPresetNumber.value
+      })
     }
   }
 
   function resetRoster() {
     customizationStore.clearRosterEntries()
-    workflowStore.setRosterSubStep('list')
     lastImportSummary.value = null
   }
 
@@ -209,6 +270,8 @@ export function useRoster() {
     rosterEntries,
     availableSizes,
     hasEntries,
+    selectedRosterPreviewIndex,
+    setRosterPreviewIndex,
     addEmptyRow,
     updateRow,
     removeRow,
@@ -217,7 +280,11 @@ export function useRoster() {
     resetRoster,
     lastImportSummary,
     setLastImportSummary,
-    downloadTemplate
+    downloadTemplate,
+    presetNameId,
+    presetNumberId,
+    customizedPresetName,
+    customizedPresetNumber
   }
 }
 
