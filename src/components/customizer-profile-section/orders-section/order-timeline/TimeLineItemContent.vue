@@ -80,12 +80,12 @@
               content.third_party_approval_obj.approval_status === 'rejected' &&
               content.third_party_approval_obj.feedback
             "
-            class="bg-destructive/10 dark:bg-destructive/20 border border-destructive/30 rounded-md p-3 mb-2 mt-2"
+            class="bg-destructive/10 dark:bg-destructive/20 border border-destructive/30 rounded-md py-2 px-4 mb-2 mt-2"
           >
-            <div class="text-sm mb-1">
+            <div class="text-[0.95em] mb-[0.2em]">
               <span class="text-destructive mr-2 font-bold">Rejection Feedback</span>
             </div>
-            <div class="text-destructive text-sm">
+            <div class="text-destructive text-[0.95em]">
               {{ content.third_party_approval_obj.feedback }}
             </div>
           </div>

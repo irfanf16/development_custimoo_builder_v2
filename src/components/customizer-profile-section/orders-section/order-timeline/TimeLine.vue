@@ -1,5 +1,5 @@
 <template>
-  <div class="relative w-full flex flex-col">
+  <div class="relative w-full" :class="{ 'flex flex-col': direction === 'vertical' }">
     <div class="relative">
       <div class="absolute left-5 top-0 h-full flex flex-col">
         <div class="w-full bg-primary transition-all duration-500 ease-in-out"></div>

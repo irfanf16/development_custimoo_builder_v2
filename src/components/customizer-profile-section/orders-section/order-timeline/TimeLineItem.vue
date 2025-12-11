@@ -9,8 +9,7 @@
       class="absolute top-0 w-0.5 h-full z-[1] transition-colors"
       :class="[
         alternating && index % 2 === 1 ? 'right-5 sm:right-5' : 'left-4 sm:left-4',
-        isCompleted ? 'border-primary' : 'border',
-        index > 0 ? 'border-primary' : 'border-dashed border-primary'
+        isCompleted ? 'bg-green-500 dark:bg-green-600' : 'bg-primary'
       ]"
     ></div>
     <div
@@ -20,12 +19,14 @@
       }"
     >
       <div
-        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors bg-primary text-primary-foreground"
+        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors"
         :class="[
           alternating && index % 2 === 1 ? 'ml-4 mr-0' : 'mr-4',
-          isActive || isCompleted
+          isActive
             ? 'bg-primary border-primary text-primary-foreground'
-            : 'bg-muted border-border text-muted-foreground'
+            : isCompleted
+              ? 'bg-green-500 dark:bg-green-600 border-green-500 dark:border-green-600 text-white'
+              : 'bg-primary border-primary text-primary-foreground'
         ]"
       >
         <component :is="isCompleted ? completedIcon : icon" class="h-4 w-4" />
