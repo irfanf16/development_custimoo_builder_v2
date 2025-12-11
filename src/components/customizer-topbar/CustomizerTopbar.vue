@@ -37,31 +37,42 @@
   import SignInDialog from '@/components/auth/SignInDialog.vue'
   import { CartDialog } from '@/components/cart'
   import { useSignIn } from '@/composables/useSignIn'
-  import { useResetCustomization } from '@/composables/useResetCustomization'
   import { ref } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import ResetCustomizationDialog from '@/components/customizer/ResetCustomizationDialog.vue'
+  import { confirmDialog } from '@/lib/confirm-dialog'
+  import LockerBrowser from '@/components/LockerBrowser.vue'
+  import SaveDesignDialog from '@/components/SaveDesignDialog.vue'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { useHistoryStore } from '@/stores/history/history.store'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
   const authStore = useAuthStore()
+  const customizationStore = useCustomizationStore()
+  const history = useHistoryStore()
   const { openSignInDialog, handleLogout } = useSignIn()
-  const { isResetDialogOpen, openResetDialog, handleConfirmReset, setResetDialogOpen } =
-    useResetCustomization()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
 
   // Reactive state
   const showProfileDialog = ref(false)
+  const showLockerBrowser = ref(false)
   const showCartDialog = ref(false)
-
+  const showSaveDesignDialog = ref(false)
   // Methods
-  function handleResetCustomization() {
-    openResetDialog()
+  async function handleResetCustomization() {
+    const ok = await confirmDialog({
+      title: actions_reset_customization({}, { locale: profileStore.currentLocale }),
+      description: "This will clear all current selections and history. You can't undo this action."
+    })
+    if (ok) {
+      customizationStore.clearCustomization()
+      history.clear()
+    }
   }
 
   function handleSaveAsDraft() {
-    // Handle save as draft
+    showSaveDesignDialog.value = true
   }
 
   function handleSaveAndShare() {
@@ -151,7 +162,7 @@
       </ButtonGroup>
       <!-- Locker Room Button -->
       <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <Button variant="outline" size="default">
+        <Button size="default" @click="showLockerBrowser = true">
           <LayoutGrid class="size-4" />
           <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
@@ -194,7 +205,10 @@
             <ShoppingCart class="size-4 mr-2" />
             <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
           </DropdownMenuItem>
-          <DropdownMenuItem v-if="uiStore.isMobile && authStore.isAuthenticated">
+          <DropdownMenuItem
+            v-if="uiStore.isMobile && authStore.isAuthenticated"
+            @click="showLockerBrowser = true"
+          >
             <LayoutGrid class="size-4 mr-2" />
             <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
           </DropdownMenuItem>
@@ -227,11 +241,8 @@
         <SignInDialog />
       </DropdownMenu>
     </ButtonGroup>
-    <ResetCustomizationDialog
-      :open="isResetDialogOpen"
-      @update:open="setResetDialogOpen"
-      @confirm="handleConfirmReset"
-    />
+    <LockerBrowser :open="showLockerBrowser" @update:open="showLockerBrowser = $event" />
+    <SaveDesignDialog :open="showSaveDesignDialog" @update:open="showSaveDesignDialog = $event" />
     <CartDialog :open="showCartDialog" @update:open="showCartDialog = $event" />
   </div>
 </template>

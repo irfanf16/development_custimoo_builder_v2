@@ -1,16 +1,15 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
   import { Button } from '@/components/ui/button'
+  import { InputSearchGroup } from '@/components/ui/input-search-group'
   import { Label } from '@/components/ui/label'
   import { Switch } from '@/components/ui/switch'
-  import { InputSearchGroup } from '@/components/ui/input-search-group'
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import { Info, Maximize2, Minimize2 } from 'lucide-vue-next'
+  import { computed, ref } from 'vue'
+  import type { BreadcrumbItem, HeaderConfiguration } from './types'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import { DesignCategoryTabs } from './WorkflowSteps'
-  import type { BreadcrumbItem } from './types'
-  import { useUIStore } from '@/stores/ui/ui.store'
-  import type { HeaderConfiguration } from './types'
   import CustomizableStockFilter from './WorkflowSteps/product/CustomizableStockFilter.vue'
 
   interface Props {
