@@ -1,5 +1,5 @@
 import http from '../api'
-import type { CancelOrderResponse, OrderDetailResponse } from './types'
+import type { CancelOrderResponse, CommentResponse, OrderDetailResponse } from './types'
 
 export type OrdersResponse = {
   result: {
@@ -31,4 +31,24 @@ async function getOrderDetail(orderId: number | string): Promise<OrderDetailResp
   return data
 }
 
-export default { getOrders, cancelOrder, getOrderDetail }
+async function addComment(apiUrl: string, formData: FormData) {
+  return http.post<CommentResponse>(apiUrl, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+async function updateComment(apiUrl: string, commentId: number, formData: FormData) {
+  return http.post<CommentResponse>(`${apiUrl}/${commentId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+async function deleteComment(commentId: number) {
+  return http.delete<CommentResponse>(`order_item/${commentId}/delete_comment`)
+}
+
+export default { getOrders, cancelOrder, getOrderDetail, addComment, updateComment, deleteComment }
