@@ -64,7 +64,7 @@
             </button> -->
           </div>
           <div class="grid grid-cols-2">
-            <template v-for="(image, imgIdx) in content.images" :key="imgIdx">
+            <template v-for="(image, _imgIdx) in content.images" :key="_imgIdx">
               <img
                 :src="image.url ? `${storage_url}${image.url}` : `${PLACEHOLDER_IMAGE}`"
                 :alt="image?.alt || ''"
