@@ -1,6 +1,6 @@
 <template>
   <!-- <div class="p-4 space-y-6"> -->
-  <div class="flex flex-col gap-4 w-full">
+  <div class="flex flex-col gap-4 sm:gap-6 w-full">
     <template v-for="(item, idx) in order.items || []" :key="`item-${idx}`">
       <!-- class="border rounded p-3 w-full" -->
       <TimeLine

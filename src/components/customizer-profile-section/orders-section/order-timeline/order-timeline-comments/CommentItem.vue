@@ -16,7 +16,7 @@
                 {{ getUserName(comment) }}
               </span>
               <span class="text-xs text-muted-foreground">
-                {{ comment.created_at }}
+                {{ formatDate(comment.created_at) }}
               </span>
               <span
                 ><small class="text-xs text-muted-foreground">{{
@@ -152,6 +152,7 @@
   import { ArrowLeftIcon, FileIcon, PencilIcon, TrashIcon } from 'lucide-vue-next'
   import { inject, reactive, ref, watch } from 'vue'
   import CommentForm from './CommentForm.vue'
+  import { formatDate } from '@/lib/utils'
 
   interface Props {
     comment: Comment

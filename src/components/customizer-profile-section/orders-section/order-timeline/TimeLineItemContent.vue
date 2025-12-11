@@ -4,13 +4,16 @@
     <div class="h-max">
       <slot></slot>
     </div>
-    <div v-if="!isNullOrEmpty(reference_no)" class="flex text-sm text-muted-foreground mb-2">
-      <span class="font-semibold">Customer Reference No:</span>
-      <span class="px-2 py-1 text-xs">{{ reference_no }}</span>
+    <div
+      v-if="!isNullOrEmpty(reference_no)"
+      class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mb-3"
+    >
+      <span class="font-semibold whitespace-nowrap">Customer Reference No:</span>
+      <span class="px-3 py-1.5 text-xs break-all sm:break-normal">{{ reference_no }}</span>
     </div>
     <div
       v-if="activity_content.content_group && activity_content.content_group.length > 0"
-      class="grid grid-cols-3 gap-2 mb-4"
+      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6"
     >
       <div
         v-for="(content, index) in activity_content.content_group"
@@ -21,10 +24,10 @@
           v-if="
             content.third_party_approval_obj && content.third_party_approval_obj.approval_status
           "
-          class="mb-2"
+          class="mb-3"
         >
           <span
-            class="inline-block px-2.5 py-0.5 text-xs font-medium rounded-full"
+            class="inline-block px-3 py-1.5 text-xs font-medium rounded-full"
             :class="{
               'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300':
                 content.third_party_approval_obj.approval_status === 'pending',
@@ -44,13 +47,13 @@
 
         <div
           v-if="content.images && content.images.length > 0"
-          class="border border-border rounded-lg p-3 h-full bg-card"
+          class="border border-border rounded-lg h-full bg-card"
         >
-          <div class="flex items-center gap-2 mb-2 justify-between">
-            <div class="flex min-h-[22px] items-center">
-              <div v-if="content.nickName" class="text-sm text-muted-foreground mb-2">
+          <div class="flex items-center gap-3 mb-3 justify-between">
+            <div class="flex min-h-6 items-center">
+              <div v-if="content.nickName" class="text-xs sm:text-sm text-muted-foreground mb-3">
                 <span class="font-semibold">Nick Name:</span>
-                <span class="px-2 py-1 text-xs">
+                <span class="px-3 py-1.5 text-xs break-words">
                   {{ content.nickName }}
                 </span>
               </div>
@@ -58,17 +61,13 @@
                 <div class="h-full"></div>
               </div>
             </div>
-
-            <!-- <button class="bg-primary text-white rounded-md text-center p-1">
-              <QueueListIcon class="size-6" />
-            </button> -->
           </div>
-          <div class="grid grid-cols-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <template v-for="(image, _imgIdx) in content.images" :key="_imgIdx">
               <img
                 :src="image.url ? `${storage_url}${image.url}` : `${PLACEHOLDER_IMAGE}`"
                 :alt="image?.alt || ''"
-                class="object-contain h-[200px] max-h-[200px]"
+                class="object-contain h-48 sm:h-56 md:h-64 w-full cursor-pointer"
                 @click="onImageClick(image?.url ?? null)"
                 @error="onImageError"
               />
@@ -80,71 +79,82 @@
               content.third_party_approval_obj.approval_status === 'rejected' &&
               content.third_party_approval_obj.feedback
             "
-            class="bg-destructive/10 dark:bg-destructive/20 border border-destructive/30 rounded-md py-2 px-4 mb-2 mt-2"
+            class="bg-destructive/10 dark:bg-destructive/20 border border-destructive/30 rounded-md py-3 px-4 sm:px-5 mb-3 mt-3"
           >
-            <div class="text-[0.95em] mb-[0.2em]">
-              <span class="text-destructive mr-2 font-bold">Rejection Feedback</span>
+            <div class="text-xs sm:text-sm mb-2">
+              <span class="text-destructive mr-3 font-bold">Rejection Feedback</span>
             </div>
-            <div class="text-destructive text-[0.95em]">
+            <div class="text-destructive text-xs sm:text-sm break-words">
               {{ content.third_party_approval_obj.feedback }}
             </div>
           </div>
         </div>
         <div
           v-if="!isNullOrEmpty(content.design_id) && content.images.length > 0"
-          class="text-sm mb-2"
+          class="text-xs sm:text-sm mb-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"
         >
-          <span class="font-semibold">Design ID:</span>
-          <span class="px-2 py-1 text-xs">{{ content.design_id }}</span>
+          <span class="font-semibold whitespace-nowrap">Design ID:</span>
+          <span class="px-3 py-1.5 text-xs break-all sm:break-normal">{{ content.design_id }}</span>
         </div>
 
-        <div v-if="content.addons.length > 0" class="flex gap-2 text-sm mb-2">
-          <div class="flex flex-wrap gap-1">
-            <span class="font-semibold pr-1">Addons:</span>
+        <div
+          v-if="content.addons.length > 0"
+          class="flex flex-col sm:flex-row gap-2 sm:gap-3 text-xs sm:text-sm mb-3"
+        >
+          <div class="flex flex-wrap gap-2 sm:gap-3">
+            <span class="font-semibold pr-2 whitespace-nowrap">Addons:</span>
             <span
               v-for="addon in content.addons"
               :key="`addon-${addon.addon_id}`"
-              class="px-2 py-1 bg-primary text-primary-foreground rounded-lg text-[12px] font-normal"
+              class="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-normal break-words"
             >
               {{ addon.title }}
             </span>
           </div>
         </div>
 
-        <div v-if="!isNullOrEmpty(content.skipReason)" class="flex gap-2 mb-2 text-sm">
-          <span class="font-semibold">Skip Reason:</span>
-          <span class="px-2 py-1 text-xs">
+        <div
+          v-if="!isNullOrEmpty(content.skipReason)"
+          class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3 text-xs sm:text-sm"
+        >
+          <span class="font-semibold whitespace-nowrap">Skip Reason:</span>
+          <span class="px-3 py-1.5 text-xs break-words">
             {{ content.skipReason }}
           </span>
         </div>
 
-        <div v-if="!isNullOrEmpty(content.message)" class="flex gap-2 mb-2 text-sm">
-          <span class="font-semibold">Feedback:</span>
-          <span class="text-muted-foreground">{{ content.message }}</span>
+        <div
+          v-if="!isNullOrEmpty(content.message)"
+          class="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 mb-3 text-xs sm:text-sm"
+        >
+          <span class="font-semibold whitespace-nowrap">Feedback:</span>
+          <span class="text-muted-foreground break-words">{{ content.message }}</span>
         </div>
         <div
           v-if="
             activity_content.activity_status === CustimooOrderFlowStatuses.FACTORYREVIEW &&
             !isNullOrEmpty(content.reorder_message)
           "
-          class="text-sm text-muted-foreground"
+          class="text-xs sm:text-sm text-muted-foreground break-words"
         >
           {{ content.reorder_message }}
         </div>
       </div>
     </div>
     <template v-if="activity_content.general_comments">
-      <strong class="font-bold">General Comments: </strong>
-      <span class="text-sm text-muted-foreground">
-        {{ activity_content.general_comments }}
-      </span>
+      <div class="mb-3">
+        <strong class="font-bold text-xs sm:text-sm">General Comments: </strong>
+        <span class="text-xs sm:text-sm text-muted-foreground break-words">
+          {{ activity_content.general_comments }}
+        </span>
+      </div>
     </template>
     <div
       v-if="
         activity_content.activity_status === 'quality_control' &&
         activity_content.content_group.find(item => 'quality_control' in item)
       "
-      class="text-sm text-muted-foreground w-full"
+      class="text-xs sm:text-sm text-muted-foreground w-full"
     >
       <ol class="list-decimal list-inside">
         <li
@@ -157,7 +167,7 @@
           <a class="text-primary hover:underline" :href="report.pdf_url" target="_blank">
             {{ decodeURIComponent(report.pdf_name) }}
           </a>
-          submitted at {{ report.created_at }}
+          submitted at {{ formatDate(report.created_at) }}
         </li>
       </ol>
     </div>
@@ -171,6 +181,7 @@
   import { onImageError, PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
   import { useOrderTimeline } from '@/components/customizer-profile-section/orders-section/order-timeline/useOrderTimeline'
   import type { GetActivityContentReturn } from '@/services/orders/types'
+  import { formatDate } from '@/lib/utils'
 
   interface Props {
     activity_content?: GetActivityContentReturn
