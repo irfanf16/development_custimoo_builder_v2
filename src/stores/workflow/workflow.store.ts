@@ -42,7 +42,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   // ===== STATE =====
   // Initialize to null - will be loaded from localStorage after company is fetched
-  const activeStep = ref<CustomizerStep | null | undefined>(null)
+  const activeStep = ref<CustomizerStep | null>(null)
 
   // Workflow UI state
   const logosSubStep = ref<LogosSubStep>('list')
@@ -75,7 +75,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   // ===== COMPUTED PROPERTIES =====
   const currentStep = computed<WorkflowRouteStep>(() => {
-    const step = activeStep.value as CustomizerStep | null
+    const step = activeStep.value
     switch (step) {
       case 'designs':
         return 'designs'

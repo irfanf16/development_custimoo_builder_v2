@@ -9,6 +9,7 @@
   import { Button } from '@/components/ui/button'
   import ColorSelector from '@/components/ui/color-selector/ColorSelector.vue'
   import { PaletteColorSelector } from '@/components/ui/palette-color-selector'
+  import GradientTabs from './GradientTabs.vue'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import type { GradientColor, OutputColor } from '@/services/products/types'
   import { useHistoryStore } from '@/stores/history/history.store'
@@ -287,20 +288,13 @@
           </div>
         </AccordionTrigger>
         <AccordionContent>
-          <!-- Gradient color selection buttons -->
-          <div v-if="svgGroup.gradient_colors" class="flex flex-wrap gap-2 mb-4">
-            <Button
-              v-for="(gradientColor, gIndex) in svgGroup.gradient_colors"
-              :key="gIndex"
-              size="sm"
-              variant="outline"
-              :class="{
-                'bg-primary text-primary-foreground': getGradientIndex(svgGroup.id) === gIndex
-              }"
-              @click="setGradientIndex(svgGroup.id, gIndex)"
-            >
-              {{ gradientColor.percentage }}%
-            </Button>
+          <!-- Gradient color selection tabs -->
+          <div v-if="svgGroup.gradient_colors" class="mb-4">
+            <GradientTabs
+              :gradient-colors="svgGroup.gradient_colors"
+              :model-value="getGradientIndex(svgGroup.id)"
+              @update:model-value="index => setGradientIndex(svgGroup.id, index)"
+            />
           </div>
           <PaletteColorSelector
             v-if="computedPalettes"
