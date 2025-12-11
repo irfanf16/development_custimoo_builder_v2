@@ -1,5 +1,15 @@
 <script setup lang="ts">
-  import { onMounted, onBeforeUnmount, computed, ref, watch, nextTick, type Ref } from 'vue'
+  import {
+    onMounted,
+    onBeforeUnmount,
+    computed,
+    ref,
+    watch,
+    nextTick,
+    getCurrentInstance,
+    type Ref,
+    type ComponentPublicInstance
+  } from 'vue'
   import { FabricImage, Canvas, type FabricObject } from 'fabric'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
@@ -8,10 +18,16 @@
   import { useSceneCommon } from '@/composables/scene'
   import { useSvgGroups } from '@/composables/scene'
   import { useColorCustomization } from '@/composables/scene'
+  import {
+    getImageFrom2DCanvas,
+    type GetImageFromCanvasOptions
+  } from '@/composables/scene/useCanvasImage'
+  import { useSceneStore } from '@/stores/scene/scene.store'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
 
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
+  const sceneStore = useSceneStore()
 
   // Canvas refs
   const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -314,6 +330,68 @@
   // All customization functions are now provided by useColorCustomization composable
   // Functions removed: getGroupColorBySvgGroup, getSvgGroupColors, getDefaultColorBySvgGroup,
   // findClosestColorIndex, changeDefaultColors, changeGroupColors, resetToInitialColors, applyCustomization
+
+  /**
+   * Get image from canvas
+   * TwoDScene only handles single side, so no side parameter needed
+   * Adapted from old Helpers.ts getImageFromCanvas function
+   */
+  function getImageFromCanvas(options: GetImageFromCanvasOptions = {}): string {
+    if (!canvas.value) return ''
+    // Type assertion needed because canvas.value is typed as Canvas but may have additional properties
+    return getImageFrom2DCanvas(canvas.value as unknown as Canvas, options)
+  }
+
+  // Store component reference in global store if mainPreview
+  function updateSceneRef() {
+    if (!props.mainPreview || !props.side) return
+
+    const componentInstance = getCurrentInstance()?.proxy as ComponentPublicInstance | null
+    if (componentInstance) {
+      sceneStore.setTwoDSceneRef(componentInstance, props.side as 'front' | 'back')
+    }
+  }
+
+  onMounted(() => {
+    if (props.mainPreview && props.side) {
+      // Get component instance from template ref
+      nextTick(() => {
+        updateSceneRef()
+      })
+    }
+  })
+
+  // Watch for side prop changes and update reference
+  watch(
+    () => props.side,
+    (newSide, oldSide) => {
+      if (!props.mainPreview) return
+
+      // Clear old reference if side changed
+      if (oldSide && oldSide !== newSide) {
+        sceneStore.setTwoDSceneRef(null, oldSide as 'front' | 'back')
+      }
+
+      // Set new reference
+      if (newSide) {
+        nextTick(() => {
+          updateSceneRef()
+        })
+      }
+    }
+  )
+
+  onBeforeUnmount(() => {
+    // Clear reference when component unmounts
+    if (props.mainPreview && props.side) {
+      sceneStore.setTwoDSceneRef(null, props.side as 'front' | 'back')
+    }
+  })
+
+  // Expose function for external use
+  defineExpose({
+    getImageFromCanvas
+  })
 
   // Watch for changes in default colors from customization store
   watch(
