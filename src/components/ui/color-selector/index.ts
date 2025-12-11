@@ -9,7 +9,8 @@ export const colorSelectorVariants = cva(
     variants: {
       size: {
         default: 'h-[2.875rem] w-[2.875rem]',
-        sm: 'h-[1.875rem] w-[1.875rem]'
+        sm: 'h-[1.875rem] w-[1.875rem]',
+        xs: 'h-[1rem] w-[1rem]'
       }
     },
     defaultVariants: {
