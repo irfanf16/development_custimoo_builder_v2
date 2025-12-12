@@ -67,8 +67,8 @@
               <img
                 :src="image.url ? `${storage_url}${image.url}` : `${PLACEHOLDER_IMAGE}`"
                 :alt="image?.alt || ''"
-                class="object-contain h-48 sm:h-56 md:h-64 w-full cursor-pointer"
-                @click="onImageClick(image?.url ?? null)"
+                class="object-contain h-48 sm:h-56 md:h-64 w-full cursor-pointer hover:opacity-90 transition-opacity"
+                @click="onImageClick(image?.url ?? null, content)"
                 @error="onImageError"
               />
             </template>
@@ -198,13 +198,26 @@
   })
 
   const storage_url = import.meta.env.VITE_APP_STORAGE_URL
-  const emit = defineEmits(['showPreview'])
+  const emit = defineEmits<{
+    (
+      e: 'showPreview',
+      contentGroup:
+        | import('@/services/orders/types').ContentGroup
+        | Array<{ url: string; alt?: string }>
+    ): void
+  }>()
   const { isNullOrEmpty, CustimooOrderFlowStatuses } = useOrderTimeline()
 
-  const onImageClick = (image_url: string) => {
-    if (image_url) {
-      emit('showPreview', image_url)
+  const onImageClick = (
+    image_url: string | null,
+    content?: import('@/services/orders/types').ContentGroup
+  ) => {
+    if (content && content.images && content.images.length > 0) {
+      // Emit the entire content group so we can show all images
+      emit('showPreview', content)
+    } else if (image_url) {
+      // Fallback: emit as array with single image
+      emit('showPreview', [{ url: image_url }])
     }
-    return
   }
 </script>

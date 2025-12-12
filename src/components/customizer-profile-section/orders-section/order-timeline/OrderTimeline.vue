@@ -33,6 +33,7 @@
                 item
               )
             "
+            @show-preview="contentGroup => handleImagePreview(contentGroup)"
           >
             <template #comments>
               <CommentsList
@@ -54,14 +55,21 @@
         </TimeLineItem>
       </TimeLine>
     </template>
+
+    <!-- Image Preview Dialog -->
+    <ImagePreview
+      v-model:open="showImagePreview"
+      :content_group="selectedContentGroup"
+      :images="selectedImages"
+    />
   </div>
   <!-- </div> -->
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import { storeToRefs } from 'pinia'
-  import type { Order, StatusActivity, Comment } from '@/services/orders/types'
+  import type { Order, StatusActivity, Comment, ContentGroup } from '@/services/orders/types'
   import { usePermissions } from '@/composables/usePermissions.ts'
   import CommentsList from '@/components/customizer-profile-section/orders-section/order-timeline/order-timeline-comments/CommentsList.vue'
   import { useAuthStore } from '@/stores/auth/auth.store'
@@ -69,6 +77,7 @@
   import TimeLine from '@/components/customizer-profile-section/orders-section/order-timeline/TimeLine.vue'
   import TimeLineItem from '@/components/customizer-profile-section/orders-section/order-timeline/TimeLineItem.vue'
   import TimeLineItemContent from '@/components/customizer-profile-section/orders-section/order-timeline/TimeLineItemContent.vue'
+  import ImagePreview from '@/components/customizer-profile-section/orders-section/order-timeline/ImagePreview.vue'
 
   defineProps<{ order: Order }>()
   const { activityStatus, CustimooOrderFlowStatuses, getActivityIcon, getActivityContent } =
@@ -79,6 +88,25 @@
   const canEditComments = computed(() => can('edit-comment'))
   const canDeleteComments = computed(() => can('delete-comment'))
   const { customer: currentUser } = storeToRefs(useAuthStore())
+
+  const showImagePreview = ref(false)
+  const selectedContentGroup = ref<ContentGroup | undefined>(undefined)
+  const selectedImages = ref<Array<{ url: string; alt?: string }> | undefined>(undefined)
+
+  const handleImagePreview = (
+    contentGroup: ContentGroup | Array<{ url: string; alt?: string }>
+  ) => {
+    if (Array.isArray(contentGroup)) {
+      // If it's an array of images
+      selectedImages.value = contentGroup
+      selectedContentGroup.value = undefined
+    } else {
+      // If it's a ContentGroup
+      selectedContentGroup.value = contentGroup
+      selectedImages.value = undefined
+    }
+    showImagePreview.value = true
+  }
 
   const handleCommentsUpdated = (activity: StatusActivity, comments: Comment[]) => {
     activity.comments = comments
