@@ -550,8 +550,40 @@ export function useColorCustomization(
    * Reset colors to their original state from initialSvgGroups
    * @param renderTime - Optional render delay time
    */
+  /**
+   * Check if svgGroups and initialSvgGroups are the same
+   */
+  function areSvgGroupsSame(): boolean {
+    if (svgGroups.value.length !== initialSvgGroups.value.length) return false
+
+    for (let i = 0; i < svgGroups.value.length; i++) {
+      const current = svgGroups.value[i] as OutputSvgGroupColor
+      const initial = initialSvgGroups.value.find(g => g.id === current.id)
+
+      if (!initial) return false
+
+      // Compare solid colors
+      if (current.color !== initial.color) return false
+
+      // Compare gradient colors
+      if (current.gradient_colors && initial.gradient_colors) {
+        if (current.gradient_colors.length !== initial.gradient_colors.length) return false
+        for (let j = 0; j < current.gradient_colors.length; j++) {
+          if (current.gradient_colors[j]?.color !== initial.gradient_colors[j]?.color) return false
+        }
+      } else if (current.gradient_colors || initial.gradient_colors) {
+        return false // One has gradient, other doesn't
+      }
+    }
+
+    return true
+  }
+
   function resetToInitialColors(renderTime = 0): void {
     if (!canvas.value || !designObject.value || initialSvgGroups.value.length === 0) return
+
+    // Only reset if svgGroups and initialSvgGroups are different
+    if (areSvgGroupsSame()) return
 
     // Create a map of initial SVG groups for quick lookup
     const defaultSvgGroups: Record<string, OutputSvgGroupColor> = {}
@@ -642,14 +674,6 @@ export function useColorCustomization(
 
     const groupColors = customizationStore.customization?.group_colors || {}
     const hasGroupColors = Object.keys(groupColors).length > 0
-
-    // If no colors are set, reset to initial colors
-    if (!hasDefaultColors && !hasGroupColors) {
-      if (applyCustomizationOverrides.value || mainPreview) {
-        resetToInitialColors(renderTime)
-      }
-      return
-    }
 
     // Apply default colors customization
     if (hasDefaultColors) {

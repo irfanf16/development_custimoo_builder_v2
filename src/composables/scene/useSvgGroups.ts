@@ -134,6 +134,8 @@ export function useSvgGroups(
 
       // Process id: split by underscore and take first part, convert to lowercase
       const itemId = idValue.split('_')[0]?.toLowerCase() || idValue.toLowerCase()
+      if (!itemId) return
+
       itemWithId.set('id', itemId)
 
       // Skip non-customizable parts
