@@ -26,7 +26,8 @@ export function useColorCustomization(
   effectiveProductId: Ref<number | null>,
   productsStore: ReturnType<typeof useProductsStore>,
   mainPreview: boolean,
-  side: CanvasSide
+  side: CanvasSide,
+  colorGrouping?: Ref<Record<string, string[]> | null>
 ) {
   // ===== DEPENDENCIES =====
   const customizationStore = useCustomizationStore()
@@ -338,13 +339,18 @@ export function useColorCustomization(
       }
     })
 
-    // Render canvas after a delay
-    if (renderTime > 0) {
-      setTimeout(() => {
-        canvas.value?.requestRenderAll()
-      }, renderTime)
+    // Apply color grouping if available
+    if (colorGrouping?.value) {
+      unHideColorGrouping(renderTime)
     } else {
-      canvas.value?.requestRenderAll()
+      // Render canvas after a delay
+      if (renderTime > 0) {
+        setTimeout(() => {
+          canvas.value?.requestRenderAll()
+        }, renderTime)
+      } else {
+        canvas.value?.requestRenderAll()
+      }
     }
   }
 
@@ -536,13 +542,18 @@ export function useColorCustomization(
       }
     })
 
-    // Render canvas after a delay
-    if (renderTime > 0) {
-      setTimeout(() => {
-        canvas.value?.requestRenderAll()
-      }, renderTime)
+    // Apply color grouping if available
+    if (colorGrouping?.value) {
+      unHideColorGrouping(renderTime)
     } else {
-      canvas.value?.requestRenderAll()
+      // Render canvas after a delay
+      if (renderTime > 0) {
+        setTimeout(() => {
+          canvas.value?.requestRenderAll()
+        }, renderTime)
+      } else {
+        canvas.value?.requestRenderAll()
+      }
     }
   }
 
@@ -661,6 +672,158 @@ export function useColorCustomization(
   }
 
   /**
+   * Unhide color grouping - ensures parts that should be visually distinct have different colors
+   * @param renderTime - Optional render delay time
+   */
+  function unHideColorGrouping(renderTime = 0): void {
+    if (!canvas.value || !designObject.value || !colorGrouping?.value) return
+
+    const grouping = colorGrouping.value
+
+    for (const key in grouping) {
+      const distinguishPart = svgGroups.value.filter(
+        (svgGroup: OutputSvgGroupColor) => svgGroup.id === key.toLowerCase()
+      )
+
+      const keyArray = grouping[key]
+      if (!keyArray) continue
+
+      keyArray.forEach((comparePartId: string) => {
+        const comparePart = svgGroups.value.filter(
+          (svgGroup: OutputSvgGroupColor) => svgGroup.id === comparePartId.toLowerCase()
+        )
+
+        if (
+          distinguishPart.length &&
+          comparePart.length &&
+          distinguishPart[0] &&
+          comparePart[0] &&
+          (distinguishPart[0].color === comparePart[0].color ||
+            (distinguishPart[0].name &&
+              comparePart[0].name &&
+              distinguishPart[0].name === comparePart[0].name) ||
+            (distinguishPart[0].pantone &&
+              comparePart[0].pantone &&
+              distinguishPart[0].pantone === comparePart[0].pantone))
+        ) {
+          // Colors match, need to change the distinguish part color
+          let changeColor: { value: string; name: string; pantone: string } | null = null
+
+          // Get product colors (namecolors)
+          const product = effectiveProductId.value
+            ? productsStore.getProductById(effectiveProductId.value)
+            : productsStore.activeProductDetails
+
+          const productColors = product?.namecolors || []
+
+          // Find a different color from product colors
+          for (const colorGroup of productColors) {
+            const colors = colorGroup.json_data || []
+            for (const color of colors) {
+              if (color.value !== comparePart[0].color) {
+                // Get pantone info for this color
+                const pantoneProductId = effectiveProductId.value || 0
+                const selectProductPantonesList = getSelectedProductPantones(
+                  pantoneProductId,
+                  key.toLowerCase()
+                )
+                const closestColor = getClosestColor(
+                  color.value,
+                  selectProductPantonesList,
+                  getColorType(key.toLowerCase(), effectiveProductId.value)
+                )
+                changeColor = {
+                  value: color.value || '',
+                  name: color.name || '',
+                  pantone: closestColor.pantone
+                }
+                break
+              }
+            }
+            if (changeColor) break
+          }
+
+          // If no different color found, use closest color to black
+          if (!changeColor) {
+            const pantoneProductId = effectiveProductId.value || 0
+            const selectProductPantonesList = getSelectedProductPantones(
+              pantoneProductId,
+              key.toLowerCase()
+            )
+            const closestColor = getClosestColor(
+              '#000000',
+              selectProductPantonesList,
+              getColorType(key.toLowerCase(), effectiveProductId.value)
+            )
+            changeColor = {
+              value: closestColor.hex,
+              name: closestColor.name,
+              pantone: closestColor.pantone
+            }
+          }
+
+          if (!changeColor) return
+
+          // Update design objects on canvas
+          const design: FabricObject[] = (
+            designObject.value as Group & {
+              _objects?: FabricObject[]
+            }
+          )._objects
+            ? (designObject.value as Group)._objects || []
+            : [designObject.value as FabricObject]
+
+          design.forEach(item => {
+            const itemWithId = item as FabricObject & {
+              id?: string
+              fill?: string | { gradientUnits?: string; colorStops?: Array<{ color: string }> }
+            }
+
+            if (!itemWithId.id) return
+
+            const itemId = itemWithId.id.toLowerCase()
+            if (key.toLowerCase() === itemId && itemWithId.fill) {
+              if (typeof itemWithId.fill === 'string') {
+                itemWithId.set('fill', changeColor.value)
+              }
+            }
+          })
+
+          // Update SVG groups
+          svgGroups.value.forEach(svgGroup => {
+            if (svgGroup.id === key.toLowerCase()) {
+              svgGroup.color = changeColor.value
+              svgGroup.name = changeColor.name
+              svgGroup.pantone = changeColor.pantone
+
+              // Update store if mainPreview is enabled
+              if (mainPreview) {
+                // Update customization store group_colors so effectiveSvgGroups reflects the change
+                // This ensures the UI updates when colors are changed by unHideColorGrouping
+                customizationStore.setGroupColor(key.toLowerCase(), {
+                  value: changeColor.value,
+                  name: changeColor.name,
+                  position: 0
+                })
+                productsStore.setSvgGroups(svgGroups.value, side, false)
+              }
+            }
+          })
+        }
+      })
+    }
+
+    // Render canvas after a delay
+    if (renderTime > 0) {
+      setTimeout(() => {
+        canvas.value?.requestRenderAll()
+      }, renderTime)
+    } else {
+      canvas.value?.requestRenderAll()
+    }
+  }
+
+  /**
    * Apply all customization types to the canvas
    * This method centralizes all customization application logic
    * @param renderTime - Optional render delay time
@@ -713,6 +876,7 @@ export function useColorCustomization(
     changeDefaultColors,
     changeGroupColors,
     resetToInitialColors,
+    unHideColorGrouping,
     // Utilities
     getGroupColorBySvgGroup,
     getDefaultColorBySvgGroup,

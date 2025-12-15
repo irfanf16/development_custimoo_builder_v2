@@ -15,9 +15,12 @@
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
   import { filterFields } from '@/lib/utils'
   import { toRef } from 'vue'
-  import { useSceneCommon } from '@/composables/scene'
-  import { useSvgGroups } from '@/composables/scene'
-  import { useColorCustomization } from '@/composables/scene'
+  import {
+    useSceneCommon,
+    useSvgGroups,
+    useColorCustomization,
+    useColorGrouping
+  } from '@/composables/scene'
   import {
     getImageFrom2DCanvas,
     type GetImageFromCanvasOptions
@@ -63,6 +66,8 @@
     canvasClass?: string
     // SVG parts array for color permutation (can be string JSON or array)
     svgParts?: string[] | string
+    // Color grouping - can be string (JSON) or object
+    colorGrouping?: Record<string, string[]> | string | null
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -81,7 +86,9 @@
     // Canvas class
     canvasClass: 'rounded-[32px] transition-opacity duration-300 z-10',
     // SVG parts - defaults to undefined (will be initialized from svgGroups if not provided)
-    svgParts: undefined
+    svgParts: undefined,
+    // Color grouping - defaults to undefined (will be extracted from design if not provided)
+    colorGrouping: undefined
   })
 
   // ===== SHARED COMPOSABLE =====
@@ -106,6 +113,9 @@
   )
   const { svgGroups, initialSvgGroups, parts } = svgGroupsComposable
 
+  // ===== COLOR GROUPING =====
+  const colorGrouping = useColorGrouping(toRef(props, 'colorGrouping'))
+
   // ===== COLOR CUSTOMIZATION COMPOSABLE =====
   const colorCustomization = useColorCustomization(
     canvas as Ref<Canvas | null>,
@@ -116,7 +126,8 @@
     effectiveProductId,
     productsStore,
     props.mainPreview,
-    props.side
+    props.side,
+    colorGrouping as Ref<Record<string, string[]> | null>
   )
 
   // Extract customization functions from composable

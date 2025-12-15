@@ -22,9 +22,12 @@
   import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
   import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
   import { Canvas, FabricImage, Group, type FabricObject } from 'fabric'
-  import { useSceneCommon } from '@/composables/scene'
-  import { useSvgGroups } from '@/composables/scene'
-  import { useColorCustomization } from '@/composables/scene'
+  import {
+    useSceneCommon,
+    useSvgGroups,
+    useColorCustomization,
+    useColorGrouping
+  } from '@/composables/scene'
   import {
     getImageFrom3DCanvas,
     type GetImageFromCanvasOptions
@@ -77,6 +80,8 @@
     }
     // SVG parts array for color permutation (can be string JSON or array)
     svgParts?: string[] | string
+    // Color grouping - can be string (JSON) or object
+    colorGrouping?: Record<string, string[]> | string | null
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -89,7 +94,8 @@
     side: '3d',
     models: undefined,
     imageData: undefined,
-    svgParts: undefined
+    svgParts: undefined,
+    colorGrouping: undefined
   })
 
   // Convert imageData to DesignData format for useSceneCommon
@@ -131,6 +137,9 @@
   // ===== DESIGN OBJECT REF =====
   const designObject = ref<FabricObject | null>(null)
 
+  // ===== COLOR GROUPING =====
+  const colorGrouping = useColorGrouping(toRef(props, 'colorGrouping'))
+
   // ===== COLOR CUSTOMIZATION COMPOSABLE =====
   const colorCustomization = useColorCustomization(
     canvas as Ref<Canvas | null>,
@@ -141,7 +150,8 @@
     effectiveProductId,
     productsStore,
     props.mainPreview,
-    props.side
+    props.side,
+    colorGrouping as Ref<Record<string, string[]> | null>
   )
 
   // Extract customization functions from composable
