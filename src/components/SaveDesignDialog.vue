@@ -1,30 +1,35 @@
 <script setup lang="ts">
-  import { ref, computed, watch } from 'vue'
-  import { Dialog, DialogHeader, DialogContent } from '@/components/ui/dialog'
-  import { Input } from '@/components/ui/input'
+  import ProductPreview from '@/components/product-preview/ProductPreview.vue'
   import { Button } from '@/components/ui/button'
+  import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
+  import { Input } from '@/components/ui/input'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-  import ProductPreview from '@/components/product-preview/ProductPreview.vue'
-  import { Calendar, SwatchBook, Plus, ArrowUpDown, Check } from 'lucide-vue-next'
+  import { ArrowUpDown, Calendar, Check, Plus, SwatchBook } from 'lucide-vue-next'
+  import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
 
-  import type { Locker } from '@/services/lockers/types'
-  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  import TwoDScene from './scene/TwoDScene.vue'
-  import { storeToRefs } from 'pinia'
-  import { useProductsStore } from '@/stores/products/products.store'
-  import { InputSearchGroup } from '@/components/ui/input-search-group'
   import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
-  import { timeAgo } from '@/lib/utils'
-  // import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { InputSearchGroup } from '@/components/ui/input-search-group'
+  import { base64ToFile, timeAgo, uploadPresignedFiles } from '@/lib/utils'
+  import type { Locker } from '@/services/lockers/types'
+  import { useProductsStore } from '@/stores/products/products.store'
+  import { useSceneStore } from '@/stores/scene/scene.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { storeToRefs } from 'pinia'
+  import TwoDScene from './scene/TwoDScene.vue'
+
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { objectToFormData } from '../lib/utils'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
-
+  type TwoDSceneRef = {
+    getImageFromCanvas: () => string
+  } | null
   const props = defineProps<{
     open: boolean
   }>()
@@ -33,17 +38,20 @@
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const sortOption = ref<SortOption>('alphabetical')
+  const sceneStore = useSceneStore()
   const productName = ref('')
   const selectedLockerId = ref<number | null>(null)
 
+  const frontImage = ref('')
+  const backImage = ref('')
   const lockerStore = useLockerRoomStore()
   const workflowStore = useWorkflowStore()
   const lockerStoreRef = storeToRefs(lockerStore)
   const productsStore = useProductsStore()
-  // const customizationStore = useCustomizationStore()
-
+  const customizationStore = useCustomizationStore()
+  const isSubmitting = ref<boolean>(false)
   const { activeProductDetails } = storeToRefs(productsStore)
-  // const customizeStoreRef = storeToRefs(customizationStore)
+  const customizationStoreRef = storeToRefs(customizationStore)
 
   const lockers = computed(() => lockerStoreRef.lockers.value)
 
@@ -58,14 +66,94 @@
     selectedLockerId.value = locker.id
     emit('select-locker', locker)
   }
+  let frontImageComponentRef: TwoDSceneRef = sceneStore.getTwoDSceneRef('front')
+  if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
+    frontImage.value = (
+      frontImageComponentRef as unknown as ComponentPublicInstance & {
+        getImageFromCanvas: () => string
+      }
+    ).getImageFromCanvas()
+  }
 
-  const handleSave = () => {
-    // console.log(customizeStoreRef)
+  let backImageComponentRef: TwoDSceneRef = sceneStore.getTwoDSceneRef('back')
+  if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
+    backImage.value = (
+      backImageComponentRef as unknown as ComponentPublicInstance & {
+        getImageFromCanvas: () => string
+      }
+    ).getImageFromCanvas()
+  }
+
+  const componentRef = sceneStore.threeDSceneRef
+  if (componentRef && 'getImageFromCanvas' in componentRef) {
+    frontImage.value = (
+      componentRef as unknown as ComponentPublicInstance & {
+        getImageFromCanvas: (side?: string) => string
+      }
+    ).getImageFromCanvas('front')
+    backImage.value = (
+      componentRef as unknown as ComponentPublicInstance & {
+        getImageFromCanvas: (side?: string) => string
+      }
+    ).getImageFromCanvas('back')
+  }
+  const handleSave = async () => {
     if (!selectedLockerId.value) return
-    emit('save-design', {
-      locker_id: selectedLockerId.value,
-      name: productName.value
-    })
+    isSubmitting.value = true
+    const signedUrls = await lockerStore.getSignedUrl(selectedLockerId.value)
+    if (!signedUrls) {
+      isSubmitting.value = false
+      return
+    } else {
+      const preparedFiles = signedUrls.urls.map(u => {
+        return {
+          presigned_url: u.presigned_url,
+          file_type: u.file_type,
+          file:
+            u.file_side === 'front'
+              ? base64ToFile(frontImage.value, 'front.png')
+              : base64ToFile(backImage.value, 'back.png'),
+          file_side: u.file_side
+        }
+      })
+      const results = await uploadPresignedFiles(preparedFiles)
+      if (results.every(r => r.success)) {
+        let locker = {
+          addons: [],
+          roster_url: true,
+          room_id: selectedLockerId.value,
+          modelId: null,
+          product_id: activeProductDetails.value!.product_id,
+          product_name: productName.value,
+          // svg_parts: scene_ref.parts,
+          style_id: customizationStoreRef.activeStyleId.value,
+          design_id: customizationStore.activeDesignId,
+          custom_logos: [],
+          text: [],
+          colors: [],
+          shuffle_color_number: 0,
+          defaultcolors: [],
+          groupcolors: [],
+          front_image: signedUrls.urls.find(item => item.file_side === 'front')!.original_url,
+          back_image: signedUrls.urls.find(item => item.file_side === 'back')!.original_url,
+          product_roster_detail: [],
+          fixed_logo_index: 0,
+          svgcolors: [],
+          grouped_addons: [],
+          ungrouped_addons: [],
+          group_patterns: [],
+          locker_id: selectedLockerId.value
+        }
+        const payload = objectToFormData(locker)
+        const success = await lockerStore.saveDesignToLocker(payload)
+        if (success) {
+          isSubmitting.value = false
+          emit('update:open', false)
+        } else {
+          isSubmitting.value = false
+        }
+      }
+    }
   }
   const handlePreviewToggle = () => {
     workflowStore.toggleActiveCanvasSide()
@@ -77,6 +165,23 @@
       if (newVal) {
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()
+        }
+        frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
+        if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
+          frontImage.value = (
+            frontImageComponentRef as unknown as TwoDSceneRef & {
+              getImageFromCanvas: () => string
+            }
+          ).getImageFromCanvas()
+        }
+
+        backImageComponentRef = sceneStore.getTwoDSceneRef('back')
+        if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
+          backImage.value = (
+            backImageComponentRef as unknown as TwoDSceneRef & {
+              getImageFromCanvas: () => string
+            }
+          ).getImageFromCanvas()
         }
       }
     }
@@ -117,13 +222,19 @@
         <!-- RIGHT: LOCKER LIST -->
         <div class="w-[40%] flex flex-col p-6 pb-0! gap-3">
           <div class="flex flex-col gap-3">
-            <Input v-model="productName" placeholder="Design name..." class="h-9 bg-accent" />
+            <Input
+              v-model="productName"
+              placeholder="Design name..."
+              class="h-9 bg-accent"
+              :disabled="isSubmitting"
+            />
             <h4 class="text-sm font-semibold mb-0">Choose a Locker</h4>
             <div class="flex items-center justify-between gap-1">
               <InputSearchGroup
                 v-model="search"
                 placeholder="Search Locker"
                 class="w-full h-9 bg-accent"
+                :disabled="isSubmitting"
                 @update:model-value="
                   (val: string | number) => {
                     search = val as string
@@ -166,7 +277,11 @@
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button class="h-9 flex items-center gap-2" @click="emit('create-locker')">
+              <Button
+                class="h-9 flex items-center gap-2"
+                :disabled="isSubmitting"
+                @click="emit('create-locker')"
+              >
                 <Plus class="w-4 h-4" /> Create locker
               </Button>
             </div>
@@ -179,7 +294,11 @@
               v-for="locker in filteredLockers"
               :key="locker.id"
               class="flex gap-4 rounded-lg cursor-pointer hover:bg-accent transition mb-4 p-1 last-of-type:mb-0"
-              :class="selectedLockerId === locker.id ? 'bg-primary/20' : ''"
+              :class="{
+                'bg-primary/20': selectedLockerId === locker.id,
+                'pointer-events-none': isSubmitting,
+                'cursor-not-allowed': isSubmitting
+              }"
               @click="handleSelectLocker(locker)"
             >
               <!-- THUMBNAIL -->
@@ -221,9 +340,16 @@
             </div>
             <!-- </div> -->
           </ScrollArea>
-          <div class="flex justify-end gap-3">
-            <Button variant="outline" @click="emit('update:open', false)"> Cancel </Button>
-            <Button :disabled="!selectedLockerId" @click="handleSave"> Save design </Button>
+          <div
+            class="flex justify-end gap-3"
+            :class="{ 'pointer-events-none': !selectedLockerId || isSubmitting }"
+          >
+            <Button variant="outline" :disabled="isSubmitting" @click="emit('update:open', false)">
+              Cancel
+            </Button>
+            <Button :disabled="!selectedLockerId || isSubmitting" @click="handleSave">
+              Save design
+            </Button>
           </div>
         </div>
       </div>

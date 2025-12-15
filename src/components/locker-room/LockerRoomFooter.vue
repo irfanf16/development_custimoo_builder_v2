@@ -24,16 +24,18 @@
     selectedLockers: Array<string | number>
     lockerProductsRef?: InstanceType<typeof LockerProductsListing> | null
     currentLocker: Locker | null
+    isCreatingCollection: boolean
   }
   const props = withDefaults(defineProps<FooterProps>(), {
     currentTab: 'lockers',
     detailsTab: 'products',
     currentMode: 'list',
     selectedProducts: () => [],
-    lockerProductsRef: null
+    lockerProductsRef: null,
+    isCreatingCollection: false
   })
 
-  const emit = defineEmits(['back'])
+  const emit = defineEmits(['back', 'cancel-collection-creation', 'create-collection'])
   const uiStore = useUIStore()
   const lockerRoomStore = useLockerRoomStore()
   const products = computed(() => props.selectedProducts)
@@ -70,21 +72,34 @@
 </script>
 <template>
   <DialogFooter class="w-full">
-    <div v-if="props.currentMode === 'list'" class="flex justify-end gap-2 pt-4 border-t w-full">
+    <div
+      v-if="props.currentMode === 'list' && !isCreatingCollection"
+      class="flex justify-end gap-2 pt-4 border-t w-full"
+    >
       <Button variant="ghost">Cancel</Button>
       <Button
+        v-if="!isCreatingCollection"
         :disabled="selectedLockers.length === 0"
         class="disabled:opacity-25"
         variant="primary"
       >
         <ShoppingBasket class="w-4 h-4" /> Add to cart
       </Button>
+
+      <Button
+        v-else
+        :disabled="selectedProducts.length === 0"
+        class="disabled:opacity-25"
+        variant="primary"
+      >
+        Add to Collection
+      </Button>
     </div>
     <div
-      v-else-if="currentMode === 'detail'"
+      v-else-if="currentMode === 'detail' || isCreatingCollection"
       class="flex pt-4 border-t w-full flex-col md:flex-row gap-2"
     >
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between" :class="{ 'w-full': isCreatingCollection }">
         <span v-if="products.length > 0" class="flex items-center mr-3">
           <AvatarQueue
             :images="products.map(prod => baseStorageUrl + prod.product_front_url)"
@@ -108,12 +123,13 @@
           </TooltipProvider>
         </span>
         <Button
+          v-if="!isCreatingCollection"
           class="mr-3"
           variant="outline"
           @click="props.lockerProductsRef?.selecteAllProducts()"
           >Select all</Button
         >
-        <div class="flex items-center gap-1">
+        <div v-if="!isCreatingCollection" class="flex items-center gap-1">
           <Button :disabled="products.length === 0" variant="outline">
             <FolderArchive class="size-4" /> Move
           </Button>
@@ -126,23 +142,45 @@
           </Button>
         </div>
       </div>
-      <Separator v-if="!uiStore.isMobile" orientation="vertical" class="h-full mx-5" />
+      <Separator
+        v-if="!uiStore.isMobile && !isCreatingCollection"
+        orientation="vertical"
+        class="h-full mx-5"
+      />
 
       <div class="flex items-center justify-end">
-        <Button variant="outline" class="ml-1" :disabled="selectedProducts.length === 0"
+        <Button
+          variant="outline"
+          class="ml-1"
+          :disabled="selectedProducts.length === 0"
+          @click="emit('create-collection')"
           ><PlusIcon class="size-4" /> Add to collection</Button
         >
-        <Button variant="primary" class="ml-1" :disabled="selectedProducts.length === 0">
+        <Button
+          v-if="!isCreatingCollection"
+          variant="primary"
+          class="ml-1"
+          :disabled="selectedProducts.length === 0"
+        >
           <ShoppingBasket class="w-4 h-4" /> Add to cart
         </Button>
-
-        <Separator v-if="!uiStore.isMobile" orientation="vertical" class="h-full mx-5" />
+        <template v-if="!isCreatingCollection">
+          <Separator v-if="!uiStore.isMobile" orientation="vertical" class="h-full mx-5" />
+          <Button
+            variant="ghost"
+            class="text-destructive"
+            @click="products.length === 0 ? deleteLockers() : deleteProducts()"
+          >
+            <TrashIcon class="size-4 text-destructive" /> Delete
+          </Button>
+        </template>
         <Button
-          variant="ghost"
-          class="text-destructive"
-          @click="products.length === 0 ? deleteLockers() : deleteProducts()"
+          v-else
+          variant="outline"
+          class="text-destructive ml-2"
+          @click="emit('cancel-collection-creation')"
         >
-          <TrashIcon class="size-4 text-destructive" /> Delete
+          Cancel Creation
         </Button>
       </div>
     </div>

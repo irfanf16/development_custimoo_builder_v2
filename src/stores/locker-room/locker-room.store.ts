@@ -1,5 +1,10 @@
 import { API } from '@/services'
-import type { CopyProductPayload, Locker } from '@/services/lockers/types'
+import type {
+  Collection,
+  CopyProductPayload,
+  Locker,
+  SignedUrlResponse
+} from '@/services/lockers/types'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { tryCatchApi } from '../utils'
@@ -9,7 +14,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   const lockers = ref<Locker[]>([])
   const isLoading = ref<boolean>(false)
   const error = ref<string | null>(null)
+  const collections = ref<Collection[]>([])
 
+  //lockers methods
   async function fetchLockers() {
     isLoading.value = true
     error.value = null
@@ -152,6 +159,59 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     }
   }
 
+  async function saveDesignToLocker(formData: FormData): Promise<boolean> {
+    const resp = await tryCatchApi(API.lockers.saveDesign(formData))
+    if (!resp.success) {
+      setError('Failed to save design')
+      return false
+    }
+    setSuccessMessage('Design saved successfully')
+    return true
+  }
+
+  // collection methods
+  async function fetchCollections() {
+    isLoading.value = true
+    error.value = null
+    const resp = await tryCatchApi(API.lockers.getCollections())
+    if (resp.success && resp.content) {
+      collections.value = resp.content
+    } else {
+      setError('Failed to load collections')
+    }
+    isLoading.value = false
+  }
+
+  async function fetchCollectionProducts(collection_id: number) {
+    isLoading.value = true
+    error.value = null
+    const resp = await tryCatchApi(API.lockers.getCollectionProducts(collection_id))
+    if (resp.success && resp.content) {
+      collections.value = collections.value.map(c => {
+        if (c.id === collection_id) {
+          return {
+            ...c,
+            ...resp.content,
+            details_fetched: true
+          }
+        } else {
+          return c
+        }
+      })
+      isLoading.value = false
+      return resp.content
+    } else {
+      setError('Failed to load collection products')
+      isLoading.value = false
+      return null
+    }
+  }
+
+  // to get signed Image URL
+  async function getSignedUrl(locker_id: number): Promise<SignedUrlResponse | undefined> {
+    return (await tryCatchApi(API.lockers.getSignedUrl(locker_id))).content?.result
+  }
+
   //error message
   function setError(errorMessage: string | null) {
     error.value = errorMessage
@@ -170,6 +230,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     lockers,
     isLoading,
     error,
+    collections,
     //functions
     fetchLockers,
     fetchLockerProducts,
@@ -179,6 +240,12 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     //Products Endpoint
     deleteProducts,
     copyProducts,
-    fetchLockerAssets
+    fetchLockerAssets,
+    saveDesignToLocker,
+    //collection methods
+    fetchCollections,
+    fetchCollectionProducts,
+    //get s3 signed URL
+    getSignedUrl
   }
 })

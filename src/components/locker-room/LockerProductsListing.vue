@@ -2,7 +2,7 @@
   import { Card } from '@/components/ui/card'
   import { DotSeparator } from '@/components/ui/separator'
   import type { LockerProduct } from '@/services/lockers/types'
-  import { computed, ref } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { Checkbox } from '@/components/ui/checkbox'
   import { Spinner } from '@/components/ui/spinner'
   import { TooltipProvider, TooltipContent, TooltipTrigger, Tooltip } from '@/components/ui/tooltip'
@@ -13,7 +13,12 @@
   import { Copy, Pencil, SwitchCamera } from 'lucide-vue-next'
   import CopyProductsDialog from './CopyProductsDialog.vue'
 
-  const props = defineProps<{ products: LockerProduct[]; lockerId: number }>()
+  const props = defineProps<{
+    products: LockerProduct[]
+    lockerId: number
+    preSelectedProducts: LockerProduct[]
+    isCreatingCollection: boolean
+  }>()
   const emit = defineEmits(['select-product'])
 
   const showCopyDialog = ref<boolean>(false)
@@ -21,35 +26,46 @@
   const { isLoading } = storeToRefs(lockerRoomStore)
   const uiStore = useUIStore()
 
-  const selectedProduct = ref<(string | number)[]>([])
+  const selectedProducts = ref<LockerProduct[]>([])
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const products_to_copy = ref<LockerProduct[]>([])
   const showBack = ref<Record<number, boolean>>({})
 
   const handleSelect = (id: string | number) => {
-    if (!selectedProduct.value.includes(id)) {
-      selectedProduct.value.push(id)
+    const existingIndex = selectedProducts.value.findIndex(p => p.id === id)
+
+    if (existingIndex === -1) {
+      // selecting → find product ONLY from current list
+      const prod = props.products.find(p => p.id === id)
+      if (prod) {
+        selectedProducts.value.push(prod)
+      }
     } else {
-      selectedProduct.value = selectedProduct.value.filter(i => i !== id)
+      // unselecting → remove only that product
+      selectedProducts.value.splice(existingIndex, 1)
     }
-    const locker_products = selectedProduct.value.map(id =>
-      props.products.find(prod => prod.id === id)
-    )
-    emit('select-product', locker_products)
+
+    emit('select-product', [...selectedProducts.value])
   }
   const selecteAllProducts = () => {
-    selectedProduct.value = props.products.map(prod => prod.id)
+    const currentIds = new Set(selectedProducts.value.map(p => p.id))
 
-    const locker_products = selectedProduct.value.map(id =>
-      props.products.find(prod => prod.id === id)
-    )
-    emit('select-product', locker_products)
+    props.products.forEach(prod => {
+      if (!currentIds.has(prod.id)) {
+        selectedProducts.value.push(prod)
+      }
+    })
+
+    emit('select-product', [...selectedProducts.value])
   }
 
   const unSelectAllProducts = () => {
-    selectedProduct.value = []
+    // remove only products from current list
+    const currentIds = new Set(props.products.map(p => p.id))
 
-    emit('select-product', [])
+    selectedProducts.value = selectedProducts.value.filter(p => !currentIds.has(p.id))
+
+    emit('select-product', [...selectedProducts.value])
   }
 
   const startEditing = (prod: LockerProduct, prodIndex: number) => {
@@ -64,6 +80,11 @@
   const toggleImage = (prodId: number) => {
     showBack.value[prodId] = !showBack.value[prodId]
   }
+  const isSelected = (id: number | string) => selectedProducts.value.some(p => p.id === id)
+  onMounted(() => {
+    selectedProducts.value = [...props.preSelectedProducts]
+  })
+
   defineExpose({ selecteAllProducts, unSelectAllProducts })
 </script>
 <template>
@@ -80,9 +101,9 @@
         :id="`checkbox-addon-${prod.id}`"
         class="absolute top-2 left-2 z-10 size-5 bg-white"
         :class="{
-          'top-[calc(0.5rem-1px)] left-[calc(0.5rem-1px)]': selectedProduct.includes(prod.id)
+          'top-[calc(0.5rem-1px)] left-[calc(0.5rem-1px)]': isSelected(prod.id)
         }"
-        :model-value="selectedProduct.includes(prod.id)"
+        :model-value="isSelected(prod.id)"
         @update:model-value="handleSelect(prod.id)"
         @click.stop
       />
@@ -106,7 +127,7 @@
         >
           <div class="flex items-center gap-2 flex-col">
             <TooltipProvider>
-              <Tooltip>
+              <Tooltip v-if="isCreatingCollection">
                 <TooltipTrigger as-child>
                   <Button
                     size="icon"
@@ -121,7 +142,7 @@
                   <p>Edit Product</p>
                 </TooltipContent>
               </Tooltip>
-              <Tooltip>
+              <Tooltip v-if="isCreatingCollection">
                 <TooltipTrigger as-child>
                   <Button
                     size="icon"

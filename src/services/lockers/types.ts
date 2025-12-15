@@ -29,9 +29,22 @@ export interface LockerDeletionResponse {
   errors?: string[]
 }
 
+export interface SignedUrlResponse {
+  urls: SignedUrl[]
+  room_id: number
+}
+
+export interface SignedUrl {
+  original_url: string
+  presigned_url: string
+  file_side: 'front' | 'back'
+  file_type: string
+}
+
 export interface CopyProductPayload {
   products: CopyProduct[]
 }
+
 export interface CopyProduct {
   room_id: number
   id: number
@@ -401,11 +414,11 @@ export interface Ecommerceproduct {
   updated_at: string
 }
 
-export interface Collection {
-  id: number
-  name: string
-  laravel_through_key: number
-}
+// export interface Collection {
+//   id: number
+//   name: string
+//   laravel_through_key: number
+// }
 
 export interface SharedProduct {
   id: number
@@ -463,4 +476,149 @@ export interface Contact {
 export interface Colour {
   name: string
   value: string
+}
+
+//Collection Types
+
+export type CollectionResponse = Collection[]
+
+export interface Collection {
+  id: number
+  name: string
+  link: string
+  pdf_link: any
+  random_string: any
+  file_name: string
+  company_id: number
+  customer_id: number
+  room_id: any
+  ecommerce_collection_id: any
+  is_exporting: number
+  created_at: string
+  updated_at: string
+  deleted_at: any
+  shared_url?: string
+  collection_products: CollectionProduct[]
+  logos: Logo[]
+  details_fetched: boolean
+}
+
+export interface CollectionProduct {
+  id: number
+  product_nickname: string
+  product_note: string
+  product_price: string
+  order_number: number
+  collection_id: number
+  product_locker_room_id: number
+  allow_description: boolean
+  allow_title: boolean
+  allow_price: boolean
+  ecommerce_product_id: any
+  ecommerce_variant_id: any
+  created_at: string
+  updated_at: string
+  deleted_at: any
+  description: string
+  key: number
+  product_locker_room: ProductLockerRoom
+}
+
+export interface ProductLockerRoom {
+  id: number
+  random_string: string
+  product_url: string
+  locker_product_images_folder: string
+  logo_colors?: string
+  product_id: number
+  design_id: number
+  shared_url?: string
+  product_type: string
+  design?: Design
+  product: Product
+  front_url: string
+  back_url: string
+}
+
+export interface Design {
+  id: number
+  back_design_id: number
+}
+
+export interface Product {
+  id: number
+  parent_id: any
+  factory_id?: number
+  company_id: any
+  is_default: number
+  sku_id: number
+  sync_id: any
+  ecommerce_product_id: any
+  sync_on_install: number
+  url_slug: string
+  product_type: string
+  svg_group_color_container?: any[]
+  created_by: number
+  measurement_ratio: number
+  is_private: number
+  step_completed: number
+  allowed_logos_count: number
+  is_logo_allowed: number
+  allow_name_number: number
+  preview_custom_texts: number
+  allow_fixed_logo: number
+  created_at: string
+  updated_at: string
+  is_custom_color_allowed: number
+  allow_extra_text: number
+  is_cap_letter_available: number
+  shareable: number
+  is_3d_product: number
+  sort_order: number
+  deleted_at: any
+  sku: Sku
+  sizes: Size[]
+}
+
+export interface Sku {
+  id: number
+  sku_id: string
+  description: string
+}
+
+export interface Size {
+  id: number
+  created_by: number
+  file_size: string
+  json_data: JsonDaum[]
+  file_name: string
+  file_type: string
+  is_default: number
+  file_url: string
+  original_file_url: any
+  thumb_sm_url?: string
+  created_at: string
+  updated_at: string
+  deleted_at: any
+  sourceable_type: string
+  sourceable_id: number
+  pivot: Pivot
+}
+
+export interface JsonDaum {
+  name: string
+}
+
+export interface Pivot {
+  product_id: number
+  file_id: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Logo {
+  id: number
+  collection_id: number
+  name: string
+  path: string
 }

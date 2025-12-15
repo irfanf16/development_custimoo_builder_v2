@@ -5,7 +5,7 @@
   interface Props {
     images: string[] // list of avatar URLs
     max?: number // how many avatars to show
-    size?: number // avatar size in px (default: 36)
+    size?: string // avatar size in px (default: 36)
     class?: string // extra classes for container
     avatarClass?: string // extra classes for avatars
   }

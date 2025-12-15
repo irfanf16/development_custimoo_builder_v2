@@ -4,6 +4,7 @@ import { useProductsStore } from '@/stores/products/products.store'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { pantonesTcx } from './pantonesTcx'
 import { pantonesCoated } from './pantonesCoated'
+import { toast } from 'vue-sonner'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -527,4 +528,131 @@ export function getPermutation(n: number, number_of_parts: number): number[] {
     })
   }
   return result
+}
+
+// upload files to s3 via preSignedUrl
+export interface PresignedFile {
+  file: File
+  presigned_url: string
+  file_type?: string
+  file_side?: string
+}
+
+export async function uploadPresignedFiles(files: PresignedFile[]) {
+  const toastMap = new Map<string, string | number>()
+
+  const uploadTasks = files.map(async item => {
+    // 1️⃣ Create loading toast per file
+    const toastId = toast.loading(`Uploading ${item.file.name}…`, {
+      duration: Infinity
+    })
+
+    toastMap.set(item.file.name, toastId)
+
+    try {
+      const response = await fetch(item.presigned_url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': item.file_type || item.file.type
+        },
+        body: item.file
+      })
+
+      if (!response.ok) {
+        toast.error(`Failed to upload ${item.file.name}`, {
+          id: toastId
+        })
+
+        return {
+          file: item.file.name,
+          success: false,
+          status: response.status
+        }
+      }
+
+      // 2️⃣ Success toast (update same toast)
+      toast.success(`Uploaded ${item.file.name}`, {
+        id: toastId
+      })
+      toast.dismiss(toastId)
+      return {
+        file: item.file.name,
+        success: true,
+        side: item?.file_side
+      }
+    } catch (err) {
+      toast.error(`Failed to upload ${item.file.name}`, {
+        id: toastId
+      })
+
+      return {
+        file: item.file.name,
+        success: false,
+        error: err
+      }
+    }
+  })
+
+  return Promise.all(uploadTasks)
+}
+
+export function base64ToFile(base64: string, filename: string): File {
+  const arr = base64.split(',')
+  const mime = arr[0]!.match(/:(.*?);/)?.[1] || 'image/png'
+  const bstr = atob(arr[1]!)
+  let n = bstr.length
+  const u8arr = new Uint8Array(n)
+
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n)
+  }
+
+  return new File([u8arr], filename, { type: mime })
+}
+
+export function objectToFormData(
+  data: Record<string, any>,
+  formData: FormData = new FormData(),
+  parentKey?: string
+): FormData {
+  if (!data) return formData
+
+  Object.entries(data).forEach(([key, value]) => {
+    const formKey = parentKey ? `${parentKey}[${key}]` : key
+
+    if (value === null || value === undefined) {
+      return
+    }
+
+    // File or Blob
+    if (value instanceof File || value instanceof Blob) {
+      formData.append(formKey, value)
+      return
+    }
+
+    // Date
+    if (value instanceof Date) {
+      formData.append(formKey, value.toISOString())
+      return
+    }
+
+    // Array
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => {
+        objectToFormData(item as Record<string, any>, formData, `${formKey}[${index}]`)
+      })
+      return
+    }
+
+    // Object
+    if (typeof value === 'object') {
+      objectToFormData(value as Record<string, any>, formData, formKey)
+      return
+    }
+
+    // Primitive
+    formData.append(formKey, String(value))
+  })
+
+  return formData
 }

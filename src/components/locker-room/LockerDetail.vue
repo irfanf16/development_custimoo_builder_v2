@@ -10,7 +10,12 @@
     roster_group: ProductRosterDetail[] | undefined
     group_name: string
   }
-  const props = defineProps<{ locker: Locker; lockerTab: LockerTab }>()
+  const props = defineProps<{
+    locker: Locker
+    lockerTab: LockerTab
+    preSelectedProducts: LockerProduct[]
+    isCreatingCollection: boolean
+  }>()
   const activeTab = computed(() => props.lockerTab)
   const emit = defineEmits(['select-product'])
   const lockerProductsRef = ref<InstanceType<typeof LockerProductsListing> | null>(null)
@@ -31,6 +36,8 @@
         ref="lockerProductsRef"
         :products="locker.product"
         :locker-id="locker.id"
+        :pre-selected-products="preSelectedProducts"
+        :is-creating-collection="isCreatingCollection"
         @select-product="
           (locker_products: LockerProduct[]) => emit('select-product', locker_products)
         "

@@ -25,10 +25,11 @@
   const props = withDefaults(
     defineProps<{
       search: null | string
+      isCreatingCollection: boolean
     }>(),
     {
       search: null,
-      lockers: () => []
+      isCreatingCollection: false
     }
   )
 
@@ -124,13 +125,20 @@
       v-for="(locker, lockerIndex) in filteredLockers"
       :key="locker.id"
       class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative !gap-0 h-fit duration-150 border-0"
-      @click="handleSelect(locker.id)"
+      @click="
+        () => {
+          if (isCreatingCollection) {
+            emit('open-locker', locker)
+          } else handleSelect(locker.id)
+        }
+      "
       @mouseenter="hoveringToolbar[lockerIndex] = dropdownOpwnIndex.includes(lockerIndex) || true"
       @mouseleave="hoveringToolbar[lockerIndex] = false"
     >
       <!-- Hover Toolbar -->
 
       <Checkbox
+        v-if="!isCreatingCollection"
         :id="`checkbox-addon-${locker.id}`"
         class="absolute top-2 left-2 z-10 size-5 bg-white"
         :class="{
@@ -170,6 +178,7 @@
           />
         </template>
         <div
+          v-if="!isCreatingCollection"
           class="absolute flex flex-col gap-2 transition-opacity z-20 justify-between h-full p-2 right-0"
           :class="
             uiStore.isMobile ||

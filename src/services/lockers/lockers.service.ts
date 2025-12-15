@@ -1,12 +1,15 @@
 import http from '../api'
 import type {
+  Collection,
+  CollectionResponse,
   CopyProductPayload,
   Locker,
   LockerAssetsResponse,
   LockerDeletionResponse,
   LockerFetchResponse,
   LockerResponse,
-  LockerUpdatePayload
+  LockerUpdatePayload,
+  SignedUrlResponse
 } from './types'
 
 async function getLockers() {
@@ -40,6 +43,29 @@ async function copyProducts(payload: CopyProductPayload) {
 async function fetchLockerAssets(locker_id: number) {
   return await http.get<LockerResponse<LockerAssetsResponse>>(`lockers/assets/${locker_id}`)
 }
+async function getSignedUrl(locker_id: number) {
+  return await http.post<LockerResponse<SignedUrlResponse>>(
+    `locker-products/presigned-upload-urls/`,
+    { locker_room_id: locker_id }
+  )
+}
+
+async function saveDesign(payload: FormData) {
+  return await http.post<LockerResponse<any>>(`locker-products`, payload)
+}
+
+//collection requests
+
+async function getCollections() {
+  return await http.get<CollectionResponse>(`collection`)
+}
+async function getCollectionProducts(collection_id: number) {
+  return await http.post<Collection>(`collection/collection-data`, {
+    collection_id: collection_id,
+    collection_prd_ids: [],
+    delete_ids: []
+  })
+}
 
 export default {
   getLockers,
@@ -47,7 +73,15 @@ export default {
   getLockerProducts,
   createLocker,
   deleteLocker,
+  fetchLockerAssets,
+  //  Product endpoints
   deleteProducts,
   copyProducts,
-  fetchLockerAssets
+  saveDesign,
+
+  // collection endpoints
+  getCollections,
+  getCollectionProducts,
+  //get s3 signed url
+  getSignedUrl
 }
