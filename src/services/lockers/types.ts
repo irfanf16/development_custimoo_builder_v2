@@ -622,3 +622,11 @@ export interface Logo {
   name: string
   path: string
 }
+
+export interface CollectionPayload {
+  name: string
+  link: string
+  collection_logos_data: string
+  deleted_logos_ids: string
+  products: string
+}

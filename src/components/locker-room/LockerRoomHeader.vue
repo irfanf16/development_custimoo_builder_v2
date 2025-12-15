@@ -80,7 +80,6 @@
     creatingCollection,
     collection_name
   })
-  console.log(props.currentCollection)
 </script>
 <template>
   <DialogHeader>
@@ -181,9 +180,9 @@
         </template>
       </template>
 
-      <template v-if="!currentCollection && creatingCollection">
-        <Input v-model="collection_name" class="w-[200px]"
-      /></template>
+      <template v-if="!currentCollection && creatingCollection && collectionCreationStep === 2">
+        <Input v-model="collection_name" class="w-[200px]" placeholder="Collection Name" />
+      </template>
     </div>
     <DialogTitle v-if="currentMode === 'list'" class="text-xl font-semibold">
       {{ creatingCollection ? 'Select Locker' : 'Locker Room' }}
@@ -297,7 +296,11 @@
             v-model="collectionTab"
             default-value="products"
             class="space-x-2 w-[50%]"
-            @update:model-value="val => emit('change-collection-tab', val)"
+            @update:model-value="
+              val => {
+                emit('change-collection-tab', val)
+              }
+            "
           >
             <TabsList class="w-full">
               <TabsTrigger class="w-full" value="products">Products</TabsTrigger>

@@ -192,7 +192,16 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
           return {
             ...c,
             ...resp.content,
-            details_fetched: true
+            details_fetched: true,
+            collection_products: resp.content.collection_products.map(cp => {
+              return {
+                ...cp,
+                product_locker_room: {
+                  ...cp.product_locker_room,
+                  product_url: cp.product_locker_room.front_url
+                }
+              }
+            })
           }
         } else {
           return c
@@ -205,6 +214,30 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       isLoading.value = false
       return null
     }
+  }
+
+  async function saveCollection(formData: FormData) {
+    isLoading.value = true
+    error.value = null
+    const resp = await tryCatchApi(API.lockers.saveCollection(formData))
+    if (resp.success && resp.content) {
+      await fetchCollections()
+    } else {
+      setError('Failed to save collection')
+      isLoading.value = false
+      return null
+    }
+  }
+
+  async function deleteCollection(id: number) {
+    const resp = await tryCatchApi(API.lockers.deleteCollection(id))
+    if (!resp.success) {
+      setError('Failed to delete locker')
+      return
+    }
+
+    setSuccessMessage('Collection deleted successfully')
+    collections.value = collections.value.filter(collection => collection.id !== id)
   }
 
   // to get signed Image URL
@@ -245,6 +278,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     //collection methods
     fetchCollections,
     fetchCollectionProducts,
+    saveCollection,
+    deleteCollection,
     //get s3 signed URL
     getSignedUrl
   }

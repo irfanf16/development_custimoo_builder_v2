@@ -66,6 +66,13 @@ async function getCollectionProducts(collection_id: number) {
     delete_ids: []
   })
 }
+async function deleteCollection(id: number) {
+  return await http.delete<LockerDeletionResponse>(`collection/${id}`)
+}
+
+async function saveCollection(payload: FormData) {
+  return await http.post<CollectionResponse>(`collection`, payload)
+}
 
 export default {
   getLockers,
@@ -82,6 +89,8 @@ export default {
   // collection endpoints
   getCollections,
   getCollectionProducts,
+  saveCollection,
+  deleteCollection,
   //get s3 signed url
   getSignedUrl
 }

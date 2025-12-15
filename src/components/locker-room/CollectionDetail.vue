@@ -30,12 +30,8 @@
         ref="collectionProductListingRef"
         :products="preSelectedProducts"
       />
-      <!-- :collection-id="collection?.id"
-        :is-creating-collection="isCreatingCollection" -->
     </div>
 
-    <div v-else-if="activeTab === 'preview'" key="preview" class="absolute inset-0">
-      <!-- <LockerAssetsListing :locker="locker" /> -->
-    </div>
+    <div v-else-if="activeTab === 'preview'" key="preview" class="absolute inset-0">test</div>
   </Transition>
 </template>

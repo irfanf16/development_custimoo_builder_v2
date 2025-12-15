@@ -127,7 +127,7 @@
         >
           <div class="flex items-center gap-2 flex-col">
             <TooltipProvider>
-              <Tooltip v-if="isCreatingCollection">
+              <Tooltip v-if="!isCreatingCollection">
                 <TooltipTrigger as-child>
                   <Button
                     size="icon"
@@ -142,7 +142,7 @@
                   <p>Edit Product</p>
                 </TooltipContent>
               </Tooltip>
-              <Tooltip v-if="isCreatingCollection">
+              <Tooltip v-if="!isCreatingCollection">
                 <TooltipTrigger as-child>
                   <Button
                     size="icon"

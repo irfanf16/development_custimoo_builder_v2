@@ -19,7 +19,6 @@
   const localProducts = ref<CollectionProduct[]>(
     Array.isArray(props.products) ? [...props.products] : []
   )
-
   watch(
     () => props.products,
     val => {

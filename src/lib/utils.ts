@@ -5,6 +5,7 @@ import { useCompanyStore } from '@/stores/company/company.store'
 import { pantonesTcx } from './pantonesTcx'
 import { pantonesCoated } from './pantonesCoated'
 import { toast } from 'vue-sonner'
+import axios from 'axios'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -548,17 +549,17 @@ export async function uploadPresignedFiles(files: PresignedFile[]) {
     })
 
     toastMap.set(item.file.name, toastId)
-
+    const formData = new FormData()
+    formData.append('file', item.file)
+    const file = formData.get('file')
     try {
-      const response = await fetch(item.presigned_url, {
-        method: 'PUT',
+      const response = await axios.put(item.presigned_url, file, {
         headers: {
           'Content-Type': item.file_type || item.file.type
-        },
-        body: item.file
+        }
       })
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         toast.error(`Failed to upload ${item.file.name}`, {
           id: toastId
         })
@@ -597,6 +598,7 @@ export async function uploadPresignedFiles(files: PresignedFile[]) {
 }
 
 export function base64ToFile(base64: string, filename: string): File {
+  console.log(base64)
   const arr = base64.split(',')
   const mime = arr[0]!.match(/:(.*?);/)?.[1] || 'image/png'
   const bstr = atob(arr[1]!)
