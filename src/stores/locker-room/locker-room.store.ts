@@ -8,7 +8,7 @@ import type {
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { tryCatchApi } from '../utils'
-import { toast } from 'vue-sonner'
+import { toast } from '@/components/ui/sonner'
 
 export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   const lockers = ref<Locker[]>([])

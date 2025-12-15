@@ -4,7 +4,7 @@ import { useProductsStore } from '@/stores/products/products.store'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { pantonesTcx } from './pantonesTcx'
 import { pantonesCoated } from './pantonesCoated'
-import { toast } from 'vue-sonner'
+import { toast } from '@/components/ui/sonner'
 import axios from 'axios'
 
 export function cn(...inputs: ClassValue[]) {

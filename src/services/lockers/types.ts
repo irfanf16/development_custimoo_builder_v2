@@ -1,4 +1,10 @@
 import type { HttpStatusCode } from 'axios'
+import type {
+  APCustomizationDefaultColor,
+  APCustomizationGroupColor,
+  APCustomizationLogosMap,
+  OutputProductText
+} from '@/services/products/types'
 
 export interface LockerResponse<T> {
   errors: string[]
@@ -83,17 +89,21 @@ export interface LockerProduct {
   random_string: string
   style_id: number
   product_roster_detail?: ProductRosterDetail[]
-  colors: string
-  defaultcolors: string
-  groupcolors: string
-  custom_logos: string
-  text: Text[]
+  colors: unknown
+  defaultcolors: APCustomizationDefaultColor[] | string | null
+  groupcolors: Record<string, APCustomizationGroupColor> | string | null
+  custom_logos:
+    | APCustomizationLogosMap
+    | Array<import('@/services/logos/types').CustomLogo>
+    | string
+    | null
+  text: OutputProductText[] | string | null
   product_attribute?: string
   product_url: string
   product_front_url: string
   product_back_url: string
   is_back_img: number
-  svg_parts: any
+  svg_parts: string[]
   product_type: string
   is_private: number
   name: string
@@ -117,9 +127,9 @@ export interface ProductRosterDetail {
   size: string
   text?: string
   number?: string
-  quantity: any
-  size_index: any
-  information: any
+  quantity: number
+  size_index: number
+  information: string
 }
 
 export interface Text {
@@ -128,16 +138,16 @@ export interface Text {
   items: Item[]
   label: string
   value?: string
-  created_at: any
-  deleted_at: any
+  created_at: string | null
+  deleted_at: string | null
   product_id: number
-  updated_at: any
+  updated_at: string | null
   font_family: string
   is_first_name?: boolean
   manually_added: boolean
   active_item_index: number
-  following_products: any[]
-  following_product_ids: any[]
+  following_products: number[]
+  following_product_ids: number[]
   is_first_number?: boolean
 }
 
@@ -148,19 +158,19 @@ export interface Item {
   height: number
   scaleX?: number
   scaleY?: number
-  x_axis: any
-  y_axis: any
-  rotation: any
+  x_axis: string
+  y_axis: string
+  rotation: string
   selected: boolean
   is_locked: boolean
   placement: string
   font_family: string
   color_pantone: string
   outline_color: string
-  outline_width: any
+  outline_width: number
   color_tab_index: number
-  outline_enabled: any
-  arc_text_allowed: any
+  outline_enabled: boolean
+  arc_text_allowed: boolean
   outline_color_pantone: string
   originalWidth?: string
   originalHeight?: string
@@ -180,7 +190,7 @@ export interface CompanyProduct {
 }
 
 export interface CustomSkus {
-  moq: any
+  moq: number | null
   title: string
   prices: Price[]
   moq_type: string
@@ -202,7 +212,7 @@ export interface Price {
   code: string
   name: string
   price: string
-  value: any
+  value: number | null
   symbol: string
   created_at: string
   updated_at: string
@@ -261,26 +271,26 @@ export interface Style {
   back_enabled: boolean
   composition: string
   default_style: number
-  style_icon_id: any
-  style_icon: any
+  style_icon_id: number | null
+  style_icon: unknown
   created_at: string
   updated_at: string
-  deleted_at: any
+  deleted_at: string | null
 }
 
 export interface Product2 {
   id: number
-  parent_id: any
+  parent_id: number | null
   factory_id?: number
-  company_id: any
+  company_id: number | null
   is_default: number
   sku_id: number
-  sync_id: any
-  ecommerce_product_id: any
+  sync_id: number | null
+  ecommerce_product_id: number | null
   sync_on_install: number
   url_slug: string
   product_type: string
-  svg_group_color_container?: any[]
+  svg_group_color_container?: unknown[]
   created_by: number
   measurement_ratio: number
   is_private: number
@@ -298,38 +308,38 @@ export interface Product2 {
   shareable: number
   is_3d_product: number
   sort_order: number
-  deleted_at: any
-  sku: Sku
+  deleted_at: string | null
+  sku: ProductSkuDetails
   addons: Addon[]
   ecommerceproduct: Ecommerceproduct[]
 }
 
-export interface Sku {
+export interface ProductSkuDetails {
   id: number
-  addon_group_id: any
-  data_container_id: any
-  customized_sku_info: any
+  addon_group_id: number | null
+  data_container_id: number | null
+  customized_sku_info: unknown
   sku_id: string
   sku_number: number
   design_customer_approval: number
-  image_url: any
-  specs_sheet_url: any
-  sizechart_reference: any
+  image_url: string | null
+  specs_sheet_url: string | null
+  sizechart_reference: string | null
   factory_id?: number
   asana_task_template_id?: string
   asana_task_template_id_reorder?: string
-  note: any
+  note: string | null
   minimum_order_quantity_type: string
   minimum_order_quantity?: number
   description: string
   reorder_follows_moq: number
   type: string
-  is_selected: any
-  production_days: any
+  is_selected: unknown
+  production_days: number | null
   created_at: string
   updated_at: string
-  deleted_at: any
-  pattern_name?: string
+  deleted_at: string | null
+  pattern_name?: string | null
   skucurrency: Skucurrency[]
 }
 
@@ -338,33 +348,33 @@ export interface Skucurrency {
   symbol: string
   name: string
   code: string
-  value: any
+  value: number | null
   created_at: string
   updated_at: string
-  pivot: Pivot
+  pivot: SkuCurrencyPivot
 }
 
-export interface Pivot {
+export interface SkuCurrencyPivot {
   sku_id: number
   currency_id: number
   price?: number
-  net_price: any
+  net_price: number | null
 }
 
 export interface Addon {
   id: number
-  addon_group_id: any
-  data_container_id: any
-  customized_sku_info: any
+  addon_group_id: number | null
+  data_container_id: number | null
+  customized_sku_info: unknown
   sku_id: string
   sku_number: number
   design_customer_approval: number
-  image_url: any
-  specs_sheet_url: any
-  sizechart_reference: any
+  image_url: string | null
+  specs_sheet_url: string | null
+  sizechart_reference: string | null
   factory_id?: number
-  asana_task_template_id: any
-  asana_task_template_id_reorder: any
+  asana_task_template_id: string | null
+  asana_task_template_id_reorder: string | null
   note?: string
   minimum_order_quantity_type: string
   minimum_order_quantity: number
@@ -372,11 +382,11 @@ export interface Addon {
   reorder_follows_moq: number
   type: string
   is_selected: number
-  production_days: any
+  production_days: number | null
   created_at: string
   updated_at: string
-  deleted_at: any
-  pattern_name: any
+  deleted_at: string | null
+  pattern_name: string | null
   pivot: Pivot2
   skucurrency: Skucurrency2[]
 }
@@ -398,7 +408,7 @@ export interface Pivot3 {
   sku_id: number
   currency_id: number
   price?: number
-  net_price: any
+  net_price: number | null
 }
 
 export interface Ecommerceproduct {
@@ -409,7 +419,7 @@ export interface Ecommerceproduct {
   ecommerce_product_id: string
   ecommerce_variant_id: string
   ecommerce_modifier_id?: string
-  size_variants: any
+  size_variants: unknown
   created_at: string
   updated_at: string
 }
@@ -424,11 +434,11 @@ export interface SharedProduct {
   id: number
   shared_url: string
   product_locker_id: number
-  collection_id: any
+  collection_id: number | null
   status: string
   created_at: string
   updated_at: string
-  deleted_at: any
+  deleted_at: string | null
 }
 
 export interface Folder {
@@ -438,7 +448,7 @@ export interface Folder {
   color: string
   created_at: string
   updated_at: string
-  deleted_at: any
+  deleted_at: string | null
 }
 
 export interface Logo {
@@ -454,17 +464,17 @@ export interface Collection2 {
   id: number
   name: string
   link: string
-  pdf_link: any
-  random_string: any
+  pdf_link: string | null
+  random_string: string | null
   file_name: string
   company_id: number
   customer_id: number
   room_id: number
-  ecommerce_collection_id: any
+  ecommerce_collection_id: number | null
   is_exporting: number
   created_at: string
   updated_at: string
-  deleted_at: any
+  deleted_at: string | null
 }
 
 export interface Contact {
@@ -486,20 +496,20 @@ export interface Collection {
   id: number
   name: string
   link: string
-  pdf_link: any
-  random_string: any
+  pdf_link: string | null
+  random_string: string | null
   file_name: string
   company_id: number
   customer_id: number
-  room_id: any
-  ecommerce_collection_id: any
+  room_id: number | null
+  ecommerce_collection_id: number | null
   is_exporting: number
   created_at: string
   updated_at: string
-  deleted_at: any
+  deleted_at: string | null
   shared_url?: string
   collection_products: CollectionProduct[]
-  logos: Logo[]
+  logos: CollectionLogo[]
   details_fetched: boolean
 }
 
@@ -514,11 +524,11 @@ export interface CollectionProduct {
   allow_description: boolean
   allow_title: boolean
   allow_price: boolean
-  ecommerce_product_id: any
-  ecommerce_variant_id: any
+  ecommerce_product_id: number | null
+  ecommerce_variant_id: number | null
   created_at: string
   updated_at: string
-  deleted_at: any
+  deleted_at: string | null
   description: string
   key: number
   product_locker_room: ProductLockerRoom
@@ -534,30 +544,30 @@ export interface ProductLockerRoom {
   design_id: number
   shared_url?: string
   product_type: string
-  design?: Design
+  design?: LockerRoomDesign
   product: Product
   front_url: string
   back_url: string
 }
 
-export interface Design {
+export interface LockerRoomDesign {
   id: number
   back_design_id: number
 }
 
 export interface Product {
   id: number
-  parent_id: any
+  parent_id: number | null
   factory_id?: number
-  company_id: any
+  company_id: number | null
   is_default: number
   sku_id: number
-  sync_id: any
-  ecommerce_product_id: any
+  sync_id: number | null
+  ecommerce_product_id: number | null
   sync_on_install: number
   url_slug: string
   product_type: string
-  svg_group_color_container?: any[]
+  svg_group_color_container?: unknown[]
   created_by: number
   measurement_ratio: number
   is_private: number
@@ -575,7 +585,7 @@ export interface Product {
   shareable: number
   is_3d_product: number
   sort_order: number
-  deleted_at: any
+  deleted_at: string | null
   sku: Sku
   sizes: Size[]
 }
@@ -595,28 +605,28 @@ export interface Size {
   file_type: string
   is_default: number
   file_url: string
-  original_file_url: any
+  original_file_url: string | null
   thumb_sm_url?: string
   created_at: string
   updated_at: string
-  deleted_at: any
+  deleted_at: string | null
   sourceable_type: string
   sourceable_id: number
-  pivot: Pivot
+  pivot: ProductFilePivot
 }
 
 export interface JsonDaum {
   name: string
 }
 
-export interface Pivot {
+export interface ProductFilePivot {
   product_id: number
   file_id: number
   created_at: string
   updated_at: string
 }
 
-export interface Logo {
+export interface CollectionLogo {
   id: number
   collection_id: number
   name: string

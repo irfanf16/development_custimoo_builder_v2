@@ -11,12 +11,11 @@
     ProductLockerRoom
   } from '@/services/lockers/types'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-  import { ref, watch } from 'vue'
+  import { ref, watch, computed } from 'vue'
   import LockerRoomFooter from './locker-room/LockerRoomFooter.vue'
   import LockerRoomHeader from './locker-room/LockerRoomHeader.vue'
   import CollectionList from './locker-room/CollectionList.vue'
   import CollectionDetail from './locker-room/CollectionDetail.vue'
-  import { toast } from 'vue-sonner'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
   type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
@@ -31,6 +30,7 @@
     'create-locker',
     'select-locker',
     'edit-locker',
+    'edit-product',
     'copy-locker',
     'sort'
   ])
@@ -52,7 +52,6 @@
   const lockerRoomHeaderRef = ref<InstanceType<typeof LockerRoomHeader> | null>(null)
   const isCreatingCollection = ref<boolean>(false)
   const collectionCreationStep = ref<number>(1)
-  const collectionProducts = ref<CollectionProduct[]>([])
   const setSort = (value: SortOption) => {
     sortOption.value = value
   }
@@ -76,7 +75,6 @@
     currentCollection.value = !collection.details_fetched
       ? ((await lockerRoomStore.fetchCollectionProducts(collection.id)) ?? null)
       : collection
-    collectionProducts.value = currentCollection.value?.collection_products ?? []
     currentMode.value = 'detail'
     tab.value = 'collections'
     collectionCreationStep.value = 2
@@ -96,75 +94,32 @@
     tab.value = 'collections'
     collectionCreationStep.value = 2
   }
-  const handleProductSelect = (products: LockerProduct[]) => {
-    selectedProducts.value = products
-    collectionProducts.value = selectedProducts.value.map(product => {
-      return {
-        allow_description: true,
-        allow_price: true,
-        allow_title: true,
-        product_nickname: product.product_name,
-        description: product.description,
-        product_note: product.description,
-        product_price: '',
-        product_locker_room_id: product.id,
-        product_locker_room: {
-          front_url: product.product_front_url,
-          product_id: product.id
-        } as ProductLockerRoom
-      } as CollectionProduct
-    })
-  }
 
-  const handleSaveCollection = async () => {
-    if (lockerRoomHeaderRef.value) {
-      if (lockerRoomHeaderRef.value.collection_name) {
-        const prods = collectionProducts.value.map((product, index) => {
+  const collectionProducts = computed(() => {
+    if (currentCollection.value) {
+      return currentCollection.value.collection_products
+    } else {
+      if (selectedProducts.value.length) {
+        return selectedProducts.value.map(product => {
           return {
             allow_description: true,
             allow_price: true,
             allow_title: true,
-            product_nickname: product.product_nickname,
-            product_note: product.product_note ?? '',
-            product_price: product.product_price,
-            product_locker_room_id: product.product_locker_room_id,
-            order_number: index + 1
+            product_nickname: product.product_name,
+            description: product.description,
+            product_note: product.description,
+            product_price: '',
+            product_locker_room: {
+              front_url: product.product_front_url,
+              product_id: product.id
+            } as ProductLockerRoom
           } as CollectionProduct
         })
-
-        const formData = new FormData()
-
-        formData.append('name', lockerRoomHeaderRef.value.collection_name)
-        formData.append('link', '')
-        formData.append('collection_logos_data', JSON.stringify([]))
-        formData.append('deleted_logos_ids', JSON.stringify([]))
-
-        prods.forEach(prod => {
-          formData.append('products[]', JSON.stringify(prod))
-        })
-        try {
-          await lockerRoomStore.saveCollection(formData)
-          currentMode.value = 'list'
-          currentLocker.value = null
-          lockerTab.value = 'products'
-          collectionTab.value = 'products'
-          tab.value = 'collections'
-          currentCollection.value = null
-          collectionCreationStep.value = 1
-          lockerRoomHeaderRef.value.creatingCollection = false
-          selectedProducts.value = []
-          collectionProducts.value = []
-        } catch (err) {
-          toast.error(err as string, { richColors: true })
-        }
       } else {
-        toast.info('Collection Name is required', {
-          richColors: true,
-          duration: 5000
-        })
+        return []
       }
     }
-  }
+  })
   watch(
     () => props.open,
     newVal => {
@@ -254,7 +209,10 @@
                 :locker-tab="lockerTab"
                 :locker="currentLocker"
                 :pre-selected-products="selectedProducts"
-                @select-product="handleProductSelect"
+                @select-product="
+                  (locker_products: LockerProduct[]) => (selectedProducts = locker_products)
+                "
+                @edit-product="payload => emit('edit-product', payload)"
               />
             </div>
 
@@ -269,6 +227,9 @@
                 :collection-tab="collectionTab"
                 :collection="currentCollection"
                 :pre-selected-products="collectionProducts"
+                @select-product="
+                  (locker_products: LockerProduct[]) => (selectedProducts = locker_products)
+                "
               />
             </div>
           </Transition>
@@ -286,14 +247,12 @@
         :current-tab="tab"
         :current-locker="currentLocker"
         :current-mode="currentMode"
-        :lockers-list-ref="lockerListRef"
         :details-tab="lockerTab"
         :selected-products="selectedProducts"
         :selected-lockers="selectedLocker"
         :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
         :collection-creation-step="collectionCreationStep"
         @back="handleBackNavigation"
-        @save-collection="handleSaveCollection"
         @cancel-collection-creation="
           () => {
             currentMode = 'list'
