@@ -40,6 +40,7 @@ type InitializationContext = {
   categoryInfo: CategoryInfo | null
   hasCategoriesAvailable: boolean
   companyChanged: boolean
+  hadPersistedWorkflowStep: boolean
 }
 
 type InitializationPhase =
@@ -177,8 +178,6 @@ export function useAppInitialization() {
     productsStore.suspendCustomizationAutoSync()
     const customizationStore = useCustomizationStore()
 
-    wf.loadFromLocalStorage()
-
     try {
       const history = useHistoryStore()
       history.load()
@@ -193,7 +192,8 @@ export function useAppInitialization() {
       hasPersistedCustomization,
       categoryInfo: null,
       hasCategoriesAvailable: false,
-      companyChanged: false
+      companyChanged: false,
+      hadPersistedWorkflowStep: false
     }
   }
 
@@ -233,6 +233,10 @@ export function useAppInitialization() {
     ])
 
     context.hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
+
+    // Reload workflow state now that the correct storage prefix is known
+    wf.loadFromLocalStorage()
+    context.hadPersistedWorkflowStep = Boolean(wf.activeStep)
   }
 
   // ============================================================================
@@ -251,7 +255,12 @@ export function useAppInitialization() {
       return
     }
 
-    await createDefaultCustomization(customizationStore, productsStore, categoryInfo)
+    await createDefaultCustomization(
+      customizationStore,
+      productsStore,
+      categoryInfo,
+      context.hadPersistedWorkflowStep
+    )
   }
 
   // ============================================================================
@@ -315,11 +324,24 @@ export function useAppInitialization() {
     await productsStore.fetchProductPreviews(categoryInfo.categoryId, categoryInfo.subCategoryId)
   }
 
-  const syncWorkflowForCategoryAvailability = (hasCategories: boolean): void => {
+  const syncWorkflowForCategoryAvailability = (
+    hasCategories: boolean,
+    preserveExistingStep = false
+  ): void => {
     if (hasCategories) return
 
     wf.setSelectedCategoryForPreview(null)
     wf.setSelectedSubCategoryForPreview(null)
+
+    if (preserveExistingStep) {
+      if (!wf.activeStep) {
+        wf.setActiveStep('product')
+      }
+      if (wf.activeStep === 'product' && wf.productsSubStep !== 'product') {
+        wf.setProductsSubStep('product')
+      }
+      return
+    }
 
     if (wf.productsSubStep !== 'product') {
       wf.setProductsSubStep('product')
@@ -342,8 +364,12 @@ export function useAppInitialization() {
     const customization = customizationStore.customization
     if (!customization) return
 
+    const persistedProductId = Number(customization.product_id || 0)
+    const persistedStyleId = Number(customization.style_id || 0)
+    const persistedDesignId = Number(customization.design_id || 0)
+
     // Restore product selection
-    let productId = Number(customization.product_id || 0)
+    let productId = persistedProductId
 
     // Load product data if missing
     if (!productId) {
@@ -359,32 +385,40 @@ export function useAppInitialization() {
       // Load data for saved product
       await productsStore.fetchStylePreviews(productId)
       await productsStore.fetchActiveProductDetails(productId)
+      customizationStore.setProduct(productId)
     }
 
     // Restore style selection
-    let styleId = Number(customization.style_id || 0)
-    if (!styleId) {
+    let styleId = persistedStyleId
+    if (styleId > 0) {
+      if (productsStore.activeStyleDetails?.id !== styleId) {
+        await productsStore.fetchActiveStyleDetails(styleId)
+      }
+      customizationStore.setStyle(styleId)
+    } else {
       // Use default style if none saved
       const defaultStyleId = productsStore.activeStyleDetails?.id
       if (defaultStyleId) {
         customizationStore.setStyle(defaultStyleId)
         styleId = defaultStyleId
       }
-    } else if (productsStore.activeStyleDetails?.id !== styleId) {
-      // Load saved style if different from current
-      await productsStore.fetchActiveStyleDetails(styleId)
     }
 
     // Restore design selection
-    let designId = Number(customization.design_id || 0)
-    if (!designId) {
+    let designId = persistedDesignId
+    if (designId > 0) {
+      if (productsStore.activeDesignDetails?.id !== designId) {
+        await productsStore.fetchDesignDetailsById(designId)
+      }
+      if (productsStore.activeDesignDetails) {
+        void customizationStore.setDesign(productsStore.activeDesignDetails as OutputDesignDetails)
+      }
+    } else {
       const defaultDesignId = productsStore.activeDesignDetails?.id
       if (defaultDesignId) {
         void customizationStore.setDesign(productsStore.activeDesignDetails as OutputDesignDetails)
         designId = defaultDesignId
       }
-    } else if (productsStore.activeDesignDetails?.id !== designId) {
-      await productsStore.fetchDesignDetailsById(designId)
     }
 
     // Ensure product_texts are initialized from activeProductDetails
@@ -409,7 +443,8 @@ export function useAppInitialization() {
   const createDefaultCustomization = async (
     customizationStore: ReturnType<typeof useCustomizationStore>,
     productsStore: ReturnType<typeof useProductsStore>,
-    categoryInfo: CategoryInfo
+    categoryInfo: CategoryInfo,
+    preserveWorkflowStep = false
   ): Promise<void> => {
     const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
 
@@ -451,7 +486,7 @@ export function useAppInitialization() {
     if (wf.activeStep === 'product') {
       wf.setProductsSubStep(hasCategories ? 'category' : 'product')
     }
-    syncWorkflowForCategoryAvailability(hasCategories)
+    syncWorkflowForCategoryAvailability(hasCategories, preserveWorkflowStep)
   }
 
   // ============================================================================
@@ -507,7 +542,10 @@ export function useAppInitialization() {
           pipelineContext.stores.productsStore
         )
       )
-      syncWorkflowForCategoryAvailability(pipelineContext.hasCategoriesAvailable)
+      syncWorkflowForCategoryAvailability(
+        pipelineContext.hasCategoriesAvailable,
+        pipelineContext.hadPersistedWorkflowStep
+      )
 
       const categoryInfo = pipelineContext.categoryInfo ?? { categoryId: null }
 
