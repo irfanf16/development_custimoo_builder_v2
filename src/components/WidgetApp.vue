@@ -1,12 +1,10 @@
 <script setup lang="ts">
   import { onMounted, ref } from 'vue'
-  // import { useRouter, useRoute } from 'vue-router'
   import { useBrandStyling } from '@/composables/useBrandStyling'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { LayoutWrapper } from '@/layouts'
-  // import SignInButton from './SignInButton.vue'
-  // import ThemeToggle from './ThemeToggle.vue'
-  // import { Button } from '@/components/ui/button'
+  import ConfirmDialog from '@/components/global/ConfirmDialog.vue'
+  import { Toaster } from '@/components/ui/sonner'
 
   // Define props for the widget component
   defineProps({
@@ -52,8 +50,6 @@
     }
   })
 
-  // const router = useRouter()
-  // const route = useRoute()
   const uiStore = useUIStore()
 
   const widgetRootContainer = ref<HTMLElement>()
@@ -78,6 +74,8 @@
     <!-- Widget content -->
     <LayoutWrapper class="bg-accent text-foreground flex-1 flex flex-col">
       <router-view class="flex-1 flex flex-col" />
+      <ConfirmDialog />
+      <Toaster />
     </LayoutWrapper>
   </div>
 </template>

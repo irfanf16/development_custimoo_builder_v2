@@ -15,7 +15,7 @@
 
 /* Import Tailwind CSS */
 @import 'tailwindcss';
-
+@import 'vue-sonner/style.css';
 /* Using tailwindcss-animate via plugin */
 
 /* Custom widget styles */
@@ -527,6 +527,22 @@ v-customizer * {
  * - animate-accordion-up
  */
 
+.slide-horizontal-enter-active,
+.slide-horizontal-leave-active {
+  transition: all 0.25s ease;
+  background-color: red;
+}
+
+.slide-horizontal-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.slide-horizontal-leave-to {
+  transform: translateX(-30%);
+  opacity: 0;
+}
+
 #three-container {
   position: relative;
 }
@@ -534,4 +550,8 @@ v-customizer * {
 #three-container canvas {
   width: 100% !important;
   height: 100% !important;
+}
+
+.product-card:hover .accessibilty-menu {
+  opacity: 1 !important;
 }

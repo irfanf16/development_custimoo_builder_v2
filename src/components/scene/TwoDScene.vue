@@ -91,6 +91,9 @@
     colorGrouping: undefined
   })
 
+  // get current instance at mounted
+  const instance = getCurrentInstance()
+
   // ===== SHARED COMPOSABLE =====
   const {
     canvas,
@@ -356,10 +359,9 @@
   // Store component reference in global store if mainPreview
   function updateSceneRef() {
     if (!props.mainPreview || !props.side) return
-
-    const componentInstance = getCurrentInstance()?.proxy as ComponentPublicInstance | null
+    const componentInstance = instance?.proxy as ComponentPublicInstance | null
     if (componentInstance) {
-      sceneStore.setTwoDSceneRef(componentInstance, props.side as 'front' | 'back')
+      sceneStore.setTwoDSceneRef({ getImageFromCanvas }, props.side as 'front' | 'back')
     }
   }
 

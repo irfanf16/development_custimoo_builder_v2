@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
-
+type TwoDSceneRef = {
+  getImageFromCanvas: () => string
+} | null
 /**
  * Store for scene component references
  * Used to access mainPreview scene components globally
@@ -9,8 +11,8 @@ import type { ComponentPublicInstance } from 'vue'
 export const useSceneStore = defineStore('sceneStore', () => {
   // Component references
   const threeDSceneRef = ref<ComponentPublicInstance | null>(null)
-  const twoDSceneFrontRef = ref<ComponentPublicInstance | null>(null)
-  const twoDSceneBackRef = ref<ComponentPublicInstance | null>(null)
+  const twoDSceneFrontRef = ref<TwoDSceneRef | null>(null)
+  const twoDSceneBackRef = ref<TwoDSceneRef | null>(null)
 
   /**
    * Set 3D scene reference
@@ -22,7 +24,7 @@ export const useSceneStore = defineStore('sceneStore', () => {
   /**
    * Set 2D scene reference (front or back)
    */
-  function setTwoDSceneRef(ref: ComponentPublicInstance | null, side: 'front' | 'back') {
+  function setTwoDSceneRef(ref: TwoDSceneRef | null, side: 'front' | 'back') {
     if (side === 'front') {
       twoDSceneFrontRef.value = ref
     } else {
@@ -33,7 +35,7 @@ export const useSceneStore = defineStore('sceneStore', () => {
   /**
    * Get 2D scene reference by side
    */
-  function getTwoDSceneRef(side: 'front' | 'back'): ComponentPublicInstance | null {
+  function getTwoDSceneRef(side: 'front' | 'back'): TwoDSceneRef | null {
     return side === 'front' ? twoDSceneFrontRef.value : twoDSceneBackRef.value
   }
 

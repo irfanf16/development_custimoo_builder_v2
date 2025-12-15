@@ -4,6 +4,8 @@ import { useProductsStore } from '@/stores/products/products.store'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { pantonesTcx } from './pantonesTcx'
 import { pantonesCoated } from './pantonesCoated'
+import { toast } from '@/components/ui/sonner'
+import axios from 'axios'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -126,6 +128,35 @@ export function formatDate(dateStr?: string): string {
     day: '2-digit',
     year: 'numeric'
   })
+}
+
+// To get date-time in past toned responses like: 1d ago, 2h ago, 3m ago
+export function timeAgo(dateTime: string): string {
+  const now = new Date()
+  const past = new Date(dateTime)
+
+  if (isNaN(past.getTime())) return ''
+
+  const seconds = Math.floor((now.getTime() - past.getTime()) / 1000)
+
+  if (seconds < 5) return 'just now'
+  if (seconds < 60) return `${seconds} seconds ago`
+
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+
+  const days = Math.floor(hours / 24)
+  if (days === 1) return 'yesterday'
+  if (days < 30) return `${days} days ago`
+
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`
+
+  const years = Math.floor(days / 365)
+  return `${years} year${years === 1 ? '' : 's'} ago`
 }
 
 export function loadCustomFont(url: string, fontFamily: string): Promise<void> {
@@ -498,4 +529,132 @@ export function getPermutation(n: number, number_of_parts: number): number[] {
     })
   }
   return result
+}
+
+// upload files to s3 via preSignedUrl
+export interface PresignedFile {
+  file: File
+  presigned_url: string
+  file_type?: string
+  file_side?: string
+}
+
+export async function uploadPresignedFiles(files: PresignedFile[]) {
+  const toastMap = new Map<string, string | number>()
+
+  const uploadTasks = files.map(async item => {
+    // 1️⃣ Create loading toast per file
+    const toastId = toast.loading(`Uploading ${item.file.name}…`, {
+      duration: Infinity
+    })
+
+    toastMap.set(item.file.name, toastId)
+    const formData = new FormData()
+    formData.append('file', item.file)
+    const file = formData.get('file')
+    try {
+      const response = await axios.put(item.presigned_url, file, {
+        headers: {
+          'Content-Type': item.file_type || item.file.type
+        }
+      })
+
+      if (response.status !== 200) {
+        toast.error(`Failed to upload ${item.file.name}`, {
+          id: toastId
+        })
+
+        return {
+          file: item.file.name,
+          success: false,
+          status: response.status
+        }
+      }
+
+      // 2️⃣ Success toast (update same toast)
+      toast.success(`Uploaded ${item.file.name}`, {
+        id: toastId
+      })
+      toast.dismiss(toastId)
+      return {
+        file: item.file.name,
+        success: true,
+        side: item?.file_side
+      }
+    } catch (err) {
+      toast.error(`Failed to upload ${item.file.name}`, {
+        id: toastId
+      })
+
+      return {
+        file: item.file.name,
+        success: false,
+        error: err
+      }
+    }
+  })
+
+  return Promise.all(uploadTasks)
+}
+
+export function base64ToFile(base64: string, filename: string): File {
+  console.log(base64)
+  const arr = base64.split(',')
+  const mime = arr[0]!.match(/:(.*?);/)?.[1] || 'image/png'
+  const bstr = atob(arr[1]!)
+  let n = bstr.length
+  const u8arr = new Uint8Array(n)
+
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n)
+  }
+
+  return new File([u8arr], filename, { type: mime })
+}
+
+export function objectToFormData(
+  data: Record<string, any>,
+  formData: FormData = new FormData(),
+  parentKey?: string
+): FormData {
+  if (!data) return formData
+
+  Object.entries(data).forEach(([key, value]) => {
+    const formKey = parentKey ? `${parentKey}[${key}]` : key
+
+    if (value === null || value === undefined) {
+      return
+    }
+
+    // File or Blob
+    if (value instanceof File || value instanceof Blob) {
+      formData.append(formKey, value)
+      return
+    }
+
+    // Date
+    if (value instanceof Date) {
+      formData.append(formKey, value.toISOString())
+      return
+    }
+
+    // Array
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => {
+        objectToFormData(item as Record<string, any>, formData, `${formKey}[${index}]`)
+      })
+      return
+    }
+
+    // Object
+    if (typeof value === 'object') {
+      objectToFormData(value as Record<string, any>, formData, formKey)
+      return
+    }
+
+    // Primitive
+    formData.append(formKey, String(value))
+  })
+
+  return formData
 }
