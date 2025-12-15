@@ -19,7 +19,15 @@
     preSelectedProducts: LockerProduct[]
     isCreatingCollection: boolean
   }>()
-  const emit = defineEmits(['select-product'])
+  type EditLockerProductPayload = {
+    lockerProductId: number
+    lockerId: number
+    lockerProduct: LockerProduct
+  }
+  const emit = defineEmits<{
+    (e: 'select-product', products: LockerProduct[]): void
+    (e: 'edit-product', payload: EditLockerProductPayload): void
+  }>()
 
   const showCopyDialog = ref<boolean>(false)
   const lockerRoomStore = useLockerRoomStore()
@@ -68,8 +76,12 @@
     emit('select-product', [...selectedProducts.value])
   }
 
-  const startEditing = (prod: LockerProduct, prodIndex: number) => {
-    console.log(`prodIndex => ${prodIndex}`, prod)
+  const startEditing = (prod: LockerProduct) => {
+    emit('edit-product', {
+      lockerProductId: prod.id,
+      lockerId: props.lockerId,
+      lockerProduct: prod
+    })
   }
 
   const copyProduct = (prod: LockerProduct) => {
@@ -133,7 +145,7 @@
                     size="icon"
                     variant="secondary"
                     class="h-7 w-7 rounded-full shadow"
-                    @click="startEditing(prod, prodIndex)"
+                    @click="startEditing(prod)"
                   >
                     <Pencil class="w-3.5 h-3.5" />
                   </Button>

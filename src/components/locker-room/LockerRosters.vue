@@ -54,9 +54,7 @@
               <h3 class="font-semibold text-base">{{ roster.group_name }}</h3>
               <p class="text-xs text-muted-foreground mb-2">
                 <UsersIcon class="inline-block w-4 h-4 mr-1" />
-                {{
-                  roster.roster_group.reduce((acc, player) => acc + parseInt(player.quantity), 0)
-                }}
+                {{ roster.roster_group.reduce((acc, player) => acc + player.quantity, 0) }}
                 players
               </p>
 

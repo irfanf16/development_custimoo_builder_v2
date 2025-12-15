@@ -17,7 +17,15 @@
     isCreatingCollection: boolean
   }>()
   const activeTab = computed(() => props.lockerTab)
-  const emit = defineEmits(['select-product'])
+  type EditLockerProductPayload = {
+    lockerProductId: number
+    lockerId: number
+    lockerProduct: LockerProduct
+  }
+  const emit = defineEmits<{
+    (e: 'select-product', products: LockerProduct[]): void
+    (e: 'edit-product', payload: EditLockerProductPayload): void
+  }>()
   const lockerProductsRef = ref<InstanceType<typeof LockerProductsListing> | null>(null)
 
   const rosters_groups: ComputedRef<RosterProps[]> = computed(() =>
@@ -41,6 +49,7 @@
         @select-product="
           (locker_products: LockerProduct[]) => emit('select-product', locker_products)
         "
+        @edit-product="payload => emit('edit-product', payload)"
       />
     </div>
 

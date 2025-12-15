@@ -7,6 +7,7 @@
   import { Badge } from '@/components/ui/badge'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import type { LogoColor } from '@/services/types'
   import {
     logos_uploaded_logo_alt,
     logos_apply_colors,
@@ -21,6 +22,20 @@
   const props = defineProps<{
     logo: CustomLogo
   }>()
+
+  const previewColors = computed(() => {
+    const colors = props.logo.logo_colors || []
+    return colors
+      .map((c: LogoColor) => {
+        if (Array.isArray(c)) {
+          // RGB array from backend
+          return `rgb(${c.join(',')})`
+        }
+        // Hex/pantone object from backend
+        return c.hex || ''
+      })
+      .filter(Boolean)
+  })
 
   // Check if default colors exist (have at least one color set)
   const hasDefaultColors = computed(() => {
@@ -53,9 +68,7 @@
         v-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
         class="flex flex-row justify-between w-full items-center gap-2"
       >
-        <ColorsPreview
-          :colors="props.logo.logo_colors.map(c => `rgb(${(c as number[]).join(',')})`) || []"
-        />
+        <ColorsPreview :colors="previewColors" />
         <div class="flex gap-2">
           <Button
             v-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"

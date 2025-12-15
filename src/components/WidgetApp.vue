@@ -4,8 +4,7 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import { LayoutWrapper } from '@/layouts'
   import ConfirmDialog from '@/components/global/ConfirmDialog.vue'
-  import { Toaster } from 'vue-sonner'
-  // import 'vue-sonner/style.css'
+  import { Toaster } from '@/components/ui/sonner'
 
   // Define props for the widget component
   defineProps({

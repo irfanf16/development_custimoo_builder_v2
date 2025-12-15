@@ -7,6 +7,7 @@ import type {
   LockerAssetsResponse,
   LockerDeletionResponse,
   LockerFetchResponse,
+  LockerProduct,
   LockerResponse,
   LockerUpdatePayload,
   SignedUrlResponse
@@ -18,6 +19,16 @@ async function getLockers() {
 
 async function getLockerProducts(locker_id: number) {
   return await http.get<LockerResponse<Locker[]>>(`locker-products?locker_id=${locker_id}`)
+}
+
+//endpoint: locker-products/26417?locker_product_id=26417&active_product_type=locker_product
+async function getLockerProductDetails(product_id: number) {
+  return await http.get<LockerResponse<LockerProduct>>(`locker-products/${product_id}`, {
+    params: {
+      locker_product_id: product_id,
+      active_product_type: 'locker_product'
+    }
+  })
 }
 
 async function createLocker(name: string) {
@@ -78,6 +89,7 @@ export default {
   getLockers,
   updateLocker,
   getLockerProducts,
+  getLockerProductDetails,
   createLocker,
   deleteLocker,
   fetchLockerAssets,
