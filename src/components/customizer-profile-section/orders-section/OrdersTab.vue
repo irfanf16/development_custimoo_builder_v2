@@ -17,7 +17,7 @@
   import { getOrderOptions } from '@/helpers/orderStatuses'
   import WorkflowBreadcrumbs from '@/components/customization-workflow/WorkflowBreadcrumbs.vue'
   import OrderDetailsView from './OrderDetailsView.vue'
-  import OrderTimeline from './OrderTimeline.vue'
+  import OrderTimeline from '@/components/customizer-profile-section/orders-section/order-timeline/OrderTimeline.vue'
   import { useOrdersStore } from '@/stores/orders/orders.store'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { useProfileStore } from '@/stores/profile/profile.store'
