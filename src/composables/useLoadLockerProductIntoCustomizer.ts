@@ -15,6 +15,8 @@ import type { LockerProduct, ProductRosterDetail } from '@/services/lockers/type
 import type { CustomLogo } from '@/services/logos/types'
 import type { APCustomizationRosterEntry } from '@/services/products/types/customization'
 
+// ===== UTILITY FUNCTIONS =====
+
 function parseMaybeJson<T>(value: unknown): T | null {
   if (value == null) return null
   if (typeof value === 'string') {
@@ -51,6 +53,13 @@ function asSafeNumber(value: unknown, fallback = 0): number {
   }
   return fallback
 }
+
+function normalizeNumberArray(value: unknown): number[] {
+  if (!Array.isArray(value)) return []
+  return value.map(n => Number(n)).filter(n => !Number.isNaN(n))
+}
+
+// ===== NORMALIZATION FUNCTIONS =====
 
 function normalizeDefaultColors(value: unknown): APCustomizationDefaultColor[] | null {
   const parsed = parseMaybeJson<unknown>(value)
@@ -130,6 +139,9 @@ function normalizeTexts(value: unknown, productId: number): OutputProductText[] 
   const arr = Array.isArray(parsed) ? parsed : null
   if (!arr) return null
 
+  // Track temporary ID generation for texts with id: 0
+  let tempIdCounter = -1
+
   const mapped: Array<OutputProductText | null> = arr.map(raw => {
     if (!isRecord(raw)) return null
 
@@ -170,8 +182,14 @@ function normalizeTexts(value: unknown, productId: number): OutputProductText[] 
           .filter((x): x is OutputProductTextItem => x != null)
       : []
 
-    const id = asSafeNumber(raw.id, 0)
+    let id = asSafeNumber(raw.id, 0)
     const type = (asSafeString(raw.type) as OutputProductText['type']) || 'name'
+
+    // If id is 0 or missing, assign a temporary negative ID and mark as manually added
+    const needsTempId = id === 0
+    if (needsTempId) {
+      id = tempIdCounter--
+    }
 
     return {
       id,
@@ -179,19 +197,15 @@ function normalizeTexts(value: unknown, productId: number): OutputProductText[] 
       type,
       label: asSafeString(raw.label),
       placeholder: raw.placeholder == null ? undefined : asSafeString(raw.placeholder),
-      following_products: Array.isArray(raw.following_products)
-        ? raw.following_products.map(n => Number(n)).filter(n => !Number.isNaN(n))
-        : [],
+      following_products: normalizeNumberArray(raw.following_products),
       items,
       created_at: raw.created_at == null ? null : asSafeString(raw.created_at),
       updated_at: raw.updated_at == null ? null : asSafeString(raw.updated_at),
       deleted_at: raw.deleted_at == null ? null : asSafeString(raw.deleted_at),
       value: asSafeString(raw.value),
-      manually_added: Boolean(raw.manually_added),
+      manually_added: needsTempId || Boolean(raw.manually_added),
       font_family: asSafeString(raw.font_family),
-      following_product_ids: Array.isArray(raw.following_product_ids)
-        ? raw.following_product_ids.map(n => Number(n)).filter(n => !Number.isNaN(n))
-        : [],
+      following_product_ids: normalizeNumberArray(raw.following_product_ids),
       active_item_index: asSafeNumber(raw.active_item_index, 0),
       is_first_name: raw.is_first_name == null ? undefined : Boolean(raw.is_first_name),
       is_first_number: raw.is_first_number == null ? undefined : Boolean(raw.is_first_number),
@@ -199,7 +213,7 @@ function normalizeTexts(value: unknown, productId: number): OutputProductText[] 
     } satisfies OutputProductText
   })
 
-  return mapped.filter((x): x is OutputProductText => x != null && x.id !== 0)
+  return mapped.filter((x): x is OutputProductText => x != null)
 }
 
 function normalizeRosterEntries(
@@ -213,6 +227,146 @@ function normalizeRosterEntries(
     quantity: Number(entry.quantity ?? 0),
     information: entry.information ?? ''
   }))
+}
+
+// ===== LOCKER PRODUCT RESOLUTION =====
+
+interface LockerResultContainer {
+  factoryProducts?: unknown[]
+  factoryProductActiveIndex?: number | string
+}
+
+function resolveLockerProduct(
+  lockerResult: unknown,
+  fallbackLockerProduct?: LockerProduct
+): LockerProduct | null {
+  // Handle API response with container structure
+  if (isRecord(lockerResult) && Array.isArray(lockerResult.factoryProducts)) {
+    const container = lockerResult as LockerResultContainer
+    const factoryProducts = container.factoryProducts
+    if (factoryProducts && factoryProducts.length > 0) {
+      const idxRaw = container.factoryProductActiveIndex
+      const idx =
+        typeof idxRaw === 'number' ? idxRaw : typeof idxRaw === 'string' ? Number(idxRaw) : 0
+      const resolved = factoryProducts[idx] ?? factoryProducts[0]
+
+      if (isRecord(resolved)) {
+        return resolved as unknown as LockerProduct
+      }
+    }
+  }
+
+  // Handle direct locker product
+  if (isRecord(lockerResult)) {
+    return lockerResult as unknown as LockerProduct
+  }
+
+  // Use fallback if provided
+  return fallbackLockerProduct ?? null
+}
+
+function extractLockerProductIds(lockerProduct: Record<string, unknown>): {
+  productId: number
+  styleId: number
+  designId: number
+} {
+  const rawProductId = lockerProduct['product_id'] ?? lockerProduct['productId']
+  const rawStyleId = lockerProduct['style_id'] ?? lockerProduct['styleId']
+  const rawDesignId = lockerProduct['design_id'] ?? lockerProduct['designId']
+
+  return {
+    productId: asSafeNumber(rawProductId, 0) || 0,
+    styleId: asSafeNumber(rawStyleId, 0) || 0,
+    designId: asSafeNumber(rawDesignId, 0) || 0
+  }
+}
+
+// ===== PRODUCT ID MAPPING =====
+
+function findActiveProductIdFromPreviews(
+  baseProductId: number,
+  previews: Array<{ productPreview?: { id?: number; product_id?: number } }> | null | undefined
+): number | null {
+  if (!baseProductId || !previews || !Array.isArray(previews)) return null
+  const hit = previews.find(p => p?.productPreview?.product_id === baseProductId)
+  const mapped = hit?.productPreview?.id
+  return typeof mapped === 'number' && mapped > 0 ? mapped : null
+}
+
+async function resolveActiveProductId(
+  lockerBaseProductId: number,
+  styleId: number,
+  productsStore: ReturnType<typeof useProductsStore>,
+  customizationStore: ReturnType<typeof useCustomizationStore>
+): Promise<number | null> {
+  // First try: derive active product id from style details (style_id tends to be stable)
+  if (styleId) {
+    await productsStore.fetchActiveStyleDetails(styleId)
+    const derivedProductId = productsStore.activeStyleDetails?.product_id
+    if (typeof derivedProductId === 'number' && derivedProductId > 0) {
+      const retryFromStyle = await productsStore.fetchActiveProductDetails(derivedProductId)
+      if (retryFromStyle?.success) {
+        return derivedProductId
+      }
+    }
+  }
+
+  // Try existing previews first (no extra requests)
+  let mappedId = findActiveProductIdFromPreviews(lockerBaseProductId, productsStore.productPreviews)
+  if (mappedId) return mappedId
+
+  // Try fetching previews in current category context
+  const catId = customizationStore.activeCategoryId ?? null
+  const subId = customizationStore.activeSubCategoryId ?? undefined
+  await productsStore.fetchProductPreviews(catId, subId || undefined)
+  mappedId = findActiveProductIdFromPreviews(lockerBaseProductId, productsStore.productPreviews)
+  if (mappedId) return mappedId
+
+  // Last resort: try fetching previews with no category constraint
+  await productsStore.fetchProductPreviews(null)
+  mappedId = findActiveProductIdFromPreviews(lockerBaseProductId, productsStore.productPreviews)
+  if (mappedId) return mappedId
+
+  return null
+}
+
+// ===== CUSTOMIZATION BUILDING =====
+
+function extractLockerCustomTexts(
+  productCustomTextsRaw: unknown,
+  productKey: string,
+  productId: number
+): OutputProductText[] | null {
+  if (isRecord(productCustomTextsRaw)) {
+    // If it's a Record, extract texts for the product key or normalize all entries
+    const textsForProduct = Array.isArray(productCustomTextsRaw[productKey])
+      ? (productCustomTextsRaw[productKey] as unknown[])
+      : null
+
+    if (textsForProduct) {
+      return normalizeTexts(textsForProduct, productId)
+    }
+
+    // If it's a Record but not keyed by productKey, try to normalize all values
+    const allTexts: OutputProductText[] = []
+    for (const key in productCustomTextsRaw) {
+      const value = productCustomTextsRaw[key]
+      if (Array.isArray(value)) {
+        const normalized = normalizeTexts(value, productId)
+        if (normalized) {
+          allTexts.push(...normalized)
+        }
+      }
+    }
+    return allTexts.length > 0 ? allTexts : null
+  }
+
+  if (Array.isArray(productCustomTextsRaw)) {
+    // Handle case where product_custom_texts is an array (like the `text` field format)
+    return normalizeTexts(productCustomTextsRaw, productId)
+  }
+
+  return null
 }
 
 function buildCustomizationFromLocker(
@@ -249,13 +403,15 @@ function buildCustomizationFromLocker(
   if (groupColors && Object.keys(groupColors).length) next.group_colors = groupColors
   if (logos?.map && Object.keys(logos.map).length) next.custom_logos = logos.map
 
-  // Some locker payloads provide the full texts map directly as `product_custom_texts`.
-  // Prefer that over `text` when present so we don't lose user edits.
-  if (isRecord(productCustomTextsRaw)) {
-    next.product_custom_texts =
-      productCustomTextsRaw as unknown as ActiveProductCustomization['product_custom_texts']
-  } else if (texts?.length) {
-    next.product_custom_texts = { ...next.product_custom_texts, [productKey]: texts }
+  // Replace the entire product_custom_texts object with locker texts (preserving IDs from locker room)
+  const finalLockerTexts =
+    extractLockerCustomTexts(productCustomTextsRaw, productKey, locker.product_id) ?? texts
+
+  // Replace the entire product_custom_texts object (not merge) with locker texts
+  if (finalLockerTexts && finalLockerTexts.length > 0) {
+    next.product_custom_texts = {
+      [productKey]: finalLockerTexts
+    }
   }
 
   if (rosterEntries.length)
@@ -264,18 +420,64 @@ function buildCustomizationFromLocker(
   return next
 }
 
+// ===== PRODUCT ID REMAPPING =====
+
+function remapProductIdKeys(
+  customization: ActiveProductCustomization,
+  fromProductId: number,
+  toProductId: number
+): void {
+  if (fromProductId === toProductId) return
+
+  const fromKey = String(fromProductId)
+  const toKey = String(toProductId)
+
+  // Remap product_custom_texts
+  if (customization.product_custom_texts[fromKey] && !customization.product_custom_texts[toKey]) {
+    customization.product_custom_texts[toKey] = customization.product_custom_texts[fromKey]!
+  }
+
+  // Remap custom_logos
+  if (customization.custom_logos[fromKey] && !customization.custom_logos[toKey]) {
+    customization.custom_logos[toKey] = customization.custom_logos[fromKey]!
+  }
+
+  // Remap products_rosters
+  if (customization.products_rosters[fromKey] && !customization.products_rosters[toKey]) {
+    customization.products_rosters[toKey] = customization.products_rosters[fromKey]!
+  }
+}
+
+// ===== PRESET TEXT UPDATES =====
+
+function updatePresetTextsWithLockerFlags(
+  presetTexts: OutputProductText[],
+  lockerTexts: OutputProductText[]
+): OutputProductText[] {
+  const lockerFirstNameText = lockerTexts.find(t => t.type === 'name' && t.is_first_name === true)
+  const lockerFirstNumberText = lockerTexts.find(
+    t => t.type === 'number' && t.is_first_number === true
+  )
+
+  return presetTexts.map(presetText => {
+    if (lockerFirstNameText && presetText.type === 'name' && presetText.is_first_name === true) {
+      return lockerFirstNameText
+    }
+    if (
+      lockerFirstNumberText &&
+      presetText.type === 'number' &&
+      presetText.is_first_number === true
+    ) {
+      return lockerFirstNumberText
+    }
+    return presetText
+  })
+}
+
+// ===== MAIN COMPOSABLE =====
+
 export function useLoadLockerProductIntoCustomizer() {
   const isLoading = ref(false)
-
-  const findActiveProductIdFromPreviews = (
-    baseProductId: number,
-    previews: Array<{ productPreview?: { id?: number; product_id?: number } }> | null | undefined
-  ): number | null => {
-    if (!baseProductId || !previews || !Array.isArray(previews)) return null
-    const hit = previews.find(p => p?.productPreview?.product_id === baseProductId)
-    const mapped = hit?.productPreview?.id
-    return typeof mapped === 'number' && mapped > 0 ? mapped : null
-  }
 
   async function loadLockerProductIntoCustomizer(
     lockerProductId: number,
@@ -300,97 +502,38 @@ export function useLoadLockerProductIntoCustomizer() {
         return false
       }
 
-      if (!resp.success || !resp.content?.result) {
-        // Using fallback locker product snapshot due to API failure/missing result
-      }
-
-      // If the API returns a container object with factoryProducts, probe the active entry.
-      if (isRecord(lockerResult) && Array.isArray(lockerResult.factoryProducts)) {
-        // Probe logic removed - was only used for debug logging
-      }
-
-      // Resolve the actual locker product payload.
-      // Evidence shows `result` can be a container with `factoryProducts` instead of the product itself.
-      let lockerProductResolved: unknown = lockerResult
-      if (isRecord(lockerResult) && Array.isArray(lockerResult.factoryProducts)) {
-        const idxRaw = lockerResult.factoryProductActiveIndex
-        const idx =
-          typeof idxRaw === 'number' ? idxRaw : typeof idxRaw === 'string' ? Number(idxRaw) : 0
-        lockerProductResolved =
-          (lockerResult.factoryProducts[idx] as unknown) ??
-          (lockerResult.factoryProducts[0] as unknown)
-      }
-
-      if (!isRecord(lockerProductResolved)) {
+      const lockerProduct = resolveLockerProduct(lockerResult, fallbackLockerProduct)
+      if (!lockerProduct) {
         return false
       }
 
-      const lockerProduct = lockerProductResolved as unknown as LockerProduct
-      const rawProductId = lockerProductResolved['product_id'] ?? lockerProductResolved['productId']
-      const rawStyleId = lockerProductResolved['style_id'] ?? lockerProductResolved['styleId']
-      const rawDesignId = lockerProductResolved['design_id'] ?? lockerProductResolved['designId']
+      const {
+        productId: lockerBaseProductId,
+        styleId,
+        designId
+      } = extractLockerProductIds(lockerProduct as unknown as Record<string, unknown>)
 
-      const lockerBaseProductId = asSafeNumber(rawProductId, 0) || 0
-      let productId = lockerBaseProductId
-      const styleId = asSafeNumber(rawStyleId, 0) || 0
-      const designId = asSafeNumber(rawDesignId, 0) || 0
-
-      if (!productId) {
+      if (!lockerBaseProductId) {
         return false
       }
 
       // Load the base product/style/design via existing products flow
+      let productId = lockerBaseProductId
       const productResp = await productsStore.fetchActiveProductDetails(productId)
+
       if (!productResp?.success) {
         // If the locker payload uses a *base* product_id that isn't valid for GET product/{id},
-        // try mapping it to the active product id via previews (OutputProductPreview.id).
+        // try mapping it to the active product id via previews
         if (productResp?.status === 404 && lockerBaseProductId) {
-          // First try: derive active product id from style details (style_id tends to be stable).
-          if (styleId) {
-            await productsStore.fetchActiveStyleDetails(styleId)
-
-            const derivedProductId = productsStore.activeStyleDetails?.product_id
-            if (typeof derivedProductId === 'number' && derivedProductId > 0) {
-              productId = derivedProductId
-              const retryFromStyle = await productsStore.fetchActiveProductDetails(productId)
-
-              if (retryFromStyle?.success) {
-                // continue pipeline with resolved productId
-              } else {
-                // fall through to preview mapping
-                productId = lockerBaseProductId
-              }
-            }
-          }
-
-          // Try existing previews first (no extra requests)
-          let mappedId = findActiveProductIdFromPreviews(
+          const resolvedId = await resolveActiveProductId(
             lockerBaseProductId,
-            productsStore.productPreviews
+            styleId,
+            productsStore,
+            customizationStore
           )
 
-          // Try fetching previews in current category context if not found
-          if (!mappedId) {
-            const catId = customizationStore.activeCategoryId ?? null
-            const subId = customizationStore.activeSubCategoryId ?? undefined
-            await productsStore.fetchProductPreviews(catId, subId || undefined)
-            mappedId = findActiveProductIdFromPreviews(
-              lockerBaseProductId,
-              productsStore.productPreviews
-            )
-          }
-
-          // Last resort: try fetching previews with no category constraint
-          if (!mappedId) {
-            await productsStore.fetchProductPreviews(null)
-            mappedId = findActiveProductIdFromPreviews(
-              lockerBaseProductId,
-              productsStore.productPreviews
-            )
-          }
-
-          if (!mappedId) return false
-          productId = mappedId
+          if (!resolvedId) return false
+          productId = resolvedId
 
           const retry = await productsStore.fetchActiveProductDetails(productId)
           if (!retry?.success) return false
@@ -405,12 +548,12 @@ export function useLoadLockerProductIntoCustomizer() {
         const activeStyleResp = await productsStore.fetchActiveStyleDetails(styleId)
         if (!activeStyleResp?.success) return false
       }
+
       if (designId && productsStore.activeDesignDetails?.id !== designId) {
         const designResp = await productsStore.fetchDesignDetailsById(designId)
-        if (!designResp?.success) {
-          // Locker design_id can refer to a locker-specific artifact and not exist in product/style/design endpoint.
-          // Fallback to whatever design was loaded via active product/style.
-        } else if (productsStore.activeDesignDetails) {
+        // Locker design_id can refer to a locker-specific artifact and not exist in product/style/design endpoint.
+        // Fallback to whatever design was loaded via active product/style.
+        if (designResp?.success && productsStore.activeDesignDetails) {
           customizationStore.setDesign(productsStore.activeDesignDetails)
         }
       }
@@ -433,36 +576,32 @@ export function useLoadLockerProductIntoCustomizer() {
         ...(lockerProduct as unknown as Record<string, unknown>),
         product_id: productId
       } as unknown as LockerProduct
+
       const nextCustomization = buildCustomizationFromLocker(
         lockerProductForCustomizer,
         baseCustomization,
         designName
       )
 
-      // If locker payload maps were keyed by base product id, copy them to the resolved active product id.
-      if (lockerBaseProductId && lockerBaseProductId !== productId) {
-        const fromKey = String(lockerBaseProductId)
-        const toKey = String(productId)
-
-        if (
-          nextCustomization.product_custom_texts[fromKey] &&
-          !nextCustomization.product_custom_texts[toKey]
-        ) {
-          nextCustomization.product_custom_texts[toKey] =
-            nextCustomization.product_custom_texts[fromKey]!
-        }
-        if (nextCustomization.custom_logos[fromKey] && !nextCustomization.custom_logos[toKey]) {
-          nextCustomization.custom_logos[toKey] = nextCustomization.custom_logos[fromKey]!
-        }
-        if (
-          nextCustomization.products_rosters[fromKey] &&
-          !nextCustomization.products_rosters[toKey]
-        ) {
-          nextCustomization.products_rosters[toKey] = nextCustomization.products_rosters[fromKey]!
-        }
-      }
+      // If locker payload maps were keyed by base product id, copy them to the resolved active product id
+      remapProductIdKeys(nextCustomization, lockerBaseProductId, productId)
 
       customizationStore.setCustomization(nextCustomization)
+
+      // Update preset texts in productsStore based on is_first_name and is_first_number flags
+      const lockerTexts = nextCustomization.product_custom_texts[String(productId)]
+      const presetTexts = productsStore.activeProductDetails?.product_texts
+
+      if (lockerTexts && presetTexts && presetTexts.length > 0) {
+        const updatedPresetTexts = updatePresetTextsWithLockerFlags(presetTexts, lockerTexts)
+
+        if (productsStore.activeProductDetails) {
+          productsStore.setActiveProductDetailsState({
+            ...productsStore.activeProductDetails,
+            product_texts: updatedPresetTexts
+          })
+        }
+      }
 
       return true
     } finally {
