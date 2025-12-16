@@ -159,12 +159,21 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     }
   }
 
-  async function saveDesignToLocker(formData: FormData): Promise<boolean> {
+  async function saveDesignToLocker(
+    formData: FormData,
+    locker_id: number,
+    front_image: string
+  ): Promise<boolean> {
     const resp = await tryCatchApi(API.lockers.saveDesign(formData))
     if (!resp.success) {
       setError('Failed to save design')
       return false
     }
+    lockers.value = lockers.value.map(locker =>
+      locker.id === locker_id
+        ? { ...locker, product_thumbnails: [...locker.product_thumbnails, front_image] }
+        : locker
+    )
     setSuccessMessage('Design saved successfully')
     return true
   }

@@ -5,10 +5,10 @@ import type { DashboardCounters } from '@/services/dashboard/types'
 import type { Address, AddressPayload } from '@/services/customers/types'
 import type { UserPreferences, ParaglideLocale, DisplayMode } from '@/services/preferences/types'
 import { useCompanyStore } from '../company/company.store'
-import { setLocale } from '@/paraglide/runtime'
 import { useAuthStore } from '../auth/auth.store'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import { WIDGET_CONTAINER_ID } from '@/lib/widgetUtils'
+import { setLocale } from '@/paraglide/runtime'
 
 export const useProfileStore = defineStore('profileStore', () => {
   // ===== Dashboard =====

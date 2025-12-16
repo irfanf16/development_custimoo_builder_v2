@@ -25,6 +25,7 @@
 
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { objectToFormData } from '../lib/utils'
+  import CreateLockerDialog from './locker-room/CreateLockerDialog.vue'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
   type TwoDSceneRef = {
@@ -50,6 +51,7 @@
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const isSubmitting = ref<boolean>(false)
+  const createLocker = ref<boolean>(false)
   const { activeProductDetails } = storeToRefs(productsStore)
   const customizationStoreRef = storeToRefs(customizationStore)
 
@@ -145,7 +147,11 @@
           locker_id: selectedLockerId.value
         }
         const payload = objectToFormData(locker)
-        const success = await lockerStore.saveDesignToLocker(payload)
+        const success = await lockerStore.saveDesignToLocker(
+          payload,
+          selectedLockerId.value,
+          locker.front_image
+        )
         if (success) {
           isSubmitting.value = false
           emit('update:open', false)
@@ -186,6 +192,10 @@
       }
     }
   )
+
+  const handleClick = () => {
+    createLocker.value = true
+  }
 </script>
 
 <template>
@@ -280,7 +290,7 @@
               <Button
                 class="h-9 flex items-center gap-2"
                 :disabled="isSubmitting"
-                @click="emit('create-locker')"
+                @click="handleClick"
               >
                 <Plus class="w-4 h-4" /> Create locker
               </Button>
@@ -357,4 +367,5 @@
       <!-- FOOTER -->
     </DialogContent>
   </Dialog>
+  <CreateLockerDialog :open="createLocker" @update:open="createLocker = $event" />
 </template>
