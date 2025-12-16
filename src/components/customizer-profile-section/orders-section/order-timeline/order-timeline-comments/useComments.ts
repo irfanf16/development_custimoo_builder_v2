@@ -100,7 +100,7 @@ export const useComments = () => {
 
       if (formData.parent_message_id && !newComment.parent_message_id) {
         newComment.parent_message_id = formData.parent_message_id
-        newComment.parent_message = formData.parent_message
+        newComment.parent_message = formData.parent_message || ''
       }
 
       comments.value.push(newComment)

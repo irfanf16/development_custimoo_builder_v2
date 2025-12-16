@@ -3,6 +3,7 @@ import type {
   ContentGroup,
   FactoryProduct,
   GetActivityContentReturn,
+  Item,
   Order
 } from '@/services/orders/types'
 import {
@@ -166,10 +167,10 @@ export function useOrderTimeline() {
   }
 
   const getActivityContent = (
-    activity_items: any[],
+    activity_items: ActivityItem[],
     activity_status: string,
     order: Order,
-    order_item: Record<string, any>
+    order_item: Item
   ): GetActivityContentReturn => {
     const content_group: ContentGroup[] = []
 
@@ -184,40 +185,28 @@ export function useOrderTimeline() {
           : [],
         design_id:
           Array.isArray(order_item?.factory_products) && order_item.factory_products[index]
-            ? ((order_item.factory_products[index] as Record<string, unknown>).design_id as string)
+            ? (order_item.factory_products[index].design_id as string)
             : null,
         nickName:
           order.additional_fields && order.additional_fields.is_manual_order
-            ? ((
-                (order_item?.factory_products as Array<Record<string, unknown>>)[index] as Record<
-                  string,
-                  unknown
-                >
-              )?.design_nick_name as string | null)
+            ? (((order_item?.factory_products as Array<FactoryProduct>)[index] as FactoryProduct)
+                ?.design_nick_name as string | null)
             : null,
         addons:
           Array.isArray(order_item?.factory_products) && order_item.factory_products[index]
-            ? ((order_item.factory_products[index] as Record<string, unknown>)?.addons as Array<
-                Record<string, unknown>
-              >)
+            ? (order_item.factory_products[index]?.addons ?? [])
             : [],
-        skipReason: ((item.skip_customer_approval as Record<string, unknown>)?.reason ?? null) as
-          | string
-          | null,
+        skipReason: item.skip_customer_approval?.reason ?? null,
+        skip_customer_approval: item.skip_customer_approval,
         message: item.message ?? null,
         status: item.status,
         reorder_message: makeReorderMessage(
           item.factory_product_id,
-          Array.isArray(order_item?.factory_products)
-            ? (order_item.factory_products as FactoryProduct[])
-            : [],
+          Array.isArray(order_item?.factory_products) ? order_item.factory_products : [],
           order
         ),
-        third_party_approval_obj: (item.third_party_approval_obj ?? null) as Record<
-          string,
-          unknown
-        > | null,
-        quality_control: (item.quality_control ?? null) as Record<string, unknown> | null
+        third_party_approval_obj: item.third_party_approval_obj ?? null,
+        quality_control: item.quality_control ?? null
       })
     })
 
@@ -301,7 +290,7 @@ export function useOrderTimeline() {
     return url.split('.').pop()?.toLowerCase() || ''
   }
 
-  const isNullOrEmpty = (value: any): boolean => {
+  const isNullOrEmpty = (value: string | null | undefined): boolean => {
     return value === null || value === undefined || value === '' || value === 'null'
   }
 

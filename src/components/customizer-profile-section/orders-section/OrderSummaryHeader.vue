@@ -8,6 +8,19 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <template v-if="isQuoteOrder && showQuoteButtons">
+          <Button size="sm" variant="secondary" class="text-xs" @click="emit('acceptQuote', order)">
+            Accept Quote
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            class="text-xs"
+            @click="emit('rejectQuote', order)"
+          >
+            Reject Quote
+          </Button>
+        </template>
         <Button
           v-if="order.items?.some(i => i.status === 'submitted_for_factory_review')"
           size="sm"
@@ -83,6 +96,7 @@
 </template>
 
 <script setup lang="ts">
+  import { computed } from 'vue'
   import type { Order } from '@/services/orders/types'
   import { formatDate } from '@/lib/utils'
   import { getStatusColor } from '@/helpers/orderStatuses'
@@ -95,7 +109,17 @@
     (e: 'cancel', order: Order): void
     (e: 'pdf', order: Order): void
     (e: 'details', order: Order): void
+    (e: 'acceptQuote', order: Order): void
+    (e: 'rejectQuote', order: Order): void
   }>()
+
+  const isQuoteOrder = computed(() => props.order.is_quote_order === true)
+
+  const showQuoteButtons = computed(() => {
+    if (!isQuoteOrder.value || !props.order.items?.length) return false
+    const lastOrderItem = props.order.items[props.order.items.length - 1]
+    return lastOrderItem?.status === 'quote_provided'
+  })
 
   const store = useOrdersStore()
   function getTotalQuantity(order: Order): number {

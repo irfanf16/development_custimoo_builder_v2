@@ -1,9 +1,9 @@
 import http from '../api'
-import type { CancelOrderResponse, CommentResponse, OrderDetailResponse } from './types'
+import type { CancelOrderResponse, CommentResponse, Order, OrderDetailResponse } from './types'
 
 export type OrdersResponse = {
   result: {
-    data: any[]
+    data: Order[]
     current_page: number
     per_page: number
     total: number
@@ -51,4 +51,48 @@ async function deleteComment(commentId: number) {
   return http.delete<CommentResponse>(`order_item/${commentId}/delete_comment`)
 }
 
-export default { getOrders, cancelOrder, getOrderDetail, addComment, updateComment, deleteComment }
+async function submitOrderActivity(orderItemId: number | string, formData: FormData) {
+  return http.post(`customer-orders/${orderItemId}/order-activity`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+async function sendThirdPartyApproval(orderItemId: number | string, email: string) {
+  return http.post('admin/send-third-party-approval', {
+    email,
+    id: orderItemId
+  })
+}
+
+async function getDesignFileUrl(orderId: number | string) {
+  return http.get<{ result: { url: string } }>(`designfile/order/${orderId}`)
+}
+
+async function acceptQuote(orderId: number | string) {
+  return http.post<{ success: boolean; message?: string; result?: OrderDetailResponse['result'] }>(
+    'accept-quote-order',
+    { order_id: orderId }
+  )
+}
+
+async function rejectQuote(orderId: number | string) {
+  return http.post<{ success: boolean; message?: string }>('reject-quote-order', {
+    order_id: orderId
+  })
+}
+
+export default {
+  getOrders,
+  cancelOrder,
+  getOrderDetail,
+  addComment,
+  updateComment,
+  deleteComment,
+  submitOrderActivity,
+  sendThirdPartyApproval,
+  getDesignFileUrl,
+  acceptQuote,
+  rejectQuote
+}

@@ -265,7 +265,7 @@
     const file = formData.value.files![i]
 
     if (props.mode === 'edit') {
-      const originUrl = props.editComment?.files?.find(f => f.url.includes(file?.name))?.url
+      const originUrl = props.editComment?.files?.find(f => f.url?.includes(file?.name ?? ''))?.url
       if (originUrl) {
         // initialize removed_files if not already
         if (!formData.value.removed_files) {

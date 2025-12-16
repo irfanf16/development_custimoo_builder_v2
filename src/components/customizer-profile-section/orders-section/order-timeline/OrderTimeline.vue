@@ -1,60 +1,81 @@
 <template>
   <!-- <div class="p-4 space-y-6"> -->
   <div class="flex flex-col gap-4 sm:gap-6 w-full">
-    <template v-for="(item, idx) in order.items || []" :key="`item-${idx}`">
-      <!-- class="border rounded p-3 w-full" -->
-      <TimeLine
-        :order-status="item.status"
-        :is-order-status="false"
-        :current-step="1"
-        :total-items="item.status_activities.length"
-        :direction="'vertical'"
-        :alternating="false"
+    <Tabs v-if="order.items && order.items.length > 0" v-model="activeTab">
+      <TabsList
+        class="grid w-1/2"
+        :style="{ gridTemplateColumns: `repeat(${order.items.length}, 1fr)` }"
       >
-        <TimeLineItem
-          v-for="(status_activity, isaIdx) in item.status_activities"
-          :key="`timeline-item-${isaIdx}`"
-          :attribution="getAttributionHtml(status_activity)"
-          :title="activityStatus[status_activity.status]?.title ?? ''"
-          :index="isaIdx"
-          :total-items="item.status_activities.length"
-          :alternating="false"
-          :activity-date-time="status_activity.created_at"
-          :icon="getActivityIcon(status_activity.status)"
-          :completed-icon="getActivityIcon(status_activity.status)"
-          :activity-user="status_activity.user"
+        <TabsTrigger
+          v-for="(_item, idx) in order.items"
+          :key="`tab-trigger-${idx}`"
+          :value="`factory-${idx}`"
         >
-          <TimeLineItemContent
-            :activity_content="
-              getActivityContent(
-                status_activity.activity_items,
-                status_activity.status,
-                order,
-                item
-              )
-            "
-            @show-preview="contentGroup => handleImagePreview(contentGroup)"
+          Factory {{ idx + 1 }}
+        </TabsTrigger>
+      </TabsList>
+      <template v-for="(item, idx) in order.items || []" :key="`item-${idx}`">
+        <TabsContent :value="`factory-${idx}`" class="mt-4">
+          <TimeLine
+            :order-status="item.status"
+            :is-order-status="false"
+            :current-step="1"
+            :total-items="item.status_activities.length"
+            :direction="'vertical'"
+            :alternating="false"
           >
-            <template #comments>
-              <CommentsList
-                :order_item_id="item.id as number"
-                :isa-idx="isaIdx"
-                :api-url="`/order_item/${status_activity.id}/comment`"
-                :current-user="currentUser"
-                :can-add-comments="canAddComments"
-                :can-edit-comments="canEditComments"
-                :can-delete-comments="canDeleteComments"
-                :initial-comments="status_activity.comments || []"
-                :storage-url="storageUrl"
-                @comments-updated="
-                  (comments: Comment[]) => handleCommentsUpdated(status_activity, comments)
+            <TimeLineItem
+              v-for="(status_activity, isaIdx) in item.status_activities"
+              :key="`timeline-item-${isaIdx}`"
+              :attribution="getAttributionHtml(status_activity)"
+              :title="getActivityTitle(status_activity, isaIdx, item.status_activities.length)"
+              :index="isaIdx"
+              :total-items="item.status_activities.length"
+              :alternating="false"
+              :activity-date-time="status_activity.created_at"
+              :icon="getActivityIcon(status_activity.status)"
+              :completed-icon="getActivityIcon(status_activity.status)"
+              :activity-user="status_activity.user"
+            >
+              <TimeLineItemContent
+                :activity-content="
+                  getActivityContent(
+                    status_activity.activity_items,
+                    status_activity.status,
+                    order,
+                    item
+                  )
                 "
-              />
-            </template>
-          </TimeLineItemContent>
-        </TimeLineItem>
-      </TimeLine>
-    </template>
+                :order="order"
+                :order-item="item"
+                :status-activity="status_activity"
+                :order-item-index="idx"
+                :status-activity-index="isaIdx"
+                @show-preview="contentGroup => handleImagePreview(contentGroup)"
+                @order-item-updated="updatedItem => handleOrderItemUpdated(idx, updatedItem)"
+              >
+                <template #comments>
+                  <CommentsList
+                    :order_item_id="item.id as number"
+                    :isa-idx="isaIdx"
+                    :api-url="`/order_item/${status_activity.id}/comment`"
+                    :current-user="currentUser"
+                    :can-add-comments="canAddComments"
+                    :can-edit-comments="canEditComments"
+                    :can-delete-comments="canDeleteComments"
+                    :initial-comments="status_activity.comments || []"
+                    :storage-url="storageUrl"
+                    @comments-updated="
+                      (comments: Comment[]) => handleCommentsUpdated(status_activity, comments)
+                    "
+                  />
+                </template>
+              </TimeLineItemContent>
+            </TimeLineItem>
+          </TimeLine>
+        </TabsContent>
+      </template>
+    </Tabs>
 
     <!-- Image Preview Dialog -->
     <ImagePreview
@@ -62,14 +83,17 @@
       :content_group="selectedContentGroup"
       :images="selectedImages"
     />
+
+    <!-- Quote Modal -->
+    <QuoteModal v-model:open="showQuoteModal" :order="order" @accepted="handleQuoteAccepted" />
   </div>
   <!-- </div> -->
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { storeToRefs } from 'pinia'
-  import type { Order, StatusActivity, Comment, ContentGroup } from '@/services/orders/types'
+  import type { Order, StatusActivity, Comment, ContentGroup, Item } from '@/services/orders/types'
   import { usePermissions } from '@/composables/usePermissions.ts'
   import CommentsList from '@/components/customizer-profile-section/orders-section/order-timeline/order-timeline-comments/CommentsList.vue'
   import { useAuthStore } from '@/stores/auth/auth.store'
@@ -78,8 +102,14 @@
   import TimeLineItem from '@/components/customizer-profile-section/orders-section/order-timeline/TimeLineItem.vue'
   import TimeLineItemContent from '@/components/customizer-profile-section/orders-section/order-timeline/TimeLineItemContent.vue'
   import ImagePreview from '@/components/customizer-profile-section/orders-section/order-timeline/ImagePreview.vue'
+  import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+  import QuoteModal from './QuoteModal.vue'
+  import { API } from '@/services'
+  import { useOrdersStore } from '@/stores/orders/orders.store'
+  import { tryCatchApi } from '@/stores/utils'
 
-  defineProps<{ order: Order }>()
+  const props = defineProps<{ order: Order }>()
+  const order = computed(() => props.order)
   const { activityStatus, CustimooOrderFlowStatuses, getActivityIcon, getActivityContent } =
     useOrderTimeline()
   const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
@@ -89,6 +119,17 @@
   const canDeleteComments = computed(() => can('delete-comment'))
   const { customer: currentUser } = storeToRefs(useAuthStore())
 
+  const activeTab = ref('factory-0')
+  const showQuoteModal = ref(false)
+  const ordersStore = useOrdersStore()
+
+  // Reset active tab when order changes
+  watch(
+    () => order.value?.id,
+    () => {
+      activeTab.value = 'factory-0'
+    }
+  )
   const showImagePreview = ref(false)
   const selectedContentGroup = ref<ContentGroup | undefined>(undefined)
   const selectedImages = ref<Array<{ url: string; alt?: string }> | undefined>(undefined)
@@ -110,6 +151,27 @@
 
   const handleCommentsUpdated = (activity: StatusActivity, comments: Comment[]) => {
     activity.comments = comments
+  }
+
+  const handleOrderItemUpdated = (itemIndex: number, updatedItem: Item) => {
+    if (order.value?.items) {
+      order.value.items[itemIndex] = updatedItem
+    }
+  }
+
+  const getActivityTitle = (
+    status_activity: StatusActivity,
+    activityIndex: number,
+    totalActivities: number
+  ): string => {
+    // Show "Artwork Updated" for factory review when it's not the last activity
+    if (
+      status_activity.status === CustimooOrderFlowStatuses.FACTORYREVIEW &&
+      activityIndex + 1 !== totalActivities
+    ) {
+      return 'Artwork Updated'
+    }
+    return activityStatus[status_activity.status as keyof typeof activityStatus]?.title ?? ''
   }
 
   const getAttributionHtml = (status_activity: StatusActivity): string => {
@@ -152,5 +214,19 @@
     }
     html += `</div>`
     return html
+  }
+
+  async function handleQuoteAccepted(orderToAccept: Order) {
+    const response = await tryCatchApi(API.orders.acceptQuote(orderToAccept.id))
+    if (response.success && response.content?.success) {
+      alert(response.content.message || 'Quote accepted successfully')
+      await ordersStore.fetchOrderDetails(orderToAccept.id)
+    } else {
+      alert(
+        response.content?.message ||
+          response.axiosError?.response?.data?.message ||
+          'Failed to accept quote'
+      )
+    }
   }
 </script>
