@@ -2,7 +2,7 @@ import http from '../api'
 import type { PermissionResponse } from './types'
 import type { AxiosResponse } from 'axios'
 
-const getPermissions = async (): Promise<AxiosResponse<PermissionResponse>> => {
+async function getPermissions(): Promise<AxiosResponse<PermissionResponse>> {
   return await http.get<PermissionResponse>(`permissions`)
 }
 

@@ -18,6 +18,6 @@ export const API = {
   orders: ordersService,
   customer: customerService,
   preferences: preferencesService,
-  lockers: lockerRoomService
+  lockers: lockerRoomService,
   permissions: permissionsService
 }
