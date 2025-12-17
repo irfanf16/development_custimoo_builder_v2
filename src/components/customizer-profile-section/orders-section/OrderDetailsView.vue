@@ -8,6 +8,8 @@
         @cancel="store.cancelOrder"
         @pdf="() => {}"
         @details="() => {}"
+        @accept-quote="handleAcceptQuote"
+        @reject-quote="handleRejectQuote"
       />
     </div>
 
@@ -134,19 +136,60 @@
         </div>
       </div>
     </div>
+
+    <!-- Quote Modal -->
+    <QuoteModal v-model:open="showQuoteModal" :order="order" @accepted="handleQuoteAccepted" />
   </div>
 </template>
 
 <script setup lang="ts">
-  import { defineProps, defineEmits } from 'vue'
+  import { ref } from 'vue'
   import { getStatusColor } from '@/helpers/orderStatuses'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
+  import QuoteModal from './order-timeline/QuoteModal.vue'
   import type { Order } from '@/services/orders/types'
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
   import { useOrdersStore } from '@/stores/orders/orders.store'
+  import { API } from '@/services'
+  import { tryCatchApi } from '@/stores/utils'
 
   defineProps<{ order: Order }>()
   defineEmits<{ (e: 'back'): void }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
   const store = useOrdersStore()
+  const showQuoteModal = ref(false)
+
+  async function handleAcceptQuote() {
+    showQuoteModal.value = true
+  }
+
+  async function handleRejectQuote(order: Order) {
+    if (!confirm('Are you sure you want to reject this quote?')) return
+
+    const response = await tryCatchApi(API.orders.rejectQuote(order.id))
+    if (response.success && response.content?.success) {
+      alert(response.content.message || 'Quote rejected successfully')
+      await store.fetchOrderDetails(order.id)
+    } else {
+      alert(
+        response.content?.message ||
+          response.axiosError?.response?.data?.message ||
+          'Failed to reject quote'
+      )
+    }
+  }
+
+  async function handleQuoteAccepted(order: Order) {
+    const response = await tryCatchApi(API.orders.acceptQuote(order.id))
+    if (response.success && response.content?.success) {
+      alert(response.content.message || 'Quote accepted successfully')
+      await store.fetchOrderDetails(order.id)
+    } else {
+      alert(
+        response.content?.message ||
+          response.axiosError?.response?.data?.message ||
+          'Failed to accept quote'
+      )
+    }
+  }
 </script>

@@ -7,6 +7,7 @@ import logosService from './logos/logos.service'
 import ordersService from './orders/orders.service'
 import preferencesService from './preferences/preferences.service'
 import productsService from './products/products.service'
+import permissionsService from './permissions/permissions.service'
 
 export const API = {
   authentication: authenticationService,
@@ -18,4 +19,5 @@ export const API = {
   customer: customerService,
   preferences: preferencesService,
   lockers: lockerRoomService
+  permissions: permissionsService
 }

@@ -1,9 +1,9 @@
 import http from '../api'
-import type { CancelOrderResponse, OrderDetailResponse } from './types'
+import type { CancelOrderResponse, CommentResponse, Order, OrderDetailResponse } from './types'
 
 export type OrdersResponse = {
   result: {
-    data: any[]
+    data: Order[]
     current_page: number
     per_page: number
     total: number
@@ -31,4 +31,68 @@ async function getOrderDetail(orderId: number | string): Promise<OrderDetailResp
   return data
 }
 
-export default { getOrders, cancelOrder, getOrderDetail }
+async function addComment(apiUrl: string, formData: FormData) {
+  return http.post<CommentResponse>(apiUrl, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+async function updateComment(apiUrl: string, commentId: number, formData: FormData) {
+  return http.post<CommentResponse>(`${apiUrl}/${commentId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+async function deleteComment(commentId: number) {
+  return http.delete<CommentResponse>(`order_item/${commentId}/delete_comment`)
+}
+
+async function submitOrderActivity(orderItemId: number | string, formData: FormData) {
+  return http.post(`customer-orders/${orderItemId}/order-activity`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+async function sendThirdPartyApproval(orderItemId: number | string, email: string) {
+  return http.post('admin/send-third-party-approval', {
+    email,
+    id: orderItemId
+  })
+}
+
+async function getDesignFileUrl(orderId: number | string) {
+  return http.get<{ result: { url: string } }>(`designfile/order/${orderId}`)
+}
+
+async function acceptQuote(orderId: number | string) {
+  return http.post<{ success: boolean; message?: string; result?: OrderDetailResponse['result'] }>(
+    'accept-quote-order',
+    { order_id: orderId }
+  )
+}
+
+async function rejectQuote(orderId: number | string) {
+  return http.post<{ success: boolean; message?: string }>('reject-quote-order', {
+    order_id: orderId
+  })
+}
+
+export default {
+  getOrders,
+  cancelOrder,
+  getOrderDetail,
+  addComment,
+  updateComment,
+  deleteComment,
+  submitOrderActivity,
+  sendThirdPartyApproval,
+  getDesignFileUrl,
+  acceptQuote,
+  rejectQuote
+}

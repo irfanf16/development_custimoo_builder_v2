@@ -11,6 +11,7 @@ import { API } from '../../services'
 import { tryCatchApi } from '../utils'
 import type { APIResponse } from '@/services/types'
 import { useLocalStorage } from '@/composables/useLocalStorage'
+import type { PermissionResponse, Permissions } from '@/services/permissions/types'
 
 export const useAuthStore = defineStore('authStore', () => {
   // ===== STATE =====
@@ -23,6 +24,7 @@ export const useAuthStore = defineStore('authStore', () => {
   const refreshPromise = ref<Promise<boolean> | null>(null)
   const encryptionKey = ref<CryptoKey | null>(null)
   const isHydrated = ref(false)
+  const permissions = ref<Permissions>()
 
   const hasWindow = typeof window !== 'undefined'
   const hasCryptoSupport = hasWindow && !!window.crypto?.subtle
@@ -461,6 +463,15 @@ export const useAuthStore = defineStore('authStore', () => {
     return output
   }
 
+  // ===== PERMISSIONS =====
+  async function getPermissions(): Promise<APIResponse<PermissionResponse>> {
+    const output = await tryCatchApi(API.permissions.getPermissions())
+    if (output.success) {
+      permissions.value = output.content.result
+    }
+    return output
+  }
+
   // ===== RETURN =====
   return {
     // State
@@ -471,6 +482,7 @@ export const useAuthStore = defineStore('authStore', () => {
     error,
     isRefreshing,
     isHydrated,
+    permissions,
     // Computed
     isAuthenticated,
     customerInitials,
@@ -494,6 +506,8 @@ export const useAuthStore = defineStore('authStore', () => {
     initCustomerAndAccessToken,
     login,
     logout,
-    register
+    register,
+    // Permissions
+    getPermissions
   }
 })
