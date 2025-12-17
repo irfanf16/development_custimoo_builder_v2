@@ -2,6 +2,7 @@
   import { ref, watch, onMounted } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useAuthStore } from '@/stores/auth/auth.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import {
     Dialog,
     DialogContent,
@@ -25,6 +26,9 @@
   import { toTypedSchema } from '@vee-validate/zod'
   import { z } from 'zod'
   import { API } from '@/services'
+
+  const uiStore = useUIStore()
+  const isMobile = uiStore.isMobile
 
   const props = withDefaults(
     defineProps<{
@@ -198,7 +202,7 @@
         <DialogTitle>Create Account</DialogTitle>
         <DialogDescription> Enter your information to create a new account. </DialogDescription>
       </DialogHeader>
-      <ScrollArea class="h-full overflow-y-auto">
+      <component :is="isMobile ? 'div' : ScrollArea" class="h-full overflow-y-auto">
         <form class="space-y-4" @submit.prevent="onSubmit">
           <FormField v-slot="{ componentField }" name="first_name">
             <FormItem>
@@ -327,7 +331,7 @@
             </div>
           </DialogFooter>
         </form>
-      </ScrollArea>
+      </component>
       <div class="text-center text-xs text-muted-foreground px-6 pb-4">
         By signing up, you agree to our
         <a href="#" class="text-primary hover:underline">Terms of Service</a>

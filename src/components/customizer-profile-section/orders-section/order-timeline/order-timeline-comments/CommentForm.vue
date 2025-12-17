@@ -146,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-  import type { Comment } from '@/services/orders/types'
+  import type { Comment, CommentFile } from '@/services/orders/types'
   import type { CommentFormData } from '@/services/orders/types'
   import { FileIcon, SendIcon, PaperclipIcon, XIcon } from 'lucide-vue-next'
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -192,7 +192,7 @@
         formData.value.message = props.editComment.message
 
         if (props.editComment.files?.length) {
-          const filePromises = props.editComment.files.map(async (f: any) => {
+          const filePromises = props.editComment.files.map(async (f: CommentFile) => {
             try {
               // fetch the blob from the file URL
               const response = await fetch(`${props.storageUrl}/${f.url}`)

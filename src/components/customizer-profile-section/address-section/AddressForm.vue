@@ -16,6 +16,7 @@
   import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
   import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import type { Address, AddressPayload } from '@/services/customers/types'
   import { m as messages } from '@/paraglide/messages'
   import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
@@ -27,6 +28,8 @@
   }>()
 
   const profileStore = useProfileStore()
+  const uiStore = useUIStore()
+  const isMobile = uiStore.isMobile
 
   const requiredMessage = (label: string) => `${label} is required`
   const emailMessage = (label: string) => `${label} must be a valid email address`
@@ -218,7 +221,7 @@
       </TabsList>
     </Tabs>
 
-    <ScrollArea class="flex-1 h-full overflow-y-auto">
+    <component :is="isMobile ? 'div' : ScrollArea" class="flex-1 h-full overflow-y-auto">
       <form class="space-y-4 h-full" @submit.prevent="onSubmit">
         <div class="grid gap-4 md:grid-cols-2">
           <FormField v-slot="{ field }" name="first_name">
@@ -466,6 +469,6 @@
           <Button type="submit" class="bg-primary text-white hover:text-white">{{ t.save }}</Button>
         </div>
       </form>
-    </ScrollArea>
+    </component>
   </div>
 </template>
