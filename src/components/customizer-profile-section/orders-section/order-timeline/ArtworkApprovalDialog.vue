@@ -18,7 +18,7 @@
           </div>
         </div>
       </DialogHeader>
-      <ScrollArea class="h-full overflow-y-auto">
+      <component :is="isMobile ? 'div' : ScrollArea" class="h-full overflow-y-auto">
         <div
           v-if="activityItems.length === 0"
           class="flex flex-col items-center justify-center py-12 px-4"
@@ -97,7 +97,7 @@
             </template>
           </div>
         </div>
-      </ScrollArea>
+      </component>
     </DialogContent>
   </Dialog>
 </template>
@@ -115,6 +115,10 @@
     SkipCustomerApproval
   } from '@/services/orders/types'
   import { ScrollArea } from '@/components/ui/scroll-area'
+  import { useUIStore } from '@/stores/ui/ui.store'
+
+  const uiStore = useUIStore()
+  const isMobile = uiStore.isMobile
 
   interface ActivityFile {
     file: string

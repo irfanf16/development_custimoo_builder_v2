@@ -1,5 +1,4 @@
 <script setup lang="ts">
-  import { defineProps } from 'vue'
   import type { Order } from '@/services/orders/types'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
@@ -18,7 +17,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 py-3 px-4 border-b transition-colors hover:bg-gray-50">
+  <div class="flex flex-col gap-2 py-3 px-4 border-b transition-colors hover:bg-muted/50">
     <!-- Top Row -->
     <OrderSummaryHeader
       :order="order"

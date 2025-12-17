@@ -1,5 +1,10 @@
 <script setup lang="ts">
-  import { defineEmits, onMounted, onUnmounted, ref, nextTick } from 'vue'
+  import { cn } from '@/lib/utils'
+  import { onMounted, onUnmounted, ref, nextTick, type HTMLAttributes } from 'vue'
+
+  const props = defineProps<{
+    class?: HTMLAttributes['class']
+  }>()
 
   const emit = defineEmits(['load-more'])
   const wrapperRef = ref<HTMLElement | null>(null)
@@ -42,7 +47,7 @@
 </script>
 
 <template>
-  <div ref="wrapperRef" class="h-full">
+  <div ref="wrapperRef" :class="cn('h-full', props.class)">
     <slot />
   </div>
 </template>

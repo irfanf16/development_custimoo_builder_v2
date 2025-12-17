@@ -21,10 +21,13 @@
   import { useOrdersStore } from '@/stores/orders/orders.store'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import { m as messages } from '@/paraglide/messages'
 
   const store = useOrdersStore()
   const profileStore = useProfileStore()
+  const uiStore = useUIStore()
+  const isMobile = uiStore.isMobile
 
   const t = computed(() => ({
     searchOrders: messages.profile_search_orders({}, { locale: profileStore.currentLocale }),
@@ -45,9 +48,6 @@
   const orderStatuses = computed(() => getOrderOptions(store.ordersPageType))
 
   onMounted(() => {
-    // Load persisted state
-    store.loadFromLocalStorage()
-
     // If on timeline view and activeOrder exists, fetch fresh details
     if (store.activeOrder?.id && store.activeOrderView === 'timeline') {
       store.fetchOrderDetails(store.activeOrder.id)
@@ -117,7 +117,9 @@
               size="sm"
               variant="outline"
               class="px-2 h-8 shadow-none"
-              :class="store.ordersParams.filter ? 'bg-primary text-white border-primary' : 'border'"
+              :class="
+                store.ordersParams.filter ? 'bg-primary text-foreground border-primary' : 'border'
+              "
             >
               <Filter class="size-4" />
             </Button>
@@ -127,14 +129,14 @@
             align="end"
             :position-strategy="'absolute'"
             :collision-padding="32"
-            class="bg-white rounded-lg shadow-md border p-0 mt-1 h-auto max-h-80 overflow-auto"
+            class="rounded-lg shadow-md border p-0 mt-1 h-auto max-h-80 overflow-auto"
           >
             <!-- Header -->
             <div class="px-3 py-2.5 font-semibold text-sm">{{ t.filter }}</div>
 
             <!-- Clear Filter -->
             <DropdownMenuItem
-              class="rounded-none px-3 py-2.5 text-sm justify-start gap-2 hover:bg-transparent"
+              class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
               @click="store.clearFilter()"
             >
               <span class="w-4"></span>
@@ -147,10 +149,10 @@
             <DropdownMenuItem
               v-for="status in orderStatuses"
               :key="status.value"
-              class="rounded-none px-3 py-2.5 text-sm justify-start gap-2 hover:bg-transparent"
+              class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
               :class="
                 status.value === store.ordersParams.filter
-                  ? 'bg-transparent text-foreground hover:bg-transparent'
+                  ? 'bg-transparent text-foreground'
                   : 'hover:bg-transparent'
               "
               @click="
@@ -215,9 +217,9 @@
       </div>
     </div>
     <!-- Orders List -->
-    <ScrollArea v-if="!store.activeOrder" class="flex-1 h-full overflow-y-auto">
-      <InfiniteScroll @load-more="loadMore">
-        <div v-if="store.orders.length">
+    <ScrollArea v-if="!store.activeOrder" class="flex-1 overflow-y-auto">
+      <InfiniteScroll :class="'w-full h-full relative'" @load-more="loadMore">
+        <div v-if="store.orders.length" class="absolute inset-0">
           <OrdersListItem
             v-for="order in store.orders"
             :key="order.id"
@@ -243,13 +245,25 @@
         </div>
       </InfiniteScroll>
     </ScrollArea>
-    <ScrollArea v-else class="flex-1 h-full overflow-y-auto">
+    <component
+      :is="isMobile ? 'div' : ScrollArea"
+      v-if="!isMobile && store.activeOrder"
+      class="flex-1 h-full overflow-y-auto"
+    >
       <OrderDetailsView
         v-if="store.activeOrderView === 'details'"
         :order="store.activeOrder"
         @back="store.closeOrderDetails"
       />
       <OrderTimeline v-else :order="store.activeOrder" />
-    </ScrollArea>
+    </component>
+    <div v-else-if="store.activeOrder" class="flex-1 h-full overflow-y-auto">
+      <OrderDetailsView
+        v-if="store.activeOrderView === 'details'"
+        :order="store.activeOrder"
+        @back="store.closeOrderDetails"
+      />
+      <OrderTimeline v-else :order="store.activeOrder" />
+    </div>
   </div>
 </template>
