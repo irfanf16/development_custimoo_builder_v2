@@ -1,9 +1,10 @@
 import type { Comment, CommentFormData, CommentResponse } from '@/services/orders/types'
 import { computed, nextTick, ref } from 'vue'
 import ordersService from '@/services/orders/orders.service'
-import { tryCatchApi } from '@/stores/utils'
+import { useTryCatchApi } from '@/composables/useTryCatchApi'
 
 export const useComments = () => {
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { composable: 'useComments' } })
   const comments = ref<Comment[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -93,7 +94,10 @@ export const useComments = () => {
     }
     form.append('order_item_id', order_item_id.toString())
 
-    const response = await tryCatchApi<CommentResponse>(ordersService.addComment(apiUrl, form))
+    const response = await tryCatchApi<CommentResponse>(ordersService.addComment(apiUrl, form), {
+      operation: 'addComment',
+      order_item_id
+    })
 
     if (response.success && response.content) {
       const newComment = response.content.result.item_activity_comment
@@ -146,7 +150,12 @@ export const useComments = () => {
     }
 
     const response = await tryCatchApi<CommentResponse>(
-      ordersService.updateComment(apiUrl, commentId, form)
+      ordersService.updateComment(apiUrl, commentId, form),
+      {
+        operation: 'updateComment',
+        comment_id: commentId,
+        order_item_id
+      }
     )
 
     if (response.success && response.content) {
@@ -173,7 +182,10 @@ export const useComments = () => {
     loading.value = true
     error.value = null
 
-    const response = await tryCatchApi<CommentResponse>(ordersService.deleteComment(commentId))
+    const response = await tryCatchApi<CommentResponse>(ordersService.deleteComment(commentId), {
+      operation: 'deleteComment',
+      comment_id: commentId
+    })
 
     if (response.success) {
       const newComments = comments.value.filter(c => c.id !== commentId)

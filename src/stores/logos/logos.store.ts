@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API } from '../../services'
-import { tryCatchApi } from '../utils'
+import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
 import type {
   CustomLogo,
@@ -14,7 +14,10 @@ import type {
 } from '../../services/logos/types'
 
 export const useLogosStore = defineStore('logosStore', () => {
-  // State
+  // ===== DEPENDENCIES =====
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'logosStore' } })
+
+  // ===== STATE =====
   const logos = ref<CustomLogo[] | null>(null) // Deprecated: kept for backward compat; main source is customization.custom_logos
   const recentLogos = ref<CustomLogo[] | null>(null)
   const activeLogo = ref<CustomLogo | null>(null)
@@ -58,7 +61,9 @@ export const useLogosStore = defineStore('logosStore', () => {
   async function fetchRecentLogos(): Promise<APIResponse<OutputRecentLogos>> {
     setLoadingRecentLogos(true)
     setError(null)
-    const response = await tryCatchApi(API.logos.getRecentLogos())
+    const response = await tryCatchApi(API.logos.getRecentLogos(), {
+      operation: 'fetchRecentLogos'
+    })
     if (response.success) {
       setRecentLogos(response.content.data)
     } else {
@@ -73,7 +78,9 @@ export const useLogosStore = defineStore('logosStore', () => {
   ): Promise<APIResponse<OutputUploadLogo>> {
     setLoadingUploadLogo(true)
     setError(null)
-    const response = await tryCatchApi(API.logos.uploadLogo(uploadLogoParams))
+    const response = await tryCatchApi(API.logos.uploadLogo(uploadLogoParams), {
+      operation: 'uploadLogo'
+    })
     if (response.success) {
       setLoadingUploadLogo(false)
       const created = response.content?.result?.customer_logo
@@ -100,7 +107,10 @@ export const useLogosStore = defineStore('logosStore', () => {
     // Optimistically remove the logo from state
     removeRecentLogo(Number(logoId))
 
-    const response = await tryCatchApi(API.logos.deleteRecentLogo(logoId))
+    const response = await tryCatchApi(API.logos.deleteRecentLogo(logoId), {
+      operation: 'deleteRecentLogo',
+      logo_id: logoId
+    })
     if (!response.success) {
       // Rollback - restore the original state
       setRecentLogos(originalLogos)
@@ -123,7 +133,10 @@ export const useLogosStore = defineStore('logosStore', () => {
       logo: customLogo.url,
       product_id: customLogo.product_id
     }
-    const response = await tryCatchApi(API.logos.updateAndPostNewLogo(updateAndPostNewLogoParams))
+    const response = await tryCatchApi(API.logos.updateAndPostNewLogo(updateAndPostNewLogoParams), {
+      operation: 'updateAndPostNewLogo',
+      logo_id: customLogo.id
+    })
     if (response.success) {
       // Add the logo to the active logo state
       const newLogo = { ...customLogo, ...response.content?.customer_logo }
@@ -145,7 +158,9 @@ export const useLogosStore = defineStore('logosStore', () => {
     editLogoParams: UpdateLogoParams
   ): Promise<APIResponse<OutputUpdateLogo>> {
     setError(null)
-    const response = await tryCatchApi(API.logos.editLogo(editLogoParams))
+    const response = await tryCatchApi(API.logos.editLogo(editLogoParams), {
+      operation: 'editLogo'
+    })
     if (response.success) {
       setError('Error editing logo')
     }

@@ -7,10 +7,14 @@ import type {
 } from '@/services/lockers/types'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { tryCatchApi } from '../utils'
-import { toast } from '@/components/ui/sonner'
+import { useTryCatchApi } from '@/composables/useTryCatchApi'
+import { toast } from 'vue-sonner'
 
 export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
+  // ===== DEPENDENCIES =====
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'lockerRoomStore' } })
+
+  // ===== STATE =====
   const lockers = ref<Locker[]>([])
   const isLoading = ref<boolean>(false)
   const error = ref<string | null>(null)
@@ -20,7 +24,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   async function fetchLockers() {
     isLoading.value = true
     error.value = null
-    const response = await tryCatchApi(API.lockers.getLockers())
+    const response = await tryCatchApi(API.lockers.getLockers(), {
+      operation: 'fetchLockers'
+    })
     if (response.success && response.content) {
       lockers.value = response.content.result
     } else {
@@ -31,7 +37,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   async function fetchLockerProducts(locker_id: number): Promise<Locker | undefined> {
     isLoading.value = true
     error.value = null
-    const resp = await tryCatchApi(API.lockers.getLockerProducts(locker_id))
+    const resp = await tryCatchApi(API.lockers.getLockerProducts(locker_id), {
+      operation: 'fetchLockerProducts',
+      locker_id
+    })
     if (resp.success && resp.content) {
       const data = resp.content.result
       lockers.value = lockers.value.map((l: Locker) =>
@@ -48,7 +57,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   async function createLocker(name: string) {
     isLoading.value = true
     error.value = null
-    const resp = await tryCatchApi(API.lockers.createLocker(name))
+    const resp = await tryCatchApi(API.lockers.createLocker(name), {
+      operation: 'createLocker'
+    })
     if (resp.success && resp.content) {
       setSuccessMessage('Locker created successfully')
       const data = resp.content.result
@@ -67,7 +78,11 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
 
   async function updateLockers(locker: Locker) {
     const resp = await tryCatchApi(
-      API.lockers.updateLocker({ id: locker.id, room_name: locker.room_name })
+      API.lockers.updateLocker({ id: locker.id, room_name: locker.room_name }),
+      {
+        operation: 'updateLockers',
+        locker_id: locker.id
+      }
     )
     if (!resp.success) {
       setError('Failed to update locker')
@@ -88,7 +103,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   }
 
   async function deleteLocker(id: number) {
-    const resp = await tryCatchApi(API.lockers.deleteLocker(id))
+    const resp = await tryCatchApi(API.lockers.deleteLocker(id), {
+      operation: 'deleteLocker',
+      locker_id: id
+    })
     if (!resp.success) {
       setError('Failed to delete locker')
       return
@@ -100,7 +118,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
 
   //Delete Locker Products
   async function deleteProducts(product_ids: number[], locker_id: number) {
-    const resp = await tryCatchApi(API.lockers.deleteProducts(product_ids, locker_id))
+    const resp = await tryCatchApi(API.lockers.deleteProducts(product_ids, locker_id), {
+      operation: 'deleteProducts',
+      locker_id
+    })
     if (!resp.success) {
       setError('Failed to delete products')
       return
@@ -135,7 +156,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       targetLocker.products_fetched = true
     })
 
-    const resp = await tryCatchApi(API.lockers.copyProducts(payload))
+    const resp = await tryCatchApi(API.lockers.copyProducts(payload), {
+      operation: 'copyProducts'
+    })
 
     if (!resp.success) {
       setError('Copy failed')
@@ -144,7 +167,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   }
 
   async function fetchLockerAssets(locker_id: number) {
-    const resp = await tryCatchApi(API.lockers.fetchLockerAssets(locker_id))
+    const resp = await tryCatchApi(API.lockers.fetchLockerAssets(locker_id), {
+      operation: 'fetchLockerAssets',
+      locker_id
+    })
     if (resp.success && resp.content) {
       const locker_index = lockers.value.findIndex(l => l.id === locker_id)
       if (locker_index !== -1) {
@@ -164,7 +190,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     locker_id: number,
     front_image: string
   ): Promise<boolean> {
-    const resp = await tryCatchApi(API.lockers.saveDesign(formData))
+    const resp = await tryCatchApi(API.lockers.saveDesign(formData), {
+      operation: 'saveDesignToLocker'
+    })
     if (!resp.success) {
       setError('Failed to save design')
       return false
@@ -182,7 +210,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   async function fetchCollections() {
     isLoading.value = true
     error.value = null
-    const resp = await tryCatchApi(API.lockers.getCollections())
+    const resp = await tryCatchApi(API.lockers.getCollections(), {
+      operation: 'fetchCollections'
+    })
     if (resp.success && resp.content) {
       collections.value = resp.content
     } else {
@@ -194,7 +224,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   async function fetchCollectionProducts(collection_id: number) {
     isLoading.value = true
     error.value = null
-    const resp = await tryCatchApi(API.lockers.getCollectionProducts(collection_id))
+    const resp = await tryCatchApi(API.lockers.getCollectionProducts(collection_id), {
+      operation: 'fetchCollectionProducts',
+      collection_id
+    })
     if (resp.success && resp.content) {
       collections.value = collections.value.map(c => {
         if (c.id === collection_id) {
@@ -228,7 +261,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   async function saveCollection(formData: FormData) {
     isLoading.value = true
     error.value = null
-    const resp = await tryCatchApi(API.lockers.saveCollection(formData))
+    const resp = await tryCatchApi(API.lockers.saveCollection(formData), {
+      operation: 'saveCollection'
+    })
     if (resp.success && resp.content) {
       await fetchCollections()
     } else {
@@ -239,7 +274,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   }
 
   async function deleteCollection(id: number) {
-    const resp = await tryCatchApi(API.lockers.deleteCollection(id))
+    const resp = await tryCatchApi(API.lockers.deleteCollection(id), {
+      operation: 'deleteCollection',
+      collection_id: id
+    })
     if (!resp.success) {
       setError('Failed to delete locker')
       return
@@ -251,7 +289,12 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
 
   // to get signed Image URL
   async function getSignedUrl(locker_id: number): Promise<SignedUrlResponse | undefined> {
-    return (await tryCatchApi(API.lockers.getSignedUrl(locker_id))).content?.result
+    return (
+      await tryCatchApi(API.lockers.getSignedUrl(locker_id), {
+        operation: 'getSignedUrl',
+        locker_id
+      })
+    ).content?.result
   }
 
   //error message

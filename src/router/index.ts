@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { isWidgetMode } from '@/lib/widgetUtils'
+import { usePostHog } from '@/composables/usePostHog'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -75,5 +76,9 @@ router.beforeEach((to, _from, next) => {
 
   next()
 })
+
+// @ts-expect-error - posthog initialization for side effects
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { posthog } = usePostHog()
 
 export default router

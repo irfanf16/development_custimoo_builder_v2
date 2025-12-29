@@ -41,8 +41,12 @@
   import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
   import { Button } from '@/components/ui/button'
   import type { Item, StatusActivity } from '@/services/orders/types'
-  import { tryCatchApi } from '@/stores/utils'
+  import { useTryCatchApi } from '@/composables/useTryCatchApi'
   import { API } from '@/services'
+
+  const { tryCatchApi } = useTryCatchApi({
+    defaultProperties: { component: 'ThirdPartyApprovalDialog' }
+  })
 
   interface Props {
     open?: boolean
@@ -90,7 +94,11 @@
     isSubmitting.value = true
 
     const response = await tryCatchApi(
-      API.orders.sendThirdPartyApproval(props.orderItem.id, approvalEmail.value)
+      API.orders.sendThirdPartyApproval(props.orderItem.id, approvalEmail.value),
+      {
+        operation: 'sendForApproval',
+        order_item_id: props.orderItem.id
+      }
     )
 
     if (response.success && response.content?.result?.activity_items && props.orderItem) {

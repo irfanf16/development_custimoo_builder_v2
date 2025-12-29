@@ -330,8 +330,17 @@
       console.error('Order item ID is missing')
       return
     }
-    const { tryCatchApi } = await import('@/stores/utils')
-    const response = await tryCatchApi(API.orders.submitOrderActivity(props.orderItem.id, formData))
+    const { useTryCatchApi } = await import('@/composables/useTryCatchApi')
+    const { tryCatchApi } = useTryCatchApi({
+      defaultProperties: { component: 'ArtworkApprovalDialog' }
+    })
+    const response = await tryCatchApi(
+      API.orders.submitOrderActivity(props.orderItem.id, formData),
+      {
+        operation: 'submitActivity',
+        order_item_id: props.orderItem.id
+      }
+    )
 
     if (response.success && response.content?.result?.order_item) {
       emit('approved', response.content.result.order_item)
