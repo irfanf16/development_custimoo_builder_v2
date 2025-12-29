@@ -542,7 +542,10 @@ export function useLoadLockerProductIntoCustomizer() {
         }
       }
 
-      await productsStore.fetchStylePreviews(productId)
+      await Promise.all([
+        productsStore.fetchStylePreviews(productId),
+        productsStore.fetchDesignPreviewsByStyleId(styleId)
+      ])
 
       if (styleId && productsStore.activeStyleDetails?.id !== styleId) {
         const activeStyleResp = await productsStore.fetchActiveStyleDetails(styleId)
