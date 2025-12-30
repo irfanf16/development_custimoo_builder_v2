@@ -60,7 +60,7 @@ async function submitOrderActivity(orderItemId: number | string, formData: FormD
 }
 
 async function sendThirdPartyApproval(orderItemId: number | string, email: string) {
-  return http.post('admin/send-third-party-approval', {
+  return http.post('send-third-party-approval', {
     email,
     id: orderItemId
   })

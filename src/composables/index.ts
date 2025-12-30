@@ -1,4 +1,5 @@
 export { useAppInitialization } from './useAppInitialization'
+export { useThirdPartyApprovalInitialization } from './useThirdPartyApprovalInitialization'
 export { useColorActions } from './useColorActions'
 export { useBrandStyling } from './useBrandStyling'
 export { useCustomizerMenu } from './useCustomizerMenu'

@@ -24,6 +24,16 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/third-party-approval/:order_item_id',
+    name: 'ThirdPartyApproval',
+    component: () => import('@/views/ThirdPartyApproval.vue'),
+    meta: {
+      layout: 'third-party-approval',
+      intitializationType: 'third-party-approval',
+      title: 'Third Party Approval'
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFound.vue'),

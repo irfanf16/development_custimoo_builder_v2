@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useRoute } from 'vue-router'
-  import { DefaultLayout } from './index'
+  import { DefaultLayout, ThirdPartyApprovalLayout } from './index'
 
   const route = useRoute()
 
@@ -16,6 +16,10 @@
 
       case 'auth':
         return DefaultLayout // For now, using DefaultLayout for auth too
+
+      case 'third-party-approval':
+        return ThirdPartyApprovalLayout
+
       default:
         return DefaultLayout
     }
