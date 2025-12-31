@@ -15,6 +15,20 @@ export type OutputProductLogosSetting = LogoPlacementBase & {
   length: number
 }
 
+export type OutputProductLogoTechnology = {
+  currency_code: string
+  currency_name: string
+  currency_symbol: string
+  is_default: 0 | 1
+  label: string
+  net_price: number
+  preselected: 0 | 1
+  price: number
+  product_id: number
+  product_logo_setting_id: number
+  sku_id: number
+}
+
 export type OutputRecentLogo = {
   id: number
   company_id: number

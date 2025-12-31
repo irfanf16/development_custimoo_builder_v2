@@ -1,6 +1,6 @@
 import type { OutputProductColor } from './colors'
 import type { OutputAddon, OutputCompanyAddon } from './addons'
-import type { OutputProductLogosSetting } from './logos'
+import type { OutputProductLogosSetting, OutputProductLogoTechnology } from './logos'
 import type { OutputProductPattern } from './patterns'
 import type { OutputFont, OutputSize, OutputProductText } from './texts'
 
@@ -73,6 +73,7 @@ export type OutputProductDetails = OutputProductPreview & {
   product_addons: OutputAddon[]
   company_addons: OutputCompanyAddon[]
   active_addons: OutputAddon[]
+  logo_technologies: Record<number, OutputProductLogoTechnology[]>
   logos_setting: OutputProductLogosSetting[]
   patterns: OutputProductPattern[]
   colors: OutputProductColor[]
