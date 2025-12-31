@@ -14,13 +14,14 @@ import type {
   OutputDesignPreviewFront
 } from '@/services/products/types'
 import { API } from '../../services'
-import { tryCatchApi } from '../utils'
+import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
 import { useCustomizationStore } from '../customization/customization.store'
 import type { CanvasSide } from '../workflow/workflow.store.types'
 export const useProductsStore = defineStore('productsStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'productsStore' } })
 
   // ===== INTERNAL FLAGS =====
   let customizationAutoSyncSuspendCount = 0
@@ -186,7 +187,9 @@ export const useProductsStore = defineStore('productsStore', () => {
       personalized: true,
       private: false
     }
-    const output = await tryCatchApi(API.products.getProductCategories(queryParams))
+    const output = await tryCatchApi(API.products.getProductCategories(queryParams), {
+      operation: 'fetchCustomizedCategories'
+    })
     if (output.success) {
       setCategories(output.content)
 
@@ -207,7 +210,12 @@ export const useProductsStore = defineStore('productsStore', () => {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(
-      API.products.getProductPreviewsByCategory(categoryId ?? null, subcategoryId ?? undefined)
+      API.products.getProductPreviewsByCategory(categoryId ?? null, subcategoryId ?? undefined),
+      {
+        operation: 'fetchProductPreviews',
+        category_id: categoryId,
+        subcategory_id: subcategoryId
+      }
     )
     if (resp.success) {
       productPreviews.value = resp.content as unknown as ProductPreviewItem[]
@@ -221,7 +229,10 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchStylePreviews(productId: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(API.products.getStylePreviewsByProduct(productId))
+    const resp = await tryCatchApi(API.products.getStylePreviewsByProduct(productId), {
+      operation: 'fetchStylePreviews',
+      product_id: productId
+    })
     if (resp.success) {
       stylePreviews.value = resp.content as unknown as OutputStylePreviewFront[]
     }
@@ -233,7 +244,11 @@ export const useProductsStore = defineStore('productsStore', () => {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(
-      API.products.getActiveStyleDetails(styleId, customization.customization?.design_name)
+      API.products.getActiveStyleDetails(styleId, customization.customization?.design_name),
+      {
+        operation: 'fetchActiveStyleDetails',
+        style_id: styleId
+      }
     )
     if (resp.success) {
       const payload = resp.content
@@ -251,7 +266,10 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchActiveProductDetails(productId: number) {
     setLoading(true)
     setError(null)
-    const result = await tryCatchApi(API.products.getActiveProductDetails(productId))
+    const result = await tryCatchApi(API.products.getActiveProductDetails(productId), {
+      operation: 'fetchActiveProductDetails',
+      product_id: productId
+    })
     if (result.success && result.content) {
       const details = result.content
       setActiveProductDetailsState(details.productDetails)
@@ -281,7 +299,10 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchDesignPreviewsByStyleId(styleId: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(API.products.getDesignPreviewsByStyleId(styleId))
+    const resp = await tryCatchApi(API.products.getDesignPreviewsByStyleId(styleId), {
+      operation: 'fetchDesignPreviewsByStyleId',
+      style_id: styleId
+    })
     if (resp.success) {
       designPreviews.value = resp.content as OutputDesignPreviewFront[]
     } else {
@@ -294,12 +315,20 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchProductDetailsAndDesignsForProductPreview(productId: number) {
     setLoading(true)
     setError(null)
-    const productDetailsPromise = tryCatchApi(API.products.getActiveProductDetails(productId))
+    const productDetailsPromise = tryCatchApi(API.products.getActiveProductDetails(productId), {
+      operation: 'fetchProductDetailsAndDesignsForProductPreview',
+      product_id: productId
+    })
+    const styleId =
+      productPreviews.value?.find(preview => preview.productPreview.id === productId)?.stylePreview
+        .id ?? 0
     const designPreviewsByStyleIdPromise = tryCatchApi(
-      API.products.getDesignPreviewsByStyleId(
-        productPreviews.value?.find(preview => preview.productPreview.id === productId)
-          ?.stylePreview.id ?? 0
-      )
+      API.products.getDesignPreviewsByStyleId(styleId),
+      {
+        operation: 'fetchProductDetailsAndDesignsForProductPreview',
+        product_id: productId,
+        style_id: styleId
+      }
     )
     const [responseProductDetails, responseDesignPreviewsByStyleId] = await Promise.all([
       productDetailsPromise,
@@ -356,7 +385,10 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchDesignDetailsById(designId: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(API.products.getDesignDetailsById(designId))
+    const resp = await tryCatchApi(API.products.getDesignDetailsById(designId), {
+      operation: 'fetchDesignDetailsById',
+      design_id: designId
+    })
     if (resp.success) {
       activeDesignDetails.value = resp.content as unknown as OutputDesignDetails
     } else {

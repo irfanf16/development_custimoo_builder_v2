@@ -6,7 +6,7 @@ import {
   type OutputSettingsResponse
 } from '@/services/company/types'
 import { API } from '../../services'
-import { tryCatchApi } from '../utils'
+import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
 
 // ---------------- Language configuration types ----------------
@@ -80,6 +80,10 @@ const DEFAULT_LANGUAGES: LanguageConfig[] = [
 
 // ---------------- Pinia Store ----------------
 export const useCompanyStore = defineStore('companyStore', () => {
+  // ===== DEPENDENCIES =====
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'companyStore' } })
+
+  // ===== STATE =====
   const company = ref<Company | null>(null)
   const settings = ref<OutputSettings | null>(null)
   const localization = ref<CompanyLocalization>({
@@ -154,7 +158,9 @@ export const useCompanyStore = defineStore('companyStore', () => {
   async function fetchCompany(): Promise<APIResponse<{ company: Company }>> {
     setLoading(true)
     setError(null)
-    const response = await tryCatchApi(API.company.getCompany())
+    const response = await tryCatchApi(API.company.getCompany(), {
+      operation: 'fetchCompany'
+    })
     if (response.success) {
       setCompany(response.content.company)
     } else {
@@ -167,7 +173,9 @@ export const useCompanyStore = defineStore('companyStore', () => {
   async function fetchSettings(): Promise<APIResponse<OutputSettingsResponse>> {
     setLoading(true)
     setError(null)
-    const output = await tryCatchApi(API.company.getSettings())
+    const output = await tryCatchApi(API.company.getSettings(), {
+      operation: 'fetchSettings'
+    })
 
     if (output.success) {
       setSettings(output.content.result)

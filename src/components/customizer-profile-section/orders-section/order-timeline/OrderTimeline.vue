@@ -106,7 +106,7 @@
   import QuoteModal from './QuoteModal.vue'
   import { API } from '@/services'
   import { useOrdersStore } from '@/stores/orders/orders.store'
-  import { tryCatchApi } from '@/stores/utils'
+  import { useTryCatchApi } from '@/composables/useTryCatchApi'
 
   const props = defineProps<{ order: Order }>()
   const order = computed(() => props.order)
@@ -118,6 +118,7 @@
   const canEditComments = computed(() => can('edit-comment'))
   const canDeleteComments = computed(() => can('delete-comment'))
   const { customer: currentUser } = storeToRefs(useAuthStore())
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { component: 'OrderTimeline' } })
 
   const activeTab = ref('factory-0')
   const showQuoteModal = ref(false)
@@ -217,7 +218,10 @@
   }
 
   async function handleQuoteAccepted(orderToAccept: Order) {
-    const response = await tryCatchApi(API.orders.acceptQuote(orderToAccept.id))
+    const response = await tryCatchApi(API.orders.acceptQuote(orderToAccept.id), {
+      operation: 'handleQuoteAccepted',
+      order_id: orderToAccept.id
+    })
     if (response.success && response.content?.success) {
       alert(response.content.message || 'Quote accepted successfully')
       await ordersStore.fetchOrderDetails(orderToAccept.id)

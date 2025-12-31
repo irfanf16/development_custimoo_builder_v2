@@ -1,4 +1,5 @@
 export { useAppInitialization } from './useAppInitialization'
+export { useThirdPartyApprovalInitialization } from './useThirdPartyApprovalInitialization'
 export { useColorActions } from './useColorActions'
 export { useBrandStyling } from './useBrandStyling'
 export { useCustomizerMenu } from './useCustomizerMenu'
@@ -9,6 +10,7 @@ export { useProfileDialogState } from './useProfileDialogState'
 export { useLocalStorage } from './useLocalStorage'
 export { useSignIn, type LogoutOptions } from './useSignIn'
 export { useResetCustomization } from './useResetCustomization'
+export { useTryCatchApi, type UseTryCatchApiOptions } from './useTryCatchApi'
 export {
   useRenderQueue,
   usePreviousLogoState,

@@ -151,12 +151,13 @@
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
   import { useOrdersStore } from '@/stores/orders/orders.store'
   import { API } from '@/services'
-  import { tryCatchApi } from '@/stores/utils'
+  import { useTryCatchApi } from '@/composables/useTryCatchApi'
 
   defineProps<{ order: Order }>()
   defineEmits<{ (e: 'back'): void }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
   const store = useOrdersStore()
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { component: 'OrderDetailsView' } })
   const showQuoteModal = ref(false)
 
   async function handleAcceptQuote() {
@@ -166,7 +167,10 @@
   async function handleRejectQuote(order: Order) {
     if (!confirm('Are you sure you want to reject this quote?')) return
 
-    const response = await tryCatchApi(API.orders.rejectQuote(order.id))
+    const response = await tryCatchApi(API.orders.rejectQuote(order.id), {
+      operation: 'handleRejectQuote',
+      order_id: order.id
+    })
     if (response.success && response.content?.success) {
       alert(response.content.message || 'Quote rejected successfully')
       await store.fetchOrderDetails(order.id)
@@ -180,7 +184,10 @@
   }
 
   async function handleQuoteAccepted(order: Order) {
-    const response = await tryCatchApi(API.orders.acceptQuote(order.id))
+    const response = await tryCatchApi(API.orders.acceptQuote(order.id), {
+      operation: 'handleQuoteAccepted',
+      order_id: order.id
+    })
     if (response.success && response.content?.success) {
       alert(response.content.message || 'Quote accepted successfully')
       await store.fetchOrderDetails(order.id)

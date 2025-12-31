@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { tryCatchApi } from '@/stores/utils'
+import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import lockersService from '@/services/lockers/lockers.service'
@@ -478,6 +478,9 @@ function updatePresetTextsWithLockerFlags(
 
 export function useLoadLockerProductIntoCustomizer() {
   const isLoading = ref(false)
+  const { tryCatchApi } = useTryCatchApi({
+    defaultProperties: { composable: 'useLoadLockerProductIntoCustomizer' }
+  })
 
   async function loadLockerProductIntoCustomizer(
     lockerProductId: number,
@@ -489,7 +492,10 @@ export function useLoadLockerProductIntoCustomizer() {
     isLoading.value = true
     productsStore.suspendCustomizationAutoSync()
     try {
-      const resp = await tryCatchApi(lockersService.getLockerProductDetails(lockerProductId))
+      const resp = await tryCatchApi(lockersService.getLockerProductDetails(lockerProductId), {
+        operation: 'loadLockerProductIntoCustomizer',
+        locker_product_id: lockerProductId
+      })
 
       const lockerResult: unknown =
         resp.success && resp.content?.result
@@ -542,7 +548,10 @@ export function useLoadLockerProductIntoCustomizer() {
         }
       }
 
-      await productsStore.fetchStylePreviews(productId)
+      await Promise.all([
+        productsStore.fetchStylePreviews(productId),
+        productsStore.fetchDesignPreviewsByStyleId(styleId)
+      ])
 
       if (styleId && productsStore.activeStyleDetails?.id !== styleId) {
         const activeStyleResp = await productsStore.fetchActiveStyleDetails(styleId)

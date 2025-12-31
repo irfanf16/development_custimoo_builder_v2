@@ -48,7 +48,7 @@
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
   import { useLoadLockerProductIntoCustomizer } from '@/composables/useLoadLockerProductIntoCustomizer.ts'
-  import { toast } from '@/components/ui/sonner'
+  import { toast } from 'vue-sonner'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()

@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { isWidgetMode } from '@/lib/widgetUtils'
+import { usePostHog } from '@/composables/usePostHog'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -20,6 +21,16 @@ const routes: RouteRecordRaw[] = [
     meta: {
       layout: 'auth',
       title: 'Authentication'
+    }
+  },
+  {
+    path: '/third-party-approval/:order_item_id',
+    name: 'ThirdPartyApproval',
+    component: () => import('@/views/ThirdPartyApproval.vue'),
+    meta: {
+      layout: 'third-party-approval',
+      intitializationType: 'third-party-approval',
+      title: 'Third Party Approval'
     }
   },
   {
@@ -75,5 +86,9 @@ router.beforeEach((to, _from, next) => {
 
   next()
 })
+
+// @ts-expect-error - posthog initialization for side effects
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { posthog } = usePostHog()
 
 export default router

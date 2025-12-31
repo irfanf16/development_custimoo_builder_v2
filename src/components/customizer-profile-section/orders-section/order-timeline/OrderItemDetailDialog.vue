@@ -156,8 +156,12 @@
   import type { FactoryProduct, Order } from '@/services/orders/types'
   import type { APCustomizationRosterEntry } from '@/services/products/types/customization'
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
-  import { tryCatchApi } from '@/stores/utils'
+  import { useTryCatchApi } from '@/composables/useTryCatchApi'
   import { API } from '@/services'
+
+  const { tryCatchApi } = useTryCatchApi({
+    defaultProperties: { component: 'OrderItemDetailDialog' }
+  })
 
   interface Props {
     open?: boolean
@@ -248,7 +252,10 @@
   async function handleDownloadPdf() {
     if (!props.order?.id) return
 
-    const response = await tryCatchApi(API.orders.getDesignFileUrl(props.order.id))
+    const response = await tryCatchApi(API.orders.getDesignFileUrl(props.order.id), {
+      operation: 'handleDownloadPdf',
+      order_id: props.order.id
+    })
     if (response.success && response.content?.result?.url) {
       window.open(response.content.result.url, '_blank')
     } else if (!response.success) {

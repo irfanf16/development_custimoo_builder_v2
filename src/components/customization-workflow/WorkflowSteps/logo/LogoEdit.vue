@@ -20,8 +20,11 @@
     SelectGroup,
     SelectValue
   } from '@/components/ui/select'
-  import type { OutputColor } from '@/services/products/types'
+  import type { OutputColor, OutputProductLogoTechnology } from '@/services/products/types'
+  import type { CustomLogo } from '@/services/logos/types'
   import LogoCard from './LogoCard.vue'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { Checkbox } from '@/components/ui/checkbox'
   import { useLogoActions, type BackgroundRemovalMode } from './useLogoActions'
   import { useLogos } from './useLogos'
   import { useLogoPlacements, type PlacementOption } from './useLogoPlacements'
@@ -64,6 +67,7 @@
   const productsStore = useProductsStore()
   const historyStore = useHistoryStore()
   const profileStore = useProfileStore()
+  const customizationStore = useCustomizationStore()
 
   // ===== COMPOSABLES =====
   const { productKey, getLogoById, getActiveLogoIndex } = useLogos()
@@ -85,6 +89,20 @@
   const customLogo = computed(() => {
     if (props.logoId) return getLogoById(props.logoId)
     return logosStore.activeLogo
+  })
+
+  const logoTechnologies = computed(() => {
+    const technologies = productsStore.activeProductDetails?.logo_technologies
+    if (!technologies) return []
+
+    // logo_technologies is an object with keys being product_logo_setting_id
+    // Get the current placement ID to look up the correct technologies
+    const placementId = positionForm.placementOption?.placementId
+    if (!placementId) return []
+
+    // Look up technologies by placement ID (product_logo_setting_id)
+    const technologiesForPlacement = technologies[placementId]
+    return Array.isArray(technologiesForPlacement) ? technologiesForPlacement : []
   })
 
   const colorSwatches = computed(() =>
@@ -131,6 +149,7 @@
 
   const removingBackgroundMode = ref<BackgroundRemovalMode | null>(null)
   const isRecoloring = ref(false)
+  const selectedLogoTechnology = ref<OutputProductLogoTechnology | null>(null)
 
   async function handleRemoveBackground(type: BackgroundRemovalMode) {
     if (!customLogo.value || !productKey.value) return
@@ -243,11 +262,54 @@
     handleHeightInput(value)
   }
 
+  function selectLogoTechnology(technology: OutputProductLogoTechnology) {
+    if (!customLogo.value || !productKey.value) return
+
+    // Toggle selection: if already selected, deselect; otherwise select
+    if (selectedLogoTechnology.value?.sku_id === technology.sku_id) {
+      selectedLogoTechnology.value = null
+    } else {
+      selectedLogoTechnology.value = technology
+    }
+
+    // Update the logo in customization store
+    const logoIndex = getActiveLogoIndex(customLogo.value.id)
+    if (logoIndex === -1) return
+
+    const map = customizationStore.customization?.custom_logos
+    if (!map) return
+    const arr = map[productKey.value]
+    if (!arr || logoIndex < 0 || logoIndex >= arr.length) return
+
+    // Update logo with technology (using type assertion since logo_technology is not in the base type)
+    const updatedLogo = {
+      ...arr[logoIndex],
+      logo_technology: selectedLogoTechnology.value
+    } as CustomLogo & { logo_technology?: OutputProductLogoTechnology | null }
+
+    arr[logoIndex] = updatedLogo as CustomLogo
+    customizationStore.saveToLocalStorage()
+
+    // Update active logo if it's the same one
+    if (logosStore.activeLogo?.id === customLogo.value.id) {
+      logosStore.setActiveLogo(updatedLogo as CustomLogo)
+    }
+  }
+
   // Watch for logo changes and sync form
   watch(
     customLogo,
     logo => {
       syncFormWithLogo(logo)
+      // Initialize selected logo technology from logo
+      if (logo) {
+        const logoWithTech = logo as CustomLogo & {
+          logo_technology?: OutputProductLogoTechnology | null
+        }
+        selectedLogoTechnology.value = logoWithTech.logo_technology || null
+      } else {
+        selectedLogoTechnology.value = null
+      }
     },
     { immediate: true }
   )
@@ -269,7 +331,48 @@
       />
     </div>
 
-    <Accordion type="multiple" :default-value="['position', 'recolor']" class="space-y-4">
+    <Accordion type="multiple" class="space-y-4">
+      <AccordionItem
+        v-if="logoTechnologies.length > 0"
+        value="technologies"
+        class="overflow-hidden"
+      >
+        <AccordionTrigger class="mx-4 md:mx-6 py-4">
+          <div
+            class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
+          >
+            <span class="text-base font-semibold">Logo Technology</span>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent class="space-y-6 px-4 md:px-6 py-5">
+          <div class="space-y-3 text-left">
+            <div
+              v-for="(technology, index) in logoTechnologies"
+              :key="technology.sku_id"
+              class="flex items-center space-x-2"
+            >
+              <Checkbox
+                :id="`logo-tech-${index}`"
+                :checked="selectedLogoTechnology?.sku_id === technology.sku_id"
+                @update:checked="() => selectLogoTechnology(technology)"
+              />
+              <Label
+                :for="`logo-tech-${index}`"
+                class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                @click="selectLogoTechnology(technology)"
+              >
+                {{ technology.label }}
+                <template v-if="technology.price">
+                  <span class="text-muted-foreground ml-1">
+                    +{{ technology.price }}{{ technology.currency_symbol }}
+                  </span>
+                </template>
+              </Label>
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+
       <AccordionItem value="position" class="overflow-hidden">
         <AccordionTrigger class="mx-4 md:mx-6 py-4">
           <div

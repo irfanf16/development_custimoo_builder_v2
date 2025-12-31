@@ -8,12 +8,15 @@ import {
   type OutputSignup
 } from '@/services/authentication/types'
 import { API } from '../../services'
-import { tryCatchApi } from '../utils'
+import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import type { PermissionResponse, Permissions } from '@/services/permissions/types'
 
 export const useAuthStore = defineStore('authStore', () => {
+  // ===== DEPENDENCIES =====
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'authStore' } })
+
   // ===== STATE =====
   const customer = ref<Customer | null>(null)
   const accessToken = ref<string | null>(null)
@@ -226,7 +229,9 @@ export const useAuthStore = defineStore('authStore', () => {
     const operation = (async () => {
       isRefreshing.value = true
       try {
-        const response = await tryCatchApi(API.authentication.refreshToken(tokenToRefresh))
+        const response = await tryCatchApi(API.authentication.refreshToken(tokenToRefresh), {
+          operation: 'refreshAccessToken'
+        })
 
         if (response.success && response.content) {
           const { access_token, refresh_token, user } = response.content
@@ -440,7 +445,9 @@ export const useAuthStore = defineStore('authStore', () => {
   async function login(input: InputLogin): Promise<APIResponse<OutputLogin>> {
     setLoading(true)
     setError(null)
-    const output = await tryCatchApi(API.authentication.postLogin(input))
+    const output = await tryCatchApi(API.authentication.postLogin(input), {
+      operation: 'login'
+    })
     if (output.success) {
       await initCustomerAndAccessToken(output.content)
     } else {
@@ -453,7 +460,9 @@ export const useAuthStore = defineStore('authStore', () => {
   async function register(input: InputSignup): Promise<APIResponse<OutputSignup>> {
     setLoading(true)
     setError(null)
-    const output = await tryCatchApi(API.authentication.postRegister(input))
+    const output = await tryCatchApi(API.authentication.postRegister(input), {
+      operation: 'register'
+    })
     if (output.success) {
       await initCustomerAndAccessToken(output.content)
     } else {
@@ -465,7 +474,9 @@ export const useAuthStore = defineStore('authStore', () => {
 
   // ===== PERMISSIONS =====
   async function getPermissions(): Promise<APIResponse<PermissionResponse>> {
-    const output = await tryCatchApi(API.permissions.getPermissions())
+    const output = await tryCatchApi(API.permissions.getPermissions(), {
+      operation: 'getPermissions'
+    })
     if (output.success) {
       permissions.value = output.content.result
     }
