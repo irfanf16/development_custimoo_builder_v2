@@ -20,7 +20,8 @@
     LogOut,
     LogIn,
     LayoutGrid,
-    Fullscreen
+    Fullscreen,
+    Ruler
   } from 'lucide-vue-next'
   import {
     topbar_save,
@@ -38,7 +39,7 @@
   import SignInDialog from '@/components/auth/SignInDialog.vue'
   import { CartDialog } from '@/components/cart'
   import { useSignIn } from '@/composables/useSignIn'
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import LockerBrowser from '@/components/LockerBrowser.vue'
@@ -46,6 +47,7 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useProductsStore } from '@/stores/products/products.store'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
   import { useLoadLockerProductIntoCustomizer } from '@/composables/useLoadLockerProductIntoCustomizer.ts'
@@ -55,6 +57,7 @@
   const profileStore = useProfileStore()
   const authStore = useAuthStore()
   const customizationStore = useCustomizationStore()
+  const productsStore = useProductsStore()
   const history = useHistoryStore()
   const workflowStore = useWorkflowStore()
   const { menuItems, goTo } = useCustomizerMenu()
@@ -68,6 +71,10 @@
   const showLockerBrowser = ref(false)
   const showCartDialog = ref(false)
   const showSaveDesignDialog = ref(false)
+  const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
+
+  const skuInformation = computed(() => productsStore.skuInformation)
+
   // Methods
   async function handleResetCustomization() {
     const ok = await confirmDialog({
@@ -214,6 +221,21 @@
           </DropdownMenuContent>
         </DropdownMenu>
       </ButtonGroup>
+
+      <!-- Size Guide Button -->
+      <ButtonGroup v-if="!uiStore.isMobile && skuInformation?.image_url">
+        <Button
+          variant="outline"
+          size="default"
+          as="a"
+          target="_blank"
+          :href="`${storageUrl}${skuInformation.image_url}`"
+        >
+          <Ruler class="size-4" />
+          <span>Size Guide</span>
+        </Button>
+      </ButtonGroup>
+
       <!-- Locker Room Button -->
       <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
         <Button size="default" @click="showLockerBrowser = true">

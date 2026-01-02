@@ -11,7 +11,8 @@ import type {
   OutputRecentLogo,
   OutputProductDetails,
   OutputSvgGroupColor,
-  OutputDesignPreviewFront
+  OutputDesignPreviewFront,
+  OutputSkuInformation
 } from '@/services/products/types'
 import { API } from '../../services'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
@@ -40,6 +41,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   const activeProductDetails = ref<OutputProductDetails | null>(null)
   const activeStyleDetails = ref<OutputStyleDetails | null>(null)
   const activeDesignDetails = ref<OutputDesignDetails | null>(null)
+  const skuInformation = ref<OutputSkuInformation | null>(null)
   const svgGroupsFront = ref<OutputSvgGroupColor[]>([])
   const svgGroupsBack = ref<OutputSvgGroupColor[]>([])
   const svgGroups = computed<OutputSvgGroupColor[]>(() => {
@@ -106,6 +108,10 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function setActiveDesignDetailsState(payload: OutputDesignDetails | null) {
     activeDesignDetails.value = payload
+  }
+
+  function setSkuInformation(payload: OutputSkuInformation) {
+    skuInformation.value = payload
   }
 
   // Addons setters to avoid direct mutations from components
@@ -275,6 +281,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       setActiveProductDetailsState(details.productDetails)
       setActiveStyleDetailsState(details.styleDetails)
       setActiveDesignDetailsState(details.designDetails)
+      await fetchSkuInformation(productId)
       customization.setProduct(productId)
       customization.setStyle(details.styleDetails.id)
       customization.setDesign(details.designDetails)
@@ -382,6 +389,22 @@ export const useProductsStore = defineStore('productsStore', () => {
     }
   }
 
+  async function fetchSkuInformation(productId: number) {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.getSkuInformation(productId), {
+      operation: 'fetchSkuInformation',
+      product_id: productId
+    })
+    if (resp.success) {
+      setSkuInformation(resp.content)
+    } else {
+      setError('Error getting SKU information')
+    }
+    setLoading(false)
+    return resp
+  }
+
   async function fetchDesignDetailsById(designId: number) {
     setLoading(true)
     setError(null)
@@ -460,6 +483,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     activeRenderMode,
     svgGroups,
     initialSvgGroups,
+    skuInformation,
     //activeAddons,
     //productAddons,
     //companyAddons,
@@ -498,6 +522,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     fetchActiveProductDetails,
     fetchActiveStyleDetails,
     fetchProductDetailsAndDesignsForProductPreview,
+    fetchSkuInformation,
     //fetchProductAddons,
     fetchDesignPreviewsByStyleId,
     fetchDesignDetailsById,

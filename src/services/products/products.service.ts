@@ -9,7 +9,8 @@ import {
   type OutputDesignPreviewBack,
   type OutputStylePreviewFront,
   type OutputDesignDetails,
-  type ActiveStyleDetails
+  type ActiveStyleDetails,
+  type OutputSkuInformation
 } from '@/services/products/types'
 // import type { OutputRecentLogo } from '@/services/products/types'
 
@@ -22,6 +23,10 @@ async function getProductCategories(params: GetProductCategoriesParams) {
 // Fetch full details for the active product
 async function getActiveProductDetails(productId: number) {
   return await http.get<ActiveProductDetails>(`product/${productId}`)
+}
+
+async function getSkuInformation(productId: number) {
+  return await http.get<OutputSkuInformation>(`product-sku/information/${productId}`)
 }
 
 // Fetch lightweight previews for all products in a category
@@ -70,5 +75,6 @@ export default {
   getStylePreviewsByProduct,
   getActiveStyleDetails,
   getDesignDetailsById,
+  getSkuInformation,
   downloadRosterTemplate
 }
