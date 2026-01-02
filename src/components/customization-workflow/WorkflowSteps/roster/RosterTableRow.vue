@@ -19,7 +19,8 @@
     roster_table_name,
     roster_table_number,
     roster_table_quantity,
-    roster_table_size
+    roster_table_size,
+    ui_aria_select_row
   } from '@/paraglide/messages'
   import type { RosterColumnKey } from './types'
 
@@ -153,7 +154,7 @@
     <RadioGroupItem
       :value="props.value"
       class="flex items-center justify-center"
-      aria-label="Select row"
+      :aria-label="ui_aria_select_row({}, { locale })"
     />
 
     <Input

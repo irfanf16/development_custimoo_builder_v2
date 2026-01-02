@@ -105,30 +105,30 @@
               <div class="flex flex-wrap items-center gap-2">
                 <button
                   class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
-                  title="Save"
+                  :title="orders_action_save({}, { locale })"
                 >
-                  <i-flex-line-save class="size-4" /> Save
+                  <i-flex-line-save class="size-4" /> {{ orders_action_save({}, { locale }) }}
                 </button>
 
                 <button
                   class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
-                  title="Share"
+                  :title="orders_action_share({}, { locale })"
                 >
-                  <i-flex-line-share class="size-4" /> Share
+                  <i-flex-line-share class="size-4" /> {{ orders_action_share({}, { locale }) }}
                 </button>
 
                 <button
                   class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
-                  title="Add to Cart"
+                  :title="orders_action_add_to_cart({}, { locale })"
                 >
-                  <i-flex-line-cart class="size-4" /> Cart
+                  <i-flex-line-cart class="size-4" /> {{ topbar_cart({}, { locale }) }}
                 </button>
 
                 <button
                   class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
-                  title="Reorder"
+                  :title="orders_action_reorder({}, { locale })"
                 >
-                  <i-flex-line-reorder class="size-4" /> Reorder
+                  <i-flex-line-reorder class="size-4" /> {{ orders_action_reorder({}, { locale }) }}
                 </button>
               </div>
             </div>
@@ -143,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, computed } from 'vue'
   import { getStatusColor } from '@/helpers/orderStatuses'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
   import QuoteModal from './order-timeline/QuoteModal.vue'
@@ -152,13 +152,23 @@
   import { useOrdersStore } from '@/stores/orders/orders.store'
   import { API } from '@/services'
   import { useTryCatchApi } from '@/composables/useTryCatchApi'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    orders_action_save,
+    orders_action_share,
+    orders_action_add_to_cart,
+    orders_action_reorder,
+    topbar_cart
+  } from '@/paraglide/messages'
 
   defineProps<{ order: Order }>()
   defineEmits<{ (e: 'back'): void }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
   const store = useOrdersStore()
+  const profileStore = useProfileStore()
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { component: 'OrderDetailsView' } })
   const showQuoteModal = ref(false)
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   async function handleAcceptQuote() {
     showQuoteModal.value = true

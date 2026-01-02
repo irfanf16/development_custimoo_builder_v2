@@ -4,6 +4,13 @@
   import { Card } from '@/components/ui/card'
   import { Input } from '@/components/ui/input'
   import type { CollectionProduct } from '@/services/lockers/types'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    locker_description_placeholder,
+    locker_product_nickname_label,
+    locker_product_description_label,
+    locker_price_label
+  } from '@/paraglide/messages'
   const props = withDefaults(
     defineProps<{
       products?: CollectionProduct[]
@@ -29,6 +36,8 @@
   )
 
   const isDragging = ref(false)
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
 </script>
@@ -61,17 +70,26 @@
       <!-- Form (hidden while dragging) -->
       <div v-if="!isDragging" class="space-y-2">
         <div>
-          <label class="text-xs text-muted-foreground"> Product nickname </label>
+          <label class="text-xs text-muted-foreground">{{
+            locker_product_nickname_label({}, { locale })
+          }}</label>
           <Input v-model="element.product_nickname" />
         </div>
 
         <div>
-          <label class="text-xs text-muted-foreground"> Product description </label>
-          <Input v-model="element.product_note" placeholder="Description" />
+          <label class="text-xs text-muted-foreground">{{
+            locker_product_description_label({}, { locale })
+          }}</label>
+          <Input
+            v-model="element.product_note"
+            :placeholder="locker_description_placeholder({}, { locale })"
+          />
         </div>
 
         <div>
-          <label class="text-xs text-muted-foreground"> Price </label>
+          <label class="text-xs text-muted-foreground">{{
+            locker_price_label({}, { locale })
+          }}</label>
           <Input v-model="element.product_price" type="number" placeholder="50" />
         </div>
       </div>

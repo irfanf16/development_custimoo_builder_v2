@@ -107,8 +107,26 @@
                 {{ (customer?.first_name || '') + ' ' + (customer?.last_name || '') }}
               </div>
               <div v-else class="flex gap-2">
-                <Input v-model="firstName" placeholder="First Name" class="w-32" />
-                <Input v-model="lastName" placeholder="Last Name" class="w-32" />
+                <Input
+                  v-model="firstName"
+                  :placeholder="
+                    messages.account_first_name_placeholder(
+                      {},
+                      { locale: profileStore.currentLocale }
+                    )
+                  "
+                  class="w-32"
+                />
+                <Input
+                  v-model="lastName"
+                  :placeholder="
+                    messages.account_last_name_placeholder(
+                      {},
+                      { locale: profileStore.currentLocale }
+                    )
+                  "
+                  class="w-32"
+                />
               </div>
               <div class="text-sm text-muted-foreground">{{ customer?.email }}</div>
             </div>

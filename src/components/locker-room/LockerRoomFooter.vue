@@ -13,6 +13,32 @@
   import type LockerProductsListing from './LockerProductsListing.vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import CopyProductsDialog from '@/components/locker-room/CopyProductsDialog.vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    locker_delete_products_title,
+    locker_delete_products_description,
+    locker_delete_products_title_plural,
+    locker_delete_products_description_plural,
+    locker_delete_locker_confirm,
+    locker_action_cannot_undo,
+    locker_delete_collection_confirm,
+    locker_cancel_confirm_title,
+    locker_cancel_confirm_description,
+    locker_cancel,
+    locker_add_to_cart,
+    locker_add_to_collection,
+    locker_selected,
+    locker_unselect_all_products,
+    locker_select_all,
+    locker_move,
+    locker_copy,
+    locker_save,
+    locker_cancel_creation,
+    locker_delete
+  } from '@/paraglide/messages'
+
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
 
@@ -54,9 +80,20 @@
 
   const deleteProducts = async () => {
     if (products.value.length) {
+      const isPlural = products.value.length > 1
       const ok = await confirmDialog({
-        title: `Delete ${products.value.length} Product${products.value.length > 1 ? 's' : ''}`,
-        description: `Are you sure you want to delete ${products.value.length > 1 ? 'all these products' : 'this product'}? This action cannot be undone.`
+        title: isPlural
+          ? locker_delete_products_title_plural(
+              { count: products.value.length },
+              { locale: locale.value }
+            )
+          : locker_delete_products_title(
+              { count: products.value.length },
+              { locale: locale.value }
+            ),
+        description: isPlural
+          ? locker_delete_products_description_plural({}, { locale: locale.value })
+          : locker_delete_products_description({}, { locale: locale.value })
       })
       if (ok) {
         lockerRoomStore.deleteProducts(
@@ -69,8 +106,8 @@
   const deleteLockers = async () => {
     if (lockerRoom.value) {
       const ok = await confirmDialog({
-        title: 'Delete Locker?',
-        description: 'This action cannot be undone.'
+        title: locker_delete_locker_confirm({}, { locale: locale.value }),
+        description: locker_action_cannot_undo({}, { locale: locale.value })
       })
       if (ok) {
         emit('back')
@@ -81,8 +118,8 @@
   const deleteCollection = async () => {
     if (currentCollection.value) {
       const ok = await confirmDialog({
-        title: 'Delete Collection?',
-        description: 'This action cannot be undone.'
+        title: locker_delete_collection_confirm({}, { locale: locale.value }),
+        description: locker_action_cannot_undo({}, { locale: locale.value })
       })
       if (ok) {
         emit('back')
@@ -92,8 +129,8 @@
   }
   const handleCancel = async () => {
     const ok = await confirmDialog({
-      title: 'Are you sure you want to cancel?',
-      description: "By confirming you'll lose access to all the progress made so far."
+      title: locker_cancel_confirm_title({}, { locale: locale.value }),
+      description: locker_cancel_confirm_description({}, { locale: locale.value })
     })
     if (ok) {
       emit('cancel-collection-creation')
@@ -118,14 +155,14 @@
       v-if="props.currentMode === 'list' && !isCreatingCollection"
       class="flex justify-end gap-2 pt-4 border-t w-full"
     >
-      <Button variant="ghost">Cancel</Button>
+      <Button variant="ghost">{{ locker_cancel({}, { locale }) }}</Button>
       <Button
         v-if="!isCreatingCollection"
         :disabled="selectedLockers.length === 0"
         class="disabled:opacity-25"
         variant="primary"
       >
-        <ShoppingBasket class="w-4 h-4" /> Add to cart
+        <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
       </Button>
 
       <Button
@@ -134,7 +171,7 @@
         class="disabled:opacity-25"
         variant="primary"
       >
-        Add to Collection
+        {{ locker_add_to_collection({}, { locale }) }}
       </Button>
     </div>
     <div
@@ -158,7 +195,7 @@
             :class="'overflow-hidden mr-2'"
             :avatar-class="'!rounded-[13px] border p-1 !ring-0 !bg-secondary !shadow-none '"
           />
-          <span class="ml-1">{{ products.length }} selected</span>
+          <span class="ml-1">{{ products.length }} {{ locker_selected({}, { locale }) }}</span>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
@@ -169,7 +206,9 @@
                   ><X class="size-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent align="center" side="bottom"> Unselect all products </TooltipContent>
+              <TooltipContent align="center" side="bottom">
+                {{ locker_unselect_all_products({}, { locale }) }}
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </span>
@@ -178,21 +217,21 @@
           class="mr-3"
           variant="outline"
           @click="props.lockerProductsRef?.selecteAllProducts()"
-          >Select all</Button
+          >{{ locker_select_all({}, { locale }) }}</Button
         >
         <div
           v-if="!isCreatingCollection && currentTab === 'lockers' && detailsTab === 'products'"
           class="flex items-center gap-1"
         >
           <Button :disabled="products.length === 0" variant="outline">
-            <FolderArchive class="size-4" /> Move
+            <FolderArchive class="size-4" /> {{ locker_move({}, { locale }) }}
           </Button>
           <Button
             :disabled="products.length !== 1 && products.length <= 0"
             variant="outline"
             @click="showCopyDialog = true"
           >
-            <Copy class="size-4" /> Copy
+            <Copy class="size-4" /> {{ locker_copy({}, { locale }) }}
           </Button>
         </div>
       </div>
@@ -220,7 +259,7 @@
           :disabled="selectedProducts.length === 0"
           @click="emit('create-collection')"
         >
-          <PlusIcon class="size-4" /> Add to collection</Button
+          <PlusIcon class="size-4" /> {{ locker_add_to_collection({}, { locale }) }}</Button
         >
         <Button
           v-if="currentTab === 'collections' && collectionCreationStep === 2"
@@ -228,7 +267,7 @@
           class="ml-1"
           @click="emit('save-collection')"
         >
-          Save</Button
+          {{ locker_save({}, { locale }) }}</Button
         >
         <Button
           v-if="!isCreatingCollection && currentTab === 'lockers'"
@@ -236,7 +275,7 @@
           class="ml-1"
           :disabled="selectedProducts.length === 0"
         >
-          <ShoppingBasket class="w-4 h-4" /> Add to cart
+          <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
         </Button>
         <template v-if="!isCreatingCollection">
           <Separator
@@ -245,11 +284,11 @@
             class="h-full mx-5"
           />
           <Button variant="ghost" class="text-destructive" @click="handleDelete">
-            <TrashIcon class="size-4 text-destructive" /> Delete
+            <TrashIcon class="size-4 text-destructive" /> {{ locker_delete({}, { locale }) }}
           </Button>
         </template>
         <Button v-else variant="outline" class="text-destructive ml-2" @click="handleCancel">
-          Cancel Creation
+          {{ locker_cancel_creation({}, { locale }) }}
         </Button>
       </div>
     </div>

@@ -107,7 +107,7 @@
                   <textarea
                     v-model="comments"
                     rows="3"
-                    placeholder="A short note about what type of comments make sense.."
+                    :placeholder="cart_note_placeholder({}, { locale })"
                     class="mt-1 w-full px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   />
                 </div>
@@ -154,6 +154,11 @@
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { Pencil, Trash2 } from 'lucide-vue-next'
   import { useCart } from './useCart'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { cart_note_placeholder } from '@/paraglide/messages'
+
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   const props = defineProps<{ open: boolean }>()
   const emit = defineEmits<{ 'update:open': [value: boolean] }>()

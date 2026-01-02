@@ -9,6 +9,11 @@
   import { toast } from 'vue-sonner'
   import { ChevronLeft, ChevronRight, Check, X } from 'lucide-vue-next'
   import type { ApprovalDetail } from '@/services/orders/thirdPartyApproval.service'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { feedback_placeholder } from '@/paraglide/messages'
+
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   const approvalInit = useThirdPartyApprovalInitialization()
   const storageUrl = import.meta.env.VITE_APP_STORAGE_URL || ''
@@ -307,7 +312,7 @@
               <Textarea
                 id="feedback"
                 v-model="pendingFeedback"
-                placeholder="Enter your feedback here..."
+                :placeholder="feedback_placeholder({}, { locale })"
                 rows="4"
                 class="w-full"
               />

@@ -70,7 +70,7 @@
       <textarea
         ref="inputAreaRef"
         v-model="formData.message"
-        placeholder="Write your comment here..."
+        :placeholder="comment_placeholder({}, { locale })"
         rows="3"
         class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
         :disabled="loading"
@@ -152,9 +152,13 @@
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { storeToRefs } from 'pinia'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { comment_placeholder } from '@/paraglide/messages'
 
   const authStore = useAuthStore()
   const { customer: currentUser } = storeToRefs(authStore)
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   interface Props {
     mode?: 'add' | 'edit' | 'reply'

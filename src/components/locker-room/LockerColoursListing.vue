@@ -5,6 +5,8 @@
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { storeToRefs } from 'pinia'
   import { computed, onMounted, type ComputedRef } from 'vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { locker_use_in_design } from '@/paraglide/messages'
 
   type ColourProps = {
     colour_group: Colour[]
@@ -12,6 +14,8 @@
   }
 
   const props = defineProps<{ locker: Locker }>()
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
   const lockerStore = useLockerRoomStore()
   const { lockers } = storeToRefs(lockerStore)
 
@@ -59,7 +63,7 @@
       <!-- Metadata -->
       <div class="flex flex-col items-center justify-center gap-2">
         <div class="mt-2 text-sm text-center font-medium">{{ color.group_name }}</div>
-        <Button variant="outline" class="w-full">Use In Design</Button>
+        <Button variant="outline" class="w-full">{{ locker_use_in_design({}, { locale }) }}</Button>
       </div>
     </Card>
   </div>

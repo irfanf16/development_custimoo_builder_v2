@@ -13,6 +13,27 @@
   import { Check, X, Calendar, ShoppingBag, InfoIcon } from 'lucide-vue-next'
   import { timeAgo } from '@/lib/utils'
   import AvatarQueue from '../ui/avatar-queue/AvatarQueue.vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    locker_name_placeholder,
+    locker_designs_count,
+    locker_auto_generated,
+    locker_auto_generated_tooltip,
+    time_ago_just_now,
+    time_ago_seconds,
+    time_ago_seconds_plural,
+    time_ago_minutes,
+    time_ago_minutes_plural,
+    time_ago_hours,
+    time_ago_hours_plural,
+    time_ago_days,
+    time_ago_days_plural,
+    time_ago_yesterday,
+    time_ago_months,
+    time_ago_months_plural,
+    time_ago_years,
+    time_ago_years_plural
+  } from '@/paraglide/messages'
   const props = withDefaults(
     defineProps<{
       search: null | string
@@ -30,8 +51,10 @@
     'open-collection'
   ])
   const lockerRoomStore = useLockerRoomStore()
+  const profileStore = useProfileStore()
   const isCreatingCollection = ref<boolean>(false)
   const { isLoading, collections } = storeToRefs(lockerRoomStore)
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   onMounted(() => {
     if (!collections.value.length) {
@@ -48,6 +71,31 @@
       c.name.toLowerCase().includes(props.search?.toLowerCase() || '')
     )
   })
+
+  const timeAgoMessages = computed(() => ({
+    just_now: () => time_ago_just_now({}, { locale: locale.value }),
+    seconds: (params: { count: number }) => time_ago_seconds(params, { locale: locale.value }),
+    seconds_plural: (params: { count: number }) =>
+      time_ago_seconds_plural(params, { locale: locale.value }),
+    minutes: (params: { count: number }) => time_ago_minutes(params, { locale: locale.value }),
+    minutes_plural: (params: { count: number }) =>
+      time_ago_minutes_plural(params, { locale: locale.value }),
+    hours: (params: { count: number }) => time_ago_hours(params, { locale: locale.value }),
+    hours_plural: (params: { count: number }) =>
+      time_ago_hours_plural(params, { locale: locale.value }),
+    days: (params: { count: number }) => time_ago_days(params, { locale: locale.value }),
+    days_plural: (params: { count: number }) =>
+      time_ago_days_plural(params, { locale: locale.value }),
+    yesterday: () => time_ago_yesterday({}, { locale: locale.value }),
+    months: (params: { count: number }) => time_ago_months(params, { locale: locale.value }),
+    months_plural: (params: { count: number }) =>
+      time_ago_months_plural(params, { locale: locale.value }),
+    years: (params: { count: number }) => time_ago_years(params, { locale: locale.value }),
+    years_plural: (params: { count: number }) =>
+      time_ago_years_plural(params, { locale: locale.value })
+  }))
+
+  const localizedTimeAgo = (dateTime: string) => timeAgo(dateTime, timeAgoMessages.value)
 
   function createCollection() {
     isCreatingCollection.value = true
@@ -116,7 +164,11 @@
         class="metadata flex gap-2 pt-2 items-center"
         @click.stop
       >
-        <Input v-model="editName" placeholder="Locker name" class="flex-1" />
+        <Input
+          v-model="editName"
+          :placeholder="locker_name_placeholder({}, { locale })"
+          class="flex-1"
+        />
 
         <ButtonGroup>
           <Button variant="primary" size="default" @click.stop="saveEdit(collection)">
@@ -139,12 +191,13 @@
         <div class="text-sm text-muted-foreground flex gap-1 items-center">
           <span class="flex items-center gap-1">
             <ShoppingBag class="size-3.5 inline-block" />
-            {{ collection.collection_products.length }} designs
+            {{ collection.collection_products.length }}
+            {{ locker_designs_count({}, { locale }) }}
           </span>
           <DotSeparator class="bg-muted-foreground" />
           <span class="flex items-center gap-1">
             <Calendar class="size-3.5 inline-block" />
-            {{ timeAgo(collection.updated_at) }}
+            {{ localizedTimeAgo(collection.updated_at) }}
           </span>
           <template v-if="collection.room_id">
             <DotSeparator class="bg-muted-foreground" />
@@ -153,10 +206,10 @@
                 <TooltipTrigger>
                   <span class="flex items-center gap-1">
                     <InfoIcon class="size-3.5 inline-block" />
-                    Auto Generated
+                    {{ locker_auto_generated({}, { locale }) }}
                   </span>
                 </TooltipTrigger>
-                <TooltipContent> Created and synced with locker </TooltipContent>
+                <TooltipContent>{{ locker_auto_generated_tooltip({}, { locale }) }}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </template>

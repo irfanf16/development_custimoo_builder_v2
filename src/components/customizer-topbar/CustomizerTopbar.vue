@@ -27,7 +27,8 @@
     topbar_locker_room,
     topbar_cart,
     topbar_save_options,
-    actions_reset_customization
+    actions_reset_customization,
+    ui_aria_user_menu
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import SignInButton from '@/components/auth/SignInButton.vue'
@@ -237,7 +238,7 @@
             <Button
               variant="outline"
               size="icon"
-              aria-label="User menu"
+              :aria-label="ui_aria_user_menu({}, { locale: profileStore.currentLocale })"
               class="rounded-l-md rounded-r-md"
             >
               <Menu class="size-4" />

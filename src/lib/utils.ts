@@ -131,7 +131,25 @@ export function formatDate(dateStr?: string): string {
 }
 
 // To get date-time in past toned responses like: 1d ago, 2h ago, 3m ago
-export function timeAgo(dateTime: string): string {
+export function timeAgo(
+  dateTime: string,
+  messages?: {
+    just_now: () => string
+    seconds: (params: { count: number }) => string
+    seconds_plural: (params: { count: number }) => string
+    minutes: (params: { count: number }) => string
+    minutes_plural: (params: { count: number }) => string
+    hours: (params: { count: number }) => string
+    hours_plural: (params: { count: number }) => string
+    days: (params: { count: number }) => string
+    days_plural: (params: { count: number }) => string
+    yesterday: () => string
+    months: (params: { count: number }) => string
+    months_plural: (params: { count: number }) => string
+    years: (params: { count: number }) => string
+    years_plural: (params: { count: number }) => string
+  }
+): string {
   const now = new Date()
   const past = new Date(dateTime)
 
@@ -139,24 +157,58 @@ export function timeAgo(dateTime: string): string {
 
   const seconds = Math.floor((now.getTime() - past.getTime()) / 1000)
 
-  if (seconds < 5) return 'just now'
-  if (seconds < 60) return `${seconds} seconds ago`
+  if (seconds < 5) return messages?.just_now() || 'just now'
+  if (seconds < 60) {
+    return messages
+      ? seconds === 1
+        ? messages.seconds({ count: seconds })
+        : messages.seconds_plural({ count: seconds })
+      : `${seconds} seconds ago`
+  }
 
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`
+  if (minutes < 60) {
+    return messages
+      ? minutes === 1
+        ? messages.minutes({ count: minutes })
+        : messages.minutes_plural({ count: minutes })
+      : `${minutes} minute${minutes === 1 ? '' : 's'} ago`
+  }
 
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+  if (hours < 24) {
+    return messages
+      ? hours === 1
+        ? messages.hours({ count: hours })
+        : messages.hours_plural({ count: hours })
+      : `${hours} hour${hours === 1 ? '' : 's'} ago`
+  }
 
   const days = Math.floor(hours / 24)
-  if (days === 1) return 'yesterday'
-  if (days < 30) return `${days} days ago`
+  if (days === 1) return messages?.yesterday() || 'yesterday'
+  if (days < 30) {
+    return messages
+      ? days === 1
+        ? messages.days({ count: days })
+        : messages.days_plural({ count: days })
+      : `${days} days ago`
+  }
 
   const months = Math.floor(days / 30)
-  if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`
+  if (months < 12) {
+    return messages
+      ? months === 1
+        ? messages.months({ count: months })
+        : messages.months_plural({ count: months })
+      : `${months} month${months === 1 ? '' : 's'} ago`
+  }
 
   const years = Math.floor(days / 365)
-  return `${years} year${years === 1 ? '' : 's'} ago`
+  return messages
+    ? years === 1
+      ? messages.years({ count: years })
+      : messages.years_plural({ count: years })
+    : `${years} year${years === 1 ? '' : 's'} ago`
 }
 
 export function loadCustomFont(url: string, fontFamily: string): Promise<void> {
