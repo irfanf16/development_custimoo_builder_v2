@@ -3,12 +3,12 @@
     onMounted,
     onBeforeUnmount,
     computed,
-    ref,
     watch,
     nextTick,
     getCurrentInstance,
     type Ref,
-    type ComponentPublicInstance
+    type ComponentPublicInstance,
+    shallowRef
   } from 'vue'
   import { FabricImage, Canvas, type FabricObject } from 'fabric'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -19,8 +19,15 @@
     useSceneCommon,
     useSvgGroups,
     useColorCustomization,
-    useColorGrouping
+    useColorGrouping,
+    addLogoToCanvas,
+    setupFabricControls,
+    deleteLogoFromCanvas,
+    syncLogosOnCanvas,
+    getLogoSignature,
+    getLogoSignatureUrlSide
   } from '@/composables/scene'
+  import type { CustomLogo } from '@/services/logos/types'
   import {
     getImageFrom2DCanvas,
     type GetImageFromCanvasOptions
@@ -33,9 +40,10 @@
   const sceneStore = useSceneStore()
 
   // Canvas refs
-  const canvasEl = ref<HTMLCanvasElement | null>(null)
-  const designObject = ref<FabricObject | FabricImage | null>(null)
-  const modelObjects = ref<(FabricObject | FabricImage)[]>([])
+  const canvasEl = shallowRef<HTMLCanvasElement | null>(null)
+  const designObject = shallowRef<FabricObject | FabricImage | null>(null)
+  const modelObjects = shallowRef<(FabricObject | FabricImage)[]>([])
+  const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
 
   // Model type based on style preview structure
   type ModelData = {
@@ -118,6 +126,29 @@
 
   // ===== COLOR GROUPING =====
   const colorGrouping = useColorGrouping(toRef(props, 'colorGrouping'))
+
+  // ===== CUSTOM LOGOS =====
+  // Get custom_logos from customization store by product_id
+  const customLogos = computed<CustomLogo[]>(() => {
+    const productId = effectiveProductId.value
+    if (!productId || !customizationStore.customization) return []
+    const key = String(productId)
+    const all = customizationStore.customization.custom_logos?.[key] || []
+    // Filter by current side (front/back)
+    const currentSideLogos = all.filter((logo: CustomLogo) => logo.side === props.side)
+    return currentSideLogos
+      ? (filterFields(currentSideLogos, [
+          'url',
+          'side',
+          'x_axis',
+          'y_axis',
+          'height',
+          'rotation',
+          'scaleX',
+          'scaleY'
+        ]) as CustomLogo[])
+      : []
+  })
 
   // ===== COLOR CUSTOMIZATION COMPOSABLE =====
   const colorCustomization = useColorCustomization(
@@ -235,6 +266,14 @@
 
     initCanvas(canvasEl.value, props.canvasWidth, props.canvasHeight)
 
+    // Setup custom Fabric controls with icons (scale/rotate/delete)
+    setupFabricControls({
+      onRemoveLogo: (logoIndex: number, canvasInstance: Canvas) => {
+        deleteLogoFromCanvas(logoIndex, canvasInstance, customLogoObjects)
+      }
+      // Text removal can be added here if needed
+    })
+
     // Ensure canvas is initialized before loading scene
     if (canvas.value) {
       loadScene()
@@ -339,6 +378,9 @@
     bringModelToFront()
 
     canvas.value.requestRenderAll()
+
+    // Load logos after scene is loaded
+    await resetAndAddLogos()
   }
 
   // All customization functions are now provided by useColorCustomization composable
@@ -401,9 +443,128 @@
     }
   })
 
-  // Expose function for external use
+  // ===== LOGO UTILITIES =====
+  function calculatePosition2D(logoData: CustomLogo): { x: number; y: number } {
+    return {
+      x: (props.canvasWidth / (props.mainCanvasWidth || 600)) * logoData.x_axis,
+      y: (props.canvasHeight / (props.mainCanvasHeight || 600)) * logoData.y_axis
+    }
+  }
+
+  function calculateRotation2D(rotation: number): number {
+    if (rotation < 0) {
+      return 360 - rotation
+    }
+    return rotation
+  }
+
+  function calculateScaleRatios2D() {
+    return {
+      widthRatio: props.canvasWidth / (props.mainCanvasWidth || 600),
+      heightRatio: props.canvasHeight / (props.mainCanvasHeight || 600)
+    }
+  }
+
+  /**
+   * Add logo to canvas (2D scene)
+   * Uses the shared composable with 2D-specific configuration
+   */
+  async function addLogo(logo: CustomLogo, logoIndex: number): Promise<void> {
+    if (!canvas.value) return
+
+    if (!logo || !logo.url) return
+
+    // Check if logo side matches current side
+    if (logo.side !== props.side) return
+
+    // Apply clipping (placeholder - can be extended with applyClipPath)
+    const applyClipping = async (_img: FabricImage, _side: 'front' | 'back') => {
+      // TODO: Implement applyClipPath if needed
+    }
+
+    // Render canvas
+    const renderCanvas = () => {
+      if (canvas.value) {
+        canvas.value.requestRenderAll()
+      }
+    }
+
+    // Update store (placeholder for now - can be extended)
+    const updateStore = (
+      _logoIndex: number,
+      _data: {
+        x_axis_3d?: number
+        y_axis_3d?: number
+        originalWidth?: number
+        originalHeight?: number
+        actualWidth?: number
+        actualHeight?: number
+      }
+    ) => {
+      // TODO: Update customization store with logo position/size
+      // This can be implemented when store methods are available
+    }
+
+    try {
+      await addLogoToCanvas({
+        logo,
+        logoIndex: logoIndex,
+        signature: getLogoSignature(logo),
+        signatureUrlSide: getLogoSignatureUrlSide(logo),
+        mainPreview: props.mainPreview,
+        productId: effectiveProductId.value,
+        canvas: canvas.value as Canvas,
+        logoObjects: customLogoObjects,
+        calculatePosition: calculatePosition2D,
+        calculateRotation: calculateRotation2D,
+        calculateScaleRatios: calculateScaleRatios2D,
+        applyClipping,
+        renderCanvas,
+        updateStore,
+        canvasSelection: true,
+        flipX: false
+      })
+    } catch (error) {
+      console.error('Failed to add logo:', error)
+    }
+  }
+
+  /**
+   * Reset and add all logos
+   * Clears existing logos and adds all logos from custom_logos
+   */
+  async function resetAndAddLogos(): Promise<void> {
+    if (!canvas.value) return
+
+    // Reset existing logos
+    customLogoObjects.value.forEach(logo => {
+      if (canvas.value) {
+        canvas.value.remove(logo as unknown as FabricObject)
+      }
+    })
+    customLogoObjects.value.clear()
+
+    // Add logos from custom_logos (filter by side)
+    if (customLogos.value.length > 0) {
+      let logoIndex = 0
+      for (const logo of customLogos.value) {
+        if (logo && logo.url && logo.side === props.side) {
+          await addLogo(logo, logoIndex)
+          logoIndex++
+        }
+      }
+    }
+
+    if (canvas.value) {
+      canvas.value.requestRenderAll()
+    }
+  }
+
+  // Expose functions for external use
   defineExpose({
-    getImageFromCanvas
+    getImageFromCanvas,
+    addLogo,
+    resetAndAddLogos
   })
 
   // Watch for changes in default colors from customization store
@@ -446,6 +607,32 @@
         }
       }
     }
+  )
+
+  // Watch for changes in customLogos from customization store
+  // Compare by checking what's in the Map vs what's in the array
+  watch(
+    customLogos,
+    async (newLogos = []) => {
+      await syncLogosOnCanvas({
+        newLogos,
+        canvas: canvas.value,
+        logoObjects: customLogoObjects,
+        addLogo,
+        calculatePosition: calculatePosition2D,
+        calculateRotation: calculateRotation2D,
+        calculateScaleRatios: calculateScaleRatios2D,
+        getSignature: getLogoSignature,
+        getSignatureUrlSide: getLogoSignatureUrlSide,
+        filterLogo: (logo: CustomLogo) => logo.side === props.side,
+        onAfterSync: () => {
+          if (canvas.value) {
+            canvas.value.requestRenderAll()
+          }
+        }
+      })
+    },
+    { deep: true }
   )
 
   // Watch for changes in group colors from customization store
@@ -506,7 +693,7 @@
   <div class="relative">
     <canvas
       ref="canvasEl"
-      class="!w-full !aspect-square !h-auto"
+      class="w-full! aspect-square! h-auto!"
       :class="canvasClass"
       :width="canvasWidth"
       :height="canvasHeight"

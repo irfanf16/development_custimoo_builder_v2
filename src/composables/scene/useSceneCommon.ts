@@ -1,4 +1,4 @@
-import { ref, computed, type Ref } from 'vue'
+import { computed, shallowRef, type Ref } from 'vue'
 import {
   Canvas,
   Group,
@@ -14,6 +14,15 @@ import { useSvgGroups } from './useSvgGroups'
 import type { useColorCustomization } from './useColorCustomization'
 import { filterFields } from '@/lib/utils'
 import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
+
+// Polyfill: ensure requestRenderAll exists (fallback to renderAll)
+const canvasProto = Canvas.prototype as Canvas & {
+  requestRenderAll?: () => void
+  renderAll?: () => void
+}
+if (!canvasProto.requestRenderAll && canvasProto.renderAll) {
+  canvasProto.requestRenderAll = canvasProto.renderAll
+}
 
 /**
  * Design data type with file URL and extension
@@ -73,8 +82,8 @@ export function useSceneCommon(
   const { fromStorage } = useStorage()
 
   // ===== STATE =====
-  const canvas = ref<Canvas | null>(null)
-  const design = ref<FabricObject | Group | null>(null)
+  const canvas = shallowRef<Canvas | null>(null)
+  const design = shallowRef<FabricObject | Group | null>(null)
 
   // ===== COMPUTED =====
   /**
@@ -137,10 +146,11 @@ export function useSceneCommon(
     const canvasOptions: Partial<CanvasOptions> = {
       selection: false,
       enableRetinaScaling: true,
-      enablePointerEvents: false,
+      enablePointerEvents: true,
       allowTouchScrolling: true
     }
 
+    // markRaw prevents Vue reactivity from interfering with Fabric (fixes missing controls)
     canvas.value = new Canvas(canvasEl, canvasOptions)
 
     canvas.value.setDimensions({

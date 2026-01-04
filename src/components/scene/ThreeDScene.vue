@@ -22,11 +22,18 @@
   import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
   import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
   import { Canvas, FabricImage, Group, type FabricObject } from 'fabric'
+  import type { CustomLogo } from '@/services/logos/types'
   import {
     useSceneCommon,
     useSvgGroups,
     useColorCustomization,
-    useColorGrouping
+    useColorGrouping,
+    addLogoToCanvas,
+    setupFabricControls,
+    deleteLogoFromCanvas,
+    syncLogosOnCanvas,
+    getLogoSignature,
+    getLogoSignatureUrlSide
   } from '@/composables/scene'
   import {
     getImageFrom3DCanvas,
@@ -37,6 +44,7 @@
   import { useSceneStore } from '@/stores/scene/scene.store'
   import type { DesignData } from '@/composables/scene'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
+  import { filterFields } from '@/lib/utils'
 
   // 3D Model data type matching imageData structure
   type Model3DData = {
@@ -124,6 +132,31 @@
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
   const sceneStore = useSceneStore()
+
+  // ===== LOGOS COMPOSABLE =====
+  // Note: fromStorage is already available from useSceneCommon
+
+  // ===== CUSTOM LOGOS =====
+  // Get custom_logos from customization store by product_id
+  const customLogos = computed<CustomLogo[]>(() => {
+    const productId = effectiveProductId.value
+    if (!productId || !customizationStore.customization) return []
+    const key = String(productId)
+    const all = customizationStore.customization.custom_logos?.[key] || []
+    // in case of 3D, we need to add the x_axis_3d and y_axis_3d fields and send all logos
+    return filterFields(all, [
+      'url',
+      'side',
+      'x_axis',
+      'y_axis',
+      'x_axis_3d',
+      'y_axis_3d',
+      'height',
+      'rotation',
+      'scaleX',
+      'scaleY'
+    ]) as CustomLogo[]
+  })
 
   // ===== SVG GROUPS COMPOSABLE =====
   const svgGroupsComposable = useSvgGroups(
@@ -215,6 +248,12 @@
   const renderPass = shallowRef<RenderPass | null>(null)
   const smaaPass = shallowRef<SMAAPass | null>(null)
   const outputPass = shallowRef<OutputPass | null>(null)
+  const safeZone = shallowRef<Group | null>(null)
+  const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
+  const raycaster = shallowRef<THREE.Raycaster | null>(null)
+  const onClickPosition = shallowRef<THREE.Vector2>(new THREE.Vector2())
+  const mouse = shallowRef<THREE.Vector2>(new THREE.Vector2())
+  const sceneLoadPromise = shallowRef<Promise<void> | null>(null)
 
   // ===== LIFECYCLE =====
   onMounted(() => {
@@ -465,6 +504,14 @@
     // Initialize Fabric.js canvas
     if (canvasEl.value) {
       initCanvas(canvasEl.value, props.canvasResolution, props.canvasResolution)
+
+      // Setup custom Fabric controls (scale/rotate/delete icons)
+      setupFabricControls({
+        onRemoveLogo: (logoIndex: number, canvasInstance: Canvas) => {
+          deleteLogoFromCanvas(logoIndex, canvasInstance, customLogoObjects)
+        }
+        // Text removal can be added here if needed
+      })
     }
 
     // Create texture from canvas
@@ -472,6 +519,9 @@
       texture.value = new THREE.CanvasTexture(canvasEl.value)
       texture.value.anisotropy = 1
     }
+
+    // Initialize raycaster for 3D positioning
+    raycaster.value = new THREE.Raycaster()
 
     // Setup lights
     setupLights()
@@ -539,6 +589,263 @@
     )
   }
 
+  // ===== LOGO UTILITIES =====
+  /**
+   * Calculate canvas width ratio for 3D scene
+   * Used for scaling logos from 2D coordinates to 3D canvas
+   */
+  const canvasWidthRatio = computed(() => {
+    return props.containerWidth / 600 // twoDCanvasWidth default is 600
+  })
+
+  /**
+   * Calculate canvas height ratio for 3D scene
+   * Used for scaling logos from 2D coordinates to 3D canvas
+   */
+  const canvasHeightRatio = computed(() => {
+    return props.containerHeight / 600 // twoDCanvasHeight default is 600
+  })
+
+  // Calculate rotation (opposite angle for 3D)
+  function calculateRotation(rotation: number): number {
+    if (rotation < 0) {
+      return oppositeAngle(360 - rotation)
+    }
+    return oppositeAngle(rotation)
+  }
+
+  // Calculate position (use 3D position if available, otherwise calculate from 2D)
+  function calculatePosition(logoData: CustomLogo): { x: number; y: number } {
+    if (logoData.x_axis_3d && logoData.y_axis_3d) {
+      return { x: logoData.x_axis_3d, y: logoData.y_axis_3d }
+    } else {
+      const threeDXPosition = canvasWidthRatio.value * logoData.x_axis
+      const threeDYPosition = canvasHeightRatio.value * logoData.y_axis
+      return findPositionOn3D(threeDXPosition, threeDYPosition, logoData.side)
+    }
+  }
+
+  // Calculate scale ratios
+  function calculateScaleRatios(): { widthRatio: number; heightRatio: number } {
+    return {
+      widthRatio: canvasWidthRatio.value,
+      heightRatio: canvasHeightRatio.value
+    }
+  }
+
+  /**
+   * Calculate opposite angle for 3D rotation
+   * Adapted from old ThreeDScene.vue
+   */
+  function oppositeAngle(angle: number): number {
+    return (180 - angle + 360) % 360
+  }
+
+  /**
+   * Get mouse position relative to container
+   * Adapted from old ThreeDScene.vue
+   */
+  function getMousePosition(
+    dom: HTMLElement,
+    x: number,
+    y: number,
+    byScreen = false
+  ): [number, number] {
+    const rect = dom.getBoundingClientRect()
+    let screenLeft = 0
+    let screenTop = 0
+    if (byScreen) {
+      screenLeft = rect.left
+      screenTop = rect.top
+    }
+    return [(x - screenLeft) / rect.width, (y - screenTop) / rect.height]
+  }
+
+  /**
+   * Get intersection points with scene objects
+   * Adapted from old ThreeDScene.vue
+   */
+  function getIntersects(
+    point: THREE.Vector2,
+    objects: THREE.Object3D[],
+    camera: THREE.OrthographicCamera | THREE.PerspectiveCamera
+  ): THREE.Intersection[] {
+    if (!raycaster.value) return []
+    mouse.value.set(point.x * 2 - 1, -(point.y * 2) + 1)
+    raycaster.value.setFromCamera(mouse.value, camera)
+    return raycaster.value.intersectObjects(objects, false)
+  }
+
+  /**
+   * Get real position from normalized UV coordinates
+   * Adapted from old ThreeDScene.vue
+   */
+  function getRealPosition(axis: 'x' | 'y', value: number): number {
+    const CORRECTION_VALUE = axis === 'x' ? 4.5 : 5.5
+    return Math.round(value * props.canvasResolution) - CORRECTION_VALUE
+  }
+
+  /**
+   * Find position on 3D model surface from 2D coordinates
+   * Adapted from old ThreeDScene.vue
+   */
+  function findPositionOn3D(
+    x: number,
+    y: number,
+    side: 'front' | 'back'
+  ): { x: number; y: number } {
+    if (!rendererEl.value || !scene.value) {
+      return { x: 0, y: 0 }
+    }
+
+    const camera = side.toLowerCase() === 'back' ? backCamera.value : frontCamera.value
+    if (!camera) {
+      return { x: 0, y: 0 }
+    }
+
+    const point = getMousePosition(rendererEl.value, x, y)
+    onClickPosition.value.fromArray(point)
+
+    const intersects = getIntersects(onClickPosition.value, scene.value.children, camera)
+
+    if (intersects.length > 0 && intersects[0]?.uv) {
+      const uv = intersects[0].uv
+      const mesh = intersects[0]?.object as THREE.Mesh | undefined
+      if (mesh) {
+        const material = mesh.material
+        if (material && !Array.isArray(material) && 'map' in material && material.map) {
+          // transformUv is available on Texture
+          if (material.map && typeof (material.map as THREE.Texture).transformUv === 'function') {
+            ;(material.map as THREE.Texture).transformUv(uv)
+          }
+        }
+      }
+      return {
+        x: getRealPosition('x', uv.x),
+        y: getRealPosition('y', uv.y)
+      }
+    }
+
+    return { x: 0, y: 0 }
+  }
+
+  /**
+   * Add logo to canvas (3D scene)
+   * Uses the shared composable with 3D-specific configuration
+   */
+  async function addLogo(logo: CustomLogo, logoIndex: number): Promise<void> {
+    if (!canvas.value || !mounted.value) return
+
+    if (!logo || !logo.url) return
+
+    // Apply clipping (safe zone)
+    const applyClipping = (img: FabricImage) => {
+      if (safeZone.value) {
+        // Type assertion needed for clipPath - Group can be used as clipPath
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(img as any).clipPath = safeZone.value
+      }
+    }
+
+    // Render canvas
+    const renderCanvas = () => {
+      if (canvas.value) {
+        canvas.value.requestRenderAll()
+      }
+      // Also render 3D scene
+      if (composer.value) {
+        composer.value.render()
+      }
+    }
+
+    // Control visibility (3D specific)
+    const controlVisibility = {
+      tl: false,
+      bl: false,
+      tr: true,
+      br: true,
+      ml: false,
+      mb: false,
+      mr: false,
+      mt: false,
+      mtr: false,
+      deleteControl: true
+    }
+
+    // Update store (placeholder for now - can be extended)
+    const updateStore = (
+      _logoIndex: number,
+      _data: {
+        x_axis_3d?: number
+        y_axis_3d?: number
+        originalWidth?: number
+        originalHeight?: number
+        actualWidth?: number
+        actualHeight?: number
+      }
+    ) => {
+      // TODO: Update customization store with logo position/size
+      // This can be implemented when store methods are available
+    }
+
+    try {
+      if (!canvas.value) return
+
+      await addLogoToCanvas({
+        logo,
+        logoIndex: logoIndex,
+        signature: getLogoSignature(logo),
+        signatureUrlSide: getLogoSignatureUrlSide(logo),
+        mainPreview: props.mainPreview,
+        productId: effectiveProductId.value,
+        canvas: canvas.value as Canvas,
+        logoObjects: customLogoObjects,
+        calculatePosition,
+        calculateRotation,
+        calculateScaleRatios,
+        applyClipping,
+        renderCanvas,
+        updateStore,
+        controlVisibility,
+        canvasSelection: true,
+        flipX: true
+      })
+    } catch (error) {
+      console.error('Failed to add logo:', error)
+    }
+  }
+
+  /**
+   * Reset and add all logos
+   * Clears existing logos and adds all logos from custom_logos
+   */
+  async function resetAndAddLogos(): Promise<void> {
+    if (!mounted.value || !canvas.value) return
+
+    // Reset existing logos
+    customLogoObjects.value.forEach(logo => {
+      if (canvas.value) {
+        canvas.value.remove(logo as unknown as FabricObject)
+      }
+    })
+    customLogoObjects.value.clear()
+
+    // Add logos from custom_logos
+    if (customLogos.value.length > 0) {
+      let logoIndex = 0
+      for (const logo of customLogos.value) {
+        if (logo && logo.url) {
+          await addLogo(logo, logoIndex)
+          logoIndex++
+        }
+      }
+    }
+
+    if (canvas.value) {
+      canvas.value.requestRenderAll()
+    }
+  }
+
   // ===== MODEL LOADING =====
   async function loadScene() {
     const modelData = effectiveModels.value
@@ -549,47 +856,52 @@
       return
     }
 
-    try {
-      // Load model and design in parallel
-      await Promise.all([
-        addModel(
-          modelData.model_url,
-          modelData.texture_url || '',
-          modelData.roughness_map_url || null,
-          modelData.metalness_map_url || null,
-          modelData.ao_map_url || null,
-          modelData.alpha_map_url || null,
-          modelData.roughness ?? null,
-          modelData.metalness ?? null
-        ),
-        addDesign(designData, {
-          scaleMode: 'resolution',
-          canvasResolution: props.canvasResolution,
-          centerInViewport: false,
-          flipY: true,
-          svgGroupsComposable,
-          designObjectRef: designObject as Ref<FabricObject | FabricImage | null>,
-          colorCustomization,
-          mainPreview: props.mainPreview,
-          onLoaded: async _loadedDesign => {
-            // Design is automatically stored in design ref from useSceneCommon
-            // SVG groups are automatically extracted if it's an SVG design
-            // Customization is automatically applied if colorCustomization is provided
-            // Apply anchor differences to balance the view
-            if (designObject.value && designObject.value instanceof Group) {
-              await applyAnchorDifferences(designObject.value)
-              if (canvas.value) {
-                canvas.value.requestRenderAll()
+    const work = async () => {
+      try {
+        // Load model and design in parallel
+        await Promise.all([
+          addModel(
+            modelData.model_url,
+            modelData.texture_url || '',
+            modelData.roughness_map_url || null,
+            modelData.metalness_map_url || null,
+            modelData.ao_map_url || null,
+            modelData.alpha_map_url || null,
+            modelData.roughness ?? null,
+            modelData.metalness ?? null
+          ),
+          addDesign(designData, {
+            scaleMode: 'resolution',
+            canvasResolution: props.canvasResolution,
+            centerInViewport: false,
+            flipY: true,
+            svgGroupsComposable,
+            designObjectRef: designObject as Ref<FabricObject | FabricImage | null>,
+            colorCustomization,
+            mainPreview: props.mainPreview,
+            onLoaded: async _loadedDesign => {
+              if (designObject.value && designObject.value instanceof Group) {
+                await applyAnchorDifferences(designObject.value)
+                if (canvas.value) {
+                  canvas.value.requestRenderAll()
+                }
               }
             }
-          }
-        })
-      ])
+          })
+        ])
 
-      mounted.value = true
-    } catch (error) {
-      console.error('Failed to load scene:', error)
+        mounted.value = true
+
+        // Load logos after scene is loaded
+        await resetAndAddLogos()
+      } catch (error) {
+        console.error('Failed to load scene:', error)
+      }
     }
+
+    sceneLoadPromise.value = work()
+    await sceneLoadPromise.value
+    sceneLoadPromise.value = null
   }
 
   /**
@@ -1041,9 +1353,11 @@
     }
   })
 
-  // Expose only getImageFromCanvas for external use
+  // Expose functions for external use
   defineExpose({
-    getImageFromCanvas
+    getImageFromCanvas,
+    addLogo,
+    resetAndAddLogos
   })
 
   // ===== WATCHERS =====
@@ -1055,37 +1369,38 @@
 
       // Only reload if design actually changed
       if (newDesign && (!oldDesign || newDesign.file_url !== oldDesign.file_url)) {
-        try {
-          await addDesign(newDesign, {
-            scaleMode: 'resolution',
-            canvasResolution: props.canvasResolution,
-            centerInViewport: false,
-            flipY: true,
-            svgGroupsComposable,
-            designObjectRef: designObject as Ref<FabricObject | FabricImage | null>,
-            colorCustomization,
-            mainPreview: props.mainPreview,
-            onLoaded: async _loadedDesign => {
-              // Design is automatically stored in design ref from useSceneCommon
-              // SVG groups are automatically extracted if it's an SVG design
-              // Customization is automatically applied if colorCustomization is provided
-              // Apply anchor differences to balance the view
-              if (designObject.value && designObject.value instanceof Group) {
-                await applyAnchorDifferences(designObject.value)
-                if (canvas.value) {
-                  canvas.value.requestRenderAll()
+        const work = async () => {
+          try {
+            await addDesign(newDesign, {
+              scaleMode: 'resolution',
+              canvasResolution: props.canvasResolution,
+              centerInViewport: false,
+              flipY: true,
+              svgGroupsComposable,
+              designObjectRef: designObject as Ref<FabricObject | FabricImage | null>,
+              colorCustomization,
+              mainPreview: props.mainPreview,
+              onLoaded: async _loadedDesign => {
+                if (designObject.value && designObject.value instanceof Group) {
+                  await applyAnchorDifferences(designObject.value)
+                  if (canvas.value) {
+                    canvas.value.requestRenderAll()
+                  }
                 }
               }
-            }
-          })
+            })
 
-          // Update texture if it exists
-          if (texture.value) {
-            texture.value.needsUpdate = true
+            if (texture.value) {
+              texture.value.needsUpdate = true
+            }
+          } catch (error) {
+            console.error('Failed to reload design:', error)
           }
-        } catch (error) {
-          console.error('Failed to reload design:', error)
         }
+
+        sceneLoadPromise.value = work()
+        await sceneLoadPromise.value
+        sceneLoadPromise.value = null
       }
     },
     { immediate: false }
@@ -1106,7 +1421,7 @@
       const oldModelUrl = oldModel?.model_url || ''
 
       if (newModelUrl !== oldModelUrl) {
-        try {
+        const work = async () => {
           // Remove canvas render handler if exists
           if (canvas.value && canvasRenderHandler.value) {
             canvas.value.off('after:render', canvasRenderHandler.value)
@@ -1207,12 +1522,49 @@
           if (texture.value) {
             texture.value.needsUpdate = true
           }
-        } catch (error) {
-          console.error('Failed to reload model:', error)
         }
+        sceneLoadPromise.value = work()
+        await sceneLoadPromise.value
+        sceneLoadPromise.value = null
       }
     },
     { immediate: false }
+  )
+
+  // Watch for changes in customLogos from customization store
+  // Compare by checking what's in the Map vs what's in the array
+  watch(
+    customLogos,
+    async (newLogos = []) => {
+      if (!mounted.value) return
+      // Small delay to let design/model settles before syncing logos
+      await new Promise(resolve => setTimeout(resolve, 200))
+      // Wait for any in-flight scene/model/design loading to finish
+      if (sceneLoadPromise.value) {
+        await sceneLoadPromise.value
+      }
+
+      await syncLogosOnCanvas({
+        newLogos,
+        canvas: canvas.value,
+        logoObjects: customLogoObjects,
+        addLogo,
+        calculatePosition,
+        calculateRotation,
+        calculateScaleRatios,
+        getSignature: getLogoSignature,
+        getSignatureUrlSide: getLogoSignatureUrlSide,
+        onAfterSync: () => {
+          if (canvas.value) {
+            canvas.value.requestRenderAll()
+          }
+          if (composer.value) {
+            composer.value.render()
+          }
+        }
+      })
+    },
+    { deep: true }
   )
 
   // Watch for changes in default colors from customization store
