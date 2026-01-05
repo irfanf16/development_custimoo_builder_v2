@@ -10,7 +10,7 @@
     type ComponentPublicInstance,
     shallowRef
   } from 'vue'
-  import { FabricImage, Canvas, type FabricObject } from 'fabric'
+  import { FabricImage, Canvas, Group, type FabricObject } from 'fabric'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
   import { filterFields } from '@/lib/utils'
@@ -44,6 +44,8 @@
   const designObject = shallowRef<FabricObject | FabricImage | null>(null)
   const modelObjects = shallowRef<(FabricObject | FabricImage)[]>([])
   const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
+  const safeZone = shallowRef<Group | null>(null)
+  const boundary = shallowRef<Group | null>(null)
 
   // Model type based on style preview structure
   type ModelData = {
@@ -55,6 +57,8 @@
   type DesignData = {
     file_url: string
     file_extension: string
+    safe_zone_url?: string
+    boundary_url?: string
   }
 
   interface Props {
@@ -212,6 +216,8 @@
           colorCustomization,
           mainPreview: props.mainPreview
         })
+
+        await addBoundary(newDesign.safe_zone_url, newDesign.boundary_url)
 
         canvas.value.requestRenderAll()
       }
@@ -377,6 +383,10 @@
     // Ensure models are on top of design
     bringModelToFront()
 
+    if (effectiveDesign.value?.safe_zone_url || effectiveDesign.value?.boundary_url) {
+      await addBoundary(effectiveDesign.value?.safe_zone_url, effectiveDesign.value?.boundary_url)
+    }
+
     canvas.value.requestRenderAll()
 
     // Load logos after scene is loaded
@@ -465,6 +475,175 @@
     }
   }
 
+  async function cloneFabricObject(obj: FabricObject): Promise<FabricObject> {
+    // Fabric 6 clone: clone(propertiesToInclude?) returns object; clone(cb, props?) also supported
+    const anyObj = obj as unknown as { clone: (...args: unknown[]) => unknown }
+    try {
+      const direct = anyObj.clone()
+      if (direct) return direct as FabricObject
+    } catch {
+      // fallback to callback form below
+    }
+    return await new Promise(resolve => {
+      anyObj.clone((cloned: FabricObject) => resolve(cloned))
+    })
+  }
+
+  async function findClippedParts(
+    logoOrText: FabricImage,
+    boundaries: FabricObject[],
+    canvasInstance: Canvas,
+    checkPointX: number,
+    checkPointY: number,
+    maxCall = 60
+  ): Promise<FabricObject[]> {
+    const applyBoundary: FabricObject[] = []
+    let foundExcluded = false
+    const objects = boundaries ?? []
+
+    for (const boundary of objects) {
+      // fabric.Canvas#isTargetTransparent exists on Canvas
+      const isTransparent = canvasInstance.isTargetTransparent(
+        boundary as unknown as FabricObject,
+        checkPointX,
+        checkPointY
+      )
+      if (foundExcluded || isTransparent) {
+        applyBoundary.push(await cloneFabricObject(boundary))
+      } else {
+        const id = (boundary as unknown as { id?: string }).id || ''
+        const boundaryId = id.includes('_') ? id.substring(0, id.indexOf('_')) : id
+        ;(logoOrText as unknown as { excluded_clip_id?: string }).excluded_clip_id = boundaryId
+        foundExcluded = true
+      }
+    }
+
+    if (!foundExcluded && maxCall) {
+      // ensure at least one excluded piece; shift point and retry
+      const nextX = checkPointX < props.canvasWidth / 2 ? checkPointX + 1 : checkPointX - 1
+      return await findClippedParts(
+        logoOrText,
+        boundaries,
+        canvasInstance,
+        nextX,
+        checkPointY,
+        maxCall - 1
+      )
+    }
+
+    return applyBoundary
+  }
+
+  async function buildClipGroup(target: FabricImage): Promise<Group | null> {
+    if (!canvas.value) return null
+
+    // start with safe zone objects
+    const safeObjects = (safeZone.value?._objects as FabricObject[] | undefined) ?? []
+    const parts: FabricObject[] = []
+    for (const o of safeObjects) {
+      parts.push(await cloneFabricObject(o))
+    }
+
+    // handle boundaries with exclusion logic
+    const boundaryObjects = (boundary.value?._objects as FabricObject[] | undefined) ?? []
+    if (boundaryObjects.length) {
+      const checkPointX = target.left ?? 0
+      const checkPointY = target.top ?? 0
+      const clippedParts = await findClippedParts(
+        target,
+        boundaryObjects,
+        canvas.value,
+        checkPointX,
+        checkPointY
+      )
+      parts.push(...clippedParts)
+    }
+
+    if (!parts.length) return null
+
+    const clip = new Group(parts, {
+      hasControls: false,
+      selectable: false,
+      evented: false,
+      originX: 'center',
+      originY: 'center',
+      lockMovementX: true,
+      lockMovementY: true,
+      absolutePositioned: true,
+      inverted: true
+    })
+
+    const scaleX = safeZone.value?.scaleX ?? boundary.value?.scaleX ?? 1
+    const scaleY = safeZone.value?.scaleY ?? boundary.value?.scaleY ?? 1
+    clip.set({
+      scaleX,
+      scaleY,
+      left: props.canvasWidth / 2,
+      top: props.canvasHeight / 2
+    })
+    clip.setCoords()
+    canvas.value.viewportCenterObject(clip)
+    return clip
+  }
+
+  async function applyClipPath(target: FabricImage): Promise<void> {
+    if (!canvas.value) return
+    const clip = await buildClipGroup(target)
+    if (clip) {
+      // @ts-expect-error clipPath accepts any fabric object; Group works at runtime
+      target.clipPath = clip
+    }
+  }
+
+  async function loadClipGroup(url: string, target: 'safe' | 'boundary'): Promise<Group | null> {
+    if (!url) return null
+    const clip = (await loadImageFromURLCommon(url, 'svg', {
+      hasControls: false,
+      selectable: false,
+      evented: false,
+      originX: 'center',
+      originY: 'center',
+      lockMovementX: true,
+      lockMovementY: true,
+      absolutePositioned: true,
+      inverted: true
+    })) as Group
+
+    // Scale to canvas and center
+    clip.scaleToHeight(props.canvasHeight)
+    clip.set({
+      left: props.canvasWidth / 2,
+      top: props.canvasHeight / 2
+    })
+    clip.setCoords()
+    if (canvas.value) {
+      canvas.value.viewportCenterObject(clip)
+    }
+
+    if (target === 'safe') {
+      safeZone.value = clip
+    } else {
+      boundary.value = clip
+    }
+
+    return clip
+  }
+
+  async function addBoundary(safeZoneUrl?: string, boundaryUrl?: string): Promise<void> {
+    if (!canvas.value) return
+    if (safeZoneUrl) {
+      await loadClipGroup(safeZoneUrl, 'safe')
+    }
+    if (boundaryUrl) {
+      await loadClipGroup(boundaryUrl, 'boundary')
+    }
+
+    // Re-apply clipping to existing logos
+    for (const logo of customLogoObjects.value.values()) {
+      await applyClipPath(logo)
+    }
+  }
+
   /**
    * Add logo to canvas (2D scene)
    * Uses the shared composable with 2D-specific configuration
@@ -477,9 +656,9 @@
     // Check if logo side matches current side
     if (logo.side !== props.side) return
 
-    // Apply clipping (placeholder - can be extended with applyClipPath)
-    const applyClipping = async (_img: FabricImage, _side: 'front' | 'back') => {
-      // TODO: Implement applyClipPath if needed
+    // Apply clipping via loaded safe zone / boundary
+    const applyClipping = async (img: FabricImage, _side: 'front' | 'back') => {
+      await applyClipPath(img)
     }
 
     // Render canvas
@@ -524,6 +703,19 @@
         canvasSelection: true,
         flipX: false
       })
+
+      // Re-apply clip when user moves/scales/rotates
+      const reclip = async () => {
+        const added = customLogoObjects.value.get(logoIndex)
+        if (added) {
+          await applyClipPath(added)
+          if (canvas.value) canvas.value.requestRenderAll()
+        }
+      }
+      const added = customLogoObjects.value.get(logoIndex)
+      added?.on('moving', reclip)
+      added?.on('scaling', reclip)
+      added?.on('rotating', reclip)
     } catch (error) {
       console.error('Failed to add logo:', error)
     }

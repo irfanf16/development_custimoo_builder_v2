@@ -198,7 +198,7 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
       hasControls: logo.haveControls ?? true,
       hasBorders: true, // always show selection box so handles/icons are visible
       evented: true,
-      globalCompositeOperation: 'source-over',
+      globalCompositeOperation: 'source-atop',
       padding: 15,
       cornerSize: 30,
       flipX: flipX,

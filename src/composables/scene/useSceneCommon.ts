@@ -12,7 +12,6 @@ import { useProductsStore } from '@/stores/products/products.store'
 import { useStorage } from './useStorage'
 import { useSvgGroups } from './useSvgGroups'
 import type { useColorCustomization } from './useColorCustomization'
-import { filterFields } from '@/lib/utils'
 import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
 
 // Polyfill: ensure requestRenderAll exists (fallback to renderAll)
@@ -30,6 +29,8 @@ if (!canvasProto.requestRenderAll && canvasProto.renderAll) {
 export type DesignData = {
   file_url: string
   file_extension: string
+  safe_zone_url?: string
+  boundary_url?: string
 }
 
 /**
@@ -102,8 +103,8 @@ export function useSceneCommon(
 
     // Use prop if provided
     if (designProp?.value) {
-      // Filter to only include DesignData fields
-      return filterFields(designProp.value, ['file_url', 'file_extension']) as DesignData
+      const { file_url, file_extension, safe_zone_url, boundary_url } = designProp.value
+      return { file_url, file_extension, safe_zone_url, boundary_url } as DesignData
     }
 
     // Fallback to store
@@ -112,16 +113,35 @@ export function useSceneCommon(
 
     // Get design based on side - handle different types (OutputDesignAsset vs production_design)
     let storeDesign: { file_url: string; file_extension?: string }
+    let safeZoneDesign: { file_url?: string } | undefined
+    let boundaryDesign: { file_url?: string } | undefined
+
     if (sideValue === 'front') {
       storeDesign = designDetails.front_design
+      safeZoneDesign = (designDetails as Record<string, unknown>).frontsafezone_design as
+        | { file_url?: string }
+        | undefined
+      boundaryDesign = (designDetails as Record<string, unknown>).frontboundary_design as
+        | { file_url?: string }
+        | undefined
     } else if (sideValue === 'back') {
       storeDesign = designDetails.back_design
+      safeZoneDesign = (designDetails as Record<string, unknown>).backsafezone_design as
+        | { file_url?: string }
+        | undefined
+      boundaryDesign = (designDetails as Record<string, unknown>).backboundary_design as
+        | { file_url?: string }
+        | undefined
     } else {
       storeDesign = designDetails.production_design
     }
 
-    // Filter to only include DesignData properties
-    return filterFields(storeDesign, ['file_url', 'file_extension']) as DesignData
+    const file_url = storeDesign.file_url
+    const file_extension = storeDesign.file_extension
+    const safe_zone_url = safeZoneDesign?.file_url
+    const boundary_url = boundaryDesign?.file_url
+
+    return { file_url, file_extension, safe_zone_url, boundary_url } as DesignData
   })
 
   // ===== UTILITIES =====
