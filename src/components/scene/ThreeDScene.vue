@@ -9,8 +9,7 @@
     watch,
     nextTick,
     getCurrentInstance,
-    type Ref,
-    type ComponentPublicInstance
+    type Ref
   } from 'vue'
   import * as THREE from 'three'
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -187,6 +186,7 @@
     colorGrouping as Ref<Record<string, string[]> | null>
   )
 
+  const componentInstance = getCurrentInstance()
   // Extract customization functions from composable
   const { applyCustomization, changeDefaultColors, changeGroupColors, resetToInitialColors } =
     colorCustomization
@@ -1338,9 +1338,8 @@
   onMounted(() => {
     if (props.mainPreview) {
       nextTick(() => {
-        const componentInstance = getCurrentInstance()?.proxy as ComponentPublicInstance | null
         if (componentInstance) {
-          sceneStore.setThreeDSceneRef(componentInstance)
+          sceneStore.setThreeDSceneRef({ getImageFromCanvas })
         }
       })
     }

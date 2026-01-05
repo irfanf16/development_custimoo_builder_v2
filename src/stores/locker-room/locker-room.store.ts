@@ -1,6 +1,7 @@
 import { API } from '@/services'
 import type {
   Collection,
+  CollectionLogoPresignedUrlsResponse,
   CopyProductPayload,
   Locker,
   SignedUrlResponse
@@ -114,6 +115,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
 
     setSuccessMessage('Locker deleted successfully')
     lockers.value = lockers.value.filter(locker => locker.id !== id)
+    // Remove associated collections from frontend
+    collections.value = collections.value.filter(collection => collection.room_id !== id)
   }
 
   //Delete Locker Products
@@ -214,7 +217,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       operation: 'fetchCollections'
     })
     if (resp.success && resp.content) {
-      collections.value = resp.content
+      collections.value = resp.content.result
     } else {
       setError('Failed to load collections')
     }
@@ -233,17 +236,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
         if (c.id === collection_id) {
           return {
             ...c,
-            ...resp.content,
+            ...resp.content.result,
             details_fetched: true,
-            collection_products: resp.content.collection_products.map(cp => {
-              return {
-                ...cp,
-                product_locker_room: {
-                  ...cp.product_locker_room,
-                  product_url: cp.product_locker_room.front_url
-                }
-              }
-            })
+            collection_products: resp.content.result.collection_products
           }
         } else {
           return c
@@ -273,6 +268,21 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     }
   }
 
+  async function updateCollection(collection_id: number, formData: FormData) {
+    isLoading.value = true
+    error.value = null
+    const resp = await tryCatchApi(API.lockers.updateCollection(collection_id, formData))
+    if (resp.success && resp.content) {
+      await fetchCollections()
+      isLoading.value = false
+      return resp.content
+    } else {
+      setError('Failed to update collection')
+      isLoading.value = false
+      return null
+    }
+  }
+
   async function deleteCollection(id: number) {
     const resp = await tryCatchApi(API.lockers.deleteCollection(id), {
       operation: 'deleteCollection',
@@ -295,6 +305,24 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
         locker_id
       })
     ).content?.result
+  }
+
+  async function getCollectionLogoPresignedUrls(
+    collection_id: number | null,
+    logoFiles: Array<{ name: string; type: string; size?: number }>
+  ): Promise<CollectionLogoPresignedUrlsResponse> {
+    const resp = await tryCatchApi(
+      API.lockers.getCollectionLogoPresignedUrls(collection_id, logoFiles)
+    )
+    if (resp.success && resp.content) {
+      return resp.content
+    } else {
+      setError('Failed to get collection logo presigned URLs')
+      return {
+        presigned_urls: [],
+        success: false
+      }
+    }
   }
 
   //error message
@@ -331,8 +359,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     fetchCollections,
     fetchCollectionProducts,
     saveCollection,
+    updateCollection,
     deleteCollection,
     //get s3 signed URL
-    getSignedUrl
+    getSignedUrl,
+    getCollectionLogoPresignedUrls
   }
 })

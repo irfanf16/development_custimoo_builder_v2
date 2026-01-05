@@ -3,7 +3,7 @@
   import { Card } from '@/components/ui/card'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { Spinner } from '@/components/ui/spinner'
-  import type { ProductRosterDetail } from '@/services/lockers/types'
+  import type { ProductRosterDetail } from '@/services/products/types'
   import { UsersIcon } from 'lucide-vue-next'
   import { computed, ref } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'

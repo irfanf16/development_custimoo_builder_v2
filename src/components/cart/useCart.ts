@@ -1,7 +1,13 @@
-import { ref, computed } from 'vue'
-import cartProductsData from '@/cart-products.json'
+import { ref, computed, watch } from 'vue'
+import { useCartStore } from '@/stores/cart/cart.store'
+import { confirmDialog } from '@/lib/confirm-dialog'
 
 export interface CartProduct {
+  // Internal IDs for API operations
+  cart_item_id: number
+  factory_product_id: string
+
+  // Display fields
   product_id: number
   product_name: string
   design_id: number
@@ -9,38 +15,22 @@ export interface CartProduct {
   price: number
   style: string
   addons: Array<{ id: number; name: string }>
+
+  // Additional fields for display
+  front_image?: string
+  back_image?: string
 }
 
 export function useCart() {
-  const products = ref<CartProduct[]>(cartProductsData.products)
+  // ===== DEPENDENCIES =====
+  const cartStore = useCartStore()
 
-  const formatPrice = (price: number): string => {
-    return `$${price.toFixed(2)}`
-  }
+  // ===== STATE =====
+  const products = ref<CartProduct[]>([])
 
-  const formatAddons = (addons: Array<{ id: number; name: string }>): string => {
-    return addons.map(addon => addon.name).join(', ')
-  }
-
-  const removeProduct = (productId: number): void => {
-    products.value = products.value.filter(p => p.product_id !== productId)
-  }
-
-  const editProduct = (productId: number): void => {
-    // Handle edit action - can be implemented later
-    console.log('Edit product:', productId)
-  }
-
-  const addProduct = (product: CartProduct): void => {
-    products.value.push(product)
-  }
-
-  const updateProductQuantity = (productId: number, quantity: number): void => {
-    const product = products.value.find(p => p.product_id === productId)
-    if (product) {
-      product.quantity = quantity
-    }
-  }
+  // ===== COMPUTED =====
+  const isLoading = computed(() => cartStore.isLoading)
+  const error = computed(() => cartStore.error)
 
   const totalItems = computed(() => {
     return products.value.reduce((sum, product) => sum + product.quantity, 0)
@@ -50,15 +40,173 @@ export function useCart() {
     return products.value.reduce((sum, product) => sum + product.price * product.quantity, 0)
   })
 
+  // ===== UTILITIES =====
+  /**
+   * Map factory products from cart items to CartProduct array
+   * Complex type transformation from API response structure
+   */
+  /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
+  function mapCartItemsToProducts(): CartProduct[] {
+    if (!cartStore.cart?.items) {
+      return []
+    }
+
+    const mappedProducts: CartProduct[] = []
+
+    for (const item of cartStore.cart.items) {
+      const factoryProducts: any[] = item.factory_products || []
+      for (const fp of factoryProducts) {
+        // Safely extract addons
+        const groupedAddons: any[] = Array.isArray(fp.grouped_addons) ? fp.grouped_addons : []
+        const ungroupedAddons: any[] = Array.isArray(fp.ungrouped_addons) ? fp.ungrouped_addons : []
+        const allAddons: Array<{ id: number; name: string }> = []
+
+        for (const addon of groupedAddons) {
+          allAddons.push({ id: Number(addon?.id) || 0, name: String(addon?.name || 'Unknown') })
+        }
+        for (const addon of ungroupedAddons) {
+          allAddons.push({ id: Number(addon?.id) || 0, name: String(addon?.name || 'Unknown') })
+        }
+
+        const priceObj: any = fp.product_price_object
+
+        mappedProducts.push({
+          cart_item_id: item.id,
+          factory_product_id: String(fp?.id || ''),
+          product_id: Number(fp?.product_id || 0),
+          product_name: String(fp?.product_display_name || fp?.product_name || ''),
+          design_id: Number(fp?.design_id || 0),
+          quantity: Number(priceObj?.quantity || 0),
+          price: Number(priceObj?.product_price || 0),
+          style: String(fp?.style_name || ''),
+          addons: allAddons,
+          front_image: fp?.front_image ? String(fp.front_image) : undefined,
+          back_image: fp?.back_image ? String(fp.back_image) : undefined
+        })
+      }
+    }
+
+    return mappedProducts
+  }
+  /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
+
+  // ===== ACTIONS =====
+  /**
+   * Fetch cart from API
+   */
+  async function fetchCart() {
+    await cartStore.fetchCart()
+    // Map cart data to products
+    products.value = mapCartItemsToProducts()
+  }
+
+  /**
+   * Remove product from cart
+   */
+  async function removeProduct(factoryProductId: string): Promise<void> {
+    const product = products.value.find(p => p.factory_product_id === factoryProductId)
+    if (!product) {
+      console.error('Product not found:', factoryProductId)
+      return
+    }
+    const confirmDialogResult = await confirmDialog({
+      title: 'Remove Product',
+      description: 'Are you sure you want to remove this product from your cart?',
+      confirmText: 'Remove',
+      cancelText: 'Cancel'
+    })
+    if (confirmDialogResult) {
+      await cartStore.deleteCartItem(product.cart_item_id, factoryProductId)
+      // Refresh products after deletion
+      products.value = mapCartItemsToProducts()
+    }
+  }
+
+  /**
+   * Edit product - navigate to customization
+   */
+  async function editProduct(_factoryProductId: string): Promise<void> {
+    // This will be handled by CartDialog which has access to the composable
+    // The actual loading is done in CartDialog
+  }
+
+  /**
+   * Add product to cart
+   */
+  async function addProduct(payload: {
+    factory_product_id: number
+    quantity?: number
+  }): Promise<void> {
+    try {
+      await cartStore.addProductToCart(payload)
+      // Refresh products after adding
+      products.value = mapCartItemsToProducts()
+    } catch (error) {
+      console.error('Failed to add product:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Update product quantity
+   */
+  async function updateProductQuantity(factoryProductId: string, quantity: number): Promise<void> {
+    const product = products.value.find(p => p.factory_product_id === factoryProductId)
+    if (!product) {
+      console.error('Product not found:', factoryProductId)
+      return
+    }
+
+    try {
+      await cartStore.updateCartItem(product.cart_item_id, { quantity })
+      // Refresh products after update
+      products.value = mapCartItemsToProducts()
+    } catch (error) {
+      console.error('Failed to update product quantity:', error)
+      throw error
+    }
+  }
+
+  const formatPrice = (price: number): string => {
+    return `$${price.toFixed(2)}`
+  }
+
+  const formatAddons = (addons: Array<{ id: number; name: string }>): string => {
+    return addons.map(addon => addon.name).join(', ')
+  }
+
+  // ===== WATCHERS =====
+  // Watch cart store changes and update products automatically
+  watch(
+    () => cartStore.cart,
+    () => {
+      if (cartStore.cart) {
+        products.value = mapCartItemsToProducts()
+      }
+    },
+    { deep: true }
+  )
+
+  // ===== RETURN =====
   return {
+    // State
     products,
-    formatPrice,
-    formatAddons,
+    isLoading,
+    error,
+
+    // Computed
+    totalItems,
+    totalPrice,
+
+    // Actions
+    fetchCart,
     removeProduct,
     editProduct,
     addProduct,
     updateProductQuantity,
-    totalItems,
-    totalPrice
+
+    // Utilities
+    formatPrice,
+    formatAddons
   }
 }

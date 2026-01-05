@@ -51,6 +51,8 @@
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
   import { useLoadLockerProductIntoCustomizer } from '@/composables/useLoadLockerProductIntoCustomizer.ts'
+  import { useCartStore } from '@/stores/cart/cart.store'
+  import { useBuildFactoryProduct } from '@/composables/useBuildFactoryProduct'
   import { toast } from 'vue-sonner'
 
   const uiStore = useUIStore()
@@ -60,8 +62,10 @@
   const productsStore = useProductsStore()
   const history = useHistoryStore()
   const workflowStore = useWorkflowStore()
+  const cartStore = useCartStore()
   const { menuItems, goTo } = useCustomizerMenu()
   const { loadLockerProductIntoCustomizer } = useLoadLockerProductIntoCustomizer()
+  const { buildFactoryProductPayload } = useBuildFactoryProduct()
   const { openSignInDialog, handleLogout } = useSignIn()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
@@ -87,8 +91,59 @@
     }
   }
 
-  function handleSaveAsDraft() {
-    showSaveDesignDialog.value = true
+  async function handleSaveAsDraft() {
+    if (cartStore.isEditingCartProduct) {
+      // Update existing cart item
+      await handleUpdateCartProduct()
+    } else {
+      // Save as draft to locker
+      showSaveDesignDialog.value = true
+    }
+  }
+
+  async function handleUpdateCartProduct() {
+    if (!cartStore.editingCartItemId || !cartStore.editingFactoryProductId) {
+      toast.error('No cart product selected for update', {
+        position: 'top-right',
+        richColors: true
+      })
+      return
+    }
+
+    const { factory_product, product_assets } = await buildFactoryProductPayload()
+
+    const result = await cartStore.updateCartItem(cartStore.editingCartItemId, {
+      factory_product,
+      product_assets
+    })
+
+    // Only clear editing state if update was successful
+    // The store returns null on failure, or the response object with success: true on success
+    if (result && !result.errors.length) {
+      cartStore.clearEditingCartProduct()
+    }
+  }
+
+  async function handleAddToCart() {
+    try {
+      const { factory_product, product_assets } = await buildFactoryProductPayload()
+
+      await cartStore.addProductToCart({
+        factory_product,
+        product_assets
+      })
+
+      toast.success('Product added to cart', {
+        position: 'top-right',
+        richColors: true
+      })
+    } catch (error) {
+      toast.error('Failed to add product to cart', {
+        position: 'top-right',
+        richColors: true
+      })
+      console.error('Add to cart error:', error)
+    }
   }
 
   function handleSaveAndShare() {
@@ -187,7 +242,14 @@
           </Button>
         </ButtonGroup>
         <!-- Save Button Group with DropdownMenu -->
-        <DropdownMenu v-if="authStore.isAuthenticated">
+        <template v-if="cartStore.isEditingCartProduct">
+          <!-- Simple Update Button when editing cart product -->
+          <Button variant="outline" size="default" @click="handleUpdateCartProduct">
+            <Save class="size-4" />
+            <span>Update</span>
+          </Button>
+        </template>
+        <DropdownMenu v-else-if="authStore.isAuthenticated">
           <ButtonGroup>
             <DropdownMenuTrigger as-child>
               <Button variant="outline" size="default">
@@ -209,6 +271,10 @@
             <DropdownMenuItem @click="handleSaveAsDraft">
               <Save class="size-4 mr-2" />
               Save as Draft
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="handleAddToCart">
+              <ShoppingCart class="size-4 mr-2" />
+              Add to Cart
             </DropdownMenuItem>
             <DropdownMenuItem @click="handleSaveAndShare">
               <Save class="size-4 mr-2" />
@@ -238,7 +304,7 @@
 
       <!-- Locker Room Button -->
       <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <Button size="default" @click="showLockerBrowser = true">
+        <Button variant="outline" size="default" @click="showLockerBrowser = true">
           <LayoutGrid class="size-4" />
           <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>

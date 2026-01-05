@@ -11,7 +11,8 @@ import type {
   OutputProductText,
   OutputProductTextItem
 } from '@/services/products/types'
-import type { LockerProduct, ProductRosterDetail } from '@/services/lockers/types'
+import type { LockerProduct } from '@/services/lockers/types'
+import type { ProductRosterDetail } from '@/services/products/types'
 import type { CustomLogo } from '@/services/logos/types'
 import type { APCustomizationRosterEntry } from '@/services/products/types/customization'
 
@@ -380,7 +381,7 @@ function buildCustomizationFromLocker(
   const groupColors = normalizeGroupColors(locker.groupcolors)
   const logos = normalizeCustomLogos(locker.custom_logos, locker.product_id)
   const texts = normalizeTexts(locker.text, locker.product_id)
-  const rosterEntries = normalizeRosterEntries(locker.product_roster_detail)
+  const rosterEntries = normalizeRosterEntries(locker.product_roster_detail ?? undefined)
   const lockerRecord = locker as unknown as Record<string, unknown>
   const productCustomTextsRaw = lockerRecord['product_custom_texts']
   const fixedLogoIndexRaw = lockerRecord['fixed_logo_index']

@@ -1,11 +1,13 @@
 <script setup lang="ts">
-  import type { Locker, LockerProduct, ProductRosterDetail } from '@/services/lockers/types'
+  import type { Locker, LockerProduct } from '@/services/lockers/types'
+  import type { ProductRosterDetail } from '@/services/products/types'
   import { computed, ref, type ComputedRef } from 'vue'
   import LockerAssetsListing from './LockerAssetsListing.vue'
   import LockerColoursListing from './LockerColoursListing.vue'
   import LockerProductsListing from './LockerProductsListing.vue'
   import LockerRosters from './LockerRosters.vue'
   type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
+  type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
   type RosterProps = {
     roster_group: ProductRosterDetail[] | undefined
     group_name: string
@@ -15,6 +17,8 @@
     lockerTab: LockerTab
     preSelectedProducts: LockerProduct[]
     isCreatingCollection: boolean
+    sort: SortOption
+    search: string | null
   }>()
   const activeTab = computed(() => props.lockerTab)
   type EditLockerProductPayload = {
@@ -30,7 +34,7 @@
 
   const rosters_groups: ComputedRef<RosterProps[]> = computed(() =>
     props.locker.product.map(prod => ({
-      roster_group: prod.product_roster_detail,
+      roster_group: prod.product_roster_detail ?? undefined,
       group_name: prod.product_name
     }))
   )
@@ -46,6 +50,8 @@
         :locker-id="locker.id"
         :pre-selected-products="preSelectedProducts"
         :is-creating-collection="isCreatingCollection"
+        :sort="sort"
+        :search="search"
         @select-product="
           (locker_products: LockerProduct[]) => emit('select-product', locker_products)
         "

@@ -1,7 +1,7 @@
 import http from '../api'
 import type {
   Collection,
-  CollectionResponse,
+  CollectionLogoPresignedUrlsResponse,
   CopyProductPayload,
   Locker,
   LockerAssetsResponse,
@@ -68,10 +68,10 @@ async function saveDesign(payload: FormData) {
 //collection requests
 
 async function getCollections() {
-  return await http.get<CollectionResponse>(`collection`)
+  return await http.get<LockerResponse<Collection[]>>(`collection`)
 }
 async function getCollectionProducts(collection_id: number) {
-  return await http.post<Collection>(`collection/collection-data`, {
+  return await http.post<LockerResponse<Collection>>(`collection/products`, {
     collection_id: collection_id,
     collection_prd_ids: [],
     delete_ids: []
@@ -82,7 +82,25 @@ async function deleteCollection(id: number) {
 }
 
 async function saveCollection(payload: FormData) {
-  return await http.post<CollectionResponse>(`collection`, payload)
+  return await http.post<LockerResponse<Collection>>(`collection`, payload)
+}
+
+async function updateCollection(collection_id: number, payload: FormData) {
+  return await http.post<LockerResponse<Collection>>(`collection/${collection_id}`, payload)
+}
+
+async function getCollectionLogoPresignedUrls(
+  collection_id: number | null,
+  logoFiles: Array<{ name: string; type: string; size?: number }>
+) {
+  return await http.post<CollectionLogoPresignedUrlsResponse>(
+    `collection/generate-logo-presigned-urls`,
+    {
+      collection_id: collection_id || null,
+      logo_files: JSON.stringify(logoFiles),
+      expiration_minutes: 10
+    }
+  )
 }
 
 export default {
@@ -102,7 +120,9 @@ export default {
   getCollections,
   getCollectionProducts,
   saveCollection,
+  updateCollection,
   deleteCollection,
   //get s3 signed url
-  getSignedUrl
+  getSignedUrl,
+  getCollectionLogoPresignedUrls
 }

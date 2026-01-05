@@ -16,10 +16,9 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import { ArrowLeft, ArrowUpDown, Check, ChevronDown, PencilLine, Plus, X } from 'lucide-vue-next'
   import { storeToRefs } from 'pinia'
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
-    locker_collection_name_enter_placeholder,
     locker_collection_name_placeholder,
     ui_search_placeholder,
     locker_edit,
@@ -55,6 +54,7 @@
       currentCollection: Collection | null
       collectionCreationStep: number
       collectionTab: CollectionTab
+      creatingCollection?: boolean
     }>(),
     {
       currentMode: 'list',
@@ -64,7 +64,8 @@
       lockerDetailTab: 'products',
       currentCollection: null,
       collectionCreationStep: 1,
-      collectionTab: 'products'
+      collectionTab: 'products',
+      creatingCollection: false
     }
   )
 
@@ -75,12 +76,13 @@
   const profileStore = useProfileStore()
   const search = ref('')
   const isEditingLocker = ref(false)
+  const isEditingCollection = ref(false)
   const lockerRoomStore = useLockerRoomStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
   const { lockers, collections } = storeToRefs(lockerRoomStore)
   const room_name = ref(props.currentLocker?.room_name)
   const collection_name = ref(props.currentCollection?.name ?? '')
-  const creatingCollection = ref(false)
+  const creatingCollection = ref(props.creatingCollection ?? false)
 
   // Computed properties for translated tab labels
   const tabLabel = computed(() => {
@@ -117,6 +119,44 @@
     }
   }
 
+  const updateCollection = () => {
+    if (props.currentCollection && collection_name.value) {
+      // Don't allow editing name if collection has room_id
+      if (props.currentCollection.room_id) {
+        isEditingCollection.value = false
+        return
+      }
+      // Emit update event - parent will handle the actual update
+      emit('update-collection-name', collection_name.value)
+      isEditingCollection.value = false
+    }
+  }
+
+  const canEditCollection = computed(() => {
+    return props.currentCollection && !props.currentCollection.room_id
+  })
+
+  const cancelEditCollection = () => {
+    collection_name.value = props.currentCollection?.name ?? ''
+    isEditingCollection.value = false
+  }
+
+  watch(
+    () => props.currentCollection,
+    newCollection => {
+      collection_name.value = newCollection?.name ?? ''
+      isEditingCollection.value = false
+    }
+  )
+
+  watch(
+    () => props.creatingCollection,
+    newValue => {
+      creatingCollection.value = newValue ?? false
+    },
+    { immediate: true }
+  )
+
   const emit = defineEmits([
     'sort',
     'search',
@@ -129,7 +169,9 @@
     'change-locker-tab',
     'change-collection-tab',
     'create-collection',
-    'change-current-collection'
+    'change-current-collection',
+    'update-creating-collection',
+    'update-collection-name'
   ])
   defineExpose({
     creatingCollection,
@@ -138,50 +180,64 @@
 </script>
 <template>
   <DialogHeader>
-    <div v-if="currentMode === 'detail'" class="flex gap-2">
-      <Button
-        v-if="!creatingCollection"
-        size="icon"
-        variant="outline"
-        @click="
-          () => {
-            lockerTab = 'products'
-            emit('change-locker-tab', 'products')
-            emit('back')
-          }
-        "
-      >
-        <ArrowLeft class="w-5 h-5" />
-      </Button>
-      <template v-if="mainTab === 'lockers'">
-        <template v-if="currentLocker">
+    <!-- ========================================================= -->
+    <!-- DETAIL MODE HEADER -->
+    <!-- ========================================================= -->
+    <template v-if="currentMode === 'detail'">
+      <!-- ---------- BACK BUTTON ---------- -->
+      <div class="flex gap-2 items-center">
+        <Button
+          v-if="!creatingCollection"
+          size="icon"
+          variant="outline"
+          @click="
+            () => {
+              emit('change-locker-tab', 'products')
+              emit('back')
+            }
+          "
+        >
+          <ArrowLeft class="w-5 h-5" />
+        </Button>
+
+        <!-- ===================================================== -->
+        <!-- LOCKER DETAIL HEADER -->
+        <!-- ===================================================== -->
+        <template v-if="mainTab === 'lockers' && currentLocker && !creatingCollection">
+          <!-- VIEW MODE -->
           <template v-if="!isEditingLocker">
-            <DropdownMenu class="w-[200px]">
+            <DropdownMenu>
               <DropdownMenuTrigger as-child>
-                <Button variant="outline" class="flex items-center gap-2">
-                  {{ currentLocker?.room_name }}
+                <Button variant="outline">
+                  {{ currentLocker.room_name }}
                   <ChevronDown class="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent class="w-48">
+              <DropdownMenuContent>
                 <DropdownMenuItem
-                  v-for="(locker, index) in lockers"
-                  :key="index"
+                  v-for="locker in lockers"
+                  :key="locker.id"
                   @click="emit('change-current-locker', locker)"
                 >
                   <Check
-                    :class="{ '!opacity-100': currentLocker?.id === locker.id }"
-                    class="w-4 h-4 opacity-0"
+                    class="w-4 h-4"
+                    :class="{
+                      'opacity-100': locker.id === currentLocker.id,
+                      'opacity-0': locker.id !== currentLocker.id
+                    }"
                   />
                   {{ locker.room_name }}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button v-if="!creatingCollection" variant="outline" @click="isEditingLocker = true">
+
+            <Button variant="outline" @click="isEditingLocker = true">
               <PencilLine class="w-4 h-4" /> {{ locker_edit({}, { locale }) }}
             </Button>
           </template>
+
+          <!-- EDIT MODE -->
           <template v-else>
             <Input v-model="room_name" class="w-[200px]" />
             <ButtonGroup>
@@ -195,243 +251,229 @@
             </ButtonGroup>
           </template>
         </template>
-      </template>
 
-      <template v-if="currentCollection && !creatingCollection">
-        <template v-if="!isEditingLocker">
-          <DropdownMenu class="w-[200px]">
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" class="flex items-center gap-2">
-                {{ currentCollection?.name }}
-                <ChevronDown class="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
+        <!-- ===================================================== -->
+        <!-- COLLECTION DETAIL HEADER -->
+        <!-- ===================================================== -->
+        <template v-if="mainTab === 'collections' && currentCollection && !creatingCollection">
+          <!-- VIEW MODE -->
+          <template v-if="!isEditingCollection">
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="outline">
+                  {{ currentCollection.name }}
+                  <ChevronDown class="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
 
-            <DropdownMenuContent class="w-48">
-              <DropdownMenuItem
-                v-for="(collection, index) in collections"
-                :key="index"
-                @click="emit('change-current-collection', collection)"
-              >
-                <Check
-                  :class="{ '!opacity-100': currentCollection?.id === collection.id }"
-                  class="w-4 h-4 opacity-0"
-                />
-                {{ collection.name }}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button v-if="!creatingCollection" variant="outline" @click="isEditingLocker = true">
-            <PencilLine class="w-4 h-4" /> Edit
-          </Button>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  v-for="collection in collections"
+                  :key="collection.id"
+                  @click="emit('change-current-collection', collection)"
+                >
+                  <Check
+                    class="w-4 h-4"
+                    :class="{
+                      'opacity-100': collection.id === currentCollection.id,
+                      'opacity-0': collection.id !== currentCollection.id
+                    }"
+                  />
+                  {{ collection.name }}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              :disabled="!canEditCollection"
+              @click="isEditingCollection = true"
+            >
+              <PencilLine class="w-4 h-4" /> Edit
+            </Button>
+          </template>
+
+          <!-- EDIT MODE -->
+          <template v-else>
+            <Input
+              v-model="collection_name"
+              class="w-[200px]"
+              :placeholder="locker_collection_name_placeholder({}, { locale })"
+            />
+            <ButtonGroup>
+              <Button @click="updateCollection"> <Check class="w-4 h-4" /> Update </Button>
+              <Button @click="cancelEditCollection"> <X class="w-4 h-4" /> Cancel </Button>
+            </ButtonGroup>
+          </template>
         </template>
-        <template v-else>
+
+        <!-- ===================================================== -->
+        <!-- COLLECTION CREATION STEP 2 -->
+        <!-- ===================================================== -->
+        <template
+          v-if="
+            (creatingCollection || props.creatingCollection) &&
+            collectionCreationStep === 2 &&
+            mainTab === 'collections'
+          "
+        >
           <Input
             v-model="collection_name"
             class="w-[200px]"
-            :placeholder="locker_collection_name_enter_placeholder({}, { locale })"
-          />
-          <ButtonGroup>
-            <Button @click="updateLocker">
-              <Check class="w-4 h-4" />
-              Update
-            </Button>
-            <Button @click="isEditingLocker = false"> <X class="w-4 h-4" /> Cancel </Button>
-          </ButtonGroup>
-        </template>
-      </template>
-
-      <template v-if="!currentCollection && creatingCollection && collectionCreationStep === 2">
-        <Input
-          v-model="collection_name"
-          class="w-[200px]"
-          :placeholder="locker_collection_name_placeholder({}, { locale })"
-        />
-      </template>
-    </div>
-    <DialogTitle v-if="currentMode === 'list'" class="text-xl font-semibold">
-      {{
-        creatingCollection
-          ? locker_select_locker({}, { locale })
-          : locker_room_title({}, { locale })
-      }}
-    </DialogTitle>
-    <div class="flex flex-col md:flex-row items-center justify-between pb-4 border-b h-fit gap-2">
-      <div class="flex w-full items-center justify-between gap-2">
-        <template v-if="!uiStore.isMobile && currentMode === 'list' && !creatingCollection">
-          <Tabs
-            v-model="tab"
-            default-value="lockers"
-            class="space-x-2 w-[50%]"
-            @update:model-value="val => emit('tab-change', val)"
-          >
-            <TabsList class="w-full">
-              <TabsTrigger class="w-full" value="lockers">{{
-                locker_lockers_tab({}, { locale })
-              }}</TabsTrigger>
-              <TabsTrigger class="w-full" value="collections">{{
-                locker_collections_tab({}, { locale })
-              }}</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </template>
-        <template v-else-if="uiStore.isMobile && currentMode === 'list' && !creatingCollection">
-          <DropdownMenu v-model="tab" default-value="lockers" class="space-x-2 w-[50%]">
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" class="flex items-center gap-2">
-                {{ tabLabel }}
-                <ChevronDown class="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-full">
-              <DropdownMenuItem
-                class="w-full"
-                value="lockers"
-                @click="emit('tab-change', 'lockers')"
-                >{{ locker_lockers_tab({}, { locale }) }}</DropdownMenuItem
-              >
-              <DropdownMenuItem
-                class="w-full"
-                value="collections"
-                @click="emit('tab-change', 'collections')"
-                >{{ locker_collections_tab({}, { locale }) }}</DropdownMenuItem
-              >
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </template>
-        <template
-          v-else-if="
-            !uiStore.isMobile &&
-            currentMode === 'detail' &&
-            tab === 'lockers' &&
-            !creatingCollection
-          "
-        >
-          <Tabs
-            v-model="lockerTab"
-            default-value="products"
-            class="space-x-2 w-[50%]"
-            @update:model-value="val => emit('change-locker-tab', val)"
-          >
-            <TabsList class="w-full">
-              <TabsTrigger class="w-full" value="products">{{
-                locker_products_tab({}, { locale })
-              }}</TabsTrigger>
-              <TabsTrigger class="w-full" value="assets">{{
-                locker_assets_tab({}, { locale })
-              }}</TabsTrigger>
-              <TabsTrigger class="w-full" value="colours">{{
-                locker_colours_tab({}, { locale })
-              }}</TabsTrigger>
-              <TabsTrigger class="w-full" value="rosters">{{
-                locker_rosters_tab({}, { locale })
-              }}</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </template>
-        <template
-          v-else-if="
-            uiStore.isMobile && currentMode === 'detail' && tab === 'lockers' && !creatingCollection
-          "
-        >
-          <DropdownMenu v-model="lockerTab" default-value="products" class="space-x-2 w-[50%]">
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" class="flex items-center gap-2">
-                {{ lockerTabLabel }}
-                <ChevronDown class="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-full">
-              <DropdownMenuItem
-                class="w-full"
-                value="products"
-                @click="emit('change-locker-tab', 'products')"
-                >{{ locker_products_tab({}, { locale }) }}</DropdownMenuItem
-              >
-              <DropdownMenuItem
-                class="w-full"
-                value="assets"
-                @click="emit('change-locker-tab', 'assets')"
-                >{{ locker_assets_tab({}, { locale }) }}</DropdownMenuItem
-              >
-              <DropdownMenuItem
-                class="w-full"
-                value="colours"
-                @click="emit('change-locker-tab', 'colours')"
-                >{{ locker_colours_tab({}, { locale }) }}</DropdownMenuItem
-              >
-              <DropdownMenuItem
-                class="w-full"
-                value="rosters"
-                @click="emit('change-locker-tab', 'rosters')"
-                >{{ locker_rosters_tab({}, { locale }) }}</DropdownMenuItem
-              >
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </template>
-
-        <template
-          v-else-if="!uiStore.isMobile && currentMode === 'detail' && tab === 'collections'"
-        >
-          <Tabs
-            v-model="collectionTab"
-            default-value="products"
-            class="space-x-2 w-[50%]"
-            @update:model-value="
-              val => {
-                emit('change-collection-tab', val)
-              }
-            "
-          >
-            <TabsList class="w-full">
-              <TabsTrigger class="w-full" value="products">{{
-                locker_products_tab({}, { locale })
-              }}</TabsTrigger>
-              <TabsTrigger class="w-full" value="preview">{{
-                locker_preview({}, { locale })
-              }}</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </template>
-        <template v-else-if="uiStore.isMobile && currentMode === 'detail' && tab === 'collections'">
-          <DropdownMenu v-model="collectionTab" default-value="products" class="space-x-2 w-[50%]">
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" class="flex items-center gap-2">
-                {{ collectionTabLabel }}
-                <ChevronDown class="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-full">
-              <DropdownMenuItem
-                class="w-full"
-                value="products"
-                @click="emit('change-collection-tab', 'products')"
-                >{{ locker_products_tab({}, { locale }) }}</DropdownMenuItem
-              >
-              <DropdownMenuItem
-                class="w-full"
-                value="preview"
-                @click="emit('change-collection-tab', 'preview')"
-                >{{ locker_preview({}, { locale }) }}</DropdownMenuItem
-              >
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </template>
-        <template v-if="collectionCreationStep !== 2">
-          <InputSearchGroup
-            v-model="search"
-            :placeholder="ui_search_placeholder({}, { locale })"
-            class="w-full md:w-[30%]"
-            @update:model-value="
-              (val: string | number) => {
-                emit('search', val)
-                search = val as string
-              }
-            "
+            :placeholder="locker_collection_name_placeholder({}, { locale })"
           />
         </template>
       </div>
-      <div v-if="!creatingCollection" class="flex items-center justify-end gap-2 w-full md:w-fit">
+    </template>
+
+    <!-- ========================================================= -->
+    <!-- LIST MODE HEADER -->
+    <!-- ========================================================= -->
+    <template v-if="currentMode === 'list'">
+      <DialogTitle class="text-xl font-semibold">
+        {{
+          creatingCollection
+            ? locker_select_locker({}, { locale })
+            : locker_room_title({}, { locale })
+        }}
+      </DialogTitle>
+    </template>
+
+    <!-- ========================================================= -->
+    <!-- HEADER BODY -->
+    <!-- ========================================================= -->
+    <div class="flex flex-col md:flex-row justify-between gap-2 pb-4 border-b">
+      <!-- ================= LIST MODE TABS ================= -->
+      <template v-if="currentMode === 'list' && !creatingCollection">
+        <Tabs
+          v-if="!uiStore.isMobile"
+          v-model="tab"
+          class="w-[50%]"
+          @update:model-value="val => emit('tab-change', val)"
+        >
+          <TabsList class="w-full">
+            <TabsTrigger class="w-full" value="lockers">{{
+              locker_lockers_tab({}, { locale })
+            }}</TabsTrigger>
+            <TabsTrigger class="w-full" value="collections">{{
+              locker_collections_tab({}, { locale })
+            }}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <DropdownMenu v-else>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline">
+              {{ tabLabel }}
+              <ChevronDown class="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem @click="emit('tab-change', 'lockers')">{{
+              locker_lockers_tab({}, { locale })
+            }}</DropdownMenuItem>
+            <DropdownMenuItem @click="emit('tab-change', 'collections')">{{
+              locker_collections_tab({}, { locale })
+            }}</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </template>
+
+      <!-- ================= LOCKER DETAIL TABS ================= -->
+      <template v-if="currentMode === 'detail' && mainTab === 'lockers' && !creatingCollection">
+        <Tabs
+          v-if="!uiStore.isMobile"
+          v-model="lockerTab"
+          class="w-[50%]"
+          @update:model-value="val => emit('change-locker-tab', val)"
+        >
+          <TabsList class="w-full">
+            <TabsTrigger class="w-full" value="products">{{
+              locker_products_tab({}, { locale })
+            }}</TabsTrigger>
+            <TabsTrigger class="w-full" value="assets">{{
+              locker_assets_tab({}, { locale })
+            }}</TabsTrigger>
+            <TabsTrigger class="w-full" value="colours">{{
+              locker_colours_tab({}, { locale })
+            }}</TabsTrigger>
+            <TabsTrigger class="w-full" value="rosters">{{
+              locker_rosters_tab({}, { locale })
+            }}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <DropdownMenu v-else>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline">
+              {{ lockerTabLabel }}
+              <ChevronDown class="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem @click="emit('change-locker-tab', 'products')">{{
+              locker_products_tab({}, { locale })
+            }}</DropdownMenuItem>
+            <DropdownMenuItem @click="emit('change-locker-tab', 'assets')">{{
+              locker_assets_tab({}, { locale })
+            }}</DropdownMenuItem>
+            <DropdownMenuItem @click="emit('change-locker-tab', 'colours')">{{
+              locker_colours_tab({}, { locale })
+            }}</DropdownMenuItem>
+            <DropdownMenuItem @click="emit('change-locker-tab', 'rosters')">{{
+              locker_rosters_tab({}, { locale })
+            }}</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </template>
+
+      <!-- ================= COLLECTION DETAIL TABS ================= -->
+      <template v-if="currentMode === 'detail' && mainTab === 'collections'">
+        <Tabs
+          v-if="!uiStore.isMobile"
+          v-model="collectionTab"
+          class="w-[50%]"
+          @update:model-value="val => emit('change-collection-tab', val)"
+        >
+          <TabsList class="w-full">
+            <TabsTrigger class="w-full" value="products">{{
+              locker_products_tab({}, { locale })
+            }}</TabsTrigger>
+            <TabsTrigger class="w-full" value="preview">{{
+              locker_preview({}, { locale })
+            }}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <DropdownMenu v-else>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline">
+              {{ collectionTabLabel }}
+              <ChevronDown class="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem @click="emit('change-collection-tab', 'products')">{{
+              locker_products_tab({}, { locale })
+            }}</DropdownMenuItem>
+            <DropdownMenuItem @click="emit('change-collection-tab', 'preview')">{{
+              locker_preview({}, { locale })
+            }}</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </template>
+
+      <!-- ================= SEARCH ================= -->
+      <template v-if="collectionCreationStep !== 2">
+        <InputSearchGroup
+          v-model="search"
+          :placeholder="ui_search_placeholder({}, { locale })"
+          @update:model-value="val => emit('search', val)"
+        />
+      </template>
+
+      <!-- ================= SORT + CREATE ================= -->
+      <template v-if="!creatingCollection">
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button variant="outline" class="flex items-center gap-2">
@@ -439,9 +481,8 @@
               {{ locker_sort({}, { locale }) }}
             </Button>
           </DropdownMenuTrigger>
-
-          <DropdownMenuContent class="w-48">
-            <DropdownMenuItem @click="emit('sort', 'lastModified')">
+          <DropdownMenuContent>
+            <DropdownMenuItem @click="emit('sort', 'alphabetical')">
               <Check
                 :class="{ '!opacity-100': sortOption === 'lastModified' }"
                 class="w-4 h-4 opacity-0"
@@ -470,8 +511,7 @@
         <Button
           v-if="currentMode === 'list'"
           variant="primary"
-          class="w-full md:w-fit"
-          @click="() => (tab === 'lockers' ? emit('create-locker') : emit('create-collection'))"
+          @click="tab === 'lockers' ? emit('create-locker') : emit('create-collection')"
         >
           <Plus class="w-4 h-4" />
           {{
@@ -480,7 +520,7 @@
               : locker_create_locker({}, { locale })
           }}
         </Button>
-      </div>
+      </template>
     </div>
   </DialogHeader>
 </template>

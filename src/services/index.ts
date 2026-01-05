@@ -1,4 +1,5 @@
 import authenticationService from './authentication/authentication.service'
+import cartService from './cart/cart.service'
 import companyService from './company/company.service'
 import customerService from './customers/customer.service'
 import dashboardService from './dashboard/dashboard.service'
@@ -11,6 +12,7 @@ import permissionsService from './permissions/permissions.service'
 
 export const API = {
   authentication: authenticationService,
+  cart: cartService,
   company: companyService,
   products: productsService,
   logos: logosService,

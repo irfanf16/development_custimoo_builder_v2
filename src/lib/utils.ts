@@ -650,7 +650,6 @@ export async function uploadPresignedFiles(files: PresignedFile[]) {
 }
 
 export function base64ToFile(base64: string, filename: string): File {
-  console.log(base64)
   const arr = base64.split(',')
   const mime = arr[0]!.match(/:(.*?);/)?.[1] || 'image/png'
   const bstr = atob(arr[1]!)
@@ -662,6 +661,114 @@ export function base64ToFile(base64: string, filename: string): File {
   }
 
   return new File([u8arr], filename, { type: mime })
+}
+
+/**
+ * Convert image URL to File object
+ * Uses canvas approach to avoid CORS issues with fetch()
+ * @param url - Image URL (can be relative to storage base or absolute)
+ * @param filename - Optional filename, defaults to 'image.png'
+ * @returns Promise<File>
+ */
+export async function urlToFile(url: string, filename?: string): Promise<File> {
+  const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
+  const fullUrl = url.startsWith('http') ? url : `${storageBase}${url}`
+
+  // Try fetch first (works if CORS is properly configured)
+  try {
+    const response = await fetch(fullUrl, { mode: 'cors' })
+    if (response.ok) {
+      const blob = await response.blob()
+      const fileExtension = filename?.split('.').pop() || url.split('.').pop() || 'png'
+      const defaultFilename = filename || `image.${fileExtension}`
+      return new File([blob], defaultFilename, { type: blob.type || 'image/png' })
+    }
+  } catch (_fetchError) {
+    // If fetch fails (likely CORS), fall back to canvas approach
+    // This works because <img> tags can load cross-origin images
+  }
+
+  // Fallback: Use image element + canvas to convert to File
+  // Try with crossOrigin='anonymous' first (requires CORS headers from server)
+  // If that fails, try without crossOrigin (but canvas will be tainted)
+  return new Promise((resolve, reject) => {
+    let attemptWithCors = true
+
+    const attemptLoad = () => {
+      const img = new Image()
+      if (attemptWithCors) {
+        img.crossOrigin = 'anonymous'
+      }
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const ctx = canvas.getContext('2d')
+
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'))
+            return
+          }
+
+          ctx.drawImage(img, 0, 0)
+
+          // Try to convert canvas to blob
+          canvas.toBlob(
+            blob => {
+              if (!blob) {
+                // If we tried with CORS and it failed, try without CORS
+                if (attemptWithCors) {
+                  attemptWithCors = false
+                  attemptLoad()
+                } else {
+                  reject(new Error('Failed to convert canvas to blob'))
+                }
+                return
+              }
+
+              const fileExtension = filename?.split('.').pop() || url.split('.').pop() || 'png'
+              const defaultFilename = filename || `image.${fileExtension}`
+              const file = new File([blob], defaultFilename, { type: blob.type || 'image/png' })
+              resolve(file)
+            },
+            'image/png' // Default to PNG format
+          )
+        } catch (err) {
+          // If canvas is tainted (SecurityError), try without crossOrigin
+          if (err instanceof Error && err.name === 'SecurityError' && attemptWithCors) {
+            attemptWithCors = false
+            attemptLoad()
+          } else {
+            reject(
+              new Error(
+                `Failed to convert image to file: ${err instanceof Error ? err.message : String(err)}`
+              )
+            )
+          }
+        }
+      }
+
+      img.onerror = () => {
+        // If crossOrigin='anonymous' fails, try without it
+        if (attemptWithCors) {
+          attemptWithCors = false
+          attemptLoad()
+        } else {
+          reject(
+            new Error(
+              `Failed to load image from URL: ${fullUrl}. If this is an S3 URL, ensure CORS is configured on your bucket.`
+            )
+          )
+        }
+      }
+
+      img.src = fullUrl
+    }
+
+    attemptLoad()
+  })
 }
 
 export function objectToFormData(
@@ -692,9 +799,30 @@ export function objectToFormData(
 
     // Array
     if (Array.isArray(value)) {
-      value.forEach((item, index) => {
-        objectToFormData(item as Record<string, any>, formData, `${formKey}[${index}]`)
-      })
+      // Handle empty arrays by appending as JSON string (needed for nested arrays in FormData)
+      if (value.length === 0) {
+        formData.append(formKey, JSON.stringify([]))
+        return
+      }
+      // Handle non-empty arrays - check if items are objects/arrays that need recursive processing
+      const firstItem = value[0] as Record<string, any> | undefined
+      if (
+        firstItem &&
+        typeof firstItem === 'object' &&
+        !(firstItem instanceof File) &&
+        !(firstItem instanceof Blob) &&
+        !(firstItem instanceof Date)
+      ) {
+        // Array of objects/arrays - process each item recursively
+        value.forEach((item, index) => {
+          objectToFormData(item as Record<string, any>, formData, `${formKey}[${index}]`)
+        })
+      } else {
+        // Array of primitives - append each item directly
+        value.forEach((item, index) => {
+          formData.append(`${formKey}[${index}]`, String(item))
+        })
+      }
       return
     }
 

@@ -57,7 +57,7 @@
   const locale = computed(() => profileStore.currentLocale || 'en')
 
   onMounted(() => {
-    if (!collections.value.length) {
+    if (!collections.value?.length) {
       lockerRoomStore.fetchCollections()
     }
   })
@@ -67,7 +67,7 @@
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const computedCollections = computed(() => collections.value)
   const filteredCollections = computed(() => {
-    return computedCollections.value.filter(c =>
+    return computedCollections.value?.filter(c =>
       c.name.toLowerCase().includes(props.search?.toLowerCase() || '')
     )
   })
@@ -107,15 +107,26 @@
   //   room_name.value = undefined
   // }
 
-  async function saveEdit(locker: any) {
+  async function saveEdit(collection: any) {
     if (!editName.value.length) return
+    // Don't allow editing name if collection has room_id
+    if (collection.room_id) return
 
-    const updated = { ...locker, room_name: editName.value }
-
-    await lockerRoomStore.updateLockers(updated)
+    // Update collection name through store
+    const formData = new FormData()
+    formData.append('name', editName.value)
+    formData.append('_method', 'PUT')
+    await lockerRoomStore.updateCollection(collection.id, formData)
 
     editingIndex.value = null
     editName.value = ''
+  }
+
+  function startEdit(index: number, collection: any) {
+    // Don't allow editing if collection has room_id
+    if (collection.room_id) return
+    editingIndex.value = index
+    editName.value = collection.name
   }
 
   function cancelEdit() {
@@ -137,24 +148,28 @@
       <div
         class="bg-secondary rounded-md md:aspect-video flex justify-center items-center overflow-hidden gap-1 place-items-start p-[10px] border relative"
       >
-        <template v-if="collection.collection_products.length">
-          <AvatarQueue
-            :size="'60'"
-            :images="
-              collection.collection_products
-                .slice(0, 3)
-                .map(prod => baseStorageUrl + prod.product_locker_room.product_url)
-            "
-            :max="3"
-            :class="'overflow-hidden mr-2'"
-            :avatar-class="'!rounded-[13px] border-0 !ring-0 !bg-transparent !shadow-none '"
-          />
+        <template v-if="collection.collection_thumbnails.length">
+          <div class="w-[156px] flex justify-center">
+            <AvatarQueue
+              :size="'60'"
+              :images="
+                collection.collection_thumbnails
+                  .slice(0, 3)
+                  .map(thumbnail => baseStorageUrl + thumbnail.front_url)
+              "
+              :max="3"
+              :class="'overflow-hidden mr-2'"
+              :avatar-class="'!rounded-[13px] border-0 !ring-0 !bg-transparent !shadow-none '"
+            />
+          </div>
         </template>
         <template v-else>
-          <img
-            :src="PLACEHOLDER_IMAGE"
-            class="h-full overflow-hidden object-contain rounded-md mx-auto w-full"
-          />
+          <div class="w-[156px] flex justify-center">
+            <img
+              :src="PLACEHOLDER_IMAGE"
+              class="h-full overflow-hidden object-contain rounded-md w-full"
+            />
+          </div>
         </template>
       </div>
 
@@ -187,7 +202,13 @@
         class="metadata flex flex-col justify-center"
         @click.stop="emit('open-collection', collection)"
       >
-        <div class="mt-2 text-base font-medium">{{ collection.name }}</div>
+        <div
+          class="mt-2 text-base font-medium"
+          :class="{ 'cursor-text': !collection.room_id }"
+          @dblclick.stop="startEdit(collectionIndex, collection)"
+        >
+          {{ collection.name }}
+        </div>
         <div class="text-sm text-muted-foreground flex gap-1 items-center">
           <span class="flex items-center gap-1">
             <ShoppingBag class="size-3.5 inline-block" />

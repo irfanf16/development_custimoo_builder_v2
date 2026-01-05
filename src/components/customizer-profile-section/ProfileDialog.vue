@@ -18,8 +18,15 @@
   import { DialogTitle, DialogDescription } from '@/components/ui/dialog'
   import { useSignIn } from '@/composables/useSignIn'
 
-  const props = defineProps<{ open: boolean }>()
-  const emit = defineEmits(['update:open'])
+  const props = defineProps<{
+    open: boolean
+    initialTab?: 'account' | 'orders' | 'address' | 'preferences'
+    showSelectAddressButton?: boolean
+  }>()
+  const emit = defineEmits<{
+    'update:open': [value: boolean]
+    selectAddress: [address: import('@/services/customers/types').Address]
+  }>()
 
   const { tab, tabItems } = useProfileDialogState()
   const profileStore = useProfileStore()
@@ -84,6 +91,11 @@
     showMobileTabList.value = true
   }
 
+  function handleAddressSelect(address: import('@/services/customers/types').Address) {
+    emit('selectAddress', address)
+    emit('update:open', false)
+  }
+
   watch(
     () => props.open,
     isOpen => {
@@ -91,6 +103,11 @@
         // Initialize locale if not already initialized
         if (!profileStore.isInitialized) {
           void profileStore.initializeLocale()
+        }
+        // Set initial tab if provided
+        if (props.initialTab) {
+          tab.value = props.initialTab
+          profileStore.activeTab = props.initialTab
         }
         // Reset mobile view to tab list when dialog opens
         if (uiStore.isMobile) {
@@ -159,7 +176,10 @@
                 <OrdersTab title="Orders" />
               </TabsContent>
               <TabsContent value="address" class="h-full">
-                <AddressTab />
+                <AddressTab
+                  :show-select-button="showSelectAddressButton"
+                  @select-address="handleAddressSelect"
+                />
               </TabsContent>
               <TabsContent value="preferences" class="h-full px-4">
                 <PreferencesTab />
@@ -238,7 +258,10 @@
                   <OrdersTab title="Orders" />
                 </TabsContent>
                 <TabsContent value="address" class="mt-0 h-full">
-                  <AddressTab />
+                  <AddressTab
+                    :show-select-button="showSelectAddressButton"
+                    @select-address="handleAddressSelect"
+                  />
                 </TabsContent>
                 <TabsContent value="preferences" class="px-4 py-4 mt-0 h-full">
                   <PreferencesTab />

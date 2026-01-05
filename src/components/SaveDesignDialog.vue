@@ -143,7 +143,7 @@
     ).getImageFromCanvas()
   }
 
-  const componentRef = sceneStore.threeDSceneRef
+  let componentRef = sceneStore.threeDSceneRef
   if (componentRef && 'getImageFromCanvas' in componentRef) {
     frontImage.value = (
       componentRef as unknown as ComponentPublicInstance & {
@@ -177,31 +177,77 @@
       })
       const results = await uploadPresignedFiles(preparedFiles)
       if (results.every(r => r.success)) {
+        const customization = customizationStore.customization
+        const productId = activeProductDetails.value!.product_id
+        const productKey = String(productId)
+
+        // Get svg_parts from active design details
+        const svgParts = productsStore.activeDesignDetails?.svg_parts || []
+
+        // Get custom logos
+        const customLogos = customization?.custom_logos[productKey] || []
+
+        // Get product custom texts
+        const productCustomTexts = customization?.product_custom_texts[productKey] || []
+
+        // Get roster detail
+        const rosterDetail = customization?.products_rosters[productKey] || []
+
+        // Get default colors
+        const defaultColors = customization?.default_colors || []
+
+        // Get group colors
+        const groupColors = customization?.group_colors || {}
+
+        // Get svgcolors from svgGroups
+        const svgcolors = productsStore.svgGroups.map(group => ({
+          value: group.color || '',
+          name: group.name || '',
+          pantone: group.pantone || ''
+        }))
+
+        // Get addons info
+        const addonsInfo = customization?.addons_info || {}
+        // grouped_addons should be an object (empty object if no grouped addons)
+        const groupedAddons =
+          Object.keys(addonsInfo).length > 0
+            ? Object.values(addonsInfo).reduce(
+                (acc, addonInfo: any) => {
+                  // Merge all grouped_addons from all products
+                  const grouped = addonInfo?.grouped_addons || {}
+                  return { ...acc, ...grouped }
+                },
+                {} as Record<string, unknown>
+              )
+            : {}
+        const ungroupedAddons = Object.values(addonsInfo).flatMap(
+          (addonInfo: any) => addonInfo?.ungrouped_addons || []
+        )
+
+        // Build locker product payload matching API structure
         let locker = {
           addons: [],
-          roster_url: true,
+          roster_url: false,
           room_id: selectedLockerId.value,
-          modelId: null,
-          product_id: activeProductDetails.value!.product_id,
-          product_name: productName.value,
-          // svg_parts: scene_ref.parts,
-          style_id: customizationStoreRef.activeStyleId.value,
-          design_id: customizationStore.activeDesignId,
-          custom_logos: [],
-          text: [],
+          product_id: productId,
+          product_name: productName.value || '',
+          svg_parts: svgParts,
+          style_id: customizationStoreRef.activeStyleId.value || 0,
+          design_id: customizationStore.activeDesignId || 0,
+          custom_logos: customLogos,
+          text: productCustomTexts,
           colors: [],
-          shuffle_color_number: 0,
-          defaultcolors: [],
-          groupcolors: [],
+          shuffle_color_number: customization?.shuffle_color_number || 0,
+          defaultcolors: defaultColors,
+          groupcolors: groupColors,
           front_image: signedUrls.urls.find(item => item.file_side === 'front')!.original_url,
           back_image: signedUrls.urls.find(item => item.file_side === 'back')!.original_url,
-          product_roster_detail: [],
-          fixed_logo_index: 0,
-          svgcolors: [],
-          grouped_addons: [],
-          ungrouped_addons: [],
-          group_patterns: [],
-          locker_id: selectedLockerId.value
+          product_roster_detail: rosterDetail,
+          fixed_logo_index: customization?.fixed_logo_index || 0,
+          svgcolors: svgcolors,
+          grouped_addons: groupedAddons,
+          ungrouped_addons: ungroupedAddons,
+          group_patterns: customization?.group_patterns || {}
         }
         const payload = objectToFormData(locker)
         const success = await lockerStore.saveDesignToLocker(
@@ -245,6 +291,19 @@
               getImageFromCanvas: () => string
             }
           ).getImageFromCanvas()
+        }
+        componentRef = sceneStore.threeDSceneRef
+        if (componentRef && 'getImageFromCanvas' in componentRef) {
+          frontImage.value = (
+            componentRef as unknown as ComponentPublicInstance & {
+              getImageFromCanvas: (side?: string) => string
+            }
+          ).getImageFromCanvas('front')
+          backImage.value = (
+            componentRef as unknown as ComponentPublicInstance & {
+              getImageFromCanvas: (side?: string) => string
+            }
+          ).getImageFromCanvas('back')
         }
       }
     }

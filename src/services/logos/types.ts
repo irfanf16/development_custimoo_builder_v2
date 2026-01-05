@@ -67,3 +67,11 @@ export type OutputUpdateLogo = {
   message: string
   logo: string
 }
+
+export type OutputLogoColors = {
+  message: string
+  result: {
+    logo_colors: number[][]
+  }
+  errors: string[]
+}

@@ -18,6 +18,16 @@
   import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
   import { m as messages } from '@/paraglide/messages'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import type { Address } from '@/services/customers/types'
+
+  const props = defineProps<{
+    showSelectButton?: boolean
+  }>()
+
+  const emit = defineEmits<{
+    selectAddress: [address: Address]
+  }>()
+
   const store = useProfileStore()
   onMounted(() => {
     store.fetchAddresses()
@@ -135,8 +145,17 @@
 
             <!-- Buttons at Bottom -->
             <div class="mt-auto space-y-2 pt-4">
+              <!-- Select Address Button (shown when showSelectButton prop is true) -->
               <Button
-                v-if="!store.isDefault(address)"
+                v-if="props.showSelectButton"
+                class="w-full text-xs bg-primary text-white h-8 hover:bg-primary/90"
+                @click="emit('selectAddress', address)"
+              >
+                Select this address
+              </Button>
+
+              <Button
+                v-if="!store.isDefault(address) && !props.showSelectButton"
                 class="w-full text-xs bg-transparent h-8"
                 variant="outline"
                 @click="store.setDefaultAddress(address)"
@@ -144,7 +163,7 @@
                 {{ t.setAsDefault }}
               </Button>
 
-              <div class="flex gap-2">
+              <div v-if="!props.showSelectButton" class="flex gap-2">
                 <Button
                   class="w-3/4 text-xs bg-transparent h-8"
                   variant="outline"
