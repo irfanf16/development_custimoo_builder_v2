@@ -110,7 +110,8 @@
     if (!props.imageData) return undefined
     return {
       file_url: props.imageData.design_url,
-      file_extension: props.imageData.file_extension
+      file_extension: props.imageData.file_extension,
+      safe_zone_url: props.imageData.safe_zone_url
     }
   })
 
@@ -123,6 +124,7 @@
     initCanvas,
     addDesign,
     disposeCanvas,
+    loadImageFromURL: loadImageFromURLCommon,
     fromStorage,
     productsStore
   } = useSceneCommon(toRef(props, 'productId'), toRef(props, 'side'), designFromImageData)
@@ -730,6 +732,36 @@
   }
 
   /**
+   * Load safe zone SVG and set as clip path
+   */
+  async function addSafeZone(safeZoneUrl?: string): Promise<void> {
+    if (!canvas.value || !safeZoneUrl) return
+    const clip = (await loadImageFromURLCommon(safeZoneUrl, 'svg', {
+      hasControls: false,
+      selectable: false,
+      evented: false,
+      lockMovementX: true,
+      lockMovementY: true,
+      absolutePositioned: true,
+      inverted: true,
+      flipY: true,
+      originX: 'center',
+      originY: 'center'
+    })) as Group
+
+    clip.scaleToHeight(props.canvasResolution)
+    clip.set({
+      left: 0,
+      top: 0
+    })
+    clip.setCoords()
+    if (canvas.value) {
+      canvas.value.viewportCenterObject(clip)
+    }
+    safeZone.value = clip
+  }
+
+  /**
    * Add logo to canvas (3D scene)
    * Uses the shared composable with 3D-specific configuration
    */
@@ -889,6 +921,10 @@
             }
           })
         ])
+
+        if (designData.safe_zone_url) {
+          await addSafeZone(designData.safe_zone_url)
+        }
 
         mounted.value = true
 
@@ -1391,6 +1427,10 @@
 
             if (texture.value) {
               texture.value.needsUpdate = true
+            }
+
+            if (newDesign.safe_zone_url) {
+              await addSafeZone(newDesign.safe_zone_url)
             }
           } catch (error) {
             console.error('Failed to reload design:', error)
