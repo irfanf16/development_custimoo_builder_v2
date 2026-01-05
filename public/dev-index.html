@@ -399,7 +399,7 @@
       const xhttp = new XMLHttpRequest()
       window.custimoo_app_info = undefined // used by customizer_v2.js
       let testing_mode = localStorage.getItem('cutimoo_testing_mode')
-      let API_ENDPOINT = 'http://localhost:8000'
+      let API_ENDPOINT = 'http://custimoo_backend.test'
       if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_ENDPOINT) {
         API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT
       } else if (window.__ENV?.VITE_API_ENDPOINT) {
@@ -409,7 +409,7 @@
         let pageRes = JSON.parse(this.response)
         const s = document.createElement('script')
 
-        let customizer_version = pageRes.customizer_version
+        let customizer_version = 2
         if (customizer_version && customizer_version === 2) {
           s.type = 'module'
           s.src = `/src/main.ts`
