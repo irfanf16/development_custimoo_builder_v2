@@ -77,7 +77,7 @@
   const showSaveDesignDialog = ref(false)
   const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
 
-  const skuInformation = computed(() => productsStore.skuInformation)
+  const skuInformation = computed(() => productsStore?.activeProductDetails?.sku)
 
   // Methods
   async function handleResetCustomization() {

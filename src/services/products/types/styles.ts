@@ -69,18 +69,6 @@ export type OutputStyleDetails = OutputStylePreviewFront & {
   updated_at: string
 }
 
-export type OutputSkuInformation = {
-  description: string
-  id: number
-  image_url: string
-  minimum_order_quantity: number
-  minimum_order_quantity_type: string
-  reorder_follows_moq: number
-  sizechart_reference: string
-  sku_id: number
-  sku_number: number
-}
-
 export type ActiveProductDetails = {
   productDetails: import('./products').OutputProductDetails
   styleDetails: OutputStyleDetails

@@ -12,6 +12,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     IFlexFlatPaintPalette: typeof import('~icons/flex-flat/paint-palette')['default']
+    IFlexFlatUploadImagePlaceholder: typeof import('~icons/flex-flat/upload-image-placeholder')['default']
     IFlexLineAiEditSpark: typeof import('~icons/flex-line/ai-edit-spark')['default']
     IFlexLineAiSparkles: typeof import('~icons/flex-line/ai-sparkles')['default']
     IFlexLineCart: typeof import('~icons/flex-line/cart')['default']
