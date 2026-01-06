@@ -23,7 +23,10 @@
     >
       <slot />
     </ScrollAreaViewport>
-    <ScrollBar />
+    <!-- Keep scrollbar mounted to avoid DOM childList mutations on hover/scroll.
+         In Shadow DOM, Reka's FocusScope may treat such mutations as "focused node removed"
+         and focus the dialog container, which blurs inputs. -->
+    <ScrollBar force-mount />
     <ScrollAreaCorner />
   </ScrollAreaRoot>
 </template>
