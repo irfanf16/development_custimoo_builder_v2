@@ -9,6 +9,7 @@ import { useHistoryStore } from '@/stores/history/history.store'
 import { useCategoryParams } from './useCategoryParams'
 import type { OutputDesignDetails } from '../services/products/types'
 import { useProfileStore } from '@/stores/profile/profile.store'
+import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
 import { useLocalStorage } from './useLocalStorage'
 import { useAppStore } from '@/stores/app/app.store'
 import { getCustomizerIframe } from '../lib/widgetUtils'
@@ -205,6 +206,7 @@ export function useAppInitialization() {
   const fetchEssentialData = async (context: InitializationContext): Promise<void> => {
     const { productsStore, customizationStore } = context.stores
     const companyStore = useCompanyStore()
+    const lockerRoomStore = useLockerRoomStore()
 
     const previousCompanyIdRaw = storage.getItemRaw(COMPANY_ID_STORAGE_KEY)
     const previousCompanyId = (() => {
@@ -233,6 +235,8 @@ export function useAppInitialization() {
     ])
 
     context.hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
+    // Fetch locker room with colors data
+    await lockerRoomStore.fetchLockersWithcolors()
 
     // Reload workflow state now that the correct storage prefix is known
     wf.loadFromLocalStorage()

@@ -5,10 +5,36 @@
   import { ScrollAreaCorner, ScrollAreaRoot, ScrollAreaViewport } from 'reka-ui'
   import { cn } from '@/lib/utils'
   import ScrollBar from './ScrollBar.vue'
+  import { computed } from 'vue'
 
-  const props = defineProps<ScrollAreaRootProps & { class?: HTMLAttributes['class'] }>()
+  type Direction = 'vertical' | 'horizontal' | 'both'
 
-  const delegatedProps = reactiveOmit(props, 'class')
+  const props = withDefaults(
+    defineProps<
+      ScrollAreaRootProps & {
+        class?: HTMLAttributes['class']
+        direction?: Direction
+      }
+    >(),
+    {
+      direction: 'vertical'
+    }
+  )
+
+  const delegatedProps = reactiveOmit(props, 'class', 'direction')
+
+  const viewportClass = computed(() => {
+    switch (props.direction) {
+      case 'horizontal':
+        return 'overflow-x-auto overflow-y-hidden'
+      case 'vertical':
+        return 'overflow-y-auto overflow-x-hidden'
+      case 'both':
+        return 'overflow-auto'
+      default:
+        return 'overflow-y-auto'
+    }
+  })
 </script>
 
 <template>
@@ -19,11 +45,25 @@
   >
     <ScrollAreaViewport
       data-slot="scroll-area-viewport"
-      class="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
+      :class="
+        cn(
+          'w-full h-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px]',
+          viewportClass
+        )
+      "
     >
       <slot />
     </ScrollAreaViewport>
-    <ScrollBar />
+
+    <!-- Styled Scrollbar -->
+    <ScrollBar v-if="props.direction !== 'both'" :orientation="props.direction" />
+
+    <!-- If both, show both scrollbars -->
+    <template v-else>
+      <ScrollBar orientation="vertical" />
+      <ScrollBar orientation="horizontal" />
+    </template>
+
     <ScrollAreaCorner />
   </ScrollAreaRoot>
 </template>
