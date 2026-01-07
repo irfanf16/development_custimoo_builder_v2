@@ -21,7 +21,9 @@
     v-bind="delegatedProps"
     :class="
       cn(
-        'flex touch-none p-px transition-colors select-none',
+        // Keep visible by default (we hide native scrollbars in the viewport via Reka).
+        // z-20 ensures it renders above complex tab/list layouts.
+        'flex touch-none p-px transition-colors select-none z-20 bg-muted/30 hover:bg-muted/40',
         orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent',
         orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
         props.class
@@ -30,7 +32,7 @@
   >
     <ScrollAreaThumb
       data-slot="scroll-area-thumb"
-      class="relative flex-1 rounded-full bg-primary"
+      class="relative flex-1 rounded-full bg-primary/80"
     />
   </ScrollAreaScrollbar>
 </template>

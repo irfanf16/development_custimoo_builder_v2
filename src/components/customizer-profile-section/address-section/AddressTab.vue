@@ -98,123 +98,125 @@
     </div>
 
     <!-- Address List -->
-    <ScrollArea class="flex-1 h-full overflow-y-auto">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-4 pb-4">
-        <!-- Address Card -->
-        <Card
-          v-for="address in store.addresses"
-          :key="address.id"
-          class="flex flex-col justify-between hover:bg-muted/50 transition-colors"
-        >
-          <CardContent class="flex flex-col h-full justify-between">
-            <!-- Top: Company/Name -->
-            <div>
-              <div class="flex flex-col gap-2 mb-1">
-                <p class="text-sm font-medium text-muted-foreground">
-                  {{ address.company_name ? t.business : t.personal }}
-                </p>
-                <Badge
-                  v-if="store.isDefault(address)"
-                  variant="default"
-                  class="font-normal self-start"
+    <div class="flex-1 min-h-0">
+      <ScrollArea class="h-full overflow-y-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-4 pb-4">
+          <!-- Address Card -->
+          <Card
+            v-for="address in store.addresses"
+            :key="address.id"
+            class="flex flex-col justify-between hover:bg-muted/50 transition-colors"
+          >
+            <CardContent class="flex flex-col h-full justify-between">
+              <!-- Top: Company/Name -->
+              <div>
+                <div class="flex flex-col gap-2 mb-1">
+                  <p class="text-sm font-medium text-muted-foreground">
+                    {{ address.company_name ? t.business : t.personal }}
+                  </p>
+                  <Badge
+                    v-if="store.isDefault(address)"
+                    variant="default"
+                    class="font-normal self-start"
+                  >
+                    {{ t.defaultAddress }}
+                  </Badge>
+
+                  <p class="text-base font-semibold text-foreground">
+                    {{
+                      address.company_name
+                        ? address.company_name
+                        : address.first_name + ' ' + address.last_name
+                    }}
+                  </p>
+                </div>
+
+                <!-- Address Details -->
+                <div class="text-[14px] text-foreground leading-relaxed mb-4 space-y-0.5">
+                  <p v-if="address.address1">{{ address.address1 }}</p>
+                  <p v-if="address.address2">{{ address.address2 }}</p>
+                  <p>
+                    {{ address.zip_code }}&nbsp;
+                    {{ address.city }}
+                    <span v-if="address.state">, {{ address.state }}</span>
+                  </p>
+                  <p v-if="address.country?.name">{{ address.country.name }}</p>
+                </div>
+              </div>
+
+              <!-- Buttons at Bottom -->
+              <div class="mt-auto space-y-2 pt-4">
+                <!-- Select Address Button (shown when showSelectButton prop is true) -->
+                <Button
+                  v-if="props.showSelectButton"
+                  class="w-full text-xs bg-primary text-white h-8 hover:bg-primary/90"
+                  @click="emit('selectAddress', address)"
                 >
-                  {{ t.defaultAddress }}
-                </Badge>
+                  Select this address
+                </Button>
 
-                <p class="text-base font-semibold text-foreground">
-                  {{
-                    address.company_name
-                      ? address.company_name
-                      : address.first_name + ' ' + address.last_name
-                  }}
-                </p>
+                <Button
+                  v-if="!store.isDefault(address) && !props.showSelectButton"
+                  class="w-full text-xs bg-transparent h-8"
+                  variant="outline"
+                  @click="store.setDefaultAddress(address)"
+                >
+                  {{ t.setAsDefault }}
+                </Button>
+
+                <div v-if="!props.showSelectButton" class="flex gap-2">
+                  <Button
+                    class="w-3/4 text-xs bg-transparent h-8"
+                    variant="outline"
+                    @click="
+                      () => {
+                        store.editingAddress = address
+                        store.showAddModal = true
+                      }
+                    "
+                  >
+                    <i-flex-line-edit /> {{ t.edit }}
+                  </Button>
+
+                  <Button
+                    class="w-1/4 bg-transparent h-8"
+                    size="icon"
+                    variant="outline"
+                    :disabled="store.isDefault(address)"
+                    @click="
+                      () => {
+                        store.addressToDelete = address
+                        store.showDeleteConfirm = true
+                      }
+                    "
+                  >
+                    <i-flex-line-delete />
+                  </Button>
+                </div>
               </div>
+            </CardContent>
+          </Card>
 
-              <!-- Address Details -->
-              <div class="text-[14px] text-foreground leading-relaxed mb-4 space-y-0.5">
-                <p v-if="address.address1">{{ address.address1 }}</p>
-                <p v-if="address.address2">{{ address.address2 }}</p>
-                <p>
-                  {{ address.zip_code }}&nbsp;
-                  {{ address.city }}
-                  <span v-if="address.state">, {{ address.state }}</span>
-                </p>
-                <p v-if="address.country?.name">{{ address.country.name }}</p>
-              </div>
-            </div>
-
-            <!-- Buttons at Bottom -->
-            <div class="mt-auto space-y-2 pt-4">
-              <!-- Select Address Button (shown when showSelectButton prop is true) -->
+          <!-- Add Address Card -->
+          <Card
+            v-if="store.addresses.length"
+            class="flex flex-col items-center justify-center hover:bg-muted/50 transition-colors"
+          >
+            <CardContent class="flex flex-col items-center justify-center p-4">
+              <!-- Increased icon size -->
+              <component :is="flexFlatCategoryIcons.AddressIcon" class="size-12 text-primary" />
               <Button
-                v-if="props.showSelectButton"
-                class="w-full text-xs bg-primary text-white h-8 hover:bg-primary/90"
-                @click="emit('selectAddress', address)"
-              >
-                Select this address
-              </Button>
-
-              <Button
-                v-if="!store.isDefault(address) && !props.showSelectButton"
-                class="w-full text-xs bg-transparent h-8"
+                class="bg-transparent mt-4 h-8"
                 variant="outline"
-                @click="store.setDefaultAddress(address)"
+                @click.prevent="openAddAddressModal"
               >
-                {{ t.setAsDefault }}
+                + {{ t.addNewAddress }}
               </Button>
-
-              <div v-if="!props.showSelectButton" class="flex gap-2">
-                <Button
-                  class="w-3/4 text-xs bg-transparent h-8"
-                  variant="outline"
-                  @click="
-                    () => {
-                      store.editingAddress = address
-                      store.showAddModal = true
-                    }
-                  "
-                >
-                  <i-flex-line-edit /> {{ t.edit }}
-                </Button>
-
-                <Button
-                  class="w-1/4 bg-transparent h-8"
-                  size="icon"
-                  variant="outline"
-                  :disabled="store.isDefault(address)"
-                  @click="
-                    () => {
-                      store.addressToDelete = address
-                      store.showDeleteConfirm = true
-                    }
-                  "
-                >
-                  <i-flex-line-delete />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <!-- Add Address Card -->
-        <Card
-          v-if="store.addresses.length"
-          class="flex flex-col items-center justify-center hover:bg-muted/50 transition-colors"
-        >
-          <CardContent class="flex flex-col items-center justify-center p-4">
-            <!-- Increased icon size -->
-            <component :is="flexFlatCategoryIcons.AddressIcon" class="size-12 text-primary" />
-            <Button
-              class="bg-transparent mt-4 h-8"
-              variant="outline"
-              @click.prevent="openAddAddressModal"
-            >
-              + {{ t.addNewAddress }}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+      </ScrollArea>
+    </div>
 
     <!-- Add/Edit Modal -->
     <Dialog v-model:open="store.showAddModal">

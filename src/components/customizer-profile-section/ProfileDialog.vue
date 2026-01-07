@@ -121,7 +121,7 @@
 
 <template>
   <Dialog :open="props.open" variant="large" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="p-0">
+    <DialogContent variant="large" class="p-0 flex flex-col overflow-hidden">
       <DialogTitle class="sr-only">{{ myProfileLabel }}</DialogTitle>
       <DialogDescription class="sr-only">
         {{ messages.profile_my_profile({}, { locale: profileStore.currentLocale }) }}
@@ -135,7 +135,7 @@
 
       <!-- Desktop Layout -->
       <template v-if="!uiStore.isMobile">
-        <div class="flex h-full flex-row">
+        <div class="flex flex-1 min-h-0 flex-row">
           <Tabs
             v-model="tab"
             orientation="vertical"
@@ -162,9 +162,9 @@
           </Tabs>
 
           <!-- Desktop Content -->
-          <div class="flex-1 relative py-2">
-            <Tabs v-model="tab" orientation="vertical" class="h-full">
-              <TabsContent value="account" class="h-full">
+          <div class="flex-1 relative py-2 min-h-0 overflow-hidden">
+            <Tabs v-model="tab" orientation="vertical" class="h-full min-h-0 overflow-hidden">
+              <TabsContent value="account" class="mt-0 h-full min-h-0">
                 <AccountTab
                   title="Account"
                   :counters="counters"
@@ -172,16 +172,16 @@
                   @sign-out="handleSignOut"
                 />
               </TabsContent>
-              <TabsContent value="orders" class="h-full">
+              <TabsContent value="orders" class="mt-0 h-full min-h-0">
                 <OrdersTab title="Orders" />
               </TabsContent>
-              <TabsContent value="address" class="h-full">
+              <TabsContent value="address" class="mt-0 h-full min-h-0">
                 <AddressTab
                   :show-select-button="showSelectAddressButton"
                   @select-address="handleAddressSelect"
                 />
               </TabsContent>
-              <TabsContent value="preferences" class="h-full px-4">
+              <TabsContent value="preferences" class="mt-0 h-full min-h-0 px-4">
                 <PreferencesTab />
               </TabsContent>
             </Tabs>
