@@ -20,6 +20,7 @@
   import type { Address, AddressPayload } from '@/services/customers/types'
   import { m as messages } from '@/paraglide/messages'
   import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
 
   const props = defineProps<{ address?: Address | null }>()
   const emit = defineEmits<{
@@ -30,33 +31,38 @@
   const profileStore = useProfileStore()
   const uiStore = useUIStore()
   const isMobile = uiStore.isMobile
+  const isSavingAddress = computed(() => profileStore.isLoadingAddresses)
 
   const requiredMessage = (label: string) => `${label} is required`
   const emailMessage = (label: string) => `${label} must be a valid email address`
   const phoneMessage = (label: string) => `${label} must contain at least 6 numbers`
 
-  const t = computed(() => ({
-    personal: messages.profile_personal({}, { locale: profileStore.currentLocale }),
-    business: messages.profile_business({}, { locale: profileStore.currentLocale }),
-    firstName: messages.profile_first_name({}, { locale: profileStore.currentLocale }),
-    lastName: messages.profile_last_name({}, { locale: profileStore.currentLocale }),
-    email: messages.profile_email({}, { locale: profileStore.currentLocale }),
-    phoneNumber: messages.profile_phone_number({}, { locale: profileStore.currentLocale }),
-    companyName: messages.profile_company_name({}, { locale: profileStore.currentLocale }),
-    addressLine1: messages.profile_address_line_1({}, { locale: profileStore.currentLocale }),
-    addressLine2: messages.profile_address_line_2({}, { locale: profileStore.currentLocale }),
-    city: messages.profile_city({}, { locale: profileStore.currentLocale }),
-    zipCode: messages.profile_zip_code({}, { locale: profileStore.currentLocale }),
-    country: messages.profile_country({}, { locale: profileStore.currentLocale }),
-    selectCountry: messages.profile_select_country({}, { locale: profileStore.currentLocale }),
-    state: messages.profile_state({}, { locale: profileStore.currentLocale }),
-    setAsDefaultAddress: messages.profile_set_as_default_address(
-      {},
-      { locale: profileStore.currentLocale }
-    ),
-    cancel: messages.profile_cancel({}, { locale: profileStore.currentLocale }),
-    save: messages.profile_save({}, { locale: profileStore.currentLocale })
-  }))
+  const t = computed(() => {
+    const save = messages.profile_save({}, { locale: profileStore.currentLocale })
+    return {
+      personal: messages.profile_personal({}, { locale: profileStore.currentLocale }),
+      business: messages.profile_business({}, { locale: profileStore.currentLocale }),
+      firstName: messages.profile_first_name({}, { locale: profileStore.currentLocale }),
+      lastName: messages.profile_last_name({}, { locale: profileStore.currentLocale }),
+      email: messages.profile_email({}, { locale: profileStore.currentLocale }),
+      phoneNumber: messages.profile_phone_number({}, { locale: profileStore.currentLocale }),
+      companyName: messages.profile_company_name({}, { locale: profileStore.currentLocale }),
+      addressLine1: messages.profile_address_line_1({}, { locale: profileStore.currentLocale }),
+      addressLine2: messages.profile_address_line_2({}, { locale: profileStore.currentLocale }),
+      city: messages.profile_city({}, { locale: profileStore.currentLocale }),
+      zipCode: messages.profile_zip_code({}, { locale: profileStore.currentLocale }),
+      country: messages.profile_country({}, { locale: profileStore.currentLocale }),
+      selectCountry: messages.profile_select_country({}, { locale: profileStore.currentLocale }),
+      state: messages.profile_state({}, { locale: profileStore.currentLocale }),
+      setAsDefaultAddress: messages.profile_set_as_default_address(
+        {},
+        { locale: profileStore.currentLocale }
+      ),
+      cancel: messages.profile_cancel({}, { locale: profileStore.currentLocale }),
+      save,
+      saving: `${save}...`
+    }
+  })
 
   const formSchema = z
     .object({
@@ -75,10 +81,9 @@
       phone_number: z
         .string()
         .trim()
-        .optional()
-        .default('')
+        .min(1, requiredMessage(t.value.phoneNumber))
         .refine(
-          (value: string) => value.length === 0 || value.replace(/\D/g, '').length >= 6,
+          (value: string) => value.replace(/\D/g, '').length >= 6,
           () => ({ message: phoneMessage(t.value.phoneNumber) })
         ),
       company_name: z.string().trim().optional().default(''),
@@ -141,6 +146,12 @@
     validationSchema: toTypedSchema(formSchema),
     initialValues: createFormValuesFromStore()
   })
+
+  const fieldValidationTriggers = {
+    validateOnBlur: true,
+    validateOnChange: false,
+    validateOnInput: false
+  } as const
 
   const { handleSubmit: submitHandler, setValues, values, resetForm, validate } = form
 
@@ -226,7 +237,7 @@
     <component :is="isMobile ? 'div' : ScrollArea" class="flex-1 h-full overflow-y-auto">
       <form class="space-y-4 h-full" @submit.prevent="onSubmit">
         <div class="grid gap-4 md:grid-cols-2">
-          <FormField v-slot="{ field }" name="first_name">
+          <FormField v-slot="{ field }" name="first_name" v-bind="fieldValidationTriggers">
             <FormItem>
               <FormLabel>
                 {{ t.firstName }}
@@ -236,6 +247,7 @@
                 <Input
                   id="first_name"
                   type="text"
+                  :disabled="isSavingAddress"
                   autocomplete="given-name"
                   :model-value="field.value"
                   @update:model-value="field.onChange"
@@ -246,7 +258,7 @@
             </FormItem>
           </FormField>
 
-          <FormField v-slot="{ field }" name="last_name">
+          <FormField v-slot="{ field }" name="last_name" v-bind="fieldValidationTriggers">
             <FormItem>
               <FormLabel>
                 {{ t.lastName }}
@@ -256,6 +268,7 @@
                 <Input
                   id="last_name"
                   type="text"
+                  :disabled="isSavingAddress"
                   autocomplete="family-name"
                   :model-value="field.value"
                   @update:model-value="field.onChange"
@@ -268,13 +281,14 @@
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <FormField v-slot="{ field }" name="email">
+          <FormField v-slot="{ field }" name="email" v-bind="fieldValidationTriggers">
             <FormItem>
               <FormLabel>{{ t.email }}</FormLabel>
               <FormControl>
                 <Input
                   id="email"
                   type="email"
+                  :disabled="isSavingAddress"
                   autocomplete="email"
                   :model-value="field.value"
                   placeholder="name@example.com"
@@ -286,13 +300,17 @@
             </FormItem>
           </FormField>
 
-          <FormField v-slot="{ field }" name="phone_number">
+          <FormField v-slot="{ field }" name="phone_number" v-bind="fieldValidationTriggers">
             <FormItem>
-              <FormLabel>{{ t.phoneNumber }}</FormLabel>
+              <FormLabel>
+                {{ t.phoneNumber }}
+                <span class="text-destructive">*</span>
+              </FormLabel>
               <FormControl>
                 <Input
                   id="phone_number"
                   type="tel"
+                  :disabled="isSavingAddress"
                   autocomplete="tel"
                   :model-value="field.value"
                   @update:model-value="field.onChange"
@@ -305,7 +323,13 @@
         </div>
 
         <TransitionGroup name="fade" tag="div">
-          <FormField v-if="isBusiness" v-slot="{ field }" key="company" name="company_name">
+          <FormField
+            v-if="isBusiness"
+            v-slot="{ field }"
+            key="company"
+            name="company_name"
+            v-bind="fieldValidationTriggers"
+          >
             <FormItem>
               <FormLabel>
                 {{ t.companyName }}
@@ -315,6 +339,7 @@
                 <Input
                   id="company_name"
                   type="text"
+                  :disabled="isSavingAddress"
                   autocomplete="organization"
                   :model-value="field.value"
                   @update:model-value="field.onChange"
@@ -326,7 +351,7 @@
           </FormField>
         </TransitionGroup>
 
-        <FormField v-slot="{ field }" name="address1">
+        <FormField v-slot="{ field }" name="address1" v-bind="fieldValidationTriggers">
           <FormItem>
             <FormLabel>
               {{ t.addressLine1 }}
@@ -336,6 +361,7 @@
               <Input
                 id="address1"
                 type="text"
+                :disabled="isSavingAddress"
                 autocomplete="address-line1"
                 :model-value="field.value"
                 @update:model-value="field.onChange"
@@ -346,13 +372,14 @@
           </FormItem>
         </FormField>
 
-        <FormField v-slot="{ field }" name="address2">
+        <FormField v-slot="{ field }" name="address2" v-bind="fieldValidationTriggers">
           <FormItem>
             <FormLabel>{{ t.addressLine2 }}</FormLabel>
             <FormControl>
               <Input
                 id="address2"
                 type="text"
+                :disabled="isSavingAddress"
                 autocomplete="address-line2"
                 :model-value="field.value"
                 @update:model-value="field.onChange"
@@ -364,7 +391,7 @@
         </FormField>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <FormField v-slot="{ field }" name="city">
+          <FormField v-slot="{ field }" name="city" v-bind="fieldValidationTriggers">
             <FormItem>
               <FormLabel>
                 {{ t.city }}
@@ -374,6 +401,7 @@
                 <Input
                   id="city"
                   type="text"
+                  :disabled="isSavingAddress"
                   autocomplete="address-level2"
                   :model-value="field.value"
                   @update:model-value="field.onChange"
@@ -383,7 +411,7 @@
               <FormMessage />
             </FormItem>
           </FormField>
-          <FormField v-slot="{ field }" name="zip_code">
+          <FormField v-slot="{ field }" name="zip_code" v-bind="fieldValidationTriggers">
             <FormItem>
               <FormLabel>
                 {{ t.zipCode }}
@@ -394,6 +422,7 @@
                   id="zip_code"
                   type="text"
                   inputmode="numeric"
+                  :disabled="isSavingAddress"
                   autocomplete="postal-code"
                   :model-value="field.value"
                   @update:model-value="field.onChange"
@@ -404,13 +433,17 @@
             </FormItem>
           </FormField>
         </div>
-        <FormField v-slot="{ field }" name="country">
+        <FormField v-slot="{ field }" name="country" v-bind="fieldValidationTriggers">
           <FormItem>
             <FormLabel>
               {{ t.country }}
               <span class="text-destructive">*</span>
             </FormLabel>
-            <Select :model-value="field.value" @update:model-value="field.onChange">
+            <Select
+              :model-value="field.value"
+              :disabled="isSavingAddress"
+              @update:model-value="field.onChange"
+            >
               <FormControl>
                 <SelectTrigger class="w-full" @blur="field.onBlur">
                   <SelectValue :placeholder="t.selectCountry" />
@@ -429,13 +462,14 @@
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField v-slot="{ field }" name="state">
+        <FormField v-slot="{ field }" name="state" v-bind="fieldValidationTriggers">
           <FormItem>
             <FormLabel>{{ t.state }}</FormLabel>
             <FormControl>
               <Input
                 id="state"
                 type="text"
+                :disabled="isSavingAddress"
                 autocomplete="address-level1"
                 :model-value="field.value"
                 @update:model-value="field.onChange"
@@ -449,12 +483,14 @@
           v-if="!props.address || !props.address.default"
           v-slot="{ field }"
           name="default"
+          v-bind="fieldValidationTriggers"
         >
           <FormItem class="flex flex-row items-center gap-3 space-y-0">
             <FormControl>
               <Checkbox
                 id="checkbox-default"
                 :checked="field.value"
+                :disabled="isSavingAddress"
                 @update:checked="field.onChange"
                 @blur="field.onBlur"
               />
@@ -467,8 +503,17 @@
         </FormField>
 
         <div class="flex gap-2 justify-end">
-          <Button type="button" variant="outline" @click="handleCancel">{{ t.cancel }}</Button>
-          <Button type="submit" class="bg-primary text-white hover:text-white">{{ t.save }}</Button>
+          <Button type="button" variant="outline" :disabled="isSavingAddress" @click="handleCancel">
+            {{ t.cancel }}
+          </Button>
+          <Button
+            type="submit"
+            class="bg-primary text-white hover:text-white flex items-center gap-2"
+            :disabled="isSavingAddress"
+          >
+            <Spinner v-if="isSavingAddress" class="text-white size-4" />
+            <span>{{ isSavingAddress ? t.saving : t.save }}</span>
+          </Button>
         </div>
       </form>
     </component>
