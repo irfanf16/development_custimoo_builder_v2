@@ -13,11 +13,6 @@ export interface LockerResponse<T> {
   status_code: HttpStatusCode
   success: boolean
 }
-export interface LockerRoomColors {
-  id: number
-  name: string
-  color_text: string[]
-}
 
 export interface LockerRoomsWithColors {
   id: number

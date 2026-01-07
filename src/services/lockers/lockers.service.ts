@@ -9,7 +9,6 @@ import type {
   LockerFetchResponse,
   LockerProduct,
   LockerResponse,
-  LockerRoomColors,
   LockerRoomsWithColors,
   LockerUpdatePayload,
   SignedUrlResponse
@@ -43,10 +42,6 @@ async function updateLocker(data: LockerUpdatePayload) {
 
 async function deleteLocker(id: number) {
   return await http.delete<LockerDeletionResponse>(`lockers/${id}`)
-}
-
-async function fetchLockerColors() {
-  return await http.get<LockerRoomColors[]>(`folder/colors`)
 }
 
 async function fetchLockersWithcolors() {
@@ -103,7 +98,6 @@ export default {
   createLocker,
   deleteLocker,
   fetchLockerAssets,
-  fetchLockerColors,
   fetchLockersWithcolors,
   //  Product endpoints
   deleteProducts,

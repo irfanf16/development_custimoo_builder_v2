@@ -4,7 +4,6 @@ import type {
   CopyProductPayload,
   Locker,
   SignedUrlResponse,
-  LockerRoomColors,
   LockerRoomsWithColors
 } from '@/services/lockers/types'
 import { defineStore } from 'pinia'
@@ -21,7 +20,6 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   const isLoading = ref<boolean>(false)
   const error = ref<string | null>(null)
   const collections = ref<Collection[]>([])
-  const lockerRoomColors = ref<LockerRoomColors[]>([])
   const lockerRoomsWithColors = ref<LockerRoomsWithColors[]>([])
 
   //lockers methods
@@ -118,14 +116,6 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
 
     setSuccessMessage('Locker deleted successfully')
     lockers.value = lockers.value.filter(locker => locker.id !== id)
-  }
-  async function fetchLockerColors() {
-    const resp = await tryCatchApi(API.lockers.fetchLockerColors(), {
-      operation: 'fetchLockerColors'
-    })
-    if (resp.success && resp.content) {
-      lockerRoomColors.value = resp.content
-    }
   }
 
   async function fetchLockersWithcolors() {
@@ -336,7 +326,6 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     isLoading,
     error,
     collections,
-    lockerRoomColors,
     lockerRoomsWithColors,
     //functions
     fetchLockers,
@@ -349,7 +338,6 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     copyProducts,
     fetchLockerAssets,
     saveDesignToLocker,
-    fetchLockerColors,
     fetchLockersWithcolors,
     //collection methods
     fetchCollections,
