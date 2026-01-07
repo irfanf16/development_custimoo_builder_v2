@@ -570,18 +570,13 @@
       lockMovementX: true,
       lockMovementY: true,
       absolutePositioned: true,
-      inverted: true
-    })
-
-    const scaleX = safeZone.value?.scaleX ?? boundary.value?.scaleX ?? 1
-    const scaleY = safeZone.value?.scaleY ?? boundary.value?.scaleY ?? 1
-    clip.set({
-      scaleX,
-      scaleY,
+      inverted: true,
+      scaleX: designObject.value?.scaleX ?? 1,
+      scaleY: designObject.value?.scaleY ?? 1,
       left: props.canvasWidth / 2,
       top: props.canvasHeight / 2
     })
-    clip.setCoords()
+
     canvas.value.viewportCenterObject(clip)
     return clip
   }
@@ -656,11 +651,6 @@
     // Check if logo side matches current side
     if (logo.side !== props.side) return
 
-    // Apply clipping via loaded safe zone / boundary
-    const applyClipping = async (img: FabricImage, _side: 'front' | 'back') => {
-      await applyClipPath(img)
-    }
-
     // Render canvas
     const renderCanvas = () => {
       if (canvas.value) {
@@ -697,7 +687,7 @@
         calculatePosition: calculatePosition2D,
         calculateRotation: calculateRotation2D,
         calculateScaleRatios: calculateScaleRatios2D,
-        applyClipping,
+        applyClipPath,
         renderCanvas,
         updateStore,
         canvasSelection: true,
@@ -810,6 +800,7 @@
         newLogos,
         canvas: canvas.value,
         logoObjects: customLogoObjects,
+        applyClipPath,
         addLogo,
         calculatePosition: calculatePosition2D,
         calculateRotation: calculateRotation2D,

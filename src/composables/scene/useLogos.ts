@@ -69,7 +69,7 @@ export type AddLogoOptions = {
   /** Function to calculate scale ratios */
   calculateScaleRatios: () => { widthRatio: number; heightRatio: number }
   /** Function to apply clipping (safe zone or clip path) */
-  applyClipping?: (img: FabricImage, side: 'front' | 'back') => void | Promise<void>
+  applyClipPath?: (img: FabricImage) => void | Promise<void>
   /** Function to render canvas after adding logo */
   renderCanvas: () => void
   /** Function to update store with logo position/size (optional) */
@@ -99,6 +99,8 @@ export type SyncLogosOptions = {
   canvas: Canvas | null
   /** Logo objects storage map */
   logoObjects: ShallowRef<Map<number, FabricImage>>
+  /** Optional clipping application (safe zone / boundary) */
+  applyClipPath?: (img: FabricImage) => void | Promise<void>
   /** Function used to add a logo when no match exists */
   addLogo: (logo: CustomLogo, logoIndex: number) => Promise<void>
   /** Position calculator (2D or 3D) */
@@ -141,7 +143,7 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     calculatePosition,
     calculateRotation,
     calculateScaleRatios,
-    applyClipping,
+    applyClipPath,
     renderCanvas,
     updateStore,
     controlVisibility = FABRIC_CONTROL_VISIBILITY,
@@ -239,8 +241,8 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     img.setCoords()
 
     // Apply clipping (safe zone or clip path)
-    if (applyClipping) {
-      await Promise.resolve(applyClipping(img, logo.side))
+    if (applyClipPath) {
+      await Promise.resolve(applyClipPath(img))
     }
 
     // Add to canvas
@@ -264,13 +266,6 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     // Store reference in map
     logoObjects.value.set(logoIndex, img)
 
-    // Add event listener for selection
-    img.on('selected', () => {
-      // Emit event or handle selection (can be extended)
-      // For now, just render
-      renderCanvas()
-    })
-
     // Render canvas
     renderCanvas()
   })()
@@ -285,6 +280,7 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
     newLogos,
     canvas,
     logoObjects,
+    applyClipPath,
     addLogo,
     calculatePosition,
     calculateRotation,
@@ -361,6 +357,10 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
         if (logo.scaleX && logo.scaleY) {
           match.obj.scaleX = logo.scaleX * widthRatio
           match.obj.scaleY = logo.scaleY * heightRatio
+        }
+
+        if (applyClipPath) {
+          await Promise.resolve(applyClipPath(match.obj))
         }
 
         match.obj.setCoords()

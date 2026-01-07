@@ -771,7 +771,7 @@
     if (!logo || !logo.url) return
 
     // Apply clipping (safe zone)
-    const applyClipping = (img: FabricImage) => {
+    const applyClipPath = (img: FabricImage) => {
       if (safeZone.value) {
         // Type assertion needed for clipPath - Group can be used as clipPath
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -835,7 +835,7 @@
         calculatePosition,
         calculateRotation,
         calculateScaleRatios,
-        applyClipping,
+        applyClipPath,
         renderCanvas,
         updateStore,
         controlVisibility,
