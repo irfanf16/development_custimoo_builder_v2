@@ -8,7 +8,8 @@
   const props = withDefaults(
     defineProps<ScrollAreaScrollbarProps & { class?: HTMLAttributes['class'] }>(),
     {
-      orientation: 'vertical'
+      orientation: 'vertical',
+      class: undefined
     }
   )
 
@@ -21,9 +22,9 @@
     v-bind="delegatedProps"
     :class="
       cn(
-        // Keep visible by default (we hide native scrollbars in the viewport via Reka).
-        // z-20 ensures it renders above complex tab/list layouts.
-        'flex touch-none p-px transition-colors select-none z-20 bg-muted/30 hover:bg-muted/40',
+        // Visible while scrolling (ScrollArea default is `type=scroll`); stays mounted to avoid focus issues.
+        // We toggle opacity via Reka's `data-state` attribute.
+        'flex touch-none p-px transition-opacity select-none data-[state=hidden]:opacity-0 data-[state=hidden]:pointer-events-none data-[state=visible]:opacity-100',
         orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent',
         orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
         props.class

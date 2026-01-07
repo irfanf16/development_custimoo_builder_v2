@@ -595,7 +595,7 @@
 
 <template>
   <Dialog :open="open" variant="large" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="flex flex-col w-full">
+    <DialogContent variant="large" class="flex flex-col w-full overflow-hidden">
       <LockerRoomHeader
         ref="lockerRoomHeaderRef"
         :current-collection="currentCollection"
@@ -642,79 +642,84 @@
           }
         "
       />
-      <ScrollArea class="flex-1 overflow-y-auto">
-        <div class="relative w-full h-full">
-          <Transition name="slide-horizontal" mode="out-in">
-            <div
-              v-if="tab === 'lockers' && currentMode === 'list'"
-              key="locker-list"
-              class="absolute inset-0"
-            >
-              <LockersList
-                ref="lockerListRef"
-                :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
-                :search="search"
-                :sort="sortOption"
-                @select-locker="selectedLocker = $event"
-                @open-locker="getLockerDetail"
-              />
-            </div>
+      <div class="flex-1 min-h-0">
+        <ScrollArea class="h-full">
+          <!-- NOTE: Avoid `absolute inset-0` panels here. Reka's ScrollArea measures content size
+               via ResizeObserver; absolutely-positioned children don't resize the observed content
+               box, causing the scrollbar thumb to get "stuck" at its initial size. -->
+          <div class="w-full">
+            <Transition name="slide-horizontal" mode="out-in">
+              <div
+                v-if="tab === 'lockers' && currentMode === 'list'"
+                key="locker-list"
+                class="w-full"
+              >
+                <LockersList
+                  ref="lockerListRef"
+                  :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
+                  :search="search"
+                  :sort="sortOption"
+                  @select-locker="selectedLocker = $event"
+                  @open-locker="getLockerDetail"
+                />
+              </div>
 
-            <div
-              v-else-if="tab === 'collections' && currentMode === 'list'"
-              key="collections"
-              class="absolute inset-0"
-            >
-              <CollectionList
-                ref="collectionsListRef"
-                :search="search"
-                :sort="sortOption"
-                @open-collection="getCollectionDetail"
-              />
-            </div>
+              <div
+                v-else-if="tab === 'collections' && currentMode === 'list'"
+                key="collections"
+                class="w-full"
+              >
+                <CollectionList
+                  ref="collectionsListRef"
+                  :search="search"
+                  :sort="sortOption"
+                  @open-collection="getCollectionDetail"
+                />
+              </div>
 
-            <div
-              v-else-if="tab === 'lockers' && currentMode === 'detail' && currentLocker"
-              key="locker-detail"
-              class="absolute inset-0"
-            >
-              <LockerDetail
-                ref="lockerDetailsRef"
-                :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
-                :locker-tab="lockerTab"
-                :locker="currentLocker"
-                :sort="sortOption"
-                :search="search"
-                :pre-selected-products="selectedProducts"
-                @select-product="
-                  (locker_products: LockerProduct[]) => (selectedProducts = locker_products)
-                "
-                @edit-product="payload => emit('edit-product', payload)"
-              />
-            </div>
+              <div
+                v-else-if="tab === 'lockers' && currentMode === 'detail' && currentLocker"
+                key="locker-detail"
+                class="w-full"
+              >
+                <LockerDetail
+                  ref="lockerDetailsRef"
+                  :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
+                  :locker-tab="lockerTab"
+                  :locker="currentLocker"
+                  :sort="sortOption"
+                  :search="search"
+                  :pre-selected-products="selectedProducts"
+                  @select-product="
+                    (locker_products: LockerProduct[]) => (selectedProducts = locker_products)
+                  "
+                  @edit-product="payload => emit('edit-product', payload)"
+                />
+              </div>
 
-            <div
-              v-else-if="tab === 'collections' && currentMode === 'detail'"
-              key="collection-detail"
-              class="absolute inset-0"
-            >
-              <CollectionDetail
-                ref="lockerDetailsRef"
-                :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
-                :collection-tab="collectionTab"
-                :collection="currentCollection"
-                :pre-selected-products="collectionProducts"
-                :sort="sortOption"
-                @select-product="
-                  (locker_products: LockerProduct[]) => (selectedProducts = locker_products)
-                "
-                @remove-product="handleRemoveProduct"
-                @logo-removed="handleLogoRemoved"
-              />
-            </div>
-          </Transition>
-        </div>
-      </ScrollArea>
+              <div
+                v-else-if="tab === 'collections' && currentMode === 'detail'"
+                key="collection-detail"
+                class="w-full"
+              >
+                <CollectionDetail
+                  ref="lockerDetailsRef"
+                  :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
+                  :collection-tab="collectionTab"
+                  :collection="currentCollection"
+                  :pre-selected-products="collectionProducts"
+                  :sort="sortOption"
+                  @select-product="
+                    (locker_products: LockerProduct[]) => (selectedProducts = locker_products)
+                  "
+                  @remove-product="handleRemoveProduct"
+                  @logo-removed="handleLogoRemoved"
+                />
+              </div>
+            </Transition>
+          </div>
+        </ScrollArea>
+      </div>
 
       <LockerRoomFooter
         v-if="

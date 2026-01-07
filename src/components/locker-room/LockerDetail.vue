@@ -42,8 +42,10 @@
 </script>
 
 <template>
+  <!-- Keep tab panels in normal flow so parent ScrollArea can measure content height and
+       adjust scrollbar thumb size correctly. -->
   <Transition name="slide-horizontal" mode="out-in">
-    <div v-if="activeTab === 'products'" key="products" class="absolute inset-0">
+    <div v-if="activeTab === 'products'" key="products" class="w-full">
       <LockerProductsListing
         ref="lockerProductsRef"
         :products="locker.product"
@@ -59,14 +61,14 @@
       />
     </div>
 
-    <div v-else-if="activeTab === 'assets'" key="assets" class="absolute inset-0">
+    <div v-else-if="activeTab === 'assets'" key="assets" class="w-full">
       <LockerAssetsListing :locker="locker" />
     </div>
 
-    <div v-else-if="activeTab === 'colours'" key="colours" class="absolute inset-0">
+    <div v-else-if="activeTab === 'colours'" key="colours" class="w-full">
       <LockerColoursListing :locker="locker" />
     </div>
-    <div v-else-if="activeTab === 'rosters'" key="rosters" class="absolute inset-0">
+    <div v-else-if="activeTab === 'rosters'" key="rosters" class="w-full">
       <LockerRosters :rosters="rosters_groups" />
     </div>
   </Transition>
