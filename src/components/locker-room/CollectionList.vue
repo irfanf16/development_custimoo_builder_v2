@@ -14,6 +14,7 @@
   import { timeAgo } from '@/lib/utils'
   import AvatarQueue from '../ui/avatar-queue/AvatarQueue.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import type { Collection } from '@/services/lockers/types'
   import {
     locker_name_placeholder,
     locker_designs_count,
@@ -34,12 +35,16 @@
     time_ago_years,
     time_ago_years_plural
   } from '@/paraglide/messages'
+  type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
+
   const props = withDefaults(
     defineProps<{
-      search: null | string
+      search?: null | string
+      sort?: SortOption
     }>(),
     {
-      search: null
+      search: null,
+      sort: 'lastModified'
     }
   )
 
@@ -65,10 +70,27 @@
   const editName = ref<string>('')
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
-  const computedCollections = computed(() => collections.value)
+  const computedCollections = computed(() => collections.value || [])
+  const getDateValue = (value?: string) => (value ? new Date(value).getTime() : 0)
+
+  const collectionSorters: Record<SortOption, (a: Collection, b: Collection) => number> = {
+    lastModified: (a, b) => getDateValue(b.updated_at) - getDateValue(a.updated_at),
+    alphabetical: (a, b) => a.name.localeCompare(b.name),
+    createdDate: (a, b) => getDateValue(b.created_at) - getDateValue(a.created_at)
+  }
+
+  const sortedCollections = computed(() => {
+    const sorter = collectionSorters[props.sort] || collectionSorters.lastModified
+    return [...computedCollections.value].sort(sorter)
+  })
+
   const filteredCollections = computed(() => {
-    return computedCollections.value?.filter(c =>
-      c.name.toLowerCase().includes(props.search?.toLowerCase() || '')
+    const searchTerm = props.search?.toLowerCase().trim()
+    if (!searchTerm) {
+      return sortedCollections.value
+    }
+    return sortedCollections.value.filter(collection =>
+      collection.name.toLowerCase().includes(searchTerm)
     )
   })
 

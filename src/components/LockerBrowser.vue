@@ -738,6 +738,7 @@
         :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
         :collection-creation-step="collectionCreationStep"
         @back="handleBackNavigation"
+        @close="emit('update:open', false)"
         @cancel-collection-creation="
           () => {
             currentMode = 'list'

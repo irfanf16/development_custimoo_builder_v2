@@ -22,6 +22,7 @@
   import { confirmDialog } from '@/lib/confirm-dialog'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import type { Locker } from '@/services/lockers/types'
   import {
     locker_name_placeholder,
     locker_enter_name_placeholder,
@@ -47,14 +48,18 @@
     time_ago_years_plural
   } from '@/paraglide/messages'
   import { timeAgo as timeAgoUtil } from '@/lib/utils'
+  type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
+
   const props = withDefaults(
     defineProps<{
-      search: null | string
-      isCreatingCollection: boolean
+      search?: null | string
+      isCreatingCollection?: boolean
+      sort?: SortOption
     }>(),
     {
       search: null,
-      isCreatingCollection: false
+      isCreatingCollection: false,
+      sort: 'lastModified'
     }
   )
 
@@ -105,11 +110,27 @@
   const editName = ref<string>('')
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
-  const computedLockers = computed(() => lockers.value)
+  const computedLockers = computed(() => lockers.value || [])
+  const getDateValue = (value?: string) => (value ? new Date(value).getTime() : 0)
+
+  const lockerSorters: Record<SortOption, (a: Locker, b: Locker) => number> = {
+    lastModified: (a, b) => getDateValue(b.updated_at) - getDateValue(a.updated_at),
+    alphabetical: (a, b) => a.room_name.localeCompare(b.room_name),
+    createdDate: (a, b) =>
+      getDateValue(b.created_at ?? b.updated_at) - getDateValue(a.created_at ?? a.updated_at)
+  }
+
+  const sortedLockers = computed(() => {
+    const sorter = lockerSorters[props.sort] || lockerSorters.lastModified
+    return [...computedLockers.value].sort(sorter)
+  })
+
   const filteredLockers = computed(() => {
-    return computedLockers.value.filter(l =>
-      l.room_name.toLowerCase().includes(props.search?.toLowerCase() || '')
-    )
+    const searchTerm = props.search?.toLowerCase().trim()
+    if (!searchTerm) {
+      return sortedLockers.value
+    }
+    return sortedLockers.value.filter(l => l.room_name.toLowerCase().includes(searchTerm))
   })
 
   const handleSelect = (id: string | number) => {
