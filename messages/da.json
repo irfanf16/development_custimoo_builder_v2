@@ -344,6 +344,8 @@
   "save_design_title": "Gem dit design",
   "save_design_choose_locker": "Vælg en locker",
   "save_design_button": "Gem design",
+  "save_design_name_required": "Designnavn er påkrævet",
+  "save_design_locker_required": "Vælg venligst en locker",
   "cart_title": "Kurv",
   "cart_order_reference_label": "Ordre reference",
   "cart_comments_label": "Kommentarer",
