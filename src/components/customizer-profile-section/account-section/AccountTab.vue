@@ -154,21 +154,7 @@
             <div class="text-2xl font-bold">{{ counters.track_my_orders_count }}</div>
           </Card>
         </div>
-        <!-- Counters -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
-            <div class="text-sm text-muted-foreground">{{ t.ordersCount }}</div>
-            <div class="text-2xl font-bold">{{ counters.orders_count }}</div>
-          </Card>
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
-            <div class="text-sm text-muted-foreground">{{ t.pendingApprovalCount }}</div>
-            <div class="text-2xl font-bold">{{ counters.pending_approval_count }}</div>
-          </Card>
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
-            <div class="text-sm text-muted-foreground">{{ t.trackMyOrdersCount }}</div>
-            <div class="text-2xl font-bold">{{ counters.track_my_orders_count }}</div>
-          </Card>
-        </div>
+
         <!-- Name card with edit on right -->
         <Card
           class="flex flex-row items-center justify-between gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 transition-colors"

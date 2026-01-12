@@ -4,10 +4,11 @@ import type {
   CollectionLogoPresignedUrlsResponse,
   CopyProductPayload,
   Locker,
+  LockerProduct,
   SignedUrlResponse
 } from '@/services/lockers/types'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import { toast } from 'vue-sonner'
 
@@ -20,6 +21,11 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   const isLoading = ref<boolean>(false)
   const error = ref<string | null>(null)
   const collections = ref<Collection[]>([])
+
+  // Track if we're editing a locker product
+  const editingLockerProductId = ref<number | null>(null)
+  const editingLockerId = ref<number | null>(null)
+  const editingLockerProduct = ref<LockerProduct | null>(null)
 
   //lockers methods
   async function fetchLockers() {
@@ -209,6 +215,53 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     return true
   }
 
+  async function updateLockerProduct(formData: FormData, locker_id: number): Promise<boolean> {
+    // Add _method: PUT to the form data
+    formData.append('_method', 'PUT')
+    // For updating, pass locker_id to use route: locker-products/{locker_id}
+    const resp = await tryCatchApi(API.lockers.saveDesign(formData, locker_id), {
+      operation: 'updateLockerProduct'
+    })
+    if (!resp.success) {
+      setError('Failed to update design')
+      return false
+    }
+    // Refresh locker products to get updated data
+    await fetchLockerProducts(locker_id)
+    setSuccessMessage('Design updated successfully')
+    return true
+  }
+
+  /**
+   * Set editing locker product state
+   */
+  function setEditingLockerProduct(
+    lockerProductId: number,
+    lockerId: number,
+    lockerProduct?: LockerProduct
+  ) {
+    console.log('setEditingLockerProduct', lockerProductId, lockerId)
+    editingLockerProductId.value = lockerProductId
+    editingLockerId.value = lockerId
+    editingLockerProduct.value = lockerProduct || null
+  }
+
+  /**
+   * Clear editing locker product state
+   */
+  function clearEditingLockerProduct() {
+    editingLockerProductId.value = null
+    editingLockerId.value = null
+    editingLockerProduct.value = null
+  }
+
+  /**
+   * Check if we're currently editing a locker product
+   */
+  const isEditingLockerProduct = computed(() => {
+    return editingLockerProductId.value !== null && editingLockerId.value !== null
+  })
+
   // collection methods
   async function fetchCollections() {
     isLoading.value = true
@@ -344,6 +397,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     isLoading,
     error,
     collections,
+    editingLockerProductId,
+    editingLockerId,
+    editingLockerProduct,
+    isEditingLockerProduct,
     //functions
     fetchLockers,
     fetchLockerProducts,
@@ -355,6 +412,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     copyProducts,
     fetchLockerAssets,
     saveDesignToLocker,
+    updateLockerProduct,
+    setEditingLockerProduct,
+    clearEditingLockerProduct,
     //collection methods
     fetchCollections,
     fetchCollectionProducts,
