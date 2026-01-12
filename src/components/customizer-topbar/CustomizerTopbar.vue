@@ -494,9 +494,15 @@
 
       <!-- Cart Button -->
       <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <Button variant="outline" size="default" @click="handleCartClick">
+        <Button variant="outline" size="default" class="relative" @click="handleCartClick">
           <ShoppingCart class="size-4" />
           <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
+          <span
+            v-if="cartStore.cartItemsCount > 0"
+            class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+          >
+            {{ cartStore.cartItemsCount }}
+          </span>
         </Button>
       </ButtonGroup>
 
@@ -524,10 +530,17 @@
           <!-- Mobile only -->
           <DropdownMenuItem
             v-if="uiStore.isMobile && authStore.isAuthenticated"
+            class="relative"
             @click="handleCartClick"
           >
             <ShoppingCart class="size-4 mr-2" />
             <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
+            <span
+              v-if="cartStore.cartItemsCount > 0"
+              class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+            >
+              {{ cartStore.cartItemsCount }}
+            </span>
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="uiStore.isMobile && authStore.isAuthenticated"

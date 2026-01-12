@@ -24,7 +24,6 @@ export function useBuildFactoryProduct() {
     factory_product: Record<string, unknown>
     product_assets?: File[]
   }> {
-    debugger
     const customization = customizationStore.customization
     if (!customization) {
       throw new Error('No customization data available')
