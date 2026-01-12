@@ -41,7 +41,7 @@
     price_add_to_cart
   } from '@/paraglide/messages'
   import type { GradientColor, OutputProductText } from '@/services/products/types'
-
+  import TwoDScene from '@/components/scene/TwoDScene.vue'
   // Stores
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
@@ -78,10 +78,6 @@
       return description.substring(0, 100) + '...'
     }
     return description
-  })
-
-  const productThumbnail = computed(() => {
-    return activeStyleDetails.value?.front_models?.[0]?.file_url ?? ''
   })
 
   // Style section
@@ -232,11 +228,12 @@
       <div
         class="shrink-0 w-32 h-32 rounded-xl border bg-muted overflow-hidden flex items-center justify-center"
       >
-        <img
-          v-if="productThumbnail"
-          :src="storageUrl + productThumbnail"
-          :alt="productTitle"
-          class="w-full h-full object-cover"
+        <TwoDScene
+          :side="'front'"
+          :main-preview="true"
+          :canvas-width="128"
+          :canvas-height="128"
+          canvas-class="rounded-xl"
         />
       </div>
       <div class="flex-1 flex flex-col gap-2">
