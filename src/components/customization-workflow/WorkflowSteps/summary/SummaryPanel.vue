@@ -161,9 +161,9 @@
     workflowStore.setActiveStep('logos')
   }
 
-  function handleColorClick(_colorIndex: number) {
+  function handleColorClick(colorIndex: number) {
+    workflowStore.setActiveColorAccordionIndex(colorIndex)
     workflowStore.setActiveStep('colors')
-    // You could add logic here to auto-expand the selected color
   }
 
   function handleTextClick(textId: number) {
@@ -363,39 +363,40 @@
           <span class="text-base font-semibold">{{ nav_color({}, { locale }) }}</span>
         </AccordionTrigger>
         <AccordionContent class="px-4 pb-4">
-          <div class="space-y-2">
-            <button
-              v-for="(color, index) in colors"
-              :key="color.id"
-              class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors text-left group"
-              @click="handleColorClick(index)"
-            >
-              <div class="flex items-center gap-3 min-w-0 flex-1">
-                <ColorSelector
-                  :color="
-                    color.gradient_colors ? gradientColorString(color.gradient_colors) : color.color
-                  "
-                  :disabled="true"
-                  :size="'sm'"
-                  class="shrink-0"
-                />
-                <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-foreground truncate">{{ color.id }}</p>
-                  <p class="text-xs text-muted-foreground truncate">
+          <div class="space-y-0">
+            <template v-for="(color, index) in colors" :key="color.id">
+              <button
+                class="w-full flex items-center justify-between py-3 hover:bg-muted/50 transition-colors text-left group rounded-lg px-2 -mx-2"
+                @click="handleColorClick(index)"
+              >
+                <p class="text-sm text-muted-foreground capitalize">{{ color.id }}</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-sm text-foreground">
                     <template v-if="color.gradient_colors">
                       <template v-for="(gc, gIndex) in color.gradient_colors" :key="gIndex">
-                        {{ gc.pantone }} {{ gc.name }}
-                        <template v-if="gIndex < color.gradient_colors.length - 1"> / </template>
+                        {{ gc.pantone }}
+                        <template v-if="gIndex < color.gradient_colors.length - 1">/</template>
                       </template>
                     </template>
-                    <template v-else> {{ color.pantone }} {{ color.name }} </template>
+                    <template v-else> {{ color.pantone }} {{ color.name }}</template>
                   </p>
+                  <ColorSelector
+                    :color="
+                      color.gradient_colors
+                        ? gradientColorString(color.gradient_colors)
+                        : color.color
+                    "
+                    :disabled="true"
+                    :size="'sm'"
+                    class="shrink-0"
+                  />
+                  <ChevronRight
+                    class="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                  />
                 </div>
-              </div>
-              <ChevronRight
-                class="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-              />
-            </button>
+              </button>
+              <div v-if="index < colors.length - 1" class="h-px bg-border" />
+            </template>
           </div>
         </AccordionContent>
       </AccordionItem>
