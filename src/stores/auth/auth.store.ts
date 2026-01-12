@@ -12,6 +12,7 @@ import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import type { PermissionResponse, Permissions } from '@/services/permissions/types'
+import { useCartStore } from '@/stores/cart/cart.store'
 
 export const useAuthStore = defineStore('authStore', () => {
   // ===== DEPENDENCIES =====
@@ -424,6 +425,14 @@ export const useAuthStore = defineStore('authStore', () => {
         setRefreshToken(refreshTokenValue)
       }
       await saveToLocalStorage()
+
+      // Fetch cart after successful authentication
+      try {
+        const cartStore = useCartStore()
+        await cartStore.fetchCart()
+      } catch {
+        // Ignore cart fetch errors - cart will be fetched when needed
+      }
     }
   }
 
@@ -433,6 +442,7 @@ export const useAuthStore = defineStore('authStore', () => {
    * This performs a complete auth cleanup:
    * 1. Clears in-memory auth state (customer, tokens, etc.)
    * 2. Clears auth-related data from localStorage and sessionStorage
+   * 3. Clears cart state (non-blocking)
    *
    * Note: For additional cleanup (e.g., clearing all localStorage or resetting stores),
    * use the `handleLogout` method from `useSignIn` composable instead.
@@ -440,6 +450,10 @@ export const useAuthStore = defineStore('authStore', () => {
   function logout() {
     clearAuth()
     clearLocalStorage()
+
+    // Clear cart when user logs out (non-blocking to avoid circular dependencies)
+    const cartStore = useCartStore()
+    cartStore.clearCart()
   }
 
   async function login(input: InputLogin): Promise<APIResponse<OutputLogin>> {

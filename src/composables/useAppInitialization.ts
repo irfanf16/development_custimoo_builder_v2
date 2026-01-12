@@ -13,6 +13,7 @@ import { useLocalStorage } from './useLocalStorage'
 import { useAppStore } from '@/stores/app/app.store'
 import { getCustomizerIframe } from '../lib/widgetUtils'
 import router from '../router'
+import { useCartStore } from '@/stores/cart/cart.store'
 
 // ============================================================================
 // Global State Management
@@ -170,6 +171,16 @@ export function useAppInitialization() {
     try {
       const authStore = useAuthStore()
       await authStore.ensureHydrated()
+
+      // Fetch cart if user is authenticated (after auth is hydrated)
+      if (authStore.isAuthenticated) {
+        try {
+          const cartStore = useCartStore()
+          await cartStore.fetchCart()
+        } catch {
+          // Ignore cart fetch errors so the rest of the pipeline can continue
+        }
+      }
     } catch {
       // Ignore hydration errors so the rest of the pipeline can continue.
     }
