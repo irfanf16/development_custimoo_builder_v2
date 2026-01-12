@@ -138,7 +138,11 @@
     isOpen => {
       if (isOpen) {
         // Only fetch if not already fetched on page load
+        // The watcher in useCart with immediate: true will map existing cart data
         if (!cartStore.hasFetchedOnPageLoad) {
+          fetchCart()
+        } else if (cartStore.cart && products.value.length === 0) {
+          // If cart exists but products aren't mapped yet, force mapping
           fetchCart()
         }
         // Refresh addresses when cart opens

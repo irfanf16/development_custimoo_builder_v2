@@ -356,7 +356,7 @@
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="w-full flex flex-col gap-0 p-0 overflow-hidden h-fit">
+    <DialogContent variant="large" class="w-full flex flex-col gap-0 p-0 overflow-hidden">
       <!-- HEADER -->
       <DialogHeader class="p-4">
         <h2 class="text-lg font-semibold">{{ save_design_title({}, { locale }) }}</h2>
@@ -469,7 +469,7 @@
           </div>
 
           <!-- LIST SECTION -->
-          <ScrollArea class="flex-1 px-6 py-4 h-full overflow-y-auto p-3 border rounded-lg">
+          <ScrollArea class="flex-1 px-6 py-4 overflow-y-auto p-3 border rounded-lg">
             <!-- <div class="grid gap-4 h-full"> -->
             <div
               v-for="locker in filteredLockers"
