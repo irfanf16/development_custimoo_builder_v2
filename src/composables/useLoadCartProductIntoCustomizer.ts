@@ -12,6 +12,7 @@ import type {
 import type { FactoryProduct } from '@/services/cart/types'
 import type { CustomLogo, LogoColor } from '@/services/logos/types'
 import type { APCustomizationRosterEntry } from '@/services/products/types/customization'
+import type { OutputProductLogoTechnology } from '@/services/products/types'
 
 // ===== UTILITY FUNCTIONS =====
 
@@ -144,7 +145,13 @@ function normalizeCustomLogos(
       smart_transparent_logo_url:
         typeof item.smart_transparent_logo_url === 'string'
           ? item.smart_transparent_logo_url
-          : undefined
+          : undefined,
+      logo_technology:
+        item.logo_technology &&
+        typeof item.logo_technology === 'object' &&
+        typeof (item.logo_technology as OutputProductLogoTechnology).sku_id === 'number'
+          ? (item.logo_technology as OutputProductLogoTechnology)
+          : null
     }
     list.push(logo)
     if (map[productKey]) {

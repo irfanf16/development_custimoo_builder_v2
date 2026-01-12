@@ -21,7 +21,8 @@
     LogIn,
     LayoutGrid,
     Fullscreen,
-    Ruler
+    Ruler,
+    X
   } from 'lucide-vue-next'
   import {
     topbar_save,
@@ -53,6 +54,10 @@
   import { useLoadLockerProductIntoCustomizer } from '@/composables/useLoadLockerProductIntoCustomizer.ts'
   import { useCartStore } from '@/stores/cart/cart.store'
   import { useBuildFactoryProduct } from '@/composables/useBuildFactoryProduct'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { useSceneStore } from '@/stores/scene/scene.store'
+  import { base64ToFile, objectToFormData, uploadPresignedFiles } from '@/lib/utils'
+  import type { ComponentPublicInstance } from 'vue'
   import { toast } from 'vue-sonner'
 
   const uiStore = useUIStore()
@@ -63,6 +68,8 @@
   const history = useHistoryStore()
   const workflowStore = useWorkflowStore()
   const cartStore = useCartStore()
+  const lockerRoomStore = useLockerRoomStore()
+  const sceneStore = useSceneStore()
   const { menuItems, goTo } = useCustomizerMenu()
   const { loadLockerProductIntoCustomizer } = useLoadLockerProductIntoCustomizer()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
@@ -132,16 +139,7 @@
         factory_product,
         product_assets
       })
-
-      toast.success('Product added to cart', {
-        position: 'top-right',
-        richColors: true
-      })
     } catch (error) {
-      toast.error('Failed to add product to cart', {
-        position: 'top-right',
-        richColors: true
-      })
       console.error('Add to cart error:', error)
     }
   }
@@ -204,12 +202,17 @@
 
   async function handleEditLockerProduct(payload: {
     lockerProductId: number
+    lockerId: number
     lockerProduct?: import('@/services/lockers/types').LockerProduct
   }) {
     const desiredStep = (workflowStore.activeStep || 'product') as CustomizerStep
     showLockerBrowser.value = false
 
-    const ok = await loadLockerProductIntoCustomizer(payload.lockerProductId, payload.lockerProduct)
+    const ok = await loadLockerProductIntoCustomizer(
+      payload.lockerProductId,
+      payload.lockerProduct,
+      payload.lockerId
+    )
     if (!ok) {
       toast.error('Failed to load locker product', { position: 'top-right', richColors: true })
       return
@@ -220,6 +223,172 @@
     const nextStep = pickStepOrNextAvailable(desiredStep, visibleSteps)
 
     await goTo(nextStep)
+  }
+
+  function handleCancelLockerProductEdit() {
+    // Clear editing state but keep product loaded
+    lockerRoomStore.clearEditingLockerProduct()
+  }
+
+  async function handleUpdateLockerProduct() {
+    if (!lockerRoomStore.editingLockerProductId || !lockerRoomStore.editingLockerId) {
+      toast.error('No locker product selected for update', {
+        position: 'top-right',
+        richColors: true
+      })
+      return
+    }
+
+    try {
+      const lockerId = lockerRoomStore.editingLockerId
+      const signedUrls = await lockerRoomStore.getSignedUrl(lockerId)
+      if (!signedUrls) {
+        toast.error('Failed to get signed URLs', { position: 'top-right', richColors: true })
+        return
+      }
+
+      // Get images from canvas
+      let frontImage = ''
+      let backImage = ''
+
+      const frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
+      if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
+        frontImage = (
+          frontImageComponentRef as unknown as ComponentPublicInstance & {
+            getImageFromCanvas: () => string
+          }
+        ).getImageFromCanvas()
+      }
+
+      const backImageComponentRef = sceneStore.getTwoDSceneRef('back')
+      if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
+        backImage = (
+          backImageComponentRef as unknown as ComponentPublicInstance & {
+            getImageFromCanvas: () => string
+          }
+        ).getImageFromCanvas()
+      }
+
+      const componentRef = sceneStore.threeDSceneRef
+      if (componentRef && 'getImageFromCanvas' in componentRef) {
+        frontImage = (
+          componentRef as unknown as ComponentPublicInstance & {
+            getImageFromCanvas: (side?: string) => string
+          }
+        ).getImageFromCanvas('front')
+        backImage = (
+          componentRef as unknown as ComponentPublicInstance & {
+            getImageFromCanvas: (side?: string) => string
+          }
+        ).getImageFromCanvas('back')
+      }
+
+      // Upload images
+      const preparedFiles = signedUrls.urls.map(u => {
+        return {
+          presigned_url: u.presigned_url,
+          file_type: u.file_type,
+          file:
+            u.file_side === 'front'
+              ? base64ToFile(frontImage, 'front.png')
+              : base64ToFile(backImage, 'back.png'),
+          file_side: u.file_side
+        }
+      })
+      const results = await uploadPresignedFiles(preparedFiles)
+      if (!results.every(r => r.success)) {
+        toast.error('Failed to upload images', { position: 'top-right', richColors: true })
+        return
+      }
+
+      // Build locker product payload
+      const customization = customizationStore.customization
+      const productId = productsStore.activeProductDetails?.product_id
+      if (!productId || !customization) {
+        toast.error('Missing product or customization data', {
+          position: 'top-right',
+          richColors: true
+        })
+        return
+      }
+
+      const productKey = String(productId)
+      const svgParts = productsStore.activeDesignDetails?.svg_parts || []
+      const customLogos = customization.custom_logos[productKey] || []
+      const productCustomTexts = customization.product_custom_texts[productKey] || []
+      const rosterDetail = customization.products_rosters[productKey] || []
+      const defaultColors = customization.default_colors || []
+      const groupColors = customization.group_colors || {}
+      const svgcolors = productsStore.svgGroups.map(group => ({
+        value: group.color || '',
+        name: group.name || '',
+        pantone: group.pantone || ''
+      }))
+      const addonsInfo = customization.addons_info || {}
+      const groupedAddons =
+        Object.keys(addonsInfo).length > 0
+          ? Object.values(addonsInfo).reduce(
+              (acc, addonInfo) => {
+                const grouped =
+                  (addonInfo as { grouped_addons?: Record<string, unknown> })?.grouped_addons || {}
+                return { ...acc, ...grouped }
+              },
+              {} as Record<string, unknown>
+            )
+          : {}
+      const ungroupedAddons = Object.values(addonsInfo).flatMap(
+        addonInfo => (addonInfo as { ungrouped_addons?: unknown[] })?.ungrouped_addons || []
+      )
+
+      // Get product name from locker product if available, otherwise use empty string
+      const lockerProductName =
+        lockerRoomStore.editingLockerProduct?.product_name ||
+        lockerRoomStore.editingLockerProduct?.name ||
+        ''
+
+      const locker = {
+        id: lockerRoomStore.editingLockerProductId,
+        addons: [],
+        roster_url: false,
+        room_id: lockerId,
+        product_id: productId,
+        product_name: lockerProductName,
+        svg_parts: JSON.stringify(svgParts),
+        style_id: customization.style_id || 0,
+        design_id: customization.design_id || 0,
+        custom_logos: JSON.stringify(customLogos),
+        text: JSON.stringify(productCustomTexts),
+        colors: [],
+        shuffle_color_number: customization.shuffle_color_number || 0,
+        defaultcolors: JSON.stringify(defaultColors),
+        groupcolors: JSON.stringify(groupColors),
+        front_image: signedUrls.urls.find(item => item.file_side === 'front')!.original_url,
+        back_image: signedUrls.urls.find(item => item.file_side === 'back')!.original_url,
+        product_roster_detail: JSON.stringify(rosterDetail),
+        fixed_logo_index: customization.fixed_logo_index || 0,
+        svgcolors: JSON.stringify(svgcolors),
+        grouped_addons: JSON.stringify(groupedAddons),
+        ungrouped_addons: JSON.stringify(ungroupedAddons),
+        group_patterns: JSON.stringify(customization.group_patterns || {})
+      }
+
+      const payload = objectToFormData(locker)
+      const success = await lockerRoomStore.updateLockerProduct(payload, lockerId)
+
+      if (success) {
+        lockerRoomStore.clearEditingLockerProduct()
+        toast.success('Locker product updated successfully', {
+          position: 'top-right',
+          richColors: true
+        })
+      }
+    } catch (error) {
+      toast.error('Failed to update locker product', {
+        position: 'top-right',
+        richColors: true
+      })
+      console.error('Update locker product error:', error)
+    }
   }
 </script>
 
@@ -248,6 +417,19 @@
             <Save class="size-4" />
             <span>Update</span>
           </Button>
+        </template>
+        <template v-else-if="lockerRoomStore.isEditingLockerProduct">
+          <!-- Update and Cancel buttons when editing locker product -->
+          <ButtonGroup>
+            <Button variant="outline" size="default" @click="handleCancelLockerProductEdit">
+              <X class="size-4" />
+              <span>Cancel</span>
+            </Button>
+            <Button variant="outline" size="default" @click="handleUpdateLockerProduct">
+              <Save class="size-4" />
+              <span>Update</span>
+            </Button>
+          </ButtonGroup>
         </template>
         <DropdownMenu v-else-if="authStore.isAuthenticated">
           <ButtonGroup>
@@ -312,9 +494,15 @@
 
       <!-- Cart Button -->
       <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <Button variant="outline" size="default" @click="handleCartClick">
+        <Button variant="outline" size="default" class="relative" @click="handleCartClick">
           <ShoppingCart class="size-4" />
           <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
+          <span
+            v-if="cartStore.cartItemsCount > 0"
+            class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+          >
+            {{ cartStore.cartItemsCount }}
+          </span>
         </Button>
       </ButtonGroup>
 
@@ -342,10 +530,17 @@
           <!-- Mobile only -->
           <DropdownMenuItem
             v-if="uiStore.isMobile && authStore.isAuthenticated"
+            class="relative"
             @click="handleCartClick"
           >
             <ShoppingCart class="size-4 mr-2" />
             <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
+            <span
+              v-if="cartStore.cartItemsCount > 0"
+              class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+            >
+              {{ cartStore.cartItemsCount }}
+            </span>
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="uiStore.isMobile && authStore.isAuthenticated"
