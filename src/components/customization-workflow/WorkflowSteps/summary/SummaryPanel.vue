@@ -90,7 +90,12 @@
   })
 
   const styleThumbnail = computed(() => {
-    return activeStyleDetails.value?.front_models?.[0]?.file_url ?? ''
+    return (
+      activeStyleDetails.value?.style_icon_url ??
+      productsStore.stylePreviews?.find(s => s.id === activeStyleDetails.value?.id)
+        ?.style_icon_url ??
+      ''
+    )
   })
 
   // Addons
@@ -101,9 +106,9 @@
     if (!addonsInfo?.simple_addons) return []
 
     // Get addon details from product details - addons property might not exist
-    const productAddons = (activeProductDetails.value as any)?.addons ?? []
+    const productAddons = activeProductDetails.value?.active_addons ?? []
     return addonsInfo.simple_addons
-      .map((addonId: number) => productAddons.find((a: any) => a.addon_id === addonId))
+      .map((addonId: number) => productAddons.find(a => a.addon_id === addonId))
       .filter(Boolean)
   })
 
@@ -260,7 +265,13 @@
         <AccordionContent class="px-4 pb-4">
           <div class="space-y-4">
             <!-- Style details -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex flex-col gap-1">
+                <p class="text-sm font-semibold text-foreground">{{ styleName }}</p>
+                <p class="text-xs text-muted-foreground">
+                  {{ summary_selected_option({}, { locale }) }}
+                </p>
+              </div>
               <div
                 class="w-20 h-20 rounded-lg border bg-muted overflow-hidden flex items-center justify-center shrink-0"
               >
@@ -268,14 +279,8 @@
                   v-if="styleThumbnail"
                   :src="storageUrl + styleThumbnail"
                   :alt="styleName"
-                  class="w-full h-full object-cover"
+                  class="w-full h-full object-contain p-1"
                 />
-              </div>
-              <div class="flex-1">
-                <p class="text-sm font-semibold text-foreground">{{ styleName }}</p>
-                <p class="text-xs text-muted-foreground">
-                  {{ summary_selected_option({}, { locale }) }}
-                </p>
               </div>
             </div>
 
@@ -290,11 +295,11 @@
               <div v-if="addons.length > 0" class="space-y-2">
                 <div
                   v-for="addon in addons"
-                  :key="addon.addon_id"
+                  :key="addon?.addon_id"
                   class="flex items-center gap-2 text-sm text-foreground"
                 >
                   <Check class="size-4 text-primary" />
-                  <span>{{ addon.addon_name }}</span>
+                  <span>{{ addon?.title ?? '' }}</span>
                 </div>
               </div>
               <p v-else class="text-sm text-muted-foreground">
