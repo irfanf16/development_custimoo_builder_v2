@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
   import { ref, computed, watch, onMounted } from 'vue'
   import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -133,12 +132,19 @@
     }
   )
 
-  // Fetch cart when dialog opens
+  // Fetch cart when dialog opens (only if not already fetched on page load)
   watch(
     () => props.open,
     isOpen => {
       if (isOpen) {
-        fetchCart()
+        // Only fetch if not already fetched on page load
+        // The watcher in useCart with immediate: true will map existing cart data
+        if (!cartStore.hasFetchedOnPageLoad) {
+          fetchCart()
+        } else if (cartStore.cart && products.value.length === 0) {
+          // If cart exists but products aren't mapped yet, force mapping
+          fetchCart()
+        }
         // Refresh addresses when cart opens
         profileStore.fetchAddresses()
         // Set default address if not already selected

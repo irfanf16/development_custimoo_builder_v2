@@ -33,6 +33,8 @@
     save_design_title,
     save_design_choose_locker,
     save_design_button,
+    save_design_name_required,
+    save_design_locker_required,
     locker_sort,
     locker_sort_last_modified,
     locker_sort_alphabetically,
@@ -74,6 +76,10 @@
   const sceneStore = useSceneStore()
   const productName = ref('')
   const selectedLockerId = ref<number | null>(null)
+
+  // Validation errors
+  const designNameError = ref<string | null>(null)
+  const lockerSelectionError = ref<string | null>(null)
 
   const frontImage = ref('')
   const backImage = ref('')
@@ -123,7 +129,34 @@
 
   const handleSelectLocker = (locker: Locker) => {
     selectedLockerId.value = locker.id
+    lockerSelectionError.value = null
     emit('select-locker', locker)
+  }
+
+  // Validation functions
+  const validateDesignName = (): boolean => {
+    const trimmedName = productName.value?.trim() || ''
+    if (!trimmedName) {
+      designNameError.value = save_design_name_required({}, { locale: locale.value })
+      return false
+    }
+    designNameError.value = null
+    return true
+  }
+
+  const validateLockerSelection = (): boolean => {
+    if (!selectedLockerId.value) {
+      lockerSelectionError.value = save_design_locker_required({}, { locale: locale.value })
+      return false
+    }
+    lockerSelectionError.value = null
+    return true
+  }
+
+  const validateForm = (): boolean => {
+    const isDesignNameValid = validateDesignName()
+    const isLockerValid = validateLockerSelection()
+    return isDesignNameValid && isLockerValid
   }
   let frontImageComponentRef: TwoDSceneRef = sceneStore.getTwoDSceneRef('front')
   if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
@@ -157,9 +190,13 @@
     ).getImageFromCanvas('back')
   }
   const handleSave = async () => {
-    if (!selectedLockerId.value) return
+    // Validate before proceeding
+    if (!validateForm()) {
+      return
+    }
+
     isSubmitting.value = true
-    const signedUrls = await lockerStore.getSignedUrl(selectedLockerId.value)
+    const signedUrls = await lockerStore.getSignedUrl(selectedLockerId.value!)
     if (!signedUrls) {
       isSubmitting.value = false
       return
@@ -231,28 +268,28 @@
           room_id: selectedLockerId.value,
           product_id: productId,
           product_name: productName.value || '',
-          svg_parts: svgParts,
+          svg_parts: JSON.stringify(svgParts),
           style_id: customizationStoreRef.activeStyleId.value || 0,
           design_id: customizationStore.activeDesignId || 0,
-          custom_logos: customLogos,
-          text: productCustomTexts,
+          custom_logos: JSON.stringify(customLogos),
+          text: JSON.stringify(productCustomTexts),
           colors: [],
           shuffle_color_number: customization?.shuffle_color_number || 0,
-          defaultcolors: defaultColors,
-          groupcolors: groupColors,
+          defaultcolors: JSON.stringify(defaultColors),
+          groupcolors: JSON.stringify(groupColors),
           front_image: signedUrls.urls.find(item => item.file_side === 'front')!.original_url,
           back_image: signedUrls.urls.find(item => item.file_side === 'back')!.original_url,
-          product_roster_detail: rosterDetail,
+          product_roster_detail: JSON.stringify(rosterDetail),
           fixed_logo_index: customization?.fixed_logo_index || 0,
-          svgcolors: svgcolors,
-          grouped_addons: groupedAddons,
-          ungrouped_addons: ungroupedAddons,
-          group_patterns: customization?.group_patterns || {}
+          svgcolors: JSON.stringify(svgcolors),
+          grouped_addons: JSON.stringify(groupedAddons),
+          ungrouped_addons: JSON.stringify(ungroupedAddons),
+          group_patterns: JSON.stringify(customization?.group_patterns || {})
         }
         const payload = objectToFormData(locker)
         const success = await lockerStore.saveDesignToLocker(
           payload,
-          selectedLockerId.value,
+          selectedLockerId.value!,
           locker.front_image
         )
         if (success) {
@@ -272,6 +309,9 @@
     () => props.open,
     async (newVal: boolean) => {
       if (newVal) {
+        // Reset validation errors when dialog opens
+        designNameError.value = null
+        lockerSelectionError.value = null
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()
         }
@@ -316,7 +356,7 @@
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="w-full flex flex-col gap-0 p-0 overflow-hidden h-fit">
+    <DialogContent variant="large" class="w-full flex flex-col gap-0 p-0 overflow-hidden">
       <!-- HEADER -->
       <DialogHeader class="p-4">
         <h2 class="text-lg font-semibold">{{ save_design_title({}, { locale }) }}</h2>
@@ -348,15 +388,28 @@
         <!-- RIGHT: LOCKER LIST -->
         <div class="w-[40%] flex flex-col p-6 pb-0! gap-3">
           <div class="flex flex-col gap-3">
-            <Input
-              v-model="productName"
-              :placeholder="design_name_placeholder({}, { locale })"
-              class="h-9 bg-accent"
-              :disabled="isSubmitting"
-            />
-            <h4 class="text-sm font-semibold mb-0">
-              {{ save_design_choose_locker({}, { locale }) }}
-            </h4>
+            <div class="flex flex-col gap-1">
+              <Input
+                v-model="productName"
+                :placeholder="design_name_placeholder({}, { locale })"
+                class="h-9 bg-accent"
+                :disabled="isSubmitting"
+                :aria-invalid="designNameError !== null"
+                @blur="validateDesignName"
+                @input="designNameError = null"
+              />
+              <p v-if="designNameError" class="text-[0.8rem] font-medium text-destructive">
+                {{ designNameError }}
+              </p>
+            </div>
+            <div class="flex flex-col gap-1">
+              <h4 class="text-sm font-semibold mb-0">
+                {{ save_design_choose_locker({}, { locale }) }}
+              </h4>
+              <p v-if="lockerSelectionError" class="text-[0.8rem] font-medium text-destructive">
+                {{ lockerSelectionError }}
+              </p>
+            </div>
             <div class="flex items-center justify-between gap-1">
               <InputSearchGroup
                 v-model="search"
@@ -416,7 +469,7 @@
           </div>
 
           <!-- LIST SECTION -->
-          <ScrollArea class="flex-1 px-6 py-4 h-full overflow-y-auto p-3 border rounded-lg">
+          <ScrollArea class="flex-1 px-6 py-4 overflow-y-auto p-3 border rounded-lg">
             <!-- <div class="grid gap-4 h-full"> -->
             <div
               v-for="locker in filteredLockers"
@@ -470,12 +523,17 @@
           </ScrollArea>
           <div
             class="flex justify-end gap-3"
-            :class="{ 'pointer-events-none': !selectedLockerId || isSubmitting }"
+            :class="{
+              'pointer-events-none': !selectedLockerId || !productName.trim() || isSubmitting
+            }"
           >
             <Button variant="outline" :disabled="isSubmitting" @click="emit('update:open', false)">
               {{ locker_cancel({}, { locale }) }}
             </Button>
-            <Button :disabled="!selectedLockerId || isSubmitting" @click="handleSave">
+            <Button
+              :disabled="!selectedLockerId || !productName.trim() || isSubmitting"
+              @click="handleSave"
+            >
               {{ save_design_button({}, { locale }) }}
             </Button>
           </div>

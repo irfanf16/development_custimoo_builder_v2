@@ -358,6 +358,8 @@
   "save_design_title": "Enregistrer votre design",
   "save_design_choose_locker": "Choisir un vestiaire",
   "save_design_button": "Enregistrer le design",
+  "save_design_name_required": "Le nom du design est requis",
+  "save_design_locker_required": "Veuillez sélectionner un vestiaire",
   "cart_title": "Panier",
   "cart_order_reference_label": "Référence de commande",
   "cart_comments_label": "Commentaires",

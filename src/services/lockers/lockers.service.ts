@@ -21,13 +21,17 @@ async function getLockerProducts(locker_id: number) {
   return await http.get<LockerResponse<Locker[]>>(`locker-products?locker_id=${locker_id}`)
 }
 
-//endpoint: locker-products/26417?locker_product_id=26417&active_product_type=locker_product
-async function getLockerProductDetails(product_id: number) {
+//endpoint: locker-products/26417?locker_product_id=26417&active_product_type=locker_product&locker_id=123
+async function getLockerProductDetails(product_id: number, locker_id?: number) {
+  const params: Record<string, string | number> = {
+    locker_product_id: product_id,
+    active_product_type: 'locker_product'
+  }
+  if (locker_id) {
+    params.locker_id = locker_id
+  }
   return await http.get<LockerResponse<LockerProduct>>(`locker-products/${product_id}`, {
-    params: {
-      locker_product_id: product_id,
-      active_product_type: 'locker_product'
-    }
+    params
   })
 }
 
@@ -61,8 +65,11 @@ async function getSignedUrl(locker_id: number) {
   )
 }
 
-async function saveDesign(payload: FormData) {
-  return await http.post<LockerResponse<any>>(`locker-products`, payload)
+async function saveDesign(payload: FormData, locker_id?: number) {
+  // For updating: use locker-products/{locker_id}
+  // For saving: use locker-products
+  const endpoint = locker_id ? `locker-products/${locker_id}` : `locker-products`
+  return await http.post<LockerResponse<any>>(endpoint, payload)
 }
 
 //collection requests

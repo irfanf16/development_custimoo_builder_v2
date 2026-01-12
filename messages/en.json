@@ -358,6 +358,8 @@
   "save_design_title": "Save your design",
   "save_design_choose_locker": "Choose a Locker",
   "save_design_button": "Save design",
+  "save_design_name_required": "Design name is required",
+  "save_design_locker_required": "Please select a locker",
   "cart_title": "Cart",
   "cart_order_reference_label": "Order reference",
   "cart_comments_label": "Comments",
