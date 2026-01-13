@@ -109,17 +109,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   // Addons setters to avoid direct mutations from components
-  // function setActiveAddonsList(addons: OutputAddon[]) {
-  //   activeAddons.value = addons
-  // }
 
-  // function updateActiveAddonSelected(addonId: number, selected: boolean) {
-  //   if (!activeAddons.value) return
-  //   const idx = activeAddons.value.findIndex(a => a.addon_id === addonId)
-  //   if (idx >= 0) {
-  //     activeAddons.value[idx].selected = selected
-  //   }
-  // }
   // ===== BUSINESS LOGIC =====
 
   function setSvgGroups(
@@ -498,7 +488,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     fetchActiveProductDetails,
     fetchActiveStyleDetails,
     fetchProductDetailsAndDesignsForProductPreview,
-    //fetchProductAddons,
     fetchDesignPreviewsByStyleId,
     fetchDesignDetailsById,
     suspendCustomizationAutoSync,

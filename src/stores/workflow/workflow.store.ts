@@ -56,6 +56,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const activePatternGroupName = ref<string | null>(null)
   const activeLogoId = ref<string | null>(null)
   const textClipboard = ref<{ style: unknown } | null>(null)
+  const activeColorAccordionIndex = ref<number | null>(null)
 
   // Canvas state
   const activeCanvasSide = ref<CanvasSide>('front')
@@ -215,6 +216,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setItemRaw('workflow.patternsSubStep', patternsSubStep.value || '')
     setItemRaw('workflow.activePatternGroupName', activePatternGroupName.value || '')
     setItemRaw('workflow.activeLogoId', activeLogoId.value || '')
+    setItemRaw('workflow.activeColorAccordionIndex', String(activeColorAccordionIndex.value ?? ''))
     // Note: textClipboard is not persisted - it's runtime-only
   }
 
@@ -246,6 +248,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       const patterns = getItemRaw('workflow.patternsSubStep') as 'list' | 'edit' | null
       const patternGroupName = getItemRaw('workflow.activePatternGroupName')
       const logoId = getItemRaw('workflow.activeLogoId')
+      const colorAccordionIndex = getItemRaw('workflow.activeColorAccordionIndex')
       if (logos) logosSubStep.value = logos
       if (products) productsSubStep.value = products
       if (texts) textsSubStep.value = texts
@@ -263,6 +266,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       if (patterns) patternsSubStep.value = patterns
       if (patternGroupName) activePatternGroupName.value = patternGroupName
       if (logoId) activeLogoId.value = logoId
+      if (colorAccordionIndex) activeColorAccordionIndex.value = Number(colorAccordionIndex)
       // Note: textClipboard is not loaded from localStorage - it's runtime-only
     } catch (_) {}
   }
@@ -336,6 +340,11 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
+  function setActiveColorAccordionIndex(index: number | null) {
+    activeColorAccordionIndex.value = index
+    saveSubStepsToLocalStorage()
+  }
+
   function setTextClipboard(payload: { style: unknown } | null) {
     textClipboard.value = payload
     // Note: textClipboard is not persisted to localStorage - it's runtime-only
@@ -349,6 +358,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     patternsSubStep.value = 'list'
     activePatternGroupName.value = null
     activeLogoId.value = null
+    activeColorAccordionIndex.value = null
     textClipboard.value = null
     activeTextId.value = null
     activeTextItemIndex.value = null
@@ -468,6 +478,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     patternsSubStep,
     activePatternGroupName,
     activeLogoId,
+    activeColorAccordionIndex,
     selectedCategoryId,
     selectedSubCategoryId,
     selectedDesignCategoryId,
@@ -494,6 +505,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setRosterSubStep,
     setActivePatternSubStep,
     setActiveLogoId,
+    setActiveColorAccordionIndex,
     setTextClipboard,
     resetWorkflowSubSteps,
     // Business Logic

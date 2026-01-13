@@ -1,12 +1,14 @@
 import { API } from '@/services'
 import type {
   Collection,
+  CollectionLogoPresignedUrlsResponse,
   CopyProductPayload,
   Locker,
+  LockerProduct,
   SignedUrlResponse
 } from '@/services/lockers/types'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import { toast } from 'vue-sonner'
 
@@ -19,6 +21,11 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   const isLoading = ref<boolean>(false)
   const error = ref<string | null>(null)
   const collections = ref<Collection[]>([])
+
+  // Track if we're editing a locker product
+  const editingLockerProductId = ref<number | null>(null)
+  const editingLockerId = ref<number | null>(null)
+  const editingLockerProduct = ref<LockerProduct | null>(null)
 
   //lockers methods
   async function fetchLockers() {
@@ -114,6 +121,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
 
     setSuccessMessage('Locker deleted successfully')
     lockers.value = lockers.value.filter(locker => locker.id !== id)
+    // Remove associated collections from frontend
+    collections.value = collections.value.filter(collection => collection.room_id !== id)
   }
 
   //Delete Locker Products
@@ -206,6 +215,53 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     return true
   }
 
+  async function updateLockerProduct(formData: FormData, locker_id: number): Promise<boolean> {
+    // Add _method: PUT to the form data
+    formData.append('_method', 'PUT')
+    // For updating, pass locker_id to use route: locker-products/{locker_id}
+    const resp = await tryCatchApi(API.lockers.saveDesign(formData, locker_id), {
+      operation: 'updateLockerProduct'
+    })
+    if (!resp.success) {
+      setError('Failed to update design')
+      return false
+    }
+    // Refresh locker products to get updated data
+    await fetchLockerProducts(locker_id)
+    setSuccessMessage('Design updated successfully')
+    return true
+  }
+
+  /**
+   * Set editing locker product state
+   */
+  function setEditingLockerProduct(
+    lockerProductId: number,
+    lockerId: number,
+    lockerProduct?: LockerProduct
+  ) {
+    console.log('setEditingLockerProduct', lockerProductId, lockerId)
+    editingLockerProductId.value = lockerProductId
+    editingLockerId.value = lockerId
+    editingLockerProduct.value = lockerProduct || null
+  }
+
+  /**
+   * Clear editing locker product state
+   */
+  function clearEditingLockerProduct() {
+    editingLockerProductId.value = null
+    editingLockerId.value = null
+    editingLockerProduct.value = null
+  }
+
+  /**
+   * Check if we're currently editing a locker product
+   */
+  const isEditingLockerProduct = computed(() => {
+    return editingLockerProductId.value !== null && editingLockerId.value !== null
+  })
+
   // collection methods
   async function fetchCollections() {
     isLoading.value = true
@@ -214,7 +270,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       operation: 'fetchCollections'
     })
     if (resp.success && resp.content) {
-      collections.value = resp.content
+      collections.value = resp.content.result
     } else {
       setError('Failed to load collections')
     }
@@ -233,17 +289,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
         if (c.id === collection_id) {
           return {
             ...c,
-            ...resp.content,
+            ...resp.content.result,
             details_fetched: true,
-            collection_products: resp.content.collection_products.map(cp => {
-              return {
-                ...cp,
-                product_locker_room: {
-                  ...cp.product_locker_room,
-                  product_url: cp.product_locker_room.front_url
-                }
-              }
-            })
+            collection_products: resp.content.result.collection_products
           }
         } else {
           return c
@@ -273,6 +321,21 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     }
   }
 
+  async function updateCollection(collection_id: number, formData: FormData) {
+    isLoading.value = true
+    error.value = null
+    const resp = await tryCatchApi(API.lockers.updateCollection(collection_id, formData))
+    if (resp.success && resp.content) {
+      await fetchCollections()
+      isLoading.value = false
+      return resp.content
+    } else {
+      setError('Failed to update collection')
+      isLoading.value = false
+      return null
+    }
+  }
+
   async function deleteCollection(id: number) {
     const resp = await tryCatchApi(API.lockers.deleteCollection(id), {
       operation: 'deleteCollection',
@@ -297,6 +360,24 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     ).content?.result
   }
 
+  async function getCollectionLogoPresignedUrls(
+    collection_id: number | null,
+    logoFiles: Array<{ name: string; type: string; size?: number }>
+  ): Promise<CollectionLogoPresignedUrlsResponse> {
+    const resp = await tryCatchApi(
+      API.lockers.getCollectionLogoPresignedUrls(collection_id, logoFiles)
+    )
+    if (resp.success && resp.content) {
+      return resp.content
+    } else {
+      setError('Failed to get collection logo presigned URLs')
+      return {
+        presigned_urls: [],
+        success: false
+      }
+    }
+  }
+
   //error message
   function setError(errorMessage: string | null) {
     error.value = errorMessage
@@ -316,6 +397,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     isLoading,
     error,
     collections,
+    editingLockerProductId,
+    editingLockerId,
+    editingLockerProduct,
+    isEditingLockerProduct,
     //functions
     fetchLockers,
     fetchLockerProducts,
@@ -327,12 +412,17 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     copyProducts,
     fetchLockerAssets,
     saveDesignToLocker,
+    updateLockerProduct,
+    setEditingLockerProduct,
+    clearEditingLockerProduct,
     //collection methods
     fetchCollections,
     fetchCollectionProducts,
     saveCollection,
+    updateCollection,
     deleteCollection,
     //get s3 signed URL
-    getSignedUrl
+    getSignedUrl,
+    getCollectionLogoPresignedUrls
   }
 })

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { onMounted, computed } from 'vue'
+  import { onMounted, computed, watch, nextTick, ref } from 'vue'
+  import { useDebounceFn } from '@vueuse/core'
   import { Input } from '@/components/ui/input'
   import { Button } from '@/components/ui/button'
   import {
@@ -29,6 +30,41 @@
   const uiStore = useUIStore()
   const isMobile = uiStore.isMobile
 
+  const SEARCH_INPUT_SELECTOR = 'input[data-orders-search-input="true"]'
+  const searchInputEl = ref<HTMLInputElement | null>(null)
+  const LOAD_REFOCUS_WINDOW_MS = 400
+  let lastLoadCompletionAt = 0
+
+  const interactiveTags = new Set(['INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'A', 'SUMMARY'])
+
+  function isInteractiveElement(el: HTMLElement | null) {
+    if (!el) return false
+    if (interactiveTags.has(el.tagName)) return true
+    if (typeof el.tabIndex === 'number' && el.tabIndex >= 0) return true
+    return false
+  }
+
+  function getSearchInputEl() {
+    if (searchInputEl.value?.isConnected) {
+      return searchInputEl.value
+    }
+    if (typeof document === 'undefined') return null
+    const queried = document.querySelector<HTMLInputElement>(SEARCH_INPUT_SELECTOR)
+    if (queried) {
+      searchInputEl.value = queried
+    }
+    return queried
+  }
+
+  function restoreSearchFocus() {
+    if (typeof window === 'undefined') return
+    nextTick(() => {
+      const el = getSearchInputEl()
+      if (!el) return
+      el.focus({ preventScroll: true })
+    })
+  }
+
   const t = computed(() => ({
     searchOrders: messages.profile_search_orders({}, { locale: profileStore.currentLocale }),
     filter: messages.profile_filter({}, { locale: profileStore.currentLocale }),
@@ -47,6 +83,49 @@
   // ✅ Dynamically computed filter options
   const orderStatuses = computed(() => getOrderOptions(store.ordersPageType))
 
+  function onSearchFocus(e: FocusEvent) {
+    const target = e.target as HTMLInputElement | null
+    if (target) {
+      searchInputEl.value = target
+    }
+  }
+
+  function onSearchBlur(e: FocusEvent) {
+    const related = e.relatedTarget as HTMLElement | null
+    const target = e.target as HTMLInputElement | null
+    if (target) {
+      searchInputEl.value = target
+    }
+    const finishedLoadRecently = Date.now() - lastLoadCompletionAt <= LOAD_REFOCUS_WINDOW_MS
+    const shouldRestoreFocus =
+      (store.isLoadingOrders || finishedLoadRecently) && !isInteractiveElement(related)
+    if (shouldRestoreFocus) {
+      restoreSearchFocus()
+    }
+  }
+
+  // Debounced search function
+  const debouncedFilterOrders = useDebounceFn(() => {
+    store.filterOrders()
+  }, 600)
+
+  // Watch search input and trigger debounced search
+  watch(
+    () => store.ordersParams.search,
+    () => {
+      debouncedFilterOrders()
+    }
+  )
+
+  watch(
+    () => store.isLoadingOrders,
+    next => {
+      if (!next) {
+        lastLoadCompletionAt = Date.now()
+      }
+    }
+  )
+
   onMounted(() => {
     // If on timeline view and activeOrder exists, fetch fresh details
     if (store.activeOrder?.id && store.activeOrderView === 'timeline') {
@@ -63,10 +142,6 @@
       store.fetchOrders(params)
     }
   })
-
-  function onSearchEnter(e: KeyboardEvent) {
-    if (e.key === 'Enter') store.filterOrders()
-  }
 
   async function loadMore() {
     const nextPage = store.pagination.currentPage + 1
@@ -99,11 +174,13 @@
           v-model="store.ordersParams.search"
           :placeholder="t.searchOrders"
           class="h-8 w-full pl-8 pr-8"
-          @keydown="onSearchEnter"
+          data-orders-search-input="true"
+          @focus="onSearchFocus"
+          @blur="onSearchBlur"
         />
         <Search class="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-foreground" />
         <button
-          v-if="store.ordersParams.search"
+          v-show="store.ordersParams.search"
           class="absolute right-2 top-1/2 -translate-y-1/2 text-foreground"
           @click="store.clearSearch()"
         >
@@ -217,34 +294,38 @@
       </div>
     </div>
     <!-- Orders List -->
-    <ScrollArea v-if="!store.activeOrder" class="flex-1 overflow-y-auto">
-      <InfiniteScroll :class="'w-full h-full relative'" @load-more="loadMore">
-        <div v-if="store.orders.length" class="absolute inset-0">
-          <OrdersListItem
-            v-for="order in store.orders"
-            :key="order.id"
-            :order="order"
-            :expanded="store.ordersView === 'expanded-list'"
-            @cancel="store.cancelOrder"
-            @pdf="() => {}"
-            @details="() => showOrderDetails(order)"
-          />
-        </div>
-        <div v-else class="flex justify-center py-10 text-foreground">{{ t.noOrdersFound }}</div>
+    <div v-if="!store.activeOrder" class="flex-1 min-h-0">
+      <ScrollArea class="h-full overflow-y-auto">
+        <InfiniteScroll :class="'w-full h-full relative'" @load-more="loadMore">
+          <div v-if="store.orders.length" class="absolute inset-0">
+            <OrdersListItem
+              v-for="order in store.orders"
+              :key="order.id"
+              :order="order"
+              :expanded="store.ordersView === 'expanded-list'"
+              @cancel="store.cancelOrder"
+              @pdf="() => {}"
+              @details="() => showOrderDetails(order)"
+            />
+          </div>
+          <div v-else-if="!store.isLoadingOrders" class="flex justify-center py-10 text-foreground">
+            {{ t.noOrdersFound }}
+          </div>
 
-        <div v-if="store.isLoadingOrders" class="flex justify-center py-6">
-          <Spinner class="text-primary size-6" />
-        </div>
-        <!-- Smooth bottom loader when fetching more -->
-        <div
-          v-if="store.isLoadingMore && store.orders.length"
-          class="flex justify-center py-4 text-forground transition-all duration-300"
-        >
-          <Spinner class="text-primary size-4" />
-          <span class="ml-2 text-sm">{{ t.loadingMoreOrders }}</span>
-        </div>
-      </InfiniteScroll>
-    </ScrollArea>
+          <div v-if="store.isLoadingOrders" class="flex justify-center py-6">
+            <Spinner class="text-primary size-6" />
+          </div>
+          <!-- Smooth bottom loader when fetching more -->
+          <div
+            v-if="store.isLoadingMore && store.orders.length"
+            class="flex justify-center py-4 text-forground transition-all duration-300"
+          >
+            <Spinner class="text-primary size-4" />
+            <span class="ml-2 text-sm">{{ t.loadingMoreOrders }}</span>
+          </div>
+        </InfiniteScroll>
+      </ScrollArea>
+    </div>
     <component
       :is="isMobile ? 'div' : ScrollArea"
       v-if="!isMobile && store.activeOrder"

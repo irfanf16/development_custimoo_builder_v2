@@ -6,7 +6,15 @@
   import { cn } from '@/lib/utils'
   import ScrollBar from './ScrollBar.vue'
 
-  const props = defineProps<ScrollAreaRootProps & { class?: HTMLAttributes['class'] }>()
+  // Default to `scroll` (not `hover`) so scrollbars can appear on mobile (no hover),
+  // without forcing them to always show.
+  const props = withDefaults(
+    defineProps<ScrollAreaRootProps & { class?: HTMLAttributes['class'] }>(),
+    {
+      type: 'scroll',
+      class: undefined
+    }
+  )
 
   const delegatedProps = reactiveOmit(props, 'class')
 </script>
@@ -23,7 +31,10 @@
     >
       <slot />
     </ScrollAreaViewport>
-    <ScrollBar />
+    <!-- Keep scrollbar mounted to avoid DOM childList mutations on hover/scroll.
+         In Shadow DOM, Reka's FocusScope may treat such mutations as "focused node removed"
+         and focus the dialog container, which blurs inputs. -->
+    <ScrollBar force-mount />
     <ScrollAreaCorner />
   </ScrollAreaRoot>
 </template>

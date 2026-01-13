@@ -58,6 +58,7 @@ import AddressIcon from 'virtual:icons/flex-flat/address-book-icon'
 import NotificationIcon from 'virtual:icons/flex-flat/notification-icon'
 import OrdersIcon from 'virtual:icons/flex-flat/orders-icon'
 import UserCircle from 'virtual:icons/flex-flat/user-circle'
+import UploadImagePlaceholder from 'virtual:icons/flex-flat/upload-image-placeholder'
 export const flexFlatCategoryIcons = {
   Ball,
   Baseball,
@@ -117,7 +118,8 @@ export const flexFlatCategoryIcons = {
   AddressIcon,
   NotificationIcon,
   OrdersIcon,
-  UserCircle
+  UserCircle,
+  UploadImagePlaceholder
 }
 
 // Keep a reference so tree-shaking can't drop them

@@ -3,15 +3,25 @@
   import { Card } from '@/components/ui/card'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { Spinner } from '@/components/ui/spinner'
-  import type { ProductRosterDetail } from '@/services/lockers/types'
+  import type { ProductRosterDetail } from '@/services/products/types'
   import { UsersIcon } from 'lucide-vue-next'
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    locker_roster_name,
+    locker_roster_number,
+    locker_roster_players,
+    locker_use_in_design,
+    locker_preview
+  } from '@/paraglide/messages'
   type RosterProps = {
     roster_group: ProductRosterDetail[] | undefined
     group_name: string
   }
   defineProps<{ rosters: RosterProps[] }>()
 
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
   const isLoading = ref(false)
 </script>
 <template>
@@ -31,8 +41,8 @@
             <!-- Header -->
             <div class="sticky top-0 bg-gray-200 border-b border-border border rounded-t-lg z-10">
               <div class="grid grid-cols-2 gap-4 px-4 py-3 font-semibold text-sm">
-                <div>Name</div>
-                <div>No.</div>
+                <div>{{ locker_roster_name({}, { locale }) }}</div>
+                <div>{{ locker_roster_number({}, { locale }) }}</div>
               </div>
             </div>
 
@@ -55,13 +65,15 @@
               <p class="text-xs text-muted-foreground mb-2">
                 <UsersIcon class="inline-block w-4 h-4 mr-1" />
                 {{ roster.roster_group.reduce((acc, player) => acc + player.quantity, 0) }}
-                players
+                {{ locker_roster_players({}, { locale }) }}
               </p>
 
               <Button class="w-full bg-teal-500 hover:bg-teal-600 text-white">
-                Use in design
+                {{ locker_use_in_design({}, { locale }) }}
               </Button>
-              <Button variant="outline" class="w-full"> Preview </Button>
+              <Button variant="outline" class="w-full">
+                {{ locker_preview({}, { locale }) }}
+              </Button>
             </div>
           </Card>
         </template>

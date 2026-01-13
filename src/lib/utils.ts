@@ -131,7 +131,25 @@ export function formatDate(dateStr?: string): string {
 }
 
 // To get date-time in past toned responses like: 1d ago, 2h ago, 3m ago
-export function timeAgo(dateTime: string): string {
+export function timeAgo(
+  dateTime: string,
+  messages?: {
+    just_now: () => string
+    seconds: (params: { count: number }) => string
+    seconds_plural: (params: { count: number }) => string
+    minutes: (params: { count: number }) => string
+    minutes_plural: (params: { count: number }) => string
+    hours: (params: { count: number }) => string
+    hours_plural: (params: { count: number }) => string
+    days: (params: { count: number }) => string
+    days_plural: (params: { count: number }) => string
+    yesterday: () => string
+    months: (params: { count: number }) => string
+    months_plural: (params: { count: number }) => string
+    years: (params: { count: number }) => string
+    years_plural: (params: { count: number }) => string
+  }
+): string {
   const now = new Date()
   const past = new Date(dateTime)
 
@@ -139,24 +157,58 @@ export function timeAgo(dateTime: string): string {
 
   const seconds = Math.floor((now.getTime() - past.getTime()) / 1000)
 
-  if (seconds < 5) return 'just now'
-  if (seconds < 60) return `${seconds} seconds ago`
+  if (seconds < 5) return messages?.just_now() || 'just now'
+  if (seconds < 60) {
+    return messages
+      ? seconds === 1
+        ? messages.seconds({ count: seconds })
+        : messages.seconds_plural({ count: seconds })
+      : `${seconds} seconds ago`
+  }
 
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`
+  if (minutes < 60) {
+    return messages
+      ? minutes === 1
+        ? messages.minutes({ count: minutes })
+        : messages.minutes_plural({ count: minutes })
+      : `${minutes} minute${minutes === 1 ? '' : 's'} ago`
+  }
 
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+  if (hours < 24) {
+    return messages
+      ? hours === 1
+        ? messages.hours({ count: hours })
+        : messages.hours_plural({ count: hours })
+      : `${hours} hour${hours === 1 ? '' : 's'} ago`
+  }
 
   const days = Math.floor(hours / 24)
-  if (days === 1) return 'yesterday'
-  if (days < 30) return `${days} days ago`
+  if (days === 1) return messages?.yesterday() || 'yesterday'
+  if (days < 30) {
+    return messages
+      ? days === 1
+        ? messages.days({ count: days })
+        : messages.days_plural({ count: days })
+      : `${days} days ago`
+  }
 
   const months = Math.floor(days / 30)
-  if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`
+  if (months < 12) {
+    return messages
+      ? months === 1
+        ? messages.months({ count: months })
+        : messages.months_plural({ count: months })
+      : `${months} month${months === 1 ? '' : 's'} ago`
+  }
 
   const years = Math.floor(days / 365)
-  return `${years} year${years === 1 ? '' : 's'} ago`
+  return messages
+    ? years === 1
+      ? messages.years({ count: years })
+      : messages.years_plural({ count: years })
+    : `${years} year${years === 1 ? '' : 's'} ago`
 }
 
 export function loadCustomFont(url: string, fontFamily: string): Promise<void> {
@@ -598,7 +650,6 @@ export async function uploadPresignedFiles(files: PresignedFile[]) {
 }
 
 export function base64ToFile(base64: string, filename: string): File {
-  console.log(base64)
   const arr = base64.split(',')
   const mime = arr[0]!.match(/:(.*?);/)?.[1] || 'image/png'
   const bstr = atob(arr[1]!)
@@ -610,6 +661,114 @@ export function base64ToFile(base64: string, filename: string): File {
   }
 
   return new File([u8arr], filename, { type: mime })
+}
+
+/**
+ * Convert image URL to File object
+ * Uses canvas approach to avoid CORS issues with fetch()
+ * @param url - Image URL (can be relative to storage base or absolute)
+ * @param filename - Optional filename, defaults to 'image.png'
+ * @returns Promise<File>
+ */
+export async function urlToFile(url: string, filename?: string): Promise<File> {
+  const storageBase = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
+  const fullUrl = url.startsWith('http') ? url : `${storageBase}${url}`
+
+  // Try fetch first (works if CORS is properly configured)
+  try {
+    const response = await fetch(fullUrl, { mode: 'cors' })
+    if (response.ok) {
+      const blob = await response.blob()
+      const fileExtension = filename?.split('.').pop() || url.split('.').pop() || 'png'
+      const defaultFilename = filename || `image.${fileExtension}`
+      return new File([blob], defaultFilename, { type: blob.type || 'image/png' })
+    }
+  } catch (_fetchError) {
+    // If fetch fails (likely CORS), fall back to canvas approach
+    // This works because <img> tags can load cross-origin images
+  }
+
+  // Fallback: Use image element + canvas to convert to File
+  // Try with crossOrigin='anonymous' first (requires CORS headers from server)
+  // If that fails, try without crossOrigin (but canvas will be tainted)
+  return new Promise((resolve, reject) => {
+    let attemptWithCors = true
+
+    const attemptLoad = () => {
+      const img = new Image()
+      if (attemptWithCors) {
+        img.crossOrigin = 'anonymous'
+      }
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const ctx = canvas.getContext('2d')
+
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'))
+            return
+          }
+
+          ctx.drawImage(img, 0, 0)
+
+          // Try to convert canvas to blob
+          canvas.toBlob(
+            blob => {
+              if (!blob) {
+                // If we tried with CORS and it failed, try without CORS
+                if (attemptWithCors) {
+                  attemptWithCors = false
+                  attemptLoad()
+                } else {
+                  reject(new Error('Failed to convert canvas to blob'))
+                }
+                return
+              }
+
+              const fileExtension = filename?.split('.').pop() || url.split('.').pop() || 'png'
+              const defaultFilename = filename || `image.${fileExtension}`
+              const file = new File([blob], defaultFilename, { type: blob.type || 'image/png' })
+              resolve(file)
+            },
+            'image/png' // Default to PNG format
+          )
+        } catch (err) {
+          // If canvas is tainted (SecurityError), try without crossOrigin
+          if (err instanceof Error && err.name === 'SecurityError' && attemptWithCors) {
+            attemptWithCors = false
+            attemptLoad()
+          } else {
+            reject(
+              new Error(
+                `Failed to convert image to file: ${err instanceof Error ? err.message : String(err)}`
+              )
+            )
+          }
+        }
+      }
+
+      img.onerror = () => {
+        // If crossOrigin='anonymous' fails, try without it
+        if (attemptWithCors) {
+          attemptWithCors = false
+          attemptLoad()
+        } else {
+          reject(
+            new Error(
+              `Failed to load image from URL: ${fullUrl}. If this is an S3 URL, ensure CORS is configured on your bucket.`
+            )
+          )
+        }
+      }
+
+      img.src = fullUrl
+    }
+
+    attemptLoad()
+  })
 }
 
 export function objectToFormData(
@@ -640,9 +799,30 @@ export function objectToFormData(
 
     // Array
     if (Array.isArray(value)) {
-      value.forEach((item, index) => {
-        objectToFormData(item as Record<string, any>, formData, `${formKey}[${index}]`)
-      })
+      // Handle empty arrays by appending as JSON string (needed for nested arrays in FormData)
+      if (value.length === 0) {
+        formData.append(formKey, JSON.stringify([]))
+        return
+      }
+      // Handle non-empty arrays - check if items are objects/arrays that need recursive processing
+      const firstItem = value[0] as Record<string, any> | undefined
+      if (
+        firstItem &&
+        typeof firstItem === 'object' &&
+        !(firstItem instanceof File) &&
+        !(firstItem instanceof Blob) &&
+        !(firstItem instanceof Date)
+      ) {
+        // Array of objects/arrays - process each item recursively
+        value.forEach((item, index) => {
+          objectToFormData(item as Record<string, any>, formData, `${formKey}[${index}]`)
+        })
+      } else {
+        // Array of primitives - append each item directly
+        value.forEach((item, index) => {
+          formData.append(`${formKey}[${index}]`, String(item))
+        })
+      }
       return
     }
 

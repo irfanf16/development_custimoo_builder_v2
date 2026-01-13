@@ -57,21 +57,21 @@
                 isEcommerceCompany
               "
               class="inline-flex items-center justify-center p-1.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors text-xs"
-              title="Reorder"
+              :title="orders_action_reorder({}, { locale })"
               @click.stop="handleReorder(index)"
             >
-              Reorder
+              {{ orders_action_reorder({}, { locale }) }}
             </button>
             <button
               class="inline-flex items-center justify-center p-1.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
-              title="Download images"
+              :title="orders_action_download_images({}, { locale })"
               @click.stop="downloadStatusActivityImages(content.images, index)"
             >
               <DownloadIcon class="w-4 h-4" />
             </button>
             <button
               class="inline-flex items-center justify-center p-1.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
-              title="View details"
+              :title="orders_action_view_details({}, { locale })"
               @click.stop="showActivityItemDetail(index)"
             >
               <ListIcon class="w-4 h-4" />
@@ -345,6 +345,12 @@
   import ThirdPartyApprovalDialog from './ThirdPartyApprovalDialog.vue'
   import { Button } from '@/components/ui/button'
   import { useCompanyStore } from '@/stores/company/company.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    orders_action_reorder,
+    orders_action_download_images,
+    orders_action_view_details
+  } from '@/paraglide/messages'
 
   interface Props {
     activityContent?: GetActivityContentReturn
@@ -390,6 +396,8 @@
   }>()
   const { isNullOrEmpty, CustimooOrderFlowStatuses } = useOrderTimeline()
   const companyStore = useCompanyStore()
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
   const isEcommerceCompany = computed(() => {
     const company = companyStore.company
     return company?.platform === 'shopify' || company?.platform === 'wordpress'

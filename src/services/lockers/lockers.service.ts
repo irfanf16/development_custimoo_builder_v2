@@ -1,7 +1,7 @@
 import http from '../api'
 import type {
   Collection,
-  CollectionResponse,
+  CollectionLogoPresignedUrlsResponse,
   CopyProductPayload,
   Locker,
   LockerAssetsResponse,
@@ -21,13 +21,17 @@ async function getLockerProducts(locker_id: number) {
   return await http.get<LockerResponse<Locker[]>>(`locker-products?locker_id=${locker_id}`)
 }
 
-//endpoint: locker-products/26417?locker_product_id=26417&active_product_type=locker_product
-async function getLockerProductDetails(product_id: number) {
+//endpoint: locker-products/26417?locker_product_id=26417&active_product_type=locker_product&locker_id=123
+async function getLockerProductDetails(product_id: number, locker_id?: number) {
+  const params: Record<string, string | number> = {
+    locker_product_id: product_id,
+    active_product_type: 'locker_product'
+  }
+  if (locker_id) {
+    params.locker_id = locker_id
+  }
   return await http.get<LockerResponse<LockerProduct>>(`locker-products/${product_id}`, {
-    params: {
-      locker_product_id: product_id,
-      active_product_type: 'locker_product'
-    }
+    params
   })
 }
 
@@ -61,17 +65,20 @@ async function getSignedUrl(locker_id: number) {
   )
 }
 
-async function saveDesign(payload: FormData) {
-  return await http.post<LockerResponse<any>>(`locker-products`, payload)
+async function saveDesign(payload: FormData, locker_id?: number) {
+  // For updating: use locker-products/{locker_id}
+  // For saving: use locker-products
+  const endpoint = locker_id ? `locker-products/${locker_id}` : `locker-products`
+  return await http.post<LockerResponse<any>>(endpoint, payload)
 }
 
 //collection requests
 
 async function getCollections() {
-  return await http.get<CollectionResponse>(`collection`)
+  return await http.get<LockerResponse<Collection[]>>(`collection`)
 }
 async function getCollectionProducts(collection_id: number) {
-  return await http.post<Collection>(`collection/collection-data`, {
+  return await http.post<LockerResponse<Collection>>(`collection/products`, {
     collection_id: collection_id,
     collection_prd_ids: [],
     delete_ids: []
@@ -82,7 +89,25 @@ async function deleteCollection(id: number) {
 }
 
 async function saveCollection(payload: FormData) {
-  return await http.post<CollectionResponse>(`collection`, payload)
+  return await http.post<LockerResponse<Collection>>(`collection`, payload)
+}
+
+async function updateCollection(collection_id: number, payload: FormData) {
+  return await http.post<LockerResponse<Collection>>(`collection/${collection_id}`, payload)
+}
+
+async function getCollectionLogoPresignedUrls(
+  collection_id: number | null,
+  logoFiles: Array<{ name: string; type: string; size?: number }>
+) {
+  return await http.post<CollectionLogoPresignedUrlsResponse>(
+    `collection/generate-logo-presigned-urls`,
+    {
+      collection_id: collection_id || null,
+      logo_files: JSON.stringify(logoFiles),
+      expiration_minutes: 10
+    }
+  )
 }
 
 export default {
@@ -102,7 +127,9 @@ export default {
   getCollections,
   getCollectionProducts,
   saveCollection,
+  updateCollection,
   deleteCollection,
   //get s3 signed url
-  getSignedUrl
+  getSignedUrl,
+  getCollectionLogoPresignedUrls
 }

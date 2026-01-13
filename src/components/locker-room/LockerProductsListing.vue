@@ -12,13 +12,21 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import { Copy, Pencil, SwitchCamera } from 'lucide-vue-next'
   import CopyProductsDialog from './CopyProductsDialog.vue'
+  type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
-  const props = defineProps<{
-    products: LockerProduct[]
-    lockerId: number
-    preSelectedProducts: LockerProduct[]
-    isCreatingCollection: boolean
-  }>()
+  const props = withDefaults(
+    defineProps<{
+      products: LockerProduct[]
+      lockerId: number
+      preSelectedProducts: LockerProduct[]
+      isCreatingCollection: boolean
+      sort: SortOption
+      search: string | null
+    }>(),
+    {
+      sort: 'lastModified'
+    }
+  )
   type EditLockerProductPayload = {
     lockerProductId: number
     lockerId: number
@@ -39,6 +47,30 @@
   const products_to_copy = ref<LockerProduct[]>([])
   const showBack = ref<Record<number, boolean>>({})
 
+  const computedProducts = computed(() => props.products)
+  const filteredProducts = computed(() => {
+    const search = props.search?.toLowerCase() || ''
+
+    return [...computedProducts.value]
+      .filter(c => c.name.toLowerCase().includes(search))
+      .sort((a, b) => {
+        switch (props.sort) {
+          case 'alphabetical':
+            return a.name.localeCompare(b.name)
+
+          case 'createdDate':
+            return (
+              new Date(b.product?.created_at).getTime() - new Date(a.product?.created_at).getTime()
+            )
+
+          case 'lastModified':
+          default:
+            return (
+              new Date(b.product?.updated_at).getTime() - new Date(a.product?.updated_at).getTime()
+            )
+        }
+      })
+  })
   const handleSelect = (id: string | number) => {
     const existingIndex = selectedProducts.value.findIndex(p => p.id === id)
 
@@ -103,7 +135,7 @@
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
   <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
     <Card
-      v-for="(prod, prodIndex) in products"
+      v-for="(prod, prodIndex) in filteredProducts"
       :key="prodIndex"
       class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative !gap-0 h-fit duration-150 border-0"
     >

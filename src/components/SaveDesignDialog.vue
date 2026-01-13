@@ -15,7 +15,7 @@
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import { InputSearchGroup } from '@/components/ui/input-search-group'
-  import { base64ToFile, timeAgo, uploadPresignedFiles } from '@/lib/utils'
+  import { base64ToFile, timeAgo as timeAgoUtil, uploadPresignedFiles } from '@/lib/utils'
   import type { Locker } from '@/services/lockers/types'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useSceneStore } from '@/stores/scene/scene.store'
@@ -26,6 +26,40 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { objectToFormData } from '../lib/utils'
   import CreateLockerDialog from './locker-room/CreateLockerDialog.vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    design_name_placeholder,
+    design_search_locker_placeholder,
+    save_design_title,
+    save_design_choose_locker,
+    save_design_button,
+    save_design_name_required,
+    save_design_locker_required,
+    locker_sort,
+    locker_sort_last_modified,
+    locker_sort_alphabetically,
+    locker_sort_created_date,
+    locker_create_locker,
+    locker_designs_count,
+    locker_cancel,
+    time_ago_just_now,
+    time_ago_seconds,
+    time_ago_seconds_plural,
+    time_ago_minutes,
+    time_ago_minutes_plural,
+    time_ago_hours,
+    time_ago_hours_plural,
+    time_ago_days,
+    time_ago_days_plural,
+    time_ago_yesterday,
+    time_ago_months,
+    time_ago_months_plural,
+    time_ago_years,
+    time_ago_years_plural
+  } from '@/paraglide/messages'
+
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
   type TwoDSceneRef = {
@@ -43,6 +77,10 @@
   const productName = ref('')
   const selectedLockerId = ref<number | null>(null)
 
+  // Validation errors
+  const designNameError = ref<string | null>(null)
+  const lockerSelectionError = ref<string | null>(null)
+
   const frontImage = ref('')
   const backImage = ref('')
   const lockerStore = useLockerRoomStore()
@@ -55,6 +93,31 @@
   const { activeProductDetails } = storeToRefs(productsStore)
   const customizationStoreRef = storeToRefs(customizationStore)
 
+  const timeAgoMessages = computed(() => ({
+    just_now: () => time_ago_just_now({}, { locale: locale.value }),
+    seconds: (params: { count: number }) => time_ago_seconds(params, { locale: locale.value }),
+    seconds_plural: (params: { count: number }) =>
+      time_ago_seconds_plural(params, { locale: locale.value }),
+    minutes: (params: { count: number }) => time_ago_minutes(params, { locale: locale.value }),
+    minutes_plural: (params: { count: number }) =>
+      time_ago_minutes_plural(params, { locale: locale.value }),
+    hours: (params: { count: number }) => time_ago_hours(params, { locale: locale.value }),
+    hours_plural: (params: { count: number }) =>
+      time_ago_hours_plural(params, { locale: locale.value }),
+    days: (params: { count: number }) => time_ago_days(params, { locale: locale.value }),
+    days_plural: (params: { count: number }) =>
+      time_ago_days_plural(params, { locale: locale.value }),
+    yesterday: () => time_ago_yesterday({}, { locale: locale.value }),
+    months: (params: { count: number }) => time_ago_months(params, { locale: locale.value }),
+    months_plural: (params: { count: number }) =>
+      time_ago_months_plural(params, { locale: locale.value }),
+    years: (params: { count: number }) => time_ago_years(params, { locale: locale.value }),
+    years_plural: (params: { count: number }) =>
+      time_ago_years_plural(params, { locale: locale.value })
+  }))
+
+  const localizedTimeAgo = (dateTime: string) => timeAgoUtil(dateTime, timeAgoMessages.value)
+
   const lockers = computed(() => lockerStoreRef.lockers.value)
 
   const search = ref('')
@@ -66,7 +129,34 @@
 
   const handleSelectLocker = (locker: Locker) => {
     selectedLockerId.value = locker.id
+    lockerSelectionError.value = null
     emit('select-locker', locker)
+  }
+
+  // Validation functions
+  const validateDesignName = (): boolean => {
+    const trimmedName = productName.value?.trim() || ''
+    if (!trimmedName) {
+      designNameError.value = save_design_name_required({}, { locale: locale.value })
+      return false
+    }
+    designNameError.value = null
+    return true
+  }
+
+  const validateLockerSelection = (): boolean => {
+    if (!selectedLockerId.value) {
+      lockerSelectionError.value = save_design_locker_required({}, { locale: locale.value })
+      return false
+    }
+    lockerSelectionError.value = null
+    return true
+  }
+
+  const validateForm = (): boolean => {
+    const isDesignNameValid = validateDesignName()
+    const isLockerValid = validateLockerSelection()
+    return isDesignNameValid && isLockerValid
   }
   let frontImageComponentRef: TwoDSceneRef = sceneStore.getTwoDSceneRef('front')
   if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
@@ -86,7 +176,7 @@
     ).getImageFromCanvas()
   }
 
-  const componentRef = sceneStore.threeDSceneRef
+  let componentRef = sceneStore.threeDSceneRef
   if (componentRef && 'getImageFromCanvas' in componentRef) {
     frontImage.value = (
       componentRef as unknown as ComponentPublicInstance & {
@@ -100,9 +190,13 @@
     ).getImageFromCanvas('back')
   }
   const handleSave = async () => {
-    if (!selectedLockerId.value) return
+    // Validate before proceeding
+    if (!validateForm()) {
+      return
+    }
+
     isSubmitting.value = true
-    const signedUrls = await lockerStore.getSignedUrl(selectedLockerId.value)
+    const signedUrls = await lockerStore.getSignedUrl(selectedLockerId.value!)
     if (!signedUrls) {
       isSubmitting.value = false
       return
@@ -120,36 +214,82 @@
       })
       const results = await uploadPresignedFiles(preparedFiles)
       if (results.every(r => r.success)) {
+        const customization = customizationStore.customization
+        const productId = activeProductDetails.value!.product_id
+        const productKey = String(productId)
+
+        // Get svg_parts from active design details
+        const svgParts = productsStore.activeDesignDetails?.svg_parts || []
+
+        // Get custom logos
+        const customLogos = customization?.custom_logos[productKey] || []
+
+        // Get product custom texts
+        const productCustomTexts = customization?.product_custom_texts[productKey] || []
+
+        // Get roster detail
+        const rosterDetail = customization?.products_rosters[productKey] || []
+
+        // Get default colors
+        const defaultColors = customization?.default_colors || []
+
+        // Get group colors
+        const groupColors = customization?.group_colors || {}
+
+        // Get svgcolors from svgGroups
+        const svgcolors = productsStore.svgGroups.map(group => ({
+          value: group.color || '',
+          name: group.name || '',
+          pantone: group.pantone || ''
+        }))
+
+        // Get addons info
+        const addonsInfo = customization?.addons_info || {}
+        // grouped_addons should be an object (empty object if no grouped addons)
+        const groupedAddons =
+          Object.keys(addonsInfo).length > 0
+            ? Object.values(addonsInfo).reduce(
+                (acc, addonInfo: any) => {
+                  // Merge all grouped_addons from all products
+                  const grouped = addonInfo?.grouped_addons || {}
+                  return { ...acc, ...grouped }
+                },
+                {} as Record<string, unknown>
+              )
+            : {}
+        const ungroupedAddons = Object.values(addonsInfo).flatMap(
+          (addonInfo: any) => addonInfo?.ungrouped_addons || []
+        )
+
+        // Build locker product payload matching API structure
         let locker = {
           addons: [],
-          roster_url: true,
+          roster_url: false,
           room_id: selectedLockerId.value,
-          modelId: null,
-          product_id: activeProductDetails.value!.product_id,
-          product_name: productName.value,
-          // svg_parts: scene_ref.parts,
-          style_id: customizationStoreRef.activeStyleId.value,
-          design_id: customizationStore.activeDesignId,
-          custom_logos: [],
-          text: [],
+          product_id: productId,
+          product_name: productName.value || '',
+          svg_parts: JSON.stringify(svgParts),
+          style_id: customizationStoreRef.activeStyleId.value || 0,
+          design_id: customizationStore.activeDesignId || 0,
+          custom_logos: JSON.stringify(customLogos),
+          text: JSON.stringify(productCustomTexts),
           colors: [],
-          shuffle_color_number: 0,
-          defaultcolors: [],
-          groupcolors: [],
+          shuffle_color_number: customization?.shuffle_color_number || 0,
+          defaultcolors: JSON.stringify(defaultColors),
+          groupcolors: JSON.stringify(groupColors),
           front_image: signedUrls.urls.find(item => item.file_side === 'front')!.original_url,
           back_image: signedUrls.urls.find(item => item.file_side === 'back')!.original_url,
-          product_roster_detail: [],
-          fixed_logo_index: 0,
-          svgcolors: [],
-          grouped_addons: [],
-          ungrouped_addons: [],
-          group_patterns: [],
-          locker_id: selectedLockerId.value
+          product_roster_detail: JSON.stringify(rosterDetail),
+          fixed_logo_index: customization?.fixed_logo_index || 0,
+          svgcolors: JSON.stringify(svgcolors),
+          grouped_addons: JSON.stringify(groupedAddons),
+          ungrouped_addons: JSON.stringify(ungroupedAddons),
+          group_patterns: JSON.stringify(customization?.group_patterns || {})
         }
         const payload = objectToFormData(locker)
         const success = await lockerStore.saveDesignToLocker(
           payload,
-          selectedLockerId.value,
+          selectedLockerId.value!,
           locker.front_image
         )
         if (success) {
@@ -169,6 +309,9 @@
     () => props.open,
     async (newVal: boolean) => {
       if (newVal) {
+        // Reset validation errors when dialog opens
+        designNameError.value = null
+        lockerSelectionError.value = null
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()
         }
@@ -189,6 +332,19 @@
             }
           ).getImageFromCanvas()
         }
+        componentRef = sceneStore.threeDSceneRef
+        if (componentRef && 'getImageFromCanvas' in componentRef) {
+          frontImage.value = (
+            componentRef as unknown as ComponentPublicInstance & {
+              getImageFromCanvas: (side?: string) => string
+            }
+          ).getImageFromCanvas('front')
+          backImage.value = (
+            componentRef as unknown as ComponentPublicInstance & {
+              getImageFromCanvas: (side?: string) => string
+            }
+          ).getImageFromCanvas('back')
+        }
       }
     }
   )
@@ -200,10 +356,10 @@
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="w-full flex flex-col gap-0 p-0 overflow-hidden h-fit">
+    <DialogContent variant="large" class="w-full flex flex-col gap-0 p-0 overflow-hidden">
       <!-- HEADER -->
       <DialogHeader class="p-4">
-        <h2 class="text-lg font-semibold">Save your design</h2>
+        <h2 class="text-lg font-semibold">{{ save_design_title({}, { locale }) }}</h2>
       </DialogHeader>
       <div class="flex overflow-hidden p-4">
         <!-- LEFT: PRODUCT PREVIEW -->
@@ -232,17 +388,32 @@
         <!-- RIGHT: LOCKER LIST -->
         <div class="w-[40%] flex flex-col p-6 pb-0! gap-3">
           <div class="flex flex-col gap-3">
-            <Input
-              v-model="productName"
-              placeholder="Design name..."
-              class="h-9 bg-accent"
-              :disabled="isSubmitting"
-            />
-            <h4 class="text-sm font-semibold mb-0">Choose a Locker</h4>
+            <div class="flex flex-col gap-1">
+              <Input
+                v-model="productName"
+                :placeholder="design_name_placeholder({}, { locale })"
+                class="h-9 bg-accent"
+                :disabled="isSubmitting"
+                :aria-invalid="designNameError !== null"
+                @blur="validateDesignName"
+                @input="designNameError = null"
+              />
+              <p v-if="designNameError" class="text-[0.8rem] font-medium text-destructive">
+                {{ designNameError }}
+              </p>
+            </div>
+            <div class="flex flex-col gap-1">
+              <h4 class="text-sm font-semibold mb-0">
+                {{ save_design_choose_locker({}, { locale }) }}
+              </h4>
+              <p v-if="lockerSelectionError" class="text-[0.8rem] font-medium text-destructive">
+                {{ lockerSelectionError }}
+              </p>
+            </div>
             <div class="flex items-center justify-between gap-1">
               <InputSearchGroup
                 v-model="search"
-                placeholder="Search Locker"
+                :placeholder="design_search_locker_placeholder({}, { locale })"
                 class="w-full h-9 bg-accent"
                 :disabled="isSubmitting"
                 @update:model-value="
@@ -256,7 +427,7 @@
                 <DropdownMenuTrigger as-child>
                   <Button variant="outline" class="flex items-center gap-2 h-9">
                     <ArrowUpDown class="w-4 h-4" />
-                    Sort
+                    {{ locker_sort({}, { locale }) }}
                   </Button>
                 </DropdownMenuTrigger>
 
@@ -266,7 +437,7 @@
                       :class="{ '!opacity-100': sortOption === 'lastModified' }"
                       class="w-4 h-4 opacity-0"
                     />
-                    Last modified
+                    {{ locker_sort_last_modified({}, { locale }) }}
                   </DropdownMenuItem>
 
                   <DropdownMenuItem>
@@ -274,7 +445,7 @@
                       :class="{ '!opacity-100': sortOption === 'alphabetical' }"
                       class="w-4 h-4 opacity-0"
                     />
-                    Alphabetically
+                    {{ locker_sort_alphabetically({}, { locale }) }}
                   </DropdownMenuItem>
 
                   <DropdownMenuItem>
@@ -282,7 +453,7 @@
                       :class="{ '!opacity-100': sortOption === 'createdDate' }"
                       class="w-4 h-4 opacity-0"
                     />
-                    Created date
+                    {{ locker_sort_created_date({}, { locale }) }}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -292,13 +463,13 @@
                 :disabled="isSubmitting"
                 @click="handleClick"
               >
-                <Plus class="w-4 h-4" /> Create locker
+                <Plus class="w-4 h-4" /> {{ locker_create_locker({}, { locale }) }}
               </Button>
             </div>
           </div>
 
           <!-- LIST SECTION -->
-          <ScrollArea class="flex-1 px-6 py-4 h-full overflow-y-auto p-3 border rounded-lg">
+          <ScrollArea class="flex-1 px-6 py-4 overflow-y-auto p-3 border rounded-lg">
             <!-- <div class="grid gap-4 h-full"> -->
             <div
               v-for="locker in filteredLockers"
@@ -336,14 +507,14 @@
                 <div class="text-xs text-muted-foreground flex items-center gap-2">
                   <span class="flex items-center gap-1">
                     <SwatchBook class="size-3" />
-                    {{ locker.product_count }} designs
+                    {{ locker.product_count }} {{ locker_designs_count({}, { locale }) }}
                   </span>
 
                   <span class="w-1 h-1 rounded-full bg-muted-foreground"></span>
 
                   <span class="flex items-center gap-1">
                     <Calendar class="size-3" />
-                    {{ timeAgo(locker.updated_at) }}
+                    {{ localizedTimeAgo(locker.updated_at) }}
                   </span>
                 </div>
               </div>
@@ -352,13 +523,18 @@
           </ScrollArea>
           <div
             class="flex justify-end gap-3"
-            :class="{ 'pointer-events-none': !selectedLockerId || isSubmitting }"
+            :class="{
+              'pointer-events-none': !selectedLockerId || !productName.trim() || isSubmitting
+            }"
           >
             <Button variant="outline" :disabled="isSubmitting" @click="emit('update:open', false)">
-              Cancel
+              {{ locker_cancel({}, { locale }) }}
             </Button>
-            <Button :disabled="!selectedLockerId || isSubmitting" @click="handleSave">
-              Save design
+            <Button
+              :disabled="!selectedLockerId || !productName.trim() || isSubmitting"
+              @click="handleSave"
+            >
+              {{ save_design_button({}, { locale }) }}
             </Button>
           </div>
         </div>

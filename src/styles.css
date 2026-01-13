@@ -530,7 +530,6 @@ v-customizer * {
 .slide-horizontal-enter-active,
 .slide-horizontal-leave-active {
   transition: all 0.25s ease;
-  background-color: red;
 }
 
 .slide-horizontal-enter-from {

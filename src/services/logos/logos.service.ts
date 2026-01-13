@@ -4,6 +4,7 @@ import type {
   OutputUpdateAndPostNewLogo,
   OutputUpdateLogo,
   OutputUploadLogo,
+  OutputLogoColors,
   UpdateAndPostNewLogoParams,
   UpdateLogoParams,
   UploadLogoParams
@@ -41,10 +42,15 @@ async function editLogo(editLogoParams: UpdateLogoParams) {
   return await http.post<OutputUpdateLogo>('edit-logo', editLogoParams)
 }
 
+async function getLogoColors(path: string) {
+  return await http.post<OutputLogoColors>('logos/colors', { path })
+}
+
 export default {
   getRecentLogos,
   uploadLogo,
   deleteRecentLogo,
   updateAndPostNewLogo,
-  editLogo
+  editLogo,
+  getLogoColors
 }

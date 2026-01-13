@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import LogoPlacementThumb from './LogoPlacementThumb.vue'
+  import TwoDScene from '@/components/scene/TwoDScene.vue'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import type {
@@ -38,6 +38,27 @@
     () => productsStore.activeDesignDetails ?? null
   )
   const placements = computed<OutputProductLogosSetting[]>(() => product.value?.logos_setting || [])
+
+  function getPlacementDesign(setting: OutputProductLogosSetting) {
+    if (!designBase.value) return undefined
+    const side = setting.side === 'back' ? 'back' : 'front'
+    const design = side === 'back' ? designBase.value.back_design : designBase.value.front_design
+    if (!design?.file_url) return undefined
+    const safeZone =
+      side === 'back'
+        ? designBase.value.backsafezone_design?.file_url
+        : designBase.value.frontsafezone_design?.file_url
+    const boundary =
+      side === 'back'
+        ? designBase.value.backboundary_design?.file_url
+        : designBase.value.frontboundary_design?.file_url
+    return {
+      file_url: design.file_url,
+      file_extension: design.file_extension || 'svg',
+      safe_zone_url: safeZone,
+      boundary_url: boundary
+    }
+  }
 
   function handlePlacementSelection(_placement: OutputProductLogosSetting) {
     if (logosStore.activeLogo) {
@@ -78,14 +99,16 @@
         >
           {{ s.name_of_placement }}
         </div>
-        <LogoPlacementThumb
-          v-if="product && styleBase && designBase"
-          :product="product"
-          :style-base="styleBase"
-          :design-base="designBase"
-          :setting="s"
-          :width="112"
-          :height="112"
+        <TwoDScene
+          v-if="product && styleBase && designBase && getPlacementDesign(s)"
+          :design="getPlacementDesign(s)"
+          :side="(s.side as 'front' | 'back') || 'front'"
+          :canvas-width="150"
+          :canvas-height="150"
+          :main-canvas-width="600"
+          :main-canvas-height="600"
+          :main-preview="false"
+          :placement-setting="s"
         />
       </div>
     </div>

@@ -20,6 +20,16 @@
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import type { CopyProduct, LockerProduct } from '@/services/lockers/types'
   import { watch } from 'vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    locker_product_name_label,
+    locker_product_name_placeholder,
+    locker_room_label,
+    locker_select_placeholder,
+    locker_copy_products_title,
+    locker_copy_products_button,
+    locker_cancel
+  } from '@/paraglide/messages'
 
   const props = defineProps<{
     open: boolean
@@ -29,8 +39,10 @@
   const emit = defineEmits(['update:open', 'copy-products'])
 
   const lockerStore = useLockerRoomStore()
+  const profileStore = useProfileStore()
   const lockers = computed(() => lockerStore.lockers)
   const products = computed(() => props.locker_products)
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   const form = ref<CopyProduct[]>()
 
@@ -62,7 +74,7 @@
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="min-w-xl">
       <DialogHeader>
-        <DialogTitle>Copy Products</DialogTitle>
+        <DialogTitle>{{ locker_copy_products_title({}, { locale }) }}</DialogTitle>
       </DialogHeader>
 
       <ScrollArea class="max-h-[400px] pr-4">
@@ -73,14 +85,17 @@
             class="p-4 border rounded-lg space-y-3 flex gap-2"
           >
             <div class="w-full">
-              <label>Product Name</label>
-              <Input v-model="item.name" placeholder="Product name" />
+              <label>{{ locker_product_name_label({}, { locale }) }}</label>
+              <Input
+                v-model="item.name"
+                :placeholder="locker_product_name_placeholder({}, { locale })"
+              />
             </div>
             <div class="w-full">
-              <label>Locker</label>
+              <label>{{ locker_room_label({}, { locale }) }}</label>
               <Select v-model="item.room_id">
                 <SelectTrigger class="w-full">
-                  <SelectValue placeholder="Select locker" />
+                  <SelectValue :placeholder="locker_select_placeholder({}, { locale })" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem v-for="locker in lockers" :key="locker.id" :value="locker.id">
@@ -94,8 +109,10 @@
       </ScrollArea>
 
       <DialogFooter>
-        <Button variant="outline" @click="emit('update:open', false)">Cancel</Button>
-        <Button @click="handleSave">Copy Products</Button>
+        <Button variant="outline" @click="emit('update:open', false)">{{
+          locker_cancel({}, { locale })
+        }}</Button>
+        <Button @click="handleSave">{{ locker_copy_products_button({}, { locale }) }}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

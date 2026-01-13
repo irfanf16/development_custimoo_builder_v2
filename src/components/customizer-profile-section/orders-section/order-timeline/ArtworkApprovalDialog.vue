@@ -74,7 +74,7 @@
             <h4 class="text-lg font-semibold text-foreground">Write your feedback</h4>
             <textarea
               v-model="currentItem.message"
-              placeholder="Please write your feedback here..."
+              :placeholder="feedback_placeholder_write({}, { locale })"
               rows="5"
               class="w-full px-3 py-2 text-sm border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               :class="{ 'border-destructive': feedbackError }"
@@ -116,9 +116,13 @@
   } from '@/services/orders/types'
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { feedback_placeholder_write } from '@/paraglide/messages'
 
   const uiStore = useUIStore()
   const isMobile = uiStore.isMobile
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   interface ActivityFile {
     file: string

@@ -1,4 +1,5 @@
 import type { LogoPlacementBase, LogoColor } from '@/services/types'
+import type { OutputProductLogoTechnology } from '../products/types'
 export type { LogoColor } from '@/services/types'
 
 export type CustomLogo = LogoPlacementBase & {
@@ -18,6 +19,7 @@ export type CustomLogo = LogoPlacementBase & {
   scaleX?: number
   scaleY?: number
   placement?: string
+  logo_technology: OutputProductLogoTechnology | null
 }
 
 export type OutputRecentLogos = {
@@ -66,4 +68,12 @@ export type UpdateLogoParams = {
 export type OutputUpdateLogo = {
   message: string
   logo: string
+}
+
+export type OutputLogoColors = {
+  message: string
+  result: {
+    logo_colors: number[][]
+  }
+  errors: string[]
 }

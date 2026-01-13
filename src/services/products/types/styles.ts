@@ -37,9 +37,9 @@ export type OutputStyleDetails = OutputStylePreviewFront & {
   _3d_alpha_map: Style3DMap
   _3d_ao_map: Style3DMap
   _3d_metalness_map: Style3DMap
-  _3d_model: Style3DMap & { composition: 'multiply' | 'screen' | null }
+  _3d_model: Style3DMap
   _3d_roughness_map: Style3DMap
-  _3d_texture: Style3DMap & { composition: 'multiply' | 'screen' | null }
+  _3d_texture: Style3DMap
   back_enabled: boolean
   back_models: {
     composition: 'multiply' | 'screen'
@@ -54,13 +54,6 @@ export type OutputStyleDetails = OutputStylePreviewFront & {
   customized_addons: CustomizedAddons
   default_style: number
   deleted_at: string | null
-  front_models: {
-    composition: 'multiply' | 'screen'
-    file_url: string
-    id: number
-    thumb_sm_url: string
-    type: string
-  }[]
   id: number
   is_default: 1 | 0
   is_fixed_logos_all: boolean

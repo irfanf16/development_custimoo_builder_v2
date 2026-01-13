@@ -14,7 +14,13 @@
     auth_sign_in,
     auth_signing_in,
     auth_cancel,
-    auth_dialog_title
+    auth_dialog_title,
+    auth_placeholder_email,
+    auth_placeholder_password,
+    auth_register_now,
+    auth_not_a_user,
+    auth_password_label,
+    profile_email
   } from '@/paraglide/messages'
   import { useSignIn } from '@/composables/useSignIn'
   import SignUpDialog from './SignUpDialog.vue'
@@ -60,24 +66,24 @@
       </DialogHeader>
       <form class="space-y-4" @submit.prevent="handleSignInSubmit">
         <div class="grid gap-2">
-          <Label for="email">Email</Label>
+          <Label for="email">{{ profile_email({}, { locale: currentLocale }) }}</Label>
           <Input
             id="email"
             v-model="credentials.email"
             type="email"
             required
-            placeholder="Enter your email"
+            :placeholder="auth_placeholder_email({}, { locale: currentLocale })"
             autocomplete="email"
           />
         </div>
         <div class="grid gap-2">
-          <Label for="password">Password</Label>
+          <Label for="password">{{ auth_password_label({}, { locale: currentLocale }) }}</Label>
           <Input
             id="password"
             v-model="credentials.password"
             type="password"
             required
-            placeholder="Enter your password"
+            :placeholder="auth_placeholder_password({}, { locale: currentLocale })"
             autocomplete="current-password"
           />
         </div>
@@ -94,14 +100,14 @@
           </Button>
         </DialogFooter>
         <div class="text-center text-sm text-muted-foreground pt-2">
-          Not a user?
+          {{ auth_not_a_user({}, { locale: currentLocale }) }}
           <Button
             type="button"
             variant="link"
             class="p-0 h-auto font-semibold text-primary underline-offset-4 hover:underline"
             @click="handleOpenSignUp"
           >
-            Register now
+            {{ auth_register_now({}, { locale: currentLocale }) }}
           </Button>
         </div>
       </form>

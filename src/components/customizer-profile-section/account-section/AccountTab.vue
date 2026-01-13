@@ -107,8 +107,26 @@
                 {{ (customer?.first_name || '') + ' ' + (customer?.last_name || '') }}
               </div>
               <div v-else class="flex gap-2">
-                <Input v-model="firstName" placeholder="First Name" class="w-32" />
-                <Input v-model="lastName" placeholder="Last Name" class="w-32" />
+                <Input
+                  v-model="firstName"
+                  :placeholder="
+                    messages.account_first_name_placeholder(
+                      {},
+                      { locale: profileStore.currentLocale }
+                    )
+                  "
+                  class="w-32"
+                />
+                <Input
+                  v-model="lastName"
+                  :placeholder="
+                    messages.account_last_name_placeholder(
+                      {},
+                      { locale: profileStore.currentLocale }
+                    )
+                  "
+                  class="w-32"
+                />
               </div>
               <div class="text-sm text-muted-foreground">{{ customer?.email }}</div>
             </div>
@@ -136,21 +154,7 @@
             <div class="text-2xl font-bold">{{ counters.track_my_orders_count }}</div>
           </Card>
         </div>
-        <!-- Counters -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
-            <div class="text-sm text-muted-foreground">{{ t.ordersCount }}</div>
-            <div class="text-2xl font-bold">{{ counters.orders_count }}</div>
-          </Card>
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
-            <div class="text-sm text-muted-foreground">{{ t.pendingApprovalCount }}</div>
-            <div class="text-2xl font-bold">{{ counters.pending_approval_count }}</div>
-          </Card>
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
-            <div class="text-sm text-muted-foreground">{{ t.trackMyOrdersCount }}</div>
-            <div class="text-2xl font-bold">{{ counters.track_my_orders_count }}</div>
-          </Card>
-        </div>
+
         <!-- Name card with edit on right -->
         <Card
           class="flex flex-row items-center justify-between gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 transition-colors"

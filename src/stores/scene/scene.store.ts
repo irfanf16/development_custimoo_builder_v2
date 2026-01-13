@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ComponentPublicInstance } from 'vue'
 type TwoDSceneRef = {
+  getImageFromCanvas: () => string
+} | null
+type ThreeDSceneRef = {
   getImageFromCanvas: () => string
 } | null
 /**
@@ -10,14 +12,14 @@ type TwoDSceneRef = {
  */
 export const useSceneStore = defineStore('sceneStore', () => {
   // Component references
-  const threeDSceneRef = ref<ComponentPublicInstance | null>(null)
+  const threeDSceneRef = ref<ThreeDSceneRef | null>(null)
   const twoDSceneFrontRef = ref<TwoDSceneRef | null>(null)
   const twoDSceneBackRef = ref<TwoDSceneRef | null>(null)
 
   /**
    * Set 3D scene reference
    */
-  function setThreeDSceneRef(ref: ComponentPublicInstance | null) {
+  function setThreeDSceneRef(ref: ThreeDSceneRef | null) {
     threeDSceneRef.value = ref
   }
 

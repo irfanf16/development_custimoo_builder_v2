@@ -9,7 +9,7 @@ xhttp.onload = function () {
   let customizer_version = pageRes.customizer_version
   if (customizer_version && customizer_version === 2) {
     s.type = 'module'
-    s.src = `/widget.js`
+    s.src = `https://builder-v2.custimoo.com/widget.js`
     s.crossOrigin = 'anonymous'
     window.custimoo_app_info = pageRes
   } else {

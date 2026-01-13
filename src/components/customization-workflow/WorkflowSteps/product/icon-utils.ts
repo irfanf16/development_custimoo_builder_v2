@@ -62,7 +62,8 @@ export const FALLBACK_FLEX_DUO_ICONS = {
   UserCircleIcon: flexFlatCategoryIcons.UserCircle,
   VolleyballIcon: flexFlatCategoryIcons.Volleyball,
   WalkingStepsIcon: flexFlatCategoryIcons.WalkingSteps,
-  WhistleIcon: flexFlatCategoryIcons.Whistle
+  WhistleIcon: flexFlatCategoryIcons.Whistle,
+  UploadImagePlaceholder: flexFlatCategoryIcons.UploadImagePlaceholder
 } as const
 
 /**

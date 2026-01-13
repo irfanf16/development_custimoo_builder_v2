@@ -11,6 +11,8 @@
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import { DesignCategoryTabs } from './WorkflowSteps'
   import CustomizableStockFilter from './WorkflowSteps/product/CustomizableStockFilter.vue'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { ui_aria_more_information, ui_search_placeholder } from '@/paraglide/messages'
 
   interface Props {
     isExpanded?: boolean
@@ -19,7 +21,10 @@
   }
 
   const uiStore = useUIStore()
+  const profileStore = useProfileStore()
   const props = defineProps<Props>()
+
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   const emit = defineEmits<{
     'toggle-expanded': []
@@ -115,7 +120,9 @@
         <div class="relative w-full">
           <InputSearchGroup
             :model-value="searchModelValue"
-            :placeholder="props.config?.search?.placeholder || 'Search...'"
+            :placeholder="
+              props.config?.search?.placeholder || ui_search_placeholder({}, { locale: locale })
+            "
             @update:model-value="(val: string | number) => handleSearchInput(val as string)"
           />
         </div>
@@ -148,7 +155,7 @@
           <TooltipTrigger as-child>
             <button
               type="button"
-              aria-label="More information"
+              :aria-label="ui_aria_more_information({}, { locale: locale })"
               tabindex="0"
               class="flex items-center focus:outline-none"
             >

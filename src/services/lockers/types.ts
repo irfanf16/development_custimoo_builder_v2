@@ -1,10 +1,5 @@
 import type { HttpStatusCode } from 'axios'
-import type {
-  APCustomizationDefaultColor,
-  APCustomizationGroupColor,
-  APCustomizationLogosMap,
-  OutputProductText
-} from '@/services/products/types'
+import type { LockerProductExtension } from '@/services/products/types'
 
 export interface LockerResponse<T> {
   errors: string[]
@@ -39,6 +34,21 @@ export interface SignedUrlResponse {
   urls: SignedUrl[]
   room_id: number
 }
+export interface CollectionLogoPresignedUrlsResponse {
+  result?: any
+  presigned_urls: CollectionLogoSignedUrl[]
+  success: boolean
+}
+
+export interface CollectionLogoSignedUrl {
+  name: string
+  size: number
+  extension: string
+  path: string
+  presigned_url: string
+  sort_order: number
+  content_type: string
+}
 
 export interface SignedUrl {
   original_url: string
@@ -62,6 +72,7 @@ export interface Locker {
   room_name: string
   product_thumbnails: string[]
   product_count: number
+  created_at?: string
   updated_at: string
   product: LockerProduct[]
   folders: Folder[]
@@ -77,33 +88,19 @@ export interface LockerCollection {
   room_id: number
 }
 
-export interface LockerProduct {
+/**
+ * LockerProduct extends LockerProductExtension with additional locker-specific fields
+ */
+export interface LockerProduct extends LockerProductExtension {
   id: number
   company_id: number
   customer_id: number
-  room_id: number
-  design_id: number
-  product_id: number
   model_id?: number
-  product_name: string
-  random_string: string
-  style_id: number
-  product_roster_detail?: ProductRosterDetail[]
-  colors: unknown
-  defaultcolors: APCustomizationDefaultColor[] | string | null
-  groupcolors: Record<string, APCustomizationGroupColor> | string | null
-  custom_logos:
-    | APCustomizationLogosMap
-    | Array<import('@/services/logos/types').CustomLogo>
-    | string
-    | null
-  text: OutputProductText[] | string | null
   product_attribute?: string
   product_url: string
   product_front_url: string
   product_back_url: string
   is_back_img: number
-  svg_parts: string[]
   product_type: string
   is_private: number
   name: string
@@ -114,6 +111,7 @@ export interface LockerProduct {
   disable_style: boolean
   collections_details: CollectionsDetail[]
   shared_url?: string
+  random_string: string
   company_product: CompanyProduct
   design?: Design
   style: Style
@@ -122,15 +120,7 @@ export interface LockerProduct {
   shared_product: SharedProduct[]
 }
 
-export interface ProductRosterDetail {
-  code?: string
-  size: string
-  text?: string
-  number?: string
-  quantity: number
-  size_index: number
-  information: string
-}
+// ProductRosterDetail is now exported from @/services/products/types
 
 export interface Text {
   id: number
@@ -490,27 +480,30 @@ export interface Colour {
 
 //Collection Types
 
-export type CollectionResponse = Collection[]
-
 export interface Collection {
+  collection_thumbnails: CollectionThumbnail[]
+  details_fetched: boolean
   id: number
   name: string
+  room_id: any
   link: string
-  pdf_link: string | null
-  random_string: string | null
+  pdf_link: any
+  random_string: any
   file_name: string
   company_id: number
   customer_id: number
-  room_id: number | null
-  ecommerce_collection_id: number | null
+  ecommerce_collection_id: any
   is_exporting: number
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
-  shared_url?: string
   collection_products: CollectionProduct[]
   logos: CollectionLogo[]
-  details_fetched: boolean
+  created_at: string
+  updated_at: string
+  collection_products_count: number
+}
+
+export interface CollectionThumbnail {
+  front_url: string
+  back_url: string
 }
 
 export interface CollectionProduct {
@@ -524,119 +517,30 @@ export interface CollectionProduct {
   allow_description: boolean
   allow_title: boolean
   allow_price: boolean
-  ecommerce_product_id: number | null
-  ecommerce_variant_id: number | null
+  ecommerce_product_id: any
+  ecommerce_variant_id: any
+  description: string
+  logos: CollectionLogo[]
+  product_urls: ProductUrls
   created_at: string
   updated_at: string
-  deleted_at: string | null
-  description: string
-  key: number
-  product_locker_room: ProductLockerRoom
 }
 
-export interface ProductLockerRoom {
-  id: number
-  random_string: string
-  product_url: string
-  locker_product_images_folder: string
-  logo_colors?: string
-  product_id: number
-  design_id: number
-  shared_url?: string
-  product_type: string
-  design?: LockerRoomDesign
-  product: Product
+export interface ProductUrls {
   front_url: string
   back_url: string
-}
-
-export interface LockerRoomDesign {
-  id: number
-  back_design_id: number
-}
-
-export interface Product {
-  id: number
-  parent_id: number | null
-  factory_id?: number
-  company_id: number | null
-  is_default: number
-  sku_id: number
-  sync_id: number | null
-  ecommerce_product_id: number | null
-  sync_on_install: number
-  url_slug: string
-  product_type: string
-  svg_group_color_container?: unknown[]
-  created_by: number
-  measurement_ratio: number
-  is_private: number
-  step_completed: number
-  allowed_logos_count: number
-  is_logo_allowed: number
-  allow_name_number: number
-  preview_custom_texts: number
-  allow_fixed_logo: number
-  created_at: string
-  updated_at: string
-  is_custom_color_allowed: number
-  allow_extra_text: number
-  is_cap_letter_available: number
-  shareable: number
-  is_3d_product: number
-  sort_order: number
-  deleted_at: string | null
-  sku: Sku
-  sizes: Size[]
-}
-
-export interface Sku {
-  id: number
-  sku_id: string
-  description: string
-}
-
-export interface Size {
-  id: number
-  created_by: number
-  file_size: string
-  json_data: JsonDaum[]
-  file_name: string
-  file_type: string
-  is_default: number
-  file_url: string
-  original_file_url: string | null
-  thumb_sm_url?: string
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
-  sourceable_type: string
-  sourceable_id: number
-  pivot: ProductFilePivot
-}
-
-export interface JsonDaum {
-  name: string
-}
-
-export interface ProductFilePivot {
-  product_id: number
-  file_id: number
-  created_at: string
-  updated_at: string
 }
 
 export interface CollectionLogo {
   id: number
   collection_id: number
   name: string
+  size: number
+  extension: string
   path: string
-}
-
-export interface CollectionPayload {
-  name: string
-  link: string
-  collection_logos_data: string
-  deleted_logos_ids: string
-  products: string
+  is_recent_logo: number
+  sort_order: number
+  created_at: string
+  updated_at: string
+  deleted_at: any
 }

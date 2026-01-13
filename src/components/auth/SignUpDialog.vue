@@ -26,6 +26,27 @@
   import { toTypedSchema } from '@vee-validate/zod'
   import { z } from 'zod'
   import { API } from '@/services'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { computed } from 'vue'
+  import {
+    auth_placeholder_first_name,
+    auth_placeholder_last_name,
+    auth_placeholder_email,
+    auth_placeholder_company_name,
+    auth_placeholder_select_country,
+    auth_placeholder_create_password,
+    auth_placeholder_confirm_password,
+    auth_create_account,
+    auth_creating_account,
+    auth_cancel,
+    auth_password_label,
+    auth_confirm_password_label,
+    profile_first_name,
+    profile_last_name,
+    profile_email,
+    profile_company_name,
+    profile_country
+  } from '@/paraglide/messages'
 
   const uiStore = useUIStore()
   const isMobile = uiStore.isMobile
@@ -45,8 +66,10 @@
   }>()
 
   const authStore = useAuthStore()
+  const profileStore = useProfileStore()
 
   const { isLoading, error: authError } = storeToRefs(authStore)
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   // Reactive state
   const isOpen = ref(props.open)
@@ -199,19 +222,19 @@
   <Dialog :open="isOpen" @update:open="isOpen = $event">
     <DialogContent class="sm:max-w-md h-full md:h-fit">
       <DialogHeader>
-        <DialogTitle>Create Account</DialogTitle>
+        <DialogTitle>{{ auth_create_account({}, { locale }) }}</DialogTitle>
         <DialogDescription> Enter your information to create a new account. </DialogDescription>
       </DialogHeader>
       <component :is="isMobile ? 'div' : ScrollArea" class="h-full overflow-y-auto">
         <form class="space-y-4" @submit.prevent="onSubmit">
           <FormField v-slot="{ componentField }" name="first_name">
             <FormItem>
-              <FormLabel>First Name</FormLabel>
+              <FormLabel>{{ profile_first_name({}, { locale }) }}</FormLabel>
               <FormControl>
                 <Input
                   id="first_name"
                   type="text"
-                  placeholder="Enter your first name"
+                  :placeholder="auth_placeholder_first_name({}, { locale })"
                   autocomplete="given-name"
                   v-bind="componentField"
                 />
@@ -221,12 +244,12 @@
           </FormField>
           <FormField v-slot="{ componentField }" name="last_name">
             <FormItem>
-              <FormLabel>Last Name</FormLabel>
+              <FormLabel>{{ profile_last_name({}, { locale }) }}</FormLabel>
               <FormControl>
                 <Input
                   id="last_name"
                   type="text"
-                  placeholder="Enter your last name"
+                  :placeholder="auth_placeholder_last_name({}, { locale })"
                   autocomplete="family-name"
                   v-bind="componentField"
                 />
@@ -236,12 +259,12 @@
           </FormField>
           <FormField v-slot="{ componentField }" name="email">
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{{ profile_email({}, { locale }) }}</FormLabel>
               <FormControl>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  :placeholder="auth_placeholder_email({}, { locale })"
                   autocomplete="email"
                   v-bind="componentField"
                 />
@@ -251,12 +274,12 @@
           </FormField>
           <FormField v-slot="{ componentField }" name="company_name">
             <FormItem>
-              <FormLabel>Company Name</FormLabel>
+              <FormLabel>{{ profile_company_name({}, { locale }) }}</FormLabel>
               <FormControl>
                 <Input
                   id="company_name"
                   type="text"
-                  placeholder="Enter your company name"
+                  :placeholder="auth_placeholder_company_name({}, { locale })"
                   autocomplete="organization"
                   v-bind="componentField"
                 />
@@ -266,11 +289,11 @@
           </FormField>
           <FormField v-slot="{ field }" name="countryId">
             <FormItem>
-              <FormLabel>Country</FormLabel>
+              <FormLabel>{{ profile_country({}, { locale }) }}</FormLabel>
               <Select :model-value="field.value" @update:model-value="field.onChange">
                 <FormControl>
                   <SelectTrigger id="country" class="w-full" @blur="field.onBlur">
-                    <SelectValue placeholder="Select your country" />
+                    <SelectValue :placeholder="auth_placeholder_select_country({}, { locale })" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent class="max-h-60">
@@ -288,12 +311,12 @@
           </FormField>
           <FormField v-slot="{ componentField }" name="password">
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>{{ auth_password_label({}, { locale }) }}</FormLabel>
               <FormControl>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Create a password"
+                  :placeholder="auth_placeholder_create_password({}, { locale })"
                   autocomplete="new-password"
                   v-bind="componentField"
                 />
@@ -303,12 +326,12 @@
           </FormField>
           <FormField v-slot="{ componentField }" name="confirmPassword">
             <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
+              <FormLabel>{{ auth_confirm_password_label({}, { locale }) }}</FormLabel>
               <FormControl>
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder="Confirm your password"
+                  :placeholder="auth_placeholder_confirm_password({}, { locale })"
                   autocomplete="new-password"
                   v-bind="componentField"
                 />
@@ -322,11 +345,11 @@
           <DialogFooter>
             <div class="flex flex-row gap-4 md:flex-col md:w-full">
               <Button class="w-full" type="button" variant="default" @click="handleCancel">
-                Cancel
+                {{ auth_cancel({}, { locale }) }}
               </Button>
               <Button class="w-full" type="submit" :disabled="isLoading">
-                <span v-if="isLoading">Creating Account...</span>
-                <span v-else>Create Account</span>
+                <span v-if="isLoading">{{ auth_creating_account({}, { locale }) }}</span>
+                <span v-else>{{ auth_create_account({}, { locale }) }}</span>
               </Button>
             </div>
           </DialogFooter>
