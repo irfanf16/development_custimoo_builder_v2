@@ -23,7 +23,7 @@
 
 <template>
   <div
-    class="px-4 py-4 md:px-6 md:py-6 w-full h-[500px] md:h-[800px] min-h-[500px] md:min-h-[800px] max-h-[800px] overflow-hidden flex-none"
+    class="px-4 py-4 md:px-6 md:py-6 w-full h-[500px] md:h-[800px] min-h-[500px] md:min-h-[70vh] max-h-[70vh] overflow-hidden flex-none"
   >
     <!-- Mobile layout -->
     <template v-if="isMobile">

@@ -9,7 +9,7 @@
     headerConfig?: HeaderConfiguration
     isExpanded?: boolean
     contentKey?: string | number
-    hasFooter?: boolean
+    hasFooterButtons?: boolean
   }
 
   interface Emits {
@@ -20,7 +20,7 @@
     headerConfig: undefined,
     isExpanded: false,
     contentKey: undefined,
-    hasFooter: false
+    hasFooterButtons: false
   })
 
   const emit = defineEmits<Emits>()
@@ -60,13 +60,18 @@
   })
 
   const scrollAreaMaxHeight = computed(() => {
+    // Since WorkflowFooterPricing is now always present in all customization steps,
+    // we always account for the footer height (~7rem)
     if (uiStore.isMobile) {
-      if (props.hasFooter) {
-        return 'calc(65vh - 10rem)'
+      if (props.hasFooterButtons) {
+        return 'calc(65vh - 19rem)'
       }
-      return 'calc(65vh - 7rem)'
+      return 'calc(65vh - 17rem)'
     }
-    return props.hasFooter ? '31rem' : '38rem'
+    if (props.hasFooterButtons) {
+      return '23rem'
+    }
+    return '30rem'
   })
 
   const footerClasses = computed(() => {

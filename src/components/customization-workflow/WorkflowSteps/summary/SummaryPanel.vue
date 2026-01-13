@@ -5,9 +5,7 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  import { useCartStore } from '@/stores/cart/cart.store'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
-  import { useBuildFactoryProduct } from '@/composables/useBuildFactoryProduct'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
@@ -16,8 +14,7 @@
   import { Badge } from '@/components/ui/badge'
   import ColorSelector from '@/components/ui/color-selector/ColorSelector.vue'
   // import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
-  import { Check, ShoppingCart, Pencil } from 'lucide-vue-next'
-  import { toast } from 'vue-sonner'
+  import { Check, Pencil } from 'lucide-vue-next'
   import {
     // summary_read_more,
     summary_selected_option,
@@ -26,10 +23,6 @@
     summary_logo_placement,
     summary_logo_size,
     summary_edit_roster,
-    summary_mrsp,
-    summary_for,
-    summary_pcs,
-    summary_estimated_delivery,
     nav_style,
     nav_logo,
     nav_color,
@@ -38,8 +31,7 @@
     roster_table_name,
     roster_table_number,
     roster_table_size,
-    roster_table_quantity,
-    price_add_to_cart
+    roster_table_quantity
   } from '@/paraglide/messages'
   import type { GradientColor, OutputProductText } from '@/services/products/types'
   import TwoDScene from '@/components/scene/TwoDScene.vue'
@@ -48,9 +40,7 @@
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
   const workflowStore = useWorkflowStore()
-  const cartStore = useCartStore()
   const { effectiveLogos, effectiveSvgGroups } = useEffectiveSelectors()
-  const { buildFactoryProductPayload } = useBuildFactoryProduct()
 
   const { activeProductDetails, activeStyleDetails } = storeToRefs(productsStore)
   const { activeProductTexts, rosterEntries } = storeToRefs(customizationStore)
@@ -126,31 +116,6 @@
   const roster = computed(() => rosterEntries.value ?? [])
   const rosterCount = computed(() => roster.value.length)
 
-  // Pricing
-  const formattedPrice = computed(() => {
-    const price = activeProductDetails.value?.sku?.customized_sku_info
-    if (typeof price === 'number' && !Number.isNaN(price)) {
-      return new Intl.NumberFormat(locale.value, {
-        style: 'currency',
-        currency: 'USD'
-      }).format(price)
-    }
-    return null
-  })
-
-  const quantityText = computed(() => {
-    const flexibleQuantity = activeProductDetails.value?.allowed_logos_count
-    if (typeof flexibleQuantity === 'number' && flexibleQuantity > 0) {
-      return flexibleQuantity
-    }
-    return 10
-  })
-
-  const estimatedDeliveryDate = computed(() => {
-    // This would come from API, using placeholder for now
-    return 'March 25-27, 2025'
-  })
-
   // Navigation handlers
   function handleLogoClick(logoId: string) {
     workflowStore.setActiveLogoId(logoId)
@@ -171,29 +136,6 @@
 
   function handleEditRoster() {
     workflowStore.setActiveStep('roster')
-  }
-
-  // Add to cart
-  async function handleAddToCart() {
-    try {
-      const { factory_product, product_assets } = await buildFactoryProductPayload()
-
-      await cartStore.addProductToCart({
-        factory_product,
-        product_assets
-      })
-
-      toast.success('Product added to cart', {
-        position: 'top-right',
-        richColors: true
-      })
-    } catch (error) {
-      toast.error('Failed to add product to cart', {
-        position: 'top-right',
-        richColors: true
-      })
-      console.error('Add to cart error:', error)
-    }
   }
 
   // Generate gradient CSS string
@@ -496,30 +438,6 @@
         </AccordionContent>
       </AccordionItem>
     </Accordion>
-    <!-- Pricing and Add to Cart -->
-    <div class="px-4 md:px-6 space-y-4">
-      <div class="space-y-1">
-        <p class="text-xs text-muted-foreground uppercase tracking-wide">
-          {{ summary_mrsp({}, { locale }) }}
-        </p>
-        <div class="flex items-baseline gap-2">
-          <p class="text-2xl font-bold text-foreground">
-            {{ formattedPrice || '$56.99' }}
-          </p>
-          <p class="text-sm text-muted-foreground">
-            {{ summary_for({}, { locale }) }} {{ quantityText }}
-            {{ summary_pcs({}, { locale }) }}
-          </p>
-        </div>
-        <p class="text-xs text-muted-foreground">
-          {{ summary_estimated_delivery({}, { locale }) }} {{ estimatedDeliveryDate }}
-        </p>
-      </div>
-      <Button variant="primary" size="lg" class="w-full" @click="handleAddToCart">
-        <ShoppingCart class="size-4" />
-        {{ price_add_to_cart({}, { locale }) }}
-      </Button>
-    </div>
   </div>
 
   <!-- Product Details Dialog -->

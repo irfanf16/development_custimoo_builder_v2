@@ -20,6 +20,7 @@
   "summary_for": "for",
   "summary_pcs": "stk",
   "summary_estimated_delivery": "Estimeret leveringsdato",
+  "estimated_shipping_date": "Estimeret afsendelsesdato",
   "roster_description": "Tilføj spillere for at skabe teamkits.",
   "roster_drop_helper": "Upload den downloadede Excel-skabelon.",
   "roster_manual_create": "Opret manuelt",

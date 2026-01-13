@@ -20,6 +20,7 @@
   "summary_for": "for",
   "summary_pcs": "pcs",
   "summary_estimated_delivery": "Estimated delivered date",
+  "estimated_shipping_date": "Estimated shipping date",
   "roster_description": "Add players to create team kits.",
   "roster_drop_helper": "Upload the downloaded Excel roster template.",
   "roster_manual_create": "Create manually",
