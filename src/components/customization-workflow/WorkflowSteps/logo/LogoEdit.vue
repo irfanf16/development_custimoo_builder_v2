@@ -213,6 +213,11 @@
     const prevX = prevOption?.x_axis ?? customLogo.value.x_axis ?? null
     const prevY = prevOption?.y_axis ?? customLogo.value.y_axis ?? null
     const prevSide = prevOption?.side ?? customLogo.value.side ?? null
+    // Add width and height to the history
+    const nextWidth = option.width ?? null
+    const nextHeight = option.height ?? null
+    const prevWidth = prevOption?.width ?? customLogo.value.width ?? null
+    const prevHeight = prevOption?.height ?? customLogo.value.height ?? null
 
     if (
       option.label === prevLabel &&
@@ -237,7 +242,11 @@
       prevX,
       prevY,
       nextSide,
-      prevSide
+      prevSide,
+      nextWidth,
+      nextHeight,
+      prevWidth,
+      prevHeight
     })
 
     previousPlacementOption.value = option
