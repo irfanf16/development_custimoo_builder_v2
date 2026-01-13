@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -15,15 +15,16 @@
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
   import ColorSelector from '@/components/ui/color-selector/ColorSelector.vue'
-  import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
-  import { Check, ChevronRight, ShoppingCart } from 'lucide-vue-next'
+  // import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
+  import { Check, ShoppingCart, Pencil } from 'lucide-vue-next'
   import { toast } from 'vue-sonner'
   import {
-    summary_read_more,
+    // summary_read_more,
     summary_selected_option,
     summary_addons,
     summary_no_addons,
     summary_logo_placement,
+    summary_logo_size,
     summary_edit_roster,
     summary_mrsp,
     summary_for,
@@ -58,8 +59,8 @@
   const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
 
   // Dialog state
-  const showProductDetails = ref(false)
-  const productIdForDialog = computed(() => activeProductDetails.value?.id ?? 0)
+  // const showProductDetails = ref(false)
+  // const productIdForDialog = computed(() => activeProductDetails.value?.id ?? 0)
 
   // Product section
   const productTitle = computed(() => {
@@ -238,25 +239,27 @@
       </div>
       <div class="flex-1 flex flex-col gap-2">
         <h3 class="text-lg font-semibold text-foreground">{{ productTitle }}</h3>
-        <p v-if="productDescription" class="text-sm text-muted-foreground">
-          {{ productDescription }}
-        </p>
-        <Button
+        <p
+          v-if="productDescription"
+          class="text-sm text-muted-foreground"
+          v-html="productDescription"
+        ></p>
+        <!-- <Button
           variant="ghost"
           size="sm"
           class="self-start -ml-4"
           @click="showProductDetails = true"
         >
           {{ summary_read_more({}, { locale }) }}
-        </Button>
+        </Button> -->
       </div>
     </div>
 
     <!-- Accordion Sections -->
-    <Accordion type="multiple" :default-value="['style']" class="space-y-4">
+    <Accordion type="multiple" :default-value="['style']" class="space-y-4 border-b">
       <!-- Style Section -->
-      <AccordionItem value="style">
-        <AccordionTrigger class="px-4 py-3 hover:no-underline">
+      <AccordionItem value="style" class="mb-0">
+        <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
           <span class="text-base font-semibold">{{ nav_style({}, { locale }) }}</span>
         </AccordionTrigger>
         <AccordionContent class="px-4 pb-4">
@@ -308,9 +311,9 @@
       </AccordionItem>
 
       <!-- Logo Section -->
-      <AccordionItem v-if="logosCount > 0" value="logos">
-        <AccordionTrigger class="px-4 py-3 hover:no-underline">
-          <div class="flex items-center gap-2">
+      <AccordionItem v-if="logosCount > 0" value="logos" class="mb-0">
+        <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
+          <div class="flex items-center justify-between w-full">
             <span class="text-base font-semibold">{{ nav_logo({}, { locale }) }}</span>
             <Badge variant="secondary" class="h-5 min-w-5 flex items-center justify-center px-1.5">
               {{ logosCount }}
@@ -318,52 +321,63 @@
           </div>
         </AccordionTrigger>
         <AccordionContent class="px-4 pb-4">
-          <div class="space-y-3">
-            <button
-              v-for="logo in logos"
-              :key="logo.id"
-              class="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left group"
-              @click="handleLogoClick(logo.id.toString())"
-            >
-              <div
-                class="w-16 h-16 rounded-lg border bg-white overflow-hidden flex items-center justify-center shrink-0"
+          <div class="space-y-0">
+            <template v-for="(logo, index) in logos" :key="logo.id">
+              <button
+                class="w-full flex items-center justify-between py-3 hover:bg-muted/50 transition-colors text-left group"
+                @click="handleLogoClick(logo.id.toString())"
               >
-                <img
-                  v-if="logo.url"
-                  :src="storageUrl + logo.url"
-                  :alt="logo.logo_name"
-                  class="w-full h-full object-contain p-1"
-                />
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-baseline gap-2">
-                  <p class="text-sm font-medium text-foreground">{{ logo.name_of_placement }}</p>
+                <!-- Left: Placement -->
+                <div class="flex flex-col gap-0.5">
+                  <p class="text-sm font-semibold text-foreground">{{ logo.name_of_placement }}</p>
                   <p class="text-xs text-muted-foreground">
-                    {{ logo.height?.toFixed(1) }} x {{ (logo.width || 0).toFixed(1) }} cm
+                    {{ summary_logo_placement({}, { locale }) }}
                   </p>
                 </div>
-                <p class="text-xs text-muted-foreground">
-                  {{ summary_logo_placement({}, { locale }) }}
-                </p>
-              </div>
-              <ChevronRight
-                class="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-              />
-            </button>
+
+                <!-- Middle: Size -->
+                <div class="flex flex-col gap-0.5 items-center">
+                  <p class="text-sm font-semibold text-foreground">
+                    {{ logo.height?.toFixed(1) }} x {{ (logo.width || 0).toFixed(1) }} cm
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    {{ summary_logo_size({}, { locale }) }}
+                  </p>
+                </div>
+
+                <!-- Right: Logo thumbnail with pencil on hover -->
+                <div
+                  class="relative w-16 h-16 rounded-lg border bg-white overflow-hidden flex items-center justify-center shrink-0"
+                >
+                  <img
+                    v-if="logo.url"
+                    :src="storageUrl + logo.url"
+                    :alt="logo.logo_name"
+                    class="w-full h-full object-contain p-1"
+                  />
+                  <div
+                    class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Pencil class="size-4 text-white" />
+                  </div>
+                </div>
+              </button>
+              <div v-if="index < logos.length - 1" class="h-px bg-border" />
+            </template>
           </div>
         </AccordionContent>
       </AccordionItem>
 
       <!-- Color Section -->
-      <AccordionItem value="colors">
-        <AccordionTrigger class="px-4 py-3 hover:no-underline">
+      <AccordionItem value="colors" class="mb-0">
+        <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
           <span class="text-base font-semibold">{{ nav_color({}, { locale }) }}</span>
         </AccordionTrigger>
         <AccordionContent class="px-4 pb-4">
           <div class="space-y-0">
             <template v-for="(color, index) in colors" :key="color.id">
               <button
-                class="w-full flex items-center justify-between py-3 hover:bg-muted/50 transition-colors text-left group rounded-lg px-2 -mx-2"
+                class="w-full flex items-center justify-between py-3 hover:bg-muted/50 transition-colors text-left group rounded-lg"
                 @click="handleColorClick(index)"
               >
                 <p class="text-sm text-muted-foreground capitalize">{{ color.id }}</p>
@@ -377,19 +391,23 @@
                     </template>
                     <template v-else> {{ color.pantone }} {{ color.name }}</template>
                   </p>
-                  <ColorSelector
-                    :color="
-                      color.gradient_colors
-                        ? gradientColorString(color.gradient_colors)
-                        : color.color
-                    "
-                    :disabled="true"
-                    :size="'sm'"
-                    class="shrink-0"
-                  />
-                  <ChevronRight
-                    class="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
+                  <div class="relative">
+                    <ColorSelector
+                      :color="
+                        color.gradient_colors
+                          ? gradientColorString(color.gradient_colors)
+                          : color.color
+                      "
+                      :disabled="true"
+                      :size="'sm'"
+                      class="shrink-0"
+                    />
+                    <div
+                      class="absolute size-7 m-px inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Pencil class="size-3 text-white" />
+                    </div>
+                  </div>
                 </div>
               </button>
               <div v-if="index < colors.length - 1" class="h-px bg-border" />
@@ -399,9 +417,9 @@
       </AccordionItem>
 
       <!-- Text Section -->
-      <AccordionItem v-if="textsCount > 0" value="texts">
-        <AccordionTrigger class="px-4 py-3 hover:no-underline">
-          <div class="flex items-center gap-2">
+      <AccordionItem v-if="textsCount > 0" value="texts" class="mb-0">
+        <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
+          <div class="flex items-center justify-between w-full">
             <span class="text-base font-semibold">{{ nav_text({}, { locale }) }}</span>
             <Badge variant="secondary" class="h-5 min-w-5 flex items-center justify-center px-1.5">
               {{ textsCount }}
@@ -411,14 +429,16 @@
         <AccordionContent class="px-4 pb-4">
           <div class="space-y-2">
             <button
-              v-for="text in textsWithValues"
+              v-for="(text, index) in textsWithValues"
               :key="text.id"
-              class="w-full flex flex-col items-start gap-1 p-3 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+              class="w-full flex flex-col items-start gap-1 text-left group relative"
               @click="handleTextClick(text.id)"
             >
+              <div v-if="index > 0" class="h-px bg-border w-full" />
+
               <div class="flex items-center justify-between w-full">
-                <p class="text-sm font-medium text-foreground">{{ text.value }}</p>
-                <ChevronRight
+                <p class="text-sm text-foreground">{{ text.value }}</p>
+                <Pencil
                   class="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                 />
               </div>
@@ -429,9 +449,9 @@
       </AccordionItem>
 
       <!-- Roster Section -->
-      <AccordionItem v-if="rosterCount > 0" value="roster">
-        <AccordionTrigger class="px-4 py-3 hover:no-underline">
-          <div class="flex items-center gap-2">
+      <AccordionItem v-if="rosterCount > 0" value="roster" class="mb-0">
+        <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
+          <div class="flex items-center justify-between w-full">
             <span class="text-base font-semibold">{{ nav_roster({}, { locale }) }}</span>
             <Badge variant="secondary" class="h-5 min-w-5 flex items-center justify-center px-1.5">
               {{ rosterCount }}
@@ -461,10 +481,10 @@
                 </thead>
                 <tbody>
                   <tr v-for="(entry, index) in roster" :key="index" class="border-t">
-                    <td class="py-2 px-3 text-foreground">{{ (entry as any).name }}</td>
-                    <td class="py-2 px-3 text-foreground">{{ (entry as any).number }}</td>
-                    <td class="py-2 px-3 text-foreground">{{ (entry as any).size }}</td>
-                    <td class="py-2 px-3 text-foreground">{{ (entry as any).quantity }}</td>
+                    <td class="py-2 px-3 text-foreground">{{ entry.text || '' }}</td>
+                    <td class="py-2 px-3 text-foreground">{{ entry.number || '' }}</td>
+                    <td class="py-2 px-3 text-foreground">{{ entry.size || '' }}</td>
+                    <td class="py-2 px-3 text-foreground">{{ entry.quantity || '' }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -476,7 +496,6 @@
         </AccordionContent>
       </AccordionItem>
     </Accordion>
-
     <!-- Pricing and Add to Cart -->
     <div class="px-4 md:px-6 space-y-4">
       <div class="space-y-1">
@@ -504,11 +523,11 @@
   </div>
 
   <!-- Product Details Dialog -->
-  <ProductDetailsDialog
+  <!-- <ProductDetailsDialog
     :open="showProductDetails"
     :product-id="productIdForDialog"
     @update:open="showProductDetails = $event"
-  />
+  /> -->
 </template>
 
 <style scoped></style>
