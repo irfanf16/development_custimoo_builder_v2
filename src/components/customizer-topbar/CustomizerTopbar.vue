@@ -584,7 +584,7 @@
       @edit-product="handleEditLockerProduct"
     />
     <SaveDesignDialog :open="showSaveDesignDialog" @update:open="showSaveDesignDialog = $event" />
-    <CartDialog :open="showCartDialog" @update:open="showCartDialog = $event" />
+    <CartDialog v-if="isLoggedIn" :open="showCartDialog" @update:open="showCartDialog = $event" />
   </div>
 </template>
 
