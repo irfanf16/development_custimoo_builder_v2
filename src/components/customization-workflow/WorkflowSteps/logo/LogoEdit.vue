@@ -57,7 +57,7 @@
     logos_apply,
     logos_recolor_logo
   } from '@/paraglide/messages'
-
+  import { usePricing } from '@/composables/usePricing'
   interface Props {
     logoId: string
   }
@@ -71,7 +71,7 @@
   const historyStore = useHistoryStore()
   const profileStore = useProfileStore()
   const customizationStore = useCustomizationStore()
-
+  const { showPricing } = usePricing()
   // ===== COMPOSABLES =====
   const { productKey, getLogoById, getActiveLogoIndex } = useLogos()
   const { removeBackground, applyLogoColors, recolorLogo, removeLogo, setActiveLogo } =
@@ -419,7 +419,7 @@
                 @click="selectLogoTechnology(technology)"
               >
                 {{ technology.label }}
-                <template v-if="technology.price">
+                <template v-if="showPricing && technology.price">
                   <span class="text-muted-foreground ml-1">
                     +{{ technology.price }}{{ technology.currency_symbol }}
                   </span>

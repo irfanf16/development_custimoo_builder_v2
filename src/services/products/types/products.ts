@@ -40,19 +40,45 @@ export type OutputProductDetails = OutputProductPreview & {
   preview_custom_texts: number
   shareable: number
   sku: {
-    addon_group_id: number | null
-    asana_task_template_id: number | null
-    customized_sku_info: number | null
-    data_container_id: number | null
-    design_customer_approval: number
-    factory_id: number | null
     id: number
-    image_url: string | null
-    sizechart_reference: string | null
+    addon_group_id: number | null
+    data_container_id: number | null
+    customized_sku_info: number | null
     sku_id: string
     sku_number: number
+    design_customer_approval: number
+    image_url: string | null
     specs_sheet_url: string | null
-    description?: string | null
+    sizechart_reference: string | null
+    factory_id: number | null
+    asana_task_template_id: number | null
+    asana_task_template_id_reorder: number | null
+    note: string | null
+    minimum_order_quantity_type: 'by_design' | 'by_cart'
+    minimum_order_quantity: number
+    description: string | null
+    reorder_follows_moq: number | null
+    type: string | null
+    is_selected: number | null
+    production_days: number | null
+    created_at: string | null
+    updated_at: string | null
+    deleted_at: string | null
+    pattern_name: string | null
+    is_default: number | null
+    skucurrency: Array<{
+      id: number
+      code: string
+      name: string
+      symbol: string
+      pivot: {
+        sku_id: number
+        currency_id: number
+        price: number
+        net_price: number
+      }
+    }>
+    factory: any
   }
   sku_id: number
   sort_order: number

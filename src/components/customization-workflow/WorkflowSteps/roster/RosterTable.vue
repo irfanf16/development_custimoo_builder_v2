@@ -11,6 +11,7 @@
   } from '@/paraglide/messages'
   import type { RosterColumnKey } from './types'
   import { RadioGroup } from '@/components/ui/radio-group'
+  import { usePricing } from '@/composables/usePricing'
 
   interface Props {
     entries: APCustomizationRosterEntry[]
@@ -39,7 +40,7 @@
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
-
+  const { minimumActiveProductQuantityByDesign } = usePricing()
   function focusCell(rowIndex: number, column: RosterColumnKey) {
     requestAnimationFrame(() => {
       const el = document.querySelector<HTMLElement>(
@@ -129,6 +130,7 @@
         :show-name-column="showNameColumn"
         :show-number-column="showNumberColumn"
         :value="String(index)"
+        :minimum-quantity="minimumActiveProductQuantityByDesign"
         @update="handleUpdate"
         @remove="handleRemove"
         @cell-keydown="handleCellKeydown"

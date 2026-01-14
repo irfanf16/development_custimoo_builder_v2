@@ -125,11 +125,17 @@ export function useRoster() {
   async function addEmptyRow(payload?: Partial<APCustomizationRosterEntry>) {
     if (!rosterKey.value) return
 
+    const sku = productsStore.activeProductDetails?.sku
+    const minimumQuantity =
+      sku?.minimum_order_quantity_type === 'by_design' && sku?.minimum_order_quantity > 0
+        ? sku.minimum_order_quantity
+        : 1
+
     const entry: APCustomizationRosterEntry = {
       text: payload?.text ?? '',
       number: payload?.number ?? '',
       size: payload?.size ?? availableSizes.value[0] ?? '',
-      quantity: payload?.quantity ?? 1,
+      quantity: payload?.quantity ?? minimumQuantity,
       information: payload?.information ?? ''
     }
 

@@ -15,7 +15,7 @@
   import type { OutputStylePreviewFront } from '@/services/products/types'
   import { useCompanyStore } from '@/stores/company/company.store'
   import { useHistoryStore } from '@/stores/history/history.store'
-
+  import { usePricing } from '@/composables/usePricing'
   // no emits
   // no emits
   const productsStore = useProductsStore()
@@ -24,6 +24,7 @@
   const companyStore = useCompanyStore()
   const historyStore = useHistoryStore()
 
+  const { showPricing } = usePricing()
   const productId = computed(
     () => productsStore.activeProductDetails?.id || customizationStore.activeProductId
   )
@@ -201,7 +202,7 @@
             class="flex items-center justify-between gap-1 w-full cursor-pointer"
           >
             {{ addon.title }}
-            <template v-if="getAddonFormattedPrice(addon.addon_id)">
+            <template v-if="showPricing && getAddonFormattedPrice(addon.addon_id)">
               <span class="text-xs text-muted-foreground flex items-center gap-0.5">
                 <span class="font-bold text-primary">+</span>
                 <span class="font-bold text-primary">{{
