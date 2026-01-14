@@ -175,6 +175,7 @@ export function useBuildFactoryProduct() {
     const rosterDetail = customization.products_rosters[productKey] || []
 
     // Build factory_product payload with all required fields
+    const selectedProduct = productsStore.activeProductDetails
     const factoryProduct: Record<string, unknown> = {
       // Required fields
       style_id: customization.style_id,
@@ -212,7 +213,45 @@ export function useBuildFactoryProduct() {
       ),
       ungrouped_addons: Object.values(customization.addons_info || {}).flatMap(
         (addonInfo: AddonInfo) => addonInfo?.ungrouped_addons || []
-      )
+      ),
+      ecommerce_product_id: '',
+      ecommerce_variant_id: '',
+      ecommerce_modifier_id: '',
+      sync_id: ''
+    }
+
+    // Try to get ecommerce values from product details
+    if (selectedProduct) {
+      // Check if ecommerceproduct array exists (may not be in type definition but could be in API response)
+      const productWithEcommerce = selectedProduct as typeof selectedProduct & {
+        ecommerceproduct?: Array<{
+          ecommerce_product_id?: string | number
+          ecommerce_variant_id?: string
+          ecommerce_modifier_id?: string
+          sync_id?: string | number
+        }>
+      }
+
+      if (
+        productWithEcommerce.ecommerceproduct &&
+        productWithEcommerce.ecommerceproduct.length > 0
+      ) {
+        const ecommerce = productWithEcommerce.ecommerceproduct[0]
+        if (ecommerce) {
+          factoryProduct.ecommerce_product_id = ecommerce.ecommerce_product_id
+            ? String(ecommerce.ecommerce_product_id)
+            : ''
+          factoryProduct.ecommerce_variant_id = ecommerce.ecommerce_variant_id || ''
+          factoryProduct.ecommerce_modifier_id = ecommerce.ecommerce_modifier_id || ''
+          factoryProduct.sync_id = ecommerce.sync_id ? String(ecommerce.sync_id) : ''
+        }
+      } else {
+        // Fallback to direct properties if ecommerceproduct array doesn't exist
+        factoryProduct.ecommerce_product_id = selectedProduct.ecommerce_product_id
+          ? String(selectedProduct.ecommerce_product_id)
+          : ''
+        factoryProduct.sync_id = selectedProduct.sync_id ? String(selectedProduct.sync_id) : ''
+      }
     }
 
     // Include id when updating (required for update)

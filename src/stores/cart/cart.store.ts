@@ -11,10 +11,14 @@ import type {
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import { toast } from 'vue-sonner'
+import { createEcommerceCartService, isEcommercePlatformSupported } from '@/services/ecommerce'
+import type { ProcessCartItemConfig } from '@/services/ecommerce/types'
+import { useCompanyStore } from '@/stores/company/company.store'
 
 export const useCartStore = defineStore('cartStore', () => {
   // ===== DEPENDENCIES =====
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'cartStore' } })
+  const companyStore = useCompanyStore()
 
   // ===== STATE =====
   const cart = ref<Cart | null>(null)
@@ -79,6 +83,23 @@ export const useCartStore = defineStore('cartStore', () => {
     })
   }
 
+  /**
+   * Safely convert a value to string, avoiding object stringification
+   */
+  function safeStringify(value: unknown): string {
+    if (value === null || value === undefined) {
+      return ''
+    }
+    if (typeof value === 'string') {
+      return value
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value)
+    }
+    // If it's an object or other type, return empty string
+    return ''
+  }
+
   // ===== ACTIONS =====
 
   /**
@@ -105,6 +126,72 @@ export const useCartStore = defineStore('cartStore', () => {
   }
 
   /**
+   * Sync cart item with ecommerce platform
+   */
+  async function syncWithEcommercePlatform(
+    cartProduct: Record<string, unknown>,
+    custimooCartItem: {
+      new_created_id: number | string
+      cart_item_key: string
+      front_image_url: string
+      back_image_url: string
+      front_image_short: string
+      back_image_short: string
+    },
+    productEditInfo?: {
+      cart_product_info?: {
+        ecommerce_cart_id?: string
+        shopify_line_item?: string | number
+      }
+    },
+    collectionView?: boolean
+  ): Promise<void> {
+    // Check if ecommerce sync is needed
+    const company = companyStore.company
+    if (!company || !isEcommercePlatformSupported(company.platform)) {
+      return
+    }
+
+    try {
+      const merchantMoq = companyStore.settings?.settings?.moq || 0
+      const deleteCartItemUrl = `${import.meta.env.VITE_API_ENDPOINT}/api/v2/carts/cart-items/${custimooCartItem.new_created_id}/factory_product/${custimooCartItem.cart_item_key}`
+
+      // Create ecommerce cart service
+      const ecommerceService = createEcommerceCartService(company.platform, company.company_domain)
+
+      // Build config for ecommerce service
+      const config: ProcessCartItemConfig = {
+        cartProduct,
+        custimooCartItem,
+        productEditInfo,
+        collectionView,
+        merchantMoq,
+        companyDomain: company.company_domain,
+        customizerPageUrl: company.customizer_page_url || '',
+        deleteCartItemUrl
+      }
+
+      // Process cart item with ecommerce platform
+      const result = await ecommerceService.processCartItem(config)
+
+      if (result.success) {
+        // Redirect to cart if not in collection view
+        if (result.redirectUrl && !collectionView) {
+          window.location.replace(result.redirectUrl)
+        }
+      } else {
+        console.error('Ecommerce sync error:', result.error)
+        // Don't throw error - cart was still added to our system
+        // Just log the error for debugging
+      }
+    } catch (error) {
+      console.error('Failed to sync with ecommerce platform:', error)
+      // Don't throw error - cart was still added to our system
+      // Just log the error for debugging
+    }
+  }
+
+  /**
    * Add product to cart
    */
   async function addProductToCart(payload: StoreProductToCartPayload) {
@@ -117,6 +204,30 @@ export const useCartStore = defineStore('cartStore', () => {
       const cartResponse = response.content
       if (cartResponse.result) {
         setSuccessMessage('Product added to cart successfully')
+
+        const company = companyStore.company
+        if (company && isEcommercePlatformSupported(company.platform) && payload.factory_product) {
+          const result = cartResponse.result
+          // Extract cart item data from result object (properties are at root level of API response)
+          const resultWithCartData = result as unknown as Record<string, unknown>
+          const custimooCartItem = {
+            new_created_id: resultWithCartData.new_created_id as string | number,
+            cart_item_key: safeStringify(resultWithCartData.cart_item_key),
+            front_image_url: safeStringify(resultWithCartData.front_image_url),
+            back_image_url: safeStringify(resultWithCartData.back_image_url),
+            front_image_short:
+              safeStringify(resultWithCartData.front_image_short) ||
+              safeStringify(resultWithCartData.front_image_url),
+            back_image_short:
+              safeStringify(resultWithCartData.back_image_short) ||
+              safeStringify(resultWithCartData.back_image_url)
+          }
+          await syncWithEcommercePlatform(
+            payload.factory_product,
+            custimooCartItem
+          )
+        }
+
         // Refresh cart to get updated state
         await fetchCart()
         return cartResponse
@@ -136,14 +247,44 @@ export const useCartStore = defineStore('cartStore', () => {
   async function updateCartItem(cartItemId: number | string, payload: UpdateCartItemPayload) {
     isLoading.value = true
     error.value = null
+
     const response = await tryCatchApi(API.cart.updateCartItem(cartItemId, payload), {
       operation: 'updateCartItem',
       cart_item_id: cartItemId
     })
+
     if (response.success && response.content) {
       const cartResponse = response.content
+
       if (cartResponse.result && !cartResponse.errors.length) {
         setSuccessMessage('Cart item updated successfully')
+
+        const company = companyStore.company
+
+        if (company && isEcommercePlatformSupported(company.platform) && payload.factory_product) {
+          // Extract cart item data from result object
+          const result = cartResponse.result
+          const resultWithCartData = result as unknown as Record<string, unknown>
+
+          const custimooCartItem = {
+            new_created_id: resultWithCartData.new_created_id as string | number,
+            cart_item_key: safeStringify(resultWithCartData.cart_item_key),
+            front_image_url: safeStringify(resultWithCartData.front_image_url),
+            back_image_url: safeStringify(resultWithCartData.back_image_url),
+            front_image_short:
+              safeStringify(resultWithCartData.front_image_short) ||
+              safeStringify(resultWithCartData.front_image_url),
+            back_image_short:
+              safeStringify(resultWithCartData.back_image_short) ||
+              safeStringify(resultWithCartData.back_image_url)
+          }
+
+          await syncWithEcommercePlatform(
+            payload.factory_product,
+            custimooCartItem
+          )
+        }
+
         // Refresh cart to get updated state
         await fetchCart()
         return cartResponse
