@@ -14,6 +14,7 @@
     RosterEntry,
     SummaryPanel
   } from '@/components/customization-workflow/WorkflowSteps'
+  import { Separator } from '@/components/ui/separator'
   import TextsEntry from '@/components/customization-workflow/WorkflowSteps/texts/index.vue'
   import WorkflowPanel from './WorkflowPanel.vue'
   import { useUIStore } from '@/stores/ui/ui.store'
@@ -180,7 +181,8 @@
                 :config="footerConfig"
                 :is-expanded="isExpanded"
               />
-              <WorkflowFooterPricing />
+              <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
+              <WorkflowFooterPricing :is-expanded="isExpanded" />
             </div>
           </template>
 
@@ -221,13 +223,14 @@
         />
       </template>
       <template #footer>
-        <div :class="['flex flex-col w-full', { 'justify-end': isExpanded }]">
+        <div :class="['flex flex-col w-full', { 'items-end justify-end': isExpanded }]">
           <WorkflowFooterButtons
             v-if="footerConfig?.buttons?.length > 0"
             :config="footerConfig"
             :is-expanded="isExpanded"
           />
-          <WorkflowFooterPricing />
+          <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
+          <WorkflowFooterPricing :is-expanded="isExpanded" />
         </div>
       </template>
 
