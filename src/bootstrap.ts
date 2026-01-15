@@ -122,46 +122,25 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   const authStore = useAuthStore(pinia)
   void authStore.ensureHydrated()
 
-  // Set container height with responsive minimum heights from the UI store
-  const setContainerHeight = () => {
-    const minHeight = ui.minWidgetHeight
-
-    // Set minHeight BEFORE measuring to ensure it's applied
-    container.style.minHeight = `${minHeight}px`
-    container.style.height = 'auto'
-    container.classList.add('bg-accent')
-
-    // Force a reflow to ensure styles are applied
-
+  // Measure container dimensions for reactive UI state
+  const measureContainer = () => {
     const rect = container.getBoundingClientRect()
-
-    // If the actual height is less than minimum, force it to minimum
-    const actualHeight = rect.height
-    const finalHeight = actualHeight < minHeight ? minHeight : actualHeight
-
-    // If we need to force the height, set it explicitly
-    if (actualHeight < minHeight) {
-      container.style.height = `${minHeight}px`
-    }
-    ui.setContainerSize(Math.round(rect.width), Math.round(finalHeight))
+    ui.setContainerSize(Math.round(rect.width), Math.round(rect.height))
   }
 
-  // Update height on window resize
-  window.addEventListener('resize', setContainerHeight)
+  // Update measurements on window resize
+  window.addEventListener('resize', measureContainer)
 
   shadowRoot.appendChild(container)
 
-  // Inject CSS into shadow DOM
+  // Inject CSS into shadow DOM - CSS handles all sizing via custom properties
   const style = document.createElement('style')
   style.textContent = widgetStyles
   shadowRoot.appendChild(style)
   // Track for HMR live updates
   styleElements.add(style)
 
-  // Set initial height AFTER CSS is injected
-  setContainerHeight()
-
-  // Set up the widget root with ResizeObserver
+  // Set up the widget root with ResizeObserver (handles initial measurement)
   ui.setWidgetRoot(container)
 
   // Fonts are loaded centrally in useBrandStyling; no shadowRoot font loading here
@@ -180,10 +159,8 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   // Mount the Vue application onto the container element within shadow root
   app.mount(container)
 
-  setContainerHeight()
-
   // Return cleanup function
   return () => {
-    window.removeEventListener('resize', setContainerHeight)
+    window.removeEventListener('resize', measureContainer)
   }
 }
