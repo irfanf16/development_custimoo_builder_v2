@@ -20,6 +20,10 @@
   //   return 'March 25-27, 2025'
   // })
 
+  defineProps<{
+    isExpanded?: boolean
+  }>()
+
   // Add to cart
   async function handleAddToCart() {
     try {
@@ -45,7 +49,7 @@
 </script>
 
 <template>
-  <div class="w-full space-y-2 md:space-y-4">
+  <div class="space-y-2 md:space-y-4" :class="{ 'w-auto': isExpanded, 'w-full': !isExpanded }">
     <div class="space-y-1">
       <p
         v-if="showPricing && !uiStore.isMobile"
