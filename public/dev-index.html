@@ -165,7 +165,7 @@
         background: #2c3e50;
         color: white;
         padding: 40px 0 20px;
-        margin-top: 40px;
+        margin-top: 0;
       }
       .footer-content {
         max-width: 1200px;
@@ -409,7 +409,9 @@
         let pageRes = JSON.parse(this.response)
         const s = document.createElement('script')
 
+        //let customizer_version = pageRes.customizer_version
         let customizer_version = 2
+
         if (customizer_version && customizer_version === 2) {
           s.type = 'module'
           s.src = `/src/main.ts`

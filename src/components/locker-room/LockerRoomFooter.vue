@@ -73,7 +73,8 @@
     'create-collection',
     'save-collection',
     'add-to-collection',
-    'add-products-to-collection'
+    'add-products-to-collection',
+    'close'
   ])
 
   const isEditingCollection = computed(() => {
@@ -240,7 +241,7 @@
       v-if="props.currentMode === 'list' && !isCreatingCollection"
       class="flex justify-end gap-2 pt-4 border-t w-full"
     >
-      <Button variant="ghost">{{ locker_cancel({}, { locale }) }}</Button>
+      <Button variant="ghost" @click="emit('close')">{{ locker_cancel({}, { locale }) }}</Button>
       <Button
         v-if="!isCreatingCollection"
         :disabled="selectedLockers.length === 0"

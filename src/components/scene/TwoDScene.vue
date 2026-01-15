@@ -10,7 +10,7 @@
     type ComponentPublicInstance,
     shallowRef
   } from 'vue'
-  import { FabricImage, Canvas, Group, type FabricObject } from 'fabric'
+  import { FabricImage, Canvas, Group, Rect, type FabricObject } from 'fabric'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
   import { filterFields } from '@/lib/utils'
@@ -34,6 +34,7 @@
   } from '@/composables/scene/useCanvasImage'
   import { useSceneStore } from '@/stores/scene/scene.store'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
+  import type { OutputProductLogosSetting } from '@/services/products/types'
 
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
@@ -46,6 +47,7 @@
   const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
   const safeZone = shallowRef<Group | null>(null)
   const boundary = shallowRef<Group | null>(null)
+  const placementRect = shallowRef<FabricObject | null>(null)
 
   // Model type based on style preview structure
   type ModelData = {
@@ -80,6 +82,8 @@
     svgParts?: string[] | string
     // Color grouping - can be string (JSON) or object
     colorGrouping?: Record<string, string[]> | string | null
+    // Optional placement overlay (used for logo placement preview)
+    placementSetting?: OutputProductLogosSetting
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -100,8 +104,11 @@
     // SVG parts - defaults to undefined (will be initialized from svgGroups if not provided)
     svgParts: undefined,
     // Color grouping - defaults to undefined (will be extracted from design if not provided)
-    colorGrouping: undefined
+    colorGrouping: undefined,
+    placementSetting: undefined
   })
+
+  const isPlacementMode = computed(() => !!props.placementSetting)
 
   // get current instance at mounted
   const instance = getCurrentInstance()
@@ -383,6 +390,12 @@
     // Ensure models are on top of design
     bringModelToFront()
 
+    // in here call the add rect if placementSetting is set
+    if (isPlacementMode.value) {
+      await addRect(props.placementSetting as OutputProductLogosSetting)
+      return
+    }
+
     if (effectiveDesign.value?.safe_zone_url || effectiveDesign.value?.boundary_url) {
       await addBoundary(effectiveDesign.value?.safe_zone_url, effectiveDesign.value?.boundary_url)
     }
@@ -455,9 +468,10 @@
 
   // ===== LOGO UTILITIES =====
   function calculatePosition2D(logoData: CustomLogo): { x: number; y: number } {
+    const { widthRatio, heightRatio } = calculateScaleRatios2D()
     return {
-      x: (props.canvasWidth / (props.mainCanvasWidth || 600)) * logoData.x_axis,
-      y: (props.canvasHeight / (props.mainCanvasHeight || 600)) * logoData.y_axis
+      x: widthRatio * logoData.x_axis,
+      y: heightRatio * logoData.y_axis
     }
   }
 
@@ -473,6 +487,66 @@
       widthRatio: props.canvasWidth / (props.mainCanvasWidth || 600),
       heightRatio: props.canvasHeight / (props.mainCanvasHeight || 600)
     }
+  }
+
+  const placementOverlay = computed(() => {
+    const setting = props.placementSetting
+    if (!setting) return null
+    if (setting.side && setting.side !== props.side) return null
+
+    const { widthRatio, heightRatio } = calculateScaleRatios2D()
+
+    const sizeW = (setting.height ?? 0) * widthRatio
+    const sizeH = (setting.height ?? 0) * heightRatio
+    if (!sizeW || !sizeH) return null
+
+    const { x, y } = calculatePosition2D({
+      x_axis: setting.x_axis,
+      y_axis: setting.y_axis
+    } as CustomLogo)
+    return {
+      left: x,
+      top: y,
+      width: sizeW,
+      height: sizeH
+    }
+  })
+
+  async function addRect(setting: OutputProductLogosSetting): Promise<void> {
+    if (!canvas.value) return
+    if (setting.side && setting.side !== props.side) return
+
+    // remove previous
+    if (placementRect.value) {
+      canvas.value.remove(placementRect.value)
+      placementRect.value = null
+    }
+
+    const overlay = placementOverlay.value
+
+    if (!overlay) return
+
+    const rect = new Rect({
+      left: overlay.left,
+      top: overlay.top,
+      width: overlay.width,
+      height: overlay.height,
+      originX: 'center',
+      originY: 'center',
+      fill: 'rgba(55,65,81,0.45)',
+      stroke: 'rgba(255,255,255,0.8)',
+      strokeWidth: 1,
+      selectable: false,
+      evented: false,
+      hasControls: false,
+      objectCaching: false,
+      hoverCursor: 'default'
+    })
+
+    canvas.value.add(rect)
+    canvas.value.bringObjectToFront(rect)
+    canvas.value.requestRenderAll()
+    placementRect.value = rect
   }
 
   async function cloneFabricObject(obj: FabricObject): Promise<FabricObject> {
@@ -644,6 +718,7 @@
    * Uses the shared composable with 2D-specific configuration
    */
   async function addLogo(logo: CustomLogo, logoIndex: number): Promise<void> {
+    if (isPlacementMode.value) return
     if (!canvas.value) return
 
     if (!logo || !logo.url) return
@@ -716,6 +791,7 @@
    * Clears existing logos and adds all logos from custom_logos
    */
   async function resetAndAddLogos(): Promise<void> {
+    if (isPlacementMode.value) return
     if (!canvas.value) return
 
     // Reset existing logos
@@ -753,6 +829,7 @@
   watch(
     () => customizationStore.customization?.default_colors,
     () => {
+      if (isPlacementMode.value) return
       const defaultColors = customizationStore.customization?.default_colors || []
       const hasDefaultColors =
         defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
@@ -777,6 +854,7 @@
   watch(
     () => customizationStore.customization?.shuffle_color_number,
     async () => {
+      if (isPlacementMode.value) return
       const defaultColors = customizationStore.customization?.default_colors || []
       const hasDefaultColors =
         defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
@@ -796,6 +874,7 @@
   watch(
     customLogos,
     async (newLogos = []) => {
+      if (isPlacementMode.value) return
       await syncLogosOnCanvas({
         newLogos,
         canvas: canvas.value,
@@ -822,6 +901,7 @@
   watch(
     () => customizationStore.customization?.group_colors,
     () => {
+      if (isPlacementMode.value) return
       // Only apply if there are group colors set
       if (Object.keys(customizationStore.customization?.group_colors || {}).length > 0) {
         // If applyCustomizationOverrides is enabled, apply to all canvases
@@ -849,6 +929,7 @@
   watch(
     () => applyCustomizationOverrides.value,
     async () => {
+      if (isPlacementMode.value) return
       // If not mainPreview and applyCustomizationOverrides is set to disabled, reset to initial colors
       if (!applyCustomizationOverrides.value && !props.mainPreview) {
         await resetToInitialColors(0)

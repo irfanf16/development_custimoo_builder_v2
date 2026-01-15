@@ -14,10 +14,12 @@
     RosterEntry,
     SummaryPanel
   } from '@/components/customization-workflow/WorkflowSteps'
+  import { Separator } from '@/components/ui/separator'
   import TextsEntry from '@/components/customization-workflow/WorkflowSteps/texts/index.vue'
   import WorkflowPanel from './WorkflowPanel.vue'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import WorkflowFooter from './WorkflowFooter.vue'
+  import WorkflowFooterButtons from './WorkflowFooterButtons.vue'
+  import WorkflowFooterPricing from './WorkflowFooterPricing.vue'
   const uiStore = useUIStore()
   const workflowStore = useWorkflowStore()
   const { initializeEffects } = useWorkflow()
@@ -163,7 +165,7 @@
           :content-key="workflowStore.contentKey || ''"
           :header-config="headerConfig"
           :is-expanded="true"
-          :has-footer="footerConfig?.buttons?.length > 0"
+          :has-footer-buttons="footerConfig?.buttons?.length > 0"
         >
           <template #header>
             <WorkflowHeader
@@ -172,8 +174,16 @@
               @update:search-model-value="handleSearchChange"
             />
           </template>
-          <template v-if="footerConfig?.buttons?.length > 0" #footer>
-            <WorkflowFooter :config="footerConfig" />
+          <template #footer>
+            <div :class="['flex flex-col w-full', { 'justify-end': isExpanded }]">
+              <WorkflowFooterButtons
+                v-if="footerConfig?.buttons?.length > 0"
+                :config="footerConfig"
+                :is-expanded="isExpanded"
+              />
+              <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
+              <WorkflowFooterPricing :is-expanded="isExpanded" />
+            </div>
           </template>
 
           <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
@@ -212,8 +222,16 @@
           @update:search-model-value="handleSearchChange"
         />
       </template>
-      <template v-if="footerConfig?.buttons?.length > 0" #footer>
-        <WorkflowFooter :config="footerConfig" :is-expanded="isExpanded" />
+      <template #footer>
+        <div :class="['flex flex-col w-full', { 'items-end justify-end': isExpanded }]">
+          <WorkflowFooterButtons
+            v-if="footerConfig?.buttons?.length > 0"
+            :config="footerConfig"
+            :is-expanded="isExpanded"
+          />
+          <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
+          <WorkflowFooterPricing :is-expanded="isExpanded" />
+        </div>
       </template>
 
       <ProductsEntry v-if="workflowStore.currentStep === 'product'" />

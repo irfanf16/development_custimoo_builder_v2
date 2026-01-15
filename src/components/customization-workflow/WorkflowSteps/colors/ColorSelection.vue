@@ -2,6 +2,7 @@
   import { ref, computed, type Ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
@@ -39,6 +40,7 @@
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
+  const workflowStore = useWorkflowStore()
   const { effectiveSvgGroups } = useEffectiveSelectors()
   const history = useHistoryStore()
   const { shuffleColors } = useColorActions()
@@ -163,6 +165,24 @@
     shuffleColors(computedPalettes.value?.[0]?.id)
   }
 
+  // Accordion control - open the accordion item corresponding to activeColorAccordionIndex
+  const accordionValue = computed(() => {
+    if (workflowStore.activeColorAccordionIndex !== null) {
+      return String(workflowStore.activeColorAccordionIndex)
+    }
+    return undefined
+  })
+
+  // When accordion value changes, update the store (or clear if closed)
+  function handleAccordionChange(value: string | string[] | undefined) {
+    // Handle single string value (type="single")
+    if (typeof value === 'string') {
+      workflowStore.setActiveColorAccordionIndex(Number(value))
+    } else {
+      workflowStore.setActiveColorAccordionIndex(null)
+    }
+  }
+
   // Breadcrumb logic for color selection
   const headerConfig = computed(() => ({
     breadcrumbs: [{ label: nav_color({}, { locale: profileStore.currentLocale }) }]
@@ -227,7 +247,12 @@
     </div>
 
     <!-- Color slots -->
-    <Accordion type="single" collapsible>
+    <Accordion
+      type="single"
+      collapsible
+      :model-value="accordionValue"
+      @update:model-value="handleAccordionChange"
+    >
       <AccordionItem
         v-for="(svgGroup, idx) in effectiveSvgGroups"
         :key="svgGroup.id"
@@ -243,7 +268,7 @@
             >
               <!-- Show gradient color if available, otherwise show solid color -->
               <ColorSelector
-                class="flex-shrink-0"
+                class="shrink-0"
                 :color="
                   svgGroup.gradient_colors
                     ? gradientColorString(svgGroup.gradient_colors)

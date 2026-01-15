@@ -13,6 +13,7 @@ import { useLocalStorage } from './useLocalStorage'
 import { useAppStore } from '@/stores/app/app.store'
 import { getCustomizerIframe } from '../lib/widgetUtils'
 import router from '../router'
+import { useCartStore } from '@/stores/cart/cart.store'
 
 // ============================================================================
 // Global State Management
@@ -170,6 +171,19 @@ export function useAppInitialization() {
     try {
       const authStore = useAuthStore()
       await authStore.ensureHydrated()
+
+      // Fetch cart if user is authenticated (after auth is hydrated)
+      if (authStore.isAuthenticated) {
+        try {
+          const cartStore = useCartStore()
+          await cartStore.fetchCart()
+        } catch {
+          // Ignore cart fetch errors so the rest of the pipeline can continue
+        }
+      } else {
+        // If not authenticated, start listening for external auth
+        authStore.startListeningForAuth()
+      }
     } catch {
       // Ignore hydration errors so the rest of the pipeline can continue.
     }
@@ -178,6 +192,7 @@ export function useAppInitialization() {
     productsStore.suspendCustomizationAutoSync()
     const customizationStore = useCustomizationStore()
 
+    // TODO: Skip this for syncId ecommerce product ?
     try {
       const history = useHistoryStore()
       history.load()
@@ -185,6 +200,7 @@ export function useAppInitialization() {
       // Ignore errors when loading history
     }
 
+    // TODO: Ignore if there is a syncId for ecommerce product
     const hasPersistedCustomization = customizationStore.loadFromLocalStorage()
 
     return {
@@ -234,6 +250,7 @@ export function useAppInitialization() {
 
     context.hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
 
+    // TODO: Skip this for syncId ecommerce product. Select the wf.activeStep to design.
     // Reload workflow state now that the correct storage prefix is known
     wf.loadFromLocalStorage()
     context.hadPersistedWorkflowStep = Boolean(wf.activeStep)

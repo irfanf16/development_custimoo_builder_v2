@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
   import { ref, computed, watch, onMounted } from 'vue'
   import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -17,7 +16,7 @@
   import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
   import type { Address } from '@/services/customers/types'
   import ProfileDialog from '@/components/customizer-profile-section/ProfileDialog.vue'
-
+  import { usePricing } from '@/composables/usePricing'
   const props = defineProps<{ open: boolean }>()
   const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 
@@ -28,7 +27,7 @@
   const profileStore = useProfileStore()
   const companyStore = useCompanyStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
-
+  const { showPricing } = usePricing()
   // Address selection state
   const showProfileDialog = ref(false)
   const selectedAddress = ref<Address | null>(null)
@@ -133,12 +132,19 @@
     }
   )
 
-  // Fetch cart when dialog opens
+  // Fetch cart when dialog opens (only if not already fetched on page load)
   watch(
     () => props.open,
     isOpen => {
       if (isOpen) {
-        fetchCart()
+        // Only fetch if not already fetched on page load
+        // The watcher in useCart with immediate: true will map existing cart data
+        if (!cartStore.hasFetchedOnPageLoad) {
+          fetchCart()
+        } else if (cartStore.cart && products.value.length === 0) {
+          // If cart exists but products aren't mapped yet, force mapping
+          fetchCart()
+        }
         // Refresh addresses when cart opens
         profileStore.fetchAddresses()
         // Set default address if not already selected
@@ -243,7 +249,7 @@
                     <p class="text-gray-500 text-xs">Quantity</p>
                     <p class="font-medium">{{ item.quantity }}</p>
                   </div>
-                  <div>
+                  <div v-if="showPricing">
                     <p class="text-gray-500 text-xs">Price</p>
                     <p class="font-medium">{{ formatPrice(item.price) }}</p>
                   </div>
@@ -332,17 +338,17 @@
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
                   <span class="text-gray-600">{{ totalItems }} items</span>
-                  <span>{{ formatPrice(totalPrice) }}</span>
+                  <span v-if="showPricing">{{ formatPrice(totalPrice) }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div v-if="showPricing" class="flex justify-between">
                   <span class="text-gray-600">Sales tax</span>
                   <span class="text-gray-500">Calculated later</span>
                 </div>
-                <div class="flex justify-between">
+                <div v-if="showPricing" class="flex justify-between">
                   <span class="text-gray-600">Delivery fee</span>
                   <span class="text-gray-500">Calculated later</span>
                 </div>
-                <div class="flex justify-between font-semibold pt-2 border-t">
+                <div v-if="showPricing" class="flex justify-between font-semibold pt-2 border-t">
                   <span>Total</span>
                   <span>{{ formatPrice(totalPrice) }}</span>
                 </div>

@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
 import lockersService from '@/services/lockers/lockers.service'
 import type {
   ActiveProductCustomization,
@@ -241,6 +242,8 @@ function resolveLockerProduct(
   lockerResult: unknown,
   fallbackLockerProduct?: LockerProduct
 ): LockerProduct | null {
+  let resolved: LockerProduct | null = null
+
   // Handle API response with container structure
   if (isRecord(lockerResult) && Array.isArray(lockerResult.factoryProducts)) {
     const container = lockerResult as LockerResultContainer
@@ -249,21 +252,39 @@ function resolveLockerProduct(
       const idxRaw = container.factoryProductActiveIndex
       const idx =
         typeof idxRaw === 'number' ? idxRaw : typeof idxRaw === 'string' ? Number(idxRaw) : 0
-      const resolved = factoryProducts[idx] ?? factoryProducts[0]
+      const resolvedItem = factoryProducts[idx] ?? factoryProducts[0]
 
-      if (isRecord(resolved)) {
-        return resolved as unknown as LockerProduct
+      if (isRecord(resolvedItem)) {
+        resolved = resolvedItem as unknown as LockerProduct
       }
     }
+  } else if (isRecord(lockerResult)) {
+    // Handle direct locker product
+    resolved = lockerResult as unknown as LockerProduct
   }
 
-  // Handle direct locker product
-  if (isRecord(lockerResult)) {
-    return lockerResult as unknown as LockerProduct
+  // If we have a resolved result and a fallback, merge missing properties from fallback
+  if (resolved && fallbackLockerProduct) {
+    const resolvedRecord = resolved as unknown as Record<string, unknown>
+    const fallbackRecord = fallbackLockerProduct as unknown as Record<string, unknown>
+
+    // Merge properties from fallback that are missing in resolved result
+    for (const key in fallbackRecord) {
+      if (
+        !(key in resolvedRecord) ||
+        resolvedRecord[key] === null ||
+        resolvedRecord[key] === undefined ||
+        resolvedRecord[key] === ''
+      ) {
+        resolvedRecord[key] = fallbackRecord[key]
+      }
+    }
+
+    return resolvedRecord as unknown as LockerProduct
   }
 
-  // Use fallback if provided
-  return fallbackLockerProduct ?? null
+  // Return resolved if available, otherwise use fallback
+  return resolved ?? fallbackLockerProduct ?? null
 }
 
 function extractLockerProductIds(lockerProduct: Record<string, unknown>): {
@@ -485,18 +506,24 @@ export function useLoadLockerProductIntoCustomizer() {
 
   async function loadLockerProductIntoCustomizer(
     lockerProductId: number,
-    fallbackLockerProduct?: LockerProduct
+    fallbackLockerProduct?: LockerProduct,
+    lockerId?: number
   ): Promise<boolean> {
     const productsStore = useProductsStore()
     const customizationStore = useCustomizationStore()
+    const lockerRoomStore = useLockerRoomStore()
 
     isLoading.value = true
     productsStore.suspendCustomizationAutoSync()
     try {
-      const resp = await tryCatchApi(lockersService.getLockerProductDetails(lockerProductId), {
-        operation: 'loadLockerProductIntoCustomizer',
-        locker_product_id: lockerProductId
-      })
+      // Pass locker_id to the API route if provided
+      const resp = await tryCatchApi(
+        lockersService.getLockerProductDetails(lockerProductId, lockerId),
+        {
+          operation: 'loadLockerProductIntoCustomizer',
+          locker_product_id: lockerProductId
+        }
+      )
 
       const lockerResult: unknown =
         resp.success && resp.content?.result
@@ -512,6 +539,11 @@ export function useLoadLockerProductIntoCustomizer() {
       const lockerProduct = resolveLockerProduct(lockerResult, fallbackLockerProduct)
       if (!lockerProduct) {
         return false
+      }
+
+      // Set editing state using lockerId from the payload (current open locker)
+      if (lockerId && typeof lockerId === 'number' && lockerId > 0) {
+        lockerRoomStore.setEditingLockerProduct(lockerProductId, lockerId, lockerProduct)
       }
 
       const {

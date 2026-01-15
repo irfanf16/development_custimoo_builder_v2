@@ -50,7 +50,6 @@ export function useDesignConfig() {
   }
 
   const footerConfig = computed<FooterConfiguration>(() => {
-    console.log('footerConfig hasSelectedDesigns: ', hasSelectedDesigns.value)
     if (hasSelectedDesigns.value) {
       return {
         buttons: [

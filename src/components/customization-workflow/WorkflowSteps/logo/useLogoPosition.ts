@@ -29,7 +29,7 @@ export function useLogoPosition(
     return getActiveLogoIndex(logo.value.id)
   })
 
-  const angleText = computed(() => `${positionForm.angle[0]}°`)
+  const angleText = computed(() => `${Number(positionForm.angle[0]).toFixed(1)}°`)
 
   // ===== ACTIONS =====
   function applyDraftRotation(nextAngle: number) {

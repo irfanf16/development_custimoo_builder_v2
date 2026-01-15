@@ -4,12 +4,13 @@
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { useUIStore } from '@/stores/ui/ui.store'
   import type { HeaderConfiguration } from './types'
+  import { usePricing } from '@/composables/usePricing'
 
   interface Props {
     headerConfig?: HeaderConfiguration
     isExpanded?: boolean
     contentKey?: string | number
-    hasFooter?: boolean
+    hasFooterButtons?: boolean
   }
 
   interface Emits {
@@ -20,13 +21,13 @@
     headerConfig: undefined,
     isExpanded: false,
     contentKey: undefined,
-    hasFooter: false
+    hasFooterButtons: false
   })
 
   const emit = defineEmits<Emits>()
 
   const uiStore = useUIStore()
-
+  const { showPricing } = usePricing()
   // Use computed to get the current expanded state from props
   const isExpanded = computed(() => !uiStore.isMobile && props.isExpanded)
 
@@ -60,13 +61,37 @@
   })
 
   const scrollAreaMaxHeight = computed(() => {
+    // Since WorkflowFooterPricing is now always present in all customization steps,
+    // we always account for the footer height (~7rem)
     if (uiStore.isMobile) {
-      if (props.hasFooter) {
-        return 'calc(65vh - 10rem)'
+      if (props.hasFooterButtons) {
+        return 'calc(65vh - 19rem)'
       }
-      return 'calc(65vh - 7rem)'
+      return 'calc(65vh - 17rem)'
     }
-    return props.hasFooter ? '31rem' : '38rem'
+    let sizeReduction = 4
+    if (
+      props.headerConfig?.designCategories?.categories?.length &&
+      props.headerConfig?.designCategories?.categories?.length > 0
+    ) {
+      sizeReduction += 4
+    }
+    if (showPricing) {
+      sizeReduction += 6
+    }
+    if (props.hasFooterButtons) {
+      sizeReduction += 2
+    }
+    // if (props.hasFooterButtons) {
+    //   if (
+    //     props.headerConfig?.designCategories?.categories?.length &&
+    //     props.headerConfig?.designCategories?.categories?.length > 0
+    //   ) {
+    //     return 'calc(60vh - 25rem)'
+    //   }
+    //   return 'calc(60vh - 12rem)'
+    // }
+    return `calc(60vh - ${sizeReduction}rem)`
   })
 
   const footerClasses = computed(() => {

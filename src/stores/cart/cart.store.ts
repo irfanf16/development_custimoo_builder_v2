@@ -29,6 +29,9 @@ export const useCartStore = defineStore('cartStore', () => {
   const editingCartItemId = ref<number | null>(null)
   const editingFactoryProductId = ref<string | null>(null)
 
+  // Track if cart has been fetched on page load
+  const hasFetchedOnPageLoad = ref(false)
+
   // ===== LOCAL STORAGE PERSISTENCE =====
   const STORAGE_KEY = 'cartStore'
   const { getItem, setItem, removeItem } = useLocalStorage()
@@ -105,7 +108,11 @@ export const useCartStore = defineStore('cartStore', () => {
   /**
    * Fetch customer's cart
    */
-  async function fetchCart() {
+  async function fetchCart(force = false) {
+    // Skip if already fetched on page load and not forcing
+    if (hasFetchedOnPageLoad.value && !force) {
+      return
+    }
     isLoading.value = true
     error.value = null
     const response = await tryCatchApi(API.cart.getCustomerCart(), {
@@ -116,6 +123,7 @@ export const useCartStore = defineStore('cartStore', () => {
       if (cartResponse.result) {
         cart.value = cartResponse.result
         saveToLocalStorage()
+        hasFetchedOnPageLoad.value = true
       } else {
         setError(cartResponse.message || 'Failed to load cart')
       }
@@ -222,14 +230,10 @@ export const useCartStore = defineStore('cartStore', () => {
               safeStringify(resultWithCartData.back_image_short) ||
               safeStringify(resultWithCartData.back_image_url)
           }
-          await syncWithEcommercePlatform(
-            payload.factory_product,
-            custimooCartItem
-          )
+          await syncWithEcommercePlatform(payload.factory_product, custimooCartItem)
         }
-
-        // Refresh cart to get updated state
-        await fetchCart()
+        // Refresh cart to get updated state (force refresh)
+        await fetchCart(true)
         return cartResponse
       } else {
         setError(cartResponse.message || 'Failed to add product to cart')
@@ -279,14 +283,10 @@ export const useCartStore = defineStore('cartStore', () => {
               safeStringify(resultWithCartData.back_image_url)
           }
 
-          await syncWithEcommercePlatform(
-            payload.factory_product,
-            custimooCartItem
-          )
+          await syncWithEcommercePlatform(payload.factory_product, custimooCartItem)
         }
-
-        // Refresh cart to get updated state
-        await fetchCart()
+        // Refresh cart to get updated state (force refresh)
+        await fetchCart(true)
         return cartResponse
       } else {
         setError(cartResponse.message || 'Failed to update cart item')
@@ -315,8 +315,8 @@ export const useCartStore = defineStore('cartStore', () => {
       const cartResponse = response.content
       if (cartResponse.result) {
         setSuccessMessage('Cart item deleted successfully')
-        // Refresh cart to get updated state
-        await fetchCart()
+        // Refresh cart to get updated state (force refresh)
+        await fetchCart(true)
         return cartResponse
       } else {
         setError(cartResponse.message || 'Failed to delete cart item')
@@ -399,6 +399,7 @@ export const useCartStore = defineStore('cartStore', () => {
     error.value = null
     editingCartItemId.value = null
     editingFactoryProductId.value = null
+    hasFetchedOnPageLoad.value = false
     clearLocalStorage()
   }
 
@@ -425,6 +426,16 @@ export const useCartStore = defineStore('cartStore', () => {
     return editingCartItemId.value !== null && editingFactoryProductId.value !== null
   })
 
+  /**
+   * Get total cart items count
+   */
+  const cartItemsCount = computed(() => {
+    if (!cart.value?.items) return 0
+    return cart.value.items.reduce((total, item) => {
+      return total + (item.factory_products?.length || 0)
+    }, 0)
+  })
+
   // ===== RETURN =====
   return {
     // State
@@ -434,6 +445,8 @@ export const useCartStore = defineStore('cartStore', () => {
     editingCartItemId,
     editingFactoryProductId,
     isEditingCartProduct,
+    cartItemsCount,
+    hasFetchedOnPageLoad,
 
     // Actions
     fetchCart,

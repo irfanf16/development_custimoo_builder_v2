@@ -22,9 +22,7 @@
 </script>
 
 <template>
-  <div
-    class="px-4 py-4 md:px-6 md:py-6 w-full h-[500px] md:h-[800px] min-h-[500px] md:min-h-[800px] max-h-[800px] overflow-hidden flex-none"
-  >
+  <div class="w-full h-full overflow-hidden flex-none px-4 py-4 md:px-6 md:py-6">
     <!-- Mobile layout -->
     <template v-if="isMobile">
       <div id="main-content" class="mobile-layout flex flex-col gap-2 w-full h-full">
