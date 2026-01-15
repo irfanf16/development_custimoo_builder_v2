@@ -168,6 +168,7 @@ Manages user authentication state and session.
 - Handle login/logout operations
 - Persist authentication state to localStorage
 - Provide computed properties for authentication status
+- Listen for external authentication changes (e.g., from parent window)
 
 **Key functions:**
 
@@ -176,6 +177,31 @@ Manages user authentication state and session.
 - `login(credentials)` - Authenticate user
 - `logout()` - Clear authentication state
 - `setCustomer(data)` / `setAccessToken(token)` - Update state
+- `startListeningForAuth()` - Start listening for external auth changes
+- `stopListeningForAuth()` - Stop listening for auth changes
+
+**External Authentication Listener:**
+
+The auth store automatically starts listening for `jwtToken` and `customer` in localStorage when the app initializes without authentication. This allows external systems (e.g., parent window, external scripts) to authenticate the user by setting these values:
+
+```ts
+// External system sets auth data
+localStorage.setItem('jwtToken', 'eyJhbGc...')
+localStorage.setItem('customer', JSON.stringify({ id: 123, email: 'user@example.com', ... }))
+
+// The customizer automatically detects and hydrates the auth state
+```
+
+The listener uses two strategies:
+
+1. **Storage events** - Detects changes from other tabs/windows
+2. **Polling (500ms)** - Detects changes from same-window external scripts
+
+The listener automatically stops when:
+
+- Authentication is detected
+- 5 minutes have elapsed (safety timeout)
+- User explicitly logs out
 
 **Example:**
 
@@ -186,7 +212,29 @@ if (result.success) {
   // User is now authenticated
   console.log(auth.isAuthenticated) // true
 }
+
+// Or manually start listening for external auth
+auth.startListeningForAuth()
 ```
+
+**For External Systems:**
+
+External systems can use the global API:
+
+```js
+// External system authenticates user
+window.customizerApi.auth.setCredentials({
+  jwtToken: 'eyJhbGc...',
+  customer: { id: 123, email: 'user@example.com', ... }
+})
+
+// Or set localStorage directly (auto-detected)
+localStorage.setItem('jwtToken', token)
+localStorage.setItem('customer', JSON.stringify(customer))
+// Automatically detected within 500ms
+```
+
+See [docs/AUTHENTICATION.md](../../docs/AUTHENTICATION.md) for complete integration guide.
 
 ### locale.store.ts
 

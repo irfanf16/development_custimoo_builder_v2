@@ -76,9 +76,15 @@ export function useSignIn() {
       window.location.href = companyStore.company?.login_code?.action || ''
     } else if (companyStore.company?.login_code?.type === 'code') {
       try {
+        // Start listening for external auth before executing custom code
+        // This ensures we detect when the external system sets jwtToken/customer
+        authStore.startListeningForAuth()
+
         eval(companyStore.company?.login_code?.action || '')
       } catch (error) {
         console.error('Error evaluating login code:', error)
+        // Stop listening if code execution failed
+        authStore.stopListeningForAuth()
       }
     }
   }
@@ -123,12 +129,37 @@ export function useSignIn() {
   }
 
   /**
+   * Manually triggers authentication check from localStorage
+   * Useful when external systems have just set auth data and want immediate hydration
+   *
+   * @example
+   * // External system sets auth and triggers check
+   * localStorage.setItem('jwtToken', token)
+   * localStorage.setItem('customer', JSON.stringify(customer))
+   * window.customizerApi?.checkAuth() // If exposed globally
+   */
+  const checkAuthFromStorage = async () => {
+    try {
+      const hasAuth = await authStore.loadFromLocalStorage({ force: true })
+      if (hasAuth) {
+        closeAllDialogs()
+        console.log('[Auth] Successfully authenticated from localStorage')
+      }
+      return hasAuth
+    } catch (error) {
+      console.error('[Auth] Failed to check auth from localStorage:', error)
+      return false
+    }
+  }
+
+  /**
    * Centralized logout handler
    *
    * This method orchestrates the complete logout flow:
    * 1. Closes all authentication dialogs
    * 2. Clears auth state and auth-related localStorage (via authStore.logout())
    * 3. Optionally performs additional cleanup based on options
+   * 4. Starts listening for new authentication data
    *
    * @param options - Optional configuration for logout behavior
    * @param options.clearAllStorage - If true, clears ALL localStorage (not just auth-related). Default: false
@@ -147,7 +178,7 @@ export function useSignIn() {
 
     // Determine platform-specific logout action
     if (company?.platform === 'self') {
-      authStore.logout()
+      authStore.logout() // This now also starts listening for new auth
     } else if (loginCode?.type === 'url') {
       window.location.href = loginCode.logout_action || ''
       return // Redirecting, no further actions needed
@@ -157,12 +188,15 @@ export function useSignIn() {
       } catch (error) {
         console.error('Error evaluating logout code:', error)
       }
+      // After custom logout code, perform standard logout
+      authStore.logout()
     }
 
     // Close any opened authentication dialogs
     closeAllDialogs()
 
     // Perform standard logout operations on the auth store
+    // Note: authStore.logout() already calls stopListeningForAuth() and then startListeningForAuth()
     authStore.logout()
 
     // Optionally clear all of localStorage
@@ -190,6 +224,7 @@ export function useSignIn() {
     handleCancel,
     handleOpenSignUp,
     handleSignUpSuccess,
-    handleLogout
+    handleLogout,
+    checkAuthFromStorage
   }
 }

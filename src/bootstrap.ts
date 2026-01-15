@@ -10,6 +10,7 @@ import { WIDGET_CONTAINER_ID } from './lib/widgetUtils'
 
 // Import CSS styles
 import widgetStyles from './styles.css?inline'
+import { initializeExternalApi } from './lib/externalApi'
 
 // Persist references to style elements across HMR updates
 // so we can live-replace the CSS injected into Shadow DOMs.
@@ -121,6 +122,9 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   // Load auth state from localStorage on app start
   const authStore = useAuthStore(pinia)
   void authStore.ensureHydrated()
+
+  // Initialize external API for parent window/external system integration
+  initializeExternalApi()
 
   // Measure container dimensions for reactive UI state
   const measureContainer = () => {

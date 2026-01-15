@@ -41,11 +41,11 @@ export const useAuthStore = defineStore('authStore', () => {
 
   let hydrationPromise: Promise<boolean> | null = null
   let lastHydrationResult = false
+  let storageListenerInterval: number | null = null
+  let storageEventListener: ((event: StorageEvent) => void) | null = null
 
   // ===== COMPUTED =====
-  const isAuthenticated = computed(
-    () => !!accessToken.value && !!customer.value && !!refreshToken.value
-  )
+  const isAuthenticated = computed(() => !!accessToken.value && !!customer.value)
   const customerInitials = computed(() => {
     if (!customer.value) return ''
     return `${customer.value?.first_name?.charAt(0)}${customer.value?.last_name?.charAt(0)}`.toUpperCase()
@@ -388,6 +388,108 @@ export const useAuthStore = defineStore('authStore', () => {
   }
 
   /**
+   * Starts listening for localStorage changes to detect when jwtToken and customer
+   * are set by external systems (e.g., parent window, external scripts).
+   *
+   * This uses two strategies:
+   * 1. Storage event listener (detects changes from other tabs/windows)
+   * 2. Polling interval (detects changes from same window/external scripts)
+   *
+   * Automatically stops listening once authentication is detected.
+   */
+  function startListeningForAuth(): void {
+    if (!hasWindow) return
+
+    // Don't start if already authenticated
+    if (isAuthenticated.value) {
+      return
+    }
+
+    // Don't start if already listening
+    if (storageListenerInterval !== null || storageEventListener !== null) {
+      return
+    }
+
+    console.log('[Auth] Starting localStorage listener for jwtToken and customer')
+
+    const checkAndHydrate = async () => {
+      const storedCustomer = storage.getItem<Customer>(CUSTOMER_STORAGE_KEY)
+      const storedAccessToken = storage.getItemRaw(ACCESS_TOKEN_STORAGE_KEY)
+
+      if (storedCustomer && storedAccessToken) {
+        console.log('[Auth] Detected jwtToken and customer in localStorage, hydrating...')
+
+        // Stop listening
+        stopListeningForAuth()
+
+        // Hydrate the auth state
+        await loadFromLocalStorage({ force: true })
+
+        // Fetch cart if authenticated
+        if (isAuthenticated.value) {
+          try {
+            const cartStore = useCartStore()
+            await cartStore.fetchCart()
+          } catch {
+            // Ignore cart fetch errors
+          }
+        }
+      }
+    }
+
+    // Strategy 1: Listen for storage events (cross-tab/window changes)
+    storageEventListener = (event: StorageEvent) => {
+      // Only respond to changes to our auth keys
+      if (
+        event.key === ACCESS_TOKEN_STORAGE_KEY ||
+        event.key === CUSTOMER_STORAGE_KEY ||
+        event.key?.endsWith(`_${ACCESS_TOKEN_STORAGE_KEY}`) ||
+        event.key?.endsWith(`_${CUSTOMER_STORAGE_KEY}`)
+      ) {
+        void checkAndHydrate()
+      }
+    }
+    window.addEventListener('storage', storageEventListener)
+
+    // Strategy 2: Poll for changes (same-window changes, external scripts)
+    // Check every 500ms for new auth data
+    storageListenerInterval = window.setInterval(() => {
+      void checkAndHydrate()
+    }, 500)
+
+    // Safety: Stop listening after 5 minutes to prevent memory leaks
+    setTimeout(
+      () => {
+        if (storageListenerInterval !== null) {
+          console.log('[Auth] Storage listener timeout reached, stopping')
+          stopListeningForAuth()
+        }
+      },
+      5 * 60 * 1000
+    )
+  }
+
+  /**
+   * Stops listening for localStorage changes.
+   * Called automatically when authentication is detected or after timeout.
+   */
+  function stopListeningForAuth(): void {
+    if (!hasWindow) return
+
+    if (storageListenerInterval !== null) {
+      clearInterval(storageListenerInterval)
+      storageListenerInterval = null
+    }
+
+    if (storageEventListener !== null) {
+      window.removeEventListener('storage', storageEventListener)
+      storageEventListener = null
+    }
+
+    console.log('[Auth] Stopped localStorage listener')
+  }
+
+  /**
    * Clears all authentication-related data from localStorage and sessionStorage
    * This includes:
    * - Customer data (localStorage)
@@ -426,6 +528,9 @@ export const useAuthStore = defineStore('authStore', () => {
       }
       await saveToLocalStorage()
 
+      // Stop listening for auth since we're now authenticated
+      stopListeningForAuth()
+
       // Fetch cart after successful authentication
       try {
         const cartStore = useCartStore()
@@ -443,6 +548,8 @@ export const useAuthStore = defineStore('authStore', () => {
    * 1. Clears in-memory auth state (customer, tokens, etc.)
    * 2. Clears auth-related data from localStorage and sessionStorage
    * 3. Clears cart state (non-blocking)
+   * 4. Stops any active localStorage listeners
+   * 5. Starts listening for new auth data
    *
    * Note: For additional cleanup (e.g., clearing all localStorage or resetting stores),
    * use the `handleLogout` method from `useSignIn` composable instead.
@@ -450,10 +557,14 @@ export const useAuthStore = defineStore('authStore', () => {
   function logout() {
     clearAuth()
     clearLocalStorage()
+    stopListeningForAuth()
 
     // Clear cart when user logs out (non-blocking to avoid circular dependencies)
     const cartStore = useCartStore()
     cartStore.clearCart()
+
+    // After logout, start listening for new auth data
+    startListeningForAuth()
   }
 
   async function login(input: InputLogin): Promise<APIResponse<OutputLogin>> {
@@ -527,6 +638,9 @@ export const useAuthStore = defineStore('authStore', () => {
     loadFromLocalStorage,
     ensureHydrated,
     clearLocalStorage,
+    // Storage Listeners
+    startListeningForAuth,
+    stopListeningForAuth,
     // Business Logic
     initCustomerAndAccessToken,
     login,

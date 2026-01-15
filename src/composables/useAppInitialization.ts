@@ -180,6 +180,9 @@ export function useAppInitialization() {
         } catch {
           // Ignore cart fetch errors so the rest of the pipeline can continue
         }
+      } else {
+        // If not authenticated, start listening for external auth
+        authStore.startListeningForAuth()
       }
     } catch {
       // Ignore hydration errors so the rest of the pipeline can continue.
