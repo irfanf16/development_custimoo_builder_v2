@@ -155,10 +155,6 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
   if (!canvas || isLogoEmpty(logo)) {
     return Promise.resolve()
   }
-  if (mainPreview) {
-    console.log('mainPreview', mainPreview)
-    console.log('logo', logo)
-  }
 
   // Prepare logo URL (relative path for useSceneCommon)
   const logoRelativeUrl = logo.url.trim() + '?nocache=11'

@@ -258,6 +258,10 @@ export type LogoUpdatePlacementPayload = {
   prevSide?: 'front' | 'back' | null
   nextPlacementKey?: string | null
   prevPlacementKey?: string | null
+  nextWidth?: number | null
+  nextHeight?: number | null
+  prevWidth?: number | null
+  prevHeight?: number | null
 }
 
 export type LogoUpdateSizePayload = {

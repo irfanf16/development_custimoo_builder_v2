@@ -901,7 +901,9 @@ export const registry: Registry = {
         name_of_placement: payload.nextPlacementLabel ?? current?.name_of_placement,
         x_axis: payload.nextX ?? current.x_axis,
         y_axis: payload.nextY ?? current.y_axis,
-        side: payload.nextSide ?? current.side
+        side: payload.nextSide ?? current.side,
+        width: payload.nextWidth ?? current.width,
+        height: payload.nextHeight ?? current.height
       })
       ctx.customizationStore.saveToLocalStorage()
     },
@@ -915,7 +917,9 @@ export const registry: Registry = {
         name_of_placement: payload.prevPlacementLabel ?? current?.name_of_placement,
         x_axis: payload.prevX ?? current.x_axis,
         y_axis: payload.prevY ?? current.y_axis,
-        side: payload.prevSide ?? current.side
+        side: payload.prevSide ?? current.side,
+        width: payload.prevWidth ?? current.width,
+        height: payload.prevHeight ?? current.height
       })
       ctx.customizationStore.saveToLocalStorage()
     },

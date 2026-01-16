@@ -482,7 +482,7 @@
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem @click="emit('sort', 'alphabetical')">
+            <DropdownMenuItem @click="emit('sort', 'lastModified')">
               <Check
                 :class="{ '!opacity-100': sortOption === 'lastModified' }"
                 class="w-4 h-4 opacity-0"

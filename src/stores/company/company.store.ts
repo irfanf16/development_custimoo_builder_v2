@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   type Company,
   type OutputSettings,
@@ -104,6 +104,30 @@ export const useCompanyStore = defineStore('companyStore', () => {
   })
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+
+  // ---------------- Computed Properties ----------------
+  /**
+   * Check if the company is using an ecommerce platform (shopify, wordpress, or bigcommerce)
+   */
+  const isEcommercePlatform = computed(() => {
+    const platform = company.value?.platform
+    if (!platform) return false
+    return ['shopify', 'wordpress', 'bigcommerce'].includes(platform.toLowerCase())
+  })
+
+  /**
+   * Check if the company is using Shopify
+   */
+  const isShopify = computed(() => {
+    return company.value?.platform?.toLowerCase() === 'shopify'
+  })
+
+  /**
+   * Check if the company is using WooCommerce (WordPress)
+   */
+  const isWoocommerce = computed(() => {
+    return company.value?.platform?.toLowerCase() === 'wordpress'
+  })
 
   // ---------------- Actions ----------------
   function setCompany(data: Company) {
@@ -210,6 +234,11 @@ export const useCompanyStore = defineStore('companyStore', () => {
     localization,
     isLoading,
     error,
+    // Ecommerce platform checks
+    isEcommercePlatform,
+    isShopify,
+    isWoocommerce,
+    // Actions
     setCompany,
     setSettings,
     setLocalization,

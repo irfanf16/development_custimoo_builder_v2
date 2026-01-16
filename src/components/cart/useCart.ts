@@ -96,7 +96,8 @@ export function useCart() {
    */
   async function fetchCart() {
     await cartStore.fetchCart()
-    // Map cart data to products
+    // Always map cart data to products, even if fetch returned early
+    // (e.g., if cart was already fetched on page load)
     products.value = mapCartItemsToProducts()
   }
 
@@ -182,9 +183,11 @@ export function useCart() {
     () => {
       if (cartStore.cart) {
         products.value = mapCartItemsToProducts()
+      } else {
+        products.value = []
       }
     },
-    { deep: true }
+    { deep: true, immediate: true }
   )
 
   // ===== RETURN =====

@@ -126,6 +126,17 @@
   --secondary-base: var(--secondary);
   --accent-base: var(--accent);
 
+  /* ===== CONTAINER SIZING (unified approach) ===== */
+  /* Mobile-first: use viewport height with fallback minimum */
+  --container-height-mobile: max(70vh, 500px);
+  --container-min-height-mobile: 500px;
+  --container-padding-mobile: 1rem;
+
+  /* Desktop: use viewport height with fallback minimum */
+  --container-height-desktop: max(80vh, 800px);
+  --container-min-height-desktop: 800px;
+  --container-padding-desktop: 1.5rem;
+
   /* Light theme CSS variables (default values) */
   /* Hosts can override these via runtime (see hostThemes.ts) */
   --background: #ffffff;
@@ -444,30 +455,27 @@ v-customizer * {
   font-family: var(--font-sans);
 }
 
-/* Container height management */
+/* ===== CONTAINER HEIGHT MANAGEMENT (unified approach) ===== */
+/* Main widget container with viewport-based responsive sizing */
 #v-customizer-container {
-  min-height: 800px; /* Mobile minimum */
-  height: 800px; /* Let content determine height */
+  /* Mobile-first sizing */
+  min-height: var(--container-min-height-mobile);
+  height: var(--container-height-mobile);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
-/* Desktop minimum height override */
+/* Desktop sizing (768px+ matches Tailwind md: breakpoint) */
 @media (min-width: 768px) {
   #v-customizer-container {
-    min-height: 800px;
-    height: 800px;
+    min-height: var(--container-min-height-desktop);
+    height: var(--container-height-desktop);
   }
 }
 
-/* Ensure the widget can grow with content */
-.widget-theme {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Ensure layout can grow with content */
+/* Ensure child layouts can fill container */
+.widget-theme,
 .layout {
   min-height: 100%;
   display: flex;
@@ -530,7 +538,6 @@ v-customizer * {
 .slide-horizontal-enter-active,
 .slide-horizontal-leave-active {
   transition: all 0.25s ease;
-  background-color: red;
 }
 
 .slide-horizontal-enter-from {

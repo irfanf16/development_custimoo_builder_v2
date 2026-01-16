@@ -10,6 +10,9 @@ import preferencesService from './preferences/preferences.service'
 import productsService from './products/products.service'
 import permissionsService from './permissions/permissions.service'
 
+// Re-export ecommerce services for convenience
+export * from './ecommerce'
+
 export const API = {
   authentication: authenticationService,
   cart: cartService,

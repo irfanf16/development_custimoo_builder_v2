@@ -31,6 +31,7 @@
     showNameColumn: boolean
     showNumberColumn: boolean
     value: string
+    minimumQuantity: number
   }
 
   const props = defineProps<Props>()
@@ -202,7 +203,7 @@
       :model-value="entryLocal.quantity"
       :data-roster-cell="cellId('quantity')"
       class="h-10 text-right"
-      min="1"
+      :min="minimumQuantity"
       type="number"
       inputmode="numeric"
       :placeholder="roster_table_quantity({}, { locale })"

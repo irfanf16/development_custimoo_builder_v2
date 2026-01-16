@@ -41,6 +41,9 @@
     logos_position_section_title,
     logos_placement_label,
     logos_select_placement_placeholder,
+    logos_side_label,
+    logos_side_front,
+    logos_side_back,
     logos_height_label,
     logos_angle_label,
     logos_center_logo_button,
@@ -54,7 +57,7 @@
     logos_apply,
     logos_recolor_logo
   } from '@/paraglide/messages'
-
+  import { usePricing } from '@/composables/usePricing'
   interface Props {
     logoId: string
   }
@@ -68,7 +71,7 @@
   const historyStore = useHistoryStore()
   const profileStore = useProfileStore()
   const customizationStore = useCustomizationStore()
-
+  const { showPricing } = usePricing()
   // ===== COMPOSABLES =====
   const { productKey, getLogoById, getActiveLogoIndex } = useLogos()
   const { removeBackground, applyLogoColors, recolorLogo, removeLogo, setActiveLogo } =
@@ -118,6 +121,17 @@
         colors: colorGroup.json_data
       })) || []
     )
+  })
+
+  // Side options for the select
+  const sideOptions = computed(() => [
+    { value: 'front', label: logos_side_front({}, { locale: profileStore.currentLocale }) },
+    { value: 'back', label: logos_side_back({}, { locale: profileStore.currentLocale }) }
+  ])
+
+  // Current side value
+  const currentSide = computed(() => {
+    return customLogo.value?.side || 'front'
   })
 
   // ===== POSITION COMPOSABLE =====
@@ -213,6 +227,11 @@
     const prevX = prevOption?.x_axis ?? customLogo.value.x_axis ?? null
     const prevY = prevOption?.y_axis ?? customLogo.value.y_axis ?? null
     const prevSide = prevOption?.side ?? customLogo.value.side ?? null
+    // Add width and height to the history
+    const nextWidth = option.width ?? null
+    const nextHeight = option.height ?? null
+    const prevWidth = prevOption?.width ?? customLogo.value.width ?? null
+    const prevHeight = prevOption?.height ?? customLogo.value.height ?? null
 
     if (
       option.label === prevLabel &&
@@ -237,7 +256,11 @@
       prevX,
       prevY,
       nextSide,
-      prevSide
+      prevSide,
+      nextWidth,
+      nextHeight,
+      prevWidth,
+      prevHeight
     })
 
     previousPlacementOption.value = option
@@ -256,6 +279,40 @@
     const option = resolvePlacementByValue(normalized)
     positionForm.placementOption = option
     handlePlacementChange(option)
+  }
+
+  function handleSideChange(value: string | null | AcceptableValue) {
+    const normalized = typeof value === 'string' ? value : null
+    if (!customLogo.value || !productKey.value || !normalized) return
+
+    const newSide = normalized as 'front' | 'back'
+    const prevSide = customLogo.value.side || 'front'
+
+    // Don't update if the side hasn't changed
+    if (newSide === prevSide) return
+
+    const index = activeLogoIndex.value
+    if (index === -1) return
+
+    void historyStore.execute('logo.update-placement', {
+      key: productKey.value,
+      index,
+      prevPlacementLabel: customLogo.value.name_of_placement || null,
+      nextPlacementLabel: customLogo.value.name_of_placement || null,
+      placementId: positionForm.placementOption?.placementId,
+      nextPlacementKey: customLogo.value.placement ?? null,
+      prevPlacementKey: customLogo.value.placement ?? null,
+      nextX: customLogo.value.x_axis ?? null,
+      nextY: customLogo.value.y_axis ?? null,
+      prevX: customLogo.value.x_axis ?? null,
+      prevY: customLogo.value.y_axis ?? null,
+      nextSide: newSide,
+      prevSide: prevSide,
+      nextWidth: customLogo.value.width ?? null,
+      nextHeight: customLogo.value.height ?? null,
+      prevWidth: customLogo.value.width ?? null,
+      prevHeight: customLogo.value.height ?? null
+    })
   }
 
   function handleHeightModelUpdate(value: string | number) {
@@ -362,7 +419,7 @@
                 @click="selectLogoTechnology(technology)"
               >
                 {{ technology.label }}
-                <template v-if="technology.price">
+                <template v-if="showPricing && technology.price">
                   <span class="text-muted-foreground ml-1">
                     +{{ technology.price }}{{ technology.currency_symbol }}
                   </span>
@@ -415,6 +472,28 @@
                 <SelectGroup>
                   <SelectItem
                     v-for="option in placementOptions"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div class="space-y-1 text-left">
+            <Label for="logo-side" class="text-xs font-medium text-muted-foreground">
+              {{ logos_side_label({}, { locale: profileStore.currentLocale }) }}
+            </Label>
+            <Select :model-value="currentSide" @update:model-value="handleSideChange">
+              <SelectTrigger id="logo-side" class="h-9 w-full">
+                <SelectValue :value="currentSide" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem
+                    v-for="option in sideOptions"
                     :key="option.value"
                     :value="option.value"
                   >
