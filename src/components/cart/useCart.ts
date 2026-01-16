@@ -1,6 +1,5 @@
 import { ref, computed, watch } from 'vue'
 import { useCartStore } from '@/stores/cart/cart.store'
-import { confirmDialog } from '@/lib/confirm-dialog'
 
 export interface CartProduct {
   // Internal IDs for API operations
@@ -102,7 +101,7 @@ export function useCart() {
   }
 
   /**
-   * Remove product from cart
+   * Remove product from cart (without confirmation - confirmation handled in CartDialog)
    */
   async function removeProduct(factoryProductId: string): Promise<void> {
     const product = products.value.find(p => p.factory_product_id === factoryProductId)
@@ -110,17 +109,9 @@ export function useCart() {
       console.error('Product not found:', factoryProductId)
       return
     }
-    const confirmDialogResult = await confirmDialog({
-      title: 'Remove Product',
-      description: 'Are you sure you want to remove this product from your cart?',
-      confirmText: 'Remove',
-      cancelText: 'Cancel'
-    })
-    if (confirmDialogResult) {
-      await cartStore.deleteCartItem(product.cart_item_id, factoryProductId)
-      // Refresh products after deletion
-      products.value = mapCartItemsToProducts()
-    }
+    await cartStore.deleteCartItem(product.cart_item_id, factoryProductId)
+    // Refresh products after deletion
+    products.value = mapCartItemsToProducts()
   }
 
   /**

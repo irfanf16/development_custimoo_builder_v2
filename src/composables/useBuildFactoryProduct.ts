@@ -174,6 +174,18 @@ export function useBuildFactoryProduct() {
     // Get roster detail
     const rosterDetail = customization.products_rosters[productKey] || []
 
+    // Get product and style names from stores
+    const productDisplayName = productsStore.activeProductDetails?.display_name || ''
+    const productName = productsStore.activeProductDetails?.sku?.sku_id || ''
+    const styleName = productsStore.activeStyleDetails?.name || ''
+
+    // Get additional product details
+    const svgParts = productsStore.activeDesignDetails?.svg_parts || []
+    const measurementRatio = productsStore.activeProductDetails?.measurement_ratio || 0
+    const skuNumber = productsStore.activeProductDetails?.sku?.sku_number || 0
+    const sizechartReference = productsStore.activeProductDetails?.sku?.sizechart_reference || null
+    const logoColors = customization.logo_colors || []
+
     // Build factory_product payload with all required fields
     const factoryProduct: Record<string, unknown> = {
       // Required fields
@@ -184,7 +196,18 @@ export function useBuildFactoryProduct() {
       front_image: frontImagePath || '',
       back_image: backImagePath || '', // Must be present
 
-      // Present fields (must be present even if empty)
+      // Product and style names
+      product_display_name: productDisplayName,
+      product_name: productName,
+      style_name: styleName,
+
+      // Product details
+      measurement_ratio: measurementRatio,
+      sku_number: skuNumber,
+      sizechart_reference: sizechartReference,
+
+      // SVG and design data
+      svg_parts: svgParts,
       svg_groups: svgGroups.map(group => ({
         id: group.id,
         name: group.name || '',
@@ -192,6 +215,8 @@ export function useBuildFactoryProduct() {
         count: group.count || 0,
         pantone: group.pantone || null
       })),
+
+      // Customization data
       custom_logos: customLogos, // Must be present
       product_custom_texts: productCustomTexts,
       product_roster_detail: rosterDetail, // Must be present
@@ -201,12 +226,20 @@ export function useBuildFactoryProduct() {
         roster: rosterDetail
       },
 
-      // Optional fields
+      // Color data
+      logo_colors: logoColors,
+      colors: [], // Empty array as per example
       groupcolors: customization.group_colors || {},
       defaultcolors: customization.default_colors || [],
+
+      // Pattern and logo data
       group_patterns: customization.group_patterns || {},
       fixed_logo_index: customization.fixed_logo_index || 0,
+      fixed_logos: [], // Empty array as per example
       shuffle_color_number: customization.shuffle_color_number || 0,
+
+      // Addons
+      addons: [], // Empty array as per example
       grouped_addons: Object.values(customization.addons_info || {}).flatMap(
         (addonInfo: AddonInfo) => Object.values(addonInfo?.grouped_addons || {})
       ),

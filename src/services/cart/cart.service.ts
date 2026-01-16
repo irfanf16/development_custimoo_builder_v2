@@ -9,7 +9,8 @@ import type {
   UploadCartAssetsPayload,
   UploadCartAssetsResponse,
   GenerateSignedUploadUrlPayload,
-  GenerateSignedUploadUrlResponse
+  GenerateSignedUploadUrlResponse,
+  FactoryProduct
 } from './types'
 
 /**
@@ -163,11 +164,39 @@ async function generateSignedUploadUrl(payload: GenerateSignedUploadUrlPayload) 
   })
 }
 
+/**
+ * Get cart product details
+ */
+async function getCartProductDetails(
+  cartItemId: number | string,
+  factoryProductId: number | string
+) {
+  return await http.post<{
+    errors: unknown[]
+    message: string
+    result: {
+      factoryProducts: FactoryProduct[]
+      factoryProductActiveIndex: number | string
+      lockerProductId: number | null
+      activityId: number | null
+      id: number
+      orderId: number | null
+      factoryId: number | null
+      cartId: number
+      activityItems: unknown
+    }
+  }>(`carts/cart-items/edit`, {
+    cart_item_id: cartItemId,
+    factory_product_id: factoryProductId
+  })
+}
+
 export default {
   getCustomerCart,
   storeProductToCart,
   updateCartItem,
   deleteCartItem,
   uploadCartAssets,
-  generateSignedUploadUrl
+  generateSignedUploadUrl,
+  getCartProductDetails
 }
