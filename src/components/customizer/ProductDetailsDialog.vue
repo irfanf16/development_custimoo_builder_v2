@@ -12,7 +12,7 @@
   } from '@/components/ui/carousel'
   import LazyTwoDScene from '@/components/customization-workflow/WorkflowSteps/LazyTwoDScene.vue'
   import Spinner from '../ui/spinner/Spinner.vue'
-  import { products_product_details } from '@/paraglide/messages'
+  import { products_product_details, summary_for, summary_pcs } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useProductsStore } from '@/stores/products/products.store'
   import type {
@@ -27,6 +27,8 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
+  import { usePricing } from '@/composables/usePricing'
+  import { Ruler } from 'lucide-vue-next'
 
   const uiStore = useUIStore()
   const { isMobile } = storeToRefs(uiStore)
@@ -36,6 +38,7 @@
   const workflowStore = useWorkflowStore()
   const { shouldShowStyles } = useCustomizerMenu()
   const { isLoading, fetchProductDetailsAndDesignsForProductPreview } = productsStore
+  const { getProductPrice, getMinimumProductQuantityByDesign, showPricing } = usePricing()
 
   const productPreviewDetails = ref<{
     productDetails: OutputProductDetails
@@ -72,31 +75,12 @@
     return description?.trim() || 'Description will be available soon.'
   })
 
-  // const showBadge = computed(
-  //   () => productPreviewDetails.value?.productDetails?.productDetails?.is_default === 1
-  // )
-
-  const formattedPrice = computed(() => {
-    const price = productPreviewDetails.value?.productDetails?.sku?.customized_sku_info
-    if (typeof price === 'number' && !Number.isNaN(price)) {
-      return new Intl.NumberFormat(profileStore.currentLocale ?? 'en-US', {
-        style: 'currency',
-        currency: 'USD'
-      }).format(price)
-    }
-    return null
-  })
-  const priceText = computed(() => formattedPrice.value ?? 'PRICING TBD')
-  const quantityText = computed(() => {
-    const flexibleQuantity = productPreviewDetails.value?.productDetails?.allowed_logos_count
-    if (typeof flexibleQuantity === 'number' && flexibleQuantity > 0) {
-      return `for ${flexibleQuantity} pcs`
-    }
-    return 'Flexible order sizes'
-  })
+  const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
+  const skuInformation = computed(() => productPreviewDetails.value?.productDetails?.sku)
 
   const carouselApi = ref<CarouselApi | null>(null)
   const currentSlideIndex = ref(0)
+  const hasDialogInitialized = ref(false)
 
   function updateSlidePosition(api?: CarouselApi | null) {
     if (!api) return
@@ -127,20 +111,30 @@
   let fetchSequence = 0
   async function loadProductPreview(productId: number) {
     const sequence = ++fetchSequence
-    // if (productPreviewDetails.value?.productDetails?.id !== productId) {
-    //   productPreviewDetails.value = null
-    // }
     const response = await fetchProductDetailsAndDesignsForProductPreview(productId)
     if (sequence !== fetchSequence) return
     if (response) {
       productPreviewDetails.value = response
     }
+    hasDialogInitialized.value = true
   }
+
+  // show to remove the product preview details from the store when the dialog is closed
+  watch(
+    () => props.open,
+    open => {
+      if (!open) {
+        productPreviewDetails.value = null
+        hasDialogInitialized.value = false
+      }
+    }
+  )
 
   watch(
     () => [props.open, props.productId] as const,
     ([open, productId]) => {
       if (open && typeof productId === 'number') {
+        hasDialogInitialized.value = false
         void loadProductPreview(productId)
       }
     },
@@ -232,7 +226,7 @@
       <div class="flex flex-row gap-6 h-full">
         <section class="rounded-2xl border bg-background p-4 sm:p-6 md:w-[640px]">
           <div class="h-full w-full flex flex-col justify-center items-center">
-            <div v-if="hasDesigns" class="relative overflow-hidden w-full">
+            <div v-if="!isLoading && hasDesigns" class="relative overflow-hidden w-full">
               <Carousel
                 class=""
                 :opts="{ align: 'center', loop: false }"
@@ -295,7 +289,7 @@
               <span class="text-sm text-muted-foreground">Loading design previews…</span>
             </div>
             <div
-              v-else
+              v-else-if="!isLoading && !productPreviewDetails && hasDialogInitialized"
               class="flex min-h-[320px] flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed border-muted-foreground/40 bg-muted/30 p-6 text-center"
             >
               <p class="text-sm font-medium text-foreground">Design previews unavailable</p>
@@ -307,7 +301,7 @@
         </section>
 
         <section class="flex flex-col max-w-[480px] gap-4 md:gap-6">
-          <template v-if="productPreviewDetails">
+          <template v-if="!isLoading && productPreviewDetails">
             <div class="flex flex-col gap-2">
               <!-- <Badge v-if="showBadge" class="w-fit shadow-sm">Most popular</Badge> -->
               <p class="text-3xl font-semibold leading-tight text-foreground">
@@ -316,12 +310,33 @@
               <p class="text-base leading-6 text-muted-foreground" v-html="productDescription"></p>
             </div>
 
-            <div class="flex items-baseline gap-2 text-2xl font-semibold text-foreground">
-              <span>{{ priceText }}</span>
-              <span class="text-base font-normal text-muted-foreground">{{ quantityText }}</span>
+            <div v-if="showPricing" class="flex items-baseline gap-2">
+              <p class="text-2xl font-semibold text-foreground">
+                {{ getProductPrice(productPreviewDetails.productDetails) }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                {{ summary_for({}, { locale: profileStore.currentLocale }) }}
+              </p>
+              <p class="text-2xl font-semibold text-foreground">
+                {{ getMinimumProductQuantityByDesign(productPreviewDetails.productDetails) }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                {{ summary_pcs({}, { locale: profileStore.currentLocale }) }}
+              </p>
             </div>
 
-            <Button variant="primary" @click="handleStartCustomization"> Customize now </Button>
+            <Button variant="primary" @click="handleStartCustomization">Customize now </Button>
+            <Button
+              v-if="skuInformation?.image_url"
+              variant="secondary"
+              size="default"
+              as="a"
+              target="_blank"
+              :href="`${storageUrl}${skuInformation.image_url}`"
+            >
+              <Ruler class="size-4" />
+              <span>Size Guide</span>
+            </Button>
           </template>
           <template v-else>
             <div class="space-y-3">
