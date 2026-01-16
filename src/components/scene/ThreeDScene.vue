@@ -32,7 +32,8 @@
     deleteLogoFromCanvas,
     syncLogosOnCanvas,
     getLogoSignature,
-    getLogoSignatureUrlSide
+    getLogoSignatureUrlSide,
+    suppressCustomLogosWatch
   } from '@/composables/scene'
   import {
     getImageFrom3DCanvas,
@@ -258,8 +259,8 @@
   const sceneLoadPromise = shallowRef<Promise<void> | null>(null)
 
   // ===== LIFECYCLE =====
-  onMounted(() => {
-    initThreeJS()
+  onMounted(async () => {
+    await initThreeJS()
   })
 
   onBeforeUnmount(() => {
@@ -463,7 +464,7 @@
   }
 
   // ===== THREE.JS SETUP =====
-  function initThreeJS() {
+  async function initThreeJS() {
     if (!rendererEl.value || !canvasEl.value) return
 
     // Create scene
@@ -688,6 +689,71 @@
   }
 
   /**
+   * Map a 3D intersection back to 2D screen coordinates and detect side changes.
+   * Adapted from legacy ThreeDScene.vue findPositionOn2D.
+   */
+  function findPositionOn2D(
+    x: number,
+    y: number,
+    fabricObject: FabricImage & { side?: string; type?: string }
+  ): { vector: THREE.Vector3; sideChanged: boolean } {
+    if (
+      !rendererEl.value ||
+      !scene.value ||
+      !camera.value ||
+      !frontCamera.value ||
+      !backCamera.value
+    ) {
+      return { vector: new THREE.Vector3(), sideChanged: false }
+    }
+
+    const frontCam = frontCamera.value as THREE.OrthographicCamera
+    const backCam = backCamera.value as THREE.OrthographicCamera
+
+    let sideChanged = false
+    const vector = new THREE.Vector3()
+
+    const array = getMousePosition(rendererEl.value, x, y, true)
+    onClickPosition.value.fromArray(array)
+    const intersects = getIntersects(onClickPosition.value, scene.value.children, camera.value)
+
+    let side: 'front' | 'back' = 'front'
+    if (intersects.length > 0) {
+      const hit = intersects[0]
+      if (hit?.point) {
+        vector.copy(hit.point)
+      }
+
+      if (vector.z < 0) {
+        vector.project(backCam)
+        side = 'back'
+      } else {
+        vector.project(frontCam)
+      }
+
+      const currentSide = (fabricObject.side || 'front').toLowerCase()
+      if (currentSide !== side) {
+        fabricObject.side = side
+        sideChanged = true
+      }
+
+      vector.x = Math.round(((vector.x + 1) * props.containerWidth) / 2)
+      vector.y = Math.round(((-vector.y + 1) * props.containerHeight) / 2)
+      vector.z = 0
+
+      let divideBy = fabricObject.type === 'logo' ? 1 : 3
+      const width = fabricObject.width ?? 0
+      const height = fabricObject.height ?? 0
+      const scaleX = fabricObject.scaleX ?? 1
+      const scaleY = fabricObject.scaleY ?? 1
+      vector.x += (width * scaleX) / divideBy
+      vector.y += (height * scaleY) / divideBy
+    }
+
+    return { vector, sideChanged }
+  }
+
+  /**
    * Find position on 3D model surface from 2D coordinates
    * Adapted from old ThreeDScene.vue
    */
@@ -766,7 +832,7 @@
    * Uses the shared composable with 3D-specific configuration
    */
   async function addLogo(logo: CustomLogo, logoIndex: number): Promise<void> {
-    if (!canvas.value || !mounted.value) return
+    if (!canvas.value) return
 
     if (!logo || !logo.url) return
 
@@ -804,22 +870,6 @@
       deleteControl: true
     }
 
-    // Update store (placeholder for now - can be extended)
-    const updateStore = (
-      _logoIndex: number,
-      _data: {
-        x_axis_3d?: number
-        y_axis_3d?: number
-        originalWidth?: number
-        originalHeight?: number
-        actualWidth?: number
-        actualHeight?: number
-      }
-    ) => {
-      // TODO: Update customization store with logo position/size
-      // This can be implemented when store methods are available
-    }
-
     try {
       if (!canvas.value) return
 
@@ -837,10 +887,10 @@
         calculateScaleRatios,
         applyClipPath,
         renderCanvas,
-        updateStore,
         controlVisibility,
         canvasSelection: true,
-        flipX: true
+        flipX: true,
+        findPositionOn2D
       })
     } catch (error) {
       console.error('Failed to add logo:', error)
@@ -852,7 +902,7 @@
    * Clears existing logos and adds all logos from custom_logos
    */
   async function resetAndAddLogos(): Promise<void> {
-    if (!mounted.value || !canvas.value) return
+    if (!canvas.value) return
 
     // Reset existing logos
     customLogoObjects.value.forEach(logo => {
@@ -887,57 +937,46 @@
       console.warn('Missing model or design data')
       return
     }
-
-    const work = async () => {
-      try {
-        // Load model and design in parallel
-        await Promise.all([
-          addModel(
-            modelData.model_url,
-            modelData.texture_url || '',
-            modelData.roughness_map_url || null,
-            modelData.metalness_map_url || null,
-            modelData.ao_map_url || null,
-            modelData.alpha_map_url || null,
-            modelData.roughness ?? null,
-            modelData.metalness ?? null
-          ),
-          addDesign(designData, {
-            scaleMode: 'resolution',
-            canvasResolution: props.canvasResolution,
-            centerInViewport: false,
-            flipY: true,
-            svgGroupsComposable,
-            designObjectRef: designObject as Ref<FabricObject | FabricImage | null>,
-            colorCustomization,
-            mainPreview: props.mainPreview,
-            onLoaded: async _loadedDesign => {
-              if (designObject.value && designObject.value instanceof Group) {
-                await applyAnchorDifferences(designObject.value)
-                if (canvas.value) {
-                  canvas.value.requestRenderAll()
-                }
-              }
+    // Load model and design in parallel
+    await Promise.all([
+      addModel(
+        modelData.model_url,
+        modelData.texture_url || '',
+        modelData.roughness_map_url || null,
+        modelData.metalness_map_url || null,
+        modelData.ao_map_url || null,
+        modelData.alpha_map_url || null,
+        modelData.roughness ?? null,
+        modelData.metalness ?? null
+      ),
+      addDesign(designData, {
+        scaleMode: 'resolution',
+        canvasResolution: props.canvasResolution,
+        centerInViewport: false,
+        flipY: true,
+        svgGroupsComposable,
+        designObjectRef: designObject as Ref<FabricObject | FabricImage | null>,
+        colorCustomization,
+        mainPreview: props.mainPreview,
+        onLoaded: async _loadedDesign => {
+          if (designObject.value && designObject.value instanceof Group) {
+            await applyAnchorDifferences(designObject.value)
+            if (canvas.value) {
+              canvas.value.requestRenderAll()
             }
-          })
-        ])
-
-        if (designData.safe_zone_url) {
-          await addSafeZone(designData.safe_zone_url)
+          }
         }
+      })
+    ])
 
-        mounted.value = true
-
-        // Load logos after scene is loaded
-        await resetAndAddLogos()
-      } catch (error) {
-        console.error('Failed to load scene:', error)
-      }
+    if (designData.safe_zone_url) {
+      await addSafeZone(designData.safe_zone_url)
     }
 
-    sceneLoadPromise.value = work()
-    await sceneLoadPromise.value
-    sceneLoadPromise.value = null
+    // Load logos after scene is loaded
+    await resetAndAddLogos()
+
+    mounted.value = true
   }
 
   /**
@@ -1575,6 +1614,10 @@
   watch(
     customLogos,
     async (newLogos = []) => {
+      if (suppressCustomLogosWatch.value) {
+        suppressCustomLogosWatch.value = false
+        return
+      }
       if (!mounted.value) return
       // Small delay to let design/model settles before syncing logos
       await new Promise(resolve => setTimeout(resolve, 200))

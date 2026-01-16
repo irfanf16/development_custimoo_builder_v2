@@ -365,6 +365,23 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     } as CustomLogo
   }
 
+  function updateCustomLogo(params: {
+    custom_logo_index: number
+    data: Partial<CustomLogo>
+    productId?: number | null
+  }) {
+    if (!customization.value) return
+    const pid = params.productId ?? customization.value.product_id
+    if (!pid) return
+    const key = String(pid)
+    const map = customization.value.custom_logos?.[key]
+    if (!map || !map[params.custom_logo_index]) return
+    map[params.custom_logo_index] = {
+      ...map[params.custom_logo_index],
+      ...params.data
+    } as CustomLogo
+  }
+
   // Helper function to create default customization with preserved IDs
   function createDefaultCustomization(
     preservedIds: {
@@ -555,6 +572,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     appendLogoColors,
     addLogoToCustomizationFromSource,
     getMergedCustomizationLogo,
+    updateCustomLogo,
     // Business Logic
     ensureCustomization,
     resetCustomizationToCurrentProductDefaults,
