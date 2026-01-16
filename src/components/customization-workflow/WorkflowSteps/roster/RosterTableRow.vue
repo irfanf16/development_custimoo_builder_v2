@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useDebounceFn } from '@vueuse/core'
+  import { useField } from 'vee-validate'
   import type { APCustomizationRosterEntry } from '@/services/products/types'
   import { Trash2 } from 'lucide-vue-next'
   import { Input } from '@/components/ui/input'
@@ -15,6 +16,7 @@
   import { RadioGroupItem } from '@/components/ui/radio-group'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
+    roster_quantity_minimum_error,
     roster_remove_row,
     roster_table_name,
     roster_table_number,
@@ -38,23 +40,6 @@
 
   const entryLocal = ref<APCustomizationRosterEntry>({ ...props.entry })
 
-  watch(
-    () => props.entry,
-    newVal => {
-      // Only update if the values actually differ to avoid unnecessary reactivity cycles
-      if (
-        newVal.text !== entryLocal.value.text ||
-        newVal.number !== entryLocal.value.number ||
-        newVal.size !== entryLocal.value.size ||
-        newVal.quantity !== entryLocal.value.quantity ||
-        newVal.information !== entryLocal.value.information
-      ) {
-        entryLocal.value = { ...newVal }
-      }
-    },
-    { deep: true }
-  )
-
   const emit = defineEmits<{
     (e: 'update', index: number, payload: Partial<APCustomizationRosterEntry>): void
     (e: 'remove', index: number): void
@@ -77,6 +62,70 @@
 
   const cellId = (column: RosterColumnKey) => `roster-cell-${props.index}-${column}`
 
+  // Validation for quantity field using vee-validate
+  const quantityFieldName = computed(() => `quantity-${props.index}`)
+  const {
+    value: quantityValue,
+    errorMessage: quantityError,
+    handleChange: handleQuantityChange,
+    handleBlur: handleQuantityBlur
+  } = useField(
+    quantityFieldName,
+    (value: number | string | null | undefined) => {
+      if (value === null || value === undefined || value === '') {
+        return true // Allow empty values, they'll be handled by required validation if needed
+      }
+      const numValue = typeof value === 'string' ? Number(value) : value
+      if (isNaN(numValue)) {
+        return true // Allow NaN during typing
+      }
+      if (numValue < props.minimumQuantity) {
+        return roster_quantity_minimum_error(
+          { minimum: props.minimumQuantity },
+          { locale: locale.value }
+        )
+      }
+      return true
+    },
+    {
+      initialValue: props.entry.quantity ?? props.minimumQuantity
+    }
+  )
+
+  watch(
+    () => props.entry,
+    newVal => {
+      // Only update if the values actually differ to avoid unnecessary reactivity cycles
+      if (
+        newVal.text !== entryLocal.value.text ||
+        newVal.number !== entryLocal.value.number ||
+        newVal.size !== entryLocal.value.size ||
+        newVal.quantity !== entryLocal.value.quantity ||
+        newVal.information !== entryLocal.value.information
+      ) {
+        entryLocal.value = { ...newVal }
+        // Sync quantity field value when entry changes
+        if (newVal.quantity !== quantityValue.value) {
+          quantityValue.value = newVal.quantity ?? props.minimumQuantity
+        }
+      }
+    },
+    { deep: true }
+  )
+
+  // Watch quantity field value changes and update local state, then debounce emit
+  watch(quantityValue, newValue => {
+    if (newValue === null || newValue === undefined) return
+    const numValue = typeof newValue === 'string' ? Number(newValue) : newValue
+    if (!isNaN(numValue) && typeof numValue === 'number') {
+      entryLocal.value.quantity = numValue
+      // Only emit if value is valid (no error)
+      if (numValue >= props.minimumQuantity && !quantityError.value) {
+        debouncedUpdateField('quantity', numValue)
+      }
+    }
+  })
+
   // Immediate update function for local state (for responsive UI)
   function updateLocalField(field: keyof APCustomizationRosterEntry, value: string | number) {
     entryLocal.value = {
@@ -97,6 +146,13 @@
 
   // Combined function that updates local state immediately and debounces the emit
   function updateField(field: keyof APCustomizationRosterEntry, value: string | number) {
+    // For quantity field, use vee-validate's handleChange for validation
+    if (field === 'quantity') {
+      const numValue = typeof value === 'string' ? Number(value) : value
+      // Update vee-validate field (this will trigger validation)
+      handleQuantityChange(numValue, false)
+      return
+    }
     // Update local state immediately for responsive UI
     updateLocalField(field, value)
     // Debounce the emit to parent (which will call async updateRow)
@@ -105,6 +161,31 @@
 
   // Handle blur events to ensure value is saved immediately when user leaves the field
   function handleBlur(field: keyof APCustomizationRosterEntry, value: string | number) {
+    // For quantity field, use vee-validate's handleBlur and validate
+    if (field === 'quantity') {
+      handleQuantityBlur()
+      const numValue = typeof value === 'string' ? Number(value) : value
+      // Cancel any pending debounced calls
+      if ('cancel' in debouncedUpdateField && typeof debouncedUpdateField.cancel === 'function') {
+        debouncedUpdateField.cancel()
+      }
+      // Only emit if value is valid
+      if (!isNaN(numValue) && numValue >= props.minimumQuantity && !quantityError.value) {
+        // Immediately emit the update
+        emit('update', props.index, {
+          [field]: numValue
+        } as Partial<APCustomizationRosterEntry>)
+      } else {
+        // Reset to minimum quantity if invalid
+        const minValue = props.minimumQuantity
+        quantityValue.value = minValue
+        entryLocal.value.quantity = minValue
+        emit('update', props.index, {
+          [field]: minValue
+        } as Partial<APCustomizationRosterEntry>)
+      }
+      return
+    }
     // Cancel any pending debounced calls if cancel method exists
     if ('cancel' in debouncedUpdateField && typeof debouncedUpdateField.cancel === 'function') {
       debouncedUpdateField.cancel()
@@ -199,21 +280,35 @@
       </SelectContent>
     </Select>
 
-    <Input
-      :model-value="entryLocal.quantity"
-      :data-roster-cell="cellId('quantity')"
-      class="h-10 text-right"
-      :min="minimumQuantity"
-      type="number"
-      inputmode="numeric"
-      :placeholder="roster_table_quantity({}, { locale })"
-      @update:model-value="value => updateField('quantity', Number(value))"
-      @blur="
-        (event: FocusEvent) =>
-          handleBlur('quantity', Number((event.target as HTMLInputElement).value))
-      "
-      @keydown.capture="(event: KeyboardEvent) => handleKeydown(event, 'quantity')"
-    />
+    <div class="flex flex-col gap-1">
+      <Input
+        :model-value="quantityValue ?? props.minimumQuantity"
+        :data-roster-cell="cellId('quantity')"
+        :class="[
+          'h-10 text-right',
+          quantityError ? 'border-destructive focus-visible:ring-destructive' : ''
+        ]"
+        :min="minimumQuantity"
+        type="number"
+        inputmode="numeric"
+        :placeholder="roster_table_quantity({}, { locale })"
+        :aria-invalid="!!quantityError"
+        :aria-describedby="quantityError ? `quantity-error-${props.index}` : undefined"
+        @update:model-value="value => updateField('quantity', Number(value))"
+        @blur="
+          (event: FocusEvent) =>
+            handleBlur('quantity', Number((event.target as HTMLInputElement).value))
+        "
+        @keydown.capture="(event: KeyboardEvent) => handleKeydown(event, 'quantity')"
+      />
+      <p
+        v-if="quantityError"
+        :id="`quantity-error-${props.index}`"
+        class="text-[0.8rem] font-medium text-destructive"
+      >
+        {{ quantityError }}
+      </p>
+    </div>
 
     <Button
       variant="ghost"

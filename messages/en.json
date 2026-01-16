@@ -33,6 +33,7 @@
   "roster_table_number": "No.",
   "roster_table_size": "Size",
   "roster_table_quantity": "Qty.",
+  "roster_quantity_minimum_error": "Quantity must be at least {minimum}",
   "roster_add_player": "Add player",
   "roster_remove_row": "Remove player",
   "roster_empty_state": "No players yet — start by uploading the template or add them manually.",

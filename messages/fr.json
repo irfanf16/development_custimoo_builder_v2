@@ -33,6 +33,7 @@
   "roster_table_number": "Nº",
   "roster_table_size": "Taille",
   "roster_table_quantity": "Qté",
+  "roster_quantity_minimum_error": "La quantité doit être d'au moins {minimum}",
   "roster_add_player": "Ajouter un joueur",
   "roster_remove_row": "Supprimer le joueur",
   "roster_empty_state": "Aucun joueur pour l'instant — importez un modèle ou ajoutez-les manuellement.",

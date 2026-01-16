@@ -33,6 +33,7 @@
   "roster_table_number": "Nr.",
   "roster_table_size": "Størrelse",
   "roster_table_quantity": "Antal",
+  "roster_quantity_minimum_error": "Antal skal være mindst {minimum}",
   "roster_add_player": "Tilføj spiller",
   "roster_remove_row": "Fjern spiller",
   "roster_empty_state": "Ingen spillere endnu — upload en skabelon eller tilføj dem manuelt.",

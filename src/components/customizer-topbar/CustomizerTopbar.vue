@@ -675,6 +675,13 @@
             <LayoutGrid class="size-4 mr-2" />
             <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
           </DropdownMenuItem>
+          <DropdownMenuItem
+            v-if="uiStore.isMobile && authStore.isAuthenticated"
+            @click="handleGeneratePDF"
+          >
+            <File class="size-4 mr-2" />
+            <span>Generate PDF</span>
+          </DropdownMenuItem>
           <DropdownMenuSeparator v-if="uiStore.isMobile && authStore.isAuthenticated" />
 
           <!-- Always visible -->
