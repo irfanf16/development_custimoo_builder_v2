@@ -7,6 +7,7 @@ import { useUIStore } from '@/stores/ui/ui.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { useAppStore } from '@/stores/app/app.store'
 import { WIDGET_CONTAINER_ID } from './lib/widgetUtils'
+import { initQueryParams } from '@/composables/initQueryParams'
 
 // Import CSS styles
 import widgetStyles from './styles.css?inline'
@@ -118,6 +119,10 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   const appStore = useAppStore(pinia)
   // Ensure app info is loaded before any store relies on prefixed storage keys
   appStore.loadAppInfoFromGlobalVariable()
+
+  // Initialize query parameters (extract from URL and remove them)
+  // This must be called after Pinia is created but before stores are used
+  initQueryParams(pinia)
 
   // Load auth state from localStorage on app start
   const authStore = useAuthStore(pinia)

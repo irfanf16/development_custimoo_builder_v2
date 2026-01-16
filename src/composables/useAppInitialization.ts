@@ -14,6 +14,7 @@ import { useAppStore } from '@/stores/app/app.store'
 import { getCustomizerIframe } from '../lib/widgetUtils'
 import router from '../router'
 import { useCartStore } from '@/stores/cart/cart.store'
+import { useQueryParams } from '@/composables/useQueryParams'
 
 // ============================================================================
 // Global State Management
@@ -192,16 +193,20 @@ export function useAppInitialization() {
     productsStore.suspendCustomizationAutoSync()
     const customizationStore = useCustomizationStore()
 
-    // TODO: Skip this for syncId ecommerce product ?
-    try {
-      const history = useHistoryStore()
-      history.load()
-    } catch {
-      // Ignore errors when loading history
+    const { hasSyncId } = useQueryParams()
+
+    if (!hasSyncId.value) {
+      try {
+        const history = useHistoryStore()
+        history.load()
+      } catch {
+        // Ignore errors when loading history
+      }
     }
 
-    // TODO: Ignore if there is a syncId for ecommerce product
-    const hasPersistedCustomization = customizationStore.loadFromLocalStorage()
+    const hasPersistedCustomization = hasSyncId.value
+      ? false
+      : customizationStore.loadFromLocalStorage()
 
     return {
       stores: { productsStore, customizationStore },
@@ -221,6 +226,7 @@ export function useAppInitialization() {
   const fetchEssentialData = async (context: InitializationContext): Promise<void> => {
     const { productsStore, customizationStore } = context.stores
     const companyStore = useCompanyStore()
+    const { hasSyncId } = useQueryParams()
 
     const previousCompanyIdRaw = storage.getItemRaw(COMPANY_ID_STORAGE_KEY)
     const previousCompanyId = (() => {
@@ -250,10 +256,13 @@ export function useAppInitialization() {
 
     context.hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
 
-    // TODO: Skip this for syncId ecommerce product. Select the wf.activeStep to design.
-    // Reload workflow state now that the correct storage prefix is known
-    wf.loadFromLocalStorage()
-    context.hadPersistedWorkflowStep = Boolean(wf.activeStep)
+    if (hasSyncId.value) {
+      wf.setActiveStep('designs')
+    } else {
+      // Reload workflow state now that the correct storage prefix is known
+      wf.loadFromLocalStorage()
+      context.hadPersistedWorkflowStep = Boolean(wf.activeStep)
+    }
   }
 
   // ============================================================================
@@ -265,7 +274,13 @@ export function useAppInitialization() {
     context: InitializationContext,
     categoryInfo: CategoryInfo
   ): Promise<void> => {
+    const { hasSyncId } = useQueryParams()
     const { customizationStore, productsStore } = context.stores
+
+    if (hasSyncId.value) {
+      await createEcommerceCustomization(customizationStore, productsStore, categoryInfo)
+      return
+    }
 
     if (context.hasPersistedCustomization) {
       await restoreExistingCustomization(customizationStore, productsStore)
@@ -503,6 +518,57 @@ export function useAppInitialization() {
     if (wf.activeStep === 'product') {
       wf.setProductsSubStep(hasCategories ? 'category' : 'product')
     }
+    syncWorkflowForCategoryAvailability(hasCategories, preserveWorkflowStep)
+  }
+
+  // ============================================================================
+  // Phase 8B: Create Default Customization
+  // ============================================================================
+  // Creates a new customization when no saved state exists.
+  // Sets up default product, style, and design selections.
+  const createEcommerceCustomization = async (
+    customizationStore: ReturnType<typeof useCustomizationStore>,
+    productsStore: ReturnType<typeof useProductsStore>,
+    categoryInfo: CategoryInfo,
+    preserveWorkflowStep = false
+  ): Promise<void> => {
+    const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
+
+    // Clear history when starting fresh
+    try {
+      const history = useHistoryStore()
+      history.clear()
+    } catch {
+      // Ignore errors when clearing history
+    }
+    const { syncId } = useQueryParams()
+
+    // Determine default product to load
+    const syncIdProductId = syncId.value
+
+    if (syncIdProductId) {
+      // Load product data
+      await productsStore.fetchActiveProductDetails(syncIdProductId, true)
+      const activeProductDetailsId: number = productsStore.activeProductDetails?.id ?? 0
+      await productsStore.fetchStylePreviews(activeProductDetailsId)
+
+      // Create default customization
+      customizationStore.ensureCustomization({
+        productId: activeProductDetailsId,
+        styleId: productsStore.activeStyleDetails?.id,
+        designId: productsStore.activeDesignDetails?.id,
+        categoryId: customizationStore.activeCategoryId ?? categoryInfo.categoryId ?? undefined,
+        subCategoryId:
+          customizationStore.activeSubCategoryId ?? categoryInfo.subCategoryId ?? undefined
+      })
+      customizationStore.saveToLocalStorage()
+    }
+
+    // Set default workflow step
+    if (!wf.activeStep) {
+      wf.setActiveStep('designs')
+    }
+
     syncWorkflowForCategoryAvailability(hasCategories, preserveWorkflowStep)
   }
 

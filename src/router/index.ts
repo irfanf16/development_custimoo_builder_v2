@@ -64,6 +64,27 @@ const router = createRouter({
 
 // Navigation guard for authentication
 router.beforeEach((to, _from, next) => {
+  // Remove handled query params from route if they exist
+  // This prevents them from appearing in the URL after navigation
+  const handledParams = ['sync_id', 'update_item', 'update_cart', 'line', 'roster']
+  const hasHandledParams = handledParams.some(key => to.query[key] !== undefined)
+
+  if (hasHandledParams) {
+    const cleanedQuery = { ...to.query }
+    handledParams.forEach(key => {
+      delete cleanedQuery[key]
+    })
+
+    // Redirect to same route without handled query params
+    next({
+      path: to.path,
+      query: cleanedQuery,
+      hash: to.hash,
+      replace: true
+    })
+    return
+  }
+
   // Update document title
   if (typeof to.meta.title === 'string') {
     const mode = isWidgetMode() ? 'Widget' : 'Customizer'
