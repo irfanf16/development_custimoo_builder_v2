@@ -18,6 +18,7 @@
   import type { Palette } from '@/composables/useColorActions'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useColorClipboard } from '@/composables/useColorClipboard'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import {
     color_shuffle_design_colors,
     color_shuffle_heading_1,
@@ -34,6 +35,7 @@
     colors_paste,
     nav_color
   } from '@/paraglide/messages'
+  import { storeToRefs } from 'pinia'
   // no emits
 
   // Store (kept in case we want to wire real data later)
@@ -45,14 +47,138 @@
   const history = useHistoryStore()
   const { shuffleColors } = useColorActions()
   const { clipboardColor, copyColor } = useColorClipboard()
+  const lockerRoomStore = useLockerRoomStore()
+  const { lockerRoomsWithColors } = storeToRefs(lockerRoomStore)
+
+  // Parse locker rooms response into usable structure
+  const parsedLockerRooms = computed(() => {
+    const raw = lockerRoomsWithColors?.value || []
+    return raw.map(room => {
+      const foldersRaw = (room as any).folders || []
+      const folders = foldersRaw.map((f: any) => {
+        // folder may be a JSON string or object
+        let parsed: any = f
+        if (typeof f === 'string') {
+          try {
+            parsed = JSON.parse(f)
+          } catch {
+            // not JSON, treat as folder name
+            parsed = { folder_name: String(f), color: '[]' }
+          }
+        }
+
+        // parsed.color may be a JSON string or already array
+        let colorsArr: any[] = []
+        if (parsed && parsed.color) {
+          if (typeof parsed.color === 'string') {
+            try {
+              colorsArr = JSON.parse(parsed.color)
+            } catch {
+              colorsArr = []
+            }
+          } else if (Array.isArray(parsed.color)) {
+            colorsArr = parsed.color
+          }
+        }
+
+        const colors: OutputColor[] = colorsArr.map((c: any, idx: number) => ({
+          position: idx,
+          name: c.name || '',
+          value: c.value || c.hex || ''
+        }))
+
+        return {
+          folder_name: parsed.folder_name || parsed.folderName || 'Folder',
+          colors
+        }
+      })
+
+      return {
+        id: room.id,
+        room_name: room.room_name || `Room ${room.id}`,
+        folders
+      }
+    })
+  })
 
   const computedPalettes = computed<Palette[] | undefined>(() => {
-    return productsStore.activeProductDetails?.namecolors.map(colorGroup => ({
+    return productsStore.activeProductDetails?.colors.map(colorGroup => ({
       id: colorGroup.id,
       name: colorGroup.file_name,
       colors: colorGroup.json_data
     }))
   })
+
+  // (svg group container will be read directly by getSvgGroupColors)
+  function getSvgGroupColors(svg_group: string): unknown | false {
+    const container = productsStore.activeProductDetails?.svg_group_color_container as
+      | Record<string, unknown>
+      | undefined
+    if (svg_group && container && container[svg_group]) {
+      return container[svg_group]
+    }
+    return false
+  }
+  function getCustomeLogos(): any[] {
+    const logos =
+      customizationStore.customization?.custom_logos[productsStore.activeProductDetails?.id || '']
+    if (logos && Array.isArray(logos)) {
+      return logos as any[]
+    }
+    return []
+  }
+  // Small mapper to convert a raw svg-group entry into a Palette shape expected by PaletteColorSelector
+  function getSvgGroupPalette(svg_group: string): Palette | false {
+    const entry = getSvgGroupColors(svg_group)
+    if (!entry) return false
+    const e = entry as Record<string, unknown>
+    const paletteColors = (e['colors'] ?? e['json_data'] ?? e['color_list']) as
+      | unknown[]
+      | undefined
+    const name = (e['name'] ?? e['file_name'] ?? svg_group) as string
+    const id = typeof e['group_id'] ? (e['group_id'] as number) : 0
+    return { id, name, colors: (paletteColors ?? []) as unknown as OutputColor[] }
+  }
+  // Map custom logos into palettes for PaletteColorSelector
+  function getCustomLogosPalettes(): Palette[] {
+    const customLogosFrom = getCustomeLogos()
+    if (!customLogosFrom || customLogosFrom.length === 0) return []
+
+    // Group logos by name_of_placement
+    const logosByPlacement = customLogosFrom.reduce<Record<string, typeof customLogosFrom>>(
+      (acc, logo) => {
+        const groupName = logo.name_of_placement || 'Custom'
+        if (!acc[groupName]) acc[groupName] = []
+        acc[groupName].push(logo)
+        return acc
+      },
+      {}
+    )
+
+    // Convert each group into a Palette
+    const palettes: Palette[] = Object.entries(logosByPlacement).map(([placementName, logos]) => {
+      const colors: OutputColor[] = logos.flatMap(logo =>
+        (logo.logo_colors ?? []).map((colorArray: number[], index: number) => {
+          const r = colorArray[0] ?? 0
+          const g = colorArray[1] ?? 0
+          const b = colorArray[2] ?? 0
+          return {
+            name: logo.name_of_placement || `Logo Color ${index + 1}`,
+            value: `rgb(${r}, ${g}, ${b})`,
+            position: index
+          } as OutputColor
+        })
+      )
+
+      return {
+        id: logos[0]?.id ?? 0,
+        name: `${placementName} Logo`,
+        colors
+      }
+    })
+
+    return palettes
+  }
 
   // Track selected gradient index for each group
   const selectedGradientIndex = ref<Record<string, number>>({})
@@ -245,7 +371,6 @@
         </div>
       </div>
     </div>
-
     <!-- Color slots -->
     <Accordion
       type="single"
@@ -322,13 +447,21 @@
             />
           </div>
           <PaletteColorSelector
-            v-if="computedPalettes"
-            :palettes="computedPalettes"
+            v-if="(computedPalettes && computedPalettes.length) || getSvgGroupPalette(svgGroup.id)"
+            :palettes="
+              getSvgGroupPalette(svgGroup.id)
+                ? [getSvgGroupPalette(svgGroup.id) as Palette]
+                : computedPalettes || []
+            "
+            :custom-palettes="getCustomLogosPalettes() ? getCustomLogosPalettes() : []"
             :selected-color="
               svgGroup.gradient_colors
                 ? svgGroup.gradient_colors[getGradientIndex(svgGroup.id)]?.color
                 : svgGroup.color
             "
+            :allow-custom-color="productsStore.activeProductDetails?.is_custom_color_allowed"
+            :has-svg-colors="getSvgGroupColors(svgGroup.id) ? true : false"
+            :parsed-locker-rooms="parsedLockerRooms"
             @color-select="
               color =>
                 setGroupColor(

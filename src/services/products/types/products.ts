@@ -107,6 +107,7 @@ export type OutputProductDetails = OutputProductPreview & {
   product_texts: OutputProductText[]
   namefonts: OutputFont[]
   sizes: OutputSize[]
+  is_custom_color_allowed: boolean
 }
 
 export type ProductPreviewItem = {

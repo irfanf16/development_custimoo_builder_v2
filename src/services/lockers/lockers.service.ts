@@ -9,6 +9,7 @@ import type {
   LockerFetchResponse,
   LockerProduct,
   LockerResponse,
+  LockerRoomsWithColors,
   LockerUpdatePayload,
   SignedUrlResponse
 } from './types'
@@ -45,6 +46,10 @@ async function updateLocker(data: LockerUpdatePayload) {
 
 async function deleteLocker(id: number) {
   return await http.delete<LockerDeletionResponse>(`lockers/${id}`)
+}
+
+async function fetchLockersWithcolors() {
+  return await http.get<LockerRoomsWithColors[]>('locker_with_colors')
 }
 
 async function deleteProducts(product_ids: number[], locker_id: number) {
@@ -118,6 +123,7 @@ export default {
   createLocker,
   deleteLocker,
   fetchLockerAssets,
+  fetchLockersWithcolors,
   //  Product endpoints
   deleteProducts,
   copyProducts,

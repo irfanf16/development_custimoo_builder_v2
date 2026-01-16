@@ -9,6 +9,12 @@ export interface LockerResponse<T> {
   success: boolean
 }
 
+export interface LockerRoomsWithColors {
+  id: number
+  room_name: string
+  folders: string[]
+}
+
 export interface LockerFetchResponse {
   locker: Locker
   collection: Collection2[]

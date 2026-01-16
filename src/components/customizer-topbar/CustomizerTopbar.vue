@@ -59,6 +59,7 @@
   import { base64ToFile, objectToFormData, uploadPresignedFiles } from '@/lib/utils'
   import type { ComponentPublicInstance } from 'vue'
   import { toast } from 'vue-sonner'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
@@ -74,6 +75,7 @@
   const { loadLockerProductIntoCustomizer } = useLoadLockerProductIntoCustomizer()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
   const { openSignInDialog, handleLogout } = useSignIn()
+  const lockerRoomStore = useLockerRoomStore()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
 
@@ -390,6 +392,9 @@
       console.error('Update locker product error:', error)
     }
   }
+  async function onLoginSuccess() {
+    await lockerRoomStore.fetchLockersWithcolors()
+  }
 </script>
 
 <template>
@@ -575,7 +580,7 @@
           </DropdownMenuItem>
         </DropdownMenuContent>
         <ProfileDialog :open="showProfileDialog" @update:open="showProfileDialog = $event" />
-        <SignInDialog />
+        <SignInDialog @success="onLoginSuccess" />
       </DropdownMenu>
     </ButtonGroup>
     <LockerBrowser
