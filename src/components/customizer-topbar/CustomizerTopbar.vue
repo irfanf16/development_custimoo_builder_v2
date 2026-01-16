@@ -22,7 +22,8 @@
     LayoutGrid,
     Fullscreen,
     Ruler,
-    X
+    X,
+    File
   } from 'lucide-vue-next'
   import {
     topbar_save,
@@ -49,6 +50,7 @@
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useProductsStore } from '@/stores/products/products.store'
+  import { useAppStore } from '@/stores/app/app.store'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
   import { useLoadLockerProductIntoCustomizer } from '@/composables/useLoadLockerProductIntoCustomizer.ts'
@@ -56,7 +58,12 @@
   import { useBuildFactoryProduct } from '@/composables/useBuildFactoryProduct'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { useSceneStore } from '@/stores/scene/scene.store'
-  import { base64ToFile, objectToFormData, uploadPresignedFiles } from '@/lib/utils'
+  import {
+    base64ToFile,
+    generateRandomString,
+    objectToFormData,
+    uploadPresignedFiles
+  } from '@/lib/utils'
   import type { ComponentPublicInstance } from 'vue'
   import { toast } from 'vue-sonner'
 
@@ -65,6 +72,7 @@
   const authStore = useAuthStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
+  const appStore = useAppStore()
   const history = useHistoryStore()
   const workflowStore = useWorkflowStore()
   const cartStore = useCartStore()
@@ -95,6 +103,113 @@
     if (ok) {
       customizationStore.clearCustomization()
       history.clear()
+    }
+  }
+
+  function getShareBaseUrl() {
+    if (typeof window === 'undefined') return ''
+    const origin = window.location.origin
+    if (!appStore.appInfo?.is_subpage) return origin
+    const subpageUrl = appStore.appInfo?.suppage_url ?? ''
+    if (!subpageUrl) return origin
+    const normalizedSubpage = `/${subpageUrl.replace(/^\/+/, '').replace(/\/+$/, '')}`
+    return `${origin}${normalizedSubpage}`
+  }
+
+  function normalizeImageValue(value: unknown) {
+    if (typeof value !== 'string') return ''
+    if (!value) return ''
+    if (value.startsWith('data:image')) return value
+    if (value.startsWith('http://') || value.startsWith('https://')) return value
+    if (!storageUrl) return value
+    const base = storageUrl.replace(/\/+$/, '')
+    const path = value.replace(/^\/+/, '')
+    return `${base}/${path}`
+  }
+
+  function downloadPdfFile(base64: string, filename: string) {
+    if (typeof window === 'undefined') return
+    const cleanBase64 = base64.includes(',') ? (base64.split(',')[1] ?? '') : base64
+    if (!cleanBase64) return
+
+    const binaryString = window.atob(cleanBase64)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i += 1) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+
+    const blob = new Blob([bytes], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = filename || 'customizer.pdf'
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  async function handleGeneratePDF() {
+    const randomString = generateRandomString()
+    const toastId = toast.loading('Please wait your PDF is being generated', {
+      position: 'top-right',
+      richColors: true,
+      duration: Infinity
+    })
+
+    try {
+      const { factory_product } = await buildFactoryProductPayload()
+      const resolvedFrontImage = normalizeImageValue(factory_product.front_image)
+      const resolvedBackImage = normalizeImageValue(factory_product.back_image)
+
+      if (!resolvedBackImage) {
+        toast.error('Missing back image for PDF generation', {
+          id: toastId,
+          position: 'top-right',
+          richColors: true
+        })
+        return
+      }
+
+      const factoryProductPayload = {
+        ...factory_product,
+        front_image: resolvedFrontImage,
+        back_image: resolvedBackImage
+      }
+      const productDisplayName =
+        (factoryProductPayload as { display_name?: string }).display_name ||
+        productsStore.activeProductDetails?.display_name ||
+        ''
+      const encodedName = encodeURIComponent(productDisplayName).replace(/%20/g, '+')
+      const shared_url = `${getShareBaseUrl()}/share/${encodedName}/${randomString}`
+
+      const response = await productsStore.generatePDF({
+        factory_product: [factoryProductPayload],
+        shared_url
+      })
+
+      if (response.success && response.content?.pdf) {
+        downloadPdfFile(response.content.pdf, response.content.name)
+        toast.success('PDF generated successfully! Downloading...', {
+          id: toastId,
+          position: 'top-right',
+          richColors: true,
+          duration: 4000
+        })
+      } else {
+        toast.error('Something went wrong', {
+          id: toastId,
+          position: 'top-right',
+          richColors: true
+        })
+      }
+    } catch (error) {
+      toast.error('Something went wrong', {
+        id: toastId,
+        position: 'top-right',
+        richColors: true
+      })
+      console.error('Generate PDF error:', error)
     }
   }
 
@@ -484,6 +599,14 @@
         >
           <Ruler class="size-4" />
           <span>Size Guide</span>
+        </Button>
+      </ButtonGroup>
+
+      <!-- Generate PDF Button -->
+      <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
+        <Button variant="outline" size="default" @click="handleGeneratePDF">
+          <File class="size-4" />
+          <span>Generate PDF</span>
         </Button>
       </ButtonGroup>
 

@@ -9,7 +9,9 @@ import {
   type OutputDesignPreviewBack,
   type OutputStylePreviewFront,
   type OutputDesignDetails,
-  type ActiveStyleDetails
+  type ActiveStyleDetails,
+  type GeneratePdfPayload,
+  type GeneratePdfResponse
 } from '@/services/products/types'
 // import type { OutputRecentLogo } from '@/services/products/types'
 
@@ -62,6 +64,10 @@ async function downloadRosterTemplate(productId: number) {
   })
 }
 
+async function generatePDF(payload: GeneratePdfPayload) {
+  return await http.post<GeneratePdfResponse>('generate-pdf', payload)
+}
+
 export default {
   getProductCategories,
   getActiveProductDetails,
@@ -70,5 +76,6 @@ export default {
   getStylePreviewsByProduct,
   getActiveStyleDetails,
   getDesignDetailsById,
-  downloadRosterTemplate
+  downloadRosterTemplate,
+  generatePDF
 }

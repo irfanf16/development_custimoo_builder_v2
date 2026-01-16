@@ -11,7 +11,9 @@ import type {
   OutputRecentLogo,
   OutputProductDetails,
   OutputSvgGroupColor,
-  OutputDesignPreviewFront
+  OutputDesignPreviewFront,
+  GeneratePdfPayload,
+  GeneratePdfResponse
 } from '@/services/products/types'
 import { API } from '../../services'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
@@ -388,6 +390,21 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
+  async function generatePDF(
+    payload: GeneratePdfPayload
+  ): Promise<APIResponse<GeneratePdfResponse>> {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.generatePDF(payload), {
+      operation: 'generatePDF'
+    })
+    if (!resp.success) {
+      setError('Error generating PDF')
+    }
+    setLoading(false)
+    return resp
+  }
+
   // Centralized fetch orchestration reacting to customization selections
   watch(
     [
@@ -490,6 +507,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     fetchProductDetailsAndDesignsForProductPreview,
     fetchDesignPreviewsByStyleId,
     fetchDesignDetailsById,
+    generatePDF,
     suspendCustomizationAutoSync,
     resumeCustomizationAutoSync
   }
