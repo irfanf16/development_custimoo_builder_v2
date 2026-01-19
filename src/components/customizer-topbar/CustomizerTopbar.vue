@@ -66,6 +66,7 @@
   } from '@/lib/utils'
   import type { ComponentPublicInstance } from 'vue'
   import { toast } from 'vue-sonner'
+  import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
@@ -81,6 +82,7 @@
   const { menuItems, goTo } = useCustomizerMenu()
   const { loadLockerProductIntoCustomizer } = useLoadLockerProductIntoCustomizer()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
+  const { rosterEntries, ensureEditableRoster } = useRoster()
   const { openSignInDialog, handleLogout } = useSignIn()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
@@ -248,6 +250,49 @@
 
   async function handleAddToCart() {
     try {
+      // Check roster quantities before adding to cart
+      const totalQuantity = rosterEntries.value.reduce(
+        (sum, entry) => sum + (entry.quantity || 0),
+        0
+      )
+
+      if (totalQuantity === 0) {
+        toast.error('Please add roster entries with quantities before adding to cart', {
+          position: 'top-right',
+          richColors: true
+        })
+
+        // Navigate to roster step and open edit mode
+        const visibleSteps = menuItems.value.map(i => i.step)
+        if (visibleSteps.includes('roster')) {
+          await goTo('roster')
+          await ensureEditableRoster()
+        } else {
+          // If roster step is not available, go to the next available step
+          const order: CustomizerStep[] = [
+            'product',
+            'designs',
+            'styles',
+            'logos',
+            'colors',
+            'patterns',
+            'texts',
+            'roster',
+            'summary'
+          ]
+          const rosterIndex = order.indexOf('roster')
+          const fallbackStart = rosterIndex >= 0 ? rosterIndex + 1 : 0
+          for (let i = fallbackStart; i < order.length; i += 1) {
+            const candidate = order[i]
+            if (candidate && visibleSteps.includes(candidate)) {
+              await goTo(candidate)
+              break
+            }
+          }
+        }
+        return
+      }
+
       const { factory_product, product_assets } = await buildFactoryProductPayload()
 
       await cartStore.addProductToCart({
@@ -529,14 +574,14 @@
           </Button>
         </ButtonGroup>
         <!-- Save Button Group with DropdownMenu -->
-        <template v-if="cartStore.isEditingCartProduct">
+        <template v-if="cartStore.isEditingCartProduct && isLoggedIn">
           <!-- Simple Update Button when editing cart product -->
           <Button variant="outline" size="default" @click="handleUpdateCartProduct">
             <Save class="size-4" />
             <span>Update</span>
           </Button>
         </template>
-        <template v-else-if="lockerRoomStore.isEditingLockerProduct">
+        <template v-else-if="lockerRoomStore.isEditingLockerProduct && isLoggedIn">
           <!-- Update and Cancel buttons when editing locker product -->
           <ButtonGroup>
             <Button variant="outline" size="default" @click="handleCancelLockerProductEdit">
