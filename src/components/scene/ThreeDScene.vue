@@ -21,6 +21,7 @@
   import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
   import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
   import { Canvas, FabricImage, Group, type FabricObject } from 'fabric'
+  import * as fabric from 'fabric'
   import type { CustomLogo } from '@/services/logos/types'
   import {
     useSceneCommon,
@@ -257,13 +258,23 @@
   const onClickPosition = shallowRef<THREE.Vector2>(new THREE.Vector2())
   const mouse = shallowRef<THREE.Vector2>(new THREE.Vector2())
   const sceneLoadPromise = shallowRef<Promise<void> | null>(null)
+  const pointerPatched = ref(false)
+  const pointerBridgeHandlers = shallowRef<{
+    mousedown?: (e: MouseEvent) => void
+    mouseup?: (e: MouseEvent) => void
+    touchstart?: (e: TouchEvent) => void
+    touchend?: (e: TouchEvent) => void
+  }>({})
+  const isFabricDrag = ref(false)
 
   // ===== LIFECYCLE =====
   onMounted(async () => {
     await initThreeJS()
+    addGetPointerToFabricPrototype()
   })
 
   onBeforeUnmount(() => {
+    removeGetPointerFromFabricPrototype()
     cleanup()
   })
 
@@ -273,6 +284,323 @@
    */
   async function cloneFabricObjects(objects: FabricObject[]): Promise<FabricObject[]> {
     return await Promise.all(objects.map(o => o.clone()))
+  }
+
+  /**
+   * Patch Fabric's getPointer to keep compatibility with legacy behavior (touch/mouse normalization)
+   * Stores the original implementation and restores it on unmount.
+   * Also maps pointer coords via the 3D scene (matches old ThreeDScene.vue logic).
+   */
+  function addGetPointerToFabricPrototype() {
+    if (pointerPatched.value) return
+    if (!Canvas || !(Canvas as unknown as { prototype?: unknown }).prototype) return
+    const proto = (Canvas as unknown as { prototype: { getPointer: unknown } }).prototype
+    if (!proto.getPointer) return
+    const getPointerPositionFromScene = (evt: Event) => {
+      if (!rendererEl.value || !scene.value || !camera.value) return null
+      const touch = (evt as TouchEvent).changedTouches?.[0]
+      const cx = touch?.clientX ?? (evt as MouseEvent).clientX
+      const cy = touch?.clientY ?? (evt as MouseEvent).clientY
+      if (typeof cx !== 'number' || typeof cy !== 'number') return null
+      const array = getMousePosition(rendererEl.value, cx, cy, true)
+      onClickPosition.value.fromArray(array)
+      const intersects = getIntersects(onClickPosition.value, scene.value.children, camera.value)
+      if (intersects.length > 0 && intersects[0]?.uv) {
+        const uv = intersects[0].uv
+        const mesh = intersects[0]?.object as THREE.Mesh | undefined
+        if (mesh) {
+          const material = mesh.material
+          if (material && !Array.isArray(material) && 'map' in material && material.map) {
+            if (typeof (material.map as THREE.Texture).transformUv === 'function') {
+              ;(material.map as THREE.Texture).transformUv(uv)
+            }
+          }
+        }
+        return {
+          x: getRealPosition('x', uv.x),
+          y: getRealPosition('y', uv.y)
+        }
+      }
+      return null
+    }
+
+    proto.getPointer = function (this: Canvas, e: Event, ignoreZoom?: boolean) {
+      // return cached values if we are in the event processing chain
+      if (this._absolutePointer && !ignoreZoom) {
+        return this._absolutePointer
+      }
+      if (this._pointer && ignoreZoom) {
+        return this._pointer
+      }
+
+      const upperCanvasEl = (this as unknown as { upperCanvasEl?: HTMLCanvasElement }).upperCanvasEl
+      const getPointerFn = fabric.util.getPointer as unknown as (
+        evt: MouseEvent,
+        target?: HTMLElement
+      ) => { x: number; y: number }
+      let pointerObj = getPointerFn(
+        e as unknown as MouseEvent,
+        upperCanvasEl as unknown as HTMLElement
+      )
+      let pointer = new fabric.Point(pointerObj.x, pointerObj.y)
+
+      const posOnScene = getPointerPositionFromScene(e)
+      if (posOnScene) {
+        pointer = new fabric.Point(posOnScene.x, posOnScene.y)
+      }
+
+      // mimic legacy scaling logic
+      const bounds = upperCanvasEl?.getBoundingClientRect()
+      let boundsWidth = bounds?.width || 0
+      let boundsHeight = bounds?.height || 0
+      if (!boundsWidth || !boundsHeight) {
+        if (bounds && 'top' in bounds && 'bottom' in bounds) {
+          boundsHeight = Math.abs(bounds.top - bounds.bottom)
+        }
+        if (bounds && 'right' in bounds && 'left' in bounds) {
+          boundsWidth = Math.abs(bounds.right - bounds.left)
+        }
+      }
+
+      // this.calcOffset() // seems to be not needed
+      // pointer.x = pointer.x - this._offset.left
+      // pointer.y = pointer.y - this._offset.top
+
+      if (!ignoreZoom) {
+        const restored = (
+          this as unknown as { restorePointerVpt?: (p: fabric.Point) => fabric.Point }
+        ).restorePointerVpt?.(pointer)
+        if (restored) {
+          pointer = restored
+        }
+      }
+
+      let cssScale
+      if (boundsWidth === 0 || boundsHeight === 0) {
+        cssScale = { width: 1, height: 1 }
+      } else {
+        cssScale = {
+          width: upperCanvasEl ? upperCanvasEl.width / boundsWidth : 1,
+          height: upperCanvasEl ? upperCanvasEl.height / boundsHeight : 1
+        }
+      }
+
+      return new fabric.Point(pointer.x * cssScale.width, pointer.y * cssScale.height)
+    }
+
+    // Bridge events from Three.js renderer to Fabric upper canvas (legacy behavior)
+    if (rendererEl.value && canvas.value && !pointerBridgeHandlers.value.mousedown) {
+      const upperCanvas = (canvas.value as unknown as { upperCanvasEl?: HTMLCanvasElement })
+        .upperCanvasEl
+      if (upperCanvas) {
+        const cloneMouseEvent = (type: string, source: MouseEvent) =>
+          new MouseEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            clientX: source.clientX,
+            clientY: source.clientY,
+            screenX: source.screenX,
+            screenY: source.screenY,
+            button: source.button,
+            buttons: source.buttons,
+            ctrlKey: source.ctrlKey,
+            shiftKey: source.shiftKey,
+            altKey: source.altKey,
+            metaKey: source.metaKey
+          })
+
+        const forwardMouse = (type: 'mousedown' | 'mouseup', ev: MouseEvent) => {
+          const fabricCanvas = canvas.value as unknown as Canvas
+          // use event-based target search (Fabric v6)
+          const target = fabricCanvas.findTarget(ev as unknown as PointerEvent)
+          if (target) {
+            isFabricDrag.value = type === 'mousedown'
+            if (controls.value) controls.value.enabled = false
+            ev.preventDefault()
+            ev.stopPropagation()
+          } else if (type === 'mousedown') {
+            isFabricDrag.value = false
+            if (controls.value) controls.value.enabled = true
+          }
+
+          const evt = cloneMouseEvent(type, ev)
+          upperCanvas.dispatchEvent(evt)
+          const handler =
+            type === 'mousedown'
+              ? (
+                  fabricCanvas as unknown as { _onMouseDown?: (e: MouseEvent) => void }
+                )?._onMouseDown?.bind(fabricCanvas)
+              : (
+                  fabricCanvas as unknown as { _onMouseUp?: (e: MouseEvent) => void }
+                )?._onMouseUp?.bind(fabricCanvas)
+          handler?.(evt)
+
+          if (type === 'mouseup' && controls.value) {
+            controls.value.enabled = true
+            isFabricDrag.value = false
+          }
+        }
+
+        const forwardTouch = (type: 'touchstart' | 'touchend', ev: TouchEvent) => {
+          const touch = ev.changedTouches?.[0]
+          if (!touch) return
+          const evt = new MouseEvent(type === 'touchstart' ? 'mousedown' : 'mouseup', {
+            bubbles: true,
+            cancelable: true,
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            screenX: touch.screenX ?? touch.clientX,
+            screenY: touch.screenY ?? touch.clientY,
+            button: 0,
+            buttons: 1
+          })
+
+          const fabricCanvas = canvas.value as unknown as Canvas
+          // use event-based target search (Fabric v6)
+          const target = fabricCanvas.findTarget(evt as unknown as TouchEvent)
+          if (target) {
+            isFabricDrag.value = type === 'touchstart'
+            if (controls.value) controls.value.enabled = false
+            ev.preventDefault()
+            ev.stopPropagation()
+          } else if (type === 'touchstart') {
+            isFabricDrag.value = false
+            if (controls.value) controls.value.enabled = true
+          }
+
+          upperCanvas.dispatchEvent(evt)
+          const handler =
+            type === 'touchstart'
+              ? (
+                  fabricCanvas as unknown as { _onMouseDown?: (e: MouseEvent) => void }
+                )?._onMouseDown?.bind(fabricCanvas)
+              : (
+                  fabricCanvas as unknown as { _onMouseUp?: (e: MouseEvent) => void }
+                )?._onMouseUp?.bind(fabricCanvas)
+          handler?.(evt)
+
+          if (type === 'touchend' && controls.value) {
+            controls.value.enabled = true
+            isFabricDrag.value = false
+          }
+        }
+
+        const handlers = {
+          mousedown: (ev: MouseEvent) => forwardMouse('mousedown', ev),
+          mouseup: (ev: MouseEvent) => forwardMouse('mouseup', ev),
+          touchstart: (ev: TouchEvent) => forwardTouch('touchstart', ev),
+          touchend: (ev: TouchEvent) => forwardTouch('touchend', ev)
+        }
+
+        rendererEl.value.addEventListener('mousedown', handlers.mousedown)
+        rendererEl.value.addEventListener('mouseup', handlers.mouseup)
+        rendererEl.value.addEventListener('touchstart', handlers.touchstart, { passive: false })
+        rendererEl.value.addEventListener('touchend', handlers.touchend, { passive: false })
+
+        pointerBridgeHandlers.value = handlers
+      }
+    }
+
+    pointerPatched.value = true
+  }
+
+  function removeGetPointerFromFabricPrototype() {
+    // also tear down bridge listeners
+    removePointerBridge()
+
+    // Restore Fabric's getPointer similar to legacy implementation
+    const canvasCtor = Canvas as unknown as { prototype?: unknown }
+    if (canvasCtor?.prototype) {
+      const proto = canvasCtor.prototype as unknown as {
+        getPointer: (this: Canvas, e: Event, ignoreZoom?: boolean) => { x: number; y: number }
+      }
+
+      proto.getPointer = function (this: Canvas, e: Event, ignoreZoom?: boolean) {
+        // return cached values if we are in the event processing chain
+        if (
+          (this as unknown as { _absolutePointer?: fabric.Point })._absolutePointer &&
+          !ignoreZoom
+        ) {
+          return (this as unknown as { _absolutePointer: fabric.Point })._absolutePointer
+        }
+        if ((this as unknown as { _pointer?: fabric.Point })._pointer && ignoreZoom) {
+          return (this as unknown as { _pointer: fabric.Point })._pointer
+        }
+
+        const upperCanvasEl = (this as unknown as { upperCanvasEl: HTMLCanvasElement })
+          .upperCanvasEl
+        let pointer = (
+          fabric.util.getPointer as unknown as (
+            evt: Event,
+            target?: HTMLElement
+          ) => { x: number; y: number }
+        )(e, upperCanvasEl)
+        const bounds = upperCanvasEl.getBoundingClientRect()
+        let boundsWidth = bounds.width || 0
+        let boundsHeight = bounds.height || 0
+        let cssScale
+
+        if (!boundsWidth || !boundsHeight) {
+          if ('top' in bounds && 'bottom' in bounds) {
+            boundsHeight = Math.abs(bounds.top - bounds.bottom)
+          }
+          if ('right' in bounds && 'left' in bounds) {
+            boundsWidth = Math.abs(bounds.right - bounds.left)
+          }
+        }
+
+        ;(this as unknown as { calcOffset?: () => void }).calcOffset?.()
+        pointer = {
+          x: pointer.x - (this as unknown as { _offset: { left: number } })._offset.left,
+          y: pointer.y - (this as unknown as { _offset: { top: number } })._offset.top
+        }
+
+        if (!ignoreZoom) {
+          const restored = (
+            this as unknown as {
+              restorePointerVpt?: (p: { x: number; y: number }) => { x: number; y: number }
+            }
+          ).restorePointerVpt?.(pointer)
+          if (restored) {
+            pointer = restored
+          }
+        }
+
+        const retinaScaling =
+          (this as unknown as { getRetinaScaling?: () => number }).getRetinaScaling?.() ?? 1
+        if (retinaScaling !== 1) {
+          pointer = { x: pointer.x / retinaScaling, y: pointer.y / retinaScaling }
+        }
+
+        if (boundsWidth === 0 || boundsHeight === 0) {
+          // If bounds are not available (i.e. not visible), do not apply scale.
+          cssScale = { width: 1, height: 1 }
+        } else {
+          cssScale = {
+            width: upperCanvasEl.width / boundsWidth,
+            height: upperCanvasEl.height / boundsHeight
+          }
+        }
+
+        return new fabric.Point(pointer.x * cssScale.width, pointer.y * cssScale.height)
+      }
+    }
+
+    pointerPatched.value = false
+  }
+
+  function removePointerBridge() {
+    if (!rendererEl.value) return
+    const handlers = pointerBridgeHandlers.value
+    if (handlers.mousedown) rendererEl.value.removeEventListener('mousedown', handlers.mousedown)
+    if (handlers.mouseup) rendererEl.value.removeEventListener('mouseup', handlers.mouseup)
+    if (handlers.touchstart)
+      rendererEl.value.removeEventListener('touchstart', handlers.touchstart as EventListener)
+    if (handlers.touchend)
+      rendererEl.value.removeEventListener('touchend', handlers.touchend as EventListener)
+    if (controls.value) controls.value.enabled = true
+    isFabricDrag.value = false
+    pointerBridgeHandlers.value = {}
   }
 
   /**
