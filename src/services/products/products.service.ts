@@ -22,14 +22,29 @@ async function getProductCategories(params: GetProductCategoriesParams) {
 }
 
 // Fetch full details for the active product
-async function getActiveProductDetails(productId: number) {
-  return await http.get<ActiveProductDetails>(`product/${productId}`)
+async function getActiveProductDetails(productId: number, hasSyncId: boolean = false) {
+  const params = { has_sync_id: false }
+  if (hasSyncId) {
+    params.has_sync_id = true
+  }
+  return await http.get<ActiveProductDetails>(`product/${productId}`, { params })
 }
 
 // Fetch lightweight previews for all products in a category
-async function getProductPreviewsByCategory(categoryId: number | null, subcategoryId?: number) {
+async function getProductPreviewsByCategory(
+  categoryId: number | null,
+  subcategoryId?: number,
+  syncId?: number
+) {
+  const params: { category_id: number | null; sub_category_id: number | null; sync_id?: number } = {
+    category_id: categoryId,
+    sub_category_id: subcategoryId ?? null
+  }
+  if (syncId) {
+    params.sync_id = syncId
+  }
   return await http.get<ProductPreviewItem[]>(`product/previews`, {
-    params: { category_id: categoryId, sub_category_id: subcategoryId ?? null }
+    params
   })
 }
 

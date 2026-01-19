@@ -505,6 +505,7 @@ export function useLoadCartProductIntoCustomizer() {
 
   async function loadCartProductIntoCustomizer(
     factoryProductId: string,
+    cartItemId: number | null = null,
     fallbackFactoryProduct?: FactoryProduct
   ): Promise<boolean> {
     const productsStore = useProductsStore()
@@ -515,27 +516,28 @@ export function useLoadCartProductIntoCustomizer() {
     productsStore.suspendCustomizationAutoSync()
     try {
       // Find the cart item ID from cart
-      let cartItemId: number | null = null
+      let cart_item_id: number | null = cartItemId
       let factoryProduct: FactoryProduct | null = null
-
-      if (cartStore.cart?.items) {
-        for (const item of cartStore.cart.items) {
-          const found = item.factory_products.find(fp => fp.id === factoryProductId)
-          if (found) {
-            cartItemId = item.id
-            factoryProduct = found
-            break
+      if (!cart_item_id) {
+        if (cartStore.cart?.items) {
+          for (const item of cartStore.cart.items) {
+            const found = item.factory_products.find(fp => fp.id === factoryProductId)
+            if (found) {
+              cart_item_id = item.id
+              factoryProduct = found
+              break
+            }
           }
         }
       }
 
-      // If we have cartItemId, fetch the product details from API
-      if (cartItemId) {
+      // If we have cart_item_id, fetch the product details from API
+      if (cart_item_id) {
         const resp = await tryCatchApi(
-          API.cart.getCartProductDetails(cartItemId, factoryProductId),
+          API.cart.getCartProductDetails(cart_item_id, factoryProductId),
           {
             operation: 'loadCartProductIntoCustomizer',
-            cart_item_id: cartItemId,
+            cart_item_id: cart_item_id,
             factory_product_id: factoryProductId
           }
         )
@@ -552,14 +554,14 @@ export function useLoadCartProductIntoCustomizer() {
           if (resolvedProduct) {
             factoryProduct = resolvedProduct
             // Set editing state
-            cartStore.setEditingCartProduct(cartItemId, factoryProductId)
+            cartStore.setEditingCartProduct(cart_item_id, factoryProductId)
           } else if (factoryProduct) {
             // If resolution failed but we have the product from cart, use it and set editing state
-            cartStore.setEditingCartProduct(cartItemId, factoryProductId)
+            cartStore.setEditingCartProduct(cart_item_id, factoryProductId)
           }
         } else if (factoryProduct) {
           // If API call failed but we have the product from cart, use it and set editing state
-          cartStore.setEditingCartProduct(cartItemId, factoryProductId)
+          cartStore.setEditingCartProduct(cart_item_id, factoryProductId)
         }
       }
 

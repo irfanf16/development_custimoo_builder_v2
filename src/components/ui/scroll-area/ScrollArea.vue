@@ -8,8 +8,6 @@
   import { computed } from 'vue'
   type Direction = 'vertical' | 'horizontal' | 'both'
 
-
-
   const props = withDefaults(
     defineProps<
       ScrollAreaRootProps & {
@@ -61,7 +59,7 @@
     <!-- Keep scrollbar mounted to avoid DOM childList mutations on hover/scroll.
          In Shadow DOM, Reka's FocusScope may treat such mutations as "focused node removed"
          and focus the dialog container, which blurs inputs. -->
-    <ScrollBar v-if="props.direction !== 'both'" :orientation="props.direction" force-mount/>
+    <ScrollBar v-if="props.direction !== 'both'" :orientation="props.direction" force-mount />
 
     <!-- If both, show both scrollbars -->
     <template v-else>

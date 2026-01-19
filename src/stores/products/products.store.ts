@@ -20,6 +20,7 @@ import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
 import { useCustomizationStore } from '../customization/customization.store'
 import type { CanvasSide } from '../workflow/workflow.store.types'
+import { useQueryParams } from '@/composables/useQueryParams'
 export const useProductsStore = defineStore('productsStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
@@ -179,6 +180,10 @@ export const useProductsStore = defineStore('productsStore', () => {
       personalized: true,
       private: false
     }
+    const { syncId, hasSyncId } = useQueryParams()
+    if (hasSyncId.value) {
+      queryParams.sync_id = syncId.value
+    }
     const output = await tryCatchApi(API.products.getProductCategories(queryParams), {
       operation: 'fetchCustomizedCategories'
     })
@@ -201,8 +206,14 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchProductPreviews(categoryId: number | null, subcategoryId?: number) {
     setLoading(true)
     setError(null)
+    const { syncId } = useQueryParams()
+
     const resp = await tryCatchApi(
-      API.products.getProductPreviewsByCategory(categoryId ?? null, subcategoryId ?? undefined),
+      API.products.getProductPreviewsByCategory(
+        categoryId ?? null,
+        subcategoryId ?? undefined,
+        syncId.value
+      ),
       {
         operation: 'fetchProductPreviews',
         category_id: categoryId,
@@ -255,10 +266,10 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  async function fetchActiveProductDetails(productId: number) {
+  async function fetchActiveProductDetails(productId: number, hasSyncId: boolean = false) {
     setLoading(true)
     setError(null)
-    const result = await tryCatchApi(API.products.getActiveProductDetails(productId), {
+    const result = await tryCatchApi(API.products.getActiveProductDetails(productId, hasSyncId), {
       operation: 'fetchActiveProductDetails',
       product_id: productId
     })
