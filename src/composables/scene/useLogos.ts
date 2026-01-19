@@ -185,6 +185,10 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     // Calculate position
     const position = await Promise.resolve(calculatePosition(logo))
 
+    if (is_3d) {
+      console.log('3D position', position)
+    }
+
     // Calculate rotation
     const rotation = calculateRotation(logo.rotation)
 
