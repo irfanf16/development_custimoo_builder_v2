@@ -6,6 +6,9 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useCartStore } from '@/stores/cart/cart.store'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { confirmDialog } from '@/lib/confirm-dialog'
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
   import type { OutputDesignDetails } from '@/services/products/types'
@@ -25,6 +28,8 @@
   const workflowStore = useWorkflowStore()
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
+  const cartStore = useCartStore()
+  const lockerRoomStore = useLockerRoomStore()
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeProductId: selectedProductId } = storeToRefs(customizationStore)
@@ -67,6 +72,39 @@
 
   async function handleSelectProduct(productId: number) {
     try {
+      // Check if we're editing a cart or locker product
+      const isEditingCartProduct = cartStore.isEditingCartProduct
+      const isEditingLockerProduct = lockerRoomStore.isEditingLockerProduct
+
+      if (isEditingCartProduct || isEditingLockerProduct) {
+        // Check if trying to change to a different product
+        const currentProductId = customizationStore.activeProductId
+        if (currentProductId && currentProductId !== productId) {
+          const confirmed = await confirmDialog({
+            title: 'Leave Editing Mode?',
+            description:
+              'You are currently editing a product. Changing the product will exit editing mode. Do you want to continue?',
+            confirmText: 'Leave Editing',
+            cancelText: 'Cancel'
+          })
+
+          if (!confirmed) {
+            return
+          }
+
+          // Clear editing state
+          if (isEditingCartProduct) {
+            cartStore.clearEditingCartProduct()
+          }
+          if (isEditingLockerProduct) {
+            lockerRoomStore.clearEditingLockerProduct()
+          }
+        } else {
+          // Same product, allow selection
+          return
+        }
+      }
+
       // Commit the selected category/subcategory at the moment the product is chosen
       workflowStore.commitSelectedCategory()
       workflowStore.commitSelectedSubCategory()
