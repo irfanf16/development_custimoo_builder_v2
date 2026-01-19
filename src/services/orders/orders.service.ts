@@ -83,6 +83,14 @@ async function rejectQuote(orderId: number | string) {
   })
 }
 
+async function placeOrder(payload: {
+  address_id: number
+  customer_reference_no: string
+  general_comments: string
+}) {
+  return http.post('/order', payload)
+}
+
 export default {
   getOrders,
   cancelOrder,
@@ -94,5 +102,6 @@ export default {
   sendThirdPartyApproval,
   getDesignFileUrl,
   acceptQuote,
-  rejectQuote
+  rejectQuote,
+  placeOrder
 }

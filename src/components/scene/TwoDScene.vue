@@ -6,6 +6,7 @@
     watch,
     nextTick,
     getCurrentInstance,
+    ref,
     type Ref,
     type ComponentPublicInstance,
     shallowRef
@@ -25,7 +26,8 @@
     deleteLogoFromCanvas,
     syncLogosOnCanvas,
     getLogoSignature,
-    getLogoSignatureUrlSide
+    getLogoSignatureUrlSide,
+    suppressCustomLogosWatch
   } from '@/composables/scene'
   import type { CustomLogo } from '@/services/logos/types'
   import {
@@ -48,6 +50,7 @@
   const safeZone = shallowRef<Group | null>(null)
   const boundary = shallowRef<Group | null>(null)
   const placementRect = shallowRef<FabricObject | null>(null)
+  const mounted = ref(false)
 
   // Model type based on style preview structure
   type ModelData = {
@@ -289,7 +292,8 @@
 
     // Ensure canvas is initialized before loading scene
     if (canvas.value) {
-      loadScene()
+      await loadScene()
+      mounted.value = true
     }
   })
 
@@ -733,22 +737,6 @@
       }
     }
 
-    // Update store (placeholder for now - can be extended)
-    const updateStore = (
-      _logoIndex: number,
-      _data: {
-        x_axis_3d?: number
-        y_axis_3d?: number
-        originalWidth?: number
-        originalHeight?: number
-        actualWidth?: number
-        actualHeight?: number
-      }
-    ) => {
-      // TODO: Update customization store with logo position/size
-      // This can be implemented when store methods are available
-    }
-
     try {
       await addLogoToCanvas({
         logo,
@@ -764,7 +752,6 @@
         calculateScaleRatios: calculateScaleRatios2D,
         applyClipPath,
         renderCanvas,
-        updateStore,
         canvasSelection: true,
         flipX: false
       })
@@ -874,7 +861,12 @@
   watch(
     customLogos,
     async (newLogos = []) => {
+      if (suppressCustomLogosWatch.value) {
+        suppressCustomLogosWatch.value = false
+        return
+      }
       if (isPlacementMode.value) return
+      if (!mounted.value) return
       await syncLogosOnCanvas({
         newLogos,
         canvas: canvas.value,

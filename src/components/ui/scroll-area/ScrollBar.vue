@@ -26,7 +26,7 @@
         // We toggle opacity via Reka's `data-state` attribute.
         'flex touch-none p-px transition-opacity select-none data-[state=hidden]:opacity-0 data-[state=hidden]:pointer-events-none data-[state=visible]:opacity-100',
         orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent',
-        orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
+        orientation === 'horizontal' && 'h-2 flex-col border-t border-t-transparent',
         props.class
       )
     "

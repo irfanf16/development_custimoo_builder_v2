@@ -390,6 +390,9 @@
       console.error('Update locker product error:', error)
     }
   }
+  async function onLoginSuccess() {
+    await lockerRoomStore.fetchLockersWithcolors()
+  }
 </script>
 
 <template>
@@ -575,7 +578,7 @@
           </DropdownMenuItem>
         </DropdownMenuContent>
         <ProfileDialog :open="showProfileDialog" @update:open="showProfileDialog = $event" />
-        <SignInDialog />
+        <SignInDialog @success="onLoginSuccess" />
       </DropdownMenu>
     </ButtonGroup>
     <LockerBrowser

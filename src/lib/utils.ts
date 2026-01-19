@@ -493,7 +493,7 @@ export function getColorType(
 
   // Check if product doesn't allow custom colors
   // Note: is_custom_color_allowed may not exist in all product types
-  const isCustomColorAllowed = (product as { is_custom_color_allowed?: number })
+  const isCustomColorAllowed = (product as unknown as { is_custom_color_allowed?: number })
     ?.is_custom_color_allowed
   if (product && isCustomColorAllowed === 0 && colorType === 'color_type') {
     return 'product_color'
