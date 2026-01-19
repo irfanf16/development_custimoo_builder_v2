@@ -14,6 +14,7 @@ import { toast } from 'vue-sonner'
 import { createEcommerceCartService, isEcommercePlatformSupported } from '@/services/ecommerce'
 import type { ProcessCartItemConfig } from '@/services/ecommerce/types'
 import { useCompanyStore } from '@/stores/company/company.store'
+import { useQueryParams } from '@/composables/useQueryParams'
 
 export const useCartStore = defineStore('cartStore', () => {
   // ===== DEPENDENCIES =====
@@ -264,7 +265,6 @@ export const useCartStore = defineStore('cartStore', () => {
         setSuccessMessage('Cart item updated successfully')
 
         const company = companyStore.company
-
         if (company && isEcommercePlatformSupported(company.platform) && payload.factory_product) {
           // Extract cart item data from result object
           const result = cartResponse.result
@@ -283,7 +283,18 @@ export const useCartStore = defineStore('cartStore', () => {
               safeStringify(resultWithCartData.back_image_url)
           }
 
-          await syncWithEcommercePlatform(payload.factory_product, custimooCartItem)
+          const { line, updateItem } = useQueryParams()
+          const productEditInfo = {
+            cart_product_info: {
+              ecommerce_cart_id: updateItem.value,
+              shopify_line_item: line.value
+            }
+          }
+          await syncWithEcommercePlatform(
+            payload.factory_product,
+            custimooCartItem,
+            productEditInfo
+          )
         }
         // Refresh cart to get updated state (force refresh)
         await fetchCart(true)

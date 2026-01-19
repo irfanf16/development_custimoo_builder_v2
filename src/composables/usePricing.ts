@@ -35,6 +35,13 @@ export const usePricing = () => {
     return null
   }
 
+  const getMinimumProductQuantityByDesign = (product: OutputProductDetails) => {
+    return product.sku?.minimum_order_quantity_type === 'by_design' &&
+      product.sku?.minimum_order_quantity > 0
+      ? product.sku?.minimum_order_quantity
+      : 1
+  }
+
   const minimumActiveProductQuantityByDesign = computed(() => {
     return activeProductDetails.value?.sku?.minimum_order_quantity_type === 'by_design' &&
       activeProductDetails.value?.sku?.minimum_order_quantity > 0
@@ -63,6 +70,7 @@ export const usePricing = () => {
     getProductPrice,
     activeProductPrice,
     minimumActiveProductQuantityByDesign,
-    showPricing
+    showPricing,
+    getMinimumProductQuantityByDesign
   }
 }

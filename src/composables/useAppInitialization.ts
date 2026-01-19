@@ -9,12 +9,14 @@ import { useHistoryStore } from '@/stores/history/history.store'
 import { useCategoryParams } from './useCategoryParams'
 import type { OutputDesignDetails } from '../services/products/types'
 import { useProfileStore } from '@/stores/profile/profile.store'
+import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
 import { useLocalStorage } from './useLocalStorage'
 import { useAppStore } from '@/stores/app/app.store'
 import { getCustomizerIframe } from '../lib/widgetUtils'
 import router from '../router'
 import { useCartStore } from '@/stores/cart/cart.store'
 import { useQueryParams } from '@/composables/useQueryParams'
+import { useLoadCartProductIntoCustomizer } from './useLoadCartProductIntoCustomizer'
 
 // ============================================================================
 // Global State Management
@@ -227,6 +229,7 @@ export function useAppInitialization() {
     const { productsStore, customizationStore } = context.stores
     const companyStore = useCompanyStore()
     const { hasSyncId } = useQueryParams()
+    const lockerRoomStore = useLockerRoomStore()
 
     const previousCompanyIdRaw = storage.getItemRaw(COMPANY_ID_STORAGE_KEY)
     const previousCompanyId = (() => {
@@ -255,6 +258,8 @@ export function useAppInitialization() {
     ])
 
     context.hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
+    // Fetch locker room with colors data
+    await lockerRoomStore.fetchLockersWithcolors()
 
     if (hasSyncId.value) {
       wf.setActiveStep('designs')
@@ -274,10 +279,14 @@ export function useAppInitialization() {
     context: InitializationContext,
     categoryInfo: CategoryInfo
   ): Promise<void> => {
-    const { hasSyncId } = useQueryParams()
+    const { hasSyncId, updateCart, updateItem } = useQueryParams()
     const { customizationStore, productsStore } = context.stores
-
+    const { loadCartProductIntoCustomizer } = useLoadCartProductIntoCustomizer()
     if (hasSyncId.value) {
+      if (updateCart.value && updateItem.value) {
+        await loadCartProductIntoCustomizer(String(updateItem.value), Number(updateCart.value))
+        return
+      }
       await createEcommerceCustomization(customizationStore, productsStore, categoryInfo)
       return
     }

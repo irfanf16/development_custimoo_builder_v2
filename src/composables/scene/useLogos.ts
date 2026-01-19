@@ -1,4 +1,4 @@
-import { type ShallowRef } from 'vue'
+import { type ShallowRef, ref } from 'vue'
 import {
   FabricImage,
   Object as FabricObjectClass,
@@ -9,6 +9,7 @@ import {
 import { useStorage } from './useStorage'
 import { useSceneCommon } from './useSceneCommon'
 import { FABRIC_CONTROL_VISIBILITY } from './useFabricControls'
+import { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { CustomLogo } from '@/services/logos/types'
 
 /** Build a full signature for a logo (used for diffing) */
@@ -29,6 +30,9 @@ export function getLogoSignature(logo: CustomLogo): string {
 export function getLogoSignatureUrlSide(logo: CustomLogo): string {
   return `${logo.url}|${logo.side}`
 }
+
+// Flag to suppress customLogos watchers when updates originate from canvas events
+export const suppressCustomLogosWatch = ref(false)
 
 /**
  * Options for positioning logo on canvas
@@ -72,24 +76,18 @@ export type AddLogoOptions = {
   applyClipPath?: (img: FabricImage) => void | Promise<void>
   /** Function to render canvas after adding logo */
   renderCanvas: () => void
-  /** Function to update store with logo position/size (optional) */
-  updateStore?: (
-    logoIndex: number,
-    data: {
-      x_axis_3d?: number
-      y_axis_3d?: number
-      originalWidth?: number
-      originalHeight?: number
-      actualWidth?: number
-      actualHeight?: number
-    }
-  ) => void
   /** Control visibility settings */
   controlVisibility?: typeof FABRIC_CONTROL_VISIBILITY
   /** Whether canvas selection is enabled */
   canvasSelection?: boolean
   /** Whether to flip logo horizontally (for 3D) */
   flipX?: boolean
+  /** Optional helper to map 3D interaction back to 2D screen coords */
+  findPositionOn2D?: (
+    x: number,
+    y: number,
+    fabricObject: FabricImage & { side?: string; type?: string }
+  ) => { vector: { x: number; y: number; z?: number }; sideChanged: boolean }
 }
 
 export type SyncLogosOptions = {
@@ -145,12 +143,14 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     calculateScaleRatios,
     applyClipPath,
     renderCanvas,
-    updateStore,
+    productId,
     controlVisibility = FABRIC_CONTROL_VISIBILITY,
     canvasSelection = true,
-    flipX = false
+    flipX = false,
+    findPositionOn2D
   } = options
 
+  const is_3d = !!flipX
   // Validate inputs
   if (!canvas || isLogoEmpty(logo)) {
     return Promise.resolve()
@@ -161,6 +161,8 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
 
   // Load image using common image load function
   return (async () => {
+    const customizationStore = useCustomizationStore()
+
     // Use common image loading function from useSceneCommon
     // Extract file extension from URL or default to 'png'
     const fileExtension = logo.url.split('.').pop()?.toLowerCase() || 'png'
@@ -215,7 +217,8 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
       hoverCursor: 'move',
       // metadata for matching
       signature,
-      signatureUrlSide
+      signatureUrlSide,
+      side: logo.side
     })
 
     // Apply scale if provided
@@ -245,18 +248,34 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     canvas.add(img as FabricObject)
 
     // Update store if main preview
-    if (mainPreview && updateStore) {
-      const convertedWidth = img.width && img.scaleX ? img.width * img.scaleX : 0
-      const convertedHeight = img.height && img.scaleY ? img.height * img.scaleY : 0
-
-      updateStore(logoIndex, {
-        x_axis_3d: position.x,
-        y_axis_3d: position.y,
-        originalWidth: convertedWidth,
-        originalHeight: convertedHeight,
-        actualWidth: img.width ?? 0,
-        actualHeight: img.height ?? 0
+    if (mainPreview) {
+      customizationStore.updateCustomLogo({
+        custom_logo_index: logoIndex,
+        productId: productId ?? logo.product_id ?? null,
+        data: {
+          scaleX: img.scaleX / widthRatio,
+          scaleY: img.scaleY / heightRatio,
+          ...(is_3d ? { x_axis_3d: position.x, y_axis_3d: position.y } : {}), // store 3D position in store for 3D only
+          originalWidth: img.width ?? 0, // here we need to calculate the width in cm/inch based on company settings
+          originalHeight: img.height ?? 0, // here we need to calculate the height in cm/inch based on company settings
+          actualWidth: img.width ?? 0,
+          actualHeight: img.height ?? 0
+        }
       })
+
+      img.on('modified', event =>
+        updateLogoPositionInStore({
+          img,
+          logoIndex,
+          logo,
+          productId,
+          calculateScaleRatios,
+          is_3d,
+          findPositionOn2D,
+          calculateRotation,
+          event
+        })
+      )
     }
 
     // Store reference in map
@@ -265,6 +284,83 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     // Render canvas
     renderCanvas()
   })()
+}
+
+export function updateLogoPositionInStore(options: {
+  img: FabricImage
+  logoIndex: number
+  logo: CustomLogo
+  productId?: number | null
+  calculateScaleRatios: () => { widthRatio: number; heightRatio: number }
+  is_3d: boolean
+  findPositionOn2D?: (
+    x: number,
+    y: number,
+    fabricObject: FabricImage & { side?: string; type?: string }
+  ) => { vector: { x: number; y: number; z?: number }; sideChanged: boolean }
+  calculateRotation: (rotation: number) => number
+  event?: unknown
+}): void {
+  const {
+    img,
+    logoIndex,
+    logo,
+    productId,
+    calculateScaleRatios,
+    is_3d,
+    findPositionOn2D,
+    calculateRotation,
+    event
+  } = options
+  const { widthRatio, heightRatio } = calculateScaleRatios()
+  const customizationStore = useCustomizationStore()
+
+  let left = img.left ?? 0
+  let top = img.top ?? 0
+  let x_axis_3d = 0
+  let y_axis_3d = 0
+
+  if (is_3d && findPositionOn2D && event) {
+    const pointer = (
+      event as { e?: { clientX?: number; clientY?: number; x?: number; y?: number } }
+    ).e
+    const px = pointer?.clientX ?? pointer?.x
+    const py = pointer?.clientY ?? pointer?.y
+    if (typeof px === 'number' && typeof py === 'number') {
+      const mapped = findPositionOn2D(px, py, img as FabricImage & { side?: string; type?: string })
+      if (mapped?.vector) {
+        left = mapped.vector.x ?? left
+        top = mapped.vector.y ?? top
+      }
+    }
+    x_axis_3d = img.left ?? 0
+    y_axis_3d = img.top ?? 0
+  }
+
+  const rotation = calculateRotation(img.angle) // to calculate the rereversed angle for 3D
+
+  suppressCustomLogosWatch.value = true
+  try {
+    customizationStore.updateCustomLogo({
+      custom_logo_index: logoIndex,
+      productId: productId ?? logo.product_id ?? null,
+      data: {
+        x_axis: left / widthRatio,
+        y_axis: top / heightRatio,
+        x_axis_3d: x_axis_3d,
+        y_axis_3d: y_axis_3d,
+        rotation: rotation,
+        scaleX: img.scaleX / widthRatio,
+        scaleY: img.scaleY / heightRatio,
+        originalWidth: img.width ?? 0, // here we need to calculate the width in cm/inch based on company settings
+        originalHeight: img.height ?? 0 // here we need to calculate the height in cm/inch based on company settings
+      }
+    })
+  } finally {
+    setTimeout(() => {
+      suppressCustomLogosWatch.value = false
+    }, 0)
+  }
 }
 
 /**

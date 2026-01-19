@@ -5,7 +5,8 @@ import type {
   CopyProductPayload,
   Locker,
   LockerProduct,
-  SignedUrlResponse
+  SignedUrlResponse,
+  LockerRoomsWithColors
 } from '@/services/lockers/types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
@@ -21,7 +22,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   const isLoading = ref<boolean>(false)
   const error = ref<string | null>(null)
   const collections = ref<Collection[]>([])
-
+  const lockerRoomsWithColors = ref<LockerRoomsWithColors[]>([])
   // Track if we're editing a locker product
   const editingLockerProductId = ref<number | null>(null)
   const editingLockerId = ref<number | null>(null)
@@ -125,6 +126,14 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     collections.value = collections.value.filter(collection => collection.room_id !== id)
   }
 
+  async function fetchLockersWithcolors() {
+    const resp = await tryCatchApi(API.lockers.fetchLockersWithcolors(), {
+      operation: 'fetchLockersWithcolors'
+    })
+    if (resp.success && resp.content) {
+      lockerRoomsWithColors.value = resp.content
+    }
+  }
   //Delete Locker Products
   async function deleteProducts(product_ids: number[], locker_id: number) {
     const resp = await tryCatchApi(API.lockers.deleteProducts(product_ids, locker_id), {
@@ -401,6 +410,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     editingLockerId,
     editingLockerProduct,
     isEditingLockerProduct,
+    lockerRoomsWithColors,
     //functions
     fetchLockers,
     fetchLockerProducts,
@@ -415,6 +425,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     updateLockerProduct,
     setEditingLockerProduct,
     clearEditingLockerProduct,
+    fetchLockersWithcolors,
     //collection methods
     fetchCollections,
     fetchCollectionProducts,
