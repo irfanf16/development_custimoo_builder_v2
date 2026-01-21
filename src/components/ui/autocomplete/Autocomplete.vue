@@ -3,6 +3,8 @@
   import { Input } from '@/components/ui/input'
   import { cn } from '@/lib/utils'
   import { useTeleportTo } from '@/composables/useTeleportTo'
+  import { ChevronDown } from 'lucide-vue-next'
+  import Button from '../button/Button.vue'
 
   export interface AutocompleteItem {
     label: string
@@ -177,18 +179,22 @@
 
   // click outside to close
   onMounted(() => {
-    const onDocClick = (e: MouseEvent) => {
+    const onDocMouseDown = (e: MouseEvent) => {
       const target = e.target as Node | null
       if (!target) return
-      // if click is outside both the component root and the dropdown list, close
-      const isOutsideRoot = rootRef.value && !rootRef.value.contains(target)
-      const isOutsideList = listRef.value && !listRef.value.contains(target)
-      if (isOutsideRoot && isOutsideList) {
-        close()
-      }
+
+      const rootEl = rootRef.value
+      const listEl = listRef.value
+
+      // If click started inside input or dropdown → ignore
+      if (rootEl?.contains(target)) return
+      if (listEl?.contains(target)) return
+
+      close()
     }
-    document.addEventListener('click', onDocClick)
-    onUnmounted(() => document.removeEventListener('click', onDocClick))
+    document.addEventListener('mousedown', onDocMouseDown)
+
+    onUnmounted(() => document.removeEventListener('mousedown', onDocMouseDown))
     // reposition on scroll/resize so teleport dropdown stays aligned
     const onScrollResize = () => {
       if (open.value) updatePosition()
@@ -278,6 +284,16 @@
       console.warn('Autocomplete: Failed to update position', error)
     }
   }
+  function toggleDropdown() {
+    if (props.disabled) return
+
+    open.value = !open.value
+    highlighted.value = -1
+
+    if (open.value) {
+      nextTick(updatePosition)
+    }
+  }
 </script>
 
 <template>
@@ -342,6 +358,14 @@
         </template>
       </ul>
     </Teleport>
+    <Button
+      variant="outline"
+      class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground hover:bg-transparent p-0 w-4 h-4"
+      @mousedown.prevent
+      @click="toggleDropdown"
+    >
+      <ChevronDown class="size-4" />
+    </Button>
   </div>
 </template>
 
