@@ -3,7 +3,7 @@
   import { Input } from '@/components/ui/input'
   import { cn } from '@/lib/utils'
   import { useTeleportTo } from '@/composables/useTeleportTo'
-  import { ArrowUpDown } from 'lucide-vue-next'
+  import { ChevronDown } from 'lucide-vue-next'
   import Button from '../button/Button.vue'
 
   export interface AutocompleteItem {
@@ -364,7 +364,7 @@
       @mousedown.prevent
       @click="toggleDropdown"
     >
-      <ArrowUpDown class="w-3 h-3" />
+      <ChevronDown class="size-4" />
     </Button>
   </div>
 </template>
