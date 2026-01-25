@@ -266,6 +266,7 @@
   }>({})
   const isFabricDrag = ref(false)
   const suppressCustomLogosWatch = ref(false)
+  const lastKnownObjectPos = ref<{ left: number; top: number } | null>(null)
 
   // ===== LIFECYCLE =====
   onMounted(async () => {
@@ -842,6 +843,35 @@
           deleteLogoFromCanvas(logoIndex, canvasInstance, customLogoObjects)
         }
         // Text removal can be added here if needed
+      })
+
+      // Prevent objects from moving outside the model by reverting to last valid position
+      const fabricCanvas = canvas.value as Canvas
+      fabricCanvas.on('object:moving', evt => {
+        if (!rendererEl.value || !scene.value || !camera.value) return
+        const moveEvt = evt as unknown as { e?: MouseEvent; target?: FabricObject }
+        const clientX = moveEvt.e?.clientX
+        const clientY = moveEvt.e?.clientY
+        if (typeof clientX !== 'number' || typeof clientY !== 'number') return
+
+        const array = getMousePosition(rendererEl.value, clientX, clientY, true)
+        onClickPosition.value.fromArray(array)
+        const intersects = getIntersects(onClickPosition.value, scene.value.children, camera.value)
+
+        const target = moveEvt.target
+        if (!intersects.length) {
+          if (target && lastKnownObjectPos.value) {
+            target.left = lastKnownObjectPos.value.left
+            target.top = lastKnownObjectPos.value.top
+            target.setCoords()
+            fabricCanvas.requestRenderAll()
+          }
+        } else if (target) {
+          lastKnownObjectPos.value = {
+            left: target.left ?? 0,
+            top: target.top ?? 0
+          }
+        }
       })
     }
 
