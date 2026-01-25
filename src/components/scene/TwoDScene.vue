@@ -26,8 +26,7 @@
     deleteLogoFromCanvas,
     syncLogosOnCanvas,
     getLogoSignature,
-    getLogoSignatureUrlSide,
-    suppressCustomLogosWatch
+    getLogoSignatureUrlSide
   } from '@/composables/scene'
   import type { CustomLogo } from '@/services/logos/types'
   import {
@@ -47,6 +46,8 @@
   const designObject = shallowRef<FabricObject | FabricImage | null>(null)
   const modelObjects = shallowRef<(FabricObject | FabricImage)[]>([])
   const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
+  const otherSideLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
+  const suppressCustomLogosWatch = ref(false)
   const safeZone = shallowRef<Group | null>(null)
   const boundary = shallowRef<Group | null>(null)
   const placementRect = shallowRef<FabricObject | null>(null)
@@ -58,6 +59,8 @@
     file_url: string
     thumb_sm_url: string
   }
+
+  type BoundKey = 'left' | 'right' | 'top' | 'bottom'
 
   type DesignData = {
     file_url: string
@@ -408,6 +411,9 @@
 
     // Load logos after scene is loaded
     await resetAndAddLogos()
+
+    // Render mirrored logos coming from the opposite side (stored in sceneStore)
+    await renderOtherSideLogosFromStore()
   }
 
   // All customization functions are now provided by useColorCustomization composable
@@ -490,6 +496,329 @@
     return {
       widthRatio: props.canvasWidth / (props.mainCanvasWidth || 600),
       heightRatio: props.canvasHeight / (props.mainCanvasHeight || 600)
+    }
+  }
+
+  /**
+   * Legacy-like clamp to keep logo inside design bounds and non-transparent area.
+   * Adapted from custimoo_builder/src/components/Scene.vue objectScaling/targetNonTransparent*.
+   */
+  function constrainLogoWithinDesign(target: FabricObject) {
+    if (!canvas.value || !designObject.value) return
+    const design = designObject.value
+    const modelRect = design.getBoundingRect()
+    const boundingRect = {
+      left: modelRect.left,
+      right: modelRect.left + modelRect.width,
+      top: modelRect.top,
+      bottom: modelRect.top + modelRect.height
+    }
+
+    const width = target.width ?? 0
+    const height = target.height ?? 0
+    const scaleX = target.scaleX ?? 1
+    const scaleY = target.scaleY ?? 1
+
+    if (target.left === undefined || target.top === undefined) return
+
+    // basic bounds
+    if (target.left >= boundingRect.right + (width * scaleX) / 4) {
+      target.left = boundingRect.right + (width * scaleX) / 4
+    } else if (target.left < boundingRect.left - (width * scaleX) / 4) {
+      target.left = boundingRect.left - (width * scaleX) / 4
+    }
+    if (target.top < boundingRect.top + (height * scaleY) / 3) {
+      target.top = boundingRect.top + (height * scaleY) / 3
+    } else if (target.top >= boundingRect.bottom - (height * scaleY) / 3) {
+      target.top = boundingRect.bottom - (height * scaleY) / 3
+    }
+
+    const centerPoint = target.getCenterPoint()
+    if (
+      canvas.value.isTargetTransparent(
+        design as unknown as FabricObject,
+        centerPoint.x,
+        centerPoint.y
+      )
+    ) {
+      const boundingDistance = {
+        left: Math.abs(boundingRect.left - centerPoint.x),
+        top: Math.abs(boundingRect.top - centerPoint.y),
+        right: Math.abs(boundingRect.right - centerPoint.x),
+        bottom: Math.abs(boundingRect.bottom - centerPoint.y)
+      } as Record<'left' | 'top' | 'right' | 'bottom', number>
+
+      let otherMoveTo: 'left' | 'right' | 'top' | 'bottom' = 'left'
+      Object.keys(boundingDistance).forEach(key => {
+        const k = key as 'left' | 'right' | 'top' | 'bottom'
+        if (boundingDistance[k] > boundingDistance[otherMoveTo]) {
+          otherMoveTo = k
+        }
+      })
+      let moveTo: 'left' | 'right' = 'left'
+      if (boundingDistance.right > boundingDistance.left) {
+        moveTo = 'right'
+      }
+
+      const direction = targetNonTransparentVH(
+        canvas.value,
+        design as unknown as FabricObject,
+        target.left,
+        target.top,
+        width,
+        scaleX,
+        moveTo,
+        otherMoveTo
+      )
+      target.left = direction.left
+      target.top = direction.top
+    }
+
+    target.setCoords()
+  }
+
+  function targetNonTransparentVH(
+    canvasInstance: Canvas,
+    model: FabricObject,
+    pointX: number,
+    pointY: number,
+    width: number,
+    scaleX: number,
+    moveTo: 'left' | 'right',
+    otherMoveTo: 'left' | 'right' | 'top' | 'bottom',
+    maxCall = 600
+  ): { left: number; top: number; max_call: number } {
+    let direction = targetNonTransparent(
+      canvasInstance,
+      model,
+      pointX,
+      pointY,
+      width,
+      scaleX,
+      moveTo,
+      maxCall
+    )
+    if (direction.max_call <= 0 && moveTo !== otherMoveTo) {
+      if (otherMoveTo === 'bottom') {
+        pointY++
+      } else if (otherMoveTo === 'top') {
+        pointY--
+      }
+      direction = targetNonTransparentVH(
+        canvasInstance,
+        model,
+        pointX,
+        pointY,
+        width,
+        scaleX,
+        moveTo,
+        otherMoveTo,
+        maxCall - 1
+      )
+    }
+    return direction
+  }
+
+  function targetNonTransparent(
+    canvasInstance: Canvas,
+    model: FabricObject,
+    pointX: number,
+    pointY: number,
+    width: number,
+    scaleX: number,
+    moveTo: 'left' | 'right' | 'top' | 'bottom',
+    maxCall = 600
+  ): { left: number; top: number; max_call: number } {
+    let pointXCompare = pointX + (width * scaleX) / 4
+    if (moveTo === 'left') {
+      pointXCompare = pointX - (width * scaleX) / 4
+    }
+    maxCall--
+    if (canvasInstance.isTargetTransparent(model, pointXCompare, pointY) && maxCall > 0) {
+      if (moveTo === 'left') {
+        pointX -= 1
+      } else if (moveTo === 'right') {
+        pointX += 1
+      } else if (moveTo === 'top') {
+        pointY -= 1
+      } else {
+        pointY += 1
+      }
+      return targetNonTransparent(
+        canvasInstance,
+        model,
+        pointX,
+        pointY,
+        width,
+        scaleX,
+        moveTo,
+        maxCall
+      )
+    } else {
+      const viewportMatrix = canvasInstance.viewportTransform as number[]
+      const left = pointX + (viewportMatrix?.[4] ?? 0)
+      const top = pointY + (viewportMatrix?.[5] ?? 0)
+      return { left, top, max_call: maxCall }
+    }
+  }
+
+  /**
+   * Mirror logo to the opposite side and store its data (legacy addToOtherSide).
+   */
+  function addToOtherSide(target: FabricImage) {
+    if (!canvas.value || !designObject.value) return
+
+    const design = designObject.value
+    const modelRect = design.getBoundingRect()
+    const boundingRect = {
+      left: modelRect.left,
+      right: modelRect.left + modelRect.width,
+      top: modelRect.top,
+      bottom: modelRect.top + modelRect.height
+    }
+
+    const width = (target.width ?? 0) * (target.scaleX ?? 1)
+    const height = (target.height ?? 0) * (target.scaleY ?? 1)
+    const centerPoint = target.getCenterPoint()
+
+    let boundingDistance: Record<BoundKey, number> = {
+      left: Math.abs(boundingRect.left - centerPoint.x),
+      top: Math.abs(boundingRect.top - centerPoint.y),
+      right: Math.abs(boundingRect.right - centerPoint.x),
+      bottom: Math.abs(boundingRect.bottom - centerPoint.y)
+    }
+
+    let actualNearTo: BoundKey = 'left'
+    Object.keys(boundingDistance).forEach(key => {
+      const k = key as BoundKey
+      if (boundingDistance[k] < boundingDistance[actualNearTo]) {
+        actualNearTo = k
+      }
+    })
+
+    // Bias vertical to be less likely chosen unless nearer (legacy adds +100 to top/bottom)
+    boundingDistance = {
+      left: Math.abs(boundingRect.left - centerPoint.x),
+      top: Math.abs(boundingRect.top - centerPoint.y) + 100,
+      right: Math.abs(boundingRect.right - centerPoint.x),
+      bottom: Math.abs(boundingRect.bottom - centerPoint.y) + 100
+    }
+
+    let nearTo: BoundKey = 'left'
+    Object.keys(boundingDistance).forEach(key => {
+      const k = key as BoundKey
+      if (boundingDistance[k] < boundingDistance[nearTo]) {
+        nearTo = k
+      }
+    })
+    let moreTowards: 'left' | 'right' = 'left'
+    if (boundingDistance.right < boundingDistance.left) {
+      moreTowards = 'right'
+    }
+    const isActualTop = actualNearTo === ('top' as BoundKey)
+
+    let checkPointX = (target.left ?? 0) + width / 2
+    if (nearTo === 'left') {
+      checkPointX = (target.left ?? 0) - width / 2
+    }
+
+    let checkPointY = centerPoint.y
+    if (isActualTop) {
+      checkPointY = (target.top ?? 0) - height / 3
+    }
+
+    let addLeft = target.left ?? 0
+    let addTop = target.top ?? 0
+    const modelStart = modelRect.left - modelRect.width / 2 - 1
+    const modelEnd = modelRect.left + modelRect.width / 2 + 1
+
+    if (
+      canvas.value.isTargetTransparent(design as unknown as FabricObject, checkPointX, checkPointY)
+    ) {
+      if (isActualTop) {
+        const direction = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          centerPoint.x,
+          centerPoint.y - height,
+          0,
+          1,
+          'bottom'
+        )
+        addTop = direction.top - checkPointY
+        addLeft = props.canvasWidth - (target.left ?? 0)
+      } else if (moreTowards === 'left') {
+        const direction = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          checkPointX,
+          centerPoint.y,
+          0,
+          1,
+          'right'
+        )
+        const directionFromRight = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          modelEnd,
+          checkPointY,
+          0,
+          1,
+          'left'
+        )
+        const outside = direction.left - checkPointX
+        const modelSpaceLeft = directionFromRight.left + width / 2 - 3
+        addLeft = modelSpaceLeft - outside
+        addTop = target.top ?? 0
+      } else {
+        const direction = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          (target.left ?? 0) + width,
+          target.top ?? 0,
+          0,
+          1,
+          'left'
+        )
+        const directionFromRight = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          modelStart,
+          centerPoint.y,
+          0,
+          1,
+          'right'
+        )
+        const outside = checkPointX - direction.left
+        const modelSpaceRight = directionFromRight.left - width / 2 - 3
+        addLeft = modelSpaceRight + outside
+        addTop = target.top ?? 0
+      }
+      // store mirrored logo on the opposite side
+      const destSide = (
+        (target as unknown as { side?: string }).side === 'back' ? 'front' : 'back'
+      ) as 'front' | 'back'
+      const logoIndex = (target as unknown as { logo_index?: number }).logo_index ?? 0
+      const sourceLogo = customLogos.value[logoIndex]
+      sceneStore.addOtherSideLogo({
+        logo_index: (target as unknown as { logo_index?: number }).logo_index ?? 0,
+        url: sourceLogo?.url ? sourceLogo?.url + '?nocache=11' : '',
+        side: destSide,
+        left: addLeft,
+        top: addTop,
+        flipX: isActualTop,
+        flipY: isActualTop,
+        rotation: -(target.angle ?? 0),
+        scaleX: target.scaleX ?? 1,
+        scaleY: target.scaleY ?? 1
+      })
+    } else {
+      // remove mirrored logo if it falls outside valid region
+      const destSide = (
+        (target as unknown as { side?: string }).side === 'back' ? 'front' : 'back'
+      ) as 'front' | 'back'
+      const idx = (target as unknown as { logo_index?: number }).logo_index ?? 0
+      sceneStore.removeOtherSideLogo(destSide, idx)
     }
   }
 
@@ -659,9 +988,9 @@
     return clip
   }
 
-  async function applyClipPath(target: FabricImage): Promise<void> {
+  async function applyClipPath(target: FabricImage | FabricObject): Promise<void> {
     if (!canvas.value) return
-    const clip = await buildClipGroup(target)
+    const clip = await buildClipGroup(target as FabricImage)
     if (clip) {
       // @ts-expect-error clipPath accepts any fabric object; Group works at runtime
       target.clipPath = clip
@@ -753,21 +1082,27 @@
         applyClipPath,
         renderCanvas,
         canvasSelection: true,
-        flipX: false
+        flipX: false,
+        suppressWatchRef: suppressCustomLogosWatch
       })
 
-      // Re-apply clip when user moves/scales/rotates
-      const reclip = async () => {
+      // Re-apply clip and clamp when user moves/scales/rotates
+      const reclipAndClamp = async () => {
         const added = customLogoObjects.value.get(logoIndex)
         if (added) {
+          constrainLogoWithinDesign(added as FabricObject)
           await applyClipPath(added)
           if (canvas.value) canvas.value.requestRenderAll()
         }
       }
       const added = customLogoObjects.value.get(logoIndex)
-      added?.on('moving', reclip)
-      added?.on('scaling', reclip)
-      added?.on('rotating', reclip)
+      added?.on('moving', reclipAndClamp)
+      added?.on('scaling', reclipAndClamp)
+      added?.on('rotating', reclipAndClamp)
+      added?.on('modified', () => addToOtherSide(added))
+      if (added) {
+        addToOtherSide(added)
+      }
     } catch (error) {
       console.error('Failed to add logo:', error)
     }
@@ -812,6 +1147,69 @@
     resetAndAddLogos
   })
 
+  /**
+   * Render logos stored for the opposite side onto this side's canvas.
+   * If a logo already exists locally, update its placement instead of reloading.
+   */
+  async function renderOtherSideLogosFromStore(): Promise<void> {
+    if (!canvas.value) return
+    const entries = sceneStore.getOtherSideLogos(props.side as 'front' | 'back')
+    const seen = new Set<number>()
+
+    for (const entry of entries) {
+      const logoIndex = entry.logo_index ?? 0
+      seen.add(logoIndex)
+      const existing = otherSideLogoObjects.value.get(logoIndex)
+      if (existing) {
+        existing.set({
+          left: entry.left,
+          top: entry.top,
+          angle: entry.rotation ?? 0,
+          flipX: entry.flipX ?? false,
+          flipY: entry.flipY ?? false,
+          scaleX: entry.scaleX ?? existing.scaleX,
+          scaleY: entry.scaleY ?? existing.scaleY
+        })
+        existing.setCoords()
+        continue
+      }
+
+      const url = entry.url
+      if (!url) continue
+      const img = (await loadImageFromURLCommon(url, '', {
+        crossOrigin: 'Anonymous'
+      })) as FabricImage
+      img.set({
+        left: entry.left,
+        top: entry.top,
+        angle: entry.rotation ?? 0,
+        flipX: entry.flipX ?? false,
+        flipY: entry.flipY ?? false,
+        scaleX: entry.scaleX ?? img.scaleX,
+        scaleY: entry.scaleY ?? img.scaleY,
+        globalCompositeOperation: 'source-atop',
+        originX: 'center',
+        originY: 'center',
+        selectable: false,
+        evented: false
+      })
+      otherSideLogoObjects.value.set(logoIndex, img as FabricImage)
+      canvas.value?.add(img as FabricObject)
+      await applyClipPath(img as FabricImage)
+      canvas.value?.requestRenderAll()
+    }
+
+    // Remove any mirrored logos that are no longer present in store
+    for (const [idx, obj] of otherSideLogoObjects.value.entries()) {
+      if (!seen.has(idx)) {
+        canvas.value.remove(obj as unknown as FabricObject)
+        otherSideLogoObjects.value.delete(idx)
+      }
+    }
+
+    canvas.value.requestRenderAll()
+  }
+
   // Watch for changes in default colors from customization store
   watch(
     () => customizationStore.customization?.default_colors,
@@ -832,6 +1230,16 @@
           resetToInitialColors(0)
         }
       }
+    },
+    { deep: true }
+  )
+
+  // Watch other-side mirrored entries and render/update them
+  watch(
+    () => sceneStore.getOtherSideLogos(props.side as 'front' | 'back'),
+    async () => {
+      if (isPlacementMode.value || !mounted.value) return
+      await renderOtherSideLogosFromStore()
     },
     { deep: true }
   )
@@ -879,6 +1287,7 @@
         getSignature: getLogoSignature,
         getSignatureUrlSide: getLogoSignatureUrlSide,
         filterLogo: (logo: CustomLogo) => logo.side === props.side,
+        suppressWatchRef: suppressCustomLogosWatch,
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()

@@ -15,8 +15,7 @@ export {
   resetLogosFromCanvas,
   syncLogosOnCanvas,
   getLogoSignature,
-  getLogoSignatureUrlSide,
-  suppressCustomLogosWatch
+  getLogoSignatureUrlSide
 } from './useLogos'
 export type { AddLogoOptions, LogoPositionOptions, SyncLogosOptions } from './useLogos'
 export {

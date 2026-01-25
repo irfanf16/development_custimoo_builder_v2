@@ -33,8 +33,7 @@
     deleteLogoFromCanvas,
     syncLogosOnCanvas,
     getLogoSignature,
-    getLogoSignatureUrlSide,
-    suppressCustomLogosWatch
+    getLogoSignatureUrlSide
   } from '@/composables/scene'
   import {
     getImageFrom3DCanvas,
@@ -266,6 +265,7 @@
     touchend?: (e: TouchEvent) => void
   }>({})
   const isFabricDrag = ref(false)
+  const suppressCustomLogosWatch = ref(false)
 
   // ===== LIFECYCLE =====
   onMounted(async () => {
@@ -1218,7 +1218,8 @@
         controlVisibility,
         canvasSelection: true,
         flipX: true,
-        findPositionOn2D
+        findPositionOn2D,
+        suppressWatchRef: suppressCustomLogosWatch
       })
     } catch (error) {
       console.error('Failed to add logo:', error)
@@ -1964,6 +1965,7 @@
         calculateScaleRatios,
         getSignature: getLogoSignature,
         getSignatureUrlSide: getLogoSignatureUrlSide,
+        suppressWatchRef: suppressCustomLogosWatch,
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()
