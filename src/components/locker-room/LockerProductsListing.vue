@@ -10,8 +10,11 @@
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { storeToRefs } from 'pinia'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import { Copy, Pencil, SwitchCamera } from 'lucide-vue-next'
+  import { Copy, Pencil, SwitchCamera, Share2 } from 'lucide-vue-next'
   import CopyProductsDialog from './CopyProductsDialog.vue'
+  import { toast } from 'vue-sonner'
+  import lockersService from '@/services/lockers/lockers.service'
+  import ShareUrlTooltip from '@/components/shared/ShareUrlTooltip.vue'
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
   const props = withDefaults(
@@ -46,6 +49,8 @@
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const products_to_copy = ref<LockerProduct[]>([])
   const showBack = ref<Record<number, boolean>>({})
+  const productShareUrls = ref<Record<number, string | null>>({})
+  const showShareTooltip = ref<Record<number, boolean>>({})
 
   const computedProducts = computed(() => props.products)
   const filteredProducts = computed(() => {
@@ -125,6 +130,51 @@
     showBack.value[prodId] = !showBack.value[prodId]
   }
   const isSelected = (id: number | string) => selectedProducts.value.some(p => p.id === id)
+
+  const shareProduct = async (prod: LockerProduct) => {
+    // Check if product already has a share URL
+    const existingShareUrl = prod.shared_url || prod.shared_product?.[0]?.shared_url
+
+    if (existingShareUrl) {
+      // Use existing share URL
+      productShareUrls.value[prod.id] = existingShareUrl
+      showShareTooltip.value[prod.id] = true
+      return
+    }
+
+    // Generate new share URL
+    try {
+      const productId = prod.product_id
+      if (!productId) {
+        toast.error('Product ID not found', {
+          position: 'top-right',
+          richColors: true
+        })
+        return
+      }
+
+      const response = await lockersService.shareProduct(prod.id, productId)
+
+      // Extract share URL from response: result.url
+      const shareUrl = response.data?.result?.url || null
+
+      if (shareUrl) {
+        productShareUrls.value[prod.id] = shareUrl
+        showShareTooltip.value[prod.id] = true
+      } else {
+        toast.error('Failed to generate share URL', {
+          position: 'top-right',
+          richColors: true
+        })
+      }
+    } catch (error) {
+      console.error('Share product error:', error)
+      toast.error('Failed to share product', {
+        position: 'top-right',
+        richColors: true
+      })
+    }
+  }
   onMounted(() => {
     selectedProducts.value = [...props.preSelectedProducts]
   })
@@ -216,6 +266,27 @@
                   <p>Toggle {{ showBack[prod.id] ? 'Front' : 'Back' }} image</p>
                 </TooltipContent>
               </Tooltip>
+              <ShareUrlTooltip
+                v-if="!isCreatingCollection"
+                :share-url="
+                  productShareUrls[prod.id] ||
+                  prod.shared_url ||
+                  prod.shared_product?.[0]?.shared_url ||
+                  null
+                "
+                :open="showShareTooltip[prod.id] || false"
+                @update:open="showShareTooltip[prod.id] = $event"
+              >
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  class="h-7 w-7 rounded-full shadow"
+                  title="Share Product"
+                  @click="shareProduct(prod)"
+                >
+                  <Share2 class="w-3.5 h-3.5" />
+                </Button>
+              </ShareUrlTooltip>
             </TooltipProvider>
           </div>
         </div>

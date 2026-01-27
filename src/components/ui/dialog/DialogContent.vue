@@ -43,6 +43,29 @@
   )
 
   /**
+   * Handle pointer down outside event to prevent dialog from closing
+   * when clicking inside tooltip content
+   * Uses composedPath to check across shadow DOM boundaries
+   */
+  function handlePointerDownOutside(
+    event: Event & { detail: { originalEvent: PointerEvent }; preventDefault: () => void }
+  ) {
+    const originalEvent = event.detail.originalEvent
+    // Use composedPath to get all elements in the event path, including those in shadow DOM
+    const path = originalEvent.composedPath() as HTMLElement[]
+
+    // Check if any element in the path has the tooltip content attribute
+    const isInsideTooltip = path.some(
+      element => element instanceof HTMLElement && element.hasAttribute('data-tooltip-content')
+    )
+
+    // Prevent dialog from closing if click is inside tooltip content
+    if (isInsideTooltip) {
+      event.preventDefault()
+    }
+  }
+
+  /**
    * Find the first scrollable ancestor from the event's composed path.
    * ScrollArea viewports are prioritized, but any element with overflow scroll counts.
    */
@@ -238,7 +261,12 @@
     <DialogOverlay
       class="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/40"
     />
-    <DialogContent v-bind="forwarded" :style="styleProps" :class="contentClasses">
+    <DialogContent
+      v-bind="forwarded"
+      :style="styleProps"
+      :class="contentClasses"
+      @pointer-down-outside="handlePointerDownOutside"
+    >
       <slot />
 
       <DialogClose

@@ -1,3 +1,4 @@
+import type { FactoryProduct } from '@/services/orders/types'
 import type { Style3DMap, StyleLogoEntry, StyleLogoTechnology } from '@/services/types'
 
 export type OutputStylePreviewBase = {
@@ -82,4 +83,16 @@ export type ActiveStyleDetails = {
 
 export type ActiveDesignDetails = {
   designDetails: import('./designs').OutputDesignDetails
+}
+
+export type ShareProductDetails = {
+  factoryProducts: FactoryProduct[]
+  factoryProductActiveIndex: number
+  lockerProductId: number | null
+  activityId: number | null
+  activityItems: unknown
+  cartId: number | null
+  factoryId: number | null
+  id: number | null
+  orderId: number | null
 }

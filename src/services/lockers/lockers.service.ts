@@ -115,6 +115,13 @@ async function getCollectionLogoPresignedUrls(
   )
 }
 
+async function shareProduct(locker_product_id: number, product_id: number) {
+  return await http.post<LockerResponse<{ url: string }>>(`share/product`, {
+    id: locker_product_id,
+    product_id: product_id
+  })
+}
+
 export default {
   getLockers,
   updateLocker,
@@ -128,6 +135,7 @@ export default {
   deleteProducts,
   copyProducts,
   saveDesign,
+  shareProduct,
 
   // collection endpoints
   getCollections,
