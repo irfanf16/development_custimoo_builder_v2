@@ -10,6 +10,7 @@ export const useAppStore = defineStore('appStore', () => {
   const appInfo = ref<AppInfo | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const shareUrl = ref<string | null>(null)
 
   function loadAppInfoFromGlobalVariable() {
     if (typeof window !== 'undefined') {
@@ -48,12 +49,18 @@ export const useAppStore = defineStore('appStore', () => {
     appInfo.value = data
   }
 
+  function setShareUrl(url: string | null) {
+    shareUrl.value = url
+  }
+
   return {
     appInfo,
     isLoading,
     error,
+    shareUrl,
     loadAppInfoFromGlobalVariable,
     setLoading,
-    setError
+    setError,
+    setShareUrl
   }
 })

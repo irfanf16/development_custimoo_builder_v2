@@ -74,6 +74,57 @@ export function useAppInitialization() {
   const storage = useLocalStorage()
   const categoryParamsComposable = useCategoryParams()
   const appStore = useAppStore()
+
+  // ============================================================================
+  // Phase 0: Extract and handle share URL from path
+  // ============================================================================
+  const extractAndStoreShareUrl = (): void => {
+    if (typeof window === 'undefined') return
+
+    // If share URL is already set (e.g., by router guard), skip extraction
+    if (appStore.shareUrl) return
+
+    const currentPath = router.currentRoute.value.path
+    const hashPath = window.location.hash
+
+    // Check for share URL in path (e.g., /share/%22Jersey+S%2FS%22/w0MifV3r5u)
+    // or in hash (e.g., #/share/%22Jersey+S%2FS%22/w0MifV3r5u)
+    let sharePathMatch: RegExpMatchArray | null = null
+
+    // Check hash first (for hash routing)
+    if (hashPath) {
+      sharePathMatch = hashPath.match(/[#/]share\/(.+?)(?:\?|$|#)/)
+    }
+
+    // If not found in hash, check path
+    if (!sharePathMatch && currentPath) {
+      sharePathMatch = currentPath.match(/\/share\/(.+?)(?:\?|$)/)
+    }
+
+    if (sharePathMatch && sharePathMatch[1]) {
+      const matchValue = sharePathMatch[1]
+      if (typeof matchValue === 'string' && matchValue.length > 0) {
+        // Store the full share URL including 'share/' prefix for API request
+        appStore.setShareUrl(`share/${matchValue}`)
+      }
+
+      // Remove share route from URL
+      const newPath = currentPath.replace(/\/share\/.+?$/, '/').replace(/\/+/g, '/')
+      const newHash = hashPath.replace(/[#/]share\/.+?(?:\?|$|#)/, '#/')
+
+      // Update URL without reload
+      if (hashPath) {
+        // Hash routing mode
+        window.history.replaceState(null, '', newHash || '#/')
+      } else {
+        // History mode
+        router.replace(newPath || '/').catch((err: unknown) => {
+          // Ignore navigation errors
+          console.error('Error replacing route:', err)
+        })
+      }
+    }
+  }
   const handleCompanyContextChange = (
     previousCompanyId: number | null,
     currentCompanyId: number | null,
@@ -131,7 +182,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 0: Check if the app has been loaded in an iframe and forward url params if needed
+  // Phase 0.5: Check if the app has been loaded in an iframe and forward url params if needed
   // ============================================================================
   const syncQueryParamsIfEmbedded = async (): Promise<void> => {
     if (typeof window === 'undefined') return
@@ -159,8 +210,8 @@ export function useAppInitialization() {
 
     if (queryMatches) return
 
-    await router.push({ query: nextQuery }).catch(error => {
-      console.error('Error forwarding url params to iframe:', error)
+    await router.push({ query: nextQuery }).catch((err: unknown) => {
+      console.error('Error forwarding url params to iframe:', err)
     })
   }
 
@@ -252,10 +303,16 @@ export function useAppInitialization() {
       }
     }
 
-    await Promise.all([
-      companyStore.fetchSettings(),
-      productsStore.fetchCustomizedCategories(categoryParamsComposable.categoryParams.value)
-    ])
+    // If share URL exists, fetch settings only (product will be loaded via loadShareProduct composable)
+    // Otherwise, fetch categories normally
+    if (appStore.shareUrl) {
+      await companyStore.fetchSettings()
+    } else {
+      await Promise.all([
+        companyStore.fetchSettings(),
+        productsStore.fetchCustomizedCategories(categoryParamsComposable.categoryParams.value)
+      ])
+    }
 
     context.hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
     // Fetch locker room with colors data
@@ -271,6 +328,28 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
+  // Phase 5: Load Share Product
+  // ============================================================================
+  // Loads product from share URL using the dedicated composable
+  const loadShareProduct = async (
+    customizationStore: ReturnType<typeof useCustomizationStore>,
+    _productsStore: ReturnType<typeof useProductsStore>
+  ): Promise<void> => {
+    const shareUrl = appStore.shareUrl
+    if (!shareUrl) return
+
+    const { useLoadShareProductIntoCustomizer } =
+      await import('@/composables/useLoadShareProductIntoCustomizer')
+    const { loadShareProductIntoCustomizer: loadShare } = useLoadShareProductIntoCustomizer()
+
+    const success = await loadShare(shareUrl)
+    if (success) {
+      customizationStore.saveToLocalStorage()
+      wf.setActiveStep('designs')
+    }
+  }
+
+  // ============================================================================
   // Phase 5: Reload State with Correct Prefix
   // ============================================================================
   // Now that company data is available, reload localStorage data with the
@@ -282,6 +361,13 @@ export function useAppInitialization() {
     const { hasSyncId, updateCart, updateItem } = useQueryParams()
     const { customizationStore, productsStore } = context.stores
     const { loadCartProductIntoCustomizer } = useLoadCartProductIntoCustomizer()
+
+    // Priority 1: Share URL product loading
+    if (appStore.shareUrl) {
+      await loadShareProduct(customizationStore, productsStore)
+      return
+    }
+
     if (hasSyncId.value) {
       if (updateCart.value && updateItem.value) {
         await loadCartProductIntoCustomizer(String(updateItem.value), Number(updateCart.value))
@@ -610,6 +696,8 @@ export function useAppInitialization() {
   }
 
   const runInitializationPipeline = async (): Promise<void> => {
+    // Extract share URL from path before other operations
+    extractAndStoreShareUrl()
     await executePhase('sync-query-params', syncQueryParamsIfEmbedded)
     await executePhase('load-app-info', () => {
       appStore.loadAppInfoFromGlobalVariable()

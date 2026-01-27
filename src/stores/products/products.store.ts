@@ -13,7 +13,8 @@ import type {
   OutputSvgGroupColor,
   OutputDesignPreviewFront,
   GeneratePdfPayload,
-  GeneratePdfResponse
+  GeneratePdfResponse,
+  ShareProductDetails
 } from '@/services/products/types'
 import { API } from '../../services'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
@@ -21,6 +22,7 @@ import type { APIResponse } from '@/services/types'
 import { useCustomizationStore } from '../customization/customization.store'
 import type { CanvasSide } from '../workflow/workflow.store.types'
 import { useQueryParams } from '@/composables/useQueryParams'
+import type { LockerResponse } from '@/services/lockers/types'
 export const useProductsStore = defineStore('productsStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
@@ -198,6 +200,28 @@ export const useProductsStore = defineStore('productsStore', () => {
       }
     } else {
       setError('Error getting customized categories')
+    }
+    setLoading(false)
+    return output
+  }
+
+  async function fetchProductsByShareUrl(
+    shareUrl: string
+  ): Promise<APIResponse<LockerResponse<ShareProductDetails>>> {
+    setLoading(true)
+    setError(null)
+    const output = await tryCatchApi(API.products.getProductsByShareUrl(shareUrl), {
+      operation: 'fetchProductsByShareUrl',
+      share_url: shareUrl
+    })
+    if (output.success) {
+      // If product not found and we have a stored customization, clear it
+      if (output.content?.result?.factoryProducts?.[0] && customization.customization) {
+        customization.customization = null
+        customization.clearLocalStorage()
+      }
+    } else {
+      setError('Error getting products by share URL')
     }
     setLoading(false)
     return output
@@ -416,6 +440,19 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
+  async function shareDesign(payload: FormData): Promise<APIResponse<{ url: string }>> {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.shareDesignUrl(payload), {
+      operation: 'shareDesign'
+    })
+    if (!resp.success) {
+      setError('Error sharing design')
+    }
+    setLoading(false)
+    return resp
+  }
+
   // Centralized fetch orchestration reacting to customization selections
   watch(
     [
@@ -519,6 +556,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     fetchDesignPreviewsByStyleId,
     fetchDesignDetailsById,
     generatePDF,
+    shareDesign,
+    fetchProductsByShareUrl,
     suspendCustomizationAutoSync,
     resumeCustomizationAutoSync
   }
