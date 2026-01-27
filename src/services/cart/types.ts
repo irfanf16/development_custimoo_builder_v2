@@ -106,10 +106,19 @@ export interface UploadCartAssetsResponse {
   }
 }
 
+export interface FileMetadata {
+  name: string
+  type: string
+  size: number
+}
+
 export interface GenerateSignedUploadUrlPayload {
-  files: File[]
-  factory_id?: number | null
-  company_id: number
+  files: FileMetadata[]
+  companyId?: number
+  factoryId?: number | null
+  collectionId?: number | null
+  type: 'share_product' | 'cart'
+  customer?: number
 }
 
 export interface SignedUploadUrlItem {

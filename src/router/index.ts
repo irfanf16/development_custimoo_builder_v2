@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth/auth.store'
+import { useAppStore } from '@/stores/app/app.store'
 import { isWidgetMode } from '@/lib/widgetUtils'
 import { usePostHog } from '@/composables/usePostHog'
 
@@ -64,6 +65,21 @@ const router = createRouter({
 
 // Navigation guard for authentication
 router.beforeEach((to, _from, next) => {
+  // Handle share URLs: redirect /share/... to / and let initialization extract the share URL
+  if (to.path.startsWith('/share/')) {
+    // Extract the share URL part (everything after /share/) and include the 'share/' prefix
+    const shareUrlPart = to.path.replace(/^\/share\//, '')
+    if (shareUrlPart) {
+      // Store the full share URL including 'share/' prefix for API request
+      const appStore = useAppStore()
+      appStore.setShareUrl(`share/${shareUrlPart}`)
+
+      // Redirect to home route - initialization will handle loading the product
+      next({ path: '/', replace: true })
+      return
+    }
+  }
+
   // Remove handled query params from route if they exist
   // This prevents them from appearing in the URL after navigation
   const handledParams = ['sync_id', 'update_item', 'update_cart', 'line', 'roster']

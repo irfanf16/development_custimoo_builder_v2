@@ -385,8 +385,8 @@ export const useCartStore = defineStore('cartStore', () => {
     error.value = null
     const response = await tryCatchApi(API.cart.generateSignedUploadUrl(payload), {
       operation: 'generateSignedUploadUrl',
-      company_id: payload.company_id,
-      factory_id: payload.factory_id || undefined
+      company_id: payload.companyId,
+      factory_id: payload.factoryId || undefined
     })
     if (response.success && response.content) {
       const urlResponse = response.content
