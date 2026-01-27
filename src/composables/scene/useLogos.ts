@@ -87,6 +87,8 @@ export type AddLogoOptions = {
   ) => { vector: { x: number; y: number; z?: number }; sideChanged: boolean }
   /** Per-instance suppress flag for customLogos watcher (required) */
   suppressWatchRef: Ref<boolean>
+  /** Optional size converter (px -> measurement units) */
+  convertSize?: (px: number) => number
 }
 
 export type SyncLogosOptions = {
@@ -149,7 +151,8 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     canvasSelection = true,
     flipX = false,
     findPositionOn2D,
-    suppressWatchRef
+    suppressWatchRef,
+    convertSize = (px: number) => px
   } = options
 
   const is_3d = !!flipX
@@ -260,8 +263,8 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
           scaleX: img.scaleX / widthRatio,
           scaleY: img.scaleY / heightRatio,
           ...(is_3d ? { x_axis_3d: position.x, y_axis_3d: position.y } : {}), // store 3D position in store for 3D only
-          originalWidth: img.width ?? 0, // here we need to calculate the width in cm/inch based on company settings
-          originalHeight: img.height ?? 0, // here we need to calculate the height in cm/inch based on company settings
+          originalWidth: convertSize(img.width ?? 0),
+          originalHeight: convertSize(img.height ?? 0),
           actualWidth: img.width ?? 0,
           actualHeight: img.height ?? 0
         }
