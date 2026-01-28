@@ -58,6 +58,7 @@
   import { useBuildFactoryProduct } from '@/composables/useBuildFactoryProduct'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { useSceneStore } from '@/stores/scene/scene.store'
+  import { useCompanyStore } from '@/stores/company/company.store'
   import {
     base64ToFile,
     generateRandomString,
@@ -79,6 +80,7 @@
   const cartStore = useCartStore()
   const lockerRoomStore = useLockerRoomStore()
   const sceneStore = useSceneStore()
+  const companyStore = useCompanyStore()
   const { menuItems, goTo } = useCustomizerMenu()
   const { loadLockerProductIntoCustomizer } = useLoadLockerProductIntoCustomizer()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
@@ -664,7 +666,9 @@
       </ButtonGroup>
 
       <!-- Cart Button -->
-      <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
+      <ButtonGroup
+        v-if="!uiStore.isMobile && authStore.isAuthenticated && !companyStore.isEcommercePlatform"
+      >
         <Button variant="outline" size="default" class="relative" @click="handleCartClick">
           <ShoppingCart class="size-4" />
           <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
