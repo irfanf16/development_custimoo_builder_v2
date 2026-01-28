@@ -423,15 +423,52 @@ export function useAppInitialization() {
       customizationStore.activeSubCategoryId ?? // 2. User's previous selection
       undefined
 
+    // Validate that the subcategory belongs to the effective category
+    if (effectiveCategoryId && effectiveSubCategoryId) {
+      const category = productsStore.categories?.data?.find(c => c.id === effectiveCategoryId)
+      const subcategoryBelongsToCategory = category?.subcategories?.some(
+        sub => sub.id === effectiveSubCategoryId
+      )
+      // If the subcategory doesn't belong to the category, clear it
+      if (!subcategoryBelongsToCategory) {
+        effectiveSubCategoryId = undefined
+      }
+    }
+
     // If category exists but no subcategory, use first subcategory from that category
     if (effectiveCategoryId && !effectiveSubCategoryId) {
       const category = productsStore.categories?.data?.find(c => c.id === effectiveCategoryId)
       effectiveSubCategoryId = category?.subcategories?.[0]?.id ?? undefined
     }
 
-    // Update workflow preview selection
+    // Update workflow preview selection and set substep
     if (effectiveCategoryId) {
       wf.setSelectedCategoryForPreview(effectiveCategoryId)
+      if (effectiveSubCategoryId) {
+        wf.setSelectedSubCategoryForPreview(effectiveSubCategoryId)
+      } else {
+        wf.setSelectedSubCategoryForPreview(null)
+      }
+
+      // Determine and set productsSubStep based on category/subcategory state
+      if (effectiveSubCategoryId) {
+        // Subcategory exists → show product previews directly
+        wf.setProductsSubStep('product')
+      } else {
+        // Check if category has subcategories
+        const category = productsStore.categories?.data?.find(c => c.id === effectiveCategoryId)
+        const hasSubcategories = !!(category?.subcategories && category.subcategories.length > 0)
+        if (hasSubcategories) {
+          // Category has subcategories but none selected → show subcategory selection
+          wf.setProductsSubStep('subcategory')
+        } else {
+          // Category has no subcategories → show product previews directly
+          wf.setProductsSubStep('product')
+        }
+      }
+    } else {
+      // No category → show category listing
+      wf.setProductsSubStep('category')
     }
 
     return {
@@ -560,6 +597,63 @@ export function useAppInitialization() {
         productsStore.activeProductDetails.product_texts
       )
     }
+
+    // Restore category/subcategory state and set workflow substep
+    const categoryId = customization.category_id
+    let subCategoryId = customization.sub_category_id
+
+    if (categoryId) {
+      // Validate that the subcategory belongs to the category
+      if (subCategoryId) {
+        const category = productsStore.categories?.data?.find(c => c.id === categoryId)
+        const subcategoryBelongsToCategory = category?.subcategories?.some(
+          sub => sub.id === subCategoryId
+        )
+        // If the subcategory doesn't belong to the category, clear it
+        if (!subcategoryBelongsToCategory) {
+          subCategoryId = null
+          // Also clear it in the customization store
+          if (customizationStore.customization) {
+            customizationStore.customization.sub_category_id = null
+            customizationStore.saveToLocalStorage()
+          }
+        }
+      }
+
+      // Set workflow preview selection from customization
+      wf.setSelectedCategoryForPreview(categoryId)
+      if (subCategoryId) {
+        wf.setSelectedSubCategoryForPreview(subCategoryId)
+      } else {
+        wf.setSelectedSubCategoryForPreview(null)
+      }
+
+      // Fetch product previews for the restored category/subcategory
+      await productsStore.fetchProductPreviews(categoryId, subCategoryId ?? undefined)
+
+      // Determine the correct productsSubStep based on category/subcategory state
+      const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
+      if (hasCategories) {
+        if (subCategoryId) {
+          // Subcategory exists → show product previews directly
+          wf.setProductsSubStep('product')
+        } else {
+          // Check if category has subcategories
+          const category = productsStore.categories?.data?.find(c => c.id === categoryId)
+          const hasSubcategories = !!(category?.subcategories && category.subcategories.length > 0)
+          if (hasSubcategories) {
+            // Category has subcategories but none selected → show subcategory selection
+            wf.setProductsSubStep('subcategory')
+          } else {
+            // Category has no subcategories → show product previews directly
+            wf.setProductsSubStep('product')
+          }
+        }
+      } else {
+        // No categories available → show products directly
+        wf.setProductsSubStep('product')
+      }
+    }
   }
 
   // ============================================================================
@@ -611,7 +705,38 @@ export function useAppInitialization() {
       wf.setActiveStep('product')
     }
     if (wf.activeStep === 'product') {
-      wf.setProductsSubStep(hasCategories ? 'category' : 'product')
+      // Check if category exists in customization
+      const categoryId = customizationStore.activeCategoryId
+      const subCategoryId = customizationStore.activeSubCategoryId
+
+      if (categoryId) {
+        // Category exists → determine substep based on category/subcategory state
+        if (hasCategories) {
+          if (subCategoryId) {
+            // Subcategory exists → show product previews directly
+            wf.setProductsSubStep('product')
+          } else {
+            // Check if category has subcategories
+            const category = productsStore.categories?.data?.find(c => c.id === categoryId)
+            const hasSubcategories = !!(
+              category?.subcategories && category.subcategories.length > 0
+            )
+            if (hasSubcategories) {
+              // Category has subcategories but none selected → show subcategory selection
+              wf.setProductsSubStep('subcategory')
+            } else {
+              // Category has no subcategories → show product previews directly
+              wf.setProductsSubStep('product')
+            }
+          }
+        } else {
+          // No categories available → show products directly
+          wf.setProductsSubStep('product')
+        }
+      } else {
+        // No category exists → show category listing (only if categories are available)
+        wf.setProductsSubStep(hasCategories ? 'category' : 'product')
+      }
     }
     syncWorkflowForCategoryAvailability(hasCategories, preserveWorkflowStep)
   }
@@ -729,9 +854,13 @@ export function useAppInitialization() {
 
       const categoryInfo = pipelineContext.categoryInfo ?? { categoryId: null }
 
-      await executePhase('load-product-previews', () =>
-        loadProductData(pipelineContext.stores.productsStore, categoryInfo)
-      )
+      // Only load product previews if we don't have a persisted customization
+      // If we have persisted customization, restoreExistingCustomization will fetch previews with the correct category
+      if (!pipelineContext.hasPersistedCustomization) {
+        await executePhase('load-product-previews', () =>
+          loadProductData(pipelineContext.stores.productsStore, categoryInfo)
+        )
+      }
       await executePhase('hydrate-customization', () =>
         hydrateCustomizationState(pipelineContext, categoryInfo)
       )
