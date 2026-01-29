@@ -17,6 +17,7 @@
   import AddToCollectionDialog from '@/components/locker-room/AddToCollectionDialog.vue'
   import { toast } from 'vue-sonner'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useCompanyStore } from '@/stores/company/company.store'
   import {
     locker_delete_products_title,
     locker_delete_products_description,
@@ -42,6 +43,7 @@
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
+  const companyStore = useCompanyStore()
 
   type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
 
@@ -242,24 +244,26 @@
       class="flex justify-end gap-2 pt-4 border-t w-full"
     >
       <Button variant="ghost" @click="emit('close')">{{ locker_cancel({}, { locale }) }}</Button>
-      <Button
-        v-if="!isCreatingCollection"
-        :disabled="selectedLockers.length === 0"
-        class="disabled:opacity-25"
-        variant="primary"
-        @click="handleAddToCart"
-      >
-        <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
-      </Button>
+      <template v-if="!companyStore.isEcommercePlatform">
+        <Button
+          v-if="!isCreatingCollection"
+          :disabled="selectedLockers.length === 0"
+          class="disabled:opacity-25"
+          variant="primary"
+          @click="handleAddToCart"
+        >
+          <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
+        </Button>
 
-      <Button
-        v-else
-        :disabled="selectedProducts.length === 0"
-        class="disabled:opacity-25"
-        variant="primary"
-      >
-        {{ locker_add_to_collection({}, { locale }) }}
-      </Button>
+        <Button
+          v-else
+          :disabled="selectedProducts.length === 0"
+          class="disabled:opacity-25"
+          variant="primary"
+        >
+          {{ locker_add_to_collection({}, { locale }) }}
+        </Button>
+      </template>
     </div>
     <template v-else-if="currentMode === 'detail' || isCreatingCollection">
       <div class="flex pt-4 border-t w-full flex-col md:flex-row gap-2">
@@ -356,7 +360,9 @@
             {{ isEditingCollection ? 'Update' : locker_save({}, { locale }) }}</Button
           >
           <Button
-            v-if="!isCreatingCollection && currentTab === 'lockers'"
+            v-if="
+              !isCreatingCollection && currentTab === 'lockers' && !companyStore.isEcommercePlatform
+            "
             variant="primary"
             class="ml-1"
             :disabled="selectedProducts.length === 0"

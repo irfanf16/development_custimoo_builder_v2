@@ -371,6 +371,10 @@ export function useAppInitialization() {
     if (hasSyncId.value) {
       if (updateCart.value && updateItem.value) {
         await loadCartProductIntoCustomizer(String(updateItem.value), Number(updateCart.value))
+        const { isRosterParam } = useQueryParams()
+        if (isRosterParam.value) {
+          wf.setActiveStep('roster')
+        }
         return
       }
       await createEcommerceCustomization(customizationStore, productsStore, categoryInfo)
@@ -765,7 +769,6 @@ export function useAppInitialization() {
 
     // Determine default product to load
     const syncIdProductId = syncId.value
-
     if (syncIdProductId) {
       // Load product data
       await productsStore.fetchActiveProductDetails(syncIdProductId, true)
@@ -784,7 +787,6 @@ export function useAppInitialization() {
       customizationStore.saveToLocalStorage()
     }
 
-    // Set default workflow step
     if (!wf.activeStep) {
       wf.setActiveStep('designs')
     }

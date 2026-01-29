@@ -67,6 +67,7 @@
   import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
   import ShareUrlTooltip from '@/components/shared/ShareUrlTooltip.vue'
   import { useLocalStorage } from '@/composables'
+  import { useCompanyStore } from '@/stores/company/company.store'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
@@ -79,6 +80,7 @@
   const cartStore = useCartStore()
   const lockerRoomStore = useLockerRoomStore()
   const sceneStore = useSceneStore()
+  const companyStore = useCompanyStore()
   const { menuItems, goTo } = useCustomizerMenu()
   const { loadLockerProductIntoCustomizer } = useLoadLockerProductIntoCustomizer()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
@@ -905,7 +907,9 @@
       </ButtonGroup>
 
       <!-- Cart Button -->
-      <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
+      <ButtonGroup
+        v-if="!uiStore.isMobile && authStore.isAuthenticated && !companyStore.isEcommercePlatform"
+      >
         <Button variant="outline" size="default" class="relative" @click="handleCartClick">
           <ShoppingCart class="size-4" />
           <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>

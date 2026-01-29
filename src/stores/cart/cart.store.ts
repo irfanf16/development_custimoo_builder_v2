@@ -110,7 +110,9 @@ export const useCartStore = defineStore('cartStore', () => {
    * Fetch customer's cart
    */
   async function fetchCart(force = false) {
-    // Skip if already fetched on page load and not forcing
+    if (companyStore.isEcommercePlatform || !companyStore.company) {
+      return
+    }
     if (hasFetchedOnPageLoad.value && !force) {
       return
     }

@@ -196,6 +196,15 @@ export function useBuildFactoryProduct() {
 
     // Build factory_product payload with all required fields
     const selectedProduct = productsStore.activeProductDetails
+
+    const simpleAddonIds = Object.values(customization.addons_info || {}).flatMap(
+      (addonInfo: AddonInfo) => addonInfo?.simple_addons || []
+    )
+    const simpleAddonIdsSet = new Set(simpleAddonIds)
+    const addonsFromActive = (selectedProduct?.active_addons || []).filter(addon =>
+      simpleAddonIdsSet.has(addon.addon_id)
+    )
+
     const factoryProduct: Record<string, unknown> = {
       // Required fields
       style_id: customization.style_id,
@@ -247,8 +256,8 @@ export function useBuildFactoryProduct() {
       fixed_logos: [], // Empty array as per example
       shuffle_color_number: customization.shuffle_color_number || 0,
 
-      // Addons
-      addons: [], // Empty array as per example
+      // Addons (selected simple addons with full details from active_addons)
+      addons: addonsFromActive,
       grouped_addons: Object.values(customization.addons_info || {}).flatMap(
         (addonInfo: AddonInfo) => Object.values(addonInfo?.grouped_addons || {})
       ),
