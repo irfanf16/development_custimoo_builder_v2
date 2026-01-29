@@ -128,3 +128,15 @@ export interface GenerateSignedUploadUrlResponse {
     urls: SignedUploadUrlItem[]
   }
 }
+
+export interface AddLockerProductsToCartPayload {
+  /** Map of locker_id -> array of locker_product_ids */
+  locker_products: Record<number, number[]>
+  lockers: number[]
+}
+
+export interface AddLockerProductsToCartResponse {
+  errors: any[]
+  message: string
+  result: Cart
+}

@@ -9,7 +9,9 @@ import type {
   UploadCartAssetsPayload,
   UploadCartAssetsResponse,
   GenerateSignedUploadUrlPayload,
-  GenerateSignedUploadUrlResponse
+  GenerateSignedUploadUrlResponse,
+  AddLockerProductsToCartPayload,
+  AddLockerProductsToCartResponse
 } from './types'
 
 /**
@@ -163,11 +165,19 @@ async function generateSignedUploadUrl(payload: GenerateSignedUploadUrlPayload) 
   })
 }
 
+/**
+ * Add locker products to cart (locker-only or product-level selection)
+ */
+async function addLockerProductsToCart(payload: AddLockerProductsToCartPayload) {
+  return await http.post<AddLockerProductsToCartResponse>('carts/locker-products', payload)
+}
+
 export default {
   getCustomerCart,
   storeProductToCart,
   updateCartItem,
   deleteCartItem,
   uploadCartAssets,
-  generateSignedUploadUrl
+  generateSignedUploadUrl,
+  addLockerProductsToCart
 }
