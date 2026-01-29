@@ -13,6 +13,7 @@ import {
   type GeneratePdfPayload,
   type GeneratePdfResponse
 } from '@/services/products/types'
+import type { LockerResponse } from '../lockers/types'
 // import type { OutputRecentLogo } from '@/services/products/types'
 
 async function getProductCategories(params: GetProductCategoriesParams) {
@@ -83,6 +84,28 @@ async function generatePDF(payload: GeneratePdfPayload) {
   return await http.post<GeneratePdfResponse>('generate-pdf', payload)
 }
 
+async function shareDesignUrl(payload: import('./types/base-product').ShareDesignPayload) {
+  return await http.post<{ url: string }>('product/share-design-url', payload)
+}
+
+async function getProductsByShareUrl(shared_url: string) {
+  return await http.get<
+    LockerResponse<{
+      factoryProducts: import('@/services/cart/types').FactoryProduct[]
+      factoryProductActiveIndex: number
+      lockerProductId: number | null
+      activityId: number | null
+      activityItems: unknown
+      cartId: number | null
+      factoryId: number | null
+      id: number | null
+      orderId: number | null
+    }>
+  >('product/shared', {
+    params: { shared_url }
+  })
+}
+
 export default {
   getProductCategories,
   getActiveProductDetails,
@@ -92,5 +115,7 @@ export default {
   getActiveStyleDetails,
   getDesignDetailsById,
   downloadRosterTemplate,
-  generatePDF
+  generatePDF,
+  shareDesignUrl,
+  getProductsByShareUrl
 }

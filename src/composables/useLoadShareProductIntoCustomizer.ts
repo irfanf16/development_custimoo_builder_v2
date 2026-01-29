@@ -2,20 +2,31 @@ import { ref } from 'vue'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
-import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-import lockersService from '@/services/lockers/lockers.service'
+import { API } from '@/services'
 import type {
   ActiveProductCustomization,
   APCustomizationDefaultColor,
   APCustomizationGroupColor,
   APCustomizationLogosMap,
   OutputProductText,
-  OutputProductTextItem
+  OutputProductTextItem,
+  ProductRosterDetail
 } from '@/services/products/types'
-import type { LockerProduct } from '@/services/lockers/types'
-import type { ProductRosterDetail } from '@/services/products/types'
+import type { FactoryProduct as CartFactoryProduct } from '@/services/cart/types'
 import type { CustomLogo } from '@/services/logos/types'
 import type { APCustomizationRosterEntry } from '@/services/products/types/customization'
+
+type ShareProductDetails = {
+  factoryProducts: CartFactoryProduct[]
+  factoryProductActiveIndex: number
+  lockerProductId: number | null
+  activityId: number | null
+  activityItems: unknown
+  cartId: number | null
+  factoryId: number | null
+  id: number | null
+  orderId: number | null
+}
 
 // ===== UTILITY FUNCTIONS =====
 
@@ -152,7 +163,6 @@ function normalizeTexts(value: unknown, productId: number): OutputProductText[] 
       ? itemsRaw
           .map(it => {
             if (!isRecord(it)) return null
-            // Locker payload sometimes uses numbers; product types are strings for positioning.
             const height = asSafeString(it.height)
             const x_axis = asSafeString(it.x_axis)
             const y_axis = asSafeString(it.y_axis)
@@ -231,70 +241,36 @@ function normalizeRosterEntries(
   }))
 }
 
-// ===== LOCKER PRODUCT RESOLUTION =====
+// ===== SHARE PRODUCT RESOLUTION =====
 
-interface LockerResultContainer {
-  factoryProducts?: unknown[]
-  factoryProductActiveIndex?: number | string
-}
-
-function resolveLockerProduct(
-  lockerResult: unknown,
-  fallbackLockerProduct?: LockerProduct
-): LockerProduct | null {
-  let resolved: LockerProduct | null = null
-
-  // Handle API response with container structure
-  if (isRecord(lockerResult) && Array.isArray(lockerResult.factoryProducts)) {
-    const container = lockerResult as LockerResultContainer
-    const factoryProducts = container.factoryProducts
-    if (factoryProducts && factoryProducts.length > 0) {
-      const idxRaw = container.factoryProductActiveIndex
-      const idx =
-        typeof idxRaw === 'number' ? idxRaw : typeof idxRaw === 'string' ? Number(idxRaw) : 0
-      const resolvedItem = factoryProducts[idx] ?? factoryProducts[0]
-
-      if (isRecord(resolvedItem)) {
-        resolved = resolvedItem as unknown as LockerProduct
-      }
-    }
-  } else if (isRecord(lockerResult)) {
-    // Handle direct locker product
-    resolved = lockerResult as unknown as LockerProduct
+function resolveShareProduct(shareResult: ShareProductDetails): CartFactoryProduct | null {
+  if (!Array.isArray(shareResult.factoryProducts)) {
+    return null
   }
 
-  // If we have a resolved result and a fallback, merge missing properties from fallback
-  if (resolved && fallbackLockerProduct) {
-    const resolvedRecord = resolved as unknown as Record<string, unknown>
-    const fallbackRecord = fallbackLockerProduct as unknown as Record<string, unknown>
-
-    // Merge properties from fallback that are missing in resolved result
-    for (const key in fallbackRecord) {
-      if (
-        !(key in resolvedRecord) ||
-        resolvedRecord[key] === null ||
-        resolvedRecord[key] === undefined ||
-        resolvedRecord[key] === ''
-      ) {
-        resolvedRecord[key] = fallbackRecord[key]
-      }
-    }
-
-    return resolvedRecord as unknown as LockerProduct
+  const factoryProducts = shareResult.factoryProducts
+  if (factoryProducts.length === 0) {
+    return null
   }
 
-  // Return resolved if available, otherwise use fallback
-  return resolved ?? fallbackLockerProduct ?? null
+  const idx = shareResult.factoryProductActiveIndex ?? 0
+  const resolvedItem = factoryProducts[idx] ?? factoryProducts[0]
+
+  if (isRecord(resolvedItem)) {
+    return resolvedItem as unknown as CartFactoryProduct
+  }
+
+  return null
 }
 
-function extractLockerProductIds(lockerProduct: Record<string, unknown>): {
+function extractShareProductIds(factoryProduct: Record<string, unknown>): {
   productId: number
   styleId: number
   designId: number
 } {
-  const rawProductId = lockerProduct['product_id'] ?? lockerProduct['productId']
-  const rawStyleId = lockerProduct['style_id'] ?? lockerProduct['styleId']
-  const rawDesignId = lockerProduct['design_id'] ?? lockerProduct['designId']
+  const rawProductId = factoryProduct['product_id'] ?? factoryProduct['productId']
+  const rawStyleId = factoryProduct['style_id'] ?? factoryProduct['styleId']
+  const rawDesignId = factoryProduct['design_id'] ?? factoryProduct['designId']
 
   return {
     productId: asSafeNumber(rawProductId, 0) || 0,
@@ -316,7 +292,7 @@ function findActiveProductIdFromPreviews(
 }
 
 async function resolveActiveProductId(
-  lockerBaseProductId: number,
+  shareBaseProductId: number,
   styleId: number,
   productsStore: ReturnType<typeof useProductsStore>,
   customizationStore: ReturnType<typeof useCustomizationStore>
@@ -334,19 +310,19 @@ async function resolveActiveProductId(
   }
 
   // Try existing previews first (no extra requests)
-  let mappedId = findActiveProductIdFromPreviews(lockerBaseProductId, productsStore.productPreviews)
+  let mappedId = findActiveProductIdFromPreviews(shareBaseProductId, productsStore.productPreviews)
   if (mappedId) return mappedId
 
   // Try fetching previews in current category context
   const catId = customizationStore.activeCategoryId ?? null
   const subId = customizationStore.activeSubCategoryId ?? undefined
   await productsStore.fetchProductPreviews(catId, subId || undefined)
-  mappedId = findActiveProductIdFromPreviews(lockerBaseProductId, productsStore.productPreviews)
+  mappedId = findActiveProductIdFromPreviews(shareBaseProductId, productsStore.productPreviews)
   if (mappedId) return mappedId
 
   // Last resort: try fetching previews with no category constraint
   await productsStore.fetchProductPreviews(null)
-  mappedId = findActiveProductIdFromPreviews(lockerBaseProductId, productsStore.productPreviews)
+  mappedId = findActiveProductIdFromPreviews(shareBaseProductId, productsStore.productPreviews)
   if (mappedId) return mappedId
 
   return null
@@ -354,7 +330,7 @@ async function resolveActiveProductId(
 
 // ===== CUSTOMIZATION BUILDING =====
 
-function extractLockerCustomTexts(
+function extractShareCustomTexts(
   productCustomTextsRaw: unknown,
   productKey: string,
   productId: number
@@ -391,33 +367,34 @@ function extractLockerCustomTexts(
   return null
 }
 
-function buildCustomizationFromLocker(
-  locker: LockerProduct,
+function buildCustomizationFromShareProduct(
+  factoryProduct: CartFactoryProduct,
   base: ActiveProductCustomization,
   designName: string
 ): ActiveProductCustomization {
-  const productKey = String(locker.product_id)
+  const productKey = String(factoryProduct.product_id)
+  const factoryProductRecord = factoryProduct as unknown as Record<string, unknown>
 
-  const defaultColors = normalizeDefaultColors(locker.defaultcolors)
-  const groupColors = normalizeGroupColors(locker.groupcolors)
-  const logos = normalizeCustomLogos(locker.custom_logos, locker.product_id)
-  const texts = normalizeTexts(locker.text, locker.product_id)
-  const rosterEntries = normalizeRosterEntries(locker.product_roster_detail ?? undefined)
-  const lockerRecord = locker as unknown as Record<string, unknown>
-  const productCustomTextsRaw = lockerRecord['product_custom_texts']
-  const fixedLogoIndexRaw = lockerRecord['fixed_logo_index']
-  const shuffleColorNumberRaw = lockerRecord['shuffle_color_number']
-  const groupPatternsRaw = lockerRecord['group_patterns']
+  // Access color fields via record to handle cases where they might not be in the type definition
+  const defaultColors = normalizeDefaultColors(factoryProductRecord['defaultcolors'])
+  const groupColors = normalizeGroupColors(factoryProductRecord['groupcolors'])
+  const logos = normalizeCustomLogos(factoryProduct.custom_logos, factoryProduct.product_id)
+  const texts = normalizeTexts(factoryProduct.product_custom_texts, factoryProduct.product_id)
+  const rosterEntries = normalizeRosterEntries(factoryProduct.product_roster_detail ?? undefined)
+  const productCustomTextsRaw = factoryProductRecord['product_custom_texts']
+  const fixedLogoIndexRaw = factoryProductRecord['fixed_logo_index']
+  const shuffleColorNumberRaw = factoryProductRecord['shuffle_color_number']
+  const groupPatternsRaw = factoryProductRecord['group_patterns']
 
-  // Extract category_id and sub_category_id from locker product
-  const categoryId = lockerRecord['category_id']
-  const subCategoryId = lockerRecord['sub_category_id']
+  // Extract category_id and sub_category_id from share product
+  const categoryId = factoryProductRecord['category_id']
+  const subCategoryId = factoryProductRecord['sub_category_id']
 
   const next: ActiveProductCustomization = {
     ...base,
-    product_id: locker.product_id,
-    style_id: locker.style_id,
-    design_id: locker.design_id,
+    product_id: factoryProduct.product_id,
+    style_id: factoryProduct.style_id,
+    design_id: factoryProduct.design_id,
     design_name: designName
   }
 
@@ -441,14 +418,14 @@ function buildCustomizationFromLocker(
   if (groupColors && Object.keys(groupColors).length) next.group_colors = groupColors
   if (logos?.map && Object.keys(logos.map).length) next.custom_logos = logos.map
 
-  // Replace the entire product_custom_texts object with locker texts (preserving IDs from locker room)
-  const finalLockerTexts =
-    extractLockerCustomTexts(productCustomTextsRaw, productKey, locker.product_id) ?? texts
+  // Replace the entire product_custom_texts object with share texts (preserving IDs from share)
+  const finalShareTexts =
+    extractShareCustomTexts(productCustomTextsRaw, productKey, factoryProduct.product_id) ?? texts
 
-  // Replace the entire product_custom_texts object (not merge) with locker texts
-  if (finalLockerTexts && finalLockerTexts.length > 0) {
+  // Replace the entire product_custom_texts object (not merge) with share texts
+  if (finalShareTexts && finalShareTexts.length > 0) {
     next.product_custom_texts = {
-      [productKey]: finalLockerTexts
+      [productKey]: finalShareTexts
     }
   }
 
@@ -488,25 +465,25 @@ function remapProductIdKeys(
 
 // ===== PRESET TEXT UPDATES =====
 
-function updatePresetTextsWithLockerFlags(
+function updatePresetTextsWithShareFlags(
   presetTexts: OutputProductText[],
-  lockerTexts: OutputProductText[]
+  shareTexts: OutputProductText[]
 ): OutputProductText[] {
-  const lockerFirstNameText = lockerTexts.find(t => t.type === 'name' && t.is_first_name === true)
-  const lockerFirstNumberText = lockerTexts.find(
+  const shareFirstNameText = shareTexts.find(t => t.type === 'name' && t.is_first_name === true)
+  const shareFirstNumberText = shareTexts.find(
     t => t.type === 'number' && t.is_first_number === true
   )
 
   return presetTexts.map(presetText => {
-    if (lockerFirstNameText && presetText.type === 'name' && presetText.is_first_name === true) {
-      return lockerFirstNameText
+    if (shareFirstNameText && presetText.type === 'name' && presetText.is_first_name === true) {
+      return shareFirstNameText
     }
     if (
-      lockerFirstNumberText &&
+      shareFirstNumberText &&
       presetText.type === 'number' &&
       presetText.is_first_number === true
     ) {
-      return lockerFirstNumberText
+      return shareFirstNumberText
     }
     return presetText
   })
@@ -514,74 +491,60 @@ function updatePresetTextsWithLockerFlags(
 
 // ===== MAIN COMPOSABLE =====
 
-export function useLoadLockerProductIntoCustomizer() {
+export function useLoadShareProductIntoCustomizer() {
   const isLoading = ref(false)
   const { tryCatchApi } = useTryCatchApi({
-    defaultProperties: { composable: 'useLoadLockerProductIntoCustomizer' }
+    defaultProperties: { composable: 'useLoadShareProductIntoCustomizer' }
   })
 
-  async function loadLockerProductIntoCustomizer(
-    lockerProductId: number,
-    fallbackLockerProduct?: LockerProduct,
-    lockerId?: number
+  async function loadShareProductIntoCustomizer(
+    shareUrl: string,
+    fallbackShareProduct?: ShareProductDetails
   ): Promise<boolean> {
     const productsStore = useProductsStore()
     const customizationStore = useCustomizationStore()
-    const lockerRoomStore = useLockerRoomStore()
 
     isLoading.value = true
     productsStore.suspendCustomizationAutoSync()
     try {
-      // Pass locker_id to the API route if provided
-      const resp = await tryCatchApi(
-        lockersService.getLockerProductDetails(lockerProductId, lockerId),
-        {
-          operation: 'loadLockerProductIntoCustomizer',
-          locker_product_id: lockerProductId
-        }
-      )
+      // Fetch share product details from API
+      const resp = await tryCatchApi(API.products.getProductsByShareUrl(shareUrl), {
+        operation: 'loadShareProductIntoCustomizer',
+        share_url: shareUrl
+      })
 
-      const lockerResult: unknown =
-        resp.success && resp.content?.result
-          ? resp.content.result
-          : fallbackLockerProduct
-            ? { factoryProducts: [fallbackLockerProduct], factoryProductActiveIndex: 0 }
-            : null
+      const shareResult: ShareProductDetails | null =
+        resp.success && resp.content ? resp.content.result : (fallbackShareProduct ?? null)
 
-      if (!lockerResult) {
+      if (!shareResult) {
         return false
       }
 
-      const lockerProduct = resolveLockerProduct(lockerResult, fallbackLockerProduct)
-      if (!lockerProduct) {
+      const factoryProduct = resolveShareProduct(shareResult)
+      if (!factoryProduct) {
         return false
-      }
-
-      // Set editing state using lockerId from the payload (current open locker)
-      if (lockerId && typeof lockerId === 'number' && lockerId > 0) {
-        lockerRoomStore.setEditingLockerProduct(lockerProductId, lockerId, lockerProduct)
       }
 
       const {
-        productId: lockerBaseProductId,
+        productId: shareBaseProductId,
         styleId,
         designId
-      } = extractLockerProductIds(lockerProduct as unknown as Record<string, unknown>)
+      } = extractShareProductIds(factoryProduct as unknown as Record<string, unknown>)
 
-      if (!lockerBaseProductId) {
+      if (!shareBaseProductId) {
         return false
       }
 
       // Load the base product/style/design via existing products flow
-      let productId = lockerBaseProductId
+      let productId = shareBaseProductId
       const productResp = await productsStore.fetchActiveProductDetails(productId)
 
       if (!productResp?.success) {
-        // If the locker payload uses a *base* product_id that isn't valid for GET product/{id},
+        // If the share payload uses a *base* product_id that isn't valid for GET product/{id},
         // try mapping it to the active product id via previews
-        if (productResp?.status === 404 && lockerBaseProductId) {
+        if (productResp?.status === 404 && shareBaseProductId) {
           const resolvedId = await resolveActiveProductId(
-            lockerBaseProductId,
+            shareBaseProductId,
             styleId,
             productsStore,
             customizationStore
@@ -609,27 +572,25 @@ export function useLoadLockerProductIntoCustomizer() {
 
       if (designId && productsStore.activeDesignDetails?.id !== designId) {
         const designResp = await productsStore.fetchDesignDetailsById(designId)
-        // Locker design_id can refer to a locker-specific artifact and not exist in product/style/design endpoint.
-        // Fallback to whatever design was loaded via active product/style.
         if (designResp?.success && productsStore.activeDesignDetails) {
           customizationStore.setDesign(productsStore.activeDesignDetails)
         }
       }
 
-      // Extract category_id and sub_category_id from locker product
-      const lockerRecord = lockerProduct as unknown as Record<string, unknown>
-      const lockerCategoryId = lockerRecord['category_id']
-      const lockerSubCategoryId = lockerRecord['sub_category_id']
+      // Extract category_id and sub_category_id from share product
+      const shareProductRecord = factoryProduct as unknown as Record<string, unknown>
+      const shareCategoryId = shareProductRecord['category_id']
+      const shareSubCategoryId = shareProductRecord['sub_category_id']
 
-      // Use category from locker product if available, otherwise preserve current
+      // Use category from share product if available, otherwise preserve current
       const preservedCategoryId =
-        typeof lockerCategoryId === 'number'
-          ? lockerCategoryId
+        typeof shareCategoryId === 'number'
+          ? shareCategoryId
           : (customizationStore.activeCategoryId ?? 0)
       const preservedSubCategoryId =
-        typeof lockerSubCategoryId === 'number'
-          ? lockerSubCategoryId
-          : lockerSubCategoryId === null
+        typeof shareSubCategoryId === 'number'
+          ? shareSubCategoryId
+          : shareSubCategoryId === null
             ? null
             : (customizationStore.activeSubCategoryId ?? null)
 
@@ -644,28 +605,28 @@ export function useLoadLockerProductIntoCustomizer() {
       })
 
       const designName = productsStore.activeDesignDetails?.design_name ?? ''
-      const lockerProductForCustomizer = {
-        ...(lockerProduct as unknown as Record<string, unknown>),
+      const factoryProductForCustomizer = {
+        ...(factoryProduct as unknown as Record<string, unknown>),
         product_id: productId
-      } as unknown as LockerProduct
+      } as unknown as CartFactoryProduct
 
-      const nextCustomization = buildCustomizationFromLocker(
-        lockerProductForCustomizer,
+      const nextCustomization = buildCustomizationFromShareProduct(
+        factoryProductForCustomizer,
         baseCustomization,
         designName
       )
 
-      // If locker payload maps were keyed by base product id, copy them to the resolved active product id
-      remapProductIdKeys(nextCustomization, lockerBaseProductId, productId)
+      // If share payload maps were keyed by base product id, copy them to the resolved active product id
+      remapProductIdKeys(nextCustomization, shareBaseProductId, productId)
 
       customizationStore.setCustomization(nextCustomization)
 
       // Update preset texts in productsStore based on is_first_name and is_first_number flags
-      const lockerTexts = nextCustomization.product_custom_texts[String(productId)]
+      const shareTexts = nextCustomization.product_custom_texts[String(productId)]
       const presetTexts = productsStore.activeProductDetails?.product_texts
 
-      if (lockerTexts && presetTexts && presetTexts.length > 0) {
-        const updatedPresetTexts = updatePresetTextsWithLockerFlags(presetTexts, lockerTexts)
+      if (shareTexts && presetTexts && presetTexts.length > 0) {
+        const updatedPresetTexts = updatePresetTextsWithShareFlags(presetTexts, shareTexts)
 
         if (productsStore.activeProductDetails) {
           productsStore.setActiveProductDetailsState({
@@ -682,5 +643,5 @@ export function useLoadLockerProductIntoCustomizer() {
     }
   }
 
-  return { isLoading, loadLockerProductIntoCustomizer }
+  return { isLoading, loadShareProductIntoCustomizer }
 }

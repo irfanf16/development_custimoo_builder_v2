@@ -24,8 +24,8 @@
   import TwoDScene from './scene/TwoDScene.vue'
 
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { objectToFormData } from '../lib/utils'
   import CreateLockerDialog from './locker-room/CreateLockerDialog.vue'
+  import type { SaveLockerProductPayload } from '@/services/lockers/types'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
     design_name_placeholder,
@@ -262,10 +262,10 @@
         )
 
         // Build locker product payload matching API structure
-        let locker = {
+        const locker: SaveLockerProductPayload = {
           addons: [],
           roster_url: false,
-          room_id: selectedLockerId.value,
+          room_id: selectedLockerId.value!,
           product_id: productId,
           product_name: productName.value || '',
           svg_parts: JSON.stringify(svgParts),
@@ -284,11 +284,12 @@
           svgcolors: JSON.stringify(svgcolors),
           grouped_addons: JSON.stringify(groupedAddons),
           ungrouped_addons: JSON.stringify(ungroupedAddons),
-          group_patterns: JSON.stringify(customization?.group_patterns || {})
+          group_patterns: JSON.stringify(customization?.group_patterns || {}),
+          category_id: customizationStore.activeCategoryId ?? undefined,
+          sub_category_id: customizationStore.activeSubCategoryId ?? null
         }
-        const payload = objectToFormData(locker)
         const success = await lockerStore.saveDesignToLocker(
-          payload,
+          locker,
           selectedLockerId.value!,
           locker.front_image
         )

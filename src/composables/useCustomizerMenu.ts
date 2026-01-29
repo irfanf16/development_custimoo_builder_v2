@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useProductsStore } from '@/stores/products/products.store'
+import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProfileStore } from '@/stores/profile/profile.store'
 import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
 import {
@@ -18,6 +19,7 @@ import {
 export function useCustomizerMenu() {
   const workflowStore = useWorkflowStore()
   const productsStore = useProductsStore()
+  const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
 
   // Ensure the product menu entry stays visible even when category data is missing
@@ -72,7 +74,57 @@ export function useCustomizerMenu() {
   }
 
   async function goTo(nextStep: CustomizerStep) {
-    if (nextStep === 'designs') {
+    if (nextStep === 'product') {
+      // Restore category state when navigating to product step
+      const categoryId = customizationStore.activeCategoryId
+      const subCategoryId = customizationStore.activeSubCategoryId
+
+      if (categoryId) {
+        // Restore selected category/subcategory from customization
+        workflowStore.setSelectedCategoryForPreview(categoryId)
+        if (subCategoryId) {
+          workflowStore.setSelectedSubCategoryForPreview(subCategoryId)
+        } else {
+          workflowStore.setSelectedSubCategoryForPreview(null)
+        }
+
+        // Determine the correct productsSubStep
+        const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
+        if (hasCategories) {
+          if (subCategoryId) {
+            // Subcategory exists → show product previews directly
+            workflowStore.setProductsSubStep('product')
+          } else {
+            // Check if category has subcategories
+            const category = productsStore.categories?.data?.find(c => c.id === categoryId)
+            const hasSubcategories = !!(
+              category?.subcategories && category.subcategories.length > 0
+            )
+            if (hasSubcategories) {
+              // Category has subcategories but none selected → show subcategory selection
+              workflowStore.setProductsSubStep('subcategory')
+            } else {
+              // Category has no subcategories → show product previews directly
+              workflowStore.setProductsSubStep('product')
+            }
+          }
+        } else {
+          // No categories available → show products directly
+          workflowStore.setProductsSubStep('product')
+        }
+
+        // Fetch product previews if needed
+        const hasPreviews =
+          Array.isArray(productsStore.productPreviews) && productsStore.productPreviews.length > 0
+        if (!hasPreviews) {
+          await productsStore.fetchProductPreviews(categoryId, subCategoryId ?? undefined)
+        }
+      } else {
+        // No category in customization → show category listing
+        const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
+        workflowStore.setProductsSubStep(hasCategories ? 'category' : 'product')
+      }
+    } else if (nextStep === 'designs') {
       const styleId = productsStore.activeStyleDetails?.id
       const hasPreviews =
         Array.isArray(productsStore.designPreviews) && productsStore.designPreviews.length > 0

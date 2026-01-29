@@ -2,6 +2,7 @@ import { useCustomizationStore } from '@/stores/customization/customization.stor
 import { useProductsStore } from '@/stores/products/products.store'
 import { useSceneStore } from '@/stores/scene/scene.store'
 import { useCartStore } from '@/stores/cart/cart.store'
+import { useAuthStore } from '@/stores/auth/auth.store'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import { base64ToFile, uploadPresignedFiles } from '@/lib/utils'
 import type { ComponentPublicInstance } from 'vue'
@@ -18,6 +19,7 @@ export function useBuildFactoryProduct() {
   const productsStore = useProductsStore()
   const sceneStore = useSceneStore()
   const cartStore = useCartStore()
+  const authStore = useAuthStore()
   const { getItemRaw } = useLocalStorage()
 
   async function buildFactoryProductPayload(): Promise<{
@@ -96,10 +98,16 @@ export function useBuildFactoryProduct() {
     // Upload all files in a single request if any files are available
     if (filesToUpload.length > 0) {
       const signedUrlResponse = await cartStore.generateSignedUploadUrl({
-        files: filesToUpload,
-        company_id: companyId,
-        factory_id: factoryId
-      })
+        files: filesToUpload.map(file => ({
+          name: file.name,
+          type: file.type,
+          size: file.size
+        })),
+        companyId: companyId,
+        factoryId: factoryId,
+        type: 'cart',
+        customer: authStore.customer?.id
+      } as unknown as Parameters<typeof cartStore.generateSignedUploadUrl>[0])
 
       if (
         !signedUrlResponse ||
@@ -259,7 +267,9 @@ export function useBuildFactoryProduct() {
       ecommerce_product_id: '',
       ecommerce_variant_id: '',
       ecommerce_modifier_id: '',
-      sync_id: ''
+      sync_id: '',
+      category_id: customizationStore.activeCategoryId ?? undefined,
+      sub_category_id: customizationStore.activeSubCategoryId ?? null
     }
 
     // Try to get ecommerce values from product details

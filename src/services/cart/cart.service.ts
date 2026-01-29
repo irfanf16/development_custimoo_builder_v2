@@ -140,28 +140,27 @@ async function uploadCartAssets(payload: UploadCartAssetsPayload) {
  * Generate signed upload URLs for cart assets
  */
 async function generateSignedUploadUrl(payload: GenerateSignedUploadUrlPayload) {
-  const formData = new FormData()
-
-  // Append files manually (objectToFormData doesn't handle File arrays correctly)
-  if (payload.files && Array.isArray(payload.files)) {
-    payload.files.forEach((file, index) => {
-      formData.append(`files[${index}]`, file)
-    })
+  const requestPayload: Record<string, unknown> = {
+    files: payload.files
   }
 
-  // Append other fields
-  if (payload.company_id !== undefined) {
-    formData.append('company_id', String(payload.company_id))
+  if (payload.companyId !== undefined) {
+    requestPayload.companyId = payload.companyId
   }
-  if (payload.factory_id !== undefined && payload.factory_id !== null) {
-    formData.append('factory_id', String(payload.factory_id))
+  if (payload.factoryId !== undefined && payload.factoryId !== null) {
+    requestPayload.factoryId = payload.factoryId
+  }
+  if (payload.collectionId !== undefined && payload.collectionId !== null) {
+    requestPayload.collectionId = payload.collectionId
+  }
+  if (payload.type !== undefined) {
+    requestPayload.type = payload.type
+  }
+  if (payload.customer !== undefined) {
+    requestPayload.customer = payload.customer
   }
 
-  return await http.post<GenerateSignedUploadUrlResponse>('carts/upload-urls', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
+  return await http.post<GenerateSignedUploadUrlResponse>('assets/upload-urls', requestPayload)
 }
 
 /**
