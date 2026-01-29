@@ -23,7 +23,8 @@
     Fullscreen,
     Ruler,
     X,
-    File
+    File,
+    Share2
   } from 'lucide-vue-next'
   import {
     topbar_save,
@@ -58,16 +59,15 @@
   import { useBuildFactoryProduct } from '@/composables/useBuildFactoryProduct'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { useSceneStore } from '@/stores/scene/scene.store'
-  import { useCompanyStore } from '@/stores/company/company.store'
-  import {
-    base64ToFile,
-    generateRandomString,
-    objectToFormData,
-    uploadPresignedFiles
-  } from '@/lib/utils'
+  import { base64ToFile, generateRandomString, uploadPresignedFiles } from '@/lib/utils'
+  import type { SaveLockerProductPayload } from '@/services/lockers/types'
+  import type { ShareDesignPayload } from '@/services/products/types/base-product'
   import type { ComponentPublicInstance } from 'vue'
   import { toast } from 'vue-sonner'
   import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
+  import ShareUrlTooltip from '@/components/shared/ShareUrlTooltip.vue'
+  import { useLocalStorage } from '@/composables'
+  import { useCompanyStore } from '@/stores/company/company.store'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
@@ -95,6 +95,8 @@
   const showCartDialog = ref(false)
   const showSaveDesignDialog = ref(false)
   const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
+  const sharedUrl = ref<string | null>(null)
+  const showShareTooltip = ref(false)
 
   const skuInformation = computed(() => productsStore?.activeProductDetails?.sku)
 
@@ -215,6 +217,7 @@
       })
       console.error('Generate PDF error:', error)
     }
+    toast.dismiss(toastId)
   }
 
   async function handleSaveAsDraft() {
@@ -508,7 +511,7 @@
         lockerRoomStore.editingLockerProduct?.name ||
         ''
 
-      const locker = {
+      const locker: SaveLockerProductPayload = {
         id: lockerRoomStore.editingLockerProductId,
         addons: [],
         roster_url: false,
@@ -531,11 +534,12 @@
         svgcolors: JSON.stringify(svgcolors),
         grouped_addons: JSON.stringify(groupedAddons),
         ungrouped_addons: JSON.stringify(ungroupedAddons),
-        group_patterns: JSON.stringify(customization.group_patterns || {})
+        group_patterns: JSON.stringify(customization.group_patterns || {}),
+        category_id: customizationStore.activeCategoryId ?? undefined,
+        sub_category_id: customizationStore.activeSubCategoryId ?? null
       }
 
-      const payload = objectToFormData(locker)
-      const success = await lockerRoomStore.updateLockerProduct(payload, lockerId)
+      const success = await lockerRoomStore.updateLockerProduct(locker, lockerId)
 
       if (success) {
         lockerRoomStore.clearEditingLockerProduct()
@@ -554,6 +558,229 @@
   }
   async function onLoginSuccess() {
     await lockerRoomStore.fetchLockersWithcolors()
+  }
+
+  async function handleShareDesign() {
+    // Reset shared URL and tooltip state
+    sharedUrl.value = null
+    showShareTooltip.value = false
+
+    try {
+      // Get images from canvas
+      let frontImage = ''
+      let backImage = ''
+
+      const frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
+      if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
+        frontImage = (
+          frontImageComponentRef as unknown as ComponentPublicInstance & {
+            getImageFromCanvas: () => string
+          }
+        ).getImageFromCanvas()
+      }
+
+      const backImageComponentRef = sceneStore.getTwoDSceneRef('back')
+      if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
+        backImage = (
+          backImageComponentRef as unknown as ComponentPublicInstance & {
+            getImageFromCanvas: () => string
+          }
+        ).getImageFromCanvas()
+      }
+
+      const componentRef = sceneStore.threeDSceneRef
+      if (componentRef && 'getImageFromCanvas' in componentRef) {
+        frontImage = (
+          componentRef as unknown as ComponentPublicInstance & {
+            getImageFromCanvas: (side?: string) => string
+          }
+        ).getImageFromCanvas('front')
+        backImage = (
+          componentRef as unknown as ComponentPublicInstance & {
+            getImageFromCanvas: (side?: string) => string
+          }
+        ).getImageFromCanvas('back')
+      }
+
+      if (!frontImage || !backImage) {
+        toast.error('Failed to get images from canvas', {
+          position: 'top-right',
+          richColors: true
+        })
+        return
+      }
+
+      const { getItemRaw } = useLocalStorage()
+      const companyIdRaw = getItemRaw('__customizer_company_id__')
+      const companyId = companyIdRaw ? Number(companyIdRaw) : undefined
+      if (!companyId) {
+        toast.error('Company ID not found', { position: 'top-right', richColors: true })
+        return
+      }
+
+      const factoryId = productsStore.activeProductDetails?.factory_id ?? null
+      const frontFile = base64ToFile(frontImage, 'front.png')
+      const backFile = base64ToFile(backImage, 'back.png')
+
+      const signedUrlResponse = await cartStore.generateSignedUploadUrl({
+        files: [
+          { name: frontFile.name, type: frontFile.type, size: frontFile.size },
+          { name: backFile.name, type: backFile.type, size: backFile.size }
+        ],
+        companyId: companyId,
+        factoryId: factoryId,
+        type: 'share_product' as const
+      } as unknown as Parameters<typeof cartStore.generateSignedUploadUrl>[0])
+
+      if (
+        !signedUrlResponse ||
+        !signedUrlResponse.result?.urls ||
+        signedUrlResponse.result.urls.length === 0
+      ) {
+        toast.error('Failed to generate signed upload URLs', {
+          position: 'top-right',
+          richColors: true
+        })
+        return
+      }
+
+      // Upload images
+      const urlItems = signedUrlResponse.result.urls
+      const presignedFiles: Array<{
+        file: File
+        presigned_url: string
+        file_type: string
+        file_side?: string
+      }> = []
+      let frontUrlItem: (typeof urlItems)[0] | undefined
+      let backUrlItem: (typeof urlItems)[0] | undefined
+
+      // Match URL items with files based on file path or file name
+      urlItems.forEach((urlItem, index) => {
+        const file = index === 0 ? frontFile : backFile
+        const isFront =
+          urlItem.file_path?.includes('_front') ||
+          urlItem.file_side === 'front' ||
+          file.name === 'front.png'
+        const isBack =
+          urlItem.file_path?.includes('_back') ||
+          urlItem.file_side === 'back' ||
+          file.name === 'back.png'
+
+        presignedFiles.push({
+          file,
+          presigned_url: urlItem.signed_url,
+          file_type: urlItem.file_type || 'image/png',
+          file_side: isFront ? 'front' : 'back'
+        })
+
+        if (isFront) {
+          frontUrlItem = urlItem
+        } else if (isBack) {
+          backUrlItem = urlItem
+        }
+      })
+
+      const uploadResults = await uploadPresignedFiles(presignedFiles)
+      if (!uploadResults.every(r => r.success)) {
+        toast.error('Failed to upload images', { position: 'top-right', richColors: true })
+        return
+      }
+
+      // Build share design payload
+      const customization = customizationStore.customization
+      const productId = productsStore.activeProductDetails?.product_id
+      if (!productId || !customization) {
+        toast.error('Missing product or customization data', {
+          position: 'top-right',
+          richColors: true
+        })
+        return
+      }
+
+      const productKey = String(productId)
+      const svgParts = productsStore.activeDesignDetails?.svg_parts || []
+      const customLogos = customization.custom_logos[productKey] || []
+      const productCustomTexts = customization.product_custom_texts[productKey] || []
+      const rosterDetail = customization.products_rosters[productKey] || []
+      const defaultColors = customization.default_colors || []
+      const groupColors = customization.group_colors || {}
+      const svgcolors = productsStore.svgGroups.map(group => ({
+        value: group.color || '',
+        name: group.name || '',
+        pantone: group.pantone || ''
+      }))
+      const addonsInfo = customization.addons_info || {}
+      const groupedAddons =
+        Object.keys(addonsInfo).length > 0
+          ? Object.values(addonsInfo).reduce(
+              (acc, addonInfo) => {
+                const grouped =
+                  (addonInfo as { grouped_addons?: Record<string, unknown> })?.grouped_addons || {}
+                return { ...acc, ...grouped }
+              },
+              {} as Record<string, unknown>
+            )
+          : {}
+      const ungroupedAddons = Object.values(addonsInfo).flatMap(
+        addonInfo => (addonInfo as { ungrouped_addons?: unknown[] })?.ungrouped_addons || []
+      )
+
+      const randString = generateRandomString()
+      const productDisplayName = productsStore.activeProductDetails?.display_name || 'Product'
+      const encodedName = encodeURIComponent(productDisplayName).replace(/%20/g, '+')
+
+      const shareDesignPayload: ShareDesignPayload = {
+        addons: [],
+        roster_url: `${getShareBaseUrl()}/share/${encodedName}/${randString}`,
+        product_id: productId,
+        product_name: productDisplayName,
+        svg_parts: JSON.stringify(svgParts),
+        style_id: customization.style_id || 0,
+        design_id: customization.design_id || 0,
+        custom_logos: JSON.stringify(customLogos),
+        text: JSON.stringify(productCustomTexts),
+        colors: [],
+        shuffle_color_number: customization.shuffle_color_number || 0,
+        defaultcolors: JSON.stringify(defaultColors),
+        groupcolors: JSON.stringify(groupColors),
+        front_image: frontUrlItem?.file_path || '',
+        back_image: backUrlItem?.file_path || '',
+        product_roster_detail: JSON.stringify(rosterDetail),
+        fixed_logo_index: customization.fixed_logo_index || 0,
+        svgcolors: JSON.stringify(svgcolors),
+        grouped_addons: JSON.stringify(groupedAddons),
+        ungrouped_addons: JSON.stringify(ungroupedAddons),
+        group_patterns: JSON.stringify(customization.group_patterns || {}),
+        rand_string: randString,
+        room_id: null,
+        category_id: customizationStore.activeCategoryId ?? undefined,
+        sub_category_id: customizationStore.activeSubCategoryId ?? null
+      }
+
+      const response = await productsStore.shareDesign(shareDesignPayload)
+
+      if (response.success && response.content?.url) {
+        sharedUrl.value = response.content.url
+        showShareTooltip.value = true
+        toast.success('Design shared successfully!', {
+          position: 'top-right',
+          richColors: true,
+          duration: 3000
+        })
+      } else {
+        toast.error('Failed to share design', {
+          position: 'top-right',
+          richColors: true
+        })
+      }
+    } catch (error) {
+      toast.error('Failed to share design', {
+        position: 'top-right',
+        richColors: true
+      })
+      console.error('Share design error:', error)
+    }
   }
 </script>
 
@@ -647,6 +874,20 @@
           <Ruler class="size-4" />
           <span>Size Guide</span>
         </Button>
+      </ButtonGroup>
+
+      <!-- Share Design Button -->
+      <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
+        <ShareUrlTooltip
+          :share-url="sharedUrl"
+          :open="showShareTooltip"
+          @update:open="showShareTooltip = $event"
+        >
+          <Button variant="outline" size="default" @click="handleShareDesign">
+            <Share2 class="size-4" />
+            <span>Share Design</span>
+          </Button>
+        </ShareUrlTooltip>
       </ButtonGroup>
 
       <!-- Generate PDF Button -->

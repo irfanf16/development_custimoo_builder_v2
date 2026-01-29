@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { GetProductCategoriesParams } from '@/services/products/types'
 import { isWidgetMode } from '@/lib/widgetUtils'
+import { useAppStore } from '@/stores/app/app.store'
 
 /**
  * Composable to determine the appropriate category query parameters
@@ -36,20 +37,32 @@ export function useCategoryParams() {
 
   /**
    * Determine the appropriate category params based on priority:
-   * 1. Share URL (if contains 'share')
-   * 2. is_reorder + active_product_id (if both present)
-   * 3. sync_id (from URL)
-   * 4. product_id (from URL or passed explicitly)
-   * 5. Default: customized=true
+   * 1. Share URL from app store (extracted from path)
+   * 2. Share URL from query params (if contains 'share')
+   * 3. is_reorder + active_product_id (if both present)
+   * 4. sync_id (from URL)
+   * 5. product_id (from URL or passed explicitly)
+   * 6. Default: customized=true
    *
    * NOTE: This composable only handles URL-based logic.
    * Edit mode state (locker_product, cart_product, order_product, reorder_product)
    * should be handled by the caller with higher priority.
    */
   const getCategoryParams = computed((): GetProductCategoriesParams | undefined => {
+    const appStore = useAppStore()
     const urlParams = getUrlQueryParams.value
 
-    // Priority 1: Share URL
+    // Priority 1: Share URL from app store (extracted from path like share/%22Jersey+S%2FS%22/w0MifV3r5u)
+    if (appStore.shareUrl) {
+      return {
+        share_url: appStore.shareUrl,
+        customized: true,
+        personalized: false,
+        private: false
+      }
+    }
+
+    // Priority 2: Share URL from query params
     if (urlParams.share_url) {
       return {
         share_url: urlParams.share_url

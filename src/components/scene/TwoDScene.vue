@@ -12,6 +12,7 @@
     shallowRef
   } from 'vue'
   import { FabricImage, Canvas, Group, Rect, type FabricObject } from 'fabric'
+  import * as fabric from 'fabric'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
   import { filterFields } from '@/lib/utils'
@@ -34,12 +35,14 @@
     type GetImageFromCanvasOptions
   } from '@/composables/scene/useCanvasImage'
   import { useSceneStore } from '@/stores/scene/scene.store'
+  import { useCompanyStore } from '@/stores/company/company.store'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
   import type { OutputProductLogosSetting } from '@/services/products/types'
 
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
   const sceneStore = useSceneStore()
+  const companyStore = useCompanyStore()
 
   // Canvas refs
   const canvasEl = shallowRef<HTMLCanvasElement | null>(null)
@@ -47,6 +50,7 @@
   const modelObjects = shallowRef<(FabricObject | FabricImage)[]>([])
   const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
   const otherSideLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
+  const dimText = shallowRef<fabric.IText | null>(null)
   const suppressCustomLogosWatch = ref(false)
   const safeZone = shallowRef<Group | null>(null)
   const boundary = shallowRef<Group | null>(null)
@@ -284,6 +288,8 @@
     }
 
     initCanvas(canvasEl.value, props.canvasWidth, props.canvasHeight)
+    ensureDimText()
+    canvas.value?.on('selection:cleared', hideDimensions)
 
     // Setup custom Fabric controls with icons (scale/rotate/delete)
     setupFabricControls({
@@ -497,6 +503,88 @@
       widthRatio: props.canvasWidth / (props.mainCanvasWidth || 600),
       heightRatio: props.canvasHeight / (props.mainCanvasHeight || 600)
     }
+  }
+
+  /**
+   * Measurement helpers and dimension overlay for 2D canvas.
+   */
+  function getMeasurementConfig() {
+    const ratio = productsStore.activeProductDetails?.measurement_ratio ?? 1
+    const unit = companyStore.settings?.settings?.measurement_unit
+    return { ratio, unit }
+  }
+
+  function formatMeasurement(value: number): string {
+    const unit = getMeasurementConfig().unit?.unit ?? 'px'
+    const converted = convertSizeToMeasurement(value)
+    return `${converted.toFixed(1)}${unit}`
+  }
+
+  function convertSizeToMeasurement(value: number): number {
+    const { ratio, unit } = getMeasurementConfig()
+    const base = value * ratio
+    let converted = base
+    if (unit?.conversion_operator === 'multiply') {
+      converted = base * Number(unit.conversion_value ?? 1)
+    } else if (unit?.conversion_operator === 'divide') {
+      const divisor = Number(unit.conversion_value ?? 1) || 1
+      converted = base / divisor
+    }
+    return Number(converted.toFixed(1))
+  }
+
+  function ensureDimText() {
+    if (!canvas.value || dimText.value) return
+    dimText.value = new fabric.IText('', {
+      fontSize: 14,
+      backgroundColor: '#fff',
+      hasControls: false,
+      selectable: false,
+      evented: false,
+      originX: 'center',
+      originY: 'center',
+      lockMovementX: true,
+      lockMovementY: true,
+      visible: false,
+      fontFamily: 'Ubuntu'
+    })
+    canvas.value.add(dimText.value as unknown as FabricObject)
+  }
+
+  function hideDimensions() {
+    if (!dimText.value || !canvas.value) return
+    dimText.value.set({ visible: false })
+    canvas.value.requestRenderAll()
+  }
+
+  function showDimensions(target: FabricObject | FabricImage) {
+    if (!canvas.value) return
+    ensureDimText()
+    if (!dimText.value) return
+
+    const width = (target.width ?? 0) * (target.scaleX ?? 1)
+    const height = (target.height ?? 0) * (target.scaleY ?? 1)
+    let displayWidth = width
+    let displayHeight = height
+
+    if ((target as unknown as { type?: string }).type === 'text') {
+      const strokeWidth = (target as unknown as { strokeWidth?: number }).strokeWidth ?? 0
+      displayWidth += strokeWidth * (target.scaleX ?? 1)
+      displayHeight += strokeWidth * (target.scaleY ?? 1)
+    }
+
+    dimText.value.set({
+      left: target.left,
+      top:
+        (target.top ?? 0) +
+        ((target.height ?? 0) * (target.scaleY ?? 1)) / 2 +
+        (dimText.value.height ?? 0) * (dimText.value.scaleY ?? 1) +
+        20,
+      text: `Size (W)${formatMeasurement(displayWidth)} x (H)${formatMeasurement(displayHeight)}`,
+      visible: true
+    })
+    canvas.value.bringObjectToFront(dimText.value as unknown as FabricObject)
+    canvas.value.requestRenderAll()
   }
 
   /**
@@ -1083,7 +1171,8 @@
         renderCanvas,
         canvasSelection: true,
         flipX: false,
-        suppressWatchRef: suppressCustomLogosWatch
+        suppressWatchRef: suppressCustomLogosWatch,
+        convertSize: convertSizeToMeasurement
       })
 
       // Re-apply clip and clamp when user moves/scales/rotates
@@ -1092,14 +1181,19 @@
         if (added) {
           constrainLogoWithinDesign(added as FabricObject)
           await applyClipPath(added)
+          showDimensions(added)
           if (canvas.value) canvas.value.requestRenderAll()
         }
       }
       const added = customLogoObjects.value.get(logoIndex)
+      added?.on('selected', () => showDimensions(added))
       added?.on('moving', reclipAndClamp)
       added?.on('scaling', reclipAndClamp)
       added?.on('rotating', reclipAndClamp)
-      added?.on('modified', () => addToOtherSide(added))
+      added?.on('modified', () => {
+        addToOtherSide(added)
+        showDimensions(added)
+      })
       if (added) {
         addToOtherSide(added)
       }

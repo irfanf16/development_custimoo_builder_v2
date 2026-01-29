@@ -40,7 +40,7 @@ export function useQueryParams() {
   /**
    * Get roster parameter
    */
-  const roster = computed(() => store.getParam('roster'))
+  const isRosterParam = computed(() => store.getParam('roster'))
 
   /**
    * Check if sync_id exists
@@ -82,7 +82,7 @@ export function useQueryParams() {
     updateItem,
     updateCart,
     line,
-    roster,
+    isRosterParam,
     // Existence checks (computed)
     hasSyncId,
     hasUpdateItem,

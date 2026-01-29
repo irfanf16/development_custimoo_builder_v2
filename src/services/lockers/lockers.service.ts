@@ -70,7 +70,7 @@ async function getSignedUrl(locker_id: number) {
   )
 }
 
-async function saveDesign(payload: FormData, locker_id?: number) {
+async function saveDesign(payload: import('./types').SaveLockerProductPayload, locker_id?: number) {
   // For updating: use locker-products/{locker_id}
   // For saving: use locker-products
   const endpoint = locker_id ? `locker-products/${locker_id}` : `locker-products`
@@ -115,6 +115,13 @@ async function getCollectionLogoPresignedUrls(
   )
 }
 
+async function shareProduct(locker_product_id: number, product_id: number) {
+  return await http.post<LockerResponse<{ url: string }>>(`share/product`, {
+    id: locker_product_id,
+    product_id: product_id
+  })
+}
+
 export default {
   getLockers,
   updateLocker,
@@ -128,6 +135,7 @@ export default {
   deleteProducts,
   copyProducts,
   saveDesign,
+  shareProduct,
 
   // collection endpoints
   getCollections,

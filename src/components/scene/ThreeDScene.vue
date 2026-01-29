@@ -42,6 +42,7 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
   import { useSceneStore } from '@/stores/scene/scene.store'
+  import { useCompanyStore } from '@/stores/company/company.store'
   import type { DesignData } from '@/composables/scene'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
   import { filterFields } from '@/lib/utils'
@@ -134,6 +135,7 @@
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
   const sceneStore = useSceneStore()
+  const companyStore = useCompanyStore()
 
   // ===== LOGOS COMPOSABLE =====
   // Note: fromStorage is already available from useSceneCommon
@@ -267,6 +269,7 @@
   const isFabricDrag = ref(false)
   const suppressCustomLogosWatch = ref(false)
   const lastKnownObjectPos = ref<{ left: number; top: number } | null>(null)
+  const dimText = shallowRef<fabric.IText | null>(null)
 
   // ===== LIFECYCLE =====
   onMounted(async () => {
@@ -845,6 +848,9 @@
         // Text removal can be added here if needed
       })
 
+      ensureDimText(true)
+      canvas.value?.on('selection:cleared', hideDimensions)
+
       // Prevent objects from moving outside the model by reverting to last valid position
       const fabricCanvas = canvas.value as Canvas
       fabricCanvas.on('object:moving', evt => {
@@ -1156,6 +1162,87 @@
   }
 
   /**
+   * Measurement helpers and dimension overlay (legacy 3D logic).
+   * Uses design scale plus company measurement unit (cm/in/px).
+   */
+  function formatMeasurement(value: number): string {
+    const unit = companyStore.settings?.settings?.measurement_unit?.unit ?? 'px'
+    const converted = convertSizeToMeasurement(value)
+    return `${converted.toFixed(1)}${unit}`
+  }
+
+  function convertSizeToMeasurement(value: number): number {
+    const unit = companyStore.settings?.settings?.measurement_unit?.unit
+    const designScale = designObject.value?.scaleX ?? 1
+    const pxScaled = designScale ? value / designScale : value
+
+    let converted = pxScaled
+    if (unit === 'cm') {
+      converted = pxScaled / 28.3464567
+    } else if (unit === 'in') {
+      converted = pxScaled / 72
+    }
+    return Number(converted.toFixed(1))
+  }
+
+  function ensureDimText(flipY = false) {
+    if (!canvas.value || dimText.value) return
+    dimText.value = new fabric.IText('', {
+      fontSize: 14,
+      backgroundColor: '#fff',
+      hasControls: false,
+      selectable: false,
+      evented: false,
+      originX: 'center',
+      originY: 'center',
+      lockMovementX: true,
+      lockMovementY: true,
+      visible: false,
+      fontFamily: 'Ubuntu',
+      flipY
+    })
+    canvas.value.add(dimText.value as unknown as FabricObject)
+  }
+
+  function hideDimensions() {
+    if (!dimText.value || !canvas.value) return
+    dimText.value.set({ visible: false })
+    canvas.value.requestRenderAll()
+    composer.value?.render()
+  }
+
+  function showDimensions(target: FabricObject | FabricImage) {
+    if (!canvas.value) return
+    ensureDimText(true)
+    if (!dimText.value) return
+
+    const width = (target.width ?? 0) * (target.scaleX ?? 1)
+    const height = (target.height ?? 0) * (target.scaleY ?? 1)
+    let displayWidth = width
+    let displayHeight = height
+
+    if ((target as unknown as { type?: string }).type === 'text') {
+      const strokeWidth = (target as unknown as { strokeWidth?: number }).strokeWidth ?? 0
+      displayWidth += strokeWidth * (target.scaleX ?? 1)
+      displayHeight += strokeWidth * (target.scaleY ?? 1)
+    }
+
+    dimText.value.set({
+      left: target.left,
+      top:
+        (target.top ?? 0) -
+        ((target.height ?? 0) * (target.scaleY ?? 1)) / 2 -
+        (dimText.value.height ?? 0) * (dimText.value.scaleY ?? 1) -
+        20,
+      text: `Size (W)${formatMeasurement(displayWidth)} x (H)${formatMeasurement(displayHeight)}`,
+      visible: true
+    })
+    canvas.value.bringObjectToFront(dimText.value as unknown as FabricObject)
+    canvas.value.requestRenderAll()
+    composer.value?.render()
+  }
+
+  /**
    * Load safe zone SVG and set as clip path
    */
   async function addSafeZone(safeZoneUrl?: string): Promise<void> {
@@ -1249,8 +1336,17 @@
         canvasSelection: true,
         flipX: true,
         findPositionOn2D,
-        suppressWatchRef: suppressCustomLogosWatch
+        suppressWatchRef: suppressCustomLogosWatch,
+        convertSize: convertSizeToMeasurement
       })
+
+      const added = customLogoObjects.value.get(logoIndex)
+      if (added) {
+        added.on('selected', () => showDimensions(added))
+        added.on('moving', () => showDimensions(added))
+        added.on('scaling', () => showDimensions(added))
+        added.on('rotating', () => showDimensions(added))
+      }
     } catch (error) {
       console.error('Failed to add logo:', error)
     }

@@ -64,6 +64,8 @@ export interface BaseProduct extends ProductBase {
   colors?: unknown
   grouped_addons: Array<{ id: number; name: string; [key: string]: unknown }>
   ungrouped_addons: Array<{ id: number; name: string; [key: string]: unknown }>
+  category_id?: number
+  sub_category_id?: number | null
 }
 
 /**
@@ -72,8 +74,41 @@ export interface BaseProduct extends ProductBase {
  */
 export interface ShareDesignProduct extends BaseProduct {
   roster_url: string
-  room_id: number
+  room_id: number | null
   rand_string: string
+}
+
+/**
+ * Share Design payload interface for API requests
+ * Contains all required fields for sharing a design
+ * Note: Many fields are JSON-stringified for API compatibility
+ */
+export interface ShareDesignPayload {
+  addons: unknown[]
+  roster_url: string
+  product_id: number
+  product_name: string
+  svg_parts: string // JSON stringified
+  style_id: number
+  design_id: number
+  custom_logos: string // JSON stringified
+  text: string // JSON stringified
+  colors: unknown[]
+  shuffle_color_number: number
+  defaultcolors: string // JSON stringified
+  groupcolors: string // JSON stringified
+  front_image: string
+  back_image: string
+  product_roster_detail: string // JSON stringified
+  fixed_logo_index: number
+  svgcolors: string // JSON stringified
+  grouped_addons: string // JSON stringified
+  ungrouped_addons: string // JSON stringified
+  group_patterns: string // JSON stringified
+  rand_string: string
+  room_id: number | null
+  category_id?: number
+  sub_category_id?: number | null
 }
 
 /**

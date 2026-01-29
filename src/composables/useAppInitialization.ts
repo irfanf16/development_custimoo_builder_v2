@@ -74,6 +74,57 @@ export function useAppInitialization() {
   const storage = useLocalStorage()
   const categoryParamsComposable = useCategoryParams()
   const appStore = useAppStore()
+
+  // ============================================================================
+  // Phase 0: Extract and handle share URL from path
+  // ============================================================================
+  const extractAndStoreShareUrl = (): void => {
+    if (typeof window === 'undefined') return
+
+    // If share URL is already set (e.g., by router guard), skip extraction
+    if (appStore.shareUrl) return
+
+    const currentPath = router.currentRoute.value.path
+    const hashPath = window.location.hash
+
+    // Check for share URL in path (e.g., /share/%22Jersey+S%2FS%22/w0MifV3r5u)
+    // or in hash (e.g., #/share/%22Jersey+S%2FS%22/w0MifV3r5u)
+    let sharePathMatch: RegExpMatchArray | null = null
+
+    // Check hash first (for hash routing)
+    if (hashPath) {
+      sharePathMatch = hashPath.match(/[#/]share\/(.+?)(?:\?|$|#)/)
+    }
+
+    // If not found in hash, check path
+    if (!sharePathMatch && currentPath) {
+      sharePathMatch = currentPath.match(/\/share\/(.+?)(?:\?|$)/)
+    }
+
+    if (sharePathMatch && sharePathMatch[1]) {
+      const matchValue = sharePathMatch[1]
+      if (typeof matchValue === 'string' && matchValue.length > 0) {
+        // Store the full share URL including 'share/' prefix for API request
+        appStore.setShareUrl(`share/${matchValue}`)
+      }
+
+      // Remove share route from URL
+      const newPath = currentPath.replace(/\/share\/.+?$/, '/').replace(/\/+/g, '/')
+      const newHash = hashPath.replace(/[#/]share\/.+?(?:\?|$|#)/, '#/')
+
+      // Update URL without reload
+      if (hashPath) {
+        // Hash routing mode
+        window.history.replaceState(null, '', newHash || '#/')
+      } else {
+        // History mode
+        router.replace(newPath || '/').catch((err: unknown) => {
+          // Ignore navigation errors
+          console.error('Error replacing route:', err)
+        })
+      }
+    }
+  }
   const handleCompanyContextChange = (
     previousCompanyId: number | null,
     currentCompanyId: number | null,
@@ -131,7 +182,7 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
-  // Phase 0: Check if the app has been loaded in an iframe and forward url params if needed
+  // Phase 0.5: Check if the app has been loaded in an iframe and forward url params if needed
   // ============================================================================
   const syncQueryParamsIfEmbedded = async (): Promise<void> => {
     if (typeof window === 'undefined') return
@@ -159,8 +210,8 @@ export function useAppInitialization() {
 
     if (queryMatches) return
 
-    await router.push({ query: nextQuery }).catch(error => {
-      console.error('Error forwarding url params to iframe:', error)
+    await router.push({ query: nextQuery }).catch((err: unknown) => {
+      console.error('Error forwarding url params to iframe:', err)
     })
   }
 
@@ -252,10 +303,16 @@ export function useAppInitialization() {
       }
     }
 
-    await Promise.all([
-      companyStore.fetchSettings(),
-      productsStore.fetchCustomizedCategories(categoryParamsComposable.categoryParams.value)
-    ])
+    // If share URL exists, fetch settings only (product will be loaded via loadShareProduct composable)
+    // Otherwise, fetch categories normally
+    if (appStore.shareUrl) {
+      await companyStore.fetchSettings()
+    } else {
+      await Promise.all([
+        companyStore.fetchSettings(),
+        productsStore.fetchCustomizedCategories(categoryParamsComposable.categoryParams.value)
+      ])
+    }
 
     context.hasCategoriesAvailable = (productsStore.categories?.data?.length ?? 0) > 0
     // Fetch locker room with colors data
@@ -271,6 +328,28 @@ export function useAppInitialization() {
   }
 
   // ============================================================================
+  // Phase 5: Load Share Product
+  // ============================================================================
+  // Loads product from share URL using the dedicated composable
+  const loadShareProduct = async (
+    customizationStore: ReturnType<typeof useCustomizationStore>,
+    _productsStore: ReturnType<typeof useProductsStore>
+  ): Promise<void> => {
+    const shareUrl = appStore.shareUrl
+    if (!shareUrl) return
+
+    const { useLoadShareProductIntoCustomizer } =
+      await import('@/composables/useLoadShareProductIntoCustomizer')
+    const { loadShareProductIntoCustomizer: loadShare } = useLoadShareProductIntoCustomizer()
+
+    const success = await loadShare(shareUrl)
+    if (success) {
+      customizationStore.saveToLocalStorage()
+      wf.setActiveStep('designs')
+    }
+  }
+
+  // ============================================================================
   // Phase 5: Reload State with Correct Prefix
   // ============================================================================
   // Now that company data is available, reload localStorage data with the
@@ -282,9 +361,20 @@ export function useAppInitialization() {
     const { hasSyncId, updateCart, updateItem } = useQueryParams()
     const { customizationStore, productsStore } = context.stores
     const { loadCartProductIntoCustomizer } = useLoadCartProductIntoCustomizer()
+
+    // Priority 1: Share URL product loading
+    if (appStore.shareUrl) {
+      await loadShareProduct(customizationStore, productsStore)
+      return
+    }
+
     if (hasSyncId.value) {
       if (updateCart.value && updateItem.value) {
         await loadCartProductIntoCustomizer(String(updateItem.value), Number(updateCart.value))
+        const { isRosterParam } = useQueryParams()
+        if (isRosterParam.value) {
+          wf.setActiveStep('roster')
+        }
         return
       }
       await createEcommerceCustomization(customizationStore, productsStore, categoryInfo)
@@ -337,15 +427,52 @@ export function useAppInitialization() {
       customizationStore.activeSubCategoryId ?? // 2. User's previous selection
       undefined
 
+    // Validate that the subcategory belongs to the effective category
+    if (effectiveCategoryId && effectiveSubCategoryId) {
+      const category = productsStore.categories?.data?.find(c => c.id === effectiveCategoryId)
+      const subcategoryBelongsToCategory = category?.subcategories?.some(
+        sub => sub.id === effectiveSubCategoryId
+      )
+      // If the subcategory doesn't belong to the category, clear it
+      if (!subcategoryBelongsToCategory) {
+        effectiveSubCategoryId = undefined
+      }
+    }
+
     // If category exists but no subcategory, use first subcategory from that category
     if (effectiveCategoryId && !effectiveSubCategoryId) {
       const category = productsStore.categories?.data?.find(c => c.id === effectiveCategoryId)
       effectiveSubCategoryId = category?.subcategories?.[0]?.id ?? undefined
     }
 
-    // Update workflow preview selection
+    // Update workflow preview selection and set substep
     if (effectiveCategoryId) {
       wf.setSelectedCategoryForPreview(effectiveCategoryId)
+      if (effectiveSubCategoryId) {
+        wf.setSelectedSubCategoryForPreview(effectiveSubCategoryId)
+      } else {
+        wf.setSelectedSubCategoryForPreview(null)
+      }
+
+      // Determine and set productsSubStep based on category/subcategory state
+      if (effectiveSubCategoryId) {
+        // Subcategory exists → show product previews directly
+        wf.setProductsSubStep('product')
+      } else {
+        // Check if category has subcategories
+        const category = productsStore.categories?.data?.find(c => c.id === effectiveCategoryId)
+        const hasSubcategories = !!(category?.subcategories && category.subcategories.length > 0)
+        if (hasSubcategories) {
+          // Category has subcategories but none selected → show subcategory selection
+          wf.setProductsSubStep('subcategory')
+        } else {
+          // Category has no subcategories → show product previews directly
+          wf.setProductsSubStep('product')
+        }
+      }
+    } else {
+      // No category → show category listing
+      wf.setProductsSubStep('category')
     }
 
     return {
@@ -474,6 +601,63 @@ export function useAppInitialization() {
         productsStore.activeProductDetails.product_texts
       )
     }
+
+    // Restore category/subcategory state and set workflow substep
+    const categoryId = customization.category_id
+    let subCategoryId = customization.sub_category_id
+
+    if (categoryId) {
+      // Validate that the subcategory belongs to the category
+      if (subCategoryId) {
+        const category = productsStore.categories?.data?.find(c => c.id === categoryId)
+        const subcategoryBelongsToCategory = category?.subcategories?.some(
+          sub => sub.id === subCategoryId
+        )
+        // If the subcategory doesn't belong to the category, clear it
+        if (!subcategoryBelongsToCategory) {
+          subCategoryId = null
+          // Also clear it in the customization store
+          if (customizationStore.customization) {
+            customizationStore.customization.sub_category_id = null
+            customizationStore.saveToLocalStorage()
+          }
+        }
+      }
+
+      // Set workflow preview selection from customization
+      wf.setSelectedCategoryForPreview(categoryId)
+      if (subCategoryId) {
+        wf.setSelectedSubCategoryForPreview(subCategoryId)
+      } else {
+        wf.setSelectedSubCategoryForPreview(null)
+      }
+
+      // Fetch product previews for the restored category/subcategory
+      await productsStore.fetchProductPreviews(categoryId, subCategoryId ?? undefined)
+
+      // Determine the correct productsSubStep based on category/subcategory state
+      const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
+      if (hasCategories) {
+        if (subCategoryId) {
+          // Subcategory exists → show product previews directly
+          wf.setProductsSubStep('product')
+        } else {
+          // Check if category has subcategories
+          const category = productsStore.categories?.data?.find(c => c.id === categoryId)
+          const hasSubcategories = !!(category?.subcategories && category.subcategories.length > 0)
+          if (hasSubcategories) {
+            // Category has subcategories but none selected → show subcategory selection
+            wf.setProductsSubStep('subcategory')
+          } else {
+            // Category has no subcategories → show product previews directly
+            wf.setProductsSubStep('product')
+          }
+        }
+      } else {
+        // No categories available → show products directly
+        wf.setProductsSubStep('product')
+      }
+    }
   }
 
   // ============================================================================
@@ -525,7 +709,38 @@ export function useAppInitialization() {
       wf.setActiveStep('product')
     }
     if (wf.activeStep === 'product') {
-      wf.setProductsSubStep(hasCategories ? 'category' : 'product')
+      // Check if category exists in customization
+      const categoryId = customizationStore.activeCategoryId
+      const subCategoryId = customizationStore.activeSubCategoryId
+
+      if (categoryId) {
+        // Category exists → determine substep based on category/subcategory state
+        if (hasCategories) {
+          if (subCategoryId) {
+            // Subcategory exists → show product previews directly
+            wf.setProductsSubStep('product')
+          } else {
+            // Check if category has subcategories
+            const category = productsStore.categories?.data?.find(c => c.id === categoryId)
+            const hasSubcategories = !!(
+              category?.subcategories && category.subcategories.length > 0
+            )
+            if (hasSubcategories) {
+              // Category has subcategories but none selected → show subcategory selection
+              wf.setProductsSubStep('subcategory')
+            } else {
+              // Category has no subcategories → show product previews directly
+              wf.setProductsSubStep('product')
+            }
+          }
+        } else {
+          // No categories available → show products directly
+          wf.setProductsSubStep('product')
+        }
+      } else {
+        // No category exists → show category listing (only if categories are available)
+        wf.setProductsSubStep(hasCategories ? 'category' : 'product')
+      }
     }
     syncWorkflowForCategoryAvailability(hasCategories, preserveWorkflowStep)
   }
@@ -554,7 +769,6 @@ export function useAppInitialization() {
 
     // Determine default product to load
     const syncIdProductId = syncId.value
-
     if (syncIdProductId) {
       // Load product data
       await productsStore.fetchActiveProductDetails(syncIdProductId, true)
@@ -573,7 +787,6 @@ export function useAppInitialization() {
       customizationStore.saveToLocalStorage()
     }
 
-    // Set default workflow step
     if (!wf.activeStep) {
       wf.setActiveStep('designs')
     }
@@ -610,6 +823,8 @@ export function useAppInitialization() {
   }
 
   const runInitializationPipeline = async (): Promise<void> => {
+    // Extract share URL from path before other operations
+    extractAndStoreShareUrl()
     await executePhase('sync-query-params', syncQueryParamsIfEmbedded)
     await executePhase('load-app-info', () => {
       appStore.loadAppInfoFromGlobalVariable()
@@ -641,9 +856,13 @@ export function useAppInitialization() {
 
       const categoryInfo = pipelineContext.categoryInfo ?? { categoryId: null }
 
-      await executePhase('load-product-previews', () =>
-        loadProductData(pipelineContext.stores.productsStore, categoryInfo)
-      )
+      // Only load product previews if we don't have a persisted customization
+      // If we have persisted customization, restoreExistingCustomization will fetch previews with the correct category
+      if (!pipelineContext.hasPersistedCustomization) {
+        await executePhase('load-product-previews', () =>
+          loadProductData(pipelineContext.stores.productsStore, categoryInfo)
+        )
+      }
       await executePhase('hydrate-customization', () =>
         hydrateCustomizationState(pipelineContext, categoryInfo)
       )
