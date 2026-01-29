@@ -107,7 +107,7 @@ export function useBuildFactoryProduct() {
         factoryId: factoryId,
         type: 'cart',
         customer: authStore.customer?.id
-      })
+      } as unknown as Parameters<typeof cartStore.generateSignedUploadUrl>[0])
 
       if (
         !signedUrlResponse ||
@@ -258,7 +258,9 @@ export function useBuildFactoryProduct() {
       ecommerce_product_id: '',
       ecommerce_variant_id: '',
       ecommerce_modifier_id: '',
-      sync_id: ''
+      sync_id: '',
+      category_id: customizationStore.activeCategoryId ?? undefined,
+      sub_category_id: customizationStore.activeSubCategoryId ?? null
     }
 
     // Try to get ecommerce values from product details

@@ -95,6 +95,38 @@ export interface LockerCollection {
 }
 
 /**
+ * Save Locker Product payload interface for API requests
+ * Contains all fields required when saving or updating a locker product
+ */
+export interface SaveLockerProductPayload {
+  id?: number
+  addons: unknown[]
+  roster_url: boolean
+  room_id: number
+  product_id: number
+  product_name: string
+  svg_parts: string
+  style_id: number
+  design_id: number
+  custom_logos: string
+  text: string
+  colors: unknown[]
+  shuffle_color_number: number
+  defaultcolors: string
+  groupcolors: string
+  front_image: string
+  back_image: string
+  product_roster_detail: string
+  fixed_logo_index: number
+  svgcolors: string
+  grouped_addons: string
+  ungrouped_addons: string
+  group_patterns: string
+  category_id?: number
+  sub_category_id?: number | null
+}
+
+/**
  * LockerProduct extends LockerProductExtension with additional locker-specific fields
  */
 export interface LockerProduct extends LockerProductExtension {

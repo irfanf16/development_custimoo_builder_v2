@@ -5,6 +5,7 @@ import type {
   CopyProductPayload,
   Locker,
   LockerProduct,
+  SaveLockerProductPayload,
   SignedUrlResponse,
   LockerRoomsWithColors
 } from '@/services/lockers/types'
@@ -204,11 +205,11 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   }
 
   async function saveDesignToLocker(
-    formData: FormData,
+    payload: SaveLockerProductPayload,
     locker_id: number,
     front_image: string
   ): Promise<boolean> {
-    const resp = await tryCatchApi(API.lockers.saveDesign(formData), {
+    const resp = await tryCatchApi(API.lockers.saveDesign(payload), {
       operation: 'saveDesignToLocker'
     })
     if (!resp.success) {
@@ -224,11 +225,12 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     return true
   }
 
-  async function updateLockerProduct(formData: FormData, locker_id: number): Promise<boolean> {
-    // Add _method: PUT to the form data
-    formData.append('_method', 'PUT')
+  async function updateLockerProduct(
+    payload: SaveLockerProductPayload,
+    locker_id: number
+  ): Promise<boolean> {
     // For updating, pass locker_id to use route: locker-products/{locker_id}
-    const resp = await tryCatchApi(API.lockers.saveDesign(formData, locker_id), {
+    const resp = await tryCatchApi(API.lockers.saveDesign(payload, locker_id), {
       operation: 'updateLockerProduct'
     })
     if (!resp.success) {
