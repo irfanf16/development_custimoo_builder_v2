@@ -70,7 +70,7 @@ async function getSignedUrl(locker_id: number) {
   )
 }
 
-async function saveDesign(payload: FormData, locker_id?: number) {
+async function saveDesign(payload: import('./types').SaveLockerProductPayload, locker_id?: number) {
   // For updating: use locker-products/{locker_id}
   // For saving: use locker-products
   const endpoint = locker_id ? `locker-products/${locker_id}` : `locker-products`

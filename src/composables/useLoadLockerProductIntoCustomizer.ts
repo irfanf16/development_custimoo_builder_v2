@@ -409,12 +409,28 @@ function buildCustomizationFromLocker(
   const shuffleColorNumberRaw = lockerRecord['shuffle_color_number']
   const groupPatternsRaw = lockerRecord['group_patterns']
 
+  // Extract category_id and sub_category_id from locker product
+  const categoryId = lockerRecord['category_id']
+  const subCategoryId = lockerRecord['sub_category_id']
+
   const next: ActiveProductCustomization = {
     ...base,
     product_id: locker.product_id,
     style_id: locker.style_id,
     design_id: locker.design_id,
     design_name: designName
+  }
+
+  // Set category_id only if it's a number
+  if (typeof categoryId === 'number') {
+    next.category_id = categoryId
+  }
+
+  // Set sub_category_id if it's a number or null
+  if (typeof subCategoryId === 'number') {
+    next.sub_category_id = subCategoryId
+  } else if (subCategoryId === null) {
+    next.sub_category_id = null
   }
 
   if (typeof fixedLogoIndexRaw === 'number') next.fixed_logo_index = fixedLogoIndexRaw
@@ -600,9 +616,23 @@ export function useLoadLockerProductIntoCustomizer() {
         }
       }
 
-      // Replace customization with a locker-hydrated snapshot
-      const preservedCategoryId = customizationStore.activeCategoryId ?? 0
-      const preservedSubCategoryId = customizationStore.activeSubCategoryId ?? null
+      // Extract category_id and sub_category_id from locker product
+      const lockerRecord = lockerProduct as unknown as Record<string, unknown>
+      const lockerCategoryId = lockerRecord['category_id']
+      const lockerSubCategoryId = lockerRecord['sub_category_id']
+
+      // Use category from locker product if available, otherwise preserve current
+      const preservedCategoryId =
+        typeof lockerCategoryId === 'number'
+          ? lockerCategoryId
+          : (customizationStore.activeCategoryId ?? 0)
+      const preservedSubCategoryId =
+        typeof lockerSubCategoryId === 'number'
+          ? lockerSubCategoryId
+          : lockerSubCategoryId === null
+            ? null
+            : (customizationStore.activeSubCategoryId ?? null)
+
       const effectiveStyleId = productsStore.activeStyleDetails?.id ?? styleId
       const effectiveDesignId = productsStore.activeDesignDetails?.id ?? designId
       const baseCustomization = customizationStore.createDefaultCustomization({

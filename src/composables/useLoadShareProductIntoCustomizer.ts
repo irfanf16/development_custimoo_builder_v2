@@ -10,12 +10,23 @@ import type {
   APCustomizationLogosMap,
   OutputProductText,
   OutputProductTextItem,
-  ProductRosterDetail,
-  ShareProductDetails
+  ProductRosterDetail
 } from '@/services/products/types'
-import type { FactoryProduct } from '@/services/cart/types'
+import type { FactoryProduct as CartFactoryProduct } from '@/services/cart/types'
 import type { CustomLogo } from '@/services/logos/types'
 import type { APCustomizationRosterEntry } from '@/services/products/types/customization'
+
+type ShareProductDetails = {
+  factoryProducts: CartFactoryProduct[]
+  factoryProductActiveIndex: number
+  lockerProductId: number | null
+  activityId: number | null
+  activityItems: unknown
+  cartId: number | null
+  factoryId: number | null
+  id: number | null
+  orderId: number | null
+}
 
 // ===== UTILITY FUNCTIONS =====
 
@@ -232,7 +243,7 @@ function normalizeRosterEntries(
 
 // ===== SHARE PRODUCT RESOLUTION =====
 
-function resolveShareProduct(shareResult: ShareProductDetails): FactoryProduct | null {
+function resolveShareProduct(shareResult: ShareProductDetails): CartFactoryProduct | null {
   if (!Array.isArray(shareResult.factoryProducts)) {
     return null
   }
@@ -246,7 +257,7 @@ function resolveShareProduct(shareResult: ShareProductDetails): FactoryProduct |
   const resolvedItem = factoryProducts[idx] ?? factoryProducts[0]
 
   if (isRecord(resolvedItem)) {
-    return resolvedItem as unknown as FactoryProduct
+    return resolvedItem as unknown as CartFactoryProduct
   }
 
   return null
@@ -357,7 +368,7 @@ function extractShareCustomTexts(
 }
 
 function buildCustomizationFromShareProduct(
-  factoryProduct: FactoryProduct,
+  factoryProduct: CartFactoryProduct,
   base: ActiveProductCustomization,
   designName: string
 ): ActiveProductCustomization {
@@ -375,12 +386,28 @@ function buildCustomizationFromShareProduct(
   const shuffleColorNumberRaw = factoryProductRecord['shuffle_color_number']
   const groupPatternsRaw = factoryProductRecord['group_patterns']
 
+  // Extract category_id and sub_category_id from share product
+  const categoryId = factoryProductRecord['category_id']
+  const subCategoryId = factoryProductRecord['sub_category_id']
+
   const next: ActiveProductCustomization = {
     ...base,
     product_id: factoryProduct.product_id,
     style_id: factoryProduct.style_id,
     design_id: factoryProduct.design_id,
     design_name: designName
+  }
+
+  // Set category_id only if it's a number
+  if (typeof categoryId === 'number') {
+    next.category_id = categoryId
+  }
+
+  // Set sub_category_id if it's a number or null
+  if (typeof subCategoryId === 'number') {
+    next.sub_category_id = subCategoryId
+  } else if (subCategoryId === null) {
+    next.sub_category_id = null
   }
 
   if (typeof fixedLogoIndexRaw === 'number') next.fixed_logo_index = fixedLogoIndexRaw
@@ -550,9 +577,23 @@ export function useLoadShareProductIntoCustomizer() {
         }
       }
 
-      // Replace customization with a share-hydrated snapshot
-      const preservedCategoryId = customizationStore.activeCategoryId ?? 0
-      const preservedSubCategoryId = customizationStore.activeSubCategoryId ?? null
+      // Extract category_id and sub_category_id from share product
+      const shareProductRecord = factoryProduct as unknown as Record<string, unknown>
+      const shareCategoryId = shareProductRecord['category_id']
+      const shareSubCategoryId = shareProductRecord['sub_category_id']
+
+      // Use category from share product if available, otherwise preserve current
+      const preservedCategoryId =
+        typeof shareCategoryId === 'number'
+          ? shareCategoryId
+          : (customizationStore.activeCategoryId ?? 0)
+      const preservedSubCategoryId =
+        typeof shareSubCategoryId === 'number'
+          ? shareSubCategoryId
+          : shareSubCategoryId === null
+            ? null
+            : (customizationStore.activeSubCategoryId ?? null)
+
       const effectiveStyleId = productsStore.activeStyleDetails?.id ?? styleId
       const effectiveDesignId = productsStore.activeDesignDetails?.id ?? designId
       const baseCustomization = customizationStore.createDefaultCustomization({
@@ -567,7 +608,7 @@ export function useLoadShareProductIntoCustomizer() {
       const factoryProductForCustomizer = {
         ...(factoryProduct as unknown as Record<string, unknown>),
         product_id: productId
-      } as unknown as FactoryProduct
+      } as unknown as CartFactoryProduct
 
       const nextCustomization = buildCustomizationFromShareProduct(
         factoryProductForCustomizer,

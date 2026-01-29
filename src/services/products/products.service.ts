@@ -11,8 +11,7 @@ import {
   type OutputDesignDetails,
   type ActiveStyleDetails,
   type GeneratePdfPayload,
-  type GeneratePdfResponse,
-  type ShareProductDetails
+  type GeneratePdfResponse
 } from '@/services/products/types'
 import type { LockerResponse } from '../lockers/types'
 // import type { OutputRecentLogo } from '@/services/products/types'
@@ -85,12 +84,24 @@ async function generatePDF(payload: GeneratePdfPayload) {
   return await http.post<GeneratePdfResponse>('generate-pdf', payload)
 }
 
-async function shareDesignUrl(payload: FormData) {
+async function shareDesignUrl(payload: import('./types/base-product').ShareDesignPayload) {
   return await http.post<{ url: string }>('product/share-design-url', payload)
 }
 
 async function getProductsByShareUrl(shared_url: string) {
-  return await http.get<LockerResponse<ShareProductDetails>>('product/shared', {
+  return await http.get<
+    LockerResponse<{
+      factoryProducts: import('@/services/cart/types').FactoryProduct[]
+      factoryProductActiveIndex: number
+      lockerProductId: number | null
+      activityId: number | null
+      activityItems: unknown
+      cartId: number | null
+      factoryId: number | null
+      id: number | null
+      orderId: number | null
+    }>
+  >('product/shared', {
     params: { shared_url }
   })
 }
