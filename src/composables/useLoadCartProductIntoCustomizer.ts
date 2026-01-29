@@ -410,12 +410,28 @@ function buildCustomizationFromCartProduct(
   const shuffleColorNumberRaw = factoryProductRecord['shuffle_color_number']
   const groupPatternsRaw = factoryProductRecord['group_patterns']
 
+  // Extract category_id and sub_category_id from factory product
+  const categoryId = factoryProductRecord['category_id']
+  const subCategoryId = factoryProductRecord['sub_category_id']
+
   const next: ActiveProductCustomization = {
     ...base,
     product_id: factoryProduct.product_id,
     style_id: factoryProduct.style_id,
     design_id: factoryProduct.design_id,
     design_name: designName
+  }
+
+  // Set category_id only if it's a number
+  if (typeof categoryId === 'number') {
+    next.category_id = categoryId
+  }
+
+  // Set sub_category_id if it's a number or null
+  if (typeof subCategoryId === 'number') {
+    next.sub_category_id = subCategoryId
+  } else if (subCategoryId === null) {
+    next.sub_category_id = null
   }
 
   if (typeof fixedLogoIndexRaw === 'number') next.fixed_logo_index = fixedLogoIndexRaw
@@ -533,8 +549,31 @@ export function useLoadCartProductIntoCustomizer() {
 
       // If we have cart_item_id, fetch the product details from API
       if (cart_item_id) {
+        // Type assertion needed because TypeScript doesn't infer the full type from default export
+        const cartService = API.cart as unknown as {
+          getCartProductDetails: (
+            cartItemId: number | string,
+            factoryProductId: number | string
+          ) => Promise<
+            import('axios').AxiosResponse<{
+              errors: unknown[]
+              message: string
+              result: {
+                factoryProducts: FactoryProduct[]
+                factoryProductActiveIndex: number | string
+                lockerProductId: number | null
+                activityId: number | null
+                id: number
+                orderId: number | null
+                factoryId: number | null
+                cartId: number
+                activityItems: unknown
+              }
+            }>
+          >
+        }
         const resp = await tryCatchApi(
-          API.cart.getCartProductDetails(cart_item_id, factoryProductId),
+          cartService.getCartProductDetails(cart_item_id, factoryProductId),
           {
             operation: 'loadCartProductIntoCustomizer',
             cart_item_id: cart_item_id,
@@ -543,7 +582,12 @@ export function useLoadCartProductIntoCustomizer() {
         )
 
         const cartResult: unknown =
-          resp.success && resp.content?.result
+          resp.success &&
+          resp.content &&
+          typeof resp.content === 'object' &&
+          resp.content !== null &&
+          'result' in resp.content &&
+          resp.content.result
             ? resp.content.result
             : factoryProduct
               ? { factoryProducts: [factoryProduct], factoryProductActiveIndex: 0 }
@@ -626,9 +670,23 @@ export function useLoadCartProductIntoCustomizer() {
         }
       }
 
-      // Replace customization with a cart-hydrated snapshot
-      const preservedCategoryId = customizationStore.activeCategoryId ?? 0
-      const preservedSubCategoryId = customizationStore.activeSubCategoryId ?? null
+      // Extract category_id and sub_category_id from factory product
+      const factoryProductRecord = factoryProduct as unknown as Record<string, unknown>
+      const cartCategoryId = factoryProductRecord['category_id']
+      const cartSubCategoryId = factoryProductRecord['sub_category_id']
+
+      // Use category from cart product if available, otherwise preserve current
+      const preservedCategoryId =
+        typeof cartCategoryId === 'number'
+          ? cartCategoryId
+          : (customizationStore.activeCategoryId ?? 0)
+      const preservedSubCategoryId =
+        typeof cartSubCategoryId === 'number'
+          ? cartSubCategoryId
+          : cartSubCategoryId === null
+            ? null
+            : (customizationStore.activeSubCategoryId ?? null)
+
       const effectiveStyleId = productsStore.activeStyleDetails?.id ?? styleId
       const effectiveDesignId = productsStore.activeDesignDetails?.id ?? designId
       const baseCustomization = customizationStore.createDefaultCustomization({

@@ -13,9 +13,9 @@ import type {
   OutputSvgGroupColor,
   OutputDesignPreviewFront,
   GeneratePdfPayload,
-  GeneratePdfResponse,
-  ShareProductDetails
+  GeneratePdfResponse
 } from '@/services/products/types'
+
 import { API } from '../../services'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
@@ -205,9 +205,21 @@ export const useProductsStore = defineStore('productsStore', () => {
     return output
   }
 
-  async function fetchProductsByShareUrl(
-    shareUrl: string
-  ): Promise<APIResponse<LockerResponse<ShareProductDetails>>> {
+  async function fetchProductsByShareUrl(shareUrl: string): Promise<
+    APIResponse<
+      LockerResponse<{
+        factoryProducts: import('@/services/cart/types').FactoryProduct[]
+        factoryProductActiveIndex: number
+        lockerProductId: number | null
+        activityId: number | null
+        activityItems: unknown
+        cartId: number | null
+        factoryId: number | null
+        id: number | null
+        orderId: number | null
+      }>
+    >
+  > {
     setLoading(true)
     setError(null)
     const output = await tryCatchApi(API.products.getProductsByShareUrl(shareUrl), {
@@ -440,7 +452,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  async function shareDesign(payload: FormData): Promise<APIResponse<{ url: string }>> {
+  async function shareDesign(
+    payload: import('@/services/products/types/base-product').ShareDesignPayload
+  ): Promise<APIResponse<{ url: string }>> {
     setLoading(true)
     setError(null)
     const resp = await tryCatchApi(API.products.shareDesignUrl(payload), {

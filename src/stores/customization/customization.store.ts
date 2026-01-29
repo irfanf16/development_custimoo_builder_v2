@@ -183,6 +183,22 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   async function setCategory(categoryId: number) {
     if (!customization.value) return
     if (customization.value.category_id === categoryId) return
+
+    // Check if the current subcategory belongs to the new category
+    const currentSubCategoryId = customization.value.sub_category_id
+    if (currentSubCategoryId) {
+      // Find the new category and check if it contains the current subcategory
+      const category = productsStore.categories?.data?.find(c => c.id === categoryId)
+      const subcategoryBelongsToCategory = category?.subcategories?.some(
+        sub => sub.id === currentSubCategoryId
+      )
+
+      // If the subcategory doesn't belong to the new category, clear it
+      if (!subcategoryBelongsToCategory) {
+        customization.value.sub_category_id = null
+      }
+    }
+
     customization.value.category_id = categoryId
     await API.products.getProductPreviewsByCategory(categoryId)
     saveToLocalStorage()

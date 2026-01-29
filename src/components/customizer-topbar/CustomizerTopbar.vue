@@ -59,12 +59,9 @@
   import { useBuildFactoryProduct } from '@/composables/useBuildFactoryProduct'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { useSceneStore } from '@/stores/scene/scene.store'
-  import {
-    base64ToFile,
-    generateRandomString,
-    objectToFormData,
-    uploadPresignedFiles
-  } from '@/lib/utils'
+  import { base64ToFile, generateRandomString, uploadPresignedFiles } from '@/lib/utils'
+  import type { SaveLockerProductPayload } from '@/services/lockers/types'
+  import type { ShareDesignPayload } from '@/services/products/types/base-product'
   import type { ComponentPublicInstance } from 'vue'
   import { toast } from 'vue-sonner'
   import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
@@ -512,7 +509,7 @@
         lockerRoomStore.editingLockerProduct?.name ||
         ''
 
-      const locker = {
+      const locker: SaveLockerProductPayload = {
         id: lockerRoomStore.editingLockerProductId,
         addons: [],
         roster_url: false,
@@ -535,11 +532,12 @@
         svgcolors: JSON.stringify(svgcolors),
         grouped_addons: JSON.stringify(groupedAddons),
         ungrouped_addons: JSON.stringify(ungroupedAddons),
-        group_patterns: JSON.stringify(customization.group_patterns || {})
+        group_patterns: JSON.stringify(customization.group_patterns || {}),
+        category_id: customizationStore.activeCategoryId ?? undefined,
+        sub_category_id: customizationStore.activeSubCategoryId ?? null
       }
 
-      const payload = objectToFormData(locker)
-      const success = await lockerRoomStore.updateLockerProduct(payload, lockerId)
+      const success = await lockerRoomStore.updateLockerProduct(locker, lockerId)
 
       if (success) {
         lockerRoomStore.clearEditingLockerProduct()
@@ -629,8 +627,8 @@
         ],
         companyId: companyId,
         factoryId: factoryId,
-        type: 'share_product'
-      })
+        type: 'share_product' as const
+      } as unknown as Parameters<typeof cartStore.generateSignedUploadUrl>[0])
 
       if (
         !signedUrlResponse ||
@@ -730,7 +728,7 @@
       const productDisplayName = productsStore.activeProductDetails?.display_name || 'Product'
       const encodedName = encodeURIComponent(productDisplayName).replace(/%20/g, '+')
 
-      const shareDesignPayload = {
+      const shareDesignPayload: ShareDesignPayload = {
         addons: [],
         roster_url: `${getShareBaseUrl()}/share/${encodedName}/${randString}`,
         product_id: productId,
@@ -752,12 +750,13 @@
         grouped_addons: JSON.stringify(groupedAddons),
         ungrouped_addons: JSON.stringify(ungroupedAddons),
         group_patterns: JSON.stringify(customization.group_patterns || {}),
-        rand_string: randString
+        rand_string: randString,
+        room_id: null,
+        category_id: customizationStore.activeCategoryId ?? undefined,
+        sub_category_id: customizationStore.activeSubCategoryId ?? null
       }
 
-      const payload = objectToFormData(shareDesignPayload)
-      payload.append('room_id', 'null')
-      const response = await productsStore.shareDesign(payload)
+      const response = await productsStore.shareDesign(shareDesignPayload)
 
       if (response.success && response.content?.url) {
         sharedUrl.value = response.content.url
