@@ -60,7 +60,7 @@
     }>(),
     {
       search: null,
-      sort: 'lastModified'
+      sort: 'lastModified',
       isCreatingCollection: false,
       selectedLockers: () => [],
       selectedProductsByLocker: () => ({})
