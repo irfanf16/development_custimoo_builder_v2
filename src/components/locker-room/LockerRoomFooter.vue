@@ -51,6 +51,7 @@
     currentMode: 'list' | 'detail'
     selectedProducts: LockerProduct[]
     selectedLockers: Array<string | number>
+    selectedProductsByLocker?: Record<number, number[]>
     lockerProductsRef?: InstanceType<typeof LockerProductsListing> | null
     currentLocker: Locker | null
     currentCollection: Collection | null
@@ -62,6 +63,7 @@
     detailsTab: 'products',
     currentMode: 'list' as 'list' | 'detail',
     selectedProducts: () => [],
+    selectedProductsByLocker: () => ({}),
     lockerProductsRef: null,
     isCreatingCollection: false,
     collectionCreationStep: 1
@@ -177,49 +179,38 @@
     else return
   }
 
-  const handleAddToCart = async () => {
-    if (products.value.length === 0) return
+  const lockerCartPayload = computed(() => {
+    const lockers = props.selectedLockers
+      .filter(id => !props.selectedProductsByLocker[Number(id)]?.length)
+      .map(id => Number(id))
+    const locker_products: Record<number, number[]> = {}
+    props.selectedLockers
+      .filter(id => (props.selectedProductsByLocker[Number(id)]?.length ?? 0) > 0)
+      .forEach(id => {
+        const numId = Number(id)
+        locker_products[numId] = props.selectedProductsByLocker[numId] ?? []
+      })
+    return { lockers, locker_products }
+  })
+
+  const canAddLockerProductsToCart = computed(
+    () =>
+      lockerCartPayload.value.lockers.length > 0 ||
+      Object.keys(lockerCartPayload.value.locker_products).length > 0
+  )
+
+  const handleAddLockerProductsToCart = async () => {
+    if (!canAddLockerProductsToCart.value) return
 
     isAddingToCart.value = true
     try {
-      // Transform locker products to factory_product payload
-      for (const lockerProduct of products.value) {
-        // Ensure all required "present" fields are included (even if empty)
-        const factoryProduct: Record<string, unknown> = {
-          // Required fields
-          style_id: lockerProduct.style_id,
-          design_id: lockerProduct.design_id,
-          product_id: lockerProduct.product_id,
-          product_type: 'customized',
-          front_image: lockerProduct.product_front_url,
-          back_image: lockerProduct.product_back_url || '', // Must be present
-
-          // Present fields (must be present even if empty for locker products)
-          svg_groups: [],
-          custom_logos: Array.isArray(lockerProduct.custom_logos) ? lockerProduct.custom_logos : [],
-          product_custom_texts: [],
-          product_roster_detail: Array.isArray(lockerProduct.product_roster_detail)
-            ? lockerProduct.product_roster_detail
-            : [],
-          custom_logo_svgs: [],
-          product_custom_text_objects: {},
-
-          // Optional fields
-          groupcolors: lockerProduct.groupcolors || {},
-          defaultcolors: lockerProduct.defaultcolors || [],
-          group_patterns: [],
-          fixed_logo_index: 0,
-          shuffle_color_number: 0,
-          grouped_addons: [],
-          ungrouped_addons: []
-        }
-
-        await cartStore.addProductToCart({
-          factory_product: factoryProduct
-        })
-      }
-
-      toast.success(`Added ${products.value.length} product(s) to cart`, {
+      await cartStore.addLockerProductsToCart(lockerCartPayload.value)
+      const productCount = Object.values(lockerCartPayload.value.locker_products).reduce(
+        (sum, ids) => sum + ids.length,
+        0
+      )
+      const total = lockerCartPayload.value.lockers.length + productCount
+      toast.success(`Added ${total} item(s) to cart`, {
         position: 'top-right',
         richColors: true
       })
@@ -243,10 +234,10 @@
       <Button variant="ghost">{{ locker_cancel({}, { locale }) }}</Button>
       <Button
         v-if="!isCreatingCollection"
-        :disabled="selectedLockers.length === 0"
+        :disabled="!canAddLockerProductsToCart"
         class="disabled:opacity-25"
         variant="primary"
-        @click="handleAddToCart"
+        @click="handleAddLockerProductsToCart"
       >
         <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
       </Button>
@@ -358,9 +349,10 @@
             v-if="!isCreatingCollection && currentTab === 'lockers'"
             variant="primary"
             class="ml-1"
-            :disabled="selectedProducts.length === 0"
+            :disabled="!canAddLockerProductsToCart"
+            @click="handleAddLockerProductsToCart"
           >
-            <ShoppingBasket class="w-4 h-4" /> Add to cart
+            <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
           </Button>
           <Button
             v-if="!isCreatingCollection && currentTab === 'lockers' && detailsTab === 'products'"
