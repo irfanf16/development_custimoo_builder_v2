@@ -6,6 +6,7 @@ import {
   type FabricObject,
   type Canvas
 } from 'fabric'
+import { useCustomizationStore } from '@/stores/customization/customization.store'
 
 /**
  * Common control visibility settings for Fabric.js objects
@@ -137,6 +138,14 @@ export function setupFabricControls(options: SetupFabricControlsOptions = {}): v
           onRemoveText(ci, ii, canvas)
         }
       } else if ('logo_index' in target && target.logo_index !== undefined) {
+        const customizationStore = useCustomizationStore() as {
+          customization: { product_id?: number } | null
+          removeCustomLogo(productKey: string, logoIndex: number): void
+        }
+        const productId = customizationStore.customization?.product_id
+        if (productId != null) {
+          customizationStore.removeCustomLogo(String(productId), target.logo_index)
+        }
         if (onRemoveLogo) onRemoveLogo(target.logo_index, canvas)
       }
 

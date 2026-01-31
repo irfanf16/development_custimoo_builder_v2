@@ -31,9 +31,7 @@
     addLogoToCanvas,
     setupFabricControls,
     deleteLogoFromCanvas,
-    syncLogosOnCanvas,
-    getLogoSignature,
-    getLogoSignatureUrlSide
+    syncLogosOnCanvas
   } from '@/composables/scene'
   import {
     getImageFrom3DCanvas,
@@ -141,14 +139,14 @@
   // Note: fromStorage is already available from useSceneCommon
 
   // ===== CUSTOM LOGOS =====
-  // Get custom_logos from customization store by product_id
-  const customLogos = computed<CustomLogo[]>(() => {
+  // Map: key = index in custom_logos array, value = logo (all logos for 3D)
+  const customLogos = computed<Map<number, CustomLogo>>(() => {
     const productId = effectiveProductId.value
-    if (!productId || !customizationStore.customization) return []
+    if (!productId || !customizationStore.customization) return new Map()
     const key = String(productId)
     const all = customizationStore.customization.custom_logos?.[key] || []
-    // in case of 3D, we need to add the x_axis_3d and y_axis_3d fields and send all logos
-    return filterFields(all, [
+    const map = new Map<number, CustomLogo>()
+    const fields = [
       'url',
       'side',
       'x_axis',
@@ -159,7 +157,11 @@
       'rotation',
       'scaleX',
       'scaleY'
-    ]) as CustomLogo[]
+    ] as const
+    all.forEach((logo: CustomLogo, index: number) => {
+      map.set(index, filterFields(logo, [...fields]) as CustomLogo)
+    })
+    return map
   })
 
   // ===== SVG GROUPS COMPOSABLE =====
@@ -1321,8 +1323,6 @@
       await addLogoToCanvas({
         logo,
         logoIndex: logoIndex,
-        signature: getLogoSignature(logo),
-        signatureUrlSide: getLogoSignatureUrlSide(logo),
         mainPreview: props.mainPreview,
         productId: effectiveProductId.value,
         canvas: canvas.value as Canvas,
@@ -1367,13 +1367,11 @@
     })
     customLogoObjects.value.clear()
 
-    // Add logos from custom_logos
-    if (customLogos.value.length > 0) {
-      let logoIndex = 0
-      for (const logo of customLogos.value) {
+    // Add logos from custom_logos (map key = index)
+    if (customLogos.value.size > 0) {
+      for (const [logoIndex, logo] of customLogos.value) {
         if (logo && logo.url) {
           await addLogo(logo, logoIndex)
-          logoIndex++
         }
       }
     }
@@ -2068,7 +2066,7 @@
   // Compare by checking what's in the Map vs what's in the array
   watch(
     customLogos,
-    async (newLogos = []) => {
+    async (logoMap = new Map<number, CustomLogo>()) => {
       if (suppressCustomLogosWatch.value) {
         suppressCustomLogosWatch.value = false
         return
@@ -2082,15 +2080,13 @@
       }
 
       await syncLogosOnCanvas({
-        newLogos,
+        newLogos: logoMap,
         canvas: canvas.value,
         logoObjects: customLogoObjects,
         addLogo,
         calculatePosition,
         calculateRotation,
         calculateScaleRatios,
-        getSignature: getLogoSignature,
-        getSignatureUrlSide: getLogoSignatureUrlSide,
         suppressWatchRef: suppressCustomLogosWatch,
         onAfterSync: () => {
           if (canvas.value) {

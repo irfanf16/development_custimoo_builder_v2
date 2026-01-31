@@ -58,6 +58,7 @@
     logos_recolor_logo
   } from '@/paraglide/messages'
   import { usePricing } from '@/composables/usePricing'
+  import { useCompanyStore } from '@/stores/company/company.store'
   interface Props {
     logoId: string
   }
@@ -72,6 +73,7 @@
   const profileStore = useProfileStore()
   const customizationStore = useCustomizationStore()
   const { showPricing } = usePricing()
+  const companyStore = useCompanyStore()
   // ===== COMPOSABLES =====
   const { productKey, getLogoById, getActiveLogoIndex } = useLogos()
   const { removeBackground, applyLogoColors, recolorLogo, removeLogo, setActiveLogo } =
@@ -134,11 +136,33 @@
     return customLogo.value?.side || 'front'
   })
 
+  const heightUnitLabel = computed(() => {
+    const measurementUnit = companyStore.settings?.settings?.measurement_unit
+    if (!measurementUnit) return 'cm'
+    const unit = typeof measurementUnit === 'string' ? measurementUnit : measurementUnit.unit
+    if (!unit) return 'cm'
+    if (unit.toLowerCase() === 'in' || unit.toLowerCase() === 'inch') return 'in'
+    if (unit.toLowerCase() === 'cm') return 'cm'
+    return unit
+  })
+
+  const originalHeightText = computed(() => {
+    const raw = customLogo.value?.originalHeight
+    if (raw === undefined || raw === null || raw === '') return ''
+    const num = Number(raw)
+    if (Number.isFinite(num)) return `${num.toFixed(1)}`
+    return String(raw)
+  })
+
+  const heightModelValue = computed(() => {
+    if (originalHeightText.value) return originalHeightText.value
+    return positionForm.height
+  })
+
   // ===== POSITION COMPOSABLE =====
   const {
     activeLogoIndex,
     angleText,
-    handleHeightInput,
     handleBlurHeight,
     handleAngleCommit,
     resetPositionToCenter,
@@ -315,8 +339,42 @@
     })
   }
 
-  function handleHeightModelUpdate(value: string | number) {
-    handleHeightInput(value)
+  function handleOriginalHeightModelUpdate(value: string | number) {
+    const str = String(value)
+    if (!customLogo.value || !productKey.value) return
+    const arr = customizationStore.customization?.custom_logos?.[productKey.value]
+    if (!arr) return
+    const index = getActiveLogoIndex(customLogo.value.id)
+    if (index === -1 || !arr[index]) return
+
+    const numeric = Number.parseFloat(str)
+    const nextOriginalHeight = Number.isFinite(numeric) ? Number(numeric.toFixed(1)) : str
+    const logo = arr[index] as CustomLogo & { scaleX?: number; scaleY?: number }
+
+    let scaleX = logo.scaleX ?? 1
+    let scaleY = logo.scaleY ?? 1
+    const originalHeightNum = Number(logo.originalHeight)
+    if (
+      Number.isFinite(numeric) &&
+      numeric > 0 &&
+      Number.isFinite(originalHeightNum) &&
+      originalHeightNum > 0
+    ) {
+      const ratio = numeric / originalHeightNum
+      scaleY = scaleY * ratio
+      scaleX = scaleX * ratio
+      // Round to fixed precision to avoid fractional drift when switching small ↔ big
+      const precision = 6
+      scaleX = Number(scaleX.toFixed(precision))
+      scaleY = Number(scaleY.toFixed(precision))
+    }
+    arr.splice(index, 1, {
+      ...logo,
+      originalHeight: nextOriginalHeight,
+      scaleX,
+      scaleY
+    } as CustomLogo)
+    customizationStore.saveToLocalStorage()
   }
 
   function selectLogoTechnology(technology: OutputProductLogoTechnology) {
@@ -513,11 +571,11 @@
                 <InputGroupInput
                   id="logo-height"
                   inputmode="decimal"
-                  :model-value="positionForm.height"
-                  @update:model-value="handleHeightModelUpdate"
+                  :model-value="heightModelValue"
+                  @update:model-value="handleOriginalHeightModelUpdate"
                   @blur="handleBlurHeight"
                 />
-                <InputGroupAddon class="pr-3 text-xs">cm</InputGroupAddon>
+                <InputGroupAddon class="pr-3 text-xs">{{ heightUnitLabel }}</InputGroupAddon>
               </InputGroup>
             </div>
           </div>

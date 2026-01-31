@@ -25,9 +25,7 @@
     addLogoToCanvas,
     setupFabricControls,
     deleteLogoFromCanvas,
-    syncLogosOnCanvas,
-    getLogoSignature,
-    getLogoSignatureUrlSide
+    syncLogosOnCanvas
   } from '@/composables/scene'
   import type { CustomLogo } from '@/services/logos/types'
   import {
@@ -149,26 +147,29 @@
   const colorGrouping = useColorGrouping(toRef(props, 'colorGrouping'))
 
   // ===== CUSTOM LOGOS =====
-  // Get custom_logos from customization store by product_id
-  const customLogos = computed<CustomLogo[]>(() => {
+  // Map: key = index in custom_logos array, value = logo (only logos for current side)
+  const customLogos = computed<Map<number, CustomLogo>>(() => {
     const productId = effectiveProductId.value
-    if (!productId || !customizationStore.customization) return []
+    if (!productId || !customizationStore.customization) return new Map()
     const key = String(productId)
     const all = customizationStore.customization.custom_logos?.[key] || []
-    // Filter by current side (front/back)
-    const currentSideLogos = all.filter((logo: CustomLogo) => logo.side === props.side)
-    return currentSideLogos
-      ? (filterFields(currentSideLogos, [
-          'url',
-          'side',
-          'x_axis',
-          'y_axis',
-          'height',
-          'rotation',
-          'scaleX',
-          'scaleY'
-        ]) as CustomLogo[])
-      : []
+    const map = new Map<number, CustomLogo>()
+    const fields = [
+      'url',
+      'side',
+      'x_axis',
+      'y_axis',
+      'height',
+      'rotation',
+      'scaleX',
+      'scaleY'
+    ] as const
+    all.forEach((logo: CustomLogo, index: number) => {
+      if (logo.side === props.side) {
+        map.set(index, filterFields(logo, [...fields]) as CustomLogo)
+      }
+    })
+    return map
   })
 
   // ===== COLOR CUSTOMIZATION COMPOSABLE =====
@@ -460,7 +461,13 @@
     () => props.side,
     (newSide, oldSide) => {
       if (!props.mainPreview) return
-
+      sceneStore.clearOtherSideLogos(oldSide as 'front' | 'back')
+      if (canvas.value) {
+        otherSideLogoObjects.value.forEach(obj => {
+          canvas.value?.remove(obj as FabricObject)
+        })
+      }
+      otherSideLogoObjects.value = new Map()
       // Clear old reference if side changed
       if (oldSide && oldSide !== newSide) {
         sceneStore.setTwoDSceneRef(null, oldSide as 'front' | 'back')
@@ -887,7 +894,7 @@
         (target as unknown as { side?: string }).side === 'back' ? 'front' : 'back'
       ) as 'front' | 'back'
       const logoIndex = (target as unknown as { logo_index?: number }).logo_index ?? 0
-      const sourceLogo = customLogos.value[logoIndex]
+      const sourceLogo = customLogos.value.get(logoIndex)
       sceneStore.addOtherSideLogo({
         logo_index: (target as unknown as { logo_index?: number }).logo_index ?? 0,
         url: sourceLogo?.url ? sourceLogo?.url + '?nocache=11' : '',
@@ -1158,8 +1165,6 @@
       await addLogoToCanvas({
         logo,
         logoIndex: logoIndex,
-        signature: getLogoSignature(logo),
-        signatureUrlSide: getLogoSignatureUrlSide(logo),
         mainPreview: props.mainPreview,
         productId: effectiveProductId.value,
         canvas: canvas.value as Canvas,
@@ -1193,6 +1198,7 @@
       added?.on('modified', () => {
         addToOtherSide(added)
         showDimensions(added)
+        customizationStore.saveToLocalStorage()
       })
       if (added) {
         addToOtherSide(added)
@@ -1218,13 +1224,11 @@
     })
     customLogoObjects.value.clear()
 
-    // Add logos from custom_logos (filter by side)
-    if (customLogos.value.length > 0) {
-      let logoIndex = 0
-      for (const logo of customLogos.value) {
-        if (logo && logo.url && logo.side === props.side) {
+    // Add logos from custom_logos (map already filtered by side, key = index)
+    if (customLogos.value.size > 0) {
+      for (const [logoIndex, logo] of customLogos.value) {
+        if (logo && logo.url) {
           await addLogo(logo, logoIndex)
-          logoIndex++
         }
       }
     }
@@ -1362,7 +1366,7 @@
   // Compare by checking what's in the Map vs what's in the array
   watch(
     customLogos,
-    async (newLogos = []) => {
+    async (newLogos = new Map<number, CustomLogo>()) => {
       if (suppressCustomLogosWatch.value) {
         suppressCustomLogosWatch.value = false
         return
@@ -1378,8 +1382,6 @@
         calculatePosition: calculatePosition2D,
         calculateRotation: calculateRotation2D,
         calculateScaleRatios: calculateScaleRatios2D,
-        getSignature: getLogoSignature,
-        getSignatureUrlSide: getLogoSignatureUrlSide,
         filterLogo: (logo: CustomLogo) => logo.side === props.side,
         suppressWatchRef: suppressCustomLogosWatch,
         onAfterSync: () => {
