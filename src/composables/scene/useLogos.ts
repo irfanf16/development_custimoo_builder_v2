@@ -245,7 +245,6 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     // Update store if main preview; suppress watcher using provided ref if present
     suppressWatchRef.value = true
     if (mainPreview) {
-      console.log('updating store', logoIndex)
       setTimeout(() => {
         customizationStore.updateCustomLogo({
           custom_logo_index: logoIndex,
@@ -464,7 +463,6 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
 
   // Remove leftover unmatched objects
   available.forEach(entry => {
-    console.log('removing entry', entry.idx)
     canvas.remove(entry.obj as FabricObject)
   })
 

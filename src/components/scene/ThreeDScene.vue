@@ -1346,6 +1346,10 @@
         added.on('moving', () => showDimensions(added))
         added.on('scaling', () => showDimensions(added))
         added.on('rotating', () => showDimensions(added))
+        added?.on('modified', () => {
+          showDimensions(added)
+          customizationStore.saveToLocalStorage()
+        })
       }
     } catch (error) {
       console.error('Failed to add logo:', error)
