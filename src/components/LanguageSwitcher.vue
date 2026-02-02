@@ -7,34 +7,24 @@
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import { ChevronDown, Globe } from 'lucide-vue-next'
-  import {
-    useLocaleStore,
-    type ParaglideLocale
-  } from '@/stores/locale/locale.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import type { ParaglideLocale } from '@/services/preferences/types'
   import { computed } from 'vue'
 
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
 
-  const shouldShowSwitcher = computed(
-    () => localeStore.availableLocales.length > 1
-  )
+  const shouldShowSwitcher = computed(() => profileStore.availableLocales.length > 1)
 
   const handleLanguageChange = (locale: ParaglideLocale) => {
-    localeStore.setCurrentLocale(locale)
+    void profileStore.setCurrentLocale(locale)
   }
 
   const currentLanguageConfig = computed(() => {
-    const currentCode = localeStore.currentLocale
+    const currentCode = profileStore.currentLocale
     // Find the language config from company store or use a fallback
     return {
       code: currentCode,
-      name:
-        currentCode === 'en'
-          ? 'English'
-          : currentCode === 'fr'
-            ? 'Français'
-            : 'Dansk',
-      flag: currentCode === 'en' ? '🇺🇸' : currentCode === 'fr' ? '🇫🇷' : '🇩🇰'
+      name: currentCode === 'en' ? 'English' : currentCode === 'fr' ? 'Français' : 'Dansk'
     }
   })
 
@@ -57,23 +47,19 @@
   <!-- Only show language switcher when multiple languages are available -->
   <DropdownMenu v-if="shouldShowSwitcher">
     <DropdownMenuTrigger as-child>
-      <Button variant="outline" size="default" class="rounded-lg">
-        <Globe class="size-4 mr-2" />
-        <span>{{ currentLanguageConfig?.flag }}</span>
+      <Button variant="default" size="default" class="rounded-lg">
+        <Globe class="size-4" />
         <span class="ml-1">{{ currentLanguageConfig?.name }}</span>
-        <ChevronDown class="size-4 ml-2" />
+        <ChevronDown class="size-4" />
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuItem
-        v-for="locale in localeStore.availableLocales"
+        v-for="locale in profileStore.availableLocales"
         :key="locale"
+        :class="{ 'bg-accent': locale === profileStore.currentLocale }"
         @click="handleLanguageChange(locale)"
-        :class="{ 'bg-accent': locale === localeStore.currentLocale }"
       >
-        <span class="mr-2">
-          {{ locale === 'en' ? '🇺🇸' : locale === 'fr' ? '🇫🇷' : '🇩🇰' }}
-        </span>
         <span>
           {{ getLanguageName(locale) }}
         </span>

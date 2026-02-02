@@ -1,37 +1,53 @@
 <script setup lang="ts">
+  import { storeToRefs } from 'pinia'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import PatternLayerSelection from './PatternLayerSelection.vue'
+  import PatternEdit from './PatternEdit.vue'
   import { computed } from 'vue'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
 
-  // no emits
-  const productsStore = useProductsStore()
-  const product = computed(() => productsStore.activeProductDetails as any)
-  const patterns = computed(() => product.value?.patterns || [])
+  const workflowStore = useWorkflowStore()
 
-  function openGroup(name: string) {
-    console.log('openGroup', name)
-    // productsStore.setActivePatternGroup(name)
-    // productsStore.setPatternsSubStep('group')
+  // Use workflow store state
+  const { patternsSubStep: currentSubStep, activePatternGroupName: selectedLayerId } =
+    storeToRefs(workflowStore)
+
+  function handleSelectLayer(layerId: string) {
+    workflowStore.setActivePatternSubStep(layerId)
+    workflowStore.setPatternsSubStep('edit')
   }
 
-  // Breadcrumb logic for pattern selection
-  const breadcrumbs = computed(() => [{ label: 'Pattern' }])
+  function handleBackToLayers() {
+    workflowStore.setPatternsSubStep('list')
+    workflowStore.setActivePatternSubStep(null)
+  }
+
+  // Breadcrumb logic for pattern selection and edit substep
+  const breadcrumbs = computed(() => {
+    if (currentSubStep.value === 'edit' && selectedLayerId.value) {
+      return [{ label: 'Pattern', action: handleBackToLayers }, { label: selectedLayerId.value }]
+    }
+    return [{ label: 'Pattern' }]
+  })
   const headerExtras = { breadcrumbs }
   defineExpose({ headerExtras })
 </script>
 
 <template>
-  <!-- Content -->
-  <div class="p-6 grid grid-cols-2 gap-3">
-    <button
-      v-for="(group, idx) in patterns"
-      :key="idx"
-      class="h-14 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors px-3"
-      @click="openGroup(group.name || 'Base')"
-    >
-      <span class="text-base font-semibold">{{ group.name || 'Base' }}</span>
-      <span class="text-sm text-muted-foreground">Select</span>
-    </button>
-  </div>
+  <!-- Two-step workflow with transitions -->
+  <Transition name="panel-slide" mode="out-in" appear>
+    <PatternLayerSelection
+      v-if="currentSubStep === 'list'"
+      :key="'layers'"
+      @select-layer="handleSelectLayer"
+    />
+
+    <PatternEdit
+      v-else-if="currentSubStep === 'edit' && selectedLayerId"
+      :key="`edit-${selectedLayerId}`"
+      :layer-id="selectedLayerId"
+      @back="handleBackToLayers"
+    />
+  </Transition>
 </template>
 
 <style scoped></style>

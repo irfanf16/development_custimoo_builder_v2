@@ -1,0 +1,366 @@
+<script setup lang="ts">
+  import { ref, watch, onMounted } from 'vue'
+  import { storeToRefs } from 'pinia'
+  import { useAuthStore } from '@/stores/auth/auth.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+  } from '@/components/ui/dialog'
+  import { Button } from '@/components/ui/button'
+  import { Input } from '@/components/ui/input'
+  import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+  } from '@/components/ui/select'
+  import { ScrollArea } from '@/components/ui/scroll-area'
+  import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+  import { useForm } from 'vee-validate'
+  import { toTypedSchema } from '@vee-validate/zod'
+  import { z } from 'zod'
+  import { API } from '@/services'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { computed } from 'vue'
+  import {
+    auth_placeholder_first_name,
+    auth_placeholder_last_name,
+    auth_placeholder_email,
+    auth_placeholder_company_name,
+    auth_placeholder_select_country,
+    auth_placeholder_create_password,
+    auth_placeholder_confirm_password,
+    auth_create_account,
+    auth_creating_account,
+    auth_cancel,
+    auth_password_label,
+    auth_confirm_password_label,
+    profile_first_name,
+    profile_last_name,
+    profile_email,
+    profile_company_name,
+    profile_country
+  } from '@/paraglide/messages'
+
+  const uiStore = useUIStore()
+  const isMobile = uiStore.isMobile
+
+  const props = withDefaults(
+    defineProps<{
+      open?: boolean
+    }>(),
+    {
+      open: false
+    }
+  )
+
+  const emit = defineEmits<{
+    (e: 'update:open', value: boolean): void
+    (e: 'success'): void
+  }>()
+
+  const authStore = useAuthStore()
+  const profileStore = useProfileStore()
+
+  const { isLoading, error: authError } = storeToRefs(authStore)
+  const locale = computed(() => profileStore.currentLocale || 'en')
+
+  // Reactive state
+  const isOpen = ref(props.open)
+  const countries = ref<{ id: number; name: string }[]>([])
+  const isLoadingCountries = ref(false)
+
+  // Validation schema
+  const formSchema = z
+    .object({
+      first_name: z
+        .string()
+        .trim()
+        .min(1, 'First name is required')
+        .min(2, 'First name must be at least 2 characters'),
+      last_name: z
+        .string()
+        .trim()
+        .min(1, 'Last name is required')
+        .min(2, 'Last name must be at least 2 characters'),
+      email: z
+        .string()
+        .trim()
+        .min(1, 'Email is required')
+        .email('Please enter a valid email address'),
+      company_name: z.string().trim().min(1, 'Company name is required'),
+      countryId: z.string().min(1, 'Please select a country'),
+      password: z
+        .string()
+        .min(1, 'Password is required')
+        .min(8, 'Password must be at least 8 characters'),
+      confirmPassword: z.string().min(1, 'Please confirm your password')
+    })
+    .refine(data => data.password === data.confirmPassword, {
+      message: 'Passwords do not match',
+      path: ['confirmPassword']
+    })
+
+  type FormValues = z.infer<typeof formSchema>
+
+  const form = useForm<FormValues>({
+    validationSchema: toTypedSchema(formSchema),
+    initialValues: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      company_name: '',
+      countryId: '',
+      password: '',
+      confirmPassword: ''
+    }
+  })
+
+  const { handleSubmit, resetForm } = form
+
+  // Fetch countries
+  const fetchCountries = async () => {
+    isLoadingCountries.value = true
+    try {
+      const res = await API.customer.getCountries()
+      if (res.success) {
+        countries.value = res.result || []
+      }
+    } catch (err) {
+      console.error('Failed to fetch countries:', err)
+    } finally {
+      isLoadingCountries.value = false
+    }
+  }
+
+  // Fetch countries on mount
+  onMounted(() => {
+    fetchCountries()
+  })
+
+  // Watch for prop changes
+  watch(
+    () => props.open,
+    (newValue, oldValue) => {
+      isOpen.value = newValue
+
+      // Only reset when transitioning from closed -> open to avoid wiping inputs mid-typing
+      if (newValue && !oldValue) {
+        resetForm({
+          values: {
+            first_name: '',
+            last_name: '',
+            email: '',
+            company_name: '',
+            countryId: '',
+            password: '',
+            confirmPassword: ''
+          }
+        })
+        authStore.setError(null)
+        if (countries.value.length === 0) {
+          fetchCountries()
+        }
+      }
+    }
+  )
+
+  // Watch for internal state changes and emit
+  watch(isOpen, newValue => {
+    emit('update:open', newValue)
+  })
+
+  // Methods
+  const onSubmit = handleSubmit(async (values: FormValues) => {
+    authStore.setError(null)
+
+    const selectedCountry = countries.value.find(c => String(c.id) === values.countryId)
+
+    if (!selectedCountry) {
+      authStore.setError('Please select a valid country')
+      return
+    }
+
+    const result = await authStore.register({
+      first_name: values.first_name,
+      last_name: values.last_name,
+      email: values.email,
+      password: values.password,
+      password_confirmation: values.confirmPassword,
+      company_name: values.company_name,
+      country: { id: selectedCountry.id, label: selectedCountry.name }
+    })
+    if (result.success) {
+      isOpen.value = false
+      resetForm({
+        values: {
+          first_name: '',
+          last_name: '',
+          email: '',
+          company_name: '',
+          countryId: '',
+          password: '',
+          confirmPassword: ''
+        }
+      })
+      emit('success')
+    }
+  })
+
+  const handleCancel = () => {
+    isOpen.value = false
+  }
+</script>
+
+<template>
+  <Dialog :open="isOpen" @update:open="isOpen = $event">
+    <DialogContent class="sm:max-w-md h-full md:h-fit">
+      <DialogHeader>
+        <DialogTitle>{{ auth_create_account({}, { locale }) }}</DialogTitle>
+        <DialogDescription> Enter your information to create a new account. </DialogDescription>
+      </DialogHeader>
+      <component :is="isMobile ? 'div' : ScrollArea" class="h-full overflow-y-auto">
+        <form class="space-y-4" @submit.prevent="onSubmit">
+          <FormField v-slot="{ componentField }" name="first_name">
+            <FormItem>
+              <FormLabel>{{ profile_first_name({}, { locale }) }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="first_name"
+                  type="text"
+                  :placeholder="auth_placeholder_first_name({}, { locale })"
+                  autocomplete="given-name"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="last_name">
+            <FormItem>
+              <FormLabel>{{ profile_last_name({}, { locale }) }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="last_name"
+                  type="text"
+                  :placeholder="auth_placeholder_last_name({}, { locale })"
+                  autocomplete="family-name"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="email">
+            <FormItem>
+              <FormLabel>{{ profile_email({}, { locale }) }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="email"
+                  type="email"
+                  :placeholder="auth_placeholder_email({}, { locale })"
+                  autocomplete="email"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="company_name">
+            <FormItem>
+              <FormLabel>{{ profile_company_name({}, { locale }) }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="company_name"
+                  type="text"
+                  :placeholder="auth_placeholder_company_name({}, { locale })"
+                  autocomplete="organization"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ field }" name="countryId">
+            <FormItem>
+              <FormLabel>{{ profile_country({}, { locale }) }}</FormLabel>
+              <Select :model-value="field.value" @update:model-value="field.onChange">
+                <FormControl>
+                  <SelectTrigger id="country" class="w-full" @blur="field.onBlur">
+                    <SelectValue :placeholder="auth_placeholder_select_country({}, { locale })" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent class="max-h-60">
+                  <SelectItem
+                    v-for="country in countries"
+                    :key="country.id"
+                    :value="String(country.id)"
+                  >
+                    {{ country.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="password">
+            <FormItem>
+              <FormLabel>{{ auth_password_label({}, { locale }) }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="password"
+                  type="password"
+                  :placeholder="auth_placeholder_create_password({}, { locale })"
+                  autocomplete="new-password"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="confirmPassword">
+            <FormItem>
+              <FormLabel>{{ auth_confirm_password_label({}, { locale }) }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  :placeholder="auth_placeholder_confirm_password({}, { locale })"
+                  autocomplete="new-password"
+                  v-bind="componentField"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <div v-if="authError" class="text-sm text-red-600">
+            {{ authError }}
+          </div>
+          <DialogFooter>
+            <div class="flex flex-row gap-4 md:flex-col md:w-full">
+              <Button class="w-full" type="button" variant="default" @click="handleCancel">
+                {{ auth_cancel({}, { locale }) }}
+              </Button>
+              <Button class="w-full" type="submit" :disabled="isLoading">
+                <span v-if="isLoading">{{ auth_creating_account({}, { locale }) }}</span>
+                <span v-else>{{ auth_create_account({}, { locale }) }}</span>
+              </Button>
+            </div>
+          </DialogFooter>
+        </form>
+      </component>
+      <div class="text-center text-xs text-muted-foreground px-6 pb-4">
+        By signing up, you agree to our
+        <a href="#" class="text-primary hover:underline">Terms of Service</a>
+        and
+        <a href="#" class="text-primary hover:underline">Privacy Policy</a>
+      </div>
+    </DialogContent>
+  </Dialog>
+</template>

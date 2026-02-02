@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { OutputSvgGroupColor } from '@/services/products/types'
+import type { CustomLogo } from '@/services/logos/types'
 
 export function useEffectiveSelectors() {
   // ===== DEPENDENCIES =====
@@ -10,12 +11,8 @@ export function useEffectiveSelectors() {
   const customizationStore = useCustomizationStore()
 
   // ===== STORE REFS =====
-  const {
-    activeProductDetails,
-    activeStyleDetails,
-    activeDesignDetails,
-    svgGroups
-  } = storeToRefs(productsStore)
+  const { activeProductDetails, activeStyleDetails, activeDesignDetails, svgGroups } =
+    storeToRefs(productsStore)
 
   // ===== COMPUTED =====
   const effectiveProductId = computed<number | null>(() => {
@@ -44,16 +41,50 @@ export function useEffectiveSelectors() {
     return base.map(svgGroup => {
       const customized = overrides[svgGroup.id]
       if (customized) {
+        // If customized has gradient_colors, preserve them and merge with base percentage if missing
+        if (customized.gradient_colors) {
+          // Merge customized gradient_colors with base to preserve percentage
+          const baseGradientColors = svgGroup.gradient_colors || []
+          const mergedGradientColors = customized.gradient_colors.map((customGc, index) => {
+            const baseGc = baseGradientColors[index]
+            return {
+              ...customGc,
+              // Preserve percentage from base if not in customized
+              percentage: (customGc as { percentage?: number }).percentage ?? baseGc?.percentage
+            }
+          })
+
+          return {
+            id: svgGroup.id,
+            name: customized.name ?? '',
+            color: customized.color ?? svgGroup.color,
+            pantone: '',
+            count: svgGroup.count ?? 0,
+            gradient_colors: mergedGradientColors
+          }
+        }
+        // Regular color override
         return {
           id: svgGroup.id,
           name: customized.name ?? '',
           color: customized.color ?? '',
           pantone: '',
-          count: 0
+          count: svgGroup.count ?? 0
         }
       }
       return svgGroup
     })
+  })
+
+  const effectiveLogos = computed<CustomLogo[]>(() => {
+    if (!effectiveProductId.value) return []
+    const effectiveLogos =
+      customizationStore.customization?.custom_logos[effectiveProductId.value.toString()] || []
+    return effectiveLogos
+  })
+
+  const groupsVersion = computed<string>(() => {
+    return (effectiveSvgGroups.value || []).map(g => `${g.id}:${g.color}`).join(',')
   })
 
   const renderVersion = computed<string>(() => {
@@ -62,10 +93,26 @@ export function useEffectiveSelectors() {
       effectiveStyleId.value ?? 'null',
       effectiveDesignId.value ?? 'null'
     ].join(':')
-    const groupsPart = (effectiveSvgGroups.value || [])
-      .map(g => `${g.id}:${g.color}`)
+
+    const logosMetaPart = effectiveLogos.value.map(logo => `${logo.id}:${logo.url}`).join(',')
+
+    const logosGeometryPart = effectiveLogos.value
+      .map(logo =>
+        [
+          logo.id,
+          logo.width,
+          logo.height,
+          logo.rotation,
+          logo.x_axis,
+          logo.y_axis,
+          logo.scaleX ?? '',
+          logo.scaleY ?? '',
+          logo.name_of_placement ?? ''
+        ].join(':')
+      )
       .join(',')
-    return `${idPart}|${groupsPart}`
+
+    return `${idPart}|${logosMetaPart}|${logosGeometryPart}`
   })
 
   // ===== RETURN =====
@@ -80,6 +127,8 @@ export function useEffectiveSelectors() {
     effectiveDesignId,
     // Computed Derived
     effectiveSvgGroups,
-    renderVersion
+    effectiveLogos,
+    renderVersion,
+    groupsVersion
   }
 }

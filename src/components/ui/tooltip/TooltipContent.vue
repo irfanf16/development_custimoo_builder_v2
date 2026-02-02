@@ -3,12 +3,7 @@
   import type { HTMLAttributes } from 'vue'
   import { reactiveOmit } from '@vueuse/core'
   import { onMounted, ref } from 'vue'
-  import {
-    TooltipArrow,
-    TooltipContent,
-    TooltipPortal,
-    useForwardPropsEmits
-  } from 'reka-ui'
+  import { TooltipArrow, TooltipContent, TooltipPortal, useForwardPropsEmits } from 'reka-ui'
   import { cn } from '@/lib/utils'
 
   defineOptions({
@@ -19,7 +14,8 @@
     defineProps<TooltipContentProps & { class?: HTMLAttributes['class'] }>(),
     {
       sideOffset: 4,
-      side: 'right'
+      side: 'right',
+      class: undefined
     }
   )
 
@@ -32,12 +28,12 @@
   // Ensure portal renders inside the widget's Shadow DOM container when embedded
   const teleportTo = ref<string | HTMLElement>('body')
   onMounted(() => {
-    const anyWindow = window as any
+    const anyWindow = window as unknown as {
+      __CUSTOMIZER_CONTAINER__?: HTMLElement
+    }
     const container = anyWindow?.__CUSTOMIZER_CONTAINER__
     if (container instanceof HTMLElement)
-      teleportTo.value = container.getElementsByClassName(
-        'widget-theme'
-      )[0] as HTMLElement
+      teleportTo.value = container.getElementsByClassName('widget-theme')[0] as HTMLElement
   })
 </script>
 

@@ -5,11 +5,15 @@ import {
   type GetProductCategoriesParams,
   type ActiveProductDetails,
   type ProductPreviewItem,
-  type OutputDesignPreview,
-  type OutputStylePreview,
+  type OutputDesignPreviewFront,
+  type OutputDesignPreviewBack,
+  type OutputStylePreviewFront,
   type OutputDesignDetails,
-  type ActiveStyleDetails
+  type ActiveStyleDetails,
+  type GeneratePdfPayload,
+  type GeneratePdfResponse
 } from '@/services/products/types'
+import type { LockerResponse } from '../lockers/types'
 // import type { OutputRecentLogo } from '@/services/products/types'
 
 async function getProductCategories(params: GetProductCategoriesParams) {
@@ -19,62 +23,99 @@ async function getProductCategories(params: GetProductCategoriesParams) {
 }
 
 // Fetch full details for the active product
-async function getActiveProductDetails(productId: number) {
-  return await http.get<ActiveProductDetails>(`product/${productId}`)
+async function getActiveProductDetails(productId: number, hasSyncId: boolean = false) {
+  const params = { has_sync_id: false }
+  if (hasSyncId) {
+    params.has_sync_id = true
+  }
+  return await http.get<ActiveProductDetails>(`product/${productId}`, { params })
 }
 
 // Fetch lightweight previews for all products in a category
-async function getProductPreviewsByCategory(categoryId: number | null) {
+async function getProductPreviewsByCategory(
+  categoryId: number | null,
+  subcategoryId?: number,
+  syncId?: number
+) {
+  const params: { category_id: number | null; sub_category_id: number | null; sync_id?: number } = {
+    category_id: categoryId,
+    sub_category_id: subcategoryId ?? null
+  }
+  if (syncId) {
+    params.sync_id = syncId
+  }
   return await http.get<ProductPreviewItem[]>(`product/previews`, {
-    params: { category_id: categoryId }
+    params
   })
 }
 
 async function getDesignPreviewsByStyleId(styleId: number) {
-  return await http.get<OutputDesignPreview[]>(
+  return await http.get<(OutputDesignPreviewFront & OutputDesignPreviewBack)[]>(
     `product/style/${styleId}/design/previews`
   )
 }
 
 // Preview styles for a product
 async function getStylePreviewsByProduct(productId: number) {
-  return await http.get<OutputStylePreview[]>(
-    `product/${productId}/style/previews`
-  )
+  return await http.get<OutputStylePreviewFront[]>(`product/${productId}/style/previews`)
 }
 
 // Active style details for a style id (style + default design)
-async function getActiveStyleDetails(
-  styleId: number,
-  activeDesignName?: string
-) {
+async function getActiveStyleDetails(styleId: number, activeDesignName?: string) {
   return await http.get<ActiveStyleDetails>(`product/style/${styleId}`, {
     params: {
       active_design_name: activeDesignName
     }
   })
 }
-
-// Recently uploaded logos
-// async function getRecentLogos(companyId?: number) {
-//   return await http.get<OutputRecentLogo[]>(`logos/recent`, {
-//     params: { company_id: companyId }
-//   })
-// }
-
 // Get design details by ID
 async function getDesignDetailsById(designId: number) {
   return await http.get<OutputDesignDetails>(`product/style/design/${designId}`)
+}
+
+// Download roster template for a product
+async function downloadRosterTemplate(productId: number) {
+  return await http.get<Blob>(`template/download/${productId}`, {
+    responseType: 'blob'
+  })
+}
+
+async function generatePDF(payload: GeneratePdfPayload) {
+  return await http.post<GeneratePdfResponse>('generate-pdf', payload)
+}
+
+async function shareDesignUrl(payload: import('./types/base-product').ShareDesignPayload) {
+  return await http.post<{ url: string }>('product/share-design-url', payload)
+}
+
+async function getProductsByShareUrl(shared_url: string) {
+  return await http.get<
+    LockerResponse<{
+      factoryProducts: import('@/services/cart/types').FactoryProduct[]
+      factoryProductActiveIndex: number
+      lockerProductId: number | null
+      activityId: number | null
+      activityItems: unknown
+      cartId: number | null
+      factoryId: number | null
+      id: number | null
+      orderId: number | null
+    }>
+  >('product/shared', {
+    params: { shared_url }
+  })
 }
 
 export default {
   getProductCategories,
   getActiveProductDetails,
   getProductPreviewsByCategory,
-  //getProductPreviews,
   getDesignPreviewsByStyleId,
   getStylePreviewsByProduct,
   getActiveStyleDetails,
-  // getRecentLogos,
-  getDesignDetailsById
+  getDesignDetailsById,
+  downloadRosterTemplate,
+  generatePDF,
+  shareDesignUrl,
+  getProductsByShareUrl
 }

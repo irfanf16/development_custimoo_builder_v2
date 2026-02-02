@@ -1,10 +1,11 @@
 import { bootstrap } from './bootstrap'
+import { WIDGET_ELEMENT_SELECTOR } from './lib/widgetUtils'
 
-// Font loading is centralized in useColorScheme
+// Font loading is centralized in useBrandStyling
 
 // Define the custom element for embedded widget (primary mode)
 customElements.define(
-  'customizer-widget',
+  WIDGET_ELEMENT_SELECTOR,
   class extends HTMLElement {
     connectedCallback() {
       // Create a shadow DOM for encapsulation

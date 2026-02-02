@@ -14,28 +14,42 @@
   } from 'lucide-vue-next'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
+  import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   import {
-    TooltipProvider,
-    Tooltip,
-    TooltipTrigger,
-    TooltipContent
-  } from '@/components/ui/tooltip'
+    toolbar_rotate_ccw,
+    toolbar_rotate_cw,
+    toolbar_zoom_in,
+    toolbar_zoom_out,
+    toolbar_rotate_3d,
+    toolbar_layers,
+    toolbar_undo,
+    toolbar_redo,
+    toolbar_undo_prefix,
+    toolbar_redo_prefix,
+    color_shuffle_design_colors
+  } from '@/paraglide/messages'
+  import { computed } from 'vue'
 
   const workflowStore = useWorkflowStore()
   const history = useHistoryStore()
   const { shuffleColors } = useColorActions()
-
-  import { computed } from 'vue'
+  const profileStore = useProfileStore()
 
   // Determine if undo/redo stacks are empty
   const isUndoDisabled = computed(() => history.undoStack.length === 0)
   const isRedoDisabled = computed(() => history.redoStack.length === 0)
 
+  const locale = computed(() => profileStore.currentLocale || 'en')
+
+  const undoPrefix = computed(() => toolbar_undo_prefix({}, { locale: locale.value }))
+  const redoPrefix = computed(() => toolbar_redo_prefix({}, { locale: locale.value }))
+
   const tools = computed(() => [
     {
       id: 'rotateCcw',
       icon: RotateCcw,
-      label: 'Rotate CCW',
+      label: toolbar_rotate_ccw({}, { locale: locale.value }),
       action: () => {
         // TODO: implement rotate counter-clockwise
       },
@@ -44,7 +58,7 @@
     {
       id: 'rotateCw',
       icon: RotateCw,
-      label: 'Rotate CW',
+      label: toolbar_rotate_cw({}, { locale: locale.value }),
       action: () => {
         // TODO: implement rotate clockwise
       },
@@ -53,21 +67,21 @@
     {
       id: 'zoomIn',
       icon: ZoomIn,
-      label: 'Zoom in',
+      label: toolbar_zoom_in({}, { locale: locale.value }),
       action: () => workflowStore.zoomIn(),
       disabled: false
     },
     {
       id: 'zoomOut',
       icon: ZoomOut,
-      label: 'Zoom out',
+      label: toolbar_zoom_out({}, { locale: locale.value }),
       action: () => workflowStore.zoomOut(),
       disabled: false
     },
     {
       id: 'rotate3d',
       icon: Rotate3D,
-      label: 'Rotate 3D',
+      label: toolbar_rotate_3d({}, { locale: locale.value }),
       action: () => {
         // TODO: implement 3D rotation
       },
@@ -76,7 +90,7 @@
     {
       id: 'layers',
       icon: Layers3,
-      label: 'Layers',
+      label: toolbar_layers({}, { locale: locale.value }),
       action: () => {
         // TODO: implement layers
       },
@@ -85,21 +99,21 @@
     {
       id: 'shuffle',
       icon: Shuffle,
-      label: 'Shuffle colors',
+      label: color_shuffle_design_colors({}, { locale: locale.value }),
       action: () => shuffleColors(),
       disabled: false
     },
     {
       id: 'undo',
       icon: Undo2,
-      label: 'Undo',
+      label: toolbar_undo({}, { locale: locale.value }),
       action: () => history.undo(),
       disabled: isUndoDisabled.value
     },
     {
       id: 'redo',
       icon: Redo2,
-      label: 'Redo',
+      label: toolbar_redo({}, { locale: locale.value }),
       action: () => history.redo(),
       disabled: isRedoDisabled.value
     }
@@ -116,22 +130,22 @@
         <Tooltip :delay-duration="200">
           <TooltipTrigger as-child>
             <Button
-              variant="outline"
+              variant="default"
               size="icon"
               class="rounded-full size-10 p-0 bg-card outline outline-border border-0 shadow-none"
               :aria-label="t.label"
-              @click="t.action"
               :disabled="t.disabled"
+              @click="t.action"
             >
               <component :is="t.icon" class="size-4" :stroke-width="1.75" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">
             <span v-if="t.id === 'undo' && history.nextUndoDescription">
-              Undo: {{ history.nextUndoDescription }}
+              {{ undoPrefix }}{{ history.nextUndoDescription }}
             </span>
             <span v-else-if="t.id === 'redo' && history.nextRedoDescription">
-              Redo: {{ history.nextRedoDescription }}
+              {{ redoPrefix }}{{ history.nextRedoDescription }}
             </span>
             <span v-else>{{ t.label }}</span>
           </TooltipContent>

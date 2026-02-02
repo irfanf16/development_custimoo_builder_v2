@@ -1,11 +1,23 @@
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { storeToRefs } from 'pinia'
   import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
+  import type {
+    OutputProductPreview,
+    OutputStylePreviewFront,
+    OutputStylePreviewBack,
+    OutputDesignPreviewFront,
+    OutputDesignPreviewBack
+  } from '@/services/products/types'
+  import { useUIStore } from '@/stores/ui/ui.store'
+
+  const uiStore = useUIStore()
+  const { isMobile } = storeToRefs(uiStore)
 
   interface Props {
-    product: any
-    styleBase: any
-    designBase: any
+    product: OutputProductPreview
+    styleBase: OutputStylePreviewFront & OutputStylePreviewBack
+    designBase: OutputDesignPreviewFront | (OutputDesignPreviewFront & OutputDesignPreviewBack)
     class?: string
     setting: {
       x_axis: number
@@ -25,7 +37,7 @@
     if (!s) return undefined
 
     const originalCanvasSize = 600
-    const actualCanvasSize = 120
+    const actualCanvasSize = isMobile.value ? 130 : 176
     const scale = actualCanvasSize / originalCanvasSize
 
     const scaledRect = {
@@ -46,9 +58,10 @@
       :product="product"
       :style-base="styleBase"
       :design-base="designBase"
-      :width="120"
-      :height="120"
-      :class="`rounded-lg border border-border/50 ${props.class || ''}`"
+      :width="isMobile ? 130 : 176"
+      :height="isMobile ? 130 : 176"
+      :side="props.setting.side"
+      :class="`${props.class || ''}`"
       :overlay-rect="overlayRect"
     />
   </div>

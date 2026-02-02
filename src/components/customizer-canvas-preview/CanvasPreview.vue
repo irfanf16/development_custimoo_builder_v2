@@ -1,8 +1,19 @@
 <script setup lang="ts">
-  import { onMounted, onBeforeUnmount, watch } from 'vue'
+  import { onMounted, onBeforeUnmount, watch, ref } from 'vue'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
+  import { useDebounceFn } from '@vueuse/core'
+  import {
+    useRenderQueue,
+    usePreviousLogoState,
+    usePreviousTextState,
+    parseRenderVersion,
+    filterLogosBySide,
+    applyIncrementalLogoUpdates,
+    applyIncrementalTextUpdates
+  } from '@/composables'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
 
   const workflowStore = useWorkflowStore()
   const {
@@ -13,99 +24,218 @@
     disposeCanvas,
     clearCanvas,
     requestRender,
+    withCanvasBatch,
     setZoom,
     animateZoom,
     addModelLayer,
     addDesignLayer,
-    fadeOut,
-    fadeIn,
-    registerBackgroundDragHandlers
+    addLogoLayer,
+    removeLogoLayer,
+    replaceLogoTexture,
+    updateLogoLayerGeometry,
+    addTextLayer,
+    removeTextLayer,
+    replaceTextContent,
+    updateTextLayerGeometry
   } = useFabricPreview()
+  const customizationStore = useCustomizationStore()
   const {
     activeDesignDetails: effectiveDesignDetails,
     activeStyleDetails: effectiveStyleDetails,
-    renderVersion
+    renderVersion,
+    effectiveLogos,
+    groupsVersion
   } = useEffectiveSelectors()
 
-  async function renderPreview() {
+  const props = defineProps<{
+    width: number
+    height: number
+  }>()
+
+  // Use composables for render queue and logo/text state management
+  const { queuedRender } = useRenderQueue()
+  const { previousLogoState, reset: resetLogoState, setFromLogos } = usePreviousLogoState()
+  const { previousTextState, reset: resetTextState, setFromTexts } = usePreviousTextState()
+  const previousSide = ref(workflowStore.activeCanvasSide)
+  const previousRenderParts = ref(parseRenderVersion(renderVersion.value))
+  const previousGroupsVersion = ref(groupsVersion.value)
+
+  async function renderPreview(full = false) {
     if (!canvas.value) return
 
-    await fadeOut(150)
+    await queuedRender(
+      async () => {
+        await withCanvasBatch(async () => {
+          const side = workflowStore.activeCanvasSide as 'front' | 'back'
+          const design = effectiveDesignDetails.value
+          const style = effectiveStyleDetails.value
+          if (!design || !style) return
 
-    clearCanvas()
-    const side = workflowStore.activeCanvasSide
-    const design = effectiveDesignDetails.value
-    const style = effectiveStyleDetails.value
-    if (!design || !style) return
+          if (full) {
+            clearCanvas({ silent: true })
+            const fitOptions = {
+              scaleBy: 'auto' as const,
+              widthPercent: 0.95,
+              heightPercent: 0.95
+            }
 
-    const fitOptions = { scaleBy: 'height', heightPercent: 0.75 } as const
+            if (side === 'back' && design.back_design) {
+              await addDesignLayer(
+                design.back_design.file_url,
+                design.back_design.file_extension,
+                fitOptions
+              )
+              for (const m of (
+                style as {
+                  back_models?: Array<{ composition?: string; file_url: string }>
+                }
+              ).back_models || []) {
+                const comp = (
+                  m.composition === 'multiply' ? 'multiply' : 'screen'
+                ) as GlobalCompositeOperation
+                await addModelLayer(m.file_url, comp, fitOptions)
+              }
+            } else {
+              await addDesignLayer(
+                design.front_design.file_url,
+                design.front_design.file_extension,
+                fitOptions
+              )
+              for (const m of (
+                style as {
+                  front_models?: Array<{ composition?: string; file_url: string }>
+                }
+              ).front_models || []) {
+                const comp = (
+                  m.composition === 'multiply' ? 'multiply' : 'screen'
+                ) as GlobalCompositeOperation
+                await addModelLayer(m.file_url, comp, fitOptions)
+              }
+            }
 
-    if (side === 'back' && design.back_design) {
-      await addDesignLayer(
-        design.back_design.file_url,
-        design.back_design.file_extension,
-        fitOptions
-      )
-      for (const m of (style as any).back_models || []) {
-        const comp = (
-          m.composition === 'multiply' ? 'multiply' : 'screen'
-        ) as GlobalCompositeOperation
-        await addModelLayer(m.file_url, comp, fitOptions)
-      }
-    } else {
-      await addDesignLayer(
-        design.front_design.file_url,
-        design.front_design.file_extension,
-        fitOptions
-      )
-      for (const m of (style as any).front_models || []) {
-        const comp = (
-          m.composition === 'multiply' ? 'multiply' : 'screen'
-        ) as GlobalCompositeOperation
-        await addModelLayer(m.file_url, comp, fitOptions)
-      }
-    }
+            const logos = filterLogosBySide(effectiveLogos.value, side)
+            for (const logo of logos) {
+              await addLogoLayer(logo).catch(err => console.warn('Failed to add logo:', err))
+            }
 
-    setZoom(workflowStore.canvasZoom)
+            setFromLogos(logos)
 
-    fadeIn()
-    requestRender()
+            // Add text layers
+            const texts = customizationStore.activeProductTexts
+            const sideStr = side === 'front' ? 'Front' : 'Back'
+            for (const entry of texts) {
+              if (!entry.items || entry.items.length === 0) continue
+              for (let i = 0; i < entry.items.length; i++) {
+                const item = entry.items[i]
+                if (!item) continue
+                if (item.placement === sideStr) {
+                  await addTextLayer(entry, item, i).catch(err =>
+                    console.warn('Failed to add text layer:', err)
+                  )
+                }
+              }
+            }
+            setFromTexts(texts, side)
+          } else {
+            const allRelevantLogos = filterLogosBySide(effectiveLogos.value, side)
+
+            await applyIncrementalLogoUpdates({
+              previousLogoState,
+              logos: allRelevantLogos,
+              addLogoLayer,
+              removeLogoLayer,
+              replaceLogoTexture,
+              updateLogoLayerGeometry
+            })
+
+            // Apply incremental text updates
+            const texts = customizationStore.activeProductTexts
+            await applyIncrementalTextUpdates({
+              previousTextState,
+              texts,
+              side,
+              addTextLayer,
+              removeTextLayer,
+              replaceTextContent,
+              updateTextLayerGeometry
+            })
+          }
+
+          setZoom(workflowStore.canvasZoom)
+          requestRender()
+        })
+      },
+      error => console.error('CanvasPreview: render error', error)
+    )
   }
 
-  function updateCanvasSize() {
-    const w = window.innerWidth || 1200
-    const h = window.innerHeight || 800
-    setCanvasSize({ width: w, height: h })
-  }
-
-  function handleResize() {
-    updateCanvasSize()
-    renderPreview()
-  }
-
-  onMounted(() => {
+  function handleInitCanvas() {
+    disposeCanvas()
     if (!canvasEl.value) return
     initCanvas({
       selection: false,
       enableRetinaScaling: true,
-      moveCursor: 'grab',
-      defaultCursor: 'grab',
-      enablePointerEvents: false
+      enablePointerEvents: false,
+      allowTouchScrolling: true
     })
-    updateCanvasSize()
-    window.addEventListener('resize', handleResize)
-    registerBackgroundDragHandlers()
-    renderPreview()
+    const smallerDimension = Math.min(props.width, props.height)
+    setCanvasSize({ width: smallerDimension, height: smallerDimension })
+    resetLogoState()
+    resetTextState()
+    void renderPreview(true)
+  }
+
+  onMounted(() => {
+    handleInitCanvas()
+    window.addEventListener('resize', handleResizeDebounced)
   })
 
   onBeforeUnmount(() => {
     disposeCanvas()
-    window.removeEventListener('resize', handleResize)
+    window.removeEventListener('resize', handleResizeDebounced)
   })
 
   watch(
-    () => [workflowStore.activeCanvasSide, renderVersion.value],
-    () => renderPreview()
+    () => workflowStore.activeCanvasSide,
+    nextSide => {
+      if (nextSide === previousSide.value) return
+      previousSide.value = nextSide
+      resetLogoState()
+      resetTextState()
+      void renderPreview(true)
+    }
+  )
+
+  watch(
+    () => renderVersion.value,
+    nextVersion => {
+      const parts = parseRenderVersion(nextVersion)
+      const prev = previousRenderParts.value
+      previousRenderParts.value = parts
+
+      const designChanged = parts.id !== prev.id
+      const logosChanged =
+        parts.logosMeta !== prev.logosMeta || parts.logosGeometry !== prev.logosGeometry
+
+      if (designChanged) {
+        resetLogoState()
+        resetTextState()
+        void renderPreview(true)
+      } else if (logosChanged) {
+        void renderPreview(false)
+      }
+    }
+  )
+
+  watch(
+    () => groupsVersion.value,
+    nextVersion => {
+      if (nextVersion === previousGroupsVersion.value) return
+      previousGroupsVersion.value = nextVersion
+      resetLogoState()
+      resetTextState()
+      void renderPreview(true)
+    }
   )
 
   watch(
@@ -116,17 +246,37 @@
       requestRender()
     }
   )
+
+  watch(
+    () => effectiveLogos.value,
+    () => {
+      void renderPreview(false)
+    },
+    { deep: true }
+  )
+
+  watch(
+    () => customizationStore.activeProductTexts,
+    () => {
+      void renderPreview(false)
+    },
+    { deep: true }
+  )
+
+  const handleResizeDebounced = useDebounceFn(() => {
+    handleInitCanvas()
+  }, 200)
+
+  watch(
+    () => [props.width, props.height],
+    () => {
+      // handleResizeDebounced()
+    }
+  )
 </script>
 
 <template>
-  <div class="relative">
-    <div class="inset-0 max-w-full max-h-full">
-      <div class="w-full h-full grid place-items-center">
-        <canvas
-          ref="canvasEl"
-          class="rounded-[32px] transition-opacity duration-300 z-10"
-        />
-      </div>
-    </div>
+  <div class="flex items-center justify-center">
+    <canvas ref="canvasEl" class="rounded-[32px] transition-opacity duration-300 z-10" />
   </div>
 </template>

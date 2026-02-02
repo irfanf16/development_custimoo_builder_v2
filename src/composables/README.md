@@ -85,68 +85,29 @@ const { isInitialized, initializeApp } = useAppInitialization()
 onMounted(() => initializeApp())
 ```
 
-### useWorkflowNavigation.ts
+### useWorkflow.ts
 
-Compute-only breadcrumb items based on store state.
+Unified controller for workflow UI state.
 
 **Key responsibilities:**
 
-- Generate navigation breadcrumbs based on current workflow step
-- Provide navigation actions for breadcrumb items
-- Handle complex navigation logic for different workflow steps
+- Expose current workflow step, panel state, and step-specific sub-state
+- Provide navigation breadcrumbs and routing helpers
+- Trigger step-dependent side effects (design/style/logo preload)
+- Offer actions for category/subcategory selection
 
 **Key functions:**
 
-- `navigationItems` - Computed breadcrumb items with labels and actions
+- `currentStep`, `contentKey`, `navigationItems`
+- `handleCategorySelect(categoryId)`
+- `handleSubcategorySelect(subcategoryId)`
+- `initializeEffects()`
 
 **Example:**
 
 ```ts
-const { navigationItems } = useWorkflowNavigation(currentStep, () => {})
-```
-
-### useWorkflowManager.ts
-
-Thin UI helpers around `workflowStore` to handle category/subcategory selection.
-
-**Key responsibilities:**
-
-- Provide UI helpers for workflow navigation
-- Handle category and subcategory selection logic
-- Derive current step from workflow store state
-
-**Key functions:**
-
-- `currentStep` - Computed current workflow step
-- `handleCategorySelect(categoryId)` - Handle category selection
-- `handleSubcategorySelect(subcategoryId)` - Handle subcategory selection
-
-**Example:**
-
-```ts
-const { currentStep, handleCategorySelect } = useWorkflowManager()
-handleCategorySelect(12)
-```
-
-### useWorkflowEffects.ts
-
-Centralized side effects for workflow step changes (fetch previews, recent logos, etc.).
-
-**Key responsibilities:**
-
-- Handle data fetching side effects when workflow state changes
-- Watch for step changes and trigger appropriate API calls
-- Provide manual trigger for effects if needed
-
-**Key functions:**
-
-- `triggerStepEffects(step)` - Manually trigger effects for a specific step
-
-**Example:**
-
-```ts
-// In app init
-useWorkflowEffects()
+const { currentStep, navigationItems, initializeEffects } = useWorkflow()
+onMounted(() => initializeEffects())
 ```
 
 ### useColorActions.ts
@@ -197,7 +158,7 @@ initCanvas({ selection: false })
 await addDesignLayer(designUrl, 'svg')
 ```
 
-### useColorScheme.ts
+### useBrandStyling.ts
 
 Manages theme and color scheme application.
 
@@ -210,13 +171,13 @@ Manages theme and color scheme application.
 
 **Key functions:**
 
-- `applyColorScheme(container?, hostTheme?)` - Apply color scheme to container
+- `applyBrandStyling(container?, hostTheme?)` - Apply color scheme to container
 
 **Example:**
 
 ```ts
-const { applyColorScheme } = useColorScheme()
-await applyColorScheme(container, hostTheme)
+const { applyBrandStyling } = useBrandStyling()
+await applyBrandStyling(container, hostTheme)
 ```
 
 ### useParaglideLocale.ts

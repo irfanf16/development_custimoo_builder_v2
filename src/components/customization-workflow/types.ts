@@ -1,38 +1,75 @@
-import type { ComputedRef, Ref } from 'vue'
+import type { ButtonVariants } from '../ui/button'
+import type { LucideIcon } from 'lucide-vue-next'
 
 export type BreadcrumbItem = { label: string; action?: () => void }
 
+export type DesignCategoriesConfig = {
+  categories: Array<{ category_name: string; created_at: string; id: number; updated_at: string }>
+  selectedId: number | null
+  onSelect: (id: number | null) => void
+  defaultLabel?: string
+}
+
+export type SearchConfiguration = {
+  placeholder: string
+  onInput: (val: string) => void
+}
+
+export type CustomizableStockFilterConfiguration = {
+  activeFilter: 'all' | 'customized' | 'personalized'
+  onFilterChange: (filter: 'all' | 'customized' | 'personalized') => void
+}
+
+export type HeaderConfiguration = {
+  breadcrumbs?: BreadcrumbItem[]
+  search?: SearchConfiguration
+  applyOverrides?: {
+    value?: boolean
+    onInput: (val: boolean) => void
+    label: string
+  }
+  actionButton?: {
+    label: string
+    tooltip?: string
+    icon?: LucideIcon
+    callback: () => void | Promise<void>
+  }
+  helpText?: {
+    label: string
+    tooltip?: string
+  }
+  isExpandable?: boolean
+  designCategories?: DesignCategoriesConfig
+  customizableStockFilter?: CustomizableStockFilterConfiguration
+}
+
+export type FooterButton = {
+  label: string
+  icon?: LucideIcon
+  variant: ButtonVariants['variant']
+  disabled?: boolean
+  onClick: () => void
+}
+
+export type FooterConfiguration = {
+  buttons: FooterButton[]
+}
+
+export type HeaderAndFooterConfiguration = {
+  headerExtras?: HeaderConfiguration
+  footerExtras?: FooterConfiguration
+}
+
+export type WorkflowProductsEntryVariant = 'cards' | 'list'
+
 export type WorkflowRouteStep =
-  | 'category'
-  | 'subcategory'
   | 'product'
   | 'designs'
   | 'styles'
   | 'logos'
   | 'colors'
   | 'patterns'
-  | 'patterns-group'
   | 'texts'
-  | 'texts-placement'
   | 'roster'
   | 'roster-edit'
   | 'summary'
-
-export type HeaderConfiguration = {
-  breadcrumbs?: ComputedRef<BreadcrumbItem[]>
-  search?: {
-    placeholder: string
-    model: Ref<string>
-    onInput: (val: string) => void
-  }
-  applyOverrides?: {
-    model: Ref<boolean>
-    onInput: (val: boolean) => void
-    label: string
-  }
-  isExpandable?: boolean
-}
-
-export type HeaderAndFooterConfiguration = {
-  headerExtras?: HeaderConfiguration
-}

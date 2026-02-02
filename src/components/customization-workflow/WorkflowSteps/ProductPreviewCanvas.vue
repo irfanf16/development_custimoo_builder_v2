@@ -1,17 +1,12 @@
 <script setup lang="ts">
-  import {
-    onMounted,
-    onBeforeUnmount,
-    watch,
-    ref,
-    type PropType,
-    computed
-  } from 'vue'
+  import { onMounted, onBeforeUnmount, watch, ref, type PropType, computed } from 'vue'
   import { Rect } from 'fabric'
   import type {
     OutputProductPreview,
-    OutputStylePreview,
-    OutputDesignPreview
+    OutputStylePreviewFront,
+    OutputStylePreviewBack,
+    OutputDesignPreviewFront,
+    OutputDesignPreviewBack
   } from '@/services/products/types'
   import { useFabricPreview } from '@/composables/useFabricPreview'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
@@ -19,11 +14,13 @@
   const props = defineProps({
     product: { type: Object as PropType<OutputProductPreview>, required: true },
     styleBase: {
-      type: Object as PropType<OutputStylePreview>,
+      type: Object as PropType<OutputStylePreviewFront & OutputStylePreviewBack>,
       required: true
     },
     designBase: {
-      type: Object as PropType<OutputDesignPreview>,
+      type: Object as PropType<
+        OutputDesignPreviewFront | (OutputDesignPreviewFront & OutputDesignPreviewBack)
+      >,
       required: true
     },
     width: { type: Number, default: 176 },
@@ -54,6 +51,7 @@
     disposeCanvas,
     clearCanvas,
     requestRender,
+    withCanvasBatch,
     addModelLayer,
     addDesignLayer
   } = useFabricPreview(computed(() => props.applyCustomizationOverrides))
@@ -68,53 +66,45 @@
   async function renderPreview() {
     if (!canvas.value) return
     isRendering.value = true
-    clearCanvas()
+    await withCanvasBatch(async () => {
+      clearCanvas({ silent: true })
 
-    // if (props.side === 'back' && props.designBase.back_design) {
-    //   const back = props.designBase.back_design
-    //   await addDesignLayer(back.file_url, back.file_extension)
-    //   const backModels = props.styleBase.back_models || []
-    //   for (const m of backModels) {
-    //     const comp =
-    //       (m.composition as 'multiply' | 'screen') === 'multiply'
-    //         ? 'multiply'
-    //         : 'screen'
-    //     await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
-    //   }
-    // } else {
-    await addDesignLayer(
-      props.designBase.front_design.file_url,
-      props.designBase.front_design.file_extension
-    )
-    for (const m of props.styleBase.front_models || []) {
-      const comp =
-        (m.composition as 'multiply' | 'screen') === 'multiply'
-          ? 'multiply'
-          : 'screen'
-      await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
-    }
-    //}
+      const chosenDesign = (() => {
+        if (props.side === 'front') return props.designBase.front_design
+        return 'back_design' in props.designBase
+          ? (props.designBase as OutputDesignPreviewFront & OutputDesignPreviewBack).back_design
+          : props.designBase.front_design
+      })()
+      await addDesignLayer(chosenDesign.file_url, chosenDesign.file_extension)
+      for (const m of props.side === 'front'
+        ? props.styleBase.front_models
+        : (props.styleBase.back_models ?? [])) {
+        const comp = (m.composition as 'multiply' | 'screen') === 'multiply' ? 'multiply' : 'screen'
+        await addModelLayer(m.file_url, comp as GlobalCompositeOperation)
+      }
+      //}
 
-    // Overlay rectangle for logo placement preview (absolute pixels)
-    if (props.overlayRect) {
-      const { x, y, width, height, color } = props.overlayRect
-      const rect = new Rect({
-        left: x,
-        top: y,
-        width,
-        height,
-        fill: color || 'rgba(107,114,128,0.35)',
-        stroke: 'rgba(107,114,128,0.6)',
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        originX: 'left',
-        originY: 'top'
-      })
-      canvas.value.add(rect)
-      rect.setCoords()
-    }
-    requestRender()
+      // Overlay rectangle for logo placement preview (absolute pixels)
+      if (props.overlayRect) {
+        const { x, y, width, height, color } = props.overlayRect
+        const rect = new Rect({
+          left: x,
+          top: y,
+          width,
+          height,
+          fill: color || 'rgba(107,114,128,0.35)',
+          stroke: 'rgba(107,114,128,0.6)',
+          strokeWidth: 1,
+          selectable: false,
+          evented: false,
+          originX: 'left',
+          originY: 'top'
+        })
+        canvas.value?.add(rect)
+        rect.setCoords()
+      }
+      requestRender()
+    })
     isRendering.value = false
   }
 
@@ -125,7 +115,8 @@
         enableRetinaScaling: true,
         selection: false,
         hoverCursor: 'pointer',
-        defaultCursor: 'pointer'
+        defaultCursor: 'pointer',
+        allowTouchScrolling: true
       })
       setCanvasSize({ width: props.width, height: props.height })
     }
@@ -133,11 +124,7 @@
   }
 
   onMounted(() => {
-    if (
-      typeof window !== 'undefined' &&
-      'IntersectionObserver' in window &&
-      containerEl.value
-    ) {
+    if (typeof window !== 'undefined' && 'IntersectionObserver' in window && containerEl.value) {
       io = new IntersectionObserver(
         entries => {
           const entry = entries[0]
@@ -196,17 +183,37 @@
     :style="{ width: `${width / 16}rem`, height: `${height / 16}rem` }"
   >
     <canvas
+      v-show="isVisible && !isRendering"
       ref="canvasEl"
-      v-show="isVisible"
       :width="width"
       :height="height"
       class="rounded-xl"
       style="width: 100%; height: 100%"
     />
 
+    <!-- Skeleton loader matching canvas dimensions -->
     <div
       v-if="!isVisible || isRendering"
-      class="absolute inset-0 rounded-xl animate-pulse bg-secondary/30"
-    />
+      class="absolute inset-0 rounded-xl overflow-hidden bg-muted/50"
+    >
+      <!-- Main product silhouette skeleton -->
+      <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          class="relative bg-muted/60 rounded-lg"
+          :style="{
+            width: '70%',
+            height: '85%'
+          }"
+        >
+          <!-- Subtle shimmer effect -->
+          <div
+            class="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-muted-foreground/10 to-transparent"
+          />
+        </div>
+      </div>
+
+      <!-- Pulsing overlay for additional loading effect -->
+      <div class="absolute inset-0 bg-muted/20 animate-pulse" />
+    </div>
   </div>
 </template>

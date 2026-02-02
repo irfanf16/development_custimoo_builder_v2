@@ -29,7 +29,6 @@ await history.execute('color.set-group', {
 
 ```ts
 await history.undo()
-console.log(history.nextRedoDescription)
 await history.redo()
 ```
 

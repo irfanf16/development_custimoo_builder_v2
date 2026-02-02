@@ -12,15 +12,15 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "vee-validate": ["./node_modules/vee-validate/dist/vee-validate"],
+      "@vee-validate/zod": ["./node_modules/@vee-validate/zod/dist/vee-validate-zod"],
+      "zod": ["./node_modules/zod/index"]
     },
+    "moduleResolution": "node",
     "allowJs": true,
     "checkJs": false
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "src/paraglide/**/*.js"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["src/paraglide/**/*", "public/**"]
 }

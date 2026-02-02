@@ -5,11 +5,11 @@
 
 export interface HostTheme {
   primary: string
-  secondary?: string
-  accent: string
   radius?: string
-  fontFamilyDefault?: string
-  fontFamilyHeading?: string
+  font?: {
+    default?: { name: string; url?: string }
+    brandAccent?: { name: string; url?: string }
+  }
   name: string
   description: string
   allowColorModeSwitch: boolean
@@ -19,68 +19,96 @@ export interface HostTheme {
 export const hostThemes: Record<string, HostTheme> = {
   // Development/Testing
   localhost: {
-    primary: '#3B82F6',
-    secondary: '#6B7280',
-    accent: '#F3F4F6',
+    primary: '#14A892',
     radius: '0.5rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Geist',
+    font: {
+      default: { name: 'Geist' }
+    },
+    name: 'Default Green',
+    description: 'default green theme',
+    allowColorModeSwitch: true,
+    defaultColorMode: 'light'
+  },
+
+  'test.custimoo.com': {
+    primary: '#3B82F6',
+    radius: '0.5rem',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: {
+        name: 'Orbitron',
+        url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
+      }
+    },
     name: 'Development Blue',
     description: 'Blue primary with green accent for development',
     allowColorModeSwitch: true,
     defaultColorMode: 'light'
   },
 
-  // Staging
   'builder-v2.custimoo.com': {
-    primary: '#FF6B6B',
-    secondary: '#4ECDC4',
-    accent: '#FF6B6B',
-    radius: '0.75rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Poppins',
-    name: 'E-commerce Red',
-    description: 'Warm red primary with teal accent for shopping sites',
+    primary: '#14A892',
+    radius: '0.5rem',
+    font: {
+      default: { name: 'Geist' }
+    },
+    name: 'Default Green',
+    description: 'default green theme',
     allowColorModeSwitch: true,
     defaultColorMode: 'light'
   },
+  // 'builder-v2.custimoo.com': {
+  //   primary: '#e12d2e',
+  //   radius: '0.5rem',
+  //   font: {
+  //     default: { name: 'Geist' },
+  //     brandAccent: {
+  //       name: 'Orbitron',
+  //       url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap'
+  //     }
+  //   },
+  //   name: 'E-commerce Red',
+  //   description: 'Warm red primary with teal accent for shopping sites',
+  //   allowColorModeSwitch: true,
+  //   defaultColorMode: 'dark'
+  // },
 
   // Example: E-commerce site
   'shop.example.com': {
     primary: '#FF6B6B',
-    secondary: '#4ECDC4',
-    accent: '#FF6B6B',
     radius: '0.75rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Poppins',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: { name: 'Poppins' }
+    },
     name: 'E-commerce Red',
     description: 'Warm red primary with teal accent for shopping sites',
     allowColorModeSwitch: false,
     defaultColorMode: 'light'
   },
 
-  // Example: Corporate site
+  // Example: Corporate site DARK GREY
   'corporate.example.com': {
     primary: '#1F2937',
-    secondary: '#6B7280',
-    accent: '#F3F4F6',
     radius: '0.375rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Inter',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: { name: 'Inter' }
+    },
     name: 'Corporate Gray',
     description: 'Professional gray theme for corporate sites',
     allowColorModeSwitch: true,
     defaultColorMode: 'light'
   },
 
-  // Example: Creative agency
+  // Example: Creative agency PURPLE
   'creative.example.com': {
     primary: '#8B5CF6',
-    secondary: '#F59E0B',
-    accent: '#FEF3C7',
     radius: '1rem',
-    fontFamilyDefault: 'Geist',
-    fontFamilyHeading: 'Montserrat',
+    font: {
+      default: { name: 'Geist' },
+      brandAccent: { name: 'Montserrat' }
+    },
     name: 'Creative Purple',
     description: 'Creative purple theme for design agencies',
     allowColorModeSwitch: true,
@@ -91,42 +119,21 @@ export const hostThemes: Record<string, HostTheme> = {
 /**
  * Get theme for current host
  */
-export function getHostTheme(): HostTheme | null {
+export function getHostTheme(): HostTheme | undefined {
   const rawHost = window.location.hostname.toLowerCase()
-  const normalizedHost =
-    rawHost === '127.0.0.1' || rawHost === '::1' ? 'localhost' : rawHost
+  const normalizedHost = rawHost === '127.0.0.1' || rawHost === '::1' ? 'localhost' : rawHost
 
   // Exact match first
   if (hostThemes[normalizedHost]) return hostThemes[normalizedHost]
 
   // Try suffix match for subdomains, pick the longest matching suffix
-  const candidates = Object.keys(hostThemes).filter(key =>
-    normalizedHost.endsWith(key)
-  )
+  const candidates = Object.keys(hostThemes).filter(key => normalizedHost.endsWith(key))
   if (candidates.length > 0) {
     const best = candidates.sort((a, b) => b.length - a.length)[0]
-    return hostThemes[best]
+    return hostThemes[best ?? 'localhost']
   }
 
-  return null
-}
-
-/**
- * Get theme for specific host
- */
-export function getThemeForHost(hostname: string): HostTheme | null {
-  const rawHost = hostname.toLowerCase()
-  const normalizedHost =
-    rawHost === '127.0.0.1' || rawHost === '::1' ? 'localhost' : rawHost
-  if (hostThemes[normalizedHost]) return hostThemes[normalizedHost]
-  const candidates = Object.keys(hostThemes).filter(key =>
-    normalizedHost.endsWith(key)
-  )
-  if (candidates.length > 0) {
-    const best = candidates.sort((a, b) => b.length - a.length)[0]
-    return hostThemes[best]
-  }
-  return null
+  return undefined
 }
 
 /**

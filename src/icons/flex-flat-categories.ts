@@ -44,14 +44,21 @@ import Backpack from 'virtual:icons/flex-flat/backpack'
 import ShoppingBagHandBag from 'virtual:icons/flex-flat/shopping-bag-hand-bag'
 import ModuleThree from 'virtual:icons/flex-flat/module-three'
 import Boots from 'virtual:icons/flex-flat/boots'
-import CapFrozen from 'virtual:icons/flex-flat/cap-front'
+import CapFront from 'virtual:icons/flex-flat/cap-front'
 import CapSide from 'virtual:icons/flex-flat/cap-side'
 import Brightness from 'virtual:icons/flex-flat/brightness'
 import PottedFlowerTulip from 'virtual:icons/flex-flat/potted-flower-tulip'
 import Leaf from 'virtual:icons/flex-flat/leaf'
 import SnowFlake from 'virtual:icons/flex-flat/snow-flake'
 import HolidayVacationBeachUmbrella from 'virtual:icons/flex-flat/holiday-vacation-beach-umbrella'
-
+import UserIcon from 'virtual:icons/flex-flat/user-circle'
+import SettingsIcon from 'virtual:icons/flex-flat/settings-icon'
+import OrderIcon from 'virtual:icons/flex-flat/orders-icon'
+import AddressIcon from 'virtual:icons/flex-flat/address-book-icon'
+import NotificationIcon from 'virtual:icons/flex-flat/notification-icon'
+import OrdersIcon from 'virtual:icons/flex-flat/orders-icon'
+import UserCircle from 'virtual:icons/flex-flat/user-circle'
+import UploadImagePlaceholder from 'virtual:icons/flex-flat/upload-image-placeholder'
 export const flexFlatCategoryIcons = {
   Ball,
   Baseball,
@@ -98,17 +105,27 @@ export const flexFlatCategoryIcons = {
   ShoppingBagHandBag,
   ModuleThree,
   Boots,
-  CapFrozen,
+  CapFront,
   CapSide,
   Brightness,
   PottedFlowerTulip,
   Leaf,
   SnowFlake,
-  HolidayVacationBeachUmbrella
+  HolidayVacationBeachUmbrella,
+  UserIcon,
+  SettingsIcon,
+  OrderIcon,
+  AddressIcon,
+  NotificationIcon,
+  OrdersIcon,
+  UserCircle,
+  UploadImagePlaceholder
 }
 
 // Keep a reference so tree-shaking can't drop them
 if (typeof window !== 'undefined') {
-  // @ts-ignore
-  window.__FLEX_FLAT_CATEGORIES__ = flexFlatCategoryIcons
+  // Keep a reference on window for runtime access, without suppressing type checks
+  ;(
+    window as unknown as { __FLEX_FLAT_CATEGORIES__?: Record<string, unknown> }
+  ).__FLEX_FLAT_CATEGORIES__ = flexFlatCategoryIcons as Record<string, unknown>
 }

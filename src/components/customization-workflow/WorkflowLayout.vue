@@ -1,278 +1,251 @@
 <script setup lang="ts">
-  import { computed, ref, isRef, type Ref, type ComputedRef } from 'vue'
-  import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { Button } from '@/components/ui/button'
-  import { Input } from '@/components/ui/input'
-  import { Label } from '@/components/ui/label'
-  import { Switch } from '@/components/ui/switch'
-  import { Maximize2, Minimize2, Search } from 'lucide-vue-next'
-  import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
-  import { useWorkflowNavigation } from '@/composables/useWorkflowNavigation'
+  import { computed, ref, onMounted, isRef, type Ref as VueRef } from 'vue'
+  import type { HeaderConfiguration, FooterConfiguration } from './types'
+  import WorkflowHeader from './WorkflowHeader.vue'
+  import { useWorkflow } from '@/composables/useWorkflow'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import {
-    CategorySelection,
-    SubcategorySelection,
-    ProductSelection,
+    ProductsEntry,
     DesignSelection,
     StyleSelection,
-    LogoCustomization,
+    LogoSelection,
     ColorSelection,
     PatternSelection,
-    PatternGroupSelection,
-    TextsSelection,
-    TextPlacement,
     RosterEntry,
-    RosterEdit,
     SummaryPanel
   } from '@/components/customization-workflow/WorkflowSteps'
+  import { Separator } from '@/components/ui/separator'
+  import TextsEntry from '@/components/customization-workflow/WorkflowSteps/texts/index.vue'
   import WorkflowPanel from './WorkflowPanel.vue'
-  import type { HeaderAndFooterConfiguration, BreadcrumbItem } from './types'
-
-  interface Props {
-    currentStep:
-      | 'category'
-      | 'subcategory'
-      | 'product'
-      | 'designs'
-      | 'styles'
-      | 'logos'
-      | 'colors'
-      | 'patterns'
-      | 'patterns-group'
-      | 'texts'
-      | 'texts-placement'
-      | 'roster'
-      | 'roster-edit'
-      | 'summary'
-    onNavigateBack: () => void
-    onCategorySelect: (categoryId: number) => void
-  }
-
-  const props = defineProps<Props>()
-
-  const productsStore = useProductsStore()
+  import { useUIStore } from '@/stores/ui/ui.store'
+  import WorkflowFooterButtons from './WorkflowFooterButtons.vue'
+  import WorkflowFooterPricing from './WorkflowFooterPricing.vue'
+  const uiStore = useUIStore()
+  const workflowStore = useWorkflowStore()
+  const { initializeEffects } = useWorkflow()
 
   const isExpanded = ref(false)
   const menuPanelRef = ref<{
     scrollToElement: (elementId: string, behavior?: 'smooth' | 'auto') => void
   } | null>(null)
 
-  // Navigation fallback derived from workflow state
-  const routeStepRef = computed(() => props.currentStep) as unknown as Ref<any>
-  const { navigationItems } = useWorkflowNavigation(
-    routeStepRef,
-    props.onNavigateBack
-  )
-
-  // Computed properties for workflow step configuration
-  const contentKey = computed(() => {
-    return props.currentStep === 'logos'
-      ? `logos-${(productsStore as any).logosSubStep || 'list'}`
-      : props.currentStep
-  })
-
-  // Get header and footer configuration from current step component
-
-  const currentStepRef = ref<HeaderAndFooterConfiguration | null>(null)
-
-  const isExpandable = computed(() => {
-    return currentStepRef.value?.headerExtras?.isExpandable
-  })
-
-  // Get breadcrumbs from current step component
-  const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => {
-    const exposed = currentStepRef.value?.headerExtras?.breadcrumbs
-    if (exposed) {
-      return isRef(exposed)
-        ? (exposed as unknown as ComputedRef<BreadcrumbItem[]>).value
-        : (exposed as BreadcrumbItem[])
-    }
-    // Fallback to centralized navigation when panel doesn't expose breadcrumbs
-    return navigationItems.value
-  })
-
-  const headerApplyOverrides = computed(() => {
-    return currentStepRef.value?.headerExtras?.applyOverrides
-  })
-
-  // Bridge nested refs from child steps to primitives for props expecting non-Ref
-  const applyOverridesModelValue = computed({
-    get: (): boolean => {
-      const model = currentStepRef.value?.headerExtras?.applyOverrides
-        ?.model as Ref<boolean> | undefined
-      return model?.value ?? false
-    },
-    set: (val: boolean) => {
-      currentStepRef.value?.headerExtras?.applyOverrides?.onInput?.(!!val)
-    }
-  })
-
-  const searchModelValue = computed({
-    get: (): string => {
-      const model = currentStepRef.value?.headerExtras?.search?.model as
-        | Ref<string>
-        | undefined
-      return model?.value ?? ''
-    },
-    set: (val: string) => {
-      currentStepRef.value?.headerExtras?.search?.onInput?.(val)
-    }
-  })
-
   const toggleExpanded = () => {
-    if (isExpandable.value) {
-      isExpanded.value = !isExpanded.value
-    }
+    isExpanded.value = !isExpanded.value
+  }
+
+  const handleApplyOverridesChange = (val: boolean) => {
+    workflowStore.currentHeaderConfig?.applyOverrides?.onInput?.(!!val)
+  }
+
+  const handleSearchChange = (val: string) => {
+    workflowStore.currentHeaderConfig?.search?.onInput?.(val)
   }
 
   /**
    * Handles scroll-to-element events from child components
    * Delegates to the WorkflowPanel's scrollToElement method
    */
-  const handleScrollToElement = (
-    elementId: string,
-    behavior: 'smooth' | 'auto' = 'auto'
-  ) => {
+  const handleScrollToElement = (elementId: string, behavior: 'smooth' | 'auto' = 'auto') => {
     if (menuPanelRef.value) {
       menuPanelRef.value.scrollToElement(elementId, behavior)
     }
   }
+
+  // Computed container classes based on mobile/desktop
+  const containerClasses = computed(() => {
+    if (uiStore.isMobile) {
+      return 'fixed bottom-25 h-fit max-h-[65vh] w-[calc(100%-2rem)]'
+    }
+    return 'max-h-[100%]'
+  })
+
+  // Initialize effects for mobile
+  onMounted(() => {
+    if (uiStore.isMobile) {
+      initializeEffects()
+    }
+  })
+
+  // Import header/footer config creators from step config modules
+  import { useDesignConfig } from './WorkflowSteps/design/useDesignConfig'
+  import { useProductConfig } from './WorkflowSteps/product/useProductConfig'
+  import { useStyleConfig } from './WorkflowSteps/style/useStyleConfig'
+  import { useLogoConfig } from './WorkflowSteps/logo/useLogoConfig'
+  import { useColorsConfig } from './WorkflowSteps/colors/useColorsConfig'
+  import { useTextsConfig } from './WorkflowSteps/texts/useTextsConfig'
+  import { usePatternsConfig } from './WorkflowSteps/patterns/usePatternsConfig'
+  import { useRosterConfig } from './WorkflowSteps/roster/useRosterConfig'
+  import { useSummaryConfig } from './WorkflowSteps/summary/useSummaryConfig'
+  // Repeat for other steps as available ...
+
+  // Instantiate step configs
+  const { headerConfig: productHeader, footerConfig: productFooter } = useProductConfig()
+  const { headerConfig: designHeader, footerConfig: designFooter } = useDesignConfig()
+  const { headerConfig: styleHeader, footerConfig: styleFooter } = useStyleConfig()
+  const { headerConfig: logoHeader, footerConfig: logoFooter } = useLogoConfig()
+  const { headerConfig: colorsHeader, footerConfig: colorsFooter } = useColorsConfig()
+  const { headerConfig: textsHeader, footerConfig: textsFooter } = useTextsConfig()
+  const { headerConfig: patternsHeader, footerConfig: patternsFooter } = usePatternsConfig()
+  const { headerConfig: rosterHeader, footerConfig: rosterFooter } = useRosterConfig()
+  const { headerConfig: summaryHeader, footerConfig: summaryFooter } = useSummaryConfig()
+
+  // Map current step to configs (resolve refs to plain objects)
+  function resolveHeader(
+    h: HeaderConfiguration | VueRef<HeaderConfiguration>
+  ): HeaderConfiguration {
+    return isRef(h) ? h.value : h
+  }
+
+  const headerConfig = computed<HeaderConfiguration>(() => {
+    switch (workflowStore.currentStep) {
+      case 'product':
+        return resolveHeader(productHeader)
+      case 'designs':
+        return resolveHeader(designHeader)
+      case 'styles':
+        return resolveHeader(styleHeader)
+      case 'logos':
+        return resolveHeader(logoHeader)
+      case 'colors':
+        return resolveHeader(colorsHeader)
+      case 'patterns':
+        return resolveHeader(patternsHeader)
+      case 'texts':
+        return resolveHeader(textsHeader)
+      case 'summary':
+        return resolveHeader(summaryHeader)
+      case 'roster':
+        return resolveHeader(rosterHeader)
+      default:
+        return { breadcrumbs: [] }
+    }
+  })
+
+  const footerConfig = computed<FooterConfiguration>(() => {
+    switch (workflowStore.currentStep) {
+      case 'product':
+        return productFooter.value
+      case 'designs':
+        return designFooter.value
+      case 'styles':
+        return styleFooter.value
+      case 'logos':
+        return logoFooter.value
+      case 'colors':
+        return colorsFooter.value
+      case 'patterns':
+        return patternsFooter.value
+      case 'texts':
+        return textsFooter.value
+      case 'summary':
+        return summaryFooter.value
+      case 'roster':
+        return rosterFooter.value
+      default:
+        return { buttons: [] } as FooterConfiguration
+    }
+  })
 </script>
 
 <template>
-  <div id="workflow-panel-container" class="flex-col">
+  <div id="workflow-panel-container" :class="containerClasses">
+    <!-- Mobile: Wrap WorkflowPanel in transition -->
+    <div v-if="uiStore.isMobile" class="relative w-full h-fit">
+      <transition
+        enter-active-class="transition duration-200"
+        enter-from-class="opacity-0 translate-y-4"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition duration-150"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-4"
+      >
+        <WorkflowPanel
+          v-show="workflowStore.isPanelOpen"
+          ref="menuPanelRef"
+          :content-key="workflowStore.contentKey || ''"
+          :header-config="headerConfig"
+          :is-expanded="true"
+          :has-footer-buttons="footerConfig?.buttons?.length > 0"
+        >
+          <template #header>
+            <WorkflowHeader
+              :config="headerConfig"
+              @update:apply-overrides-model-value="handleApplyOverridesChange"
+              @update:search-model-value="handleSearchChange"
+            />
+          </template>
+          <template #footer>
+            <div :class="['flex flex-col w-full', { 'justify-end': isExpanded }]">
+              <WorkflowFooterButtons
+                v-if="footerConfig?.buttons?.length > 0"
+                :config="footerConfig"
+                :is-expanded="isExpanded"
+              />
+              <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
+              <WorkflowFooterPricing :is-expanded="isExpanded" />
+            </div>
+          </template>
+
+          <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
+          <DesignSelection
+            v-else-if="workflowStore.currentStep === 'designs'"
+            @scroll-to-element="handleScrollToElement"
+          />
+          <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" />
+          <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" />
+          <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" />
+          <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
+          <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" />
+          <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" />
+          <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" />
+        </WorkflowPanel>
+      </transition>
+    </div>
+
+    <!-- Desktop: Direct WorkflowPanel with expand/collapse functionality -->
     <WorkflowPanel
+      v-else
       ref="menuPanelRef"
-      :content-key="contentKey"
-      :expandable="isExpandable"
+      :content-key="workflowStore.contentKey || ''"
+      :header-config="headerConfig"
       :is-expanded="isExpanded"
+      :has-footer="footerConfig?.buttons?.length > 0"
       @update:is-expanded="isExpanded = $event"
     >
-      <!-- Header slot -->
-      <template #header="{ isExpanded }">
-        <div class="w-full flex flex-col gap-5">
-          <div class="flex items-center gap-3 h-9 justify-center">
-            <div
-              class="flex items-center gap-3 flex-1 min-w-0 whitespace-nowrap overflow-hidden"
-            >
-              <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
-            </div>
-
-            <div
-              v-if="headerApplyOverrides !== undefined"
-              class="flex items-center gap-3"
-            >
-              <Switch
-                :model-value="applyOverridesModelValue"
-                @update:model-value="val => (applyOverridesModelValue = !!val)"
-              />
-              <Label class="text-sm font-normal text-muted-foreground">{{
-                headerApplyOverrides.label
-              }}</Label>
-            </div>
-
-            <Button
-              v-if="isExpandable"
-              variant="outline"
-              size="icon"
-              class="rounded-lg"
-              @click="toggleExpanded"
-            >
-              <component
-                :is="isExpanded ? Minimize2 : Maximize2"
-                class="size-4"
-              />
-            </Button>
-          </div>
-
-          <div
-            v-if="currentStepRef?.headerExtras?.search"
-            class="flex items-center flex-1"
-          >
-            <div class="relative w-full">
-              <Search
-                class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
-              />
-              <Input
-                :model-value="searchModelValue"
-                :placeholder="
-                  currentStepRef?.headerExtras?.search?.placeholder ||
-                  'Search...'
-                "
-                class="pl-8"
-                @update:model-value="val => (searchModelValue = String(val))"
-              />
-            </div>
-          </div>
+      <template #header>
+        <WorkflowHeader
+          :config="headerConfig"
+          :is-expanded="isExpanded"
+          :show-expand-button="true"
+          @toggle-expanded="toggleExpanded"
+          @update:apply-overrides-model-value="handleApplyOverridesChange"
+          @update:search-model-value="handleSearchChange"
+        />
+      </template>
+      <template #footer>
+        <div :class="['flex flex-col w-full', { 'items-end justify-end': isExpanded }]">
+          <WorkflowFooterButtons
+            v-if="footerConfig?.buttons?.length > 0"
+            :config="footerConfig"
+            :is-expanded="isExpanded"
+          />
+          <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
+          <WorkflowFooterPricing :is-expanded="isExpanded" />
         </div>
       </template>
-      <!-- Category Selection Step -->
-      <CategorySelection
-        v-if="currentStep === 'category'"
-        ref="currentStepRef"
-        @select-category="onCategorySelect"
-      />
 
-      <!-- Subcategory Selection Step -->
-      <SubcategorySelection v-else-if="currentStep === 'subcategory'" />
-
-      <!-- Product Selection Step -->
-      <ProductSelection
-        v-else-if="currentStep === 'product'"
-        ref="currentStepRef"
-        @scroll-to-element="handleScrollToElement"
-      />
-
-      <!-- Design Selection Step -->
+      <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
       <DesignSelection
-        v-else-if="currentStep === 'designs'"
-        ref="currentStepRef"
+        v-else-if="workflowStore.currentStep === 'designs'"
         @scroll-to-element="handleScrollToElement"
       />
-
-      <!-- Style Selection Step -->
-      <StyleSelection
-        v-else-if="currentStep === 'styles'"
-        ref="currentStepRef"
-      />
-
-      <!-- Logo Customization Step -->
-      <LogoCustomization
-        v-else-if="currentStep === 'logos'"
-        ref="currentStepRef"
-      />
-
-      <!-- Colors -->
-      <ColorSelection
-        v-else-if="currentStep === 'colors'"
-        ref="currentStepRef"
-      />
-
-      <!-- Patterns -->
-      <PatternSelection
-        v-else-if="currentStep === 'patterns'"
-        ref="currentStepRef"
-      />
-      <PatternGroupSelection v-else-if="currentStep === 'patterns-group'" />
-
-      <!-- Texts -->
-      <TextsSelection
-        v-else-if="currentStep === 'texts'"
-        ref="currentStepRef"
-      />
-      <TextPlacement
-        v-else-if="currentStep === 'texts-placement'"
-        ref="currentStepRef"
-      />
-
-      <!-- Roster -->
-      <RosterEntry v-else-if="currentStep === 'roster'" ref="currentStepRef" />
-      <RosterEdit v-else-if="currentStep === 'roster-edit'" />
-
-      <!-- Summary -->
-      <SummaryPanel
-        v-else-if="currentStep === 'summary'"
-        ref="currentStepRef"
-      />
+      <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" />
+      <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" />
+      <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" />
+      <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
+      <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" ref="currentStepRef" />
+      <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" />
+      <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" />
     </WorkflowPanel>
   </div>
 </template>

@@ -1,4 +1,15 @@
-export type OutputStylePreview = {
+import type { FactoryProduct } from '@/services/orders/types'
+import type { Style3DMap, StyleLogoEntry, StyleLogoTechnology } from '@/services/types'
+
+export type OutputStylePreviewBase = {
+  id: number
+  name: string
+  product_id: number
+  style_icon_url?: string
+  logo: StyleLogoEntry[]
+}
+
+export type OutputStylePreviewFront = OutputStylePreviewBase & {
   front_models: {
     composition: 'multiply' | 'screen'
     file_url: string
@@ -6,11 +17,16 @@ export type OutputStylePreview = {
     thumb_sm_url: string
     type: string
   }[]
-  id: number
-  logo: unknown[]
-  name: string
-  product_id: number
-  style_icon_url?: string
+}
+
+export type OutputStylePreviewBack = OutputStylePreviewBase & {
+  back_models: {
+    composition: 'multiply' | 'screen'
+    file_url: string
+    id: number
+    thumb_sm_url: string
+    type: string
+  }[]
 }
 
 type CustomizedAddons = {
@@ -18,25 +34,13 @@ type CustomizedAddons = {
   ungrouped_addons: import('./addons').OutputAddon[]
 }
 
-export type OutputStyleDetails = OutputStylePreview & {
-  _3d_alpha_map: unknown
-  _3d_ao_map: unknown
-  _3d_metalness_map: unknown
-  _3d_model: {
-    composition: 'multiply' | 'screen' | null
-    file_url: string
-    id: number
-    thumb_sm_url: string | null
-    type: string
-  }
-  _3d_roughness_map: unknown
-  _3d_texture: {
-    composition: 'multiply' | 'screen' | null
-    file_url: string
-    id: number
-    thumb_sm_url: string | null
-    type: string
-  }
+export type OutputStyleDetails = OutputStylePreviewFront & {
+  _3d_alpha_map: Style3DMap
+  _3d_ao_map: Style3DMap
+  _3d_metalness_map: Style3DMap
+  _3d_model: Style3DMap
+  _3d_roughness_map: Style3DMap
+  _3d_texture: Style3DMap
   back_enabled: boolean
   back_models: {
     composition: 'multiply' | 'screen'
@@ -51,18 +55,11 @@ export type OutputStyleDetails = OutputStylePreview & {
   customized_addons: CustomizedAddons
   default_style: number
   deleted_at: string | null
-  front_models: {
-    composition: 'multiply' | 'screen'
-    file_url: string
-    id: number
-    thumb_sm_url: string
-    type: string
-  }[]
   id: number
   is_default: 1 | 0
   is_fixed_logos_all: boolean
-  logo: unknown[]
-  logo_technologies: unknown[]
+  logo: StyleLogoEntry[]
+  logo_technologies: StyleLogoTechnology[]
   metalness: number | null
   name: string
   product_id: number
@@ -86,4 +83,16 @@ export type ActiveStyleDetails = {
 
 export type ActiveDesignDetails = {
   designDetails: import('./designs').OutputDesignDetails
+}
+
+export type ShareProductDetails = {
+  factoryProducts: FactoryProduct[]
+  factoryProductActiveIndex: number
+  lockerProductId: number | null
+  activityId: number | null
+  activityItems: unknown
+  cartId: number | null
+  factoryId: number | null
+  id: number | null
+  orderId: number | null
 }

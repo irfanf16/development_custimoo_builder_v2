@@ -1,59 +1,91 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-import { loadSVGFromURL, util, type FabricObject, type Group } from 'fabric'
+import { ref, watch, computed } from 'vue'
 import type {
   OutputProductCategories,
   GetProductCategoriesParams,
   ActiveProductCustomization,
-  ActiveProductDetails,
   ProductPreviewItem,
-  OutputDesignPreview,
-  OutputStylePreview,
+  OutputStylePreviewFront,
   OutputStyleDetails,
   OutputDesignDetails,
   OutputRecentLogo,
   OutputProductDetails,
   OutputSvgGroupColor,
-  ActiveStyleDetails
+  OutputDesignPreviewFront,
+  GeneratePdfPayload,
+  GeneratePdfResponse
 } from '@/services/products/types'
+
 import { API } from '../../services'
-import { tryCatchApi } from '../utils'
+import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
 import { useCustomizationStore } from '../customization/customization.store'
+import type { CanvasSide } from '../workflow/workflow.store.types'
+import { useQueryParams } from '@/composables/useQueryParams'
+import type { LockerResponse } from '@/services/lockers/types'
 export const useProductsStore = defineStore('productsStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'productsStore' } })
+
+  // ===== INTERNAL FLAGS =====
+  let customizationAutoSyncSuspendCount = 0
+  const isCustomizationAutoSyncSuspended = () => customizationAutoSyncSuspendCount > 0
+
+  function suspendCustomizationAutoSync() {
+    customizationAutoSyncSuspendCount += 1
+  }
+
+  function resumeCustomizationAutoSync() {
+    customizationAutoSyncSuspendCount = Math.max(0, customizationAutoSyncSuspendCount - 1)
+  }
 
   // ===== STATE =====
   const categories = ref<OutputProductCategories | null>(null)
   const activeProductDetails = ref<OutputProductDetails | null>(null)
   const activeStyleDetails = ref<OutputStyleDetails | null>(null)
   const activeDesignDetails = ref<OutputDesignDetails | null>(null)
-  const svgGroups = ref<OutputSvgGroupColor[] | null>(null)
+  const svgGroupsFront = ref<OutputSvgGroupColor[]>([])
+  const svgGroupsBack = ref<OutputSvgGroupColor[]>([])
+  const svgGroups = computed<OutputSvgGroupColor[]>(() => {
+    // Merge front and back groups, removing duplicates by id
+    const allGroups = [...svgGroupsFront.value, ...svgGroupsBack.value]
+    const uniqueGroups = new Map<string, OutputSvgGroupColor>()
+    allGroups.forEach(group => {
+      if (!uniqueGroups.has(group.id)) {
+        uniqueGroups.set(group.id, group)
+      }
+    })
+    return Array.from(uniqueGroups.values())
+  })
+  const initialSvgGroupsFront = ref<OutputSvgGroupColor[]>([])
+  const initialSvgGroupsBack = ref<OutputSvgGroupColor[]>([])
+  const initialSvgGroups = computed<OutputSvgGroupColor[]>(() => {
+    // Merge front and back initial groups, removing duplicates by id
+    const allGroups = [...initialSvgGroupsFront.value, ...initialSvgGroupsBack.value]
+    const uniqueGroups = new Map<string, OutputSvgGroupColor>()
+    allGroups.forEach(group => {
+      if (!uniqueGroups.has(group.id)) {
+        uniqueGroups.set(group.id, group)
+      }
+    })
+    return Array.from(uniqueGroups.values())
+  })
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
-  const stylePreviews = ref<OutputStylePreview[] | null>(null)
-  const designPreviews = ref<OutputDesignPreview[] | null>(null)
+  const stylePreviews = ref<OutputStylePreviewFront[] | null>(null)
+  const designPreviews = ref<OutputDesignPreviewFront[] | null>(null)
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  // ===== UTILITIES =====
-  const storageBase = import.meta.env.VITE_APP_STORAGE_URL || ''
-  function fromStorage(path: string): string {
-    const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
-    const clean = path?.startsWith('/') ? path.slice(1) : path
-    return base + clean
-  }
-
-  type CustomFabricGroup = Group & { _objects: FabricObject & { id: string }[] }
-  async function getSvgGroup(url: string, ext?: string) {
-    if (ext?.toLowerCase() === 'svg' && !url.toLowerCase().endsWith('.svg')) {
-      url += '.svg'
-    }
-    const { objects } = await loadSVGFromURL(fromStorage(url))
-    const safeObjects = (objects || []).filter(Boolean) as FabricObject[]
-    return util.groupSVGElements(safeObjects) as CustomFabricGroup
-  }
+  // ===== COMPUTED =====
+  // Product type flags from categories response
+  const isCustomized = computed(() => categories.value?.customized ?? false)
+  const isPersonalized = computed(() => categories.value?.personalized ?? false)
+  const isPrivateProduct = computed(() => categories.value?.private_product ?? false)
+  const customizedCount = computed(() => categories.value?.customized_count ?? 0)
+  const personalizedCount = computed(() => categories.value?.personalized_count ?? 0)
+  const privateProductCount = computed(() => categories.value?.private_product_count ?? 0)
 
   // ===== ACTIONS =====
   function setLoading(loading: boolean) {
@@ -82,68 +114,55 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   // Addons setters to avoid direct mutations from components
-  // function setActiveAddonsList(addons: OutputAddon[]) {
-  //   activeAddons.value = addons
-  // }
 
-  // function updateActiveAddonSelected(addonId: number, selected: boolean) {
-  //   if (!activeAddons.value) return
-  //   const idx = activeAddons.value.findIndex(a => a.addon_id === addonId)
-  //   if (idx >= 0) {
-  //     activeAddons.value[idx].selected = selected
-  //   }
-  // }
   // ===== BUSINESS LOGIC =====
-  async function setSvgGroups(): Promise<void> {
-    const frontDesignUrl = activeDesignDetails.value?.front_design.file_url
-    const fileExtension = activeDesignDetails.value?.front_design.file_extension
-    if (!frontDesignUrl || !fileExtension) return
-    const group = await getSvgGroup(frontDesignUrl, fileExtension)
-    if (!group?._objects) return
-    type FillWithToHex = { toHex: () => string }
-    type FillWithColor = { color: string }
-    const getColorString = (fill: unknown): string => {
-      if (typeof fill === 'string') return fill
-      if (fill && typeof (fill as FillWithToHex).toHex === 'function')
-        return (fill as FillWithToHex).toHex()
-      if (fill && typeof (fill as FillWithColor).color === 'string')
-        return (fill as FillWithColor).color
-      return '#000000'
+
+  function setSvgGroups(
+    groups: OutputSvgGroupColor[] | null | undefined,
+    side: CanvasSide = 'front',
+    setInitial = false
+  ): void {
+    const targetGroups = side === 'front' ? svgGroupsFront : svgGroupsBack
+    const targetInitialGroups = side === 'front' ? initialSvgGroupsFront : initialSvgGroupsBack
+
+    if (!groups || !Array.isArray(groups)) {
+      targetGroups.value = []
+      if (setInitial) {
+        targetInitialGroups.value = []
+      }
+      return
     }
-    svgGroups.value = group._objects
-      .filter(obj => {
-        const id = (obj as { id?: string }).id?.toLowerCase() || ''
-        return (
-          !id.includes('noncustomizable') &&
-          !id.includes('inside') &&
-          !id.includes('anchor')
-        )
-      })
-      .map(obj => {
-        const id = (obj as { id?: string }).id || 'unknown'
-        return {
-          id,
-          color: getColorString((obj as { fill?: unknown }).fill),
-          pantone: '',
-          name: '',
-          count: id === 'base' ? 10000 : 1,
-          gradient_colors: [] as Array<{
-            color: string
-            pantone: string
-            name: string
-          }>
-        }
-      })
+
+    const uniqueGroups = Array.from(new Map(groups.map(g => [g.id, g])).values())
+
+    targetGroups.value = uniqueGroups
+    if (setInitial) {
+      // Store a deep copy as the initial state
+      targetInitialGroups.value = JSON.parse(JSON.stringify(uniqueGroups)) as OutputSvgGroupColor[]
+    }
+  }
+
+  /**
+   * Get product by ID from the store
+   * @param productId - Product ID to retrieve
+   * @returns Product details if found, null otherwise
+   * Note: This only checks the active product. For other products, use fetchActiveProductDetails first.
+   */
+  function getProductById(productId: number): OutputProductDetails | null {
+    // Check if the active product matches the requested ID
+    if (activeProductDetails.value?.id === productId) {
+      return activeProductDetails.value
+    }
+
+    // Product previews don't have full details, so we can't use them
+    // If the product isn't active, it needs to be fetched first
+    return null
   }
 
   function reset() {
     categories.value = null
     isLoading.value = false
     error.value = null
-  }
-
-  function initActiveSelectionFromLocalStorage() {
-    customization.loadFromLocalStorage()
   }
 
   function setActiveStep(_: string | null) {}
@@ -153,15 +172,32 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   // ===== API FUNCTIONS =====
-  async function fetchCustomizedCategories(): Promise<
-    APIResponse<OutputProductCategories>
-  > {
+  async function fetchCustomizedCategories(
+    params?: GetProductCategoriesParams
+  ): Promise<APIResponse<OutputProductCategories>> {
     setLoading(true)
     setError(null)
-    const params: GetProductCategoriesParams = { customized: true }
-    const output = await tryCatchApi(API.products.getProductCategories(params))
+    const queryParams: GetProductCategoriesParams = params ?? {
+      customized: true,
+      personalized: true,
+      private: false
+    }
+    const { syncId, hasSyncId } = useQueryParams()
+    if (hasSyncId.value) {
+      queryParams.sync_id = syncId.value
+    }
+    const output = await tryCatchApi(API.products.getProductCategories(queryParams), {
+      operation: 'fetchCustomizedCategories'
+    })
     if (output.success) {
       setCategories(output.content)
+
+      // If product not found and we have a stored customization, clear it
+      // This happens when localStorage has a product_id but the product is no longer available
+      if (output.content?.no_product_found && customization.customization) {
+        customization.customization = null
+        customization.clearLocalStorage()
+      }
     } else {
       setError('Error getting customized categories')
     }
@@ -169,11 +205,56 @@ export const useProductsStore = defineStore('productsStore', () => {
     return output
   }
 
-  async function fetchProductPreviews(categoryId: number | null) {
+  async function fetchProductsByShareUrl(shareUrl: string): Promise<
+    APIResponse<
+      LockerResponse<{
+        factoryProducts: import('@/services/cart/types').FactoryProduct[]
+        factoryProductActiveIndex: number
+        lockerProductId: number | null
+        activityId: number | null
+        activityItems: unknown
+        cartId: number | null
+        factoryId: number | null
+        id: number | null
+        orderId: number | null
+      }>
+    >
+  > {
     setLoading(true)
     setError(null)
+    const output = await tryCatchApi(API.products.getProductsByShareUrl(shareUrl), {
+      operation: 'fetchProductsByShareUrl',
+      share_url: shareUrl
+    })
+    if (output.success) {
+      // If product not found and we have a stored customization, clear it
+      if (output.content?.result?.factoryProducts?.[0] && customization.customization) {
+        customization.customization = null
+        customization.clearLocalStorage()
+      }
+    } else {
+      setError('Error getting products by share URL')
+    }
+    setLoading(false)
+    return output
+  }
+
+  async function fetchProductPreviews(categoryId: number | null, subcategoryId?: number) {
+    setLoading(true)
+    setError(null)
+    const { syncId } = useQueryParams()
+
     const resp = await tryCatchApi(
-      API.products.getProductPreviewsByCategory(categoryId ?? null)
+      API.products.getProductPreviewsByCategory(
+        categoryId ?? null,
+        subcategoryId ?? undefined,
+        syncId.value
+      ),
+      {
+        operation: 'fetchProductPreviews',
+        category_id: categoryId,
+        subcategory_id: subcategoryId
+      }
     )
     if (resp.success) {
       productPreviews.value = resp.content as unknown as ProductPreviewItem[]
@@ -187,11 +268,12 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchStylePreviews(productId: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(
-      API.products.getStylePreviewsByProduct(productId)
-    )
+    const resp = await tryCatchApi(API.products.getStylePreviewsByProduct(productId), {
+      operation: 'fetchStylePreviews',
+      product_id: productId
+    })
     if (resp.success) {
-      stylePreviews.value = resp.content as unknown as OutputStylePreview[]
+      stylePreviews.value = resp.content as unknown as OutputStylePreviewFront[]
     }
     setLoading(false)
     return resp
@@ -200,23 +282,19 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchActiveStyleDetails(styleId: number) {
     setLoading(true)
     setError(null)
-    console.log(
-      'designName before fetch',
-      customization.customization?.design_name
-    )
     const resp = await tryCatchApi(
-      API.products.getActiveStyleDetails(
-        styleId,
-        customization.customization?.design_name
-      )
+      API.products.getActiveStyleDetails(styleId, customization.customization?.design_name),
+      {
+        operation: 'fetchActiveStyleDetails',
+        style_id: styleId
+      }
     )
     if (resp.success) {
-      const payload = resp.content as ActiveStyleDetails
+      const payload = resp.content
       setActiveStyleDetailsState(payload.styleDetails)
       setActiveDesignDetailsState(payload.designDetails)
       customization.setStyle(styleId)
       customization.setDesign(payload.designDetails)
-      setSvgGroups()
     } else {
       setError('Error getting active style details')
     }
@@ -224,24 +302,31 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  async function fetchActiveProductDetails(productId: number) {
+  async function fetchActiveProductDetails(productId: number, hasSyncId: boolean = false) {
     setLoading(true)
     setError(null)
-    const result = await tryCatchApi(
-      API.products.getActiveProductDetails(productId)
-    )
+    const result = await tryCatchApi(API.products.getActiveProductDetails(productId, hasSyncId), {
+      operation: 'fetchActiveProductDetails',
+      product_id: productId
+    })
     if (result.success && result.content) {
-      const details = result.content as ActiveProductDetails
+      const details = result.content
       setActiveProductDetailsState(details.productDetails)
       setActiveStyleDetailsState(details.styleDetails)
-      setActiveDesignDetailsState(details.designDetails as OutputDesignDetails)
+      setActiveDesignDetailsState(details.designDetails)
       customization.setProduct(productId)
       customization.setStyle(details.styleDetails.id)
       customization.setDesign(details.designDetails)
-      await setSvgGroups()
       if (!customization.customization) {
         customization.ensureCustomization()
         saveCustomizationToLocalStorage()
+      }
+      // Initialize product_custom_texts from product_texts if available
+      if (details.productDetails?.product_texts) {
+        customization.initializeProductTextsFromDetails(
+          productId,
+          details.productDetails.product_texts
+        )
       }
     } else {
       setError('Error getting active product details')
@@ -250,61 +335,15 @@ export const useProductsStore = defineStore('productsStore', () => {
     return result
   }
 
-  const defaultActiveDetails = ref<{
-    product: any
-    style: any
-    design: any
-    customization: ActiveProductCustomization | null
-  } | null>(null)
-
-  function captureDefaultsSnapshot() {
-    defaultActiveDetails.value = {
-      product: activeProductDetails.value
-        ? JSON.parse(JSON.stringify(activeProductDetails.value))
-        : null,
-      style: activeStyleDetails.value
-        ? JSON.parse(JSON.stringify(activeStyleDetails.value))
-        : null,
-      design: activeDesignDetails.value
-        ? JSON.parse(JSON.stringify(activeDesignDetails.value))
-        : null,
-      customization: customization.customization
-        ? (JSON.parse(
-            JSON.stringify(customization.customization)
-          ) as ActiveProductCustomization)
-        : null
-    }
-  }
-
-  async function resetToDefaultsSnapshot() {
-    if (defaultActiveDetails.value) {
-      activeProductDetails.value = defaultActiveDetails.value.product
-      activeStyleDetails.value = defaultActiveDetails.value.style
-      activeDesignDetails.value = defaultActiveDetails.value.design
-      svgGroups.value = []
-      await setSvgGroups()
-      customization.setCustomization(
-        (defaultActiveDetails.value.customization ||
-          (null as unknown)) as ActiveProductCustomization
-      )
-    }
-  }
-
-  function applyDesignPreview(designPreview: OutputDesignPreview) {
-    if (customization.customization) {
-      customization.setDesign(designPreview)
-      saveCustomizationToLocalStorage()
-    }
-  }
-
   async function fetchDesignPreviewsByStyleId(styleId: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(
-      API.products.getDesignPreviewsByStyleId(styleId)
-    )
+    const resp = await tryCatchApi(API.products.getDesignPreviewsByStyleId(styleId), {
+      operation: 'fetchDesignPreviewsByStyleId',
+      style_id: styleId
+    })
     if (resp.success) {
-      designPreviews.value = resp.content as unknown as OutputDesignPreview[]
+      designPreviews.value = resp.content as OutputDesignPreviewFront[]
     } else {
       setError('Error getting design previews')
     }
@@ -312,10 +351,83 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
+  async function fetchProductDetailsAndDesignsForProductPreview(productId: number) {
+    setLoading(true)
+    setError(null)
+    const productDetailsPromise = tryCatchApi(API.products.getActiveProductDetails(productId), {
+      operation: 'fetchProductDetailsAndDesignsForProductPreview',
+      product_id: productId
+    })
+    const styleId =
+      productPreviews.value?.find(preview => preview.productPreview.id === productId)?.stylePreview
+        .id ?? 0
+    const designPreviewsByStyleIdPromise = tryCatchApi(
+      API.products.getDesignPreviewsByStyleId(styleId),
+      {
+        operation: 'fetchProductDetailsAndDesignsForProductPreview',
+        product_id: productId,
+        style_id: styleId
+      }
+    )
+    const [responseProductDetails, responseDesignPreviewsByStyleId] = await Promise.all([
+      productDetailsPromise,
+      designPreviewsByStyleIdPromise
+    ])
+    if (
+      responseProductDetails.success &&
+      responseProductDetails.content &&
+      responseDesignPreviewsByStyleId.success &&
+      responseDesignPreviewsByStyleId.content
+    ) {
+      const productResponse = responseProductDetails.content
+      const payload = {
+        productDetails: productResponse.productDetails,
+        styleDetails: productResponse.styleDetails,
+        defaultDesignDetails: productResponse.designDetails,
+        designPreviews: responseDesignPreviewsByStyleId.content
+      }
+      setLoading(false)
+      return payload
+    } else {
+      setError('Error getting product details and design previews')
+    }
+    setLoading(false)
+    return null
+  }
+
+  const defaultActiveDetails = ref<{
+    product: OutputProductDetails | null
+    style: OutputStyleDetails | null
+    design: OutputDesignDetails | null
+    customization: ActiveProductCustomization | null
+  } | null>(null)
+
+  function resetToDefaultsSnapshot() {
+    if (defaultActiveDetails.value) {
+      activeProductDetails.value = defaultActiveDetails.value.product
+      activeStyleDetails.value = defaultActiveDetails.value.style
+      activeDesignDetails.value = defaultActiveDetails.value.design
+      customization.setCustomization(
+        (defaultActiveDetails.value.customization ||
+          (null as unknown)) as ActiveProductCustomization
+      )
+    }
+  }
+
+  function applyDesignPreview(designPreview: OutputDesignPreviewFront) {
+    if (customization.customization) {
+      customization.setDesign(designPreview)
+      saveCustomizationToLocalStorage()
+    }
+  }
+
   async function fetchDesignDetailsById(designId: number) {
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi(API.products.getDesignDetailsById(designId))
+    const resp = await tryCatchApi(API.products.getDesignDetailsById(designId), {
+      operation: 'fetchDesignDetailsById',
+      design_id: designId
+    })
     if (resp.success) {
       activeDesignDetails.value = resp.content as unknown as OutputDesignDetails
     } else {
@@ -325,18 +437,35 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  // async function fetchRecentLogos(companyId?: number) {
-  //   setLoading(true)
-  //   setError(null)
-  //   const resp = await tryCatchApi(API.products.getRecentLogos(companyId))
-  //   if (resp.success) {
-  //     recentLogos.value = resp.content as unknown as OutputRecentLogo[]
-  //   } else {
-  //     setError('Error getting recent logos')
-  //   }
-  //   setLoading(false)
-  //   return resp
-  // }
+  async function generatePDF(
+    payload: GeneratePdfPayload
+  ): Promise<APIResponse<GeneratePdfResponse>> {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.generatePDF(payload), {
+      operation: 'generatePDF'
+    })
+    if (!resp.success) {
+      setError('Error generating PDF')
+    }
+    setLoading(false)
+    return resp
+  }
+
+  async function shareDesign(
+    payload: import('@/services/products/types/base-product').ShareDesignPayload
+  ): Promise<APIResponse<{ url: string }>> {
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi(API.products.shareDesignUrl(payload), {
+      operation: 'shareDesign'
+    })
+    if (!resp.success) {
+      setError('Error sharing design')
+    }
+    setLoading(false)
+    return resp
+  }
 
   // Centralized fetch orchestration reacting to customization selections
   watch(
@@ -345,16 +474,10 @@ export const useProductsStore = defineStore('productsStore', () => {
       () => customization.activeStyleId,
       () => customization.activeDesignId
     ],
-    async (
-      [productId, styleId, designId],
-      [prevProductId, prevStyleId, prevDesignId]
-    ) => {
+    async ([productId, styleId, designId], [prevProductId, prevStyleId, prevDesignId]) => {
+      if (isCustomizationAutoSyncSuspended()) return
       // No changes detected
-      if (
-        productId === prevProductId &&
-        styleId === prevStyleId &&
-        designId === prevDesignId
-      )
+      if (productId === prevProductId && styleId === prevStyleId && designId === prevDesignId)
         return
 
       // Product fetch sets default style/design
@@ -368,11 +491,33 @@ export const useProductsStore = defineStore('productsStore', () => {
       // Explicit design selection overrides current
       if (designId && activeDesignDetails.value?.id !== designId) {
         await fetchDesignDetailsById(designId)
-        await setSvgGroups()
       }
     },
     { immediate: true }
   )
+
+  // ===== RENDER MODE SELECTION =====
+  /**
+   * Determine whether to render in 2D (Fabric) or 3D (Three.js)
+   * Priority order:
+   * - If product declares show_3d/is_3d_product and style exposes any 3D maps/model → '3d'
+   * - Otherwise → '2d'
+   */
+  const activeRenderMode = computed<'2d' | '3d'>(() => {
+    const product = activeProductDetails.value
+    const style = activeStyleDetails.value
+    const productWants3D = !!(product?.is_3d_product || product?.show_3d)
+    const styleHas3DAssets = !!(
+      style &&
+      (style._3d_model?.file_url ||
+        style._3d_texture?.file_url ||
+        style._3d_alpha_map?.file_url ||
+        style._3d_ao_map?.file_url ||
+        style._3d_metalness_map?.file_url ||
+        style._3d_roughness_map?.file_url)
+    )
+    return productWants3D && styleHas3DAssets ? '3d' : '2d'
+  })
 
   // ===== RETURN =====
   return {
@@ -381,7 +526,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     activeProductDetails,
     activeStyleDetails,
     activeDesignDetails,
+    activeRenderMode,
     svgGroups,
+    initialSvgGroups,
     //activeAddons,
     //productAddons,
     //companyAddons,
@@ -391,6 +538,13 @@ export const useProductsStore = defineStore('productsStore', () => {
     recentLogos,
     isLoading,
     error,
+    // Computed
+    isCustomized,
+    isPersonalized,
+    isPrivateProduct,
+    customizedCount,
+    personalizedCount,
+    privateProductCount,
     // Actions
     setLoading,
     setError,
@@ -398,16 +552,13 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveProductDetailsState,
     setActiveStyleDetailsState,
     setActiveDesignDetailsState,
-    //setActiveAddonsList,
-    //updateActiveAddonSelected,
     // Business Logic
     setSvgGroups,
+    getProductById,
     reset,
-    initActiveSelectionFromLocalStorage,
     setActiveStep,
     saveCustomizationToLocalStorage,
     applyDesignPreview,
-    captureDefaultsSnapshot,
     resetToDefaultsSnapshot,
     // API Functions
     fetchCustomizedCategories,
@@ -415,9 +566,13 @@ export const useProductsStore = defineStore('productsStore', () => {
     fetchStylePreviews,
     fetchActiveProductDetails,
     fetchActiveStyleDetails,
-    //fetchProductAddons,
+    fetchProductDetailsAndDesignsForProductPreview,
     fetchDesignPreviewsByStyleId,
-    fetchDesignDetailsById
-    //fetchRecentLogos
+    fetchDesignDetailsById,
+    generatePDF,
+    shareDesign,
+    fetchProductsByShareUrl,
+    suspendCustomizationAutoSync,
+    resumeCustomizationAutoSync
   }
 })

@@ -1,10 +1,9 @@
-import {
-  createRouter,
-  createWebHashHistory,
-  createWebHistory
-} from 'vue-router'
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth/auth.store'
+import { useAppStore } from '@/stores/app/app.store'
+import { isWidgetMode } from '@/lib/widgetUtils'
+import { usePostHog } from '@/composables/usePostHog'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -26,6 +25,16 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/third-party-approval/:order_item_id',
+    name: 'ThirdPartyApproval',
+    component: () => import('@/views/ThirdPartyApproval.vue'),
+    meta: {
+      layout: 'third-party-approval',
+      intitializationType: 'third-party-approval',
+      title: 'Third Party Approval'
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFound.vue'),
@@ -37,7 +46,6 @@ const routes: RouteRecordRaw[] = [
 ]
 
 // Determine router mode based on environment
-const isWidgetMode = () => document.querySelector('customizer-widget') !== null
 const isSPAMode = () => document.getElementById('app') !== null
 
 // Use hash mode for widgets (default), history mode for SPA
@@ -56,9 +64,45 @@ const router = createRouter({
 })
 
 // Navigation guard for authentication
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach((to, _from, next) => {
+  // Handle share URLs: redirect /share/... to / and let initialization extract the share URL
+  if (to.path.startsWith('/share/')) {
+    // Extract the share URL part (everything after /share/) and include the 'share/' prefix
+    const shareUrlPart = to.path.replace(/^\/share\//, '')
+    if (shareUrlPart) {
+      // Store the full share URL including 'share/' prefix for API request
+      const appStore = useAppStore()
+      appStore.setShareUrl(`share/${shareUrlPart}`)
+
+      // Redirect to home route - initialization will handle loading the product
+      next({ path: '/', replace: true })
+      return
+    }
+  }
+
+  // Remove handled query params from route if they exist
+  // This prevents them from appearing in the URL after navigation
+  const handledParams = ['sync_id', 'update_item', 'update_cart', 'line', 'roster']
+  const hasHandledParams = handledParams.some(key => to.query[key] !== undefined)
+
+  if (hasHandledParams) {
+    const cleanedQuery = { ...to.query }
+    handledParams.forEach(key => {
+      delete cleanedQuery[key]
+    })
+
+    // Redirect to same route without handled query params
+    next({
+      path: to.path,
+      query: cleanedQuery,
+      hash: to.hash,
+      replace: true
+    })
+    return
+  }
+
   // Update document title
-  if (to.meta.title) {
+  if (typeof to.meta.title === 'string') {
     const mode = isWidgetMode() ? 'Widget' : 'Customizer'
     document.title = `${to.meta.title} - ${mode}`
   }
@@ -79,5 +123,9 @@ router.beforeEach(async (to, _from, next) => {
 
   next()
 })
+
+// @ts-expect-error - posthog initialization for side effects
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { posthog } = usePostHog()
 
 export default router

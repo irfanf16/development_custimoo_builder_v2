@@ -3,18 +3,16 @@
 This project follows a clear separation of concerns between domain state (Pinia stores), UI composition (composables), and cross-cutting concerns (history/undo and effects).
 
 - Stores: Pure, imperative setters that mutate one slice and persist as needed.
-- Composables: UI-facing logic. Navigation is compute-only; effects handle data fetching on step changes.
+- Composables: UI-facing logic. Workflow composable handles navigation and required effects for each step.
 - History: Centralized undo/redo with an action registry that applies/reverts domain mutations and provides user-friendly descriptions.
 
 ### Key pieces
 
-- `src/stores/customization/customization.store.ts`: Active customization state; pure setters; no history.
-- `src/stores/products/products.store.ts`: Product/category/style/design details and fetch methods.
-- `src/stores/workflow/workflow.store.ts`: Workflow UI state (active step, sub-steps, canvas state, saved prefs).
-- `src/stores/history/history.store.ts` + `src/stores/history/registry.ts`: Centralized undo/redo and action handlers.
-- `src/composables/useWorkflowNavigation.ts`: Compute-only breadcrumb/navigation items.
-- `src/composables/useWorkflowManager.ts`: Thin UI helper wrapping workflow store for step selection.
-- `src/composables/useWorkflowEffects.ts`: Watches workflow state and triggers required fetches.
+- [`src/stores/customization/customization.store.ts`](../src/stores/customization/customization.store.ts): Active customization state; pure setters; no history.
+- [`src/stores/products/products.store.ts`](../src/stores/products/products.store.ts): Product/category/style/design details and fetch methods.
+- [`src/stores/workflow/workflow.store.ts`](../src/stores/workflow/workflow.store.ts): Workflow UI state (active step, sub-steps, canvas state, saved prefs).
+- [`src/stores/history/history.store.ts`](../src/stores/history/history.store.ts) + [`src/stores/history/registry.ts`](../src/stores/history/registry.ts): Centralized undo/redo and action handlers.
+- [`src/composables/useWorkflow.ts`](../src/composables/useWorkflow.ts): Unified workflow controller combining navigation helpers, sub-step state, and side effects.
 
 ### Data flow
 
@@ -22,8 +20,7 @@ This project follows a clear separation of concerns between domain state (Pinia 
 2. History registry applies the action by calling pure setters on stores.
 3. Stores mutate their slice and persist state.
 4. History store persists undo/redo stacks to localStorage.
-5. Effects composable reacts to workflow step changes and fetches as needed.
-6. Navigation composable computes the breadcrumb from store state.
+5. Workflow composable reacts to step changes and fetches as needed while computing navigation breadcrumbs.
 
 ### Persistence
 

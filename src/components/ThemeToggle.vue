@@ -8,17 +8,12 @@
     DropdownMenuItem,
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
-  import { useUIStore } from '@/stores/ui'
-  import { computed, watch } from 'vue'
-  import {
-    theme_toggle_sr,
-    theme_light,
-    theme_dark
-  } from '@/paraglide/messages'
-  import { useLocaleStore } from '@/stores/locale/locale.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
+  import { theme_toggle_sr, theme_light, theme_dark } from '@/paraglide/messages'
+  import { useProfileStore } from '@/stores/profile/profile.store'
 
   const uiStore = useUIStore()
-  const localeStore = useLocaleStore()
+  const profileStore = useProfileStore()
 
   const props = withDefaults(
     defineProps<{
@@ -34,22 +29,9 @@
   )
 
   const setTheme = (theme: 'light' | 'dark') => {
+    // uiStore.setTheme now delegates to profileStore
     uiStore.setTheme(theme)
   }
-
-  const colorMode = computed(() => uiStore.currentTheme)
-
-  watch(colorMode, newVal => {
-    if (uiStore.widgetRoot) {
-      if (newVal === 'dark') {
-        uiStore.widgetRoot.classList.remove('light')
-        uiStore.widgetRoot.classList.add('dark')
-      } else {
-        uiStore.widgetRoot.classList.remove('dark')
-        uiStore.widgetRoot.classList.add('light')
-      }
-    }
-  })
 </script>
 
 <template>
@@ -65,16 +47,16 @@
           class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
         />
         <span class="sr-only">{{
-          theme_toggle_sr({}, { locale: localeStore.currentLocale })
+          theme_toggle_sr({}, { locale: profileStore.currentLocale })
         }}</span>
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuItem @select="setTheme('light')">{{
-        theme_light({}, { locale: localeStore.currentLocale })
+        theme_light({}, { locale: profileStore.currentLocale })
       }}</DropdownMenuItem>
       <DropdownMenuItem @select="setTheme('dark')">{{
-        theme_dark({}, { locale: localeStore.currentLocale })
+        theme_dark({}, { locale: profileStore.currentLocale })
       }}</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

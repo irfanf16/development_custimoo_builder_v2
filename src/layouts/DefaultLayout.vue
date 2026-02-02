@@ -1,16 +1,11 @@
 <script setup lang="ts">
-  const props = defineProps<{
-    class?: string
-  }>()
+  // const props = defineProps<{
+  //   class?: string
+  // }>()
 </script>
 
 <template>
-  <div
-    :class="[
-      'layout w-full max-w-none mx-auto flex-1 flex flex-col overflow-hidden',
-      props.class
-    ]"
-  >
+  <div class="layout w-full mx-auto overflow-hidden h-full">
     <slot />
   </div>
 </template>

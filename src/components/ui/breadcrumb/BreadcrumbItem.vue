@@ -1,16 +1,16 @@
 <script lang="ts" setup>
-import type { HTMLAttributes } from "vue"
-import { cn } from "@/lib/utils"
+  import type { HTMLAttributes } from 'vue'
+  import { cn } from '@/lib/utils'
 
-const props = defineProps<{
-  class?: HTMLAttributes["class"]
-}>()
+  const props = defineProps<{
+    class?: HTMLAttributes['class']
+  }>()
 </script>
 
 <template>
   <li
     data-slot="breadcrumb-item"
-    :class="cn('inline-flex items-center gap-1.5 text-xl', props.class)"
+    :class="cn('inline-flex items-center gap-1.5 text-base md:text-xl', props.class)"
   >
     <slot />
   </li>

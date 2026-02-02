@@ -15,18 +15,26 @@ export type Customer = {
   created_at: string
   updated_at: string
   deleted_at: string
+  company: {
+    address: string
+    phone: string
+    post_code: string
+    city: string
+  }
 }
 
 export type OutputLogin =
   | {
       user: Customer
       access_token: string
+      refresh_token?: string
       errors?: undefined
     }
   | {
       errors: Partial<Record<keyof InputLogin, string[]>>
       user?: undefined
       access_token?: undefined
+      refresh_token?: undefined
     }
 
 export type InputLogin = {

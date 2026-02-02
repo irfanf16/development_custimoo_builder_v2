@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Run TypeScript type-checks (via vue-tsc)
+npm run -s type-check || exit 1
+
+# Format and lint only staged files
+npx --no-install lint-staged || exit 1

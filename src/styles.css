@@ -1,0 +1,564 @@
+/* Widget Styles - All CSS bundled into one file
+ * This stylesheet is injected into the Shadow DOM of <v-customizer>,
+ * so it must be self-contained and define its own tokens.
+ *
+ * Variable groups:
+ * - A) Tailwind v4 theme tokens (via @theme inline): --color-*, --radius-*, --animate-*
+ *      These back Tailwind utilities like bg-background, text-foreground, rounded-lg, etc.
+ * - B) App/Shadcn tokens: --background, --foreground, --primary, --radius, etc.
+ *      shadcn/vue components and our utilities read these design tokens.
+ * - C) Custom widget tokens: --icon-primary, --icon-secondary, fonts, etc.
+ *      Used by our icon pipeline and font utilities.
+ * - D) Tailwind internals: --tw-* fallbacks are provided for Shadow DOM safety.
+ *      Optional, but keeping them avoids surprises when utilities expect defaults.
+ */
+
+/* Import Tailwind CSS */
+@import 'tailwindcss';
+@import 'vue-sonner/style.css';
+/* Using tailwindcss-animate via plugin */
+
+/* Custom widget styles */
+@custom-variant dark (&:is(.dark *));
+
+/* ===== A) TAILWIND V4 THEME TOKENS (utilities read these) ===== */
+@theme inline {
+  --font-brand: var(--font-brand); /* @see hostThemes.ts */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  /* Secondary currently aliases primary by default via tokens, but map to distinct vars */
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  /* Custom screen sizes */
+  --breakpoint-3xl: 1920px; /* 3xl */
+  --breakpoint-4xl: 2560px; /* 4xl */
+
+  /* Animations - available as animate-* utilities */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-slide-in: fade-slide-in 300ms cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-fade-slide-out: fade-slide-out 300ms cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-shimmer: shimmer 2s infinite;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--reka-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--reka-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  @keyframes fade-slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-slide-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
+
+/* ===== B) APP/SHADCN DESIGN TOKENS (consumed by components and utilities) ===== */
+:host,
+:root {
+  /* Icons */
+  --icon-primary: currentColor;
+  --icon-secondary: rgb(from currentColor r g b / 0.5);
+  /* Colors will be set dynamically by JavaScript */
+  /* --radius is defined below in light theme */
+  --font-sans: ui-sans-serif, system-ui, sans-serif; /* @see hostThemes.ts */
+  --font-brand: var(--font-brand); /* @see hostThemes.ts */
+  /* Base color references for dark-mode derivations */
+  --primary-base: var(--primary);
+  --secondary-base: var(--secondary);
+  --accent-base: var(--accent);
+
+  /* ===== CONTAINER SIZING (unified approach) ===== */
+  /* Mobile-first: use viewport height with fallback minimum */
+  --container-height-mobile: max(70vh, 500px);
+  --container-min-height-mobile: 500px;
+  --container-padding-mobile: 1rem;
+
+  /* Desktop: use viewport height with fallback minimum */
+  --container-height-desktop: max(80vh, 800px);
+  --container-min-height-desktop: 800px;
+  --container-padding-desktop: 1.5rem;
+
+  /* Light theme CSS variables (default values) */
+  /* Hosts can override these via runtime (see hostThemes.ts) */
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #14a892;
+  --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  /* Base radius used to derive Tailwind radius scale tokens */
+  --radius: 0.5rem; /* @see hostThemes.ts */
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #f5f5f5; /* @see hostThemes.ts */
+  --accent-foreground: #171717;
+  --destructive: #dc2626;
+  --destructive-foreground: #fef2f2;
+  --border: #e5e5e5;
+  --input: oklch(0.929 0.013 255.508);
+  --ring: rgb(from var(--primary) r g b / 0.5);
+  /* Optional extras removed: chart-* and sidebar-* tokens (unused) */
+
+  /* ===== DARK THEME VARIABLES =====
+   * Activated by adding `dark` to :host or a top-level container inside Shadow DOM.
+   */
+  :host.dark,
+  .dark {
+    --background: #0a0a0a;
+    --foreground: #fafafa;
+    --card: #171717;
+    --card-foreground: #fafafa;
+    --popover: #262626;
+    --popover-foreground: #fafafa;
+    --primary-foreground: #171717;
+    --secondary: #262626;
+    --secondary-foreground: #fafafa;
+    --muted: #262626;
+    --muted-foreground: #a3a3a3;
+    --accent: #404040; /*var(--accent);*/
+    --accent-foreground: #fafafa;
+    --destructive: #f87171;
+    --border: #ffffff1a;
+    --input: oklch(1 0 0 / 15%);
+    --ring: rgb(from var(--primary) r g b / 0.5);
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+    --sidebar: oklch(0.208 0.042 265.755);
+    --sidebar-foreground: oklch(0.984 0.003 247.858);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+    --sidebar-accent: oklch(0.279 0.041 260.031);
+    --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.551 0.027 264.364);
+  }
+
+  /* ===== D) TAILWIND INTERNAL DEFAULTS =====
+   * Fallback defaults to ensure utilities work within Shadow DOM even
+   * when global defaults aren't present. Safe to keep; remove only if measured.
+   */
+  --tw-border-style: solid;
+  --tw-outline-style: solid;
+  --tw-ring-inset: ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-color: currentcolor;
+  --tw-inset-ring-color: ;
+  --tw-inset-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-color: #0000001a;
+  --tw-shadow-alpha: 100%;
+  --tw-inset-shadow: 0 0 #0000;
+  --tw-inset-shadow-color: ;
+  --tw-inset-shadow-alpha: 100%;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-translate-z: 0;
+  --tw-rotate: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-space-x-reverse: 0;
+  --tw-space-y-reverse: 0;
+  --tw-leading: initial;
+  --tw-font-weight: initial;
+  --tw-tracking: initial;
+  --tw-duration: initial;
+  --tw-ease: initial;
+  --tw-animation-delay: 0s;
+  --tw-animation-direction: normal;
+  --tw-animation-duration: initial;
+  --tw-animation-fill-mode: none;
+  --tw-animation-iteration-count: 1;
+  --tw-enter-opacity: 1;
+  --tw-enter-rotate: 0;
+  --tw-enter-scale: 1;
+  --tw-enter-translate-x: 0;
+  --tw-enter-translate-y: 0;
+  --tw-exit-opacity: 1;
+  --tw-exit-rotate: 0;
+  --tw-exit-scale: 1;
+  --tw-exit-translate-x: 0;
+  --tw-exit-translate-y: 0;
+}
+
+/* ===== BASE STYLES ===== */
+@layer base {
+  * {
+    /* @apply bg-background text-foreground font-sans; */
+    /* @apply text-foreground font-sans; */
+    @apply font-sans;
+    @apply border-border outline-ring/50;
+    .layout {
+      @apply bg-accent text-foreground;
+    }
+  }
+
+  /* Prevent mobile zoom on inputs and double-tap zoom */
+  input,
+  textarea,
+  select,
+  button {
+    /* Prevent double-tap zoom on mobile */
+    touch-action: manipulation;
+  }
+
+  /* Ensure all input fields have minimum 16px font size to prevent iOS zoom */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+
+  /* Ensure interactive elements have proper cursor */
+  button,
+  [role='button'],
+  [type='button'],
+  [type='submit'],
+  [type='reset'] {
+    @apply cursor-pointer;
+  }
+
+  /* Ensure focus states are visible */
+  :focus-visible {
+    @apply outline-2 outline-ring outline-offset-2;
+  }
+
+  /* Hide spinner arrows on number inputs */
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+}
+
+/* ===== UTILITIES ===== */
+@layer utilities {
+  .icon-secondary-from-primary-50 {
+    --icon-secondary: rgb(from currentColor r g b / 0.5);
+  }
+  .shadow-xs {
+    box-shadow: var(--shadow-xs-offset-x, 0) var(--shadow-xs-offset-y, 1px)
+      var(--shadow-xs-blur-radius, 2px) var(--shadow-xs-spread-radius, 0)
+      var(--shadow-xs-color, rgba(0, 0, 0, 0.05));
+  }
+
+  /* Replacements for tailwindcss-animate utilities (Tailwind v4 compatible) */
+  .animate-in,
+  [class~='data-[state=open]:animate-in'][data-state='open'] {
+    animation-name: enter;
+    animation-duration: var(--tw-duration, var(--default-transition-duration));
+    animation-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    animation-delay: var(--tw-animation-delay, 0s);
+    animation-direction: var(--tw-animation-direction, normal);
+    animation-fill-mode: var(--tw-animation-fill-mode, none);
+    animation-iteration-count: var(--tw-animation-iteration-count, 1);
+    --tw-enter-opacity: initial;
+    --tw-enter-scale: initial;
+    --tw-enter-rotate: initial;
+    --tw-enter-translate-x: initial;
+    --tw-enter-translate-y: initial;
+  }
+
+  .animate-out,
+  [class~='data-[state=closed]:animate-out'][data-state='closed'] {
+    animation-name: exit;
+    animation-duration: var(--tw-duration, var(--default-transition-duration));
+    animation-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    animation-delay: var(--tw-animation-delay, 0s);
+    animation-direction: var(--tw-animation-direction, normal);
+    animation-fill-mode: var(--tw-animation-fill-mode, none);
+    animation-iteration-count: var(--tw-animation-iteration-count, 1);
+    --tw-exit-opacity: initial;
+    --tw-exit-scale: initial;
+    --tw-exit-rotate: initial;
+    --tw-exit-translate-x: initial;
+    --tw-exit-translate-y: initial;
+  }
+
+  .fade-in-0,
+  [class~='data-[state=open]:fade-in-0'][data-state='open'] {
+    --tw-enter-opacity: 0;
+  }
+
+  .fade-out-0,
+  [class~='data-[state=closed]:fade-out-0'][data-state='closed'] {
+    --tw-exit-opacity: 0;
+  }
+
+  .zoom-in-95,
+  [class~='data-[state=open]:zoom-in-95'][data-state='open'] {
+    --tw-enter-scale: 0.95;
+  }
+
+  .zoom-out-95,
+  [class~='data-[state=closed]:zoom-out-95'][data-state='closed'] {
+    --tw-exit-scale: 0.95;
+  }
+
+  .slide-in-from-top-2,
+  [class~='data-[side=bottom]:slide-in-from-top-2'][data-side='bottom'] {
+    --tw-enter-translate-y: calc(var(--spacing) * -2);
+  }
+
+  .slide-in-from-bottom-2,
+  [class~='data-[side=top]:slide-in-from-bottom-2'][data-side='top'] {
+    --tw-enter-translate-y: calc(var(--spacing) * 2);
+  }
+
+  .slide-in-from-left-2,
+  [class~='data-[side=right]:slide-in-from-left-2'][data-side='right'] {
+    --tw-enter-translate-x: calc(var(--spacing) * -2);
+  }
+
+  .slide-in-from-right-2,
+  [class~='data-[side=left]:slide-in-from-right-2'][data-side='left'] {
+    --tw-enter-translate-x: calc(var(--spacing) * 2);
+  }
+
+  .slide-in-from-left-1\/2,
+  [class~='data-[state=open]:slide-in-from-left-1/2'][data-state='open'] {
+    --tw-enter-translate-x: -50%;
+  }
+
+  .slide-in-from-top-\[48\%\],
+  [class~='data-[state=open]:slide-in-from-top-[48%]'][data-state='open'] {
+    --tw-enter-translate-y: -48%;
+  }
+
+  .slide-out-to-left-1\/2,
+  [class~='data-[state=closed]:slide-out-to-left-1/2'][data-state='closed'] {
+    --tw-exit-translate-x: -50%;
+  }
+
+  .slide-out-to-top-\[48\%\],
+  [class~='data-[state=closed]:slide-out-to-top-[48%]'][data-state='closed'] {
+    --tw-exit-translate-y: -48%;
+  }
+
+  @keyframes enter {
+    from {
+      opacity: var(--tw-enter-opacity, 1);
+      transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+        scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))
+        rotate(var(--tw-enter-rotate, 0));
+    }
+  }
+
+  @keyframes exit {
+    to {
+      opacity: var(--tw-exit-opacity, 1);
+      transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
+        scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1))
+        rotate(var(--tw-exit-rotate, 0));
+    }
+  }
+}
+
+/* Removed .widget-theme blocks (unused) */
+
+/* ===== WIDGET SPECIFIC STYLES ===== */
+v-customizer {
+  display: block;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  color: var(--foreground);
+  background: var(--background);
+  /* Prevent pinch-to-zoom and double-tap zoom within the widget */
+  touch-action: manipulation;
+}
+
+.canvas-container {
+  width: 100% !important;
+  aspect-ratio: 1/1 !important;
+  height: auto !important;
+}
+
+/* Ensure widget components are properly styled */
+v-customizer * {
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+}
+
+/* ===== CONTAINER HEIGHT MANAGEMENT (unified approach) ===== */
+/* Main widget container with viewport-based responsive sizing */
+#v-customizer-container {
+  /* Mobile-first sizing */
+  min-height: var(--container-min-height-mobile);
+  height: var(--container-height-mobile);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Desktop sizing (768px+ matches Tailwind md: breakpoint) */
+@media (min-width: 768px) {
+  #v-customizer-container {
+    min-height: var(--container-min-height-desktop);
+    height: var(--container-height-desktop);
+  }
+}
+
+/* Ensure child layouts can fill container */
+.widget-theme,
+.layout {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Removed explicit text/heading font blocks to allow Tailwind classes to override */
+
+/* Removed ::part(content) block (no matching part usage found) */
+
+/* ===== VUE TRANSITIONS (applies inside Shadow DOM) ===== */
+/* Vue requires specific class names, so these can't be pure Tailwind utilities */
+
+/* Panel slide transition (for side panels) */
+.panel-slide-enter-active,
+.panel-slide-leave-active {
+  transition:
+    transform 250ms ease,
+    opacity 250ms ease;
+}
+.panel-slide-enter-from,
+.panel-slide-leave-to {
+  transform: translateX(160px);
+  opacity: 0;
+}
+.panel-slide-leave-from,
+.panel-slide-enter-to {
+  transform: translateX(0);
+  opacity: 1;
+}
+/* fade in/out transition - references animations from @theme */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 250ms ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+}
+/* Fade slide transition - references animations from @theme */
+.fade-slide-enter-active {
+  animation: var(--animate-fade-slide-in) !important;
+}
+.fade-slide-leave-active {
+  animation: var(--animate-fade-slide-out) !important;
+}
+
+/* All keyframes are now defined in @theme block above and available as:
+ * - animate-fade-slide-in
+ * - animate-fade-slide-out
+ * - animate-shimmer
+ * - animate-accordion-down
+ * - animate-accordion-up
+ */
+
+.slide-horizontal-enter-active,
+.slide-horizontal-leave-active {
+  transition: all 0.25s ease;
+}
+
+.slide-horizontal-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.slide-horizontal-leave-to {
+  transform: translateX(-30%);
+  opacity: 0;
+}
+
+#three-container {
+  position: relative;
+}
+
+#three-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.product-card:hover .accessibilty-menu {
+  opacity: 1 !important;
+}

@@ -1,10 +1,8 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  // import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
-  import { ChevronRight } from 'lucide-vue-next'
+  import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
+  import { getCategoryIcon } from './icon-utils'
 
   interface Props {
     onSelectCategory?: (categoryId: number) => void
@@ -12,89 +10,37 @@
 
   const props = defineProps<Props>()
   const productsStore = useProductsStore()
-  const workflowStore = useWorkflowStore()
-  // const customizationStore = useCustomizationStore()
+  const categories = computed(() => productsStore.categories?.data)
 
-  async function handleSelectCategory(categoryId: number) {
-    workflowStore.setSelectedCategoryForPreview(categoryId)
+  function handleSelectCategory(categoryId: number) {
     // Do not commit category or preload products here; ProductSelection will handle fetching
     props.onSelectCategory?.(categoryId)
   }
-
-  // Temporary mapping: cycle through Flex Duo icons until API provides icon per category
-  const fallbackFlexDuoIcons = [
-    flexFlatCategoryIcons.Shorts,
-    flexFlatCategoryIcons.Hockey,
-    flexFlatCategoryIcons.Baseball,
-    flexFlatCategoryIcons.Soccer,
-    flexFlatCategoryIcons.Football,
-    flexFlatCategoryIcons.Brightness,
-    flexFlatCategoryIcons.PottedFlowerTulip,
-    flexFlatCategoryIcons.Leaf,
-    flexFlatCategoryIcons.SnowFlake,
-    flexFlatCategoryIcons.HolidayVacationBeachUmbrella,
-    flexFlatCategoryIcons.Hanger,
-    flexFlatCategoryIcons.Backpack,
-    flexFlatCategoryIcons.ShoppingBagHandBag,
-    flexFlatCategoryIcons.ModuleThree,
-    flexFlatCategoryIcons.Boots,
-    flexFlatCategoryIcons.CapFrozen,
-    flexFlatCategoryIcons.CapSide,
-    flexFlatCategoryIcons.Cricket,
-    flexFlatCategoryIcons.Tennis,
-    flexFlatCategoryIcons.Volleyball,
-    flexFlatCategoryIcons.Cycling,
-    flexFlatCategoryIcons.BicycleBike,
-    flexFlatCategoryIcons.Running,
-    flexFlatCategoryIcons.Swimming,
-    flexFlatCategoryIcons.Hiking,
-    flexFlatCategoryIcons.Skateboarding,
-    flexFlatCategoryIcons.Snowboarding,
-    flexFlatCategoryIcons.Surfing,
-    flexFlatCategoryIcons.Kayaking,
-    flexFlatCategoryIcons.RollerSkating,
-    flexFlatCategoryIcons.Golf,
-    flexFlatCategoryIcons.Playground,
-    flexFlatCategoryIcons.Stadium,
-    flexFlatCategoryIcons.Whistle,
-    flexFlatCategoryIcons.Shirt,
-    flexFlatCategoryIcons.Sock,
-    flexFlatCategoryIcons.Meditation,
-    flexFlatCategoryIcons.MartialArts,
-    flexFlatCategoryIcons.MotorsportsHelmet,
-    flexFlatCategoryIcons.FlagScore,
-    flexFlatCategoryIcons.WalkingSteps,
-    flexFlatCategoryIcons.ScubaDiving
-  ] as const
-
-  const getCategoryIcon = (index: number) =>
-    fallbackFlexDuoIcons[index % fallbackFlexDuoIcons.length]
-
-  // Expose breadcrumb data to parent using new header model
-  const breadcrumbs = computed(() => [{ label: 'Category' }])
-  const headerExtras = { breadcrumbs }
-  defineExpose({ headerExtras })
+  const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
 </script>
 
 <template>
   <div class="flex flex-col">
-    <button
-      v-for="(item, index) in productsStore.categories?.data"
+    <PanelNavigationItem
+      v-for="item in categories"
+      :id="item.id.toString()"
       :key="item.id"
-      class="h-14 px-6 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors"
       @click="() => handleSelectCategory(item.id)"
     >
-      <div class="flex items-center gap-3">
-        <component
-          :is="getCategoryIcon(index)"
-          class="size-6 text-primary icon-secondary-from-primary-50"
-        />
-        <span class="text-base font-semibold text-card-foreground">{{
-          item.category_name
-        }}</span>
-      </div>
-      <ChevronRight class="size-4 text-muted-foreground" />
-    </button>
+      <template #content>
+        <div class="flex items-center gap-3">
+          <img v-if="item.image_url" :src="storage_url + item.image_url" class="size-6" />
+          <component
+            :is="getCategoryIcon(item.icon_name)"
+            v-else-if="item.icon_name"
+            class="size-6 text-primary icon-secondary-from-primary-50"
+          />
+          <span class="text-base font-semibold text-card-foreground whitespace-nowrap">{{
+            item.category_name
+          }}</span>
+        </div>
+      </template>
+    </PanelNavigationItem>
   </div>
 </template>
 

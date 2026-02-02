@@ -16,7 +16,7 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         position: sticky;
         top: 0;
-        z-index: 100;
+        z-index: 40;
       }
       .header-content {
         max-width: 1200px;
@@ -56,6 +56,72 @@
         display: flex;
         gap: 15px;
         align-items: center;
+      }
+      .hamburger {
+        display: none;
+        flex-direction: column;
+        cursor: pointer;
+        padding: 4px;
+      }
+      .hamburger span {
+        width: 25px;
+        height: 3px;
+        background-color: #2c3e50;
+        margin: 3px 0;
+        transition: 0.3s;
+        border-radius: 2px;
+      }
+      .hamburger.active span:nth-child(1) {
+        transform: rotate(-45deg) translate(-5px, 6px);
+      }
+      .hamburger.active span:nth-child(2) {
+        opacity: 0;
+      }
+      .hamburger.active span:nth-child(3) {
+        transform: rotate(45deg) translate(-5px, -6px);
+      }
+      .mobile-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+      .mobile-menu.active {
+        display: block;
+      }
+      .mobile-nav {
+        padding: 20px;
+      }
+      .mobile-nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .mobile-nav li {
+        margin-bottom: 15px;
+      }
+      .mobile-nav a {
+        color: #2c3e50;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 16px;
+        display: block;
+        padding: 10px 0;
+        border-bottom: 1px solid #ecf0f1;
+      }
+      .mobile-nav a:hover {
+        color: #3498db;
+      }
+      .mobile-actions {
+        padding: 20px;
+        border-top: 1px solid #ecf0f1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
       }
       .btn {
         padding: 8px 16px;
@@ -99,7 +165,7 @@
         background: #2c3e50;
         color: white;
         padding: 40px 0 20px;
-        margin-top: 40px;
+        margin-top: 0;
       }
       .footer-content {
         max-width: 1200px;
@@ -147,6 +213,77 @@
       .social-links a:hover {
         background: #3498db;
       }
+
+      /* Mobile Responsive Styles */
+      @media (max-width: 768px) {
+        .header {
+          position: relative;
+        }
+
+        .header-content {
+          height: 70px;
+          padding: 0 20px;
+        }
+
+        .nav-menu {
+          display: none;
+        }
+
+        .hamburger {
+          display: flex;
+        }
+
+        .header-actions .btn {
+          display: none;
+        }
+
+        .footer-content {
+          grid-template-columns: 1fr;
+          gap: 20px;
+          text-align: center;
+        }
+
+        .social-links {
+          justify-content: center;
+        }
+
+        .footer-bottom {
+          text-align: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header-content {
+          padding: 10px 15px;
+        }
+
+        .nav-menu {
+          gap: 10px;
+        }
+
+        .btn {
+          padding: 6px 12px;
+          font-size: 14px;
+        }
+
+        .footer {
+          padding: 30px 0 15px;
+        }
+
+        .footer-section h3 {
+          font-size: 16px;
+        }
+
+        .social-links {
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .social-links a {
+          padding: 6px 10px;
+          font-size: 14px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -169,19 +306,41 @@
           <a href="#" class="btn btn-outline">Sign In</a>
           <a href="#" class="btn btn-primary">Get Started</a>
         </div>
+
+        <div class="hamburger" onclick="toggleMobileMenu()">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-nav">
+          <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Products</a></li>
+            <li><a href="#">Customization</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+        <div class="mobile-actions">
+          <a href="#" class="btn btn-outline">Sign In</a>
+          <a href="#" class="btn btn-primary">Get Started</a>
+        </div>
       </div>
     </header>
 
     <div class="demo-section">
       <div class="widget-demo">
-        <customizer-widget
+        <v-customizer
           title=""
           theme="dark"
           mode="default"
           show-navigation="true"
           date="2024-01-15"
           end="Widget session ended"
-        ></customizer-widget>
+        ></v-customizer>
       </div>
     </div>
 
@@ -191,13 +350,10 @@
         <div class="footer-section">
           <h3>About Our Company</h3>
           <p>
-            We specialize in creating high-quality custom products that reflect
-            your unique style and preferences.
+            We specialize in creating high-quality custom products that reflect your unique style
+            and preferences.
           </p>
-          <p>
-            With years of experience in customization, we help bring your vision
-            to life.
-          </p>
+          <p>With years of experience in customization, we help bring your vision to life.</p>
         </div>
 
         <div class="footer-section">
@@ -220,9 +376,7 @@
 
         <div class="footer-section">
           <h3>Connect With Us</h3>
-          <p>
-            Follow us on social media for the latest updates and inspiration.
-          </p>
+          <p>Follow us on social media for the latest updates and inspiration.</p>
           <div class="social-links">
             <a href="#">Facebook</a>
             <a href="#">Twitter</a>
@@ -234,13 +388,93 @@
 
       <div class="footer-bottom">
         <p>
-          &copy; 2024 Customizer Widget Demo. All rights reserved. | Privacy
-          Policy | Terms of Service
+          &copy; 2026 Customizer Widget Demo. All rights reserved. | Privacy Policy | Terms of
+          Service
         </p>
       </div>
     </footer>
 
     <!-- Load the widget script -->
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module">
+      const xhttp = new XMLHttpRequest()
+      window.custimoo_app_info = undefined // used by customizer_v2.js
+      let testing_mode = localStorage.getItem('cutimoo_testing_mode')
+      let API_ENDPOINT = 'http://custimoo_backend.test'
+      if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_ENDPOINT) {
+        API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT
+      } else if (window.__ENV?.VITE_API_ENDPOINT) {
+        API_ENDPOINT = window.__ENV.VITE_API_ENDPOINT
+      }
+      xhttp.onload = function () {
+        let pageRes = JSON.parse(this.response)
+        const s = document.createElement('script')
+
+        //let customizer_version = pageRes.customizer_version
+        let customizer_version = 2
+
+        if (customizer_version && customizer_version === 2) {
+          s.type = 'module'
+          s.src = `/src/main.ts`
+          window.custimoo_app_info = pageRes
+        } else {
+          let build_directory = 'self'
+          let build_url = 'cdn'
+          if (testing_mode && (pageRes.testing_mode == 'true' || pageRes.testing_mode)) {
+            build_directory = 'self_staging'
+            build_url = 'devcdn'
+          }
+          s.src = `https://${build_url}.custimoo.com/${build_directory}/v-customizer.min.js?build=${pageRes.app_version}`
+          if (pageRes.is_subpage) {
+            let subpage = trimAndreplaceSlashesWithDashes(pageRes.suppage_url)
+          }
+        }
+
+        document.body.appendChild(s)
+      }
+      xhttp.open('GET', `${API_ENDPOINT}/api/get_app_version`)
+      xhttp.setRequestHeader('subpageurl', window.location.pathname)
+      xhttp.send()
+
+      function trimAndreplaceSlashesWithDashes(inputString) {
+        let trimmedString = inputString.replace(/^\/+|\/+$/g, '')
+        let resultString = trimmedString.replace(/\//g, '-')
+        return resultString
+      }
+    </script>
+
+    <!-- Mobile menu toggle script -->
+    <!-- <script type="module" src="/src/main.ts"></script> -->
+    <script>
+      function toggleMobileMenu() {
+        const mobileMenu = document.getElementById('mobileMenu')
+        const hamburger = document.querySelector('.hamburger')
+
+        mobileMenu.classList.toggle('active')
+        hamburger.classList.toggle('active')
+      }
+
+      // Close mobile menu when clicking outside
+      document.addEventListener('click', function (event) {
+        const mobileMenu = document.getElementById('mobileMenu')
+        const hamburger = document.querySelector('.hamburger')
+        const header = document.querySelector('.header')
+
+        if (!header.contains(event.target) && mobileMenu.classList.contains('active')) {
+          mobileMenu.classList.remove('active')
+          hamburger.classList.remove('active')
+        }
+      })
+
+      // Close mobile menu when clicking on a link
+      document.querySelectorAll('.mobile-nav a').forEach(link => {
+        link.addEventListener('click', function () {
+          const mobileMenu = document.getElementById('mobileMenu')
+          const hamburger = document.querySelector('.hamburger')
+
+          mobileMenu.classList.remove('active')
+          hamburger.classList.remove('active')
+        })
+      })
+    </script>
   </body>
 </html>

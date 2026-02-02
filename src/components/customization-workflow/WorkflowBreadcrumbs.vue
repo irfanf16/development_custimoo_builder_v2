@@ -24,10 +24,7 @@
   const currentBreadcrumbIndex = ref(0)
 
   const handleBreadcrumbClick = (index: number) => {
-    if (
-      index < currentBreadcrumbIndex.value &&
-      props.breadcrumbs?.[index]?.action
-    ) {
+    if (index < currentBreadcrumbIndex.value && props.breadcrumbs?.[index]?.action) {
       props.breadcrumbs[index].action?.()
     }
   }
@@ -45,11 +42,8 @@
 </script>
 
 <template>
-  <Breadcrumb
-    v-if="breadcrumbs && breadcrumbs.length > 0"
-    class="min-w-0 overflow-hidden"
-  >
-    <BreadcrumbList>
+  <Breadcrumb v-if="breadcrumbs && breadcrumbs.length > 0" class="min-w-0 overflow-hidden">
+    <BreadcrumbList class="flex-nowrap!">
       <template v-for="(item, index) in breadcrumbs" :key="index">
         <Transition name="breadcrumb-item" appear>
           <BreadcrumbItem
@@ -60,17 +54,15 @@
           >
             <BreadcrumbLink
               v-if="index < currentBreadcrumbIndex"
-              class="hover:text-primary transition-colors truncate max-w-[280px]"
+              class="hover:text-primary transition-colors truncate max-w-[280px] font-brand"
             >
               {{ item.label }}
             </BreadcrumbLink>
-            <BreadcrumbPage v-else class="truncate max-w-[280px]">
+            <BreadcrumbPage v-else class="truncate max-w-[280px] font-brand">
               {{ item.label }}
             </BreadcrumbPage>
 
-            <BreadcrumbSeparator
-              v-if="index < breadcrumbs.length - 1"
-            />
+            <BreadcrumbSeparator v-if="index < breadcrumbs.length - 1" />
           </BreadcrumbItem>
         </Transition>
       </template>
