@@ -84,7 +84,7 @@ export interface ShareDesignProduct extends BaseProduct {
  * Note: Many fields are JSON-stringified for API compatibility
  */
 export interface ShareDesignPayload {
-  addons: unknown[]
+  addons: string
   roster_url: string
   product_id: number
   product_name: string
@@ -93,7 +93,7 @@ export interface ShareDesignPayload {
   design_id: number
   custom_logos: string // JSON stringified
   text: string // JSON stringified
-  colors: unknown[]
+  colors: string
   shuffle_color_number: number
   defaultcolors: string // JSON stringified
   groupcolors: string // JSON stringified

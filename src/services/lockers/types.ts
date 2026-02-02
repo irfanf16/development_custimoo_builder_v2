@@ -100,7 +100,7 @@ export interface LockerCollection {
  */
 export interface SaveLockerProductPayload {
   id?: number
-  addons: unknown[]
+  addons: string
   roster_url: boolean
   room_id: number
   product_id: number
@@ -110,7 +110,7 @@ export interface SaveLockerProductPayload {
   design_id: number
   custom_logos: string
   text: string
-  colors: unknown[]
+  colors: string
   shuffle_color_number: number
   defaultcolors: string
   groupcolors: string
