@@ -156,7 +156,6 @@
   }
 
   async function handleGeneratePDF() {
-    const randomString = generateRandomString()
     const toastId = toast.loading('Please wait your PDF is being generated', {
       position: 'top-right',
       richColors: true,
@@ -164,6 +163,17 @@
     })
 
     try {
+      // Run share design first to get the real shared URL for PDF generation
+      const shared_url = await runShareDesignAndGetUrl()
+      if (!shared_url) {
+        toast.error('Failed to share design. PDF generation aborted.', {
+          id: toastId,
+          position: 'top-right',
+          richColors: true
+        })
+        return
+      }
+
       const { factory_product } = await buildFactoryProductPayload()
       const resolvedFrontImage = normalizeImageValue(factory_product.front_image)
       const resolvedBackImage = normalizeImageValue(factory_product.back_image)
@@ -182,12 +192,6 @@
         front_image: resolvedFrontImage,
         back_image: resolvedBackImage
       }
-      const productDisplayName =
-        (factoryProductPayload as { display_name?: string }).display_name ||
-        productsStore.activeProductDetails?.display_name ||
-        ''
-      const encodedName = encodeURIComponent(productDisplayName).replace(/%20/g, '+')
-      const shared_url = `${getShareBaseUrl()}/share/${encodedName}/${randomString}`
 
       const response = await productsStore.generatePDF({
         factory_product: [factoryProductPayload],
@@ -513,7 +517,7 @@
 
       const locker: SaveLockerProductPayload = {
         id: lockerRoomStore.editingLockerProductId,
-        addons: [],
+        addons: JSON.stringify(addonsInfo),
         roster_url: false,
         room_id: lockerId,
         product_id: productId,
@@ -523,7 +527,7 @@
         design_id: customization.design_id || 0,
         custom_logos: JSON.stringify(customLogos),
         text: JSON.stringify(productCustomTexts),
-        colors: [],
+        colors: JSON.stringify(customization.group_colors ?? []),
         shuffle_color_number: customization.shuffle_color_number || 0,
         defaultcolors: JSON.stringify(defaultColors),
         groupcolors: JSON.stringify(groupColors),
@@ -560,11 +564,11 @@
     await lockerRoomStore.fetchLockersWithcolors()
   }
 
-  async function handleShareDesign() {
-    // Reset shared URL and tooltip state
-    sharedUrl.value = null
-    showShareTooltip.value = false
-
+  /**
+   * Runs share design (upload images, register design) and returns the shared URL.
+   * Returns null if share fails. Used by both Share Design button and Generate PDF.
+   */
+  async function runShareDesignAndGetUrl(): Promise<string | null> {
     try {
       // Get images from canvas
       let frontImage = ''
@@ -607,7 +611,7 @@
           position: 'top-right',
           richColors: true
         })
-        return
+        return null
       }
 
       const { getItemRaw } = useLocalStorage()
@@ -615,7 +619,7 @@
       const companyId = companyIdRaw ? Number(companyIdRaw) : undefined
       if (!companyId) {
         toast.error('Company ID not found', { position: 'top-right', richColors: true })
-        return
+        return null
       }
 
       const factoryId = productsStore.activeProductDetails?.factory_id ?? null
@@ -641,7 +645,7 @@
           position: 'top-right',
           richColors: true
         })
-        return
+        return null
       }
 
       // Upload images
@@ -655,7 +659,6 @@
       let frontUrlItem: (typeof urlItems)[0] | undefined
       let backUrlItem: (typeof urlItems)[0] | undefined
 
-      // Match URL items with files based on file path or file name
       urlItems.forEach((urlItem, index) => {
         const file = index === 0 ? frontFile : backFile
         const isFront =
@@ -684,10 +687,9 @@
       const uploadResults = await uploadPresignedFiles(presignedFiles)
       if (!uploadResults.every(r => r.success)) {
         toast.error('Failed to upload images', { position: 'top-right', richColors: true })
-        return
+        return null
       }
 
-      // Build share design payload
       const customization = customizationStore.customization
       const productId = productsStore.activeProductDetails?.product_id
       if (!productId || !customization) {
@@ -695,7 +697,7 @@
           position: 'top-right',
           richColors: true
         })
-        return
+        return null
       }
 
       const productKey = String(productId)
@@ -731,7 +733,7 @@
       const encodedName = encodeURIComponent(productDisplayName).replace(/%20/g, '+')
 
       const shareDesignPayload: ShareDesignPayload = {
-        addons: [],
+        addons: JSON.stringify(addonsInfo ?? []),
         roster_url: `${getShareBaseUrl()}/share/${encodedName}/${randString}`,
         product_id: productId,
         product_name: productDisplayName,
@@ -740,7 +742,7 @@
         design_id: customization.design_id || 0,
         custom_logos: JSON.stringify(customLogos),
         text: JSON.stringify(productCustomTexts),
-        colors: [],
+        colors: JSON.stringify(customization.group_colors ?? []),
         shuffle_color_number: customization.shuffle_color_number || 0,
         defaultcolors: JSON.stringify(defaultColors),
         groupcolors: JSON.stringify(groupColors),
@@ -761,25 +763,36 @@
       const response = await productsStore.shareDesign(shareDesignPayload)
 
       if (response.success && response.content?.url) {
-        sharedUrl.value = response.content.url
-        showShareTooltip.value = true
-        toast.success('Design shared successfully!', {
-          position: 'top-right',
-          richColors: true,
-          duration: 3000
-        })
-      } else {
-        toast.error('Failed to share design', {
-          position: 'top-right',
-          richColors: true
-        })
+        return response.content.url
       }
+      toast.error('Failed to share design', {
+        position: 'top-right',
+        richColors: true
+      })
+      return null
     } catch (error) {
       toast.error('Failed to share design', {
         position: 'top-right',
         richColors: true
       })
       console.error('Share design error:', error)
+      return null
+    }
+  }
+
+  async function handleShareDesign() {
+    sharedUrl.value = null
+    showShareTooltip.value = false
+
+    const url = await runShareDesignAndGetUrl()
+    if (url) {
+      sharedUrl.value = url
+      showShareTooltip.value = true
+      toast.success('Design shared successfully!', {
+        position: 'top-right',
+        richColors: true,
+        duration: 3000
+      })
     }
   }
 </script>
