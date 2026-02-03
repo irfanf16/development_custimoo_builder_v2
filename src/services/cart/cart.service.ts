@@ -10,7 +10,9 @@ import type {
   UploadCartAssetsResponse,
   GenerateSignedUploadUrlPayload,
   GenerateSignedUploadUrlResponse,
-  FactoryProduct
+  FactoryProduct,
+  AddLockerProductsToCartPayload,
+  AddLockerProductsToCartResponse
 } from './types'
 
 /**
@@ -190,6 +192,13 @@ async function getCartProductDetails(
   })
 }
 
+/**
+ * Add locker products to cart (locker-only or product-level selection)
+ */
+async function addLockerProductsToCart(payload: AddLockerProductsToCartPayload) {
+  return await http.post<AddLockerProductsToCartResponse>('carts/locker-products', payload)
+}
+
 export default {
   getCustomerCart,
   storeProductToCart,
@@ -197,5 +206,6 @@ export default {
   deleteCartItem,
   uploadCartAssets,
   generateSignedUploadUrl,
-  getCartProductDetails
+  getCartProductDetails,
+  addLockerProductsToCart
 }

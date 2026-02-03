@@ -6,7 +6,8 @@ import type {
   StoreProductToCartPayload,
   UpdateCartItemPayload,
   GenerateSignedUploadUrlPayload,
-  GenerateSignedUploadUrlResponse
+  GenerateSignedUploadUrlResponse,
+  AddLockerProductsToCartPayload
 } from '@/services/cart/types'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
@@ -249,6 +250,31 @@ export const useCartStore = defineStore('cartStore', () => {
   }
 
   /**
+   * Add locker products to cart (locker-only or product-level selection)
+   */
+  async function addLockerProductsToCart(payload: AddLockerProductsToCartPayload) {
+    isLoading.value = true
+    error.value = null
+    const response = await tryCatchApi(API.cart.addLockerProductsToCart(payload), {
+      operation: 'addLockerProductsToCart'
+    })
+    if (response.success && response.content) {
+      const cartResponse = response.content
+      if (cartResponse.result) {
+        setSuccessMessage('Products added to cart successfully')
+        await fetchCart(true)
+        return cartResponse
+      } else {
+        setError(cartResponse.message || 'Failed to add products to cart')
+      }
+    } else {
+      setError('Failed to add products to cart')
+    }
+    isLoading.value = false
+    return response.content
+  }
+
+  /**
    * Update cart item
    */
   async function updateCartItem(cartItemId: number | string, payload: UpdateCartItemPayload) {
@@ -464,6 +490,7 @@ export const useCartStore = defineStore('cartStore', () => {
     // Actions
     fetchCart,
     addProductToCart,
+    addLockerProductsToCart,
     updateCartItem,
     deleteCartItem,
     uploadCartAssets,

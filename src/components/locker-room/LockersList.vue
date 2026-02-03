@@ -52,22 +52,31 @@
 
   const props = withDefaults(
     defineProps<{
-      search?: null | string
-      isCreatingCollection?: boolean
       sort?: SortOption
+      search: null | string
+      isCreatingCollection: boolean
+      selectedLockers?: (string | number)[]
+      selectedProductsByLocker?: Record<number, number[]>
     }>(),
     {
       search: null,
+      sort: 'lastModified',
       isCreatingCollection: false,
-      sort: 'lastModified'
+      selectedLockers: () => [],
+      selectedProductsByLocker: () => ({})
     }
   )
 
-  const emit = defineEmits(['select-locker', 'edit-locker', 'copy-locker', 'open-locker'])
+  const emit = defineEmits([
+    'select-locker',
+    'edit-locker',
+    'copy-locker',
+    'open-locker',
+    'toggle-locker'
+  ])
 
   const hoveringToolbar = ref<Array<boolean>>([])
   const dropdownOpwnIndex = ref<Array<number | undefined>>([])
-  const selectedLocker = ref<(string | number)[]>([])
   const lockerRoomStore = useLockerRoomStore()
   const isCreatingLocker = ref<boolean>(false)
   const { isLoading, lockers } = storeToRefs(lockerRoomStore)
@@ -133,13 +142,19 @@
     return sortedLockers.value.filter(l => l.room_name.toLowerCase().includes(searchTerm))
   })
 
-  const handleSelect = (id: string | number) => {
-    if (!selectedLocker.value.includes(id)) {
-      selectedLocker.value.push(id)
-    } else {
-      selectedLocker.value = selectedLocker.value.filter(i => i !== id)
-    }
-    emit('select-locker', selectedLocker.value)
+  type CheckboxState = boolean | 'indeterminate'
+  const getCheckboxState = (locker: { id: number; product_count: number }): CheckboxState => {
+    const selected = props.selectedLockers.includes(locker.id)
+    const productIds = props.selectedProductsByLocker[locker.id] ?? []
+    const count = productIds.length
+    const total = locker.product_count ?? 0
+    if (count === 0 && !selected) return false
+    if (count > 0 && count < total) return 'indeterminate'
+    return true
+  }
+
+  const handleToggle = (lockerId: number | string) => {
+    emit('toggle-locker', lockerId)
   }
 
   const onDropdownToggle = (index: number) => {
@@ -202,7 +217,7 @@
         () => {
           if (isCreatingCollection) {
             emit('open-locker', locker)
-          } else handleSelect(locker.id)
+          } else handleToggle(locker.id)
         }
       "
       @mouseenter="hoveringToolbar[lockerIndex] = dropdownOpwnIndex.includes(lockerIndex) || true"
@@ -215,10 +230,11 @@
         :id="`checkbox-addon-${locker.id}`"
         class="absolute top-2 left-2 z-10 size-5 bg-white"
         :class="{
-          'top-[calc(0.5rem-1px)] left-[calc(0.5rem-1px)]': selectedLocker.includes(locker.id)
+          'top-[calc(0.5rem-1px)] left-[calc(0.5rem-1px)]':
+            getCheckboxState(locker) === true || getCheckboxState(locker) === 'indeterminate'
         }"
-        :model-value="selectedLocker.includes(locker.id)"
-        @update:model-value="handleSelect(locker.id)"
+        :model-value="getCheckboxState(locker)"
+        @update:model-value="handleToggle(locker.id)"
         @click.stop
       />
 

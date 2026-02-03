@@ -263,7 +263,7 @@
 
         // Build locker product payload matching API structure
         const locker: SaveLockerProductPayload = {
-          addons: [],
+          addons: JSON.stringify(addonsInfo),
           roster_url: false,
           room_id: selectedLockerId.value!,
           product_id: productId,
@@ -273,7 +273,7 @@
           design_id: customizationStore.activeDesignId || 0,
           custom_logos: JSON.stringify(customLogos),
           text: JSON.stringify(productCustomTexts),
-          colors: [],
+          colors: JSON.stringify(!customization?.group_colors || []),
           shuffle_color_number: customization?.shuffle_color_number || 0,
           defaultcolors: JSON.stringify(defaultColors),
           groupcolors: JSON.stringify(groupColors),

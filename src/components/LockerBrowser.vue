@@ -45,6 +45,7 @@
   const sortOption = ref<SortOption>('lastModified')
   const search = ref('')
   const selectedLocker = ref<(string | number)[]>([])
+  const selectedProductsByLocker = ref<Record<number, number[]>>({})
   const selectedProducts = ref<LockerProduct[]>([])
   const currentLocker = ref<Locker | null>(null)
   const currentCollection = ref<Collection | null>(null)
@@ -83,6 +84,47 @@
       ? ((await lockerRoomStore.fetchLockerProducts(locker.id)) ?? null)
       : locker
     currentMode.value = 'detail'
+  }
+
+  // Pre-selection for LockerProductsListing: resolve selectedProductsByLocker[currentLocker.id] to LockerProduct[]
+  const preSelectedProductsForCurrentLocker = computed(() => {
+    const locker = currentLocker.value
+    if (!locker?.product?.length) return []
+    const ids = selectedProductsByLocker.value[locker.id] ?? []
+    return locker.product.filter((p: LockerProduct) => ids.includes(p.id))
+  })
+
+  const handleSelectProduct = (products: LockerProduct[]) => {
+    selectedProducts.value = products
+    if (currentLocker.value) {
+      const ids = products.map(p => p.id)
+      selectedProductsByLocker.value = {
+        ...selectedProductsByLocker.value,
+        [currentLocker.value.id]: ids
+      }
+      if (ids.length > 0) {
+        if (!selectedLocker.value.includes(currentLocker.value.id)) {
+          selectedLocker.value = [...selectedLocker.value, currentLocker.value.id]
+        }
+      } else {
+        selectedLocker.value = selectedLocker.value.filter(id => id !== currentLocker.value!.id)
+      }
+    }
+  }
+
+  const handleToggleLocker = (lockerId: number | string) => {
+    const id = Number(lockerId)
+    const isSelected = selectedLocker.value.includes(lockerId)
+    if (isSelected) {
+      selectedLocker.value = selectedLocker.value.filter(i => i !== lockerId)
+      selectedProductsByLocker.value = { ...selectedProductsByLocker.value, [id]: [] }
+    } else {
+      selectedLocker.value = [...selectedLocker.value, lockerId]
+    }
+  }
+
+  const handleSelectLocker = (lockerIds: (string | number)[]) => {
+    selectedLocker.value = lockerIds
   }
   const getCollectionDetail = async (collection: Collection) => {
     currentCollection.value = !collection.details_fetched
@@ -587,6 +629,7 @@
         sortOption.value = 'lastModified'
         search.value = ''
         selectedLocker.value = []
+        selectedProductsByLocker.value = {}
         selectedProducts.value = []
       }
     }
@@ -659,7 +702,10 @@
                   :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
                   :search="search"
                   :sort="sortOption"
-                  @select-locker="selectedLocker = $event"
+                  :selected-lockers="selectedLocker"
+                  :selected-products-by-locker="selectedProductsByLocker"
+                  @select-locker="handleSelectLocker"
+                  @toggle-locker="handleToggleLocker"
                   @open-locker="getLockerDetail"
                 />
               </div>
@@ -689,10 +735,8 @@
                   :locker="currentLocker"
                   :sort="sortOption"
                   :search="search"
-                  :pre-selected-products="selectedProducts"
-                  @select-product="
-                    (locker_products: LockerProduct[]) => (selectedProducts = locker_products)
-                  "
+                  :pre-selected-products="preSelectedProductsForCurrentLocker"
+                  @select-product="handleSelectProduct"
                   @edit-product="payload => emit('edit-product', payload)"
                 />
               </div>
@@ -735,6 +779,7 @@
         :details-tab="lockerTab"
         :selected-products="selectedProducts"
         :selected-lockers="selectedLocker"
+        :selected-products-by-locker="selectedProductsByLocker"
         :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
         :collection-creation-step="collectionCreationStep"
         @back="handleBackNavigation"

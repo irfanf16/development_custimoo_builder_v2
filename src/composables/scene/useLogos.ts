@@ -49,10 +49,6 @@ export type AddLogoOptions = {
   logo: CustomLogo
   /** Explicit logo index (provided by caller) */
   logoIndex?: number
-  /** Signature of logo (required for matching) */
-  signature: string
-  /** Url+side signature (required for matching) */
-  signatureUrlSide: string
   /** Whether this is being called during initial load */
   fromLoad?: boolean
   /** Whether this is main preview */
@@ -92,8 +88,8 @@ export type AddLogoOptions = {
 }
 
 export type SyncLogosOptions = {
-  /** New logos array to diff against existing */
-  newLogos: CustomLogo[]
+  /** New logos map: key = index in custom_logos array, value = logo */
+  newLogos: Map<number, CustomLogo>
   /** Canvas instance */
   canvas: Canvas | null
   /** Logo objects storage map */
@@ -108,10 +104,6 @@ export type SyncLogosOptions = {
   calculateRotation: (rotation: number) => number
   /** Scale ratios calculator */
   calculateScaleRatios: () => { widthRatio: number; heightRatio: number }
-  /** Signature calculator */
-  getSignature: (logo: CustomLogo) => string
-  /** Url+side signature calculator */
-  getSignatureUrlSide: (logo: CustomLogo) => string
   /** Optional filter to skip logos (e.g., by side) */
   filterLogo?: (logo: CustomLogo) => boolean
   /** Optional callback after sync to trigger renders */
@@ -136,8 +128,6 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
   const {
     logo,
     logoIndex = 0,
-    signature,
-    signatureUrlSide,
     mainPreview = false,
     canvas,
     logoObjects,
@@ -207,7 +197,6 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
       padding: 15,
       cornerSize: 30,
       flipX: flipX,
-      type: 'logo',
       centeredScaling: true,
       originX: 'center',
       originY: 'center',
@@ -221,8 +210,8 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
       targetFindTolerance: 10,
       hoverCursor: 'move',
       // metadata for matching
-      signature,
-      signatureUrlSide,
+      signature: getLogoSignature(logo),
+      signatureUrlSide: getLogoSignatureUrlSide(logo),
       side: logo.side,
       logo_index: logoIndex
     })
@@ -256,19 +245,21 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     // Update store if main preview; suppress watcher using provided ref if present
     suppressWatchRef.value = true
     if (mainPreview) {
-      customizationStore.updateCustomLogo({
-        custom_logo_index: logoIndex,
-        productId: productId ?? logo.product_id ?? null,
-        data: {
-          scaleX: img.scaleX / widthRatio,
-          scaleY: img.scaleY / heightRatio,
-          ...(is_3d ? { x_axis_3d: position.x, y_axis_3d: position.y } : {}), // store 3D position in store for 3D only
-          originalWidth: convertSize(img.width ?? 0),
-          originalHeight: convertSize(img.height ?? 0),
-          actualWidth: img.width ?? 0,
-          actualHeight: img.height ?? 0
-        }
-      })
+      setTimeout(() => {
+        customizationStore.updateCustomLogo({
+          custom_logo_index: logoIndex,
+          productId: productId ?? logo.product_id ?? null,
+          data: {
+            scaleX: img.scaleX / widthRatio,
+            scaleY: img.scaleY / heightRatio,
+            ...(is_3d ? { x_axis_3d: position.x, y_axis_3d: position.y } : {}), // store 3D position in store for 3D only
+            originalWidth: convertSize(img.width * img.scaleX),
+            originalHeight: convertSize(img.height * img.scaleY),
+            actualWidth: img.width ?? 0,
+            actualHeight: img.height ?? 0
+          }
+        })
+      }, 100)
 
       img.on('modified', event =>
         updateLogoPositionInStore({
@@ -281,7 +272,8 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
           findPositionOn2D,
           calculateRotation,
           event,
-          suppressWatchRef
+          suppressWatchRef,
+          convertSize
         })
       )
     } else {
@@ -311,6 +303,8 @@ export function updateLogoPositionInStore(options: {
   calculateRotation: (rotation: number) => number
   event?: unknown
   suppressWatchRef: Ref<boolean>
+  /** Optional: converts px to measurement units (cm/in). When provided, originalWidth/originalHeight are set. */
+  convertSize: (px: number) => number
 }): void {
   const {
     img,
@@ -322,7 +316,8 @@ export function updateLogoPositionInStore(options: {
     findPositionOn2D,
     calculateRotation,
     event,
-    suppressWatchRef
+    suppressWatchRef,
+    convertSize
   } = options
   const { widthRatio, heightRatio } = calculateScaleRatios()
   const customizationStore = useCustomizationStore()
@@ -363,8 +358,8 @@ export function updateLogoPositionInStore(options: {
       rotation: rotation,
       scaleX: img.scaleX / widthRatio,
       scaleY: img.scaleY / heightRatio,
-      originalWidth: img.width ?? 0, // here we need to calculate the width in cm/inch based on company settings
-      originalHeight: img.height ?? 0 // here we need to calculate the height in cm/inch based on company settings
+      originalWidth: convertSize(img.width * img.scaleX),
+      originalHeight: convertSize(img.height * img.scaleY)
     }
   })
 }
@@ -383,8 +378,6 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
     calculatePosition,
     calculateRotation,
     calculateScaleRatios,
-    getSignature,
-    getSignatureUrlSide,
     filterLogo,
     onAfterSync
   } = options
@@ -399,12 +392,12 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
     signatureUrlSide: (obj as unknown as { signatureUrlSide?: string }).signatureUrlSide
   }))
 
-  // New logos with signatures
-  const newLogosWithSignatures = newLogos.map((newLogo, idx) => ({
+  // New logos with signatures (from map; keep index as received from backend)
+  const newLogosWithSignatures = Array.from(newLogos.entries()).map(([idx, newLogo]) => ({
     idx,
     logo: newLogo,
-    signature: getSignature(newLogo),
-    signatureUrlSide: getSignatureUrlSide(newLogo)
+    signature: newLogo ? getLogoSignature(newLogo) : '',
+    signatureUrlSide: newLogo ? getLogoSignatureUrlSide(newLogo) : ''
   }))
 
   const nextMap = new Map<number, FabricImage>()
@@ -438,8 +431,8 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
           left: position.x,
           top: position.y,
           angle,
-          signature: getSignature(logo),
-          signatureUrlSide: getSignatureUrlSide(logo)
+          signature: getLogoSignature(logo),
+          signatureUrlSide: getLogoSignatureUrlSide(logo)
         })
 
         // Scale image based on aspect ratio

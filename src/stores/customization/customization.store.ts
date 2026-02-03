@@ -398,6 +398,14 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     } as CustomLogo
   }
 
+  function removeCustomLogo(productKey: string, logoIndex: number) {
+    if (!customization.value?.custom_logos) return
+    const arr = customization.value.custom_logos[productKey]
+    if (!arr || logoIndex < 0 || logoIndex >= arr.length) return
+    arr.splice(logoIndex, 1)
+    saveToLocalStorage()
+  }
+
   // Helper function to create default customization with preserved IDs
   function createDefaultCustomization(
     preservedIds: {
@@ -589,6 +597,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     addLogoToCustomizationFromSource,
     getMergedCustomizationLogo,
     updateCustomLogo,
+    removeCustomLogo,
     // Business Logic
     ensureCustomization,
     resetCustomizationToCurrentProductDefaults,

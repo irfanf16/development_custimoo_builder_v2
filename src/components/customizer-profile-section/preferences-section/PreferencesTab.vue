@@ -33,7 +33,8 @@
     selectLanguage: messages.profile_select_language({}, { locale: profileStore.currentLocale }),
     english: messages.profile_language_english({}, { locale: profileStore.currentLocale }),
     french: messages.profile_language_french({}, { locale: profileStore.currentLocale }),
-    danish: messages.profile_language_danish({}, { locale: profileStore.currentLocale })
+    danish: messages.profile_language_danish({}, { locale: profileStore.currentLocale }),
+    spanish: messages.profile_language_spanish({}, { locale: profileStore.currentLocale })
   }))
 
   function getLanguageName(locale: ParaglideLocale) {
@@ -44,6 +45,8 @@
         return t.value.french
       case 'da':
         return t.value.danish
+      case 'es':
+        return t.value.spanish
       default:
         return locale
     }
