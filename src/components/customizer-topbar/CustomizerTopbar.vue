@@ -846,7 +846,10 @@
               <Save class="size-4 mr-2" />
               Save as Draft
             </DropdownMenuItem>
-            <DropdownMenuItem @click="handleAddToCart">
+            <DropdownMenuItem
+              v-if="!(companyStore.isEcommercePlatform && authStore.hasAdminToken)"
+              @click="handleAddToCart"
+            >
               <ShoppingCart class="size-4 mr-2" />
               Add to Cart
             </DropdownMenuItem>
