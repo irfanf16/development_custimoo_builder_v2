@@ -38,6 +38,7 @@ export const useAuthStore = defineStore('authStore', () => {
   const REFRESH_TOKEN_STORAGE_KEY = 'refreshToken'
   const REFRESH_TOKEN_CIPHER_KEY = 'refreshTokenCipher'
   const REFRESH_TOKEN_ENC_KEY = 'refreshTokenEncKey'
+  const ADMIN_TOKEN_STORAGE_KEY = 'adminToken'
 
   let hydrationPromise: Promise<boolean> | null = null
   let lastHydrationResult = false
@@ -46,6 +47,8 @@ export const useAuthStore = defineStore('authStore', () => {
 
   // ===== COMPUTED =====
   const isAuthenticated = computed(() => !!accessToken.value && !!customer.value)
+  /** True if adminToken is set in localStorage (e.g. user landed via admin link) */
+  const hasAdminToken = computed(() => hasWindow && !!storage.getItemRaw(ADMIN_TOKEN_STORAGE_KEY))
   const customerInitials = computed(() => {
     if (!customer.value) return ''
     return `${customer.value?.first_name?.charAt(0)}${customer.value?.last_name?.charAt(0)}`.toUpperCase()
@@ -329,6 +332,7 @@ export const useAuthStore = defineStore('authStore', () => {
         }
         if (adminToken) {
           storage.setItemRaw('jwtToken', adminToken)
+          storage.setItemRaw(ADMIN_TOKEN_STORAGE_KEY, adminToken)
         }
       }
       checkForQueryStringParams()
@@ -515,6 +519,7 @@ export const useAuthStore = defineStore('authStore', () => {
 
     // Clear encryption key from sessionStorage
     storage.removeItem(REFRESH_TOKEN_ENC_KEY)
+    storage.removeItem(ADMIN_TOKEN_STORAGE_KEY)
   }
 
   // ===== BUSINESS LOGIC =====
@@ -621,6 +626,7 @@ export const useAuthStore = defineStore('authStore', () => {
     permissions,
     // Computed
     isAuthenticated,
+    hasAdminToken,
     customerInitials,
     // Actions
     setLoading,
