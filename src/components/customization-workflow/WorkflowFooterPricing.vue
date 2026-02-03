@@ -8,10 +8,14 @@
   import { summary_mrsp, summary_for, summary_pcs, price_add_to_cart } from '@/paraglide/messages'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { usePricing } from '@/composables/usePricing'
+  import { useAuthStore } from '@/stores/auth/auth.store'
+  import { useCompanyStore } from '@/stores/company/company.store'
   const uiStore = useUIStore()
   // Stores
   const profileStore = useProfileStore()
   const cartStore = useCartStore()
+  const authStore = useAuthStore()
+  const companyStore = useCompanyStore()
   const { activeProductPrice, minimumActiveProductQuantityByDesign, showPricing } = usePricing()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
 
@@ -75,6 +79,7 @@
       </p> -->
     </div>
     <Button
+      v-if="!(companyStore.isEcommercePlatform && authStore.hasAdminToken)"
       variant="primary"
       :size="uiStore.isMobile ? 'sm' : 'lg'"
       class="w-full"
