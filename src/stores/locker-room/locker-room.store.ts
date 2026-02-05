@@ -63,7 +63,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     isLoading.value = false
   }
 
-  async function createLocker(name: string) {
+  async function createLocker(name: string): Promise<Locker | null> {
     isLoading.value = true
     error.value = null
     const resp = await tryCatchApi(API.lockers.createLocker(name), {
@@ -72,17 +72,21 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     if (resp.success && resp.content) {
       setSuccessMessage('Locker created successfully')
       const data = resp.content.result
-      lockers.value.push({
+      const created: Locker = {
         collection: data.collection,
         id: data.locker.id,
         product_count: 0,
         product_thumbnails: data.locker.product_thumbnails,
         room_name: data.locker.room_name
-      } as Locker)
+      } as Locker
+      lockers.value.push(created)
+      isLoading.value = false
+      return created
     } else {
       setError('Failed to create locker')
     }
     isLoading.value = false
+    return null
   }
 
   async function updateLockers(locker: Locker) {
@@ -216,11 +220,17 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       setError('Failed to save design')
       return false
     }
-    lockers.value = lockers.value.map(locker =>
-      locker.id === locker_id
-        ? { ...locker, product_thumbnails: [...locker.product_thumbnails, front_image] }
-        : locker
-    )
+    lockers.value = lockers.value.map(locker => {
+      if (locker.id !== locker_id) return locker
+      const thumbnails = locker.product_thumbnails ?? []
+      const newThumbnails =
+        thumbnails.length < 4 ? [...thumbnails, front_image].slice(0, 4) : thumbnails
+      return {
+        ...locker,
+        product_thumbnails: newThumbnails,
+        product_count: (locker.product_count ?? 0) + 1
+      }
+    })
     setSuccessMessage('Design saved successfully')
     return true
   }
