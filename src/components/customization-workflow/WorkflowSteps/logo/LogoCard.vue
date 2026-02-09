@@ -21,6 +21,7 @@
 
   const props = defineProps<{
     logo: CustomLogo
+    index: number
   }>()
 
   const previewColors = computed(() => {
@@ -44,7 +45,7 @@
   })
 
   const emit = defineEmits<{
-    (e: 'click', logo: CustomLogo): void
+    (e: 'click', index: number): void
     (e: 'delete', logo: CustomLogo): void
     (e: 'apply-colors', logo: CustomLogo): void
     (e: 'shuffle-colors'): void
@@ -52,9 +53,8 @@
 </script>
 <template>
   <section
-    :key="props.logo.id"
     class="relative group rounded-xl border border-border p-3 flex flex-col gap-3 bg-background cursor-pointer hover:bg-muted/50 transition-colors w-full"
-    @click="emit('click', props.logo)"
+    @click="emit('click', props.index)"
   >
     <div class="flex flex-col items-center gap-3">
       <div class="w-24 h-24 rounded-lg flex items-center justify-center overflow-hidden shrink-0">

@@ -59,7 +59,7 @@
 
   // ===== EMITS =====
   const emit = defineEmits<{
-    'select-logo': [logoId: string]
+    'select-logo': [logoId: string, logoIndex: number]
     'go-to-placement': []
   }>()
 
@@ -110,8 +110,10 @@
     handleLogoAfterUpload(logo)
   }
 
-  function handleLogoClick(logo: CustomLogo) {
-    emit('select-logo', logo.id.toString())
+  function handleLogoClick(index: number) {
+    const logo = customLogos.value[index]
+    if (!logo) return
+    emit('select-logo', logo.id.toString(), index)
   }
 
   // Breadcrumbs only
@@ -166,10 +168,11 @@
           <!-- When logos exist: render each logo with swatches + actions -->
           <div v-if="hasAnyLogo" class="flex flex-col gap-4 mx-4 md:mx-6">
             <LogoCard
-              v-for="logo in customLogos || []"
-              :key="logo.id"
+              v-for="(logo, index) in customLogos || []"
+              :key="`${logo.id}-${index}`"
               :logo="logo"
-              @click="handleLogoClick(logo)"
+              :index="index"
+              @click="handleLogoClick"
               @apply-colors="applyLogoColors(logo)"
               @shuffle-colors="shuffleColors()"
               @delete="removeLogo(logo)"
