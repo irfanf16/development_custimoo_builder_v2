@@ -77,7 +77,8 @@
   const productName = ref('')
   const selectedLockerId = ref<number | null>(null)
 
-  // Validation errors
+  // Validation errors – only show after user has attempted submit
+  const formSubmitted = ref(false)
   const designNameError = ref<string | null>(null)
   const lockerSelectionError = ref<string | null>(null)
 
@@ -190,6 +191,7 @@
     ).getImageFromCanvas('back')
   }
   const handleSave = async () => {
+    formSubmitted.value = true
     // Validate before proceeding
     if (!validateForm()) {
       return
@@ -308,11 +310,20 @@
 
   watch(
     () => props.open,
-    async (newVal: boolean) => {
+    (newVal: boolean) => {
       if (newVal) {
-        // Reset validation errors when dialog opens
+        // Reset validation state synchronously so errors never show on open
+        formSubmitted.value = false
         designNameError.value = null
         lockerSelectionError.value = null
+      }
+    },
+    { flush: 'sync' }
+  )
+  watch(
+    () => props.open,
+    async (newVal: boolean) => {
+      if (newVal) {
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()
         }
@@ -395,11 +406,13 @@
                 :placeholder="design_name_placeholder({}, { locale })"
                 class="h-9 bg-accent"
                 :disabled="isSubmitting"
-                :aria-invalid="designNameError !== null"
+                :aria-invalid="formSubmitted && designNameError !== null"
                 @blur="validateDesignName"
-                @input="designNameError = null"
               />
-              <p v-if="designNameError" class="text-[0.8rem] font-medium text-destructive">
+              <p
+                v-if="formSubmitted && designNameError"
+                class="text-[0.8rem] font-medium text-destructive"
+              >
                 {{ designNameError }}
               </p>
             </div>
@@ -407,7 +420,10 @@
               <h4 class="text-sm font-semibold mb-0">
                 {{ save_design_choose_locker({}, { locale }) }}
               </h4>
-              <p v-if="lockerSelectionError" class="text-[0.8rem] font-medium text-destructive">
+              <p
+                v-if="formSubmitted && lockerSelectionError"
+                class="text-[0.8rem] font-medium text-destructive"
+              >
                 {{ lockerSelectionError }}
               </p>
             </div>
