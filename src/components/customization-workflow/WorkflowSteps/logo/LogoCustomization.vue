@@ -25,11 +25,14 @@
     nav_logo
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useAuthStore } from '@/stores/auth/auth.store'
   import { Trash } from 'lucide-vue-next'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import LogoCard from './LogoCard.vue'
   const profileStore = useProfileStore()
   const logosStore = useLogosStore()
+  const authStore = useAuthStore()
+  const isLoggedIn = computed(() => authStore.isAuthenticated)
 
   // ===== COMPOSABLES =====
   const { customLogos } = useLogos()
@@ -41,14 +44,16 @@
   const subPanel = ref<SubPanel>('list')
   const showAllRecent = ref(false)
   const displayedRecentLogos = computed(() => {
+    if (!isLoggedIn.value) return []
     if (!logosStore.recentLogos) return []
     const reversed = [...logosStore.recentLogos]
     return showAllRecent.value ? reversed : reversed.slice(0, 4)
   })
   const shouldShowRecentSection = computed(
     () =>
-      logosStore.isLoadingRecentLogos ||
-      (logosStore?.recentLogos && logosStore.recentLogos.length > 0)
+      isLoggedIn.value &&
+      (logosStore.isLoadingRecentLogos ||
+        (logosStore?.recentLogos && logosStore.recentLogos.length > 0))
   )
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
 
