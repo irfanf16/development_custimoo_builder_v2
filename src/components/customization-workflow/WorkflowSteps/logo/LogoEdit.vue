@@ -179,7 +179,8 @@
     previousPlacementOption,
     isSyncingAngle,
     rotationChangeStart,
-    heightChangeStart
+    heightChangeStart,
+    computed(() => props.logoIndex)
   )
 
   // ===== ACTIONS =====
@@ -431,6 +432,14 @@
       }
     },
     { immediate: true }
+  )
+
+  // Also watch explicit logo index changes (in case index is passed via workflow store)
+  watch(
+    () => props.logoIndex,
+    () => {
+      syncFormWithLogo(customLogo.value)
+    }
   )
 
   // Setup angle watchers

@@ -1,4 +1,4 @@
-import { computed, watch } from 'vue'
+import { computed, watch, type ComputedRef } from 'vue'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useHistoryStore } from '@/stores/history/history.store'
 import type { CustomLogo } from '@/services/logos/types'
@@ -16,7 +16,8 @@ export function useLogoPosition(
   previousPlacementOption: { value: PlacementOption | null },
   isSyncingAngle: { value: boolean },
   rotationChangeStart: { value: number | null },
-  heightChangeStart: { value: number | null }
+  heightChangeStart: { value: number | null },
+  logoIndexProp: number | null | ComputedRef<number | null> = null
 ) {
   // ===== DEPENDENCIES =====
   const customizationStore = useCustomizationStore()
@@ -25,6 +26,18 @@ export function useLogoPosition(
 
   // ===== COMPUTED =====
   const activeLogoIndex = computed(() => {
+    // Prefer the direct index passed as parameter
+    let idx: number | null = null
+    if (logoIndexProp && typeof logoIndexProp === 'object' && 'value' in logoIndexProp) {
+      idx = logoIndexProp.value
+    } else if (typeof logoIndexProp === 'number') {
+      idx = logoIndexProp
+    }
+
+    if (idx !== null && idx >= 0) {
+      return idx
+    }
+    // Fallback to ID-based lookup
     if (!logo.value) return -1
     return getActiveLogoIndex(logo.value.id)
   })
