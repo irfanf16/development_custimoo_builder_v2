@@ -179,7 +179,8 @@
     previousPlacementOption,
     isSyncingAngle,
     rotationChangeStart,
-    heightChangeStart
+    heightChangeStart,
+    computed(() => props.logoIndex)
   )
 
   // ===== ACTIONS =====
@@ -433,6 +434,14 @@
     { immediate: true }
   )
 
+  // Also watch explicit logo index changes (in case index is passed via workflow store)
+  watch(
+    () => props.logoIndex,
+    () => {
+      syncFormWithLogo(customLogo.value)
+    }
+  )
+
   // Setup angle watchers
   onMounted(() => {
     setupAngleWatcher()
@@ -531,6 +540,16 @@
                   "
                 />
               </SelectTrigger>
+              {{
+                console.log(
+                  'Rendering placement options:',
+                  placementOptions,
+                  'positionForm',
+                  positionForm,
+                  'cut',
+                  customLogo
+                )
+              }}
               <SelectContent>
                 <SelectGroup>
                   <SelectItem

@@ -63,28 +63,57 @@ export function useLogoPlacements() {
   }
 
   function syncFormWithLogo(logo: CustomLogo | null) {
-    const optionByKey = logo?.placement
-      ? placementOptions.value.find(item => item.placementKey === logo.placement)
-      : null
-    // Check if logo has placement_id property (it might not be in the type definition)
-    const logoPlacementId = (logo as { placement_id?: number })?.placement_id
-    const optionById = logoPlacementId
-      ? placementOptions.value.find(item => String(item.placementId) === String(logoPlacementId))
-      : null
-    const option = optionByKey ?? optionById ?? placementOptions.value[0] ?? null
-
-    positionForm.placementOption = option
-    previousPlacementOption.value = option
+    console.log('Syncing form with logo:', logo)
 
     if (!logo) {
+      const option = placementOptions.value[0] ?? null
+      positionForm.placementOption = option
+      previousPlacementOption.value = option
       positionForm.height = option?.height ? option.height.toFixed(1) : ''
       return
     }
 
-    const resolvedWidth = Number(logo.width || option?.width || 0)
-    const resolvedHeight = Number(logo.height || option?.height || 0)
-    currentWidth.value = resolvedWidth
-    positionForm.height = resolvedHeight ? resolvedHeight.toFixed(1) : ''
+    // Find the placement option that matches this logo
+    // Priority: match by name_of_placement → match by x_axis/y_axis → match by placement_id → use first
+    let option: PlacementOption | null = null
+
+    // Try to match by name_of_placement
+    if (logo.name_of_placement) {
+      option = placementOptions.value.find(item => item.label === logo.name_of_placement) ?? null
+    }
+
+    // Try to match by position coordinates
+    if (!option && logo.x_axis !== undefined && logo.y_axis !== undefined) {
+      option =
+        placementOptions.value.find(
+          item =>
+            item.x_axis === logo.x_axis &&
+            item.y_axis === logo.y_axis &&
+            item.side === (logo.side || 'front')
+        ) ?? null
+    }
+
+    // Try to match by placement_id
+    const logoPlacementId = (logo as { placement_id?: number })?.placement_id
+    if (!option && logoPlacementId) {
+      option =
+        placementOptions.value.find(item => String(item.placementId) === String(logoPlacementId)) ??
+        null
+    }
+
+    // Fallback to first option
+    if (!option) {
+      option = placementOptions.value[0] ?? null
+    }
+
+    positionForm.placementOption = option
+    previousPlacementOption.value = option
+
+    // Use logo's actual values, not fallback to placement defaults
+    const logoWidth = Number(logo.width)
+    const logoHeight = Number(logo.height)
+    currentWidth.value = logoWidth || 0
+    positionForm.height = logoHeight ? logoHeight.toFixed(1) : ''
     isSyncingAngle.value = true
     positionForm.angle = [Number(logo.rotation || 0)]
     rotationChangeStart.value = null
