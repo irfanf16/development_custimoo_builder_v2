@@ -25,11 +25,14 @@
     nav_logo
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useAuthStore } from '@/stores/auth/auth.store'
   import { Trash } from 'lucide-vue-next'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import LogoCard from './LogoCard.vue'
   const profileStore = useProfileStore()
   const logosStore = useLogosStore()
+  const authStore = useAuthStore()
+  const isLoggedIn = computed(() => authStore.isAuthenticated)
 
   // ===== COMPOSABLES =====
   const { customLogos } = useLogos()
@@ -41,20 +44,22 @@
   const subPanel = ref<SubPanel>('list')
   const showAllRecent = ref(false)
   const displayedRecentLogos = computed(() => {
+    if (!isLoggedIn.value) return []
     if (!logosStore.recentLogos) return []
     const reversed = [...logosStore.recentLogos]
     return showAllRecent.value ? reversed : reversed.slice(0, 4)
   })
   const shouldShowRecentSection = computed(
     () =>
-      logosStore.isLoadingRecentLogos ||
-      (logosStore?.recentLogos && logosStore.recentLogos.length > 0)
+      isLoggedIn.value &&
+      (logosStore.isLoadingRecentLogos ||
+        (logosStore?.recentLogos && logosStore.recentLogos.length > 0))
   )
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
 
   // ===== EMITS =====
   const emit = defineEmits<{
-    'select-logo': [logoId: string]
+    'select-logo': [logoId: string, logoIndex: number]
     'go-to-placement': []
   }>()
 
@@ -105,8 +110,10 @@
     handleLogoAfterUpload(logo)
   }
 
-  function handleLogoClick(logo: CustomLogo) {
-    emit('select-logo', logo.id.toString())
+  function handleLogoClick(index: number) {
+    const logo = customLogos.value[index]
+    if (!logo) return
+    emit('select-logo', logo.id.toString(), index)
   }
 
   // Breadcrumbs only
@@ -161,10 +168,11 @@
           <!-- When logos exist: render each logo with swatches + actions -->
           <div v-if="hasAnyLogo" class="flex flex-col gap-4 mx-4 md:mx-6">
             <LogoCard
-              v-for="logo in customLogos || []"
-              :key="logo.id"
+              v-for="(logo, index) in customLogos || []"
+              :key="`${logo.id}-${index}`"
               :logo="logo"
-              @click="handleLogoClick(logo)"
+              :index="index"
+              @click="handleLogoClick"
               @apply-colors="applyLogoColors(logo)"
               @shuffle-colors="shuffleColors()"
               @delete="removeLogo(logo)"

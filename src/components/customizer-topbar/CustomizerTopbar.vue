@@ -68,6 +68,7 @@
   import ShareUrlTooltip from '@/components/shared/ShareUrlTooltip.vue'
   import { useLocalStorage } from '@/composables'
   import { useCompanyStore } from '@/stores/company/company.store'
+  import { useLogosStore } from '@/stores/logos/logos.store'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
@@ -79,6 +80,7 @@
   const workflowStore = useWorkflowStore()
   const cartStore = useCartStore()
   const lockerRoomStore = useLockerRoomStore()
+  const logosStore = useLogosStore()
   const sceneStore = useSceneStore()
   const companyStore = useCompanyStore()
   const { menuItems, goTo } = useCustomizerMenu()
@@ -562,6 +564,7 @@
   }
   async function onLoginSuccess() {
     await lockerRoomStore.fetchLockersWithcolors()
+    await logosStore.fetchRecentLogos()
   }
 
   /**

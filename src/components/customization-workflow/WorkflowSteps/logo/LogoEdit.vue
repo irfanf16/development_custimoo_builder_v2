@@ -61,6 +61,7 @@
   import { useCompanyStore } from '@/stores/company/company.store'
   interface Props {
     logoId: string
+    logoIndex: number | null
   }
 
   const props = defineProps<Props>()
@@ -75,7 +76,7 @@
   const { showPricing } = usePricing()
   const companyStore = useCompanyStore()
   // ===== COMPOSABLES =====
-  const { productKey, getLogoById, getActiveLogoIndex } = useLogos()
+  const { productKey, customLogos, getLogoById, getActiveLogoIndex } = useLogos()
   const { removeBackground, applyLogoColors, recolorLogo, removeLogo, setActiveLogo } =
     useLogoActions()
   const {
@@ -92,6 +93,9 @@
 
   // ===== COMPUTED =====
   const customLogo = computed(() => {
+    if (props.logoIndex !== null && props.logoIndex >= 0) {
+      return customLogos.value[props.logoIndex] ?? null
+    }
     if (props.logoId) return getLogoById(props.logoId)
     return logosStore.activeLogo
   })
@@ -175,7 +179,8 @@
     previousPlacementOption,
     isSyncingAngle,
     rotationChangeStart,
-    heightChangeStart
+    heightChangeStart,
+    computed(() => props.logoIndex)
   )
 
   // ===== ACTIONS =====
@@ -429,6 +434,14 @@
     { immediate: true }
   )
 
+  // Also watch explicit logo index changes (in case index is passed via workflow store)
+  watch(
+    () => props.logoIndex,
+    () => {
+      syncFormWithLogo(customLogo.value)
+    }
+  )
+
   // Setup angle watchers
   onMounted(() => {
     setupAngleWatcher()
@@ -441,6 +454,7 @@
       <LogoCard
         v-if="customLogo"
         :logo="customLogo"
+        :index="props.logoIndex ?? -1"
         @apply-colors="handleApplyColours"
         @delete="handleDeleteLogo"
       />
