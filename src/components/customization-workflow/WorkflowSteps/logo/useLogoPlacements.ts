@@ -63,8 +63,6 @@ export function useLogoPlacements() {
   }
 
   function syncFormWithLogo(logo: CustomLogo | null) {
-    console.log('Syncing form with logo:', logo)
-
     if (!logo) {
       const option = placementOptions.value[0] ?? null
       positionForm.placementOption = option

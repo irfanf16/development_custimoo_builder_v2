@@ -540,16 +540,6 @@
                   "
                 />
               </SelectTrigger>
-              {{
-                console.log(
-                  'Rendering placement options:',
-                  placementOptions,
-                  'positionForm',
-                  positionForm,
-                  'cut',
-                  customLogo
-                )
-              }}
               <SelectContent>
                 <SelectGroup>
                   <SelectItem
