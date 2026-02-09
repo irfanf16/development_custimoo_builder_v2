@@ -857,7 +857,7 @@
           <DropdownMenuContent align="end">
             <DropdownMenuItem @click="handleSaveAsDraft">
               <Save class="size-4 mr-2" />
-              Save as Draft
+              Save to Locker
             </DropdownMenuItem>
             <DropdownMenuItem
               v-if="!(companyStore.isEcommercePlatform && authStore.hasAdminToken)"

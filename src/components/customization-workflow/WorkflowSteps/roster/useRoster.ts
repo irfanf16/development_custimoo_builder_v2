@@ -130,11 +130,14 @@ export function useRoster() {
       sku?.minimum_order_quantity_type === 'by_design' && sku?.minimum_order_quantity > 0
         ? sku.minimum_order_quantity
         : 1
-
+    const lastEntrySize =
+      rosterEntries?.value?.length > 0
+        ? rosterEntries.value[rosterEntries.value.length - 1]!.size
+        : (availableSizes.value[0] ?? '')
     const entry: APCustomizationRosterEntry = {
       text: payload?.text ?? '',
       number: payload?.number ?? '',
-      size: payload?.size ?? availableSizes.value[0] ?? '',
+      size: payload?.size ?? lastEntrySize,
       quantity: payload?.quantity ?? minimumQuantity,
       information: payload?.information ?? ''
     }

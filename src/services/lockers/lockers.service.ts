@@ -65,7 +65,7 @@ async function fetchLockerAssets(locker_id: number) {
 }
 async function getSignedUrl(locker_id: number) {
   return await http.post<LockerResponse<SignedUrlResponse>>(
-    `locker-products/presigned-upload-urls/`,
+    `locker-products/presigned-upload-urls`,
     { locker_room_id: locker_id }
   )
 }
