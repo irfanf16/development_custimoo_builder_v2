@@ -61,6 +61,7 @@
   import { useCompanyStore } from '@/stores/company/company.store'
   interface Props {
     logoId: string
+    logoIndex: number | null
   }
 
   const props = defineProps<Props>()
@@ -75,7 +76,7 @@
   const { showPricing } = usePricing()
   const companyStore = useCompanyStore()
   // ===== COMPOSABLES =====
-  const { productKey, getLogoById, getActiveLogoIndex } = useLogos()
+  const { productKey, customLogos, getLogoById, getActiveLogoIndex } = useLogos()
   const { removeBackground, applyLogoColors, recolorLogo, removeLogo, setActiveLogo } =
     useLogoActions()
   const {
@@ -92,6 +93,9 @@
 
   // ===== COMPUTED =====
   const customLogo = computed(() => {
+    if (props.logoIndex !== null && props.logoIndex >= 0) {
+      return customLogos.value[props.logoIndex] ?? null
+    }
     if (props.logoId) return getLogoById(props.logoId)
     return logosStore.activeLogo
   })
@@ -441,6 +445,7 @@
       <LogoCard
         v-if="customLogo"
         :logo="customLogo"
+        :index="props.logoIndex ?? -1"
         @apply-colors="handleApplyColours"
         @delete="handleDeleteLogo"
       />

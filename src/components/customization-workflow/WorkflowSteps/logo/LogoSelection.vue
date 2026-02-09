@@ -8,10 +8,15 @@
   const workflowStore = useWorkflowStore()
 
   // Use workflow store state
-  const { logosSubStep: currentSubStep, activeLogoId: selectedLogoId } = storeToRefs(workflowStore)
+  const {
+    logosSubStep: currentSubStep,
+    activeLogoId: selectedLogoId,
+    activeLogoIndex
+  } = storeToRefs(workflowStore)
 
-  function handleSelectLogo(logoId: string) {
+  function handleSelectLogo(logoId: string, logoIndex: number) {
     workflowStore.setActiveLogoId(logoId)
+    workflowStore.setActiveLogoIndex(logoIndex)
     workflowStore.setLogosSubStep('edit')
   }
 
@@ -46,11 +51,11 @@
       :key="'logos-placement'"
       @back="handleBackFromPlacement"
     />
-
     <LogoEdit
       v-else-if="currentSubStep === 'edit' && selectedLogoId"
       :key="`logos-edit-${selectedLogoId}`"
       :logo-id="selectedLogoId"
+      :logo-index="activeLogoIndex"
       @back="handleBackToLogos"
     />
   </Transition>
