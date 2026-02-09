@@ -260,7 +260,7 @@ export const useCartStore = defineStore('cartStore', () => {
     })
     if (response.success && response.content) {
       const cartResponse = response.content
-      if (cartResponse.result) {
+      if (cartResponse.errors.length > 0) {
         setSuccessMessage('Products added to cart successfully')
         await fetchCart(true)
         return cartResponse

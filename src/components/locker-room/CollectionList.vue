@@ -234,7 +234,7 @@
         <div class="text-sm text-muted-foreground flex gap-1 items-center">
           <span class="flex items-center gap-1">
             <ShoppingBag class="size-3.5 inline-block" />
-            {{ collection.collection_products?.length || 0 }}
+            {{ collection.collection_products_count || 0 }}
             {{ locker_designs_count({}, { locale }) }}
           </span>
           <DotSeparator class="bg-muted-foreground" />

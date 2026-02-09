@@ -532,6 +532,27 @@
     // Note: currentCollection is still set, so isEditingCollection will work correctly
   }
 
+  const handleSelectCollectionProducts = (products: LockerProduct[]) => {
+    selectedProducts.value = products
+  }
+
+  const handleCancelCollectionCreation = () => {
+    currentMode.value = 'list'
+    currentLocker.value = null
+    tab.value = 'collections'
+    lockerTab.value = 'products'
+    selectedProducts.value = []
+    if (lockerRoomHeaderRef.value) {
+      ;(lockerRoomHeaderRef.value as any).creatingCollection = false
+    }
+  }
+
+  const handleUnselectAllList = () => {
+    selectedLocker.value = []
+    selectedProductsByLocker.value = {}
+    selectedProducts.value = []
+  }
+
   const handleAddToCollectionFromLocker = async (targetCollection: Collection) => {
     if (!currentLocker.value || selectedProducts.value.length === 0) return
 
@@ -615,7 +636,13 @@
       richColors: true
     })
 
-    // Clear selection
+    // Clear selection for current locker so listing and footer stay in sync
+    if (currentLocker.value) {
+      selectedProductsByLocker.value = {
+        ...selectedProductsByLocker.value,
+        [currentLocker.value.id]: []
+      }
+    }
     selectedProducts.value = []
   }
 
@@ -753,9 +780,7 @@
                   :collection="currentCollection"
                   :pre-selected-products="collectionProducts"
                   :sort="sortOption"
-                  @select-product="
-                    (locker_products: LockerProduct[]) => (selectedProducts = locker_products)
-                  "
+                  @select-product="handleSelectCollectionProducts"
                   @remove-product="handleRemoveProduct"
                   @logo-removed="handleLogoRemoved"
                 />
@@ -784,17 +809,7 @@
         :collection-creation-step="collectionCreationStep"
         @back="handleBackNavigation"
         @close="emit('update:open', false)"
-        @cancel-collection-creation="
-          () => {
-            currentMode = 'list'
-            currentLocker = null
-            tab = 'collections'
-            lockerTab = 'products'
-            selectedProducts = []
-            lockerRoomHeaderRef!.creatingCollection = false
-            collectionProducts = []
-          }
-        "
+        @cancel-collection-creation="handleCancelCollectionCreation"
         @create-collection="createCollection"
         @save-collection="handleSaveCollection"
         @add-to-collection="
@@ -807,6 +822,7 @@
           }
         "
         @add-products-to-collection="handleAddProductsToCollection"
+        @unselect-all-list="handleUnselectAllList"
       />
     </DialogContent>
   </Dialog>
