@@ -48,7 +48,7 @@
 
       <div class="space-y-2 max-h-[400px] overflow-y-auto">
         <div
-          v-for="collection in collections"
+          v-for="collection in collections.filter(c => !c.room_id)"
           :key="collection.id"
           class="flex items-center justify-between p-3 rounded-lg border hover:bg-muted cursor-pointer transition-colors"
           @click="handleSelectCollection(collection)"
