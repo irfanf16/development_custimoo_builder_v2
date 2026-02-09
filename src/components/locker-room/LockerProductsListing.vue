@@ -2,7 +2,7 @@
   import { Card } from '@/components/ui/card'
   import { DotSeparator } from '@/components/ui/separator'
   import type { LockerProduct } from '@/services/lockers/types'
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { Checkbox } from '@/components/ui/checkbox'
   import { Spinner } from '@/components/ui/spinner'
   import { TooltipProvider, TooltipContent, TooltipTrigger, Tooltip } from '@/components/ui/tooltip'
@@ -178,6 +178,15 @@
   onMounted(() => {
     selectedProducts.value = [...props.preSelectedProducts]
   })
+
+  // Keep local selection in sync with parent (e.g. when switching lockers or after add-to-collection)
+  watch(
+    () => props.preSelectedProducts,
+    next => {
+      selectedProducts.value = [...next]
+    },
+    { deep: true }
+  )
 
   defineExpose({ selecteAllProducts, unSelectAllProducts })
 </script>
