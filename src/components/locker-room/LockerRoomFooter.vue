@@ -5,7 +5,7 @@
   import { Separator } from '@/components/ui/separator'
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import type { Collection, Locker, LockerProduct } from '@/services/lockers/types'
-  import { Copy, FolderArchive, PlusIcon, ShoppingBasket, TrashIcon, X } from 'lucide-vue-next'
+  import { Copy, PlusIcon, ShoppingBasket, TrashIcon, X } from 'lucide-vue-next'
   import { computed, ref } from 'vue'
 
   import { confirmDialog } from '@/lib/confirm-dialog'
@@ -34,7 +34,6 @@
     locker_selected,
     locker_unselect_all_products,
     locker_select_all,
-    locker_move,
     locker_copy,
     locker_save,
     locker_cancel_creation,
@@ -78,6 +77,7 @@
     'save-collection',
     'add-to-collection',
     'add-products-to-collection',
+    'unselect-all-list',
     'close'
   ])
 
@@ -202,6 +202,14 @@
       Object.keys(lockerCartPayload.value.locker_products).length > 0
   )
 
+  // List mode: total selected items (full lockers + individual products per locker)
+  const listModeSelectedCount = computed(() => {
+    const { lockers, locker_products } = lockerCartPayload.value
+    const fullLockersCount = lockers.length
+    const productsCount = Object.values(locker_products).reduce((sum, ids) => sum + ids.length, 0)
+    return fullLockersCount + productsCount
+  })
+
   const handleAddLockerProductsToCart = async () => {
     if (!canAddLockerProductsToCart.value) return
 
@@ -232,29 +240,46 @@
   <DialogFooter class="w-full">
     <div
       v-if="props.currentMode === 'list' && !isCreatingCollection"
-      class="flex justify-end gap-2 pt-4 border-t w-full"
+      class="flex flex-wrap items-center justify-between gap-2 pt-4 border-t w-full"
     >
-      <Button variant="ghost" @click="emit('close')">{{ locker_cancel({}, { locale }) }}</Button>
-      <template v-if="!companyStore.isEcommercePlatform">
-        <Button
-          v-if="!isCreatingCollection"
-        :disabled="!canAddLockerProductsToCart"
-          class="disabled:opacity-25"
-          variant="primary"
-        @click="handleAddLockerProductsToCart"
-        >
-          <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
-        </Button>
+      <span v-if="listModeSelectedCount > 0" class="flex items-center mr-3">
+        <span class="ml-1">{{ listModeSelectedCount }} {{ locker_selected({}, { locale }) }}</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button variant="ghost" class="p-0 ml-1" @click="emit('unselect-all-list')"
+                ><X class="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent align="center" side="bottom">
+              {{ locker_unselect_all_products({}, { locale }) }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </span>
+      <div class="flex gap-2 ml-auto">
+        <Button variant="ghost" @click="emit('close')">{{ locker_cancel({}, { locale }) }}</Button>
+        <template v-if="!companyStore.isEcommercePlatform">
+          <Button
+            v-if="!isCreatingCollection"
+            :disabled="!canAddLockerProductsToCart"
+            class="disabled:opacity-25"
+            variant="primary"
+            @click="handleAddLockerProductsToCart"
+          >
+            <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
+          </Button>
 
-        <Button
-          v-else
-          :disabled="selectedProducts.length === 0"
-          class="disabled:opacity-25"
-          variant="primary"
-        >
-          {{ locker_add_to_collection({}, { locale }) }}
-        </Button>
-      </template>
+          <Button
+            v-else
+            :disabled="selectedProducts.length === 0"
+            class="disabled:opacity-25"
+            variant="primary"
+          >
+            {{ locker_add_to_collection({}, { locale }) }}
+          </Button>
+        </template>
+      </div>
     </div>
     <template v-else-if="currentMode === 'detail' || isCreatingCollection">
       <div class="flex pt-4 border-t w-full flex-col md:flex-row gap-2">
@@ -303,9 +328,9 @@
             v-if="!isCreatingCollection && currentTab === 'lockers' && detailsTab === 'products'"
             class="flex items-center gap-1"
           >
-            <Button :disabled="products.length === 0" variant="outline">
+            <!-- <Button :disabled="products.length === 0" variant="outline">
               <FolderArchive class="size-4" /> {{ locker_move({}, { locale }) }}
-            </Button>
+            </Button> -->
             <Button
               :disabled="products.length !== 1 && products.length <= 0"
               variant="outline"

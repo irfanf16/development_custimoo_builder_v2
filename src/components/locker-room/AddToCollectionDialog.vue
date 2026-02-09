@@ -56,7 +56,7 @@
           <div class="flex flex-col">
             <span class="font-medium">{{ collection.name }}</span>
             <span class="text-xs text-muted-foreground">
-              {{ collection.collection_products?.length || 0 }} products
+              {{ collection.collection_products_count || 0 }} products
             </span>
           </div>
           <Button variant="ghost" size="sm">Select</Button>
