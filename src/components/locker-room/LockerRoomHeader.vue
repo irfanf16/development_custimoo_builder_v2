@@ -55,6 +55,8 @@
       collectionCreationStep: number
       collectionTab: CollectionTab
       creatingCollection?: boolean
+      /** When true (e.g. shared collection view), hide back button and collection list dropdown. */
+      readOnly?: boolean
     }>(),
     {
       currentMode: 'list',
@@ -65,7 +67,8 @@
       currentCollection: null,
       collectionCreationStep: 1,
       collectionTab: 'products',
-      creatingCollection: false
+      creatingCollection: false,
+      readOnly: false
     }
   )
 
@@ -184,144 +187,150 @@
     <!-- DETAIL MODE HEADER -->
     <!-- ========================================================= -->
     <template v-if="currentMode === 'detail'">
-      <!-- ---------- BACK BUTTON ---------- -->
       <div class="flex gap-2 items-center">
-        <Button
-          v-if="!creatingCollection"
-          size="icon"
-          variant="outline"
-          @click="
-            () => {
-              emit('change-locker-tab', 'products')
-              emit('back')
-            }
-          "
-        >
-          <ArrowLeft class="w-5 h-5" />
-        </Button>
-
-        <!-- ===================================================== -->
-        <!-- LOCKER DETAIL HEADER -->
-        <!-- ===================================================== -->
-        <template v-if="mainTab === 'lockers' && currentLocker && !creatingCollection">
-          <!-- VIEW MODE -->
-          <template v-if="!isEditingLocker">
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <Button variant="outline">
-                  {{ currentLocker.room_name }}
-                  <ChevronDown class="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  v-for="locker in lockers"
-                  :key="locker.id"
-                  @click="emit('change-current-locker', locker)"
-                >
-                  <Check
-                    class="w-4 h-4"
-                    :class="{
-                      'opacity-100': locker.id === currentLocker.id,
-                      'opacity-0': locker.id !== currentLocker.id
-                    }"
-                  />
-                  {{ locker.room_name }}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button variant="outline" @click="isEditingLocker = true">
-              <PencilLine class="w-4 h-4" /> {{ locker_edit({}, { locale }) }}
-            </Button>
-          </template>
-
-          <!-- EDIT MODE -->
-          <template v-else>
-            <Input v-model="room_name" class="w-[200px]" />
-            <ButtonGroup>
-              <Button @click="updateLocker">
-                <Check class="w-4 h-4" />
-                {{ locker_update({}, { locale }) }}
-              </Button>
-              <Button @click="isEditingLocker = false">
-                <X class="w-4 h-4" /> {{ locker_cancel({}, { locale }) }}
-              </Button>
-            </ButtonGroup>
-          </template>
+        <!-- Read-only shared view: only show collection name, no back or dropdown -->
+        <template v-if="readOnly && mainTab === 'collections' && currentCollection">
+          <span class="text-lg font-medium">{{ currentCollection.name }}</span>
         </template>
+        <template v-else>
+          <!-- ---------- BACK BUTTON ---------- -->
+          <Button
+            v-if="!creatingCollection"
+            size="icon"
+            variant="outline"
+            @click="
+              () => {
+                emit('change-locker-tab', 'products')
+                emit('back')
+              }
+            "
+          >
+            <ArrowLeft class="w-5 h-5" />
+          </Button>
 
-        <!-- ===================================================== -->
-        <!-- COLLECTION DETAIL HEADER -->
-        <!-- ===================================================== -->
-        <template v-if="mainTab === 'collections' && currentCollection && !creatingCollection">
-          <!-- VIEW MODE -->
-          <template v-if="!isEditingCollection">
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <Button variant="outline">
-                  {{ currentCollection.name }}
-                  <ChevronDown class="w-4 h-4" />
+          <!-- ===================================================== -->
+          <!-- LOCKER DETAIL HEADER -->
+          <!-- ===================================================== -->
+          <template v-if="mainTab === 'lockers' && currentLocker && !creatingCollection">
+            <!-- VIEW MODE -->
+            <template v-if="!isEditingLocker">
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="outline">
+                    {{ currentLocker.room_name }}
+                    <ChevronDown class="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    v-for="locker in lockers"
+                    :key="locker.id"
+                    @click="emit('change-current-locker', locker)"
+                  >
+                    <Check
+                      class="w-4 h-4"
+                      :class="{
+                        'opacity-100': locker.id === currentLocker.id,
+                        'opacity-0': locker.id !== currentLocker.id
+                      }"
+                    />
+                    {{ locker.room_name }}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button variant="outline" @click="isEditingLocker = true">
+                <PencilLine class="w-4 h-4" /> {{ locker_edit({}, { locale }) }}
+              </Button>
+            </template>
+
+            <!-- EDIT MODE -->
+            <template v-else>
+              <Input v-model="room_name" class="w-[200px]" />
+              <ButtonGroup>
+                <Button @click="updateLocker">
+                  <Check class="w-4 h-4" />
+                  {{ locker_update({}, { locale }) }}
                 </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  v-for="collection in collections"
-                  :key="collection.id"
-                  @click="emit('change-current-collection', collection)"
-                >
-                  <Check
-                    class="w-4 h-4"
-                    :class="{
-                      'opacity-100': collection.id === currentCollection.id,
-                      'opacity-0': collection.id !== currentCollection.id
-                    }"
-                  />
-                  {{ collection.name }}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button
-              variant="outline"
-              :disabled="!canEditCollection"
-              @click="isEditingCollection = true"
-            >
-              <PencilLine class="w-4 h-4" /> Edit
-            </Button>
+                <Button @click="isEditingLocker = false">
+                  <X class="w-4 h-4" /> {{ locker_cancel({}, { locale }) }}
+                </Button>
+              </ButtonGroup>
+            </template>
           </template>
 
-          <!-- EDIT MODE -->
-          <template v-else>
+          <!-- ===================================================== -->
+          <!-- COLLECTION DETAIL HEADER -->
+          <!-- ===================================================== -->
+          <template v-if="mainTab === 'collections' && currentCollection && !creatingCollection">
+            <!-- VIEW MODE -->
+            <template v-if="!isEditingCollection">
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="outline">
+                    {{ currentCollection.name }}
+                    <ChevronDown class="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    v-for="collection in collections"
+                    :key="collection.id"
+                    @click="emit('change-current-collection', collection)"
+                  >
+                    <Check
+                      class="w-4 h-4"
+                      :class="{
+                        'opacity-100': collection.id === currentCollection.id,
+                        'opacity-0': collection.id !== currentCollection.id
+                      }"
+                    />
+                    {{ collection.name }}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button
+                variant="outline"
+                :disabled="!canEditCollection"
+                @click="isEditingCollection = true"
+              >
+                <PencilLine class="w-4 h-4" /> Edit
+              </Button>
+            </template>
+
+            <!-- EDIT MODE -->
+            <template v-else>
+              <Input
+                v-model="collection_name"
+                class="w-[200px]"
+                :placeholder="locker_collection_name_placeholder({}, { locale })"
+              />
+              <ButtonGroup>
+                <Button @click="updateCollection"> <Check class="w-4 h-4" /> Update </Button>
+                <Button @click="cancelEditCollection"> <X class="w-4 h-4" /> Cancel </Button>
+              </ButtonGroup>
+            </template>
+          </template>
+
+          <!-- ===================================================== -->
+          <!-- COLLECTION CREATION STEP 2 -->
+          <!-- ===================================================== -->
+          <template
+            v-if="
+              (creatingCollection || props.creatingCollection) &&
+              collectionCreationStep === 2 &&
+              mainTab === 'collections'
+            "
+          >
             <Input
               v-model="collection_name"
               class="w-[200px]"
               :placeholder="locker_collection_name_placeholder({}, { locale })"
             />
-            <ButtonGroup>
-              <Button @click="updateCollection"> <Check class="w-4 h-4" /> Update </Button>
-              <Button @click="cancelEditCollection"> <X class="w-4 h-4" /> Cancel </Button>
-            </ButtonGroup>
           </template>
-        </template>
-
-        <!-- ===================================================== -->
-        <!-- COLLECTION CREATION STEP 2 -->
-        <!-- ===================================================== -->
-        <template
-          v-if="
-            (creatingCollection || props.creatingCollection) &&
-            collectionCreationStep === 2 &&
-            mainTab === 'collections'
-          "
-        >
-          <Input
-            v-model="collection_name"
-            class="w-[200px]"
-            :placeholder="locker_collection_name_placeholder({}, { locale })"
-          />
         </template>
       </div>
     </template>

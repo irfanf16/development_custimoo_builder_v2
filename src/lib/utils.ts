@@ -23,6 +23,22 @@ export function generateRandomString() {
   return result
 }
 
+/**
+ * Download a file from a URL. Opens in same tab and triggers download when possible.
+ * @param url - Full URL of the file to download
+ * @param filename - Optional suggested filename for the download
+ */
+export function downloadFromUrl(url: string, filename?: string): void {
+  if (typeof window === 'undefined' || !url) return
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename ?? 'download'
+  anchor.rel = 'noopener noreferrer'
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+}
+
 /** Ensure a generic link tag exists */
 function ensureLink(rel: string, href: string, crossOrigin?: string): void {
   try {
