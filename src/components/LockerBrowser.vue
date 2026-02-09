@@ -95,8 +95,12 @@
   })
 
   const handleSelectProduct = (products: LockerProduct[]) => {
-    selectedProducts.value = products
     if (currentLocker.value) {
+      const currentLockerProductIds = new Set(currentLocker.value.product.map(p => p.id))
+      selectedProducts.value = [
+        ...selectedProducts.value.filter(p => !currentLockerProductIds.has(p.id)),
+        ...products
+      ]
       const ids = products.map(p => p.id)
       selectedProductsByLocker.value = {
         ...selectedProductsByLocker.value,
@@ -109,6 +113,8 @@
       } else {
         selectedLocker.value = selectedLocker.value.filter(id => id !== currentLocker.value!.id)
       }
+    } else {
+      selectedProducts.value = products
     }
   }
 

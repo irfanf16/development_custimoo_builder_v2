@@ -107,28 +107,28 @@
   const currentCollection = computed(() => props.currentCollection)
 
   const deleteProducts = async () => {
-    if (products.value.length) {
-      const isPlural = products.value.length > 1
-      const ok = await confirmDialog({
-        title: isPlural
-          ? locker_delete_products_title_plural(
-              { count: products.value.length },
-              { locale: locale.value }
-            )
-          : locker_delete_products_title(
-              { count: products.value.length },
-              { locale: locale.value }
-            ),
-        description: isPlural
-          ? locker_delete_products_description_plural({}, { locale: locale.value })
-          : locker_delete_products_description({}, { locale: locale.value })
-      })
-      if (ok) {
-        lockerRoomStore.deleteProducts(
-          products.value.map(prod => prod.id),
-          lockerRoom.value!.id
-        )
-      }
+    const currentLockerProductIds =
+      props.currentLocker && props.currentTab === 'lockers' && props.detailsTab === 'products'
+        ? (props.selectedProductsByLocker[props.currentLocker.id] ?? [])
+        : products.value.map(prod => prod.id)
+    if (currentLockerProductIds.length === 0) return
+    const isPlural = currentLockerProductIds.length > 1
+    const ok = await confirmDialog({
+      title: isPlural
+        ? locker_delete_products_title_plural(
+            { count: currentLockerProductIds.length },
+            { locale: locale.value }
+          )
+        : locker_delete_products_title(
+            { count: currentLockerProductIds.length },
+            { locale: locale.value }
+          ),
+      description: isPlural
+        ? locker_delete_products_description_plural({}, { locale: locale.value })
+        : locker_delete_products_description({}, { locale: locale.value })
+    })
+    if (ok && lockerRoom.value) {
+      lockerRoomStore.deleteProducts(currentLockerProductIds, lockerRoom.value.id)
     }
   }
   const deleteLockers = async () => {
@@ -249,6 +249,13 @@
       class="flex flex-wrap items-center justify-between gap-2 pt-4 border-t w-full"
     >
       <span v-if="listModeSelectedCount > 0" class="flex items-center mr-3">
+        <AvatarQueue
+          v-if="products.length > 0"
+          :images="products.map(prod => baseStorageUrl + prod.product_front_url)"
+          :max="3"
+          :class="'overflow-hidden mr-2'"
+          :avatar-class="'!rounded-[13px] border p-1 !ring-0 !bg-secondary !shadow-none '"
+        />
         <span class="ml-1">{{ listModeSelectedCount }} {{ locker_selected({}, { locale }) }}</span>
         <TooltipProvider>
           <Tooltip>
