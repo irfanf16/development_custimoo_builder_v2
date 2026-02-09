@@ -527,6 +527,7 @@ export interface Collection {
   link: string
   pdf_link: any
   random_string: any
+  shared_url: string
   file_name: string
   company_id: number
   customer_id: number

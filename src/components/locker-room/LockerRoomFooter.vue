@@ -58,6 +58,8 @@
     currentCollection: Collection | null
     isCreatingCollection: boolean
     collectionCreationStep: number
+    /** When true (e.g. shared collection view), hide all actions and show only close. */
+    readOnly?: boolean
   }
   const props = withDefaults(defineProps<FooterProps>(), {
     currentTab: 'lockers',
@@ -67,7 +69,8 @@
     selectedProductsByLocker: () => ({}),
     lockerProductsRef: null,
     isCreatingCollection: false,
-    collectionCreationStep: 1
+    collectionCreationStep: 1,
+    readOnly: false
   })
 
   const emit = defineEmits([
@@ -238,8 +241,11 @@
 </script>
 <template>
   <DialogFooter class="w-full">
+    <div v-if="props.readOnly" class="flex justify-end gap-2 pt-4 border-t w-full">
+      <Button variant="ghost" @click="emit('close')">{{ locker_cancel({}, { locale }) }}</Button>
+    </div>
     <div
-      v-if="props.currentMode === 'list' && !isCreatingCollection"
+      v-else-if="props.currentMode === 'list' && !isCreatingCollection"
       class="flex flex-wrap items-center justify-between gap-2 pt-4 border-t w-full"
     >
       <span v-if="listModeSelectedCount > 0" class="flex items-center mr-3">
