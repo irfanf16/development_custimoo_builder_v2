@@ -5,7 +5,7 @@
   import { Separator } from '@/components/ui/separator'
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import type { Collection, Locker, LockerProduct } from '@/services/lockers/types'
-  import { Copy, FolderArchive, PlusIcon, ShoppingBasket, TrashIcon, X } from 'lucide-vue-next'
+  import { Copy, PlusIcon, ShoppingBasket, TrashIcon, X } from 'lucide-vue-next'
   import { computed, ref } from 'vue'
 
   import { confirmDialog } from '@/lib/confirm-dialog'
@@ -34,7 +34,6 @@
     locker_selected,
     locker_unselect_all_products,
     locker_select_all,
-    locker_move,
     locker_copy,
     locker_save,
     locker_cancel_creation,
@@ -238,10 +237,10 @@
       <template v-if="!companyStore.isEcommercePlatform">
         <Button
           v-if="!isCreatingCollection"
-        :disabled="!canAddLockerProductsToCart"
+          :disabled="!canAddLockerProductsToCart"
           class="disabled:opacity-25"
           variant="primary"
-        @click="handleAddLockerProductsToCart"
+          @click="handleAddLockerProductsToCart"
         >
           <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
         </Button>
@@ -303,9 +302,9 @@
             v-if="!isCreatingCollection && currentTab === 'lockers' && detailsTab === 'products'"
             class="flex items-center gap-1"
           >
-            <Button :disabled="products.length === 0" variant="outline">
+            <!-- <Button :disabled="products.length === 0" variant="outline">
               <FolderArchive class="size-4" /> {{ locker_move({}, { locale }) }}
-            </Button>
+            </Button> -->
             <Button
               :disabled="products.length !== 1 && products.length <= 0"
               variant="outline"
