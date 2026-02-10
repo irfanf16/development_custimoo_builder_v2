@@ -13,7 +13,8 @@
     Shuffle
   } from 'lucide-vue-next'
   import { useHistoryStore } from '@/stores/history/history.store'
-  import { useColorActions } from '@/composables/useColorActions'
+  // import { useColorActions } from '@/composables/useColorActions'
+  import { useLogoActions } from '@/components/customization-workflow/WorkflowSteps/logo/useLogoActions'
   import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
@@ -33,7 +34,8 @@
 
   const workflowStore = useWorkflowStore()
   const history = useHistoryStore()
-  const { shuffleColors } = useColorActions()
+  // const { shuffleColors: shuffleDesignColors } = useColorActions()
+  const { shuffleColors: shuffleLogoColors } = useLogoActions()
   const profileStore = useProfileStore()
 
   // Determine if undo/redo stacks are empty
@@ -44,6 +46,15 @@
 
   const undoPrefix = computed(() => toolbar_undo_prefix({}, { locale: locale.value }))
   const redoPrefix = computed(() => toolbar_redo_prefix({}, { locale: locale.value }))
+
+  function handleShuffleColors() {
+    if (workflowStore.activeLogoId) {
+      shuffleLogoColors()
+    } else {
+      // Otherwise shuffle design colors
+      // shuffleDesignColors()
+    }
+  }
 
   const tools = computed(() => [
     {
@@ -100,8 +111,8 @@
       id: 'shuffle',
       icon: Shuffle,
       label: color_shuffle_design_colors({}, { locale: locale.value }),
-      action: () => shuffleColors(),
-      disabled: false
+      action: () => handleShuffleColors(),
+      disabled: workflowStore.activeLogoId ? false : true // Enable if a logo is active, otherwise disable (for design colors)
     },
     {
       id: 'undo',
