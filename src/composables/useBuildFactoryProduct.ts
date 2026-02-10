@@ -225,7 +225,7 @@ export function useBuildFactoryProduct() {
       sizechart_reference: sizechartReference,
 
       // SVG and design data
-      svg_parts: svgParts,
+      svg_parts: typeof svgParts === 'string' ? JSON.parse(svgParts) : svgParts,
       svg_groups: svgGroups.map(group => ({
         id: group.id,
         name: group.name || '',
