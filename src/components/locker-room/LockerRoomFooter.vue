@@ -13,6 +13,7 @@
   import { useCartStore } from '@/stores/cart/cart.store'
   import type LockerProductsListing from './LockerProductsListing.vue'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { storeToRefs } from 'pinia'
   import CopyProductsDialog from '@/components/locker-room/CopyProductsDialog.vue'
   import AddToCollectionDialog from '@/components/locker-room/AddToCollectionDialog.vue'
   import { toast } from 'vue-sonner'
@@ -97,6 +98,7 @@
   })
   const uiStore = useUIStore()
   const lockerRoomStore = useLockerRoomStore()
+  const { lockers: storeLockers } = storeToRefs(lockerRoomStore)
   const cartStore = useCartStore()
   const products = computed(() => props.selectedProducts)
   const showCopyDialog = ref(false)
@@ -185,6 +187,14 @@
     else return
   }
 
+  const deleteButtonDisabled = computed(() => {
+    if (props.currentTab === 'collections') return !canDeleteCollection.value
+    if (props.currentTab === 'lockers' && props.detailsTab === 'products' && props.currentLocker) {
+      return (props.selectedProductsByLocker[props.currentLocker.id] ?? []).length === 0
+    }
+    return false
+  })
+
   const lockerCartPayload = computed(() => {
     const lockers = props.selectedLockers
       .filter(id => !props.selectedProductsByLocker[Number(id)]?.length)
@@ -205,12 +215,36 @@
       Object.keys(lockerCartPayload.value.locker_products).length > 0
   )
 
-  // List mode: total selected items (full lockers + individual products per locker)
+  // Full locker IDs (selected as whole, no product-level selection)
+  const fullLockerIds = computed(() =>
+    props.selectedLockers.filter(id => !props.selectedProductsByLocker[Number(id)]?.length)
+  )
+  const fullLockersFromStore = computed(() =>
+    fullLockerIds.value
+      .map(id => storeLockers.value.find(l => l.id === Number(id)))
+      .filter((l): l is Locker => !!l)
+  )
+  // List mode: show products count (sum of full lockers' product_count + individually selected products)
   const listModeSelectedCount = computed(() => {
-    const { lockers, locker_products } = lockerCartPayload.value
-    const fullLockersCount = lockers.length
-    const productsCount = Object.values(locker_products).reduce((sum, ids) => sum + ids.length, 0)
-    return fullLockersCount + productsCount
+    const countFromFullLockers = fullLockersFromStore.value.reduce(
+      (sum, l) => sum + (l.product_count ?? 0),
+      0
+    )
+    const countFromProducts = Object.values(props.selectedProductsByLocker).reduce(
+      (sum, ids) => sum + ids.length,
+      0
+    )
+    return countFromFullLockers + countFromProducts
+  })
+  // List mode: thumbnails from full lockers (product_thumbnails) + selected products (product_front_url)
+  const listModeImages = computed(() => {
+    const fromLockers = fullLockersFromStore.value.flatMap(l =>
+      (l.product_thumbnails ?? []).map(img => baseStorageUrl.value + img)
+    )
+    const fromProducts = props.selectedProducts.map(
+      prod => baseStorageUrl.value + prod.product_front_url
+    )
+    return [...fromLockers, ...fromProducts]
   })
 
   const handleAddLockerProductsToCart = async () => {
@@ -250,8 +284,8 @@
     >
       <span v-if="listModeSelectedCount > 0" class="flex items-center mr-3">
         <AvatarQueue
-          v-if="products.length > 0"
-          :images="products.map(prod => baseStorageUrl + prod.product_front_url)"
+          v-if="listModeImages.length > 0"
+          :images="listModeImages"
           :max="3"
           :class="'overflow-hidden mr-2'"
           :avatar-class="'!rounded-[13px] border p-1 !ring-0 !bg-secondary !shadow-none '"
@@ -436,7 +470,7 @@
             <Button
               variant="ghost"
               class="text-destructive"
-              :disabled="currentTab === 'collections' && !canDeleteCollection"
+              :disabled="deleteButtonDisabled"
               @click="handleDelete"
             >
               <TrashIcon class="size-4 text-destructive" /> {{ locker_delete({}, { locale }) }}

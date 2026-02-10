@@ -217,7 +217,19 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       operation: 'saveDesignToLocker'
     })
     if (!resp.success) {
-      setError('Failed to save design')
+      const errors = Object.values(resp.axiosError?.response?.data.errors || {})
+      console.log(errors)
+      if (errors.length > 0) {
+        errors.forEach((error: string[] | string) => {
+          if (Array.isArray(error)) {
+            setError(error[0]!)
+          } else {
+            setError(error)
+          }
+        })
+      } else {
+        setError('Failed to save design')
+      }
       return false
     }
     lockers.value = lockers.value.map(locker => {

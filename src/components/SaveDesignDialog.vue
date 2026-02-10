@@ -57,6 +57,7 @@
     time_ago_years,
     time_ago_years_plural
   } from '@/paraglide/messages'
+  import Spinner from './ui/spinner/Spinner.vue'
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
@@ -69,7 +70,13 @@
     open: boolean
   }>()
 
-  const emit = defineEmits(['update:open', 'save-design', 'create-locker', 'select-locker'])
+  const emit = defineEmits([
+    'update:open',
+    'save-design',
+    'saved-to-locker',
+    'create-locker',
+    'select-locker'
+  ])
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const sortOption = ref<SortOption>('alphabetical')
@@ -124,8 +131,23 @@
   const search = ref('')
 
   const filteredLockers = computed(() => {
-    if (!search.value) return lockers.value
-    return lockers.value.filter(l => l.room_name.toLowerCase().includes(search.value.toLowerCase()))
+    return lockers.value
+      .filter(l =>
+        l.room_name.toLowerCase().includes(search.value ? search.value.toLowerCase() : '')
+      )
+      .sort((a, b) => {
+        switch (sortOption.value) {
+          case 'alphabetical':
+            return a.room_name.localeCompare(b.room_name)
+
+          case 'createdDate':
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+
+          case 'lastModified':
+          default:
+            return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        }
+      })
   })
 
   const handleSelectLocker = (locker: Locker) => {
@@ -298,6 +320,7 @@
         if (success) {
           isSubmitting.value = false
           emit('update:open', false)
+          emit('saved-to-locker', selectedLockerId.value!)
         } else {
           isSubmitting.value = false
         }
@@ -449,7 +472,7 @@
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent class="w-48">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem @click="sortOption = 'lastModified'">
                     <Check
                       :class="{ '!opacity-100': sortOption === 'lastModified' }"
                       class="w-4 h-4 opacity-0"
@@ -457,7 +480,7 @@
                     {{ locker_sort_last_modified({}, { locale }) }}
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem>
+                  <DropdownMenuItem @click="sortOption = 'alphabetical'">
                     <Check
                       :class="{ '!opacity-100': sortOption === 'alphabetical' }"
                       class="w-4 h-4 opacity-0"
@@ -465,7 +488,7 @@
                     {{ locker_sort_alphabetically({}, { locale }) }}
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem>
+                  <DropdownMenuItem @click="sortOption = 'createdDate'">
                     <Check
                       :class="{ '!opacity-100': sortOption === 'createdDate' }"
                       class="w-4 h-4 opacity-0"
@@ -541,16 +564,14 @@
           <div
             class="flex justify-end gap-3"
             :class="{
-              'pointer-events-none': !selectedLockerId || !productName.trim() || isSubmitting
+              'pointer-events-none': isSubmitting
             }"
           >
             <Button variant="outline" :disabled="isSubmitting" @click="emit('update:open', false)">
               {{ locker_cancel({}, { locale }) }}
             </Button>
-            <Button
-              :disabled="!selectedLockerId || !productName.trim() || isSubmitting"
-              @click="handleSave"
-            >
+            <Button :disabled="isSubmitting" @click="handleSave">
+              <Spinner v-if="isSubmitting" class="w-4 h-4" />
               {{ save_design_button({}, { locale }) }}
             </Button>
           </div>

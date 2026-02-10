@@ -11,6 +11,7 @@
   } from '@/services/lockers/types'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { ref, watch, computed } from 'vue'
+  import { storeToRefs } from 'pinia'
   import LockerRoomFooter from './locker-room/LockerRoomFooter.vue'
   import LockerRoomHeader from './locker-room/LockerRoomHeader.vue'
   import CollectionList from './locker-room/CollectionList.vue'
@@ -22,9 +23,14 @@
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
   type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
   type CollectionTab = 'products' | 'preview'
-  const props = defineProps<{
-    open: boolean
-  }>()
+  const props = withDefaults(
+    defineProps<{
+      open: boolean
+      /** When set and browser opens, navigate to this locker's detail view (e.g. after saving a design). */
+      initialLockerId?: number | null
+    }>(),
+    { initialLockerId: null }
+  )
 
   const emit = defineEmits([
     'update:open',
@@ -34,10 +40,12 @@
     'edit-locker',
     'edit-product',
     'copy-locker',
-    'sort'
+    'sort',
+    'initial-locker-opened'
   ])
 
   const lockerRoomStore = useLockerRoomStore()
+  const { lockers: storeLockers } = storeToRefs(lockerRoomStore)
   const currentMode = ref<'list' | 'detail'>('list')
   const tab = ref<'lockers' | 'collections'>('lockers')
   const lockerTab = ref<LockerTab>('products')
@@ -75,9 +83,13 @@
     lockerTab.value = 'products'
     currentCollection.value = null
     collectionCreationStep.value = 1
-    // if(!lockerRoomHeaderRef.value?.creatingCollection){
-    //   selectedProducts.value = []
-    // }
+    isCreatingCollection.value = false
+    if (lockerRoomHeaderRef.value) {
+      lockerRoomHeaderRef.value.creatingCollection = false
+    }
+    selectedLocker.value = []
+    selectedProductsByLocker.value = {}
+    selectedProducts.value = []
   }
   const getLockerDetail = async (locker: Locker) => {
     currentLocker.value = !locker.products_fetched
@@ -86,11 +98,29 @@
     currentMode.value = 'detail'
   }
 
-  // Pre-selection for LockerProductsListing: resolve selectedProductsByLocker[currentLocker.id] to LockerProduct[]
+  watch(
+    () => [props.open, props.initialLockerId] as const,
+    async ([open, lockerId]) => {
+      if (!open || lockerId == null) return
+      let locker = storeLockers.value.find(l => l.id === lockerId)
+      if (!locker) {
+        await lockerRoomStore.fetchLockers()
+        locker = storeLockers.value.find(l => l.id === lockerId)
+      }
+      if (locker) {
+        await getLockerDetail(locker)
+        emit('initial-locker-opened')
+      }
+    }
+  )
+
+  // Pre-selection for LockerProductsListing: when locker is fully selected, all products; else filter by selected ids
   const preSelectedProductsForCurrentLocker = computed(() => {
     const locker = currentLocker.value
     if (!locker?.product?.length) return []
     const ids = selectedProductsByLocker.value[locker.id] ?? []
+    const isFullySelected = selectedLocker.value.includes(locker.id) && ids.length === 0
+    if (isFullySelected) return [...locker.product]
     return locker.product.filter((p: LockerProduct) => ids.includes(p.id))
   })
 
@@ -136,6 +166,7 @@
     currentCollection.value = !collection.details_fetched
       ? ((await lockerRoomStore.fetchCollectionProducts(collection.id))?.result ?? null)
       : collection
+    collectionTab.value = 'products'
     currentMode.value = 'detail'
     tab.value = 'collections'
     collectionCreationStep.value = 2
@@ -181,7 +212,7 @@
           description: product.description,
           product_note: product.description,
           product_price: '',
-          product_locker_room_id: product.room_id,
+          product_locker_room_id: product.id,
           product_urls: {
             front_url: product.product_front_url,
             back_url: product.product_back_url
@@ -213,7 +244,7 @@
             description: product.description,
             product_note: product.description,
             product_price: '',
-            product_locker_room_id: product.room_id,
+            product_locker_room_id: product.id,
             product_urls: {
               front_url: product.product_front_url,
               back_url: product.product_back_url
@@ -441,6 +472,11 @@
       await lockerRoomStore.updateCollection(collectionId, formData)
       await lockerRoomStore.fetchCollectionProducts(collectionId)
       currentCollection.value = lockerRoomStore.collections.find(c => c.id === collectionId) || null
+      isCreatingCollection.value = false
+      lockerRoomHeaderRef.value!.creatingCollection = false
+      selectedLocker.value = []
+      selectedProductsByLocker.value = {}
+      selectedProducts.value = []
     } else {
       await lockerRoomStore.saveCollection(formData)
       handleBackNavigation()
@@ -483,7 +519,7 @@
       product_note: p.product_note,
       product_price: p.product_price,
       order_number: (collectionToUpdate.collection_products?.length || 0) + index + 1,
-      product_locker_room_id: p.product_locker_room_id
+      product_locker_room_id: p.id
     }))
 
     const existingProducts = (collectionToUpdate.collection_products || []).map((p, index) => ({
@@ -492,7 +528,7 @@
       product_note: p.product_note,
       product_price: p.product_price,
       order_number: index + 1,
-      product_locker_room_id: p.product_locker_room_id
+      product_locker_room_id: p.id
     }))
 
     const allProducts = [...existingProducts, ...currentProducts]
@@ -561,7 +597,6 @@
 
   const handleAddToCollectionFromLocker = async (targetCollection: Collection) => {
     if (!currentLocker.value || selectedProducts.value.length === 0) return
-
     // Convert selected products to collection products format
     const productsToAdd = selectedProducts.value.map((product: LockerProduct) => ({
       allow_description: true,
@@ -571,7 +606,7 @@
       description: product.description,
       product_note: product.description,
       product_price: '',
-      product_locker_room_id: product.room_id,
+      product_locker_room_id: product.id,
       product_urls: {
         front_url: product.product_front_url,
         back_url: product.product_back_url
@@ -593,7 +628,7 @@
       product_note: p.product_note,
       product_price: p.product_price,
       order_number: index + 1,
-      product_locker_room_id: p.product_locker_room_id
+      product_locker_room_id: p.id
     }))
 
     const newProducts = productsToAdd.map(
