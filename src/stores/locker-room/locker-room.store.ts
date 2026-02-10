@@ -413,6 +413,13 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       richColors: true
     })
   }
+  function resetLockerState() {
+    lockers.value = []
+    collections.value = []
+    editingLockerProductId.value = null
+    editingLockerId.value = null
+    editingLockerProduct.value = null
+  }
   return {
     lockers,
     isLoading,
@@ -429,6 +436,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     createLocker,
     updateLockers,
     deleteLocker,
+    resetLockerState,
     //Products Endpoint
     deleteProducts,
     copyProducts,
