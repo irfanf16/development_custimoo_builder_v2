@@ -24,7 +24,8 @@
     locker_name_required,
     locker_create_button,
     locker_cancel,
-    locker_edit_locker_tooltip
+    locker_edit_locker_tooltip,
+    locker_update
   } from '@/paraglide/messages'
   import Spinner from '../ui/spinner/Spinner.vue'
   const props = defineProps<{
@@ -111,7 +112,8 @@
             {{ locker_cancel({}, { locale }) }}
           </Button>
           <Button type="submit" :disabled="isLoading">
-            <Spinner v-if="isLoading" class="w-4 h-4" /> {{ locker_create_button({}, { locale }) }}
+            <Spinner v-if="isLoading" class="w-4 h-4" />
+            {{ isEditMode ? locker_update({}, { locale }) : locker_create_button({}, { locale }) }}
           </Button>
         </DialogFooter>
       </form>

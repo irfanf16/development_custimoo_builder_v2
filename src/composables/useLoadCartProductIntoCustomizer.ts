@@ -537,7 +537,9 @@ export function useLoadCartProductIntoCustomizer() {
       if (!cart_item_id) {
         if (cartStore.cart?.items) {
           for (const item of cartStore.cart.items) {
-            const found = item.factory_products.find(fp => fp.id === factoryProductId)
+            const found = item.factory_products.find(
+              fp => String(fp.id) === String(factoryProductId)
+            )
             if (found) {
               cart_item_id = item.id
               factoryProduct = found

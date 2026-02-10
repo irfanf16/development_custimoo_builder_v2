@@ -87,15 +87,28 @@
     if (lockerRoomHeaderRef.value) {
       lockerRoomHeaderRef.value.creatingCollection = false
     }
-    selectedLocker.value = []
-    selectedProductsByLocker.value = {}
-    selectedProducts.value = []
   }
+  function aggregateSelectedProductsFromStore(): LockerProduct[] {
+    const result: LockerProduct[] = []
+    for (const lockerId of selectedLocker.value) {
+      const locker = storeLockers.value.find(l => l.id === Number(lockerId))
+      if (!locker?.product?.length) continue
+      const ids = selectedProductsByLocker.value[locker.id] ?? []
+      if (ids.length === 0) {
+        result.push(...locker.product)
+      } else {
+        result.push(...locker.product.filter((p: LockerProduct) => ids.includes(p.id)))
+      }
+    }
+    return result
+  }
+
   const getLockerDetail = async (locker: Locker) => {
     currentLocker.value = !locker.products_fetched
       ? ((await lockerRoomStore.fetchLockerProducts(locker.id)) ?? null)
       : locker
     currentMode.value = 'detail'
+    selectedProducts.value = aggregateSelectedProductsFromStore()
   }
 
   watch(
@@ -182,6 +195,22 @@
     lockerRoomStore.updateLockers({ ...locker })
     currentLocker.value = locker
   }
+  const handleCreateCollectionClick = () => {
+    const aggregated = aggregateSelectedProductsFromStore()
+    if (aggregated.length > 0) {
+      selectedProducts.value = aggregated
+      createCollection()
+    } else {
+      if (lockerRoomHeaderRef.value) {
+        ;(lockerRoomHeaderRef.value as any).creatingCollection = true
+      }
+      tab.value = 'lockers'
+      currentMode.value = 'list'
+      currentCollection.value = null
+      collectionCreationStep.value = 1
+    }
+  }
+
   const createCollection = () => {
     // Ensure creatingCollection flag is set
     isCreatingCollection.value = true
@@ -195,6 +224,7 @@
     currentMode.value = 'detail'
     tab.value = 'collections'
     collectionCreationStep.value = 2
+    collectionTab.value = 'products'
     // If we're adding products to existing collection, keep currentCollection
     // Otherwise, clear it for new collection creation
     if (!currentCollection.value) {
@@ -470,8 +500,9 @@
     if (isEditing && collectionId) {
       formData.append('_method', 'PUT')
       await lockerRoomStore.updateCollection(collectionId, formData)
-      await lockerRoomStore.fetchCollectionProducts(collectionId)
-      currentCollection.value = lockerRoomStore.collections.find(c => c.id === collectionId) || null
+      await lockerRoomStore.fetchCollections()
+      currentMode.value = 'list'
+      currentCollection.value = null
       isCreatingCollection.value = false
       lockerRoomHeaderRef.value!.creatingCollection = false
       selectedLocker.value = []
@@ -583,9 +614,12 @@
     currentLocker.value = null
     tab.value = 'collections'
     lockerTab.value = 'products'
+    collectionCreationStep.value = 1
+    collectionTab.value = 'products'
     selectedProducts.value = []
     if (lockerRoomHeaderRef.value) {
       ;(lockerRoomHeaderRef.value as any).creatingCollection = false
+      ;(lockerRoomHeaderRef.value as any).collection_name = ''
     }
   }
 
@@ -593,6 +627,19 @@
     selectedLocker.value = []
     selectedProductsByLocker.value = {}
     selectedProducts.value = []
+  }
+
+  const handleProductsDeleted = (deletedIds: number[], lockerId: number) => {
+    const idSet = new Set(deletedIds)
+    selectedProductsByLocker.value = {
+      ...selectedProductsByLocker.value,
+      [lockerId]: (selectedProductsByLocker.value[lockerId] ?? []).filter(id => !idSet.has(id))
+    }
+    selectedProducts.value = selectedProducts.value.filter(p => !idSet.has(p.id))
+    const updatedLocker = storeLockers.value.find(l => l.id === lockerId) ?? null
+    if (currentLocker.value?.id === lockerId) {
+      currentLocker.value = updatedLocker
+    }
   }
 
   const handleAddToCollectionFromLocker = async (targetCollection: Collection) => {
@@ -694,11 +741,17 @@
         currentMode.value = 'list'
         tab.value = 'lockers'
         lockerTab.value = 'products'
+        collectionCreationStep.value = 1
+        collectionTab.value = 'products'
         sortOption.value = 'lastModified'
         search.value = ''
         selectedLocker.value = []
         selectedProductsByLocker.value = {}
         selectedProducts.value = []
+        if (lockerRoomHeaderRef.value) {
+          ;(lockerRoomHeaderRef.value as any).creatingCollection = false
+          ;(lockerRoomHeaderRef.value as any).collection_name = ''
+        }
       }
     }
   )
@@ -735,23 +788,7 @@
             }
           }
         "
-        @create-collection="
-          () => {
-            // If we're already in detail mode with products selected, just set creation flags
-            // Otherwise, go to list mode to select locker
-            if (currentMode === 'detail' && currentLocker && selectedProducts.length > 0) {
-              lockerRoomHeaderRef!.creatingCollection = true
-              collectionCreationStep = 1
-              currentCollection = null
-            } else {
-              lockerRoomHeaderRef!.creatingCollection = true
-              tab = 'lockers'
-              currentMode = 'list'
-              currentCollection = null
-              collectionCreationStep = 1
-            }
-          }
-        "
+        @create-collection="handleCreateCollectionClick"
       />
       <div class="flex-1 min-h-0">
         <ScrollArea class="h-full">
@@ -864,6 +901,7 @@
         "
         @add-products-to-collection="handleAddProductsToCollection"
         @unselect-all-list="handleUnselectAllList"
+        @products-deleted="handleProductsDeleted"
       />
     </DialogContent>
   </Dialog>
