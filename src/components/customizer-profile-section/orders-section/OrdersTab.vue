@@ -161,7 +161,7 @@
 <template>
   <div class="flex flex-col h-full">
     <!-- Header -->
-    <div class="sticky top-0 z-10 pb-3 w-max px-4">
+    <div class="sticky top-0 z-10 pb-3 w-max px-4 pt-1">
       <WorkflowBreadcrumbs :breadcrumbs="breadcrumbs" />
     </div>
     <!-- Filter -->

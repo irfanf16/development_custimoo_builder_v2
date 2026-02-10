@@ -227,12 +227,6 @@ export function useAppInitialization() {
 
       // Fetch cart if user is authenticated (after auth is hydrated)
       if (authStore.isAuthenticated) {
-        try {
-          const cartStore = useCartStore()
-          await cartStore.fetchCart()
-        } catch {
-          // Ignore cart fetch errors so the rest of the pipeline can continue
-        }
       } else {
         // If not authenticated, start listening for external auth
         authStore.startListeningForAuth()
@@ -336,8 +330,9 @@ export function useAppInitialization() {
     const shareUrl = appStore.shareUrl
     if (!shareUrl) return
 
-    const { useLoadShareProductIntoCustomizer } =
-      await import('@/composables/useLoadShareProductIntoCustomizer')
+    const { useLoadShareProductIntoCustomizer } = await import(
+      '@/composables/useLoadShareProductIntoCustomizer'
+    )
     const { loadShareProductIntoCustomizer: loadShare } = useLoadShareProductIntoCustomizer()
 
     const success = await loadShare(shareUrl)
@@ -403,7 +398,9 @@ export function useAppInitialization() {
   ): Promise<CategoryInfo> => {
     // Initialize user locale preferences
     const profileStore = useProfileStore()
+    const cartStore = useCartStore()
     await profileStore.initializeLocale()
+    await cartStore.fetchCart(true)
 
     const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
     if (!hasCategories) {

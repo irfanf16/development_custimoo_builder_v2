@@ -199,6 +199,20 @@ async function addLockerProductsToCart(payload: AddLockerProductsToCartPayload) 
   return await http.post<AddLockerProductsToCartResponse>('carts/locker-products', payload)
 }
 
+/**
+ * Add Cart from profile section order details view
+ */
+async function addToCartFromOrder(
+  productId: number,
+  orderItemId: number | string,
+  factoryId: string
+) {
+  return await http.post('carts/add-order-product', {
+    product_id: productId,
+    order_item_id: orderItemId,
+    factory_product_id: factoryId
+  })
+}
 export default {
   getCustomerCart,
   storeProductToCart,
@@ -207,5 +221,6 @@ export default {
   uploadCartAssets,
   generateSignedUploadUrl,
   getCartProductDetails,
-  addLockerProductsToCart
+  addLockerProductsToCart,
+  addToCartFromOrder
 }
