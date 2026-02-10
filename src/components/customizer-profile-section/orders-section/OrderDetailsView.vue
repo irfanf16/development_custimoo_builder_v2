@@ -117,12 +117,16 @@
                   <i-flex-line-share class="size-4" /> {{ orders_action_share({}, { locale }) }}
                 </button>
 
-                <button
-                  class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
+                <Button
+                  size="sm"
+                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
                   :title="orders_action_add_to_cart({}, { locale })"
+                  :disabled="loadingCart[`${index}-${pIdx}`]"
+                  :loading="loadingCart[`${index}-${pIdx}`]"
+                  @click="addToCart(product, item, index, pIdx)"
                 >
                   <i-flex-line-cart class="size-4" /> {{ topbar_cart({}, { locale }) }}
-                </button>
+                </Button>
 
                 <button
                   class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
@@ -160,6 +164,9 @@
     orders_action_reorder,
     topbar_cart
   } from '@/paraglide/messages'
+  import Button from '@/components/ui/button/Button.vue'
+  import { useCartStore } from '@/stores/cart/cart.store'
+  import { toast } from 'vue-sonner'
 
   defineProps<{ order: Order }>()
   defineEmits<{ (e: 'back'): void }>()
@@ -169,6 +176,8 @@
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { component: 'OrderDetailsView' } })
   const showQuoteModal = ref(false)
   const locale = computed(() => profileStore.currentLocale || 'en')
+  const cartStore = useCartStore()
+  const loadingCart = ref<Record<string, boolean>>({})
 
   async function handleAcceptQuote() {
     showQuoteModal.value = true
@@ -207,6 +216,33 @@
           response.axiosError?.response?.data?.message ||
           'Failed to accept quote'
       )
+    }
+  }
+  async function addToCart(product: any, item: any, index: number, pIdx: number) {
+    const key = `${index}-${pIdx}`
+    loadingCart.value[key] = true
+
+    const response = await tryCatchApi(
+      API.cart.addToCartFromOrder(product.product_id, item.id, product.id),
+      {
+        operation: 'addToCartFromOrder'
+      }
+    )
+    if (response.success) {
+      toast.success(response.content?.message || 'Product added to cart successfully', {
+        position: 'top-right',
+        richColors: true
+      })
+      cartStore.fetchCart(true)
+      loadingCart.value[key] = false
+    } else {
+      toast.error(
+        (response.content as any)?.message ||
+          response.axiosError?.response?.data?.message ||
+          'Failed to add product to cart',
+        { position: 'top-right', richColors: true }
+      )
+      loadingCart.value[key] = false
     }
   }
 </script>

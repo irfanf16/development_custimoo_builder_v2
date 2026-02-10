@@ -565,6 +565,7 @@
   async function onLoginSuccess() {
     await lockerRoomStore.fetchLockersWithcolors()
     await logosStore.fetchRecentLogos()
+    await cartStore.fetchCart(true)
   }
 
   /**
