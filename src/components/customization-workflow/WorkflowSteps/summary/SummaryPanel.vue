@@ -228,7 +228,6 @@
 
             <!-- Divider -->
             <div class="h-px bg-border" />
-
             <!-- Addons -->
             <div class="space-y-2">
               <p class="text-sm font-semibold text-foreground">

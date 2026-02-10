@@ -242,8 +242,13 @@
         const productId = activeProductDetails.value!.product_id
         const productKey = String(productId)
 
-        // Get svg_parts from active design details
-        const svgParts = productsStore.activeDesignDetails?.svg_parts || []
+        // Get svg_parts from active design details (normalize if API returned a string)
+        const rawSvgParts = productsStore.activeDesignDetails?.svg_parts || []
+        const svgParts = Array.isArray(rawSvgParts)
+          ? rawSvgParts
+          : typeof rawSvgParts === 'string'
+            ? JSON.parse(rawSvgParts)
+            : []
 
         // Get custom logos
         const customLogos = customization?.custom_logos[productKey] || []
@@ -285,30 +290,30 @@
           (addonInfo: any) => addonInfo?.ungrouped_addons || []
         )
 
-        // Build locker product payload matching API structure
+        // Build locker product payload (plain JSON values — no double encoding)
         const locker: SaveLockerProductPayload = {
-          addons: JSON.stringify(addonsInfo),
+          addons: addonsInfo,
           roster_url: false,
           room_id: selectedLockerId.value!,
           product_id: productId,
           product_name: productName.value || '',
-          svg_parts: JSON.stringify(svgParts),
+          svg_parts: svgParts,
           style_id: customizationStoreRef.activeStyleId.value || 0,
           design_id: customizationStore.activeDesignId || 0,
-          custom_logos: JSON.stringify(customLogos),
-          text: JSON.stringify(productCustomTexts),
-          colors: JSON.stringify(!customization?.group_colors || []),
+          custom_logos: customLogos,
+          text: productCustomTexts,
+          colors: customization?.group_colors ?? [],
           shuffle_color_number: customization?.shuffle_color_number || 0,
-          defaultcolors: JSON.stringify(defaultColors),
-          groupcolors: JSON.stringify(groupColors),
+          defaultcolors: defaultColors,
+          groupcolors: groupColors,
           front_image: signedUrls.urls.find(item => item.file_side === 'front')!.original_url,
           back_image: signedUrls.urls.find(item => item.file_side === 'back')!.original_url,
-          product_roster_detail: JSON.stringify(rosterDetail),
+          product_roster_detail: rosterDetail,
           fixed_logo_index: customization?.fixed_logo_index || 0,
-          svgcolors: JSON.stringify(svgcolors),
-          grouped_addons: JSON.stringify(groupedAddons),
-          ungrouped_addons: JSON.stringify(ungroupedAddons),
-          group_patterns: JSON.stringify(customization?.group_patterns || {}),
+          svgcolors: svgcolors,
+          grouped_addons: groupedAddons,
+          ungrouped_addons: ungroupedAddons,
+          group_patterns: customization?.group_patterns || {},
           category_id: customizationStore.activeCategoryId ?? undefined,
           sub_category_id: customizationStore.activeSubCategoryId ?? null
         }

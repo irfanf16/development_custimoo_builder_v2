@@ -74,7 +74,8 @@ async function saveDesign(payload: import('./types').SaveLockerProductPayload, l
   // For updating: use locker-products/{locker_id}
   // For saving: use locker-products
   const endpoint = locker_id ? `locker-products/${locker_id}` : `locker-products`
-  return await http.post<LockerResponse<any>>(endpoint, payload)
+  const method = payload.id ? 'put' : 'post'
+  return await http[method]<LockerResponse<any>>(endpoint, payload)
 }
 
 //collection requests

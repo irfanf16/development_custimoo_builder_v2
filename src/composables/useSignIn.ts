@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth/auth.store'
 import { useProfileStore } from '@/stores/profile/profile.store'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import { useCompanyStore } from '@/stores/company/company.store'
+import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
 
 // ============================================================================
 // Shared Singleton State - Single source of truth for dialog visibility
@@ -174,6 +175,7 @@ export function useSignIn() {
    */
   const handleLogout = (options?: LogoutOptions) => {
     const { company } = companyStore
+    const { resetLockerState } = useLockerRoomStore()
     const loginCode = companyStore.company?.login_code
 
     // Determine platform-specific logout action
@@ -191,6 +193,7 @@ export function useSignIn() {
       // After custom logout code, perform standard logout
       authStore.logout()
     }
+    resetLockerState() // Clear locker room state on logout
 
     // Close any opened authentication dialogs
     closeAllDialogs()
