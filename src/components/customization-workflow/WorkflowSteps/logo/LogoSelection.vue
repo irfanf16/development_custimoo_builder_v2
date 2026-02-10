@@ -23,6 +23,7 @@
   function handleBackToLogos() {
     workflowStore.setLogosSubStep('list')
     workflowStore.setActiveLogoId(null)
+    workflowStore.setActiveLogoIndex(null)
   }
 
   function handleGoToPlacement() {
