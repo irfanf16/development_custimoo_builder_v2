@@ -98,7 +98,7 @@ export const usePricing = () => {
 
     const minimumQuantity = activeProductDetails.value?.sku?.minimum_order_quantity ?? 1
     const totalAddonPrice = getTotalAddonPrice()
-    const totalPrice = basePrice * minimumQuantity + totalAddonPrice
+    const totalPrice = (basePrice + totalAddonPrice) * minimumQuantity
 
     return new Intl.NumberFormat(locale.value, {
       style: 'currency',
