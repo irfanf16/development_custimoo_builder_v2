@@ -16,7 +16,7 @@
   } from '@/components/ui/dropdown-menu'
   import { Spinner } from '@/components/ui/spinner'
   import { PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
-  import { Copy, MoreVertical, Pencil, Calendar, SwatchBook } from 'lucide-vue-next'
+  import { MoreVertical, Pencil, Calendar, SwatchBook } from 'lucide-vue-next'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useProfileStore } from '@/stores/profile/profile.store'
@@ -299,13 +299,13 @@
                   <p>{{ locker_edit_locker_tooltip({}, { locale }) }}</p>
                 </TooltipContent>
               </Tooltip>
-              <Tooltip>
+              <!-- <Tooltip>
                 <TooltipTrigger as-child>
                   <Button size="icon" variant="secondary" class="h-7 w-7 rounded-full shadow">
                     <Copy class="w-3.5 h-3.5" />
                   </Button>
                 </TooltipTrigger>
-              </Tooltip>
+              </Tooltip> -->
             </TooltipProvider>
           </div>
         </div>

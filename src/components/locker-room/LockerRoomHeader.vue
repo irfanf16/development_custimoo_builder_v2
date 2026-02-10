@@ -195,7 +195,6 @@
         <template v-else>
           <!-- ---------- BACK BUTTON ---------- -->
           <Button
-            v-if="!creatingCollection"
             size="icon"
             variant="outline"
             @click="
@@ -211,7 +210,13 @@
           <!-- ===================================================== -->
           <!-- LOCKER DETAIL HEADER -->
           <!-- ===================================================== -->
-          <template v-if="mainTab === 'lockers' && currentLocker && !creatingCollection">
+          <template
+            v-if="
+              mainTab === 'lockers' &&
+              currentLocker &&
+              (!creatingCollection || collectionCreationStep === 1)
+            "
+          >
             <!-- VIEW MODE -->
             <template v-if="!isEditingLocker">
               <DropdownMenu>
@@ -240,7 +245,7 @@
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="outline" @click="isEditingLocker = true">
+              <Button v-if="!creatingCollection" variant="outline" @click="isEditingLocker = true">
                 <PencilLine class="w-4 h-4" /> {{ locker_edit({}, { locale }) }}
               </Button>
             </template>

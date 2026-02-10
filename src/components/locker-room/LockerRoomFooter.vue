@@ -82,7 +82,8 @@
     'add-to-collection',
     'add-products-to-collection',
     'unselect-all-list',
-    'close'
+    'close',
+    'products-deleted'
   ])
 
   const isEditingCollection = computed(() => {
@@ -108,6 +109,7 @@
   const lockerRoom = computed(() => props.currentLocker)
   const currentCollection = computed(() => props.currentCollection)
 
+  // Delete is scoped to current locker selection only; other bulk actions (copy, add to cart, add to collection) use global selection.
   const deleteProducts = async () => {
     const currentLockerProductIds =
       props.currentLocker && props.currentTab === 'lockers' && props.detailsTab === 'products'
@@ -130,7 +132,8 @@
         : locker_delete_products_description({}, { locale: locale.value })
     })
     if (ok && lockerRoom.value) {
-      lockerRoomStore.deleteProducts(currentLockerProductIds, lockerRoom.value.id)
+      await lockerRoomStore.deleteProducts(currentLockerProductIds, lockerRoom.value.id)
+      emit('products-deleted', currentLockerProductIds, lockerRoom.value.id)
     }
   }
   const deleteLockers = async () => {
@@ -236,15 +239,45 @@
     )
     return countFromFullLockers + countFromProducts
   })
-  // List mode: thumbnails from full lockers (product_thumbnails) + selected products (product_front_url)
+  // List mode: thumbnails from full lockers (product_thumbnails) + selected products from partial lockers only (avoid double-counting with product_thumbnails)
   const listModeImages = computed(() => {
     const fromLockers = fullLockersFromStore.value.flatMap(l =>
       (l.product_thumbnails ?? []).map(img => baseStorageUrl.value + img)
     )
-    const fromProducts = props.selectedProducts.map(
-      prod => baseStorageUrl.value + prod.product_front_url
-    )
+    const fromProducts = props.selectedProducts
+      .filter(p =>
+        Object.values(props.selectedProductsByLocker).some(
+          ids => ids.length > 0 && ids.includes(p.id)
+        )
+      )
+      .map(prod => baseStorageUrl.value + prod.product_front_url)
     return [...fromLockers, ...fromProducts]
+  })
+
+  // In locker detail, use list-mode count/images so footer matches list view; otherwise use products (collections / step 2)
+  const detailLockerCount = computed(() =>
+    props.currentTab === 'lockers' ? listModeSelectedCount.value : products.value.length
+  )
+  const detailLockerImages = computed(() =>
+    props.currentTab === 'lockers'
+      ? listModeImages.value
+      : products.value.map(prod => baseStorageUrl.value + prod.product_front_url)
+  )
+
+  // Placeholder so AvatarQueue array length matches selected count (list shows max 4 thumbnails per locker)
+  const AVATAR_PLACEHOLDER =
+    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"%3E%3C/svg%3E'
+  const listModeImagesPadded = computed(() => {
+    const list = listModeImages.value
+    const count = listModeSelectedCount.value
+    if (list.length >= count) return list
+    return [...list, ...Array.from({ length: count - list.length }, () => AVATAR_PLACEHOLDER)]
+  })
+  const detailLockerImagesPadded = computed(() => {
+    const count = detailLockerCount.value
+    const list = detailLockerImages.value
+    if (list.length >= count) return list
+    return [...list, ...Array.from({ length: count - list.length }, () => AVATAR_PLACEHOLDER)]
   })
 
   const handleAddLockerProductsToCart = async () => {
@@ -284,8 +317,8 @@
     >
       <span v-if="listModeSelectedCount > 0" class="flex items-center mr-3">
         <AvatarQueue
-          v-if="listModeImages.length > 0"
-          :images="listModeImages"
+          v-if="listModeSelectedCount > 0"
+          :images="listModeImagesPadded"
           :max="3"
           :class="'overflow-hidden mr-2'"
           :avatar-class="'!rounded-[13px] border p-1 !ring-0 !bg-secondary !shadow-none '"
@@ -338,16 +371,16 @@
           }"
         >
           <span
-            v-if="products.length > 0 && collectionCreationStep !== 2"
+            v-if="(detailLockerCount > 0 || products.length > 0) && collectionCreationStep !== 2"
             class="flex items-center mr-3"
           >
             <AvatarQueue
-              :images="products.map(prod => baseStorageUrl + prod.product_front_url)"
+              :images="detailLockerImagesPadded"
               :max="3"
               :class="'overflow-hidden mr-2'"
               :avatar-class="'!rounded-[13px] border p-1 !ring-0 !bg-secondary !shadow-none '"
             />
-            <span class="ml-1">{{ products.length }} {{ locker_selected({}, { locale }) }}</span>
+            <span class="ml-1">{{ detailLockerCount }} {{ locker_selected({}, { locale }) }}</span>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
@@ -365,7 +398,7 @@
             </TooltipProvider>
           </span>
           <Button
-            v-if="products.length > 0 && collectionCreationStep !== 2"
+            v-if="(detailLockerCount > 0 || products.length > 0) && collectionCreationStep !== 2"
             class="mr-3"
             variant="outline"
             @click="props.lockerProductsRef?.selecteAllProducts()"
