@@ -1,4 +1,6 @@
+import type { LockerPayloadJsonValue } from '@/services/lockers/types'
 import type {
+  APCustomizationAddonsInfo,
   APCustomizationDefaultColor,
   APCustomizationGroupColor,
   APCustomizationLogosMap
@@ -84,27 +86,27 @@ export interface ShareDesignProduct extends BaseProduct {
  * Note: Many fields are JSON-stringified for API compatibility
  */
 export interface ShareDesignPayload {
-  addons: string
+  addons: APCustomizationAddonsInfo
   roster_url: string
   product_id: number
   product_name: string
-  svg_parts: string // JSON stringified
+  svg_parts: LockerPayloadJsonValue
   style_id: number
   design_id: number
-  custom_logos: string // JSON stringified
-  text: string // JSON stringified
-  colors: string
+  custom_logos: LockerPayloadJsonValue
+  text: LockerPayloadJsonValue
+  colors: LockerPayloadJsonValue
   shuffle_color_number: number
-  defaultcolors: string // JSON stringified
-  groupcolors: string // JSON stringified
+  defaultcolors: LockerPayloadJsonValue
+  groupcolors: LockerPayloadJsonValue
   front_image: string
   back_image: string
-  product_roster_detail: string // JSON stringified
+  product_roster_detail: LockerPayloadJsonValue
   fixed_logo_index: number
-  svgcolors: string // JSON stringified
-  grouped_addons: string // JSON stringified
-  ungrouped_addons: string // JSON stringified
-  group_patterns: string // JSON stringified
+  svgcolors: LockerPayloadJsonValue
+  grouped_addons: LockerPayloadJsonValue
+  ungrouped_addons: LockerPayloadJsonValue
+  group_patterns: LockerPayloadJsonValue
   rand_string: string
   room_id: number | null
   category_id?: number
