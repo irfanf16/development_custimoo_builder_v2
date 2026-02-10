@@ -94,34 +94,38 @@ export interface LockerCollection {
   room_id: number
 }
 
+/** JSON-serializable value for payload fields (sent as plain JSON, not double-encoded) */
+export type LockerPayloadJsonValue = object
+
 /**
  * Save Locker Product payload interface for API requests
- * Contains all fields required when saving or updating a locker product
+ * Contains all fields required when saving or updating a locker product.
+ * JSON fields use plain objects/arrays so the request body is serialized once (no double encoding).
  */
 export interface SaveLockerProductPayload {
   id?: number
-  addons: string
+  addons: LockerPayloadJsonValue
   roster_url: boolean
   room_id: number
   product_id: number
   product_name: string
-  svg_parts: string
+  svg_parts: LockerPayloadJsonValue
   style_id: number
   design_id: number
-  custom_logos: string
-  text: string
-  colors: string
+  custom_logos: LockerPayloadJsonValue
+  text: LockerPayloadJsonValue
+  colors: LockerPayloadJsonValue
   shuffle_color_number: number
-  defaultcolors: string
-  groupcolors: string
+  defaultcolors: LockerPayloadJsonValue
+  groupcolors: LockerPayloadJsonValue
   front_image: string
   back_image: string
-  product_roster_detail: string
+  product_roster_detail: LockerPayloadJsonValue
   fixed_logo_index: number
-  svgcolors: string
-  grouped_addons: string
-  ungrouped_addons: string
-  group_patterns: string
+  svgcolors: LockerPayloadJsonValue
+  grouped_addons: LockerPayloadJsonValue
+  ungrouped_addons: LockerPayloadJsonValue
+  group_patterns: LockerPayloadJsonValue
   category_id?: number
   sub_category_id?: number | null
 }

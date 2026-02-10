@@ -484,7 +484,12 @@
       }
 
       const productKey = String(productId)
-      const svgParts = productsStore.activeDesignDetails?.svg_parts || []
+      const rawSvgParts = productsStore.activeDesignDetails?.svg_parts || []
+      const svgParts = Array.isArray(rawSvgParts)
+        ? rawSvgParts
+        : typeof rawSvgParts === 'string'
+          ? JSON.parse(rawSvgParts)
+          : []
       const customLogos = customization.custom_logos[productKey] || []
       const productCustomTexts = customization.product_custom_texts[productKey] || []
       const rosterDetail = customization.products_rosters[productKey] || []
@@ -519,28 +524,28 @@
 
       const locker: SaveLockerProductPayload = {
         id: lockerRoomStore.editingLockerProductId,
-        addons: JSON.stringify(addonsInfo),
+        addons: addonsInfo,
         roster_url: false,
         room_id: lockerId,
         product_id: productId,
         product_name: lockerProductName,
-        svg_parts: JSON.stringify(svgParts),
+        svg_parts: svgParts,
         style_id: customization.style_id || 0,
         design_id: customization.design_id || 0,
-        custom_logos: JSON.stringify(customLogos),
-        text: JSON.stringify(productCustomTexts),
-        colors: JSON.stringify(customization.group_colors ?? []),
+        custom_logos: customLogos,
+        text: productCustomTexts,
+        colors: customization.group_colors ?? [],
         shuffle_color_number: customization.shuffle_color_number || 0,
-        defaultcolors: JSON.stringify(defaultColors),
-        groupcolors: JSON.stringify(groupColors),
+        defaultcolors: defaultColors,
+        groupcolors: groupColors,
         front_image: signedUrls.urls.find(item => item.file_side === 'front')!.original_url,
         back_image: signedUrls.urls.find(item => item.file_side === 'back')!.original_url,
-        product_roster_detail: JSON.stringify(rosterDetail),
+        product_roster_detail: rosterDetail,
         fixed_logo_index: customization.fixed_logo_index || 0,
-        svgcolors: JSON.stringify(svgcolors),
-        grouped_addons: JSON.stringify(groupedAddons),
-        ungrouped_addons: JSON.stringify(ungroupedAddons),
-        group_patterns: JSON.stringify(customization.group_patterns || {}),
+        svgcolors: svgcolors,
+        grouped_addons: groupedAddons,
+        ungrouped_addons: ungroupedAddons,
+        group_patterns: customization.group_patterns || {},
         category_id: customizationStore.activeCategoryId ?? undefined,
         sub_category_id: customizationStore.activeSubCategoryId ?? null
       }
