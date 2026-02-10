@@ -124,7 +124,7 @@ export const useCartStore = defineStore('cartStore', () => {
     })
     if (response.success && response.content) {
       const cartResponse = response.content
-      if (cartResponse.result) {
+      if (cartResponse.errors.length === 0) {
         cart.value = cartResponse.result
         saveToLocalStorage()
         hasFetchedOnPageLoad.value = true

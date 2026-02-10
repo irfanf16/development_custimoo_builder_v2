@@ -244,6 +244,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       }
     })
     setSuccessMessage('Design saved successfully')
+    await fetchLockerProducts(locker_id)
     return true
   }
 
