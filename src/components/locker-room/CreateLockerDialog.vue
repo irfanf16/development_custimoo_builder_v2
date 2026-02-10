@@ -26,6 +26,7 @@
     locker_cancel,
     locker_edit_locker_tooltip
   } from '@/paraglide/messages'
+  import Spinner from '../ui/spinner/Spinner.vue'
   const props = defineProps<{
     open: boolean
     locker?: Locker | null
@@ -101,11 +102,16 @@
           />
         </div>
         <DialogFooter class="flex-col gap-2 sm:flex-row">
-          <Button type="button" variant="default" @click="emit('update:open', false)">
+          <Button
+            type="button"
+            variant="default"
+            :disabled="isLoading"
+            @click="emit('update:open', false)"
+          >
             {{ locker_cancel({}, { locale }) }}
           </Button>
           <Button type="submit" :disabled="isLoading">
-            {{ locker_create_button({}, { locale }) }}
+            <Spinner v-if="isLoading" class="w-4 h-4" /> {{ locker_create_button({}, { locale }) }}
           </Button>
         </DialogFooter>
       </form>

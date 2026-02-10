@@ -96,6 +96,7 @@
   const showLockerBrowser = ref(false)
   const showCartDialog = ref(false)
   const showSaveDesignDialog = ref(false)
+  const initialLockerIdToOpen = ref<number | null>(null)
   const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
   const sharedUrl = ref<string | null>(null)
   const showShareTooltip = ref(false)
@@ -1023,10 +1024,21 @@
     </ButtonGroup>
     <LockerBrowser
       :open="showLockerBrowser"
+      :initial-locker-id="initialLockerIdToOpen"
       @update:open="showLockerBrowser = $event"
       @edit-product="handleEditLockerProduct"
+      @initial-locker-opened="initialLockerIdToOpen = null"
     />
-    <SaveDesignDialog :open="showSaveDesignDialog" @update:open="showSaveDesignDialog = $event" />
+    <SaveDesignDialog
+      :open="showSaveDesignDialog"
+      @update:open="showSaveDesignDialog = $event"
+      @saved-to-locker="
+        id => {
+          initialLockerIdToOpen = id
+          showLockerBrowser = true
+        }
+      "
+    />
     <CartDialog v-if="isLoggedIn" :open="showCartDialog" @update:open="showCartDialog = $event" />
   </div>
 </template>

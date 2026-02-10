@@ -136,6 +136,14 @@
     return sortedLockers.value.filter(l => l.room_name.toLowerCase().includes(searchTerm))
   })
 
+  const lockersToShow = computed(() => {
+    const list = filteredLockers.value
+    if (props.isCreatingCollection) {
+      return list.filter(l => (l.product_count ?? 0) > 0)
+    }
+    return list
+  })
+
   type CheckboxState = boolean | 'indeterminate'
   const getCheckboxState = (locker: { id: number; product_count: number }): CheckboxState => {
     const selected = props.selectedLockers.includes(locker.id)
@@ -168,10 +176,9 @@
     createEditDialogOpen.value = true
   }
 
-  function onDialogCreated(locker: Locker) {
+  function onDialogCreated() {
     createEditDialogOpen.value = false
     lockerToEdit.value = null
-    emit('open-locker', locker)
   }
 
   function onDialogUpdated() {
@@ -195,7 +202,7 @@
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
   <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
     <Card
-      v-for="(locker, lockerIndex) in filteredLockers"
+      v-for="(locker, lockerIndex) in lockersToShow"
       :key="locker.id"
       class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative !gap-0 h-fit duration-150 border-0"
       @click="

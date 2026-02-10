@@ -78,7 +78,7 @@ export interface Locker {
   room_name: string
   product_thumbnails: string[]
   product_count: number
-  created_at?: string
+  created_at: string
   updated_at: string
   product: LockerProduct[]
   folders: Folder[]
