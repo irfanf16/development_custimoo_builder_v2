@@ -7,6 +7,7 @@ import type { OutputColor, APCustomizationDefaultColor } from '@/services/produc
 import { rgbArrayToHex } from './useLogoUtils'
 import { useLogos } from './useLogos'
 import { getSelectedProductPantones, getClosestColor, getColorType } from '@/lib/utils'
+import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 
 export type BackgroundRemovalMode = 'simple' | 'smart'
 
@@ -17,6 +18,7 @@ export function useLogoActions() {
   const customizationStore = useCustomizationStore()
   const { effectiveSvgGroups } = useEffectiveSelectors()
   const { customLogos, productKey, getActiveLogoIndex } = useLogos()
+  const workflowStore = useWorkflowStore()
 
   // ===== ACTIONS =====
   async function removeBackground(
@@ -190,6 +192,8 @@ export function useLogoActions() {
     const index = customLogos.value.findIndex(l => l.id === logo.id)
     if (index !== -1) {
       void historyStore.execute('logo.remove', { key, index })
+      workflowStore.setActiveLogoId(null)
+      workflowStore.setActiveLogoIndex(null)
     }
   }
 
