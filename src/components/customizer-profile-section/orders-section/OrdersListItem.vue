@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import type { Order } from '@/services/orders/types'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
@@ -11,8 +11,13 @@
     orders_action_add_to_cart,
     orders_action_reorder
   } from '@/paraglide/messages'
+  import Button from '@/components/ui/button/Button.vue'
+  import { useCartStore } from '@/stores/cart/cart.store'
+  import { useTryCatchApi } from '@/composables'
+  import { API } from '@/services'
+  import { toast } from 'vue-sonner'
 
-  defineProps<{
+  const props = defineProps<{
     order: Order
     expanded?: boolean
   }>()
@@ -20,9 +25,51 @@
   const store = useOrdersStore()
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
+  const cartStore = useCartStore()
+  const loadingCart = ref<Record<string, boolean>>({})
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { component: 'OrderDetailsView' } })
 
   function showOrderDetails(order: Order) {
     store.openOrderDetails(order)
+  }
+  const flattenedProducts = computed(() => {
+    return (
+      props.order.items?.flatMap((item, itemIndex) => {
+        return (item.factory_products || []).map((product, pIdx) => ({
+          product,
+          item,
+          itemIndex,
+          pIdx
+        }))
+      }) || []
+    )
+  })
+  async function addToCart(product: any, item: any, index: number, pIdx: number) {
+    const key = `${index}-${pIdx}`
+    loadingCart.value[key] = true
+
+    const response = await tryCatchApi(
+      API.cart.addToCartFromOrder(product.product_id, item.id, product.id),
+      {
+        operation: 'addToCartFromOrder'
+      }
+    )
+    if (response.success) {
+      toast.success(response.content?.message || 'Product added to cart successfully', {
+        position: 'top-right',
+        richColors: true
+      })
+      cartStore.fetchCart(true)
+      loadingCart.value[key] = false
+    } else {
+      toast.error(
+        (response.content as any)?.message ||
+          response.axiosError?.response?.data?.message ||
+          'Failed to add product to cart',
+        { position: 'top-right', richColors: true }
+      )
+      loadingCart.value[key] = false
+    }
   }
 </script>
 
@@ -42,8 +89,8 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <!-- Flatten all factory_products into one list -->
         <div
-          v-for="(product, index) in order.items?.flatMap(item => item.factory_products || [])"
-          :key="'product-' + index"
+          v-for="({ product, item, itemIndex, pIdx }, index) in flattenedProducts"
+          :key="`product-${itemIndex}-${pIdx}`"
           class="relative group bg-muted border rounded-lg overflow-hidden aspect-square"
         >
           <!-- Product Image -->
@@ -78,12 +125,16 @@
             >
               <i-flex-line-share class="size-4" />
             </button>
-            <button
-              class="bg-background rounded-full p-1.5 shadow transition"
+            <Button
+              size="sm"
+              class="hover:bg-transparent rounded-full p-1.5 hover:text-primary hover:border hover:border-primary"
               :title="orders_action_add_to_cart({}, { locale })"
+              :disabled="loadingCart[`${index}-${pIdx}`]"
+              :loading="loadingCart[`${index}-${pIdx}`]"
+              @click="addToCart(product, item, index, pIdx)"
             >
               <i-flex-line-cart class="size-4" />
-            </button>
+            </Button>
             <button
               class="bg-background rounded-full p-1.5 shadow transition"
               :title="orders_action_reorder({}, { locale })"
