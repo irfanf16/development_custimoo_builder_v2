@@ -154,6 +154,9 @@
       'x_axis_3d',
       'y_axis_3d',
       'height',
+      'width',
+      'placement',
+      'name_of_placement',
       'rotation',
       'scaleX',
       'scaleY'
@@ -985,6 +988,7 @@
 
   // Calculate position (use 3D position if available, otherwise calculate from 2D)
   function calculatePosition(logoData: CustomLogo): { x: number; y: number } {
+    // Check if 3D position is explicitly set (not undefined or null), even if 0
     if (logoData.x_axis_3d && logoData.y_axis_3d) {
       return { x: logoData.x_axis_3d, y: logoData.y_axis_3d }
     } else {
