@@ -122,19 +122,6 @@
     }
   }
 
-  const updateCollection = () => {
-    if (props.currentCollection && collection_name.value) {
-      // Don't allow editing name if collection has room_id
-      if (props.currentCollection.room_id) {
-        isEditingCollection.value = false
-        return
-      }
-      // Emit update event - parent will handle the actual update
-      emit('update-collection-name', collection_name.value)
-      isEditingCollection.value = false
-    }
-  }
-
   const canEditCollection = computed(() => {
     return props.currentCollection && !props.currentCollection.room_id
   })
@@ -142,6 +129,12 @@
   const cancelEditCollection = () => {
     collection_name.value = props.currentCollection?.name ?? ''
     isEditingCollection.value = false
+    emit('end-edit-collection-name')
+  }
+
+  const startEditCollection = () => {
+    isEditingCollection.value = true
+    emit('start-edit-collection-name')
   }
 
   watch(
@@ -174,11 +167,14 @@
     'create-collection',
     'change-current-collection',
     'update-creating-collection',
-    'update-collection-name'
+    'update-collection-name',
+    'start-edit-collection-name',
+    'end-edit-collection-name'
   ])
   defineExpose({
     creatingCollection,
-    collection_name
+    collection_name,
+    cancelEditCollection
   })
 </script>
 <template>
@@ -297,26 +293,18 @@
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button
-                variant="outline"
-                :disabled="!canEditCollection"
-                @click="isEditingCollection = true"
-              >
+              <Button variant="outline" :disabled="!canEditCollection" @click="startEditCollection">
                 <PencilLine class="w-4 h-4" /> Edit
               </Button>
             </template>
 
-            <!-- EDIT MODE -->
+            <!-- EDIT MODE: only input; Cancel and Update are in the footer -->
             <template v-else>
               <Input
                 v-model="collection_name"
                 class="w-[200px]"
                 :placeholder="locker_collection_name_placeholder({}, { locale })"
               />
-              <ButtonGroup>
-                <Button @click="updateCollection"> <Check class="w-4 h-4" /> Update </Button>
-                <Button @click="cancelEditCollection"> <X class="w-4 h-4" /> Cancel </Button>
-              </ButtonGroup>
             </template>
           </template>
 

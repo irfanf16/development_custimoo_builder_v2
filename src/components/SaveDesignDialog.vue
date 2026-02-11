@@ -352,6 +352,7 @@
     () => props.open,
     async (newVal: boolean) => {
       if (newVal) {
+        productName.value = activeProductDetails.value!.display_name ?? ''
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()
         }

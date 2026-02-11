@@ -152,6 +152,16 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
 
     setSuccessMessage('Products deleted successfully')
     await fetchLockerProducts(locker_id)
+    // Sync thumbnails and count from product array so list shows correct state after delete
+    lockers.value = lockers.value.map(l => {
+      if (l.id !== locker_id) return l
+      const productList = l.product ?? []
+      return {
+        ...l,
+        product_count: productList.length,
+        product_thumbnails: productList.map(p => p.product_front_url).slice(0, 4)
+      }
+    })
   }
   //Copy Locker Products
   async function copyProducts(payload: CopyProductPayload, sourceLockerId: number) {
@@ -245,6 +255,14 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     })
     setSuccessMessage('Design saved successfully')
     await fetchLockerProducts(locker_id)
+    // Sync thumbnails from product array so new product image is reflected in the list
+    lockers.value = lockers.value.map(l => {
+      if (l.id !== locker_id || !l.product?.length) return l
+      return {
+        ...l,
+        product_thumbnails: l.product.map(p => p.product_front_url).slice(0, 4)
+      }
+    })
     return true
   }
 
@@ -262,6 +280,14 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     }
     // Refresh locker products to get updated data
     await fetchLockerProducts(locker_id)
+    // Sync thumbnails from product array so updated product image is reflected in the list
+    lockers.value = lockers.value.map(l => {
+      if (l.id !== locker_id || !l.product?.length) return l
+      return {
+        ...l,
+        product_thumbnails: l.product.map(p => p.product_front_url).slice(0, 4)
+      }
+    })
     setSuccessMessage('Design updated successfully')
     return true
   }
