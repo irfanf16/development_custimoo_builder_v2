@@ -88,7 +88,7 @@ async function placeOrder(payload: {
   customer_reference_no: string
   general_comments: string
 }) {
-  return http.post('/order', payload)
+  return http.post('/orders', payload)
 }
 
 export default {
