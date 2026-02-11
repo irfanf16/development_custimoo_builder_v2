@@ -39,6 +39,17 @@ export type OutputProductDetails = OutputProductPreview & {
   parent_id: number | null
   preview_custom_texts: number
   shareable: number
+  company_product: {
+    is_custom_prices: number
+    product_id: number
+    skucurrency: Array<{
+      id: number
+      code: string
+      name: string
+      symbol: string
+      price: string
+    }>
+  }
   sku: {
     id: number
     addon_group_id: number | null
