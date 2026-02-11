@@ -91,21 +91,36 @@ export const usePricing = () => {
   }
 
   const activeProductPrice = computed(() => {
-    const basePrice = activeProductDetails.value?.sku?.skucurrency[0]?.pivot.price
-    if (typeof basePrice !== 'number' || Number.isNaN(basePrice)) {
+    const details = activeProductDetails.value
+    if (!details) return null
+    const raw = details?.company_product?.is_custom_prices
+    const isCustomPrice = ['1', 1, true, 'true'].includes(raw as string | number | boolean)
+
+    const basePrice = isCustomPrice
+      ? Number(details?.company_product?.skucurrency?.[0]?.price)
+      : Number(details?.sku?.skucurrency?.[0]?.pivot?.price)
+
+    if (!Number.isFinite(basePrice)) {
       return null
     }
 
-    const minimumQuantity = activeProductDetails.value?.sku?.minimum_order_quantity ?? 1
-    const totalAddonPrice = getTotalAddonPrice()
+    const minimumQuantity = Number(details?.sku?.minimum_order_quantity) || 1
+
+    const totalAddonPrice = Number(getTotalAddonPrice()) || 0
+
     const totalPrice = (basePrice + totalAddonPrice) * minimumQuantity
 
+    const currencyCode = isCustomPrice
+      ? details?.company_product?.skucurrency?.[0]?.code
+      : details?.sku?.skucurrency?.[0]?.code ||
+        (companyStore.settings?.settings?.currencies &&
+        Array.isArray(companyStore.settings.settings.currencies.currenncies) &&
+        companyStore.settings.settings.currencies.currenncies.length > 0
+          ? companyStore.settings.settings.currencies.currenncies[0]
+          : 'USD')
     return new Intl.NumberFormat(locale.value, {
       style: 'currency',
-      currency:
-        activeProductDetails.value?.sku?.skucurrency?.[0]?.code ||
-        companyStore.settings?.settings?.currencies?.currenncies?.[0] ||
-        'USD'
+      currency: currencyCode
     }).format(totalPrice)
   })
 
