@@ -238,8 +238,8 @@ function withLogoPatch(base: CustomLogo, patch: Partial<CustomLogo>): CustomLogo
     side: patch.side ?? base.side,
     x_axis: patch.x_axis ?? base.x_axis,
     y_axis: patch.y_axis ?? base.y_axis,
-    x_axis_3d: base.x_axis_3d,
-    y_axis_3d: base.y_axis_3d,
+    x_axis_3d: patch.x_axis_3d !== undefined ? patch.x_axis_3d : base.x_axis_3d,
+    y_axis_3d: patch.y_axis_3d !== undefined ? patch.y_axis_3d : base.y_axis_3d,
     originalWidth: patch.originalWidth ?? base.originalWidth,
     originalHeight: patch.originalHeight ?? base.originalHeight,
     logo_technologies: base.logo_technologies,
@@ -903,7 +903,10 @@ export const registry: Registry = {
         y_axis: payload.nextY ?? current.y_axis,
         side: payload.nextSide ?? current.side,
         width: payload.nextWidth ?? current.width,
-        height: payload.nextHeight ?? current.height
+        height: payload.nextHeight ?? current.height,
+        // Reset 3D position when placement changes
+        x_axis_3d: 0,
+        y_axis_3d: 0
       })
       ctx.customizationStore.saveToLocalStorage()
     },
@@ -919,7 +922,10 @@ export const registry: Registry = {
         y_axis: payload.prevY ?? current.y_axis,
         side: payload.prevSide ?? current.side,
         width: payload.prevWidth ?? current.width,
-        height: payload.prevHeight ?? current.height
+        height: payload.prevHeight ?? current.height,
+        // Reset 3D position when reverting placement changes
+        x_axis_3d: 0,
+        y_axis_3d: 0
       })
       ctx.customizationStore.saveToLocalStorage()
     },
