@@ -354,7 +354,7 @@
     if (index === -1 || !arr[index]) return
 
     const numeric = Number.parseFloat(str)
-    const nextOriginalHeight = Number.isFinite(numeric) ? Number(numeric.toFixed(1)) : str
+    const nextOriginalHeight = Number.isFinite(numeric) ? Number(numeric.toFixed(2)) : str
     const logo = arr[index] as CustomLogo & { scaleX?: number; scaleY?: number }
 
     let scaleX = logo.scaleX ?? 1
@@ -370,7 +370,7 @@
       scaleY = scaleY * ratio
       scaleX = scaleX * ratio
       // Round to fixed precision to avoid fractional drift when switching small ↔ big
-      const precision = 6
+      const precision = 12
       scaleX = Number(scaleX.toFixed(precision))
       scaleY = Number(scaleY.toFixed(precision))
     }
