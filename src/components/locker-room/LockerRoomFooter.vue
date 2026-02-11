@@ -61,6 +61,8 @@
     collectionCreationStep: number
     /** When true (e.g. shared collection view), hide all actions and show only close. */
     readOnly?: boolean
+    /** When true, user is editing collection name (header in edit mode); show Cancel and Update in footer. */
+    isEditingCollectionName?: boolean
   }
   const props = withDefaults(defineProps<FooterProps>(), {
     currentTab: 'lockers',
@@ -71,7 +73,8 @@
     lockerProductsRef: null,
     isCreatingCollection: false,
     collectionCreationStep: 1,
-    readOnly: false
+    readOnly: false,
+    isEditingCollectionName: false
   })
 
   const emit = defineEmits([
@@ -83,7 +86,9 @@
     'add-products-to-collection',
     'unselect-all-list',
     'close',
-    'products-deleted'
+    'products-deleted',
+    'cancel-collection-edit',
+    'confirm-collection-edit'
   ])
 
   const isEditingCollection = computed(() => {
@@ -286,11 +291,7 @@
     isAddingToCart.value = true
     try {
       await cartStore.addLockerProductsToCart(lockerCartPayload.value)
-      const productCount = Object.values(lockerCartPayload.value.locker_products).reduce(
-        (sum, ids) => sum + ids.length,
-        0
-      )
-      const total = lockerCartPayload.value.lockers.length + productCount
+      const total = listModeSelectedCount.value
       toast.success(`Added ${total} item(s) to cart`, {
         position: 'top-right',
         richColors: true
@@ -447,8 +448,16 @@
             <PlusIcon class="size-4" />
             {{ isAddingProductsToCollection ? 'Add products' : 'Add to collection' }}</Button
           >
+          <template v-if="currentTab === 'collections' && isEditingCollectionName">
+            <Button variant="outline" class="ml-1" @click="emit('cancel-collection-edit')">
+              {{ locker_cancel({}, { locale }) }}
+            </Button>
+            <Button variant="primary" class="ml-1" @click="emit('confirm-collection-edit')">
+              Update
+            </Button>
+          </template>
           <Button
-            v-if="currentTab === 'collections' && collectionCreationStep === 2"
+            v-else-if="currentTab === 'collections' && collectionCreationStep === 2"
             variant="primary"
             class="ml-1"
             @click="emit('save-collection')"
@@ -486,7 +495,10 @@
           </Button>
           <Button
             v-if="
-              currentTab === 'collections' && collectionCreationStep === 2 && !isCreatingCollection
+              currentTab === 'collections' &&
+              collectionCreationStep === 2 &&
+              !isCreatingCollection &&
+              !currentCollection?.room_id
             "
             variant="outline"
             class="ml-1"

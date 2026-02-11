@@ -25,7 +25,6 @@
     Share2,
     FileDown,
     MoreVertical,
-    Pencil,
     Trash2
   } from 'lucide-vue-next'
   import { timeAgo, downloadFromUrl } from '@/lib/utils'
@@ -157,12 +156,6 @@
     if (ok) {
       await lockerRoomStore.deleteCollection(collection.id)
     }
-  }
-
-  function openCollectionDetails(collection: Collection, event?: Event) {
-    event?.preventDefault()
-    event?.stopPropagation()
-    emit('open-collection', collection)
   }
 
   const timeAgoMessages = computed(() => ({
@@ -387,13 +380,6 @@
               </DropdownMenuTrigger>
               <!-- <DropdownMenuPortal to="body"> -->
               <DropdownMenuContent class="w-40 z-[9999]">
-                <DropdownMenuItem
-                  class="cursor-pointer"
-                  @click="openCollectionDetails(collection, $event)"
-                >
-                  <Pencil class="size-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
                 <DropdownMenuItem
                   class="cursor-pointer text-destructive focus:text-destructive"
                   @click="handleDeleteCollection(collection, $event)"

@@ -127,7 +127,7 @@
                   <EyeOff v-else class="h-3 w-3" />
                 </Button>
               </div>
-              <Input v-model="element.product_nickname" :disabled="!element.allow_title" />
+              <Input v-model="element.product_nickname" />
             </div>
 
             <div>
@@ -148,7 +148,6 @@
               <Input
                 v-model="element.product_note"
                 :placeholder="locker_description_placeholder({}, { locale })"
-                :disabled="!element.allow_description"
               />
             </div>
 
@@ -167,12 +166,7 @@
                   <EyeOff v-else class="h-3 w-3" />
                 </Button>
               </div>
-              <Input
-                v-model="element.product_price"
-                type="number"
-                placeholder="50"
-                :disabled="!element.allow_price"
-              />
+              <Input v-model="element.product_price" type="number" placeholder="50" />
             </div>
           </div>
         </Card>

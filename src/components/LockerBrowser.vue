@@ -63,6 +63,7 @@
   const lockerRoomHeaderRef = ref<InstanceType<typeof LockerRoomHeader> | null>(null)
   const collectionCreationStep = ref<number>(1)
   const isCreatingCollection = ref<boolean>(false)
+  const editingCollectionName = ref<boolean>(false)
 
   // Watch the header's creatingCollection and sync it
   watch(
@@ -417,7 +418,10 @@
           product_note: p.product_note,
           product_price: p.product_price,
           order_number: index + 1,
-          product_locker_room_id: p.product_locker_room_id
+          product_locker_room_id: p.product_locker_room_id,
+          allow_description: p.allow_description,
+          allow_price: p.allow_price,
+          allow_title: p.allow_title
         })
       )
 
@@ -429,7 +433,10 @@
           product_note: p.product_note,
           product_price: p.product_price,
           order_number: existingProducts.length + index + 1,
-          product_locker_room_id: p.product_locker_room_id
+          product_locker_room_id: p.product_locker_room_id,
+          allow_description: p.allow_description,
+          allow_price: p.allow_price,
+          allow_title: p.allow_title
         }))
 
       // Merge existing and new products
@@ -442,7 +449,10 @@
         product_note: p.product_note,
         product_price: p.product_price,
         order_number: index + 1,
-        product_locker_room_id: p.product_locker_room_id
+        product_locker_room_id: p.product_locker_room_id,
+        allow_description: p.allow_description,
+        allow_price: p.allow_price,
+        allow_title: p.allow_title
       }))
     }
 
@@ -513,6 +523,48 @@
       handleBackNavigation()
     }
   }
+  const handleCancelCollectionEdit = () => {
+    lockerRoomHeaderRef.value?.cancelEditCollection()
+    editingCollectionName.value = false
+  }
+
+  const handleConfirmCollectionEdit = async () => {
+    const headerRef = lockerRoomHeaderRef.value as any
+    const collection = currentCollection.value
+    if (!collection?.id || !headerRef?.collection_name) return
+    const collectionName = headerRef.collection_name
+    const logoData = (collection.logos || []).map(
+      (logo: { name: string; path: string; id?: number }) => ({
+        name: logo.name,
+        path: logo.path,
+        ...(logo.id && { id: logo.id })
+      })
+    )
+    const productsData = (collection.collection_products || []).map((p: any, index: number) => ({
+      id: p.id,
+      product_nickname: p.product_nickname,
+      product_note: p.product_note,
+      product_price: p.product_price,
+      order_number: index + 1,
+      product_locker_room_id: p.product_locker_room_id
+    }))
+    const formData = new FormData()
+    formData.append('name', collectionName)
+    formData.append('link', collection.link || '')
+    formData.append('collection_logos_data', JSON.stringify(logoData))
+    formData.append('deleted_logos_ids', JSON.stringify([]))
+    productsData.forEach((product: any) => {
+      formData.append('products[]', JSON.stringify(product))
+    })
+    formData.append('_method', 'PUT')
+    await lockerRoomStore.updateCollection(collection.id, formData)
+    await lockerRoomStore.fetchCollectionProducts(collection.id)
+    const updated = lockerRoomStore.collections.find(c => c.id === collection.id)
+    if (updated) currentCollection.value = updated
+    headerRef.cancelEditCollection()
+    editingCollectionName.value = false
+  }
+
   const handleRemoveProduct = (index: number) => {
     if (currentCollection.value) {
       // Remove from collection products
@@ -631,11 +683,18 @@
 
   const handleProductsDeleted = (deletedIds: number[], lockerId: number) => {
     const idSet = new Set(deletedIds)
+    const remainingIds = (selectedProductsByLocker.value[lockerId] ?? []).filter(
+      id => !idSet.has(id)
+    )
     selectedProductsByLocker.value = {
       ...selectedProductsByLocker.value,
-      [lockerId]: (selectedProductsByLocker.value[lockerId] ?? []).filter(id => !idSet.has(id))
+      [lockerId]: remainingIds
     }
     selectedProducts.value = selectedProducts.value.filter(p => !idSet.has(p.id))
+    // If this locker now has no products selected, remove it from selectedLocker so we don't treat it as "full locker selected"
+    if (remainingIds.length === 0) {
+      selectedLocker.value = selectedLocker.value.filter(id => Number(id) !== lockerId)
+    }
     const updatedLocker = storeLockers.value.find(l => l.id === lockerId) ?? null
     if (currentLocker.value?.id === lockerId) {
       currentLocker.value = updatedLocker
@@ -789,6 +848,8 @@
           }
         "
         @create-collection="handleCreateCollectionClick"
+        @start-edit-collection-name="editingCollectionName = true"
+        @end-edit-collection-name="editingCollectionName = false"
       />
       <div class="flex-1 min-h-0">
         <ScrollArea class="h-full">
@@ -885,7 +946,10 @@
         :selected-products-by-locker="selectedProductsByLocker"
         :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
         :collection-creation-step="collectionCreationStep"
+        :is-editing-collection-name="editingCollectionName"
         @back="handleBackNavigation"
+        @cancel-collection-edit="handleCancelCollectionEdit"
+        @confirm-collection-edit="handleConfirmCollectionEdit"
         @close="emit('update:open', false)"
         @cancel-collection-creation="handleCancelCollectionCreation"
         @create-collection="createCollection"
