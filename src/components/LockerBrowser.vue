@@ -66,6 +66,21 @@
   const editingCollectionName = ref<boolean>(false)
   const isSavingCollection = ref<boolean>(false)
   const isAddingToCollection = ref<boolean>(false)
+  /** True when we entered "Add products" from a collection; selection is the source of truth and save replaces collection products. */
+  const addedProductsFlowFromCollection = ref<boolean>(false)
+
+  /** Build a minimal LockerProduct-like object from a collection product for selection display and sync (e.g. when entering add-products). */
+  function collectionProductToStubLockerProduct(cp: CollectionProduct): LockerProduct {
+    return {
+      id: cp.product_locker_room_id,
+      name: cp.product_nickname,
+      product_name: cp.product_nickname,
+      product_front_url: cp.product_urls?.front_url ?? '',
+      product_back_url: cp.product_urls?.back_url ?? '',
+      description: cp.product_note ?? '',
+      product_note: cp.product_note ?? ''
+    } as unknown as LockerProduct
+  }
 
   // Watch the header's creatingCollection and sync it
   watch(
@@ -100,6 +115,7 @@
     currentCollection.value = null
     collectionCreationStep.value = 1
     isCreatingCollection.value = false
+    addedProductsFlowFromCollection.value = false
     if (lockerRoomHeaderRef.value) {
       lockerRoomHeaderRef.value.creatingCollection = false
     }
@@ -124,7 +140,10 @@
       ? ((await lockerRoomStore.fetchLockerProducts(locker.id)) ?? null)
       : locker
     currentMode.value = 'detail'
-    selectedProducts.value = aggregateSelectedProductsFromStore()
+    // When adding products to a collection, keep existing selection (collection products as stubs); don't overwrite with locker-only aggregate
+    if (!(isCreatingCollection.value && currentCollection.value)) {
+      selectedProducts.value = aggregateSelectedProductsFromStore()
+    }
   }
 
   watch(
@@ -143,10 +162,16 @@
     }
   )
 
-  // Pre-selection for LockerProductsListing: when locker is fully selected, all products; else filter by selected ids
+  // Pre-selection for LockerProductsListing: when adding to collection, use selectedProducts (by id); else use selectedProductsByLocker / full locker
   const preSelectedProductsForCurrentLocker = computed(() => {
     const locker = currentLocker.value
     if (!locker?.product?.length) return []
+    const creatingFromCollection =
+      lockerRoomHeaderRef.value?.creatingCollection && currentCollection.value
+    if (creatingFromCollection) {
+      const selectedIds = new Set(selectedProducts.value.map(p => p.id))
+      return locker.product.filter((p: LockerProduct) => selectedIds.has(p.id))
+    }
     const ids = selectedProductsByLocker.value[locker.id] ?? []
     const isFullySelected = selectedLocker.value.includes(locker.id) && ids.length === 0
     if (isFullySelected) return [...locker.product]
@@ -193,7 +218,7 @@
   }
   const getCollectionDetail = async (collection: Collection) => {
     currentCollection.value = !collection.details_fetched
-      ? ((await lockerRoomStore.fetchCollectionProducts(collection.id))?.result ?? null)
+      ? ((await lockerRoomStore.fetchCollectionProducts(collection.id)) ?? null)
       : collection
     collectionTab.value = 'products'
     currentMode.value = 'detail'
@@ -248,30 +273,25 @@
       // Ensure currentCollection is null
       currentCollection.value = null
     } else {
-      // We're adding products to existing collection, merge selected products
-      const newProducts = selectedProducts.value.map((product, index) => {
-        return {
-          allow_description: true,
-          allow_price: true,
-          allow_title: true,
-          product_nickname: product.product_name,
-          description: product.description,
-          product_note: product.description,
-          product_price: '',
-          product_locker_room_id: product.id,
-          product_urls: {
-            front_url: product.product_front_url,
-            back_url: product.product_back_url
-          },
-          order_number: currentCollection.value?.collection_products?.length || 0 + index + 1
-        } as CollectionProduct
-      })
-
-      // Add new products to existing collection products
-      const existingProducts = currentCollection.value.collection_products || []
+      // Adding products to existing collection: selection is the source of truth (replace list so removals are reflected)
+      const asCollectionProducts = selectedProducts.value.map((product, index) => ({
+        allow_description: true,
+        allow_price: true,
+        allow_title: true,
+        product_nickname: product.product_name ?? product.name,
+        description: product.description ?? '',
+        product_note: product.description ?? '',
+        product_price: '',
+        product_locker_room_id: product.id,
+        product_urls: {
+          front_url: product.product_front_url ?? '',
+          back_url: product.product_back_url ?? ''
+        },
+        order_number: index + 1
+      })) as CollectionProduct[]
       currentCollection.value = {
         ...currentCollection.value,
-        collection_products: [...existingProducts, ...newProducts]
+        collection_products: asCollectionProducts
       }
     }
   }
@@ -417,57 +437,66 @@
       let productsData: any[] = []
 
       if (isEditing && collectionId) {
-        // When editing, we need to merge existing products with new ones
-        // First, fetch current collection to get existing products
-        if (!currentCollection.value?.details_fetched) {
-          await lockerRoomStore.fetchCollectionProducts(collectionId)
-          const updated = lockerRoomStore.collections.find(c => c.id === collectionId)
-          if (updated) currentCollection.value = updated
-        }
-
-        // Get existing products
-        const existingProducts = (currentCollection.value?.collection_products || []).map(
-          (p, index) => ({
-            id: p.id,
-            product_nickname: p.product_nickname,
-            product_note: p.product_note,
-            product_price: p.product_price,
+        // When we came from "Add products" flow, selectedProducts is the full list (adds + removes already applied)
+        if (addedProductsFlowFromCollection.value) {
+          productsData = selectedProducts.value.map((p, index) => ({
+            product_nickname: p.name ?? p.product_name,
+            product_note: p.description ?? '',
+            product_price: '',
             order_number: index + 1,
-            product_locker_room_id: p.product_locker_room_id,
-            allow_description: p.allow_description,
-            allow_price: p.allow_price,
-            allow_title: p.allow_title
-          })
-        )
+            product_locker_room_id: p.id,
+            allow_description: true,
+            allow_price: true,
+            allow_title: true
+          }))
+          addedProductsFlowFromCollection.value = false
+        } else {
+          // When editing normally, merge existing collection products with newly selected ones
+          if (!currentCollection.value?.details_fetched) {
+            await lockerRoomStore.fetchCollectionProducts(collectionId)
+            const updated = lockerRoomStore.collections.find(c => c.id === collectionId)
+            if (updated) currentCollection.value = updated
+          }
 
-        // Get new products from collectionProducts (these are the ones being added)
-        const newProducts = collectionProducts.value
-          .filter(p => !p.id) // Only new products (no id means they're newly added)
-          .map((p, index) => ({
-            product_nickname: p.product_nickname,
-            product_note: p.product_note,
-            product_price: p.product_price,
+          const existingProducts = (currentCollection.value?.collection_products || []).map(
+            (p, index) => ({
+              id: p.id,
+              product_nickname: p.product_nickname,
+              product_note: p.product_note,
+              product_price: p.product_price,
+              order_number: index + 1,
+              product_locker_room_id: p.product_locker_room_id,
+              allow_description: p.allow_description,
+              allow_price: p.allow_price,
+              allow_title: p.allow_title
+            })
+          )
+
+          const newProducts = selectedProducts.value.map((p, index) => ({
+            product_nickname: p.name,
+            product_note: p.description,
+            product_price: '',
             order_number: existingProducts.length + index + 1,
-            product_locker_room_id: p.product_locker_room_id,
-            allow_description: p.allow_description,
-            allow_price: p.allow_price,
-            allow_title: p.allow_title
+            product_locker_room_id: p.id,
+            allow_description: true,
+            allow_price: true,
+            allow_title: true
           }))
 
-        // Merge existing and new products
-        productsData = [...existingProducts, ...newProducts]
+          productsData = [...existingProducts, ...newProducts]
+        }
       } else {
         // Creating new collection - use all products from collectionProducts
-        productsData = collectionProducts.value.map((p, index) => ({
+        productsData = selectedProducts.value.map((p, index) => ({
           id: p.id,
-          product_nickname: p.product_nickname,
-          product_note: p.product_note,
-          product_price: p.product_price,
+          product_nickname: p.name,
+          product_note: p.description,
+          product_price: '',
           order_number: index + 1,
-          product_locker_room_id: p.product_locker_room_id,
-          allow_description: p.allow_description,
-          allow_price: p.allow_price,
-          allow_title: p.allow_title
+          product_locker_room_id: p.id,
+          allow_description: true,
+          allow_price: true,
+          allow_title: true
         }))
       }
 
@@ -598,15 +627,17 @@
     editingCollectionName.value = false
   }
 
-  const handleRemoveProduct = (index: number) => {
+  const handleRemoveProduct = (products: CollectionProduct[]) => {
     if (currentCollection.value) {
-      // Remove from collection products
-      const updatedProducts = [...collectionProducts.value]
-      updatedProducts.splice(index, 1)
-      // Update the collection
+      const updatedProducts = [...products]
       currentCollection.value = {
         ...currentCollection.value,
         collection_products: updatedProducts
+      }
+      // Keep selectedProducts in sync when in add-products flow (e.g. user removed one on step 2)
+      if (addedProductsFlowFromCollection.value) {
+        const keptIds = new Set(updatedProducts.map(p => p.product_locker_room_id))
+        selectedProducts.value = selectedProducts.value.filter(p => keptIds.has(p.id))
       }
     }
   }
@@ -684,14 +715,22 @@
   }
 
   const handleAddProductsToCollection = () => {
-    // Switch to lockers tab and enable collection creation mode
-    // But keep track that we're adding to existing collection
+    // Switch to lockers tab and enable collection creation mode; pre-select current collection products in footer and listing
     isCreatingCollection.value = true
     lockerRoomHeaderRef.value!.creatingCollection = true
+    addedProductsFlowFromCollection.value = true
     tab.value = 'lockers'
     currentMode.value = 'list'
     collectionCreationStep.value = 1
-    // Note: currentCollection is still set, so isEditingCollection will work correctly
+    currentLocker.value = null
+    const collection = currentCollection.value
+    if (collection?.collection_products?.length) {
+      selectedProducts.value = collection.collection_products.map(cp =>
+        collectionProductToStubLockerProduct(cp)
+      )
+      selectedProductsByLocker.value = {}
+      selectedLocker.value = []
+    }
   }
 
   const handleSelectCollectionProducts = (products: LockerProduct[]) => {
@@ -706,6 +745,9 @@
     collectionCreationStep.value = 1
     collectionTab.value = 'products'
     selectedProducts.value = []
+    selectedProductsByLocker.value = {}
+    selectedLocker.value = []
+    addedProductsFlowFromCollection.value = false
     if (lockerRoomHeaderRef.value) {
       ;(lockerRoomHeaderRef.value as any).creatingCollection = false
       ;(lockerRoomHeaderRef.value as any).collection_name = ''
@@ -716,6 +758,14 @@
     selectedLocker.value = []
     selectedProductsByLocker.value = {}
     selectedProducts.value = []
+  }
+
+  const handleUnselectAllDetail = () => {
+    if (addedProductsFlowFromCollection.value) {
+      selectedProducts.value = []
+      selectedProductsByLocker.value = {}
+      selectedLocker.value = []
+    }
   }
 
   const handleProductsDeleted = (deletedIds: number[], lockerId: number) => {
@@ -1011,6 +1061,7 @@
         "
         @add-products-to-collection="handleAddProductsToCollection"
         @unselect-all-list="handleUnselectAllList"
+        @unselect-all-detail="handleUnselectAllDetail"
         @products-deleted="handleProductsDeleted"
       />
     </DialogContent>
