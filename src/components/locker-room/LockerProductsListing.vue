@@ -42,7 +42,7 @@
 
   const showCopyDialog = ref<boolean>(false)
   const lockerRoomStore = useLockerRoomStore()
-  const { isLoading } = storeToRefs(lockerRoomStore)
+  const { isLoading, isDeletingProducts } = storeToRefs(lockerRoomStore)
   const uiStore = useUIStore()
 
   const selectedProducts = ref<LockerProduct[]>([])
@@ -77,6 +77,7 @@
       })
   })
   const handleSelect = (id: string | number) => {
+    if (isDeletingProducts.value) return
     const existingIndex = selectedProducts.value.findIndex(p => p.id === id)
 
     if (existingIndex === -1) {
@@ -207,6 +208,7 @@
           'top-[calc(0.5rem-1px)] left-[calc(0.5rem-1px)]': isSelected(prod.id)
         }"
         :model-value="isSelected(prod.id)"
+        :disabled="isDeletingProducts"
         @update:model-value="handleSelect(prod.id)"
         @click.stop
       />
@@ -236,6 +238,7 @@
                     size="icon"
                     variant="secondary"
                     class="h-7 w-7 rounded-full shadow"
+                    :disabled="isDeletingProducts"
                     @click="startEditing(prod)"
                   >
                     <Pencil class="w-3.5 h-3.5" />
@@ -251,6 +254,7 @@
                     size="icon"
                     variant="secondary"
                     class="h-7 w-7 rounded-full shadow"
+                    :disabled="isDeletingProducts"
                     @click="copyProduct(prod)"
                   >
                     <Copy class="w-3.5 h-3.5" />
