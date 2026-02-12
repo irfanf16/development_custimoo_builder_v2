@@ -41,3 +41,9 @@ export type {
 } from './useTexts'
 export { createTextAsPathFromFonts } from './useTextAsPath'
 export type { ProductsFonts, OpentypeFont } from './useTextAsPath'
+export { getDimensionDisplayStrings, useDimensionDisplayComputed } from './useDimensionDisplay'
+export type {
+  GetDimensionDisplayOptions,
+  DimensionDisplayCustomization,
+  UseDimensionDisplayComputedOptions
+} from './useDimensionDisplay'

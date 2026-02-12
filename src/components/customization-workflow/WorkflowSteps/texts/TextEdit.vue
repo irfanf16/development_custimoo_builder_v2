@@ -172,7 +172,7 @@
       ratio = numeric / originalNum
       scaleX = scaleX * ratio
       scaleY = scaleY * ratio
-      const precision = 6
+      const precision = 12
       scaleX = Number(scaleX.toFixed(precision))
       scaleY = Number(scaleY.toFixed(precision))
     }

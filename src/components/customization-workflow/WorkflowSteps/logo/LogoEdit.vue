@@ -163,6 +163,30 @@
     return positionForm.height
   })
 
+  const originalWidthText = computed(() => {
+    const raw = customLogo.value?.originalWidth
+    if (raw === undefined || raw === null || raw === '') return ''
+    const num = Number(raw)
+    if (Number.isFinite(num)) return `${num.toFixed(1)}`
+    return String(raw)
+  })
+
+  const widthModelValue = computed(() => {
+    if (originalWidthText.value) return originalWidthText.value
+    return ''
+  })
+
+  const widthLabel = computed(() => {
+    const locale = profileStore.currentLocale || 'en'
+    const labels: Record<string, string> = {
+      en: 'Width',
+      fr: 'Largeur',
+      es: 'Ancho',
+      da: 'Bredde'
+    }
+    return labels[locale] ?? 'Width'
+  })
+
   // ===== POSITION COMPOSABLE =====
   const {
     activeLogoIndex,
@@ -345,7 +369,12 @@
     })
   }
 
-  function handleOriginalHeightModelUpdate(value: string | number) {
+  /**
+   * Shared handler for originalWidth and originalHeight.
+   * Both use the same scaleX/scaleY; changing either dimension applies the same ratio to both scales
+   * and to the other stored dimension so width and height fields stay in sync.
+   */
+  function handleOriginalDimensionUpdate(dimension: 'width' | 'height', value: string | number) {
     const str = String(value)
     if (!customLogo.value || !productKey.value) return
     const arr = customizationStore.customization?.custom_logos?.[productKey.value]
@@ -354,33 +383,58 @@
     if (index === -1 || !arr[index]) return
 
     const numeric = Number.parseFloat(str)
-    const nextOriginalHeight = Number.isFinite(numeric) ? Number(numeric.toFixed(2)) : str
-    const logo = arr[index] as CustomLogo & { scaleX?: number; scaleY?: number }
+    const nextOriginal = Number.isFinite(numeric) ? Number(Number(numeric).toFixed(1)) : str
+    const logo = arr[index] as CustomLogo & {
+      originalWidth?: number | string
+      originalHeight?: number | string
+      scaleX?: number
+      scaleY?: number
+    }
 
     let scaleX = logo.scaleX ?? 1
     let scaleY = logo.scaleY ?? 1
-    const originalHeightNum = Number(logo.originalHeight)
+    const originalNum =
+      dimension === 'width' ? Number(logo.originalWidth) : Number(logo.originalHeight)
+    let ratio = 1
     if (
       Number.isFinite(numeric) &&
       numeric > 0 &&
-      Number.isFinite(originalHeightNum) &&
-      originalHeightNum > 0
+      Number.isFinite(originalNum) &&
+      originalNum > 0
     ) {
-      const ratio = numeric / originalHeightNum
-      scaleY = scaleY * ratio
+      ratio = numeric / originalNum
       scaleX = scaleX * ratio
-      // Round to fixed precision to avoid fractional drift when switching small ↔ big
+      scaleY = scaleY * ratio
       const precision = 12
       scaleX = Number(scaleX.toFixed(precision))
       scaleY = Number(scaleY.toFixed(precision))
     }
-    arr.splice(index, 1, {
-      ...logo,
-      originalHeight: nextOriginalHeight,
-      scaleX,
-      scaleY
-    } as CustomLogo)
+    const updated = { ...logo, scaleX, scaleY }
+    if (dimension === 'width') {
+      updated.originalWidth = nextOriginal
+      const otherNum = Number(logo.originalHeight)
+      if (Number.isFinite(otherNum) && otherNum > 0) {
+        updated.originalHeight = Number((otherNum * ratio).toFixed(1))
+      }
+    } else {
+      updated.originalHeight = nextOriginal
+      const otherNum = Number(logo.originalWidth)
+      if (Number.isFinite(otherNum) && otherNum > 0) {
+        updated.originalWidth = Number((otherNum * ratio).toFixed(1))
+      }
+    }
+    arr.splice(index, 1, updated as CustomLogo)
+    if (dimension === 'height') {
+      positionForm.height = String(nextOriginal)
+    }
     customizationStore.saveToLocalStorage()
+  }
+
+  function handleBlurWidth() {
+    const num = Number.parseFloat(widthModelValue.value)
+    if (!Number.isNaN(num)) {
+      handleOriginalDimensionUpdate('width', num.toFixed(1))
+    }
   }
 
   function selectLogoTechnology(technology: OutputProductLogoTechnology) {
@@ -577,7 +631,24 @@
             </Select>
           </div>
 
-          <div class="grid grid-cols-1 gap-4">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="space-y-1">
+              <Label for="logo-width" class="text-xs font-medium text-muted-foreground">
+                {{ widthLabel }}
+              </Label>
+              <InputGroup>
+                <InputGroupInput
+                  id="logo-width"
+                  inputmode="decimal"
+                  :model-value="widthModelValue"
+                  @update:model-value="
+                    (v: string | number) => handleOriginalDimensionUpdate('width', v)
+                  "
+                  @blur="handleBlurWidth"
+                />
+                <InputGroupAddon class="pr-3 text-xs">{{ heightUnitLabel }}</InputGroupAddon>
+              </InputGroup>
+            </div>
             <div class="space-y-1">
               <Label for="logo-height" class="text-xs font-medium text-muted-foreground">
                 {{ logos_height_label({}, { locale: profileStore.currentLocale }) }}
@@ -587,7 +658,9 @@
                   id="logo-height"
                   inputmode="decimal"
                   :model-value="heightModelValue"
-                  @update:model-value="handleOriginalHeightModelUpdate"
+                  @update:model-value="
+                    (v: string | number) => handleOriginalDimensionUpdate('height', v)
+                  "
                   @blur="handleBlurHeight"
                 />
                 <InputGroupAddon class="pr-3 text-xs">{{ heightUnitLabel }}</InputGroupAddon>

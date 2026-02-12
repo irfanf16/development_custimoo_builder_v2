@@ -24,6 +24,8 @@
     useColorGrouping,
     addLogoToCanvas,
     addTextToCanvas,
+    getTextObjectKey,
+    useDimensionDisplayComputed,
     setupFabricControls,
     deleteLogoFromCanvas,
     syncLogosOnCanvas,
@@ -58,6 +60,7 @@
   const customTextObjects = shallowRef<Map<string, FabricObject>>(new Map())
   const otherSideLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
   const dimText = shallowRef<fabric.IText | null>(null)
+  const dimensionTargetRef = shallowRef<FabricObject | FabricImage | null>(null)
   const suppressCustomLogosWatch = ref(false)
   const suppressCustomTextsWatch = ref(false)
   const safeZone = shallowRef<Group | null>(null)
@@ -575,12 +578,6 @@
     return { ratio, unit }
   }
 
-  function formatMeasurement(value: number): string {
-    const unit = getMeasurementConfig().unit?.unit ?? 'px'
-    const converted = convertSizeToMeasurement(value)
-    return `${converted.toFixed(1)}${unit}`
-  }
-
   function convertSizeToMeasurement(value: number): number {
     const { ratio, unit } = getMeasurementConfig()
     const base = value * ratio
@@ -612,7 +609,24 @@
     canvas.value.add(dimText.value as unknown as FabricObject)
   }
 
+  const dimensionDisplayComputed = useDimensionDisplayComputed(dimensionTargetRef, {
+    getProductId: () => effectiveProductId.value ?? null,
+    getCustomization: () => customizationStore.customization,
+    getUnit: () => getMeasurementConfig().unit?.unit ?? 'px',
+    convertSizeToMeasurement
+  })
+
+  watch(dimensionDisplayComputed, val => {
+    if (val && dimText.value?.visible) {
+      dimText.value.set({
+        text: `Size (W)${val.displayW}${val.unit} x (H)${val.displayH}${val.unit}`
+      })
+      canvas.value?.requestRenderAll()
+    }
+  })
+
   function hideDimensions() {
+    dimensionTargetRef.value = null
     if (!dimText.value || !canvas.value) return
     dimText.value.set({ visible: false })
     canvas.value.requestRenderAll()
@@ -623,16 +637,10 @@
     ensureDimText()
     if (!dimText.value) return
 
-    const width = (target.width ?? 0) * (target.scaleX ?? 1)
-    const height = (target.height ?? 0) * (target.scaleY ?? 1)
-    let displayWidth = width
-    let displayHeight = height
-
-    if ((target as unknown as { custom_text_item_index?: number }).custom_text_item_index != null) {
-      const strokeWidth = (target as unknown as { strokeWidth?: number }).strokeWidth ?? 0
-      displayWidth += strokeWidth * (target.scaleX ?? 1)
-      displayHeight += strokeWidth * (target.scaleY ?? 1)
-    }
+    dimensionTargetRef.value = target
+    const dim = dimensionDisplayComputed.value
+    const text =
+      dim != null ? `Size (W)${dim.displayW}${dim.unit} x (H)${dim.displayH}${dim.unit}` : ''
 
     dimText.value.set({
       left: target.left,
@@ -641,7 +649,7 @@
         ((target.height ?? 0) * (target.scaleY ?? 1)) / 2 +
         (dimText.value.height ?? 0) * (dimText.value.scaleY ?? 1) +
         20,
-      text: `Size (W)${formatMeasurement(displayWidth)} x (H)${formatMeasurement(displayHeight)}`,
+      text,
       visible: true
     })
     canvas.value.bringObjectToFront(dimText.value as unknown as FabricObject)
@@ -1326,6 +1334,14 @@
       is_3d: false,
       convertSize: convertSizeToMeasurement
     })
+    const key = getTextObjectKey(customTextIndex, itemIndex)
+    const textObj = customTextObjects.value.get(key)
+    if (textObj) {
+      textObj.on('selected', () => showDimensions(textObj))
+      textObj.on('moving', () => showDimensions(textObj))
+      textObj.on('scaling', () => showDimensions(textObj))
+      textObj.on('rotating', () => showDimensions(textObj))
+    }
   }
 
   /**

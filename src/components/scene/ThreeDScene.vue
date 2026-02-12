@@ -30,6 +30,7 @@
     useColorGrouping,
     addLogoToCanvas,
     addTextToCanvas,
+    useDimensionDisplayComputed,
     setupFabricControls,
     deleteLogoFromCanvas,
     syncLogosOnCanvas,
@@ -310,6 +311,7 @@
   const suppressCustomTextsWatch = ref(false)
   const lastKnownObjectPos = ref<{ left: number; top: number } | null>(null)
   const dimText = shallowRef<fabric.IText | null>(null)
+  const dimensionTargetRef = shallowRef<FabricObject | FabricImage | null>(null)
 
   // ===== LIFECYCLE =====
   onMounted(async () => {
@@ -1223,12 +1225,6 @@
    * Measurement helpers and dimension overlay (legacy 3D logic).
    * Uses design scale plus company measurement unit (cm/in/px).
    */
-  function formatMeasurement(value: number): string {
-    const unit = companyStore.settings?.settings?.measurement_unit?.unit ?? 'px'
-    const converted = convertSizeToMeasurement(value)
-    return `${converted.toFixed(1)}${unit}`
-  }
-
   function convertSizeToMeasurement(value: number): number {
     const unit = companyStore.settings?.settings?.measurement_unit?.unit
     const designScale = designObject.value?.scaleX ?? 1
@@ -1262,7 +1258,25 @@
     canvas.value.add(dimText.value as unknown as FabricObject)
   }
 
+  const dimensionDisplayComputed = useDimensionDisplayComputed(dimensionTargetRef, {
+    getProductId: () => effectiveProductId.value ?? null,
+    getCustomization: () => customizationStore.customization,
+    getUnit: () => companyStore.settings?.settings?.measurement_unit?.unit ?? 'px',
+    convertSizeToMeasurement
+  })
+
+  watch(dimensionDisplayComputed, val => {
+    if (val && dimText.value?.visible) {
+      dimText.value.set({
+        text: `Size (W)${val.displayW}${val.unit} x (H)${val.displayH}${val.unit}`
+      })
+      canvas.value?.requestRenderAll()
+      composer.value?.render()
+    }
+  })
+
   function hideDimensions() {
+    dimensionTargetRef.value = null
     if (!dimText.value || !canvas.value) return
     dimText.value.set({ visible: false })
     canvas.value.requestRenderAll()
@@ -1274,16 +1288,10 @@
     ensureDimText(true)
     if (!dimText.value) return
 
-    const width = (target.width ?? 0) * (target.scaleX ?? 1)
-    const height = (target.height ?? 0) * (target.scaleY ?? 1)
-    let displayWidth = width
-    let displayHeight = height
-
-    if ((target as unknown as { custom_text_item_index?: number }).custom_text_item_index != null) {
-      const strokeWidth = (target as unknown as { strokeWidth?: number }).strokeWidth ?? 0
-      displayWidth += strokeWidth * (target.scaleX ?? 1)
-      displayHeight += strokeWidth * (target.scaleY ?? 1)
-    }
+    dimensionTargetRef.value = target
+    const dim = dimensionDisplayComputed.value
+    const text =
+      dim != null ? `Size (W)${dim.displayW}${dim.unit} x (H)${dim.displayH}${dim.unit}` : ''
 
     dimText.value.set({
       left: target.left,
@@ -1292,7 +1300,7 @@
         ((target.height ?? 0) * (target.scaleY ?? 1)) / 2 -
         (dimText.value.height ?? 0) * (dimText.value.scaleY ?? 1) -
         20,
-      text: `Size (W)${formatMeasurement(displayWidth)} x (H)${formatMeasurement(displayHeight)}`,
+      text,
       visible: true
     })
     canvas.value.bringObjectToFront(dimText.value as unknown as FabricObject)
