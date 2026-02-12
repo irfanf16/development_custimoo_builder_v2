@@ -131,11 +131,34 @@ export function setupFabricControls(options: SetupFabricControlsOptions = {}): v
       const canvas = target.canvas
       if (!canvas) return
 
-      if ('custom_text_index' in target && target.custom_text_index !== undefined) {
-        const ci = target.custom_text_index
-        const ii = target.custom_text_item_index
-        if (onRemoveText && ci !== undefined && ii !== undefined) {
-          onRemoveText(ci, ii, canvas)
+      if (
+        'custom_text_index' in target &&
+        target.custom_text_index !== undefined &&
+        'custom_text_item_index' in target &&
+        target.custom_text_item_index !== undefined
+      ) {
+        const customTextIndex = target.custom_text_index
+        const customTextItemIndex = target.custom_text_item_index
+        const customizationStore = useCustomizationStore() as {
+          customization: { product_id?: number } | null
+          setProductTextItemSelected(
+            productId: number,
+            entryIndex: number,
+            itemIndex: number,
+            selected: boolean
+          ): void
+        }
+        const productId = customizationStore.customization?.product_id
+        if (productId != null) {
+          customizationStore.setProductTextItemSelected(
+            productId,
+            customTextIndex,
+            customTextItemIndex,
+            false
+          )
+        }
+        if (onRemoveText) {
+          onRemoveText(customTextIndex, customTextItemIndex, canvas)
         }
       } else if ('logo_index' in target && target.logo_index !== undefined) {
         const customizationStore = useCustomizationStore() as {

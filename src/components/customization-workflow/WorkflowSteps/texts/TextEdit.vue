@@ -23,7 +23,11 @@
   import { useTextActions } from './useTextActions'
   import { useTexts } from './useTexts'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useCompanyStore } from '@/stores/company/company.store'
   import { useColorClipboard } from '@/composables/useColorClipboard'
+  import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
   import {
     texts_text_input_placeholder,
     texts_font_label,
@@ -37,7 +41,6 @@
     texts_width_label,
     texts_height_label,
     texts_angle_label,
-    texts_unit_cm,
     texts_unit_px,
     texts_side_front,
     texts_side_back,
@@ -46,10 +49,13 @@
   } from '@/paraglide/messages'
 
   // ===== COMPOSABLES =====
-  const { form, currentEntry } = useTextActions()
+  const { form, currentEntry, currentItem } = useTextActions()
   const { fontOptions, colorPalettes } = useTexts()
   const { clipboardColor, copyColor } = useColorClipboard()
   const profileStore = useProfileStore()
+  const customizationStore = useCustomizationStore()
+  const workflowStore = useWorkflowStore()
+  const companyStore = useCompanyStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
 
   // ===== COMPUTED =====
@@ -83,6 +89,123 @@
       form.outline_width = value[0] || 0
     }
   })
+
+  const heightUnitLabel = computed(() => {
+    const measurementUnit = companyStore.settings?.settings?.measurement_unit
+    if (!measurementUnit) return 'cm'
+    const unit = typeof measurementUnit === 'string' ? measurementUnit : measurementUnit.unit
+    if (!unit) return 'cm'
+    if (unit.toLowerCase() === 'in' || unit.toLowerCase() === 'inch') return 'in'
+    if (unit.toLowerCase() === 'cm') return 'cm'
+    return unit
+  })
+
+  const originalHeightText = computed(() => {
+    const item = currentItem.value as { originalHeight?: string | number } | null
+    const raw = item?.originalHeight
+    if (raw === undefined || raw === null || raw === '') return ''
+    const num = Number(raw)
+    if (Number.isFinite(num)) return `${num.toFixed(1)}`
+    return String(raw)
+  })
+
+  const heightModelValue = computed(() => {
+    if (originalHeightText.value) return originalHeightText.value
+    return String(form.height)
+  })
+
+  const originalWidthText = computed(() => {
+    const item = currentItem.value as { originalWidth?: string | number } | null
+    const raw = item?.originalWidth
+    if (raw === undefined || raw === null || raw === '') return ''
+    const num = Number(raw)
+    if (Number.isFinite(num)) return `${num.toFixed(1)}`
+    return String(raw)
+  })
+
+  const widthModelValue = computed(() => {
+    if (originalWidthText.value) return originalWidthText.value
+    return String(form.width)
+  })
+
+  /**
+   * Shared handler for originalWidth and originalHeight.
+   * Both use the same scaleX/scaleY, so changing either dimension applies the same ratio to both scales
+   * and to the other stored dimension, so width and height fields stay in sync.
+   */
+  function handleOriginalDimensionUpdate(dimension: 'width' | 'height', value: string | number) {
+    const str = String(value)
+    const productId = customizationStore.activeProductId
+    const textId = workflowStore.activeTextId
+    if (productId == null || textId == null) return
+    const key = String(productId)
+    const texts = customizationStore.customization?.product_custom_texts?.[key]
+    if (!texts) return
+    const entryIndex = texts.findIndex((e: { id: number }) => e.id === textId)
+    if (entryIndex === -1) return
+    const entry = texts[entryIndex]
+    if (!entry?.items) return
+    const itemIndex = entry.active_item_index ?? 0
+    const item = entry.items[itemIndex] as
+      | {
+          originalWidth?: string | number
+          originalHeight?: string | number
+          scaleX?: number
+          scaleY?: number
+        }
+      | undefined
+    if (!item) return
+
+    const numeric = Number.parseFloat(str)
+    const nextOriginal = Number.isFinite(numeric) ? Number(Number(numeric).toFixed(1)) : str
+    const originalNum =
+      dimension === 'width' ? Number(item.originalWidth) : Number(item.originalHeight)
+    let scaleX = item.scaleX ?? 1
+    let scaleY = item.scaleY ?? 1
+    let ratio = 1
+    if (
+      Number.isFinite(numeric) &&
+      numeric > 0 &&
+      Number.isFinite(originalNum) &&
+      originalNum > 0
+    ) {
+      ratio = numeric / originalNum
+      scaleX = scaleX * ratio
+      scaleY = scaleY * ratio
+      const precision = 6
+      scaleX = Number(scaleX.toFixed(precision))
+      scaleY = Number(scaleY.toFixed(precision))
+    }
+    const payload: Record<string, unknown> = { scaleX, scaleY }
+    if (dimension === 'width') {
+      payload.originalWidth = nextOriginal
+      const otherNum = Number(item.originalHeight)
+      if (Number.isFinite(otherNum) && otherNum > 0) {
+        payload.originalHeight = Number((otherNum * ratio).toFixed(1))
+      }
+    } else {
+      payload.originalHeight = nextOriginal
+      const otherNum = Number(item.originalWidth)
+      if (Number.isFinite(otherNum) && otherNum > 0) {
+        payload.originalWidth = Number((otherNum * ratio).toFixed(1))
+      }
+    }
+    customizationStore.updateProductTextItem(productId, entryIndex, itemIndex, payload)
+  }
+
+  function handleBlurWidth() {
+    const num = Number.parseFloat(widthModelValue.value)
+    if (!Number.isNaN(num)) {
+      handleOriginalDimensionUpdate('width', num.toFixed(1))
+    }
+  }
+
+  function handleBlurHeight() {
+    const num = Number.parseFloat(heightModelValue.value)
+    if (!Number.isNaN(num)) {
+      handleOriginalDimensionUpdate('height', num.toFixed(1))
+    }
+  }
 
   // ===== WATCHERS =====
 
@@ -297,40 +420,38 @@
             <!-- Width and Height Inputs -->
             <div class="grid grid-cols-2 gap-2">
               <div class="space-y-2">
-                <Label class="text-sm font-medium text-foreground">{{
+                <Label for="text-width" class="text-sm font-medium text-foreground">{{
                   texts_width_label({}, { locale })
                 }}</Label>
-                <div class="relative">
-                  <Input
-                    v-model.number="form.width"
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    class="pr-8"
+                <InputGroup>
+                  <InputGroupInput
+                    id="text-width"
+                    inputmode="decimal"
+                    :model-value="widthModelValue"
+                    @update:model-value="
+                      (v: string | number) => handleOriginalDimensionUpdate('width', v)
+                    "
+                    @blur="handleBlurWidth"
                   />
-                  <span
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground"
-                    >{{ texts_unit_cm({}, { locale }) }}</span
-                  >
-                </div>
+                  <InputGroupAddon class="pr-3 text-xs">{{ heightUnitLabel }}</InputGroupAddon>
+                </InputGroup>
               </div>
               <div class="space-y-2">
-                <Label class="text-sm font-medium text-foreground">{{
+                <Label for="text-height" class="text-sm font-medium text-foreground">{{
                   texts_height_label({}, { locale })
                 }}</Label>
-                <div class="relative">
-                  <Input
-                    v-model.number="form.height"
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    class="pr-8"
+                <InputGroup>
+                  <InputGroupInput
+                    id="text-height"
+                    inputmode="decimal"
+                    :model-value="heightModelValue"
+                    @update:model-value="
+                      (v: string | number) => handleOriginalDimensionUpdate('height', v)
+                    "
+                    @blur="handleBlurHeight"
                   />
-                  <span
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground"
-                    >{{ texts_unit_cm({}, { locale }) }}</span
-                  >
-                </div>
+                  <InputGroupAddon class="pr-3 text-xs">{{ heightUnitLabel }}</InputGroupAddon>
+                </InputGroup>
               </div>
             </div>
 

@@ -23,9 +23,12 @@
     useColorCustomization,
     useColorGrouping,
     addLogoToCanvas,
+    addTextToCanvas,
     setupFabricControls,
     deleteLogoFromCanvas,
-    syncLogosOnCanvas
+    syncLogosOnCanvas,
+    syncTextsOnCanvas,
+    FABRIC_CONTROL_VISIBILITY
   } from '@/composables/scene'
   import type { CustomLogo } from '@/services/logos/types'
   import {
@@ -34,8 +37,13 @@
   } from '@/composables/scene/useCanvasImage'
   import { useSceneStore } from '@/stores/scene/scene.store'
   import { useCompanyStore } from '@/stores/company/company.store'
+  import { useProductsFontsStore } from '@/stores/products-fonts/products-fonts.store'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
-  import type { OutputProductLogosSetting } from '@/services/products/types'
+  import type {
+    OutputProductLogosSetting,
+    OutputProductText,
+    OutputProductTextItem
+  } from '@/services/products/types'
 
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
@@ -47,9 +55,11 @@
   const designObject = shallowRef<FabricObject | FabricImage | null>(null)
   const modelObjects = shallowRef<(FabricObject | FabricImage)[]>([])
   const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
+  const customTextObjects = shallowRef<Map<string, FabricObject>>(new Map())
   const otherSideLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
   const dimText = shallowRef<fabric.IText | null>(null)
   const suppressCustomLogosWatch = ref(false)
+  const suppressCustomTextsWatch = ref(false)
   const safeZone = shallowRef<Group | null>(null)
   const boundary = shallowRef<Group | null>(null)
   const placementRect = shallowRef<FabricObject | null>(null)
@@ -172,6 +182,40 @@
     return map
   })
 
+  // ===== CUSTOM TEXTS =====
+  // Map: key = index in product_custom_texts, value = entry + items for this side only
+  const customTexts = computed<
+    Map<
+      number,
+      {
+        entry: OutputProductText
+        itemsForSide: { itemIndex: number; item: OutputProductTextItem }[]
+      }
+    >
+  >(() => {
+    const productId = effectiveProductId.value
+    if (!productId || !customizationStore.customization) return new Map()
+    const key = String(productId)
+    const all = customizationStore.customization.product_custom_texts?.[key] || []
+    const map = new Map<
+      number,
+      {
+        entry: OutputProductText
+        itemsForSide: { itemIndex: number; item: OutputProductTextItem }[]
+      }
+    >()
+    const sideLower = props.side?.toLowerCase()
+    all.forEach((text: OutputProductText, index: number) => {
+      const itemsForSide = (text.items ?? [])
+        .map((item, itemIndex) => ({ itemIndex, item }))
+        .filter(({ item }) => item.placement?.toLowerCase() === sideLower)
+      if (itemsForSide.length > 0) {
+        map.set(index, { entry: text, itemsForSide })
+      }
+    })
+    return map
+  })
+
   // ===== COLOR CUSTOMIZATION COMPOSABLE =====
   const colorCustomization = useColorCustomization(
     canvas as Ref<Canvas | null>,
@@ -277,6 +321,12 @@
   )
 
   onMounted(async () => {
+    if (props.mainPreview && productsStore.activeProductDetails) {
+      const productsFontsStore = useProductsFontsStore()
+      const storageUrl = import.meta.env.VITE_APP_STORAGE_URL || ''
+      await productsFontsStore.initFromProducts([productsStore.activeProductDetails], storageUrl)
+    }
+
     // Parts are now initialized in useSvgGroups composable from props
     // If not provided as props, they will be set from active design (svgGroups) after extraction
 
@@ -416,8 +466,9 @@
 
     canvas.value.requestRenderAll()
 
-    // Load logos after scene is loaded
+    // Load logos and texts after scene is loaded
     await resetAndAddLogos()
+    await resetAndAddTexts()
 
     // Render mirrored logos coming from the opposite side (stored in sceneStore)
     await renderOtherSideLogosFromStore()
@@ -490,11 +541,14 @@
   })
 
   // ===== LOGO UTILITIES =====
-  function calculatePosition2D(logoData: CustomLogo): { x: number; y: number } {
+  function calculatePosition2D(logoData: CustomLogo | OutputProductTextItem): {
+    x: number
+    y: number
+  } {
     const { widthRatio, heightRatio } = calculateScaleRatios2D()
     return {
-      x: widthRatio * logoData.x_axis,
-      y: heightRatio * logoData.y_axis
+      x: widthRatio * Number(logoData.x_axis),
+      y: heightRatio * Number(logoData.y_axis)
     }
   }
 
@@ -574,7 +628,7 @@
     let displayWidth = width
     let displayHeight = height
 
-    if ((target as unknown as { type?: string }).type === 'text') {
+    if ((target as unknown as { custom_text_item_index?: number }).custom_text_item_index != null) {
       const strokeWidth = (target as unknown as { strokeWidth?: number }).strokeWidth ?? 0
       displayWidth += strokeWidth * (target.scaleX ?? 1)
       displayHeight += strokeWidth * (target.scaleY ?? 1)
@@ -1238,11 +1292,74 @@
     }
   }
 
+  // ===== TEXT UTILITIES (sync from customTexts watch) =====
+  const heightScaleForText = computed(() => props.canvasHeight / (props.mainCanvasHeight || 600))
+
+  async function addText(
+    entry: OutputProductText,
+    customTextIndex: number,
+    itemIndex: number
+  ): Promise<void> {
+    if (isPlacementMode.value || !canvas.value) return
+    const item = entry.items?.[itemIndex]
+    if (!item) return
+    if (item.placement?.toLowerCase() !== props.side?.toLowerCase()) return
+
+    const renderCanvas = () => canvas.value?.requestRenderAll()
+    await addTextToCanvas({
+      entry,
+      customTextIndex,
+      itemIndex,
+      canvas: canvas.value,
+      textObjects: customTextObjects,
+      calculatePosition: calculatePosition2D,
+      calculateRotation: calculateRotation2D,
+      heightScale: heightScaleForText.value,
+      renderCanvas,
+      applyClipPath,
+      controlVisibility: FABRIC_CONTROL_VISIBILITY,
+      canvasSelection: true,
+      mainPreview: props.mainPreview,
+      productId: effectiveProductId.value as number,
+      suppressWatchRef: suppressCustomTextsWatch,
+      getScaleRatios: calculateScaleRatios2D,
+      is_3d: false,
+      convertSize: convertSizeToMeasurement
+    })
+  }
+
+  /**
+   * Reset and add all texts
+   * Clears existing text objects and adds all texts from customTexts (filtered by side and selected)
+   */
+  async function resetAndAddTexts(): Promise<void> {
+    if (isPlacementMode.value) return
+    if (!canvas.value) return
+
+    customTextObjects.value.forEach(obj => {
+      canvas.value?.remove(obj)
+    })
+    customTextObjects.value.clear()
+
+    for (const [customTextIndex, { entry, itemsForSide }] of customTexts.value) {
+      for (const { itemIndex, item } of itemsForSide) {
+        if (!item?.selected) continue
+        await addText(entry, customTextIndex, itemIndex)
+      }
+    }
+
+    if (canvas.value) {
+      canvas.value.requestRenderAll()
+    }
+  }
+
   // Expose functions for external use
   defineExpose({
     getImageFromCanvas,
     addLogo,
-    resetAndAddLogos
+    resetAndAddLogos,
+    resetAndAddTexts,
+    customTexts
   })
 
   /**
@@ -1384,6 +1501,35 @@
         calculateScaleRatios: calculateScaleRatios2D,
         filterLogo: (logo: CustomLogo) => logo.side === props.side,
         suppressWatchRef: suppressCustomLogosWatch,
+        onAfterSync: () => {
+          if (canvas.value) {
+            canvas.value.requestRenderAll()
+          }
+        }
+      })
+    },
+    { deep: true }
+  )
+
+  // Watch for changes in customTexts from customization store
+  watch(
+    customTexts,
+    async newTexts => {
+      if (suppressCustomTextsWatch.value) {
+        suppressCustomTextsWatch.value = false
+        return
+      }
+      if (isPlacementMode.value) return
+      if (!mounted.value) return
+      await syncTextsOnCanvas({
+        newTexts: newTexts ?? new Map(),
+        canvas: canvas.value,
+        textObjects: customTextObjects,
+        addText,
+        calculatePosition: calculatePosition2D,
+        calculateRotation: calculateRotation2D,
+        heightScale: heightScaleForText.value,
+        getScaleRatios: calculateScaleRatios2D,
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()

@@ -29,9 +29,12 @@
     useColorCustomization,
     useColorGrouping,
     addLogoToCanvas,
+    addTextToCanvas,
     setupFabricControls,
     deleteLogoFromCanvas,
-    syncLogosOnCanvas
+    syncLogosOnCanvas,
+    syncTextsOnCanvas,
+    FABRIC_CONTROL_VISIBILITY
   } from '@/composables/scene'
   import {
     getImageFrom3DCanvas,
@@ -41,8 +44,10 @@
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
   import { useSceneStore } from '@/stores/scene/scene.store'
   import { useCompanyStore } from '@/stores/company/company.store'
+  import { useProductsFontsStore } from '@/stores/products-fonts/products-fonts.store'
   import type { DesignData } from '@/composables/scene'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
+  import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
   import { filterFields } from '@/lib/utils'
 
   // 3D Model data type matching imageData structure
@@ -139,7 +144,7 @@
   // Note: fromStorage is already available from useSceneCommon
 
   // ===== CUSTOM LOGOS =====
-  // Map: key = index in custom_logos array, value = logo (all logos for 3D)
+  // Map: key = index in custom_logos array, value = logo (3D: all logos, with x_axis_3d/y_axis_3d)
   const customLogos = computed<Map<number, CustomLogo>>(() => {
     const productId = effectiveProductId.value
     if (!productId || !customizationStore.customization) return new Map()
@@ -154,15 +159,43 @@
       'x_axis_3d',
       'y_axis_3d',
       'height',
-      'width',
-      'placement',
-      'name_of_placement',
       'rotation',
       'scaleX',
       'scaleY'
     ] as const
     all.forEach((logo: CustomLogo, index: number) => {
       map.set(index, filterFields(logo, [...fields]) as CustomLogo)
+    })
+    return map
+  })
+
+  // ===== CUSTOM TEXTS =====
+  // Map: key = index in product_custom_texts, value = entry + items (3D: all items, no side filter)
+  const customTexts = computed<
+    Map<
+      number,
+      {
+        entry: OutputProductText
+        itemsForSide: { itemIndex: number; item: OutputProductTextItem }[]
+      }
+    >
+  >(() => {
+    const productId = effectiveProductId.value
+    if (!productId || !customizationStore.customization) return new Map()
+    const key = String(productId)
+    const all = customizationStore.customization.product_custom_texts?.[key] || []
+    const map = new Map<
+      number,
+      {
+        entry: OutputProductText
+        itemsForSide: { itemIndex: number; item: OutputProductTextItem }[]
+      }
+    >()
+    all.forEach((text: OutputProductText, index: number) => {
+      const itemsForSide = (text.items ?? []).map((item, itemIndex) => ({ itemIndex, item }))
+      if (itemsForSide.length > 0) {
+        map.set(index, { entry: text, itemsForSide })
+      }
     })
     return map
   })
@@ -260,6 +293,7 @@
   const outputPass = shallowRef<OutputPass | null>(null)
   const safeZone = shallowRef<Group | null>(null)
   const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
+  const customTextObjects = shallowRef<Map<string, FabricObject>>(new Map())
   const raycaster = shallowRef<THREE.Raycaster | null>(null)
   const onClickPosition = shallowRef<THREE.Vector2>(new THREE.Vector2())
   const mouse = shallowRef<THREE.Vector2>(new THREE.Vector2())
@@ -273,11 +307,18 @@
   }>({})
   const isFabricDrag = ref(false)
   const suppressCustomLogosWatch = ref(false)
+  const suppressCustomTextsWatch = ref(false)
   const lastKnownObjectPos = ref<{ left: number; top: number } | null>(null)
   const dimText = shallowRef<fabric.IText | null>(null)
 
   // ===== LIFECYCLE =====
   onMounted(async () => {
+    if (props.mainPreview && productsStore.activeProductDetails) {
+      const productsFontsStore = useProductsFontsStore()
+      const storageUrl = import.meta.env.VITE_APP_STORAGE_URL || ''
+      await productsFontsStore.initFromProducts([productsStore.activeProductDetails], storageUrl)
+    }
+
     await initThreeJS()
     addGetPointerToFabricPrototype()
   })
@@ -986,16 +1027,27 @@
     return oppositeAngle(rotation)
   }
 
-  // Calculate position (use 3D position if available, otherwise calculate from 2D)
-  function calculatePosition(logoData: CustomLogo): { x: number; y: number } {
-    // Check if 3D position is explicitly set (not undefined or null), even if 0
-    if (logoData.x_axis_3d && logoData.y_axis_3d) {
-      return { x: logoData.x_axis_3d, y: logoData.y_axis_3d }
-    } else {
-      const threeDXPosition = canvasWidthRatio.value * logoData.x_axis
-      const threeDYPosition = canvasHeightRatio.value * logoData.y_axis
-      return findPositionOn3D(threeDXPosition, threeDYPosition, logoData.side)
+  /**
+   * Calculate position for logo or text (use 3D position if available, otherwise from 2D + findPositionOn3D).
+   * Accepts CustomLogo (has x_axis_3d, y_axis_3d, side) or text item (has x_axis, y_axis, placement).
+   */
+  function calculatePosition(
+    data: (CustomLogo | OutputProductTextItem) & {
+      x_axis_3d?: number
+      y_axis_3d?: number
+      side?: string
     }
+  ): { x: number; y: number } {
+    const has3d = 'x_axis_3d' in data && 'y_axis_3d' in data && data.x_axis_3d && data.y_axis_3d
+    if (has3d) {
+      return { x: data.x_axis_3d!, y: data.y_axis_3d! }
+    }
+    const threeDXPosition = canvasWidthRatio.value * Number(data.x_axis)
+    const threeDYPosition = canvasHeightRatio.value * Number(data.y_axis)
+    const side = (data.side ??
+      (data as OutputProductTextItem).placement?.toLowerCase() ??
+      'front') as 'front' | 'back'
+    return findPositionOn3D(threeDXPosition, threeDYPosition, side)
   }
 
   // Calculate scale ratios
@@ -1227,7 +1279,7 @@
     let displayWidth = width
     let displayHeight = height
 
-    if ((target as unknown as { type?: string }).type === 'text') {
+    if ((target as unknown as { custom_text_item_index?: number }).custom_text_item_index != null) {
       const strokeWidth = (target as unknown as { strokeWidth?: number }).strokeWidth ?? 0
       displayWidth += strokeWidth * (target.scaleX ?? 1)
       displayHeight += strokeWidth * (target.scaleY ?? 1)
@@ -1249,7 +1301,7 @@
   }
 
   /**
-   * Load safe zone SVG and set as clip path
+   * Load safe zone SVG and set as clip path (same as old ThreeDScene: groupSVGElements, scaleToHeight, viewportCenter)
    */
   async function addSafeZone(safeZoneUrl?: string): Promise<void> {
     if (!canvas.value || !safeZoneUrl) return
@@ -1266,16 +1318,33 @@
       originY: 'center'
     })) as Group
 
-    clip.scaleToHeight(props.canvasResolution)
-    clip.set({
-      left: 0,
-      top: 0
-    })
-    clip.setCoords()
     if (canvas.value) {
       canvas.value.viewportCenterObject(clip)
     }
+    clip.set({
+      hasControls: false,
+      selectable: false,
+      evented: false,
+      lockMovementX: true,
+      lockMovementY: true,
+      absolutePositioned: true,
+      inverted: true,
+      flipY: true
+    })
+    clip.scaleToHeight(props.canvasResolution)
+    clip.set({ left: 0, top: 0 })
+    clip.setCoords()
     safeZone.value = clip
+  }
+
+  /**
+   * Apply safe zone as clip path to an object (logo or text). Same as old ThreeDScene: obj.clipPath = this.safe_zone
+   */
+  function applyClipPath(target: FabricImage | FabricObject): void {
+    if (safeZone.value) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(target as any).clipPath = safeZone.value
+    }
   }
 
   /**
@@ -1286,15 +1355,6 @@
     if (!canvas.value) return
 
     if (!logo || !logo.url) return
-
-    // Apply clipping (safe zone)
-    const applyClipPath = (img: FabricImage) => {
-      if (safeZone.value) {
-        // Type assertion needed for clipPath - Group can be used as clipPath
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(img as any).clipPath = safeZone.value
-      }
-    }
 
     // Render canvas
     const renderCanvas = () => {
@@ -1334,7 +1394,7 @@
         calculatePosition,
         calculateRotation,
         calculateScaleRatios,
-        applyClipPath,
+        applyClipPath: (img: FabricImage) => applyClipPath(img),
         renderCanvas,
         controlVisibility,
         canvasSelection: true,
@@ -1350,10 +1410,6 @@
         added.on('moving', () => showDimensions(added))
         added.on('scaling', () => showDimensions(added))
         added.on('rotating', () => showDimensions(added))
-        added?.on('modified', () => {
-          showDimensions(added)
-          customizationStore.saveToLocalStorage()
-        })
       }
     } catch (error) {
       console.error('Failed to add logo:', error)
@@ -1375,7 +1431,7 @@
     })
     customLogoObjects.value.clear()
 
-    // Add logos from custom_logos (map key = index)
+    // Add logos from custom_logos (map: key = index)
     if (customLogos.value.size > 0) {
       for (const [logoIndex, logo] of customLogos.value) {
         if (logo && logo.url) {
@@ -1386,6 +1442,91 @@
 
     if (canvas.value) {
       canvas.value.requestRenderAll()
+    }
+  }
+
+  // ===== TEXT UTILITIES (sync from customTexts watch) =====
+  async function addText(
+    entry: OutputProductText,
+    customTextIndex: number,
+    itemIndex: number
+  ): Promise<void> {
+    if (!canvas.value) return
+    const item = entry.items?.[itemIndex]
+    if (!item) return
+
+    const renderCanvas = () => {
+      if (canvas.value) {
+        canvas.value.requestRenderAll()
+      }
+      if (composer.value) {
+        composer.value.render()
+      }
+    }
+
+    const productsFontsStore = useProductsFontsStore()
+    await addTextToCanvas({
+      entry,
+      customTextIndex,
+      itemIndex,
+      canvas: canvas.value,
+      textObjects: customTextObjects,
+      calculatePosition,
+      calculateRotation,
+      heightScale: canvasHeightRatio.value,
+      renderCanvas,
+      applyClipPath: (obj: FabricObject) => applyClipPath(obj),
+      controlVisibility: FABRIC_CONTROL_VISIBILITY,
+      canvasSelection: true,
+      mainPreview: props.mainPreview,
+      productId: effectiveProductId.value as number,
+      suppressWatchRef: suppressCustomTextsWatch,
+      getScaleRatios: calculateScaleRatios,
+      is_3d: true,
+      flipX: true,
+      findPositionOn2D: findPositionOn2D as unknown as (
+        x: number,
+        y: number,
+        fabricObject: FabricObject & { side?: string; type?: string }
+      ) => { vector: { x: number; y: number; z?: number }; sideChanged: boolean },
+      convertSize: convertSizeToMeasurement,
+      ...(props.mainPreview ? { productsFonts: productsFontsStore.productsFonts } : {})
+    })
+
+    const key = `${customTextIndex}_${itemIndex}`
+    const added = customTextObjects.value.get(key)
+    if (added) {
+      added.on('selected', () => showDimensions(added))
+      added.on('moving', () => showDimensions(added))
+      added.on('scaling', () => showDimensions(added))
+      added.on('rotating', () => showDimensions(added))
+    }
+  }
+
+  /**
+   * Reset and add all texts
+   * Clears existing text objects and adds all texts from customTexts (all visible items, no side filter in 3D)
+   */
+  async function resetAndAddTexts(): Promise<void> {
+    if (!canvas.value) return
+
+    customTextObjects.value.forEach(obj => {
+      canvas.value?.remove(obj)
+    })
+    customTextObjects.value.clear()
+
+    for (const [customTextIndex, { entry, itemsForSide }] of customTexts.value) {
+      for (const { itemIndex, item } of itemsForSide) {
+        if (!item?.selected) continue
+        await addText(entry, customTextIndex, itemIndex)
+      }
+    }
+
+    if (canvas.value) {
+      canvas.value.requestRenderAll()
+    }
+    if (composer.value) {
+      composer.value.render()
     }
   }
 
@@ -1434,8 +1575,9 @@
       await addSafeZone(designData.safe_zone_url)
     }
 
-    // Load logos after scene is loaded
+    // Load logos and texts after scene is loaded
     await resetAndAddLogos()
+    await resetAndAddTexts()
 
     mounted.value = true
   }
@@ -1892,7 +2034,9 @@
   defineExpose({
     getImageFromCanvas,
     addLogo,
-    resetAndAddLogos
+    resetAndAddLogos,
+    resetAndAddTexts,
+    customTexts
   })
 
   // ===== WATCHERS =====
@@ -2074,7 +2218,7 @@
   // Compare by checking what's in the Map vs what's in the array
   watch(
     customLogos,
-    async (logoMap = new Map<number, CustomLogo>()) => {
+    async (newLogos = new Map<number, CustomLogo>()) => {
       if (suppressCustomLogosWatch.value) {
         suppressCustomLogosWatch.value = false
         return
@@ -2088,14 +2232,50 @@
       }
 
       await syncLogosOnCanvas({
-        newLogos: logoMap,
+        newLogos,
         canvas: canvas.value,
         logoObjects: customLogoObjects,
         addLogo,
         calculatePosition,
         calculateRotation,
         calculateScaleRatios,
+        applyClipPath: (img: FabricImage) => applyClipPath(img),
         suppressWatchRef: suppressCustomLogosWatch,
+        onAfterSync: () => {
+          if (canvas.value) {
+            canvas.value.requestRenderAll()
+          }
+          if (composer.value) {
+            composer.value.render()
+          }
+        }
+      })
+    },
+    { deep: true }
+  )
+
+  // Watch for changes in customTexts from customization store
+  watch(
+    customTexts,
+    async newTexts => {
+      if (suppressCustomTextsWatch.value) {
+        suppressCustomTextsWatch.value = false
+        return
+      }
+      if (!mounted.value) return
+      await new Promise(resolve => setTimeout(resolve, 200))
+      if (sceneLoadPromise.value) {
+        await sceneLoadPromise.value
+      }
+      await syncTextsOnCanvas({
+        newTexts: newTexts ?? new Map(),
+        canvas: canvas.value,
+        textObjects: customTextObjects,
+        addText,
+        calculatePosition,
+        calculateRotation,
+        heightScale: canvasHeightRatio.value,
+        getScaleRatios: calculateScaleRatios,
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()

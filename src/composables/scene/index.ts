@@ -23,3 +23,21 @@ export {
   setupFabricControls,
   FABRIC_CONTROL_VISIBILITY
 } from './useFabricControls'
+export {
+  useTexts,
+  getTextObjectKey,
+  getTextSignature,
+  getTextSignatureValuePlacement,
+  isTextItemVisible,
+  addTextToCanvas,
+  syncTextsOnCanvas
+} from './useTexts'
+export type {
+  AddTextOptions,
+  CreateTextAsPathParams,
+  SyncTextsOptions,
+  TextEntryWithItemsForSide,
+  UpdateTextPositionOptions
+} from './useTexts'
+export { createTextAsPathFromFonts } from './useTextAsPath'
+export type { ProductsFonts, OpentypeFont } from './useTextAsPath'
