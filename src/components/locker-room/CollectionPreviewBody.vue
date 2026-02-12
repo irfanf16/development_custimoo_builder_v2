@@ -128,6 +128,7 @@
             id: toastId,
             duration: 2000
           })
+          toast.dismiss(toastId)
         } else {
           toast.dismiss(toastId)
         }
@@ -242,6 +243,7 @@
               id: toastId,
               duration: 2000
             })
+            toast.dismiss(toastId)
           } else {
             toast.dismiss(toastId)
           }
@@ -318,6 +320,7 @@
             id: toastId,
             duration: 2000
           })
+          toast.dismiss(toastId)
         } else {
           toast.dismiss(toastId)
         }

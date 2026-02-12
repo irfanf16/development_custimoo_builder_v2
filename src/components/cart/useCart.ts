@@ -55,15 +55,21 @@ export function useCart() {
     for (const item of cartStore.cart.items) {
       const factoryProducts: any[] = item.factory_products || []
       for (const fp of factoryProducts) {
+        // console.log(fp);
         // Safely extract addons
         const groupedAddons: any[] = Array.isArray(fp.grouped_addons) ? fp.grouped_addons : []
         const ungroupedAddons: any[] = Array.isArray(fp.ungrouped_addons) ? fp.ungrouped_addons : []
+        const generalAddons: any[] = Array.isArray(fp.addons) ? fp.addons : []
         const allAddons: Array<{ id: number; name: string }> = []
 
         for (const addon of groupedAddons) {
           allAddons.push({ id: Number(addon?.id) || 0, name: String(addon?.name || 'Unknown') })
         }
         for (const addon of ungroupedAddons) {
+          allAddons.push({ id: Number(addon?.id) || 0, name: String(addon?.name || 'Unknown') })
+        }
+
+        for (const addon of generalAddons) {
           allAddons.push({ id: Number(addon?.id) || 0, name: String(addon?.name || 'Unknown') })
         }
 

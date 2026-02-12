@@ -339,6 +339,7 @@
         <!-- Cart Items -->
         <div class="divide-y">
           <div v-for="item in products" :key="item.factory_product_id" class="p-4">
+            <!-- {{ console.log(item) }} -->
             <div class="flex gap-4">
               <!-- Product Image -->
               <div

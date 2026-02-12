@@ -342,7 +342,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       operation: 'fetchCollections'
     })
     if (resp.success && resp.content) {
-      collections.value = resp.content.result
+      collections.value = resp.content.result.map(collection => ({
+        ...collection,
+        details_fetched: false
+      }))
     } else {
       setError('Failed to load collections')
     }
@@ -357,20 +360,22 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       collection_id
     })
     if (resp.success && resp.content) {
+      let local_collection
       collections.value = collections.value.map(c => {
         if (c.id === collection_id) {
-          return {
+          local_collection = {
             ...c,
             ...resp.content.result,
             details_fetched: true,
             collection_products: resp.content.result.collection_products
           }
+          return local_collection
         } else {
           return c
         }
       })
       isLoading.value = false
-      return resp.content
+      return local_collection
     } else {
       setError('Failed to load collection products')
       isLoading.value = false
