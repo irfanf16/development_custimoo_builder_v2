@@ -12,6 +12,7 @@
     size?: ButtonVariants['size']
     class?: HTMLAttributes['class']
     loading?: boolean
+    disabled?: boolean
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -23,7 +24,7 @@
   <Primitive
     :as="as"
     :as-child="asChild"
-    :disabled="loading"
+    :disabled="disabled || loading"
     :class="
       cn(
         'relative',

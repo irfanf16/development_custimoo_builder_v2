@@ -28,6 +28,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   const editingLockerProductId = ref<number | null>(null)
   const editingLockerId = ref<number | null>(null)
   const editingLockerProduct = ref<LockerProduct | null>(null)
+  const isDeletingProducts = ref<boolean>(false)
+  const isCopyingProducts = ref<boolean>(false)
 
   //lockers methods
   async function fetchLockers() {
@@ -141,27 +143,32 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   }
   //Delete Locker Products
   async function deleteProducts(product_ids: number[], locker_id: number) {
-    const resp = await tryCatchApi(API.lockers.deleteProducts(product_ids, locker_id), {
-      operation: 'deleteProducts',
-      locker_id
-    })
-    if (!resp.success) {
-      setError('Failed to delete products')
-      return
-    }
-
-    setSuccessMessage('Products deleted successfully')
-    await fetchLockerProducts(locker_id)
-    // Sync thumbnails and count from product array so list shows correct state after delete
-    lockers.value = lockers.value.map(l => {
-      if (l.id !== locker_id) return l
-      const productList = l.product ?? []
-      return {
-        ...l,
-        product_count: productList.length,
-        product_thumbnails: productList.map(p => p.product_front_url).slice(0, 4)
+    isDeletingProducts.value = true
+    try {
+      const resp = await tryCatchApi(API.lockers.deleteProducts(product_ids, locker_id), {
+        operation: 'deleteProducts',
+        locker_id
+      })
+      if (!resp.success) {
+        setError('Failed to delete products')
+        return
       }
-    })
+
+      setSuccessMessage('Products deleted successfully')
+      await fetchLockerProducts(locker_id)
+      // Sync thumbnails and count from product array so list shows correct state after delete
+      lockers.value = lockers.value.map(l => {
+        if (l.id !== locker_id) return l
+        const productList = l.product ?? []
+        return {
+          ...l,
+          product_count: productList.length,
+          product_thumbnails: productList.map(p => p.product_front_url).slice(0, 4)
+        }
+      })
+    } finally {
+      isDeletingProducts.value = false
+    }
   }
   //Copy Locker Products
   async function copyProducts(payload: CopyProductPayload, sourceLockerId: number) {
@@ -189,14 +196,19 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       targetLocker.products_fetched = true
     })
 
-    const resp = await tryCatchApi(API.lockers.copyProducts(payload), {
-      operation: 'copyProducts'
-    })
+    isCopyingProducts.value = true
+    try {
+      const resp = await tryCatchApi(API.lockers.copyProducts(payload), {
+        operation: 'copyProducts'
+      })
 
-    if (!resp.success) {
-      setError('Copy failed')
+      if (!resp.success) {
+        setError('Copy failed')
+      }
+      setSuccessMessage('Products copied successfully')
+    } finally {
+      isCopyingProducts.value = false
     }
-    setSuccessMessage('Products copied successfully')
   }
 
   async function fetchLockerAssets(locker_id: number) {
@@ -467,6 +479,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     editingLockerProductId,
     editingLockerId,
     editingLockerProduct,
+    isDeletingProducts,
+    isCopyingProducts,
     isEditingLockerProduct,
     lockerRoomsWithColors,
     //functions

@@ -37,7 +37,6 @@
     locker_select_all,
     locker_copy,
     locker_save,
-    locker_cancel_creation,
     locker_delete
   } from '@/paraglide/messages'
 
@@ -63,6 +62,10 @@
     readOnly?: boolean
     /** When true, user is editing collection name (header in edit mode); show Cancel and Update in footer. */
     isEditingCollectionName?: boolean
+    /** When true, collection save is in progress; disable conflicting actions. */
+    isSavingCollection?: boolean
+    /** When true, add-to-collection is in progress; disable conflicting actions. */
+    isAddingToCollection?: boolean
   }
   const props = withDefaults(defineProps<FooterProps>(), {
     currentTab: 'lockers',
@@ -74,7 +77,9 @@
     isCreatingCollection: false,
     collectionCreationStep: 1,
     readOnly: false,
-    isEditingCollectionName: false
+    isEditingCollectionName: false,
+    isSavingCollection: false,
+    isAddingToCollection: false
   })
 
   const emit = defineEmits([
@@ -104,7 +109,11 @@
   })
   const uiStore = useUIStore()
   const lockerRoomStore = useLockerRoomStore()
-  const { lockers: storeLockers } = storeToRefs(lockerRoomStore)
+  const {
+    lockers: storeLockers,
+    isDeletingProducts,
+    isCopyingProducts
+  } = storeToRefs(lockerRoomStore)
   const cartStore = useCartStore()
   const products = computed(() => props.selectedProducts)
   const showCopyDialog = ref(false)
@@ -202,6 +211,22 @@
     }
     return false
   })
+
+  const actionsDisabled = computed(
+    () =>
+      props.isCreatingCollection ||
+      isDeletingProducts.value ||
+      props.isSavingCollection ||
+      props.isAddingToCollection
+  )
+  const deleteDisabled = computed(
+    () =>
+      deleteButtonDisabled.value ||
+      isCopyingProducts.value ||
+      props.isCreatingCollection ||
+      props.isSavingCollection ||
+      props.isAddingToCollection
+  )
 
   const lockerCartPayload = computed(() => {
     const lockers = props.selectedLockers
@@ -388,6 +413,7 @@
                   <Button
                     variant="ghost"
                     class="p-0"
+                    :disabled="actionsDisabled"
                     @click="props.lockerProductsRef?.unSelectAllProducts()"
                     ><X class="size-4" />
                   </Button>
@@ -402,6 +428,7 @@
             v-if="(detailLockerCount > 0 || products.length > 0) && collectionCreationStep !== 2"
             class="mr-3"
             variant="outline"
+            :disabled="actionsDisabled"
             @click="props.lockerProductsRef?.selecteAllProducts()"
             >{{ locker_select_all({}, { locale }) }}</Button
           >
@@ -413,7 +440,7 @@
               <FolderArchive class="size-4" /> {{ locker_move({}, { locale }) }}
             </Button> -->
             <Button
-              :disabled="products.length !== 1 && products.length <= 0"
+              :disabled="(products.length !== 1 && products.length <= 0) || actionsDisabled"
               variant="outline"
               @click="showCopyDialog = true"
             >
@@ -470,7 +497,7 @@
             "
             variant="primary"
             class="ml-1"
-            :disabled="!canAddLockerProductsToCart"
+            :disabled="!canAddLockerProductsToCart || actionsDisabled"
             @click="handleAddLockerProductsToCart"
           >
             <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}
@@ -479,7 +506,7 @@
             v-if="!isCreatingCollection && currentTab === 'lockers' && detailsTab === 'products'"
             variant="outline"
             class="ml-1"
-            :disabled="selectedProducts.length === 0"
+            :disabled="selectedProducts.length === 0 || actionsDisabled"
             @click="showAddToCollectionDialog = true"
           >
             <PlusIcon class="size-4" /> Add to collection
@@ -488,7 +515,7 @@
             v-if="!isCreatingCollection && currentTab === 'lockers' && detailsTab === 'products'"
             variant="outline"
             class="ml-1"
-            :disabled="selectedProducts.length === 0"
+            :disabled="selectedProducts.length === 0 || actionsDisabled"
             @click="emit('create-collection')"
           >
             <PlusIcon class="size-4" /> Create new collection
@@ -515,14 +542,15 @@
             <Button
               variant="ghost"
               class="text-destructive"
-              :disabled="deleteButtonDisabled"
+              :disabled="deleteDisabled"
+              :loading="isDeletingProducts"
               @click="handleDelete"
             >
               <TrashIcon class="size-4 text-destructive" /> {{ locker_delete({}, { locale }) }}
             </Button>
           </template>
           <Button v-else variant="outline" class="text-destructive ml-2" @click="handleCancel">
-            {{ locker_cancel_creation({}, { locale }) }}
+            {{ locker_cancel({}, { locale }) }}
           </Button>
         </div>
       </div>
@@ -532,7 +560,11 @@
     :open="showCopyDialog"
     :locker_products="products"
     @update:open="showCopyDialog = $event"
-    @copy-products="payload => lockerRoomStore.copyProducts(payload, currentLocker!.id)"
+    @copy-products="
+      async payload => {
+        if (currentLocker) await lockerRoomStore.copyProducts(payload, currentLocker.id)
+      }
+    "
   />
   <AddToCollectionDialog
     :open="showAddToCollectionDialog"
