@@ -28,7 +28,7 @@
   }>()
 
   const emit = defineEmits<{
-    (e: 'remove-product', index: number): void
+    (e: 'remove-product', products: CollectionProduct[]): void
     (e: 'logo-removed', index: number, logoId?: number): void
   }>()
 
@@ -125,8 +125,8 @@
     showUploadLogoDialog.value = false
   }
 
-  const handleRemoveProduct = (index: number) => {
-    emit('remove-product', index)
+  const handleRemoveProduct = (products: CollectionProduct[]) => {
+    emit('remove-product', products)
   }
 
   const handleLogoRemoved = (index: number, logoId?: number) => {

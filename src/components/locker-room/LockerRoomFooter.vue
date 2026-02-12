@@ -90,6 +90,7 @@
     'add-to-collection',
     'add-products-to-collection',
     'unselect-all-list',
+    'unselect-all-detail',
     'close',
     'products-deleted',
     'cancel-collection-edit',
@@ -284,15 +285,19 @@
     return [...fromLockers, ...fromProducts]
   })
 
-  // In locker detail, use list-mode count/images so footer matches list view; otherwise use products (collections / step 2)
-  const detailLockerCount = computed(() =>
-    props.currentTab === 'lockers' ? listModeSelectedCount.value : products.value.length
-  )
-  const detailLockerImages = computed(() =>
-    props.currentTab === 'lockers'
+  // In locker detail, use list-mode count/images so footer matches list view; when adding products to collection use selectedProducts; otherwise use products (collections / step 2)
+  const detailLockerCount = computed(() => {
+    if (isAddingProductsToCollection.value) return products.value.length
+    return props.currentTab === 'lockers' ? listModeSelectedCount.value : products.value.length
+  })
+  const detailLockerImages = computed(() => {
+    if (isAddingProductsToCollection.value) {
+      return products.value.map(prod => baseStorageUrl.value + prod.product_front_url)
+    }
+    return props.currentTab === 'lockers'
       ? listModeImages.value
       : products.value.map(prod => baseStorageUrl.value + prod.product_front_url)
-  )
+  })
 
   // Placeholder so AvatarQueue array length matches selected count (list shows max 4 thumbnails per locker)
   const AVATAR_PLACEHOLDER =
@@ -414,7 +419,12 @@
                     variant="ghost"
                     class="p-0"
                     :disabled="actionsDisabled"
-                    @click="props.lockerProductsRef?.unSelectAllProducts()"
+                    @click="
+                      () => {
+                        emit('unselect-all-detail')
+                        props.lockerProductsRef?.unSelectAllProducts()
+                      }
+                    "
                     ><X class="size-4" />
                   </Button>
                 </TooltipTrigger>

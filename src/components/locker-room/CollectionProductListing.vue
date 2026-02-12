@@ -24,7 +24,7 @@
   )
 
   const emit = defineEmits<{
-    (e: 'remove-product', index: number): void
+    (e: 'remove-product', products: CollectionProduct[]): void
   }>()
   const computedProducts = computed(() => [...props.products])
   const filteredProducts = computed(() => {
@@ -98,7 +98,12 @@
         >
           <button
             class="absolute top-2 right-2 z-10 rounded-full bg-background border p-1 hover:bg-destructive hover:text-destructive-foreground transition-colors"
-            @click.stop="emit('remove-product', index)"
+            @click.stop="
+              () => {
+                localProducts = localProducts.filter(p => p.id !== element.id)
+                emit('remove-product', localProducts)
+              }
+            "
           >
             <X class="w-3 h-3" />
           </button>
