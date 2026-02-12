@@ -105,6 +105,14 @@
     colorGrouping?: Record<string, string[]> | string | null
     // Optional placement overlay (used for logo placement preview)
     placementSetting?: OutputProductLogosSetting
+    // Optional text placement overlay (used for text placement preview)
+    textPlacement?: {
+      x_axis: number
+      y_axis: number
+      width?: number | null
+      height: number
+      side: string
+    }
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -126,10 +134,11 @@
     svgParts: undefined,
     // Color grouping - defaults to undefined (will be extracted from design if not provided)
     colorGrouping: undefined,
-    placementSetting: undefined
+    placementSetting: undefined,
+    textPlacement: undefined
   })
 
-  const isPlacementMode = computed(() => !!props.placementSetting)
+  const isPlacementMode = computed(() => !!props.placementSetting || !!props.textPlacement)
 
   // get current instance at mounted
   const instance = getCurrentInstance()
@@ -457,9 +466,9 @@
     // Ensure models are on top of design
     bringModelToFront()
 
-    // in here call the add rect if placementSetting is set
+    // in here call the add rect if placement overlay is set (logo or text)
     if (isPlacementMode.value) {
-      await addRect(props.placementSetting as OutputProductLogosSetting)
+      await addRect()
       return
     }
 
@@ -980,6 +989,19 @@
   }
 
   const placementOverlay = computed(() => {
+    const text = props.textPlacement
+    if (text && text.side === props.side) {
+      const { widthRatio, heightRatio } = calculateScaleRatios2D()
+      const sizeW = (text.width ?? text.height ?? 300) * widthRatio
+      const sizeH = text.height * heightRatio
+      if (!sizeW || !sizeH) return null
+      const { x, y } = calculatePosition2D({
+        x_axis: text.x_axis,
+        y_axis: text.y_axis
+      } as CustomLogo)
+      return { left: x, top: y, width: sizeW, height: sizeH }
+    }
+
     const setting = props.placementSetting
     if (!setting) return null
     if (setting.side && setting.side !== props.side) return null
@@ -1002,11 +1024,9 @@
     }
   })
 
-  async function addRect(setting: OutputProductLogosSetting): Promise<void> {
+  async function addRect(): Promise<void> {
     if (!canvas.value) return
-    if (setting.side && setting.side !== props.side) return
 
-    // remove previous
     if (placementRect.value) {
       canvas.value.remove(placementRect.value)
       placementRect.value = null
