@@ -45,7 +45,9 @@
 
       <!-- Metadata -->
       <div class="flex flex-col items-center justify-center gap-2">
-        <div class="mt-2 text-sm text-center font-medium">{{ logo.logo_name }}</div>
+        <div class="mt-2 text-sm text-center font-medium text-wrap w-full">
+          {{ logo.logo_name }}
+        </div>
         <Button variant="outline" class="w-full">{{ locker_use_in_design({}, { locale }) }}</Button>
       </div>
     </Card>

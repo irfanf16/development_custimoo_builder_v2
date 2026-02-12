@@ -64,6 +64,8 @@
   const collectionCreationStep = ref<number>(1)
   const isCreatingCollection = ref<boolean>(false)
   const editingCollectionName = ref<boolean>(false)
+  const isSavingCollection = ref<boolean>(false)
+  const isAddingToCollection = ref<boolean>(false)
 
   // Watch the header's creatingCollection and sync it
   watch(
@@ -79,6 +81,19 @@
     sortOption.value = value
   }
   const handleBackNavigation = () => {
+    // During collection creation step 1, back from locker detail = return to locker list only (stay in creation)
+    const creating = lockerRoomHeaderRef.value?.creatingCollection ?? isCreatingCollection.value
+    if (
+      creating &&
+      collectionCreationStep.value === 1 &&
+      currentMode.value === 'detail' &&
+      currentLocker.value
+    ) {
+      currentMode.value = 'list'
+      currentLocker.value = null
+      lockerTab.value = 'products'
+      return
+    }
     currentMode.value = 'list'
     currentLocker.value = null
     lockerTab.value = 'products'
@@ -290,129 +305,160 @@
 
   const handleSaveCollection = async () => {
     if (!lockerRoomHeaderRef.value) return
+    isSavingCollection.value = true
+    try {
+      const collectionDetailRef = lockerDetailsRef.value as InstanceType<
+        typeof CollectionDetail
+      > | null
+      const previewBodyRef = collectionDetailRef?.previewBodyRef
 
-    const collectionDetailRef = lockerDetailsRef.value as InstanceType<
-      typeof CollectionDetail
-    > | null
-    const previewBodyRef = collectionDetailRef?.previewBodyRef
+      const baseStorageUrl = import.meta.env.VITE_APP_STORAGE_URL || ''
+      const collectionName = lockerRoomHeaderRef.value.collection_name || 'New Collection'
+      const isEditing = !!currentCollection.value
+      const collectionId = currentCollection.value?.id
 
-    const baseStorageUrl = import.meta.env.VITE_APP_STORAGE_URL || ''
-    const collectionName = lockerRoomHeaderRef.value.collection_name || 'New Collection'
-    const isEditing = !!currentCollection.value
-    const collectionId = currentCollection.value?.id
+      // Get logos from preview body ref or use existing collection data
+      let logos: Array<{
+        file: File | null
+        url: string | null
+        logo: CustomLogo | null
+        id?: number
+        isDeleted?: boolean
+      }> = []
 
-    // Get logos from preview body ref or use existing collection data
-    let logos: Array<{
-      file: File | null
-      url: string | null
-      logo: CustomLogo | null
-      id?: number
-      isDeleted?: boolean
-    }> = []
+      if (previewBodyRef) {
+        // Access logos from computed ref if preview body exists (use any to satisfy TS)
+        const logosComputed = (previewBodyRef as any)?.logos
+        if (logosComputed) {
+          if (typeof logosComputed === 'object' && 'value' in logosComputed) {
+            const computedValue = (logosComputed as { value: unknown }).value
+            logos = Array.isArray(computedValue) ? (computedValue as typeof logos) : []
+          } else if (Array.isArray(logosComputed)) {
+            logos = logosComputed as typeof logos
+          }
+        }
+      } else if (isEditing && currentCollection.value?.logos) {
+        // If preview body doesn't exist and we're editing, use existing collection logos
+        logos = currentCollection.value.logos.map(logo => ({
+          file: null,
+          url: logo.path.startsWith('http') ? logo.path : baseStorageUrl + logo.path,
+          logo: null,
+          id: logo.id,
+          isDeleted: false
+        }))
+      }
 
-    if (previewBodyRef) {
-      // Access logos from computed ref if preview body exists (use any to satisfy TS)
-      const logosComputed = (previewBodyRef as any)?.logos
-      if (logosComputed) {
-        if (typeof logosComputed === 'object' && 'value' in logosComputed) {
-          const computedValue = (logosComputed as { value: unknown }).value
-          logos = Array.isArray(computedValue) ? (computedValue as typeof logos) : []
-        } else if (Array.isArray(logosComputed)) {
-          logos = logosComputed as typeof logos
+      // For new collections, validate that at least one logo is uploaded
+      if (!isEditing) {
+        const hasLogo = logos.some(logo => (logo.file || logo.url) && !logo.isDeleted)
+        if (!hasLogo) {
+          toast.error('Please upload at least one logo before saving the collection', {
+            position: 'top-right',
+            richColors: true
+          })
+          // Switch to preview tab to show logo upload
+          collectionTab.value = 'preview'
+          return
         }
       }
-    } else if (isEditing && currentCollection.value?.logos) {
-      // If preview body doesn't exist and we're editing, use existing collection logos
-      logos = currentCollection.value.logos.map(logo => ({
-        file: null,
-        url: logo.path.startsWith('http') ? logo.path : baseStorageUrl + logo.path,
-        logo: null,
-        id: logo.id,
-        isDeleted: false
-      }))
-    }
 
-    // For new collections, validate that at least one logo is uploaded
-    if (!isEditing) {
-      const hasLogo = logos.some(logo => (logo.file || logo.url) && !logo.isDeleted)
-      if (!hasLogo) {
-        toast.error('Please upload at least one logo before saving the collection', {
-          position: 'top-right',
-          richColors: true
-        })
-        // Switch to preview tab to show logo upload
-        collectionTab.value = 'preview'
-        return
-      }
-    }
+      // Process logos - most should already have uploadedPath from CollectionDetail/CollectionPreviewBody
+      // Only upload files that haven't been processed yet (edge case)
+      const logosToUpload = logos.filter((l: any) => l?.file && !l?.uploadedPath && !l?.isDeleted)
 
-    // Process logos - most should already have uploadedPath from CollectionDetail/CollectionPreviewBody
-    // Only upload files that haven't been processed yet (edge case)
-    const logosToUpload = logos.filter((l: any) => l?.file && !l?.uploadedPath && !l?.isDeleted)
+      if (logosToUpload.length > 0) {
+        // Edge case: files that weren't uploaded yet (should be rare since CollectionDetail handles File uploads)
+        const logoFilesData: Array<{ name: string; type: string; size?: number }> =
+          logosToUpload.map((logo: any) => ({
+            name: logo.file.name,
+            type: logo.file.type || 'image/png',
+            size: logo.file.size
+          }))
 
-    if (logosToUpload.length > 0) {
-      // Edge case: files that weren't uploaded yet (should be rare since CollectionDetail handles File uploads)
-      const logoFilesData: Array<{ name: string; type: string; size?: number }> = logosToUpload.map(
-        (logo: any) => ({
-          name: logo.file.name,
-          type: logo.file.type || 'image/png',
-          size: logo.file.size
-        })
-      )
+        const collectionLogoPresignedUrls = await lockerRoomStore.getCollectionLogoPresignedUrls(
+          collectionId || null,
+          logoFilesData
+        )
 
-      const collectionLogoPresignedUrls = await lockerRoomStore.getCollectionLogoPresignedUrls(
-        collectionId || null,
-        logoFilesData
-      )
-
-      if (collectionLogoPresignedUrls.success) {
-        const filesToUpload: Array<{
-          file: File
-          presigned_url: string
-          file_type: string
-        }> = logosToUpload.map((logo: any, index: number) => {
-          const presignedUrl = collectionLogoPresignedUrls.presigned_urls[index]
-          return {
-            file: logo.file,
-            presigned_url: presignedUrl!.presigned_url,
-            file_type: presignedUrl!.content_type
-          }
-        })
-
-        const uploadResults = await uploadPresignedFiles(filesToUpload)
-        if (uploadResults.every(r => r.success)) {
-          // Update logos with uploaded paths
-          logosToUpload.forEach((logo: any, index: number) => {
-            const logoIndex = logos.findIndex(l => l === logo)
-            if (logoIndex !== -1) {
-              const uploadedPath = collectionLogoPresignedUrls.presigned_urls[index]!.path
-              logos[logoIndex] = {
-                ...logo,
-                file: null,
-                uploadedPath: uploadedPath,
-                url: baseStorageUrl + uploadedPath
-              }
+        if (collectionLogoPresignedUrls.success) {
+          const filesToUpload: Array<{
+            file: File
+            presigned_url: string
+            file_type: string
+          }> = logosToUpload.map((logo: any, index: number) => {
+            const presignedUrl = collectionLogoPresignedUrls.presigned_urls[index]
+            return {
+              file: logo.file,
+              presigned_url: presignedUrl!.presigned_url,
+              file_type: presignedUrl!.content_type
             }
           })
+
+          const uploadResults = await uploadPresignedFiles(filesToUpload)
+          if (uploadResults.every(r => r.success)) {
+            // Update logos with uploaded paths
+            logosToUpload.forEach((logo: any, index: number) => {
+              const logoIndex = logos.findIndex(l => l === logo)
+              if (logoIndex !== -1) {
+                const uploadedPath = collectionLogoPresignedUrls.presigned_urls[index]!.path
+                logos[logoIndex] = {
+                  ...logo,
+                  file: null,
+                  uploadedPath: uploadedPath,
+                  url: baseStorageUrl + uploadedPath
+                }
+              }
+            })
+          }
         }
       }
-    }
 
-    // Prepare products data
-    let productsData: any[] = []
+      // Prepare products data
+      let productsData: any[] = []
 
-    if (isEditing && collectionId) {
-      // When editing, we need to merge existing products with new ones
-      // First, fetch current collection to get existing products
-      if (!currentCollection.value?.details_fetched) {
-        await lockerRoomStore.fetchCollectionProducts(collectionId)
-        const updated = lockerRoomStore.collections.find(c => c.id === collectionId)
-        if (updated) currentCollection.value = updated
-      }
+      if (isEditing && collectionId) {
+        // When editing, we need to merge existing products with new ones
+        // First, fetch current collection to get existing products
+        if (!currentCollection.value?.details_fetched) {
+          await lockerRoomStore.fetchCollectionProducts(collectionId)
+          const updated = lockerRoomStore.collections.find(c => c.id === collectionId)
+          if (updated) currentCollection.value = updated
+        }
 
-      // Get existing products
-      const existingProducts = (currentCollection.value?.collection_products || []).map(
-        (p, index) => ({
+        // Get existing products
+        const existingProducts = (currentCollection.value?.collection_products || []).map(
+          (p, index) => ({
+            id: p.id,
+            product_nickname: p.product_nickname,
+            product_note: p.product_note,
+            product_price: p.product_price,
+            order_number: index + 1,
+            product_locker_room_id: p.product_locker_room_id,
+            allow_description: p.allow_description,
+            allow_price: p.allow_price,
+            allow_title: p.allow_title
+          })
+        )
+
+        // Get new products from collectionProducts (these are the ones being added)
+        const newProducts = collectionProducts.value
+          .filter(p => !p.id) // Only new products (no id means they're newly added)
+          .map((p, index) => ({
+            product_nickname: p.product_nickname,
+            product_note: p.product_note,
+            product_price: p.product_price,
+            order_number: existingProducts.length + index + 1,
+            product_locker_room_id: p.product_locker_room_id,
+            allow_description: p.allow_description,
+            allow_price: p.allow_price,
+            allow_title: p.allow_title
+          }))
+
+        // Merge existing and new products
+        productsData = [...existingProducts, ...newProducts]
+      } else {
+        // Creating new collection - use all products from collectionProducts
+        productsData = collectionProducts.value.map((p, index) => ({
           id: p.id,
           product_nickname: p.product_nickname,
           product_note: p.product_note,
@@ -422,105 +468,92 @@
           allow_description: p.allow_description,
           allow_price: p.allow_price,
           allow_title: p.allow_title
-        })
-      )
-
-      // Get new products from collectionProducts (these are the ones being added)
-      const newProducts = collectionProducts.value
-        .filter(p => !p.id) // Only new products (no id means they're newly added)
-        .map((p, index) => ({
-          product_nickname: p.product_nickname,
-          product_note: p.product_note,
-          product_price: p.product_price,
-          order_number: existingProducts.length + index + 1,
-          product_locker_room_id: p.product_locker_room_id,
-          allow_description: p.allow_description,
-          allow_price: p.allow_price,
-          allow_title: p.allow_title
         }))
+      }
 
-      // Merge existing and new products
-      productsData = [...existingProducts, ...newProducts]
-    } else {
-      // Creating new collection - use all products from collectionProducts
-      productsData = collectionProducts.value.map((p, index) => ({
-        id: p.id,
-        product_nickname: p.product_nickname,
-        product_note: p.product_note,
-        product_price: p.product_price,
-        order_number: index + 1,
-        product_locker_room_id: p.product_locker_room_id,
-        allow_description: p.allow_description,
-        allow_price: p.allow_price,
-        allow_title: p.allow_title
-      }))
-    }
+      // Get deleted logo IDs and prepare logo data
+      const deletedLogoIds: number[] = []
+      const logoData: Array<{ name: string; path: string; id?: number }> = []
 
-    // Get deleted logo IDs and prepare logo data
-    const deletedLogoIds: number[] = []
-    const logoData: Array<{ name: string; path: string; id?: number }> = []
+      const logosArray = Array.isArray(logos) ? logos : []
+      logosArray.forEach((logo: any, index: number) => {
+        if (logo?.isDeleted && logo?.id) {
+          deletedLogoIds.push(logo.id)
+        } else if (!logo?.isDeleted) {
+          let logoPath: string | null = null
 
-    const logosArray = Array.isArray(logos) ? logos : []
-    logosArray.forEach((logo: any, index: number) => {
-      if (logo?.isDeleted && logo?.id) {
-        deletedLogoIds.push(logo.id)
-      } else if (!logo?.isDeleted) {
-        let logoPath: string | null = null
+          // Priority: uploadedPath > logo.url path > url path
+          if (logo.uploadedPath) {
+            // Logo was already uploaded (File or CustomLogo with existing path)
+            logoPath = logo.uploadedPath
+          } else if (logo.logo?.url) {
+            // CustomLogo from recent logos - extract path from URL
+            logoPath = logo.logo.url.startsWith('http')
+              ? logo.logo.url.replace(baseStorageUrl, '')
+              : logo.logo.url
+          } else if (logo.url) {
+            // Fallback: extract path from URL
+            logoPath = logo.url.startsWith('http') ? logo.url.replace(baseStorageUrl, '') : logo.url
+          }
 
-        // Priority: uploadedPath > logo.url path > url path
-        if (logo.uploadedPath) {
-          // Logo was already uploaded (File or CustomLogo with existing path)
-          logoPath = logo.uploadedPath
-        } else if (logo.logo?.url) {
-          // CustomLogo from recent logos - extract path from URL
-          logoPath = logo.logo.url.startsWith('http')
-            ? logo.logo.url.replace(baseStorageUrl, '')
-            : logo.logo.url
-        } else if (logo.url) {
-          // Fallback: extract path from URL
-          logoPath = logo.url.startsWith('http') ? logo.url.replace(baseStorageUrl, '') : logo.url
+          if (logoPath) {
+            const logoEntry: { name: string; path: string; id?: number } = {
+              name: `logo-${index + 1}`,
+              path: logoPath
+            }
+            // Include logo ID only when editing a collection and logo has ID
+            if (isEditing && collectionId && logo.id) {
+              logoEntry.id = logo.id
+            }
+            logoData.push(logoEntry)
+          }
         }
+      })
 
-        if (logoPath) {
-          const logoEntry: { name: string; path: string; id?: number } = {
-            name: `logo-${index + 1}`,
-            path: logoPath
-          }
-          // Include logo ID only when editing a collection and logo has ID
-          if (isEditing && collectionId && logo.id) {
-            logoEntry.id = logo.id
-          }
-          logoData.push(logoEntry)
+      // Create manual FormData
+      const formData = new FormData()
+      formData.append('name', collectionName)
+      formData.append('link', currentCollection.value?.link || '')
+      formData.append('collection_logos_data', JSON.stringify(logoData))
+      formData.append('deleted_logos_ids', JSON.stringify(deletedLogoIds))
+
+      // Add products array
+      productsData.forEach(product => {
+        formData.append('products[]', JSON.stringify(product))
+      })
+
+      if (isEditing && collectionId) {
+        formData.append('_method', 'PUT')
+        await lockerRoomStore.updateCollection(collectionId, formData)
+        await lockerRoomStore.fetchCollections()
+        currentMode.value = 'list'
+        currentCollection.value = null
+        isCreatingCollection.value = false
+        lockerRoomHeaderRef.value!.creatingCollection = false
+        selectedLocker.value = []
+        selectedProductsByLocker.value = {}
+        selectedProducts.value = []
+      } else {
+        await lockerRoomStore.saveCollection(formData)
+        // Clear selection when collection is created (footer and context)
+        selectedLocker.value = []
+        selectedProductsByLocker.value = {}
+        selectedProducts.value = []
+        const collectionName = lockerRoomHeaderRef.value?.collection_name || 'New Collection'
+        if (lockerRoomHeaderRef.value) {
+          ;(lockerRoomHeaderRef.value as any).creatingCollection = false
+          ;(lockerRoomHeaderRef.value as any).collection_name = ''
+        }
+        // Navigate to the new collection so user can add more products
+        const newCollection = lockerRoomStore.collections.find(c => c.name === collectionName)
+        if (newCollection) {
+          await getCollectionDetail(newCollection)
+        } else {
+          handleBackNavigation()
         }
       }
-    })
-
-    // Create manual FormData
-    const formData = new FormData()
-    formData.append('name', collectionName)
-    formData.append('link', currentCollection.value?.link || '')
-    formData.append('collection_logos_data', JSON.stringify(logoData))
-    formData.append('deleted_logos_ids', JSON.stringify(deletedLogoIds))
-
-    // Add products array
-    productsData.forEach(product => {
-      formData.append('products[]', JSON.stringify(product))
-    })
-
-    if (isEditing && collectionId) {
-      formData.append('_method', 'PUT')
-      await lockerRoomStore.updateCollection(collectionId, formData)
-      await lockerRoomStore.fetchCollections()
-      currentMode.value = 'list'
-      currentCollection.value = null
-      isCreatingCollection.value = false
-      lockerRoomHeaderRef.value!.creatingCollection = false
-      selectedLocker.value = []
-      selectedProductsByLocker.value = {}
-      selectedProducts.value = []
-    } else {
-      await lockerRoomStore.saveCollection(formData)
-      handleBackNavigation()
+    } finally {
+      isSavingCollection.value = false
     }
   }
   const handleCancelCollectionEdit = () => {
@@ -586,63 +619,67 @@
 
   const handleAddToCollection = async (targetCollection: Collection) => {
     if (!currentCollection.value) return
+    isAddingToCollection.value = true
+    try {
+      // Fetch target collection details if needed
+      let collectionToUpdate = targetCollection
+      if (!targetCollection.details_fetched) {
+        await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
+        const updated = lockerRoomStore.collections.find(c => c.id === targetCollection.id)
+        if (updated) collectionToUpdate = updated
+      }
 
-    // Fetch target collection details if needed
-    let collectionToUpdate = targetCollection
-    if (!targetCollection.details_fetched) {
-      await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
-      const updated = lockerRoomStore.collections.find(c => c.id === targetCollection.id)
-      if (updated) collectionToUpdate = updated
-    }
+      // Merge products from current collection to target collection
+      const currentProducts = collectionProducts.value.map((p, index) => ({
+        id: p.id || undefined,
+        product_nickname: p.product_nickname,
+        product_note: p.product_note,
+        product_price: p.product_price,
+        order_number: (collectionToUpdate.collection_products?.length || 0) + index + 1,
+        product_locker_room_id: p.id
+      }))
 
-    // Merge products from current collection to target collection
-    const currentProducts = collectionProducts.value.map((p, index) => ({
-      id: p.id || undefined,
-      product_nickname: p.product_nickname,
-      product_note: p.product_note,
-      product_price: p.product_price,
-      order_number: (collectionToUpdate.collection_products?.length || 0) + index + 1,
-      product_locker_room_id: p.id
-    }))
+      const existingProducts = (collectionToUpdate.collection_products || []).map((p, index) => ({
+        id: p.id,
+        product_nickname: p.product_nickname,
+        product_note: p.product_note,
+        product_price: p.product_price,
+        order_number: index + 1,
+        product_locker_room_id: p.id
+      }))
 
-    const existingProducts = (collectionToUpdate.collection_products || []).map((p, index) => ({
-      id: p.id,
-      product_nickname: p.product_nickname,
-      product_note: p.product_note,
-      product_price: p.product_price,
-      order_number: index + 1,
-      product_locker_room_id: p.id
-    }))
+      const allProducts = [...existingProducts, ...currentProducts]
 
-    const allProducts = [...existingProducts, ...currentProducts]
-
-    // Create manual FormData
-    const formData = new FormData()
-    formData.append('name', collectionToUpdate.name)
-    formData.append('link', collectionToUpdate.link || '')
-    formData.append(
-      'collection_logos_data',
-      JSON.stringify(
-        (collectionToUpdate.logos || []).map(logo => ({
-          name: logo.name,
-          path: logo.path
-        }))
+      // Create manual FormData
+      const formData = new FormData()
+      formData.append('name', collectionToUpdate.name)
+      formData.append('link', collectionToUpdate.link || '')
+      formData.append(
+        'collection_logos_data',
+        JSON.stringify(
+          (collectionToUpdate.logos || []).map(logo => ({
+            name: logo.name,
+            path: logo.path
+          }))
+        )
       )
-    )
-    formData.append('deleted_logos_ids', JSON.stringify([]))
-    formData.append('_method', 'PUT')
-    // Add products array
-    allProducts.forEach(product => {
-      formData.append('products[]', JSON.stringify(product))
-    })
-    await lockerRoomStore.updateCollection(collectionToUpdate.id, formData)
+      formData.append('deleted_logos_ids', JSON.stringify([]))
+      formData.append('_method', 'PUT')
+      // Add products array
+      allProducts.forEach(product => {
+        formData.append('products[]', JSON.stringify(product))
+      })
+      await lockerRoomStore.updateCollection(collectionToUpdate.id, formData)
 
-    // Refresh target collection
-    await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
-    const updatedCollection = lockerRoomStore.collections.find(c => c.id === targetCollection.id)
-    if (updatedCollection) {
-      currentCollection.value = updatedCollection
-      getCollectionDetail(updatedCollection)
+      // Refresh target collection
+      await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
+      const updatedCollection = lockerRoomStore.collections.find(c => c.id === targetCollection.id)
+      if (updatedCollection) {
+        currentCollection.value = updatedCollection
+        getCollectionDetail(updatedCollection)
+      }
+    } finally {
+      isAddingToCollection.value = false
     }
   }
 
@@ -703,94 +740,101 @@
 
   const handleAddToCollectionFromLocker = async (targetCollection: Collection) => {
     if (!currentLocker.value || selectedProducts.value.length === 0) return
-    // Convert selected products to collection products format
-    const productsToAdd = selectedProducts.value.map((product: LockerProduct) => ({
-      allow_description: true,
-      allow_price: true,
-      allow_title: true,
-      product_nickname: product.product_name,
-      description: product.description,
-      product_note: product.description,
-      product_price: '',
-      product_locker_room_id: product.id,
-      product_urls: {
-        front_url: product.product_front_url,
-        back_url: product.product_back_url
+    isAddingToCollection.value = true
+    try {
+      // Convert selected products to collection products format
+      const productsToAdd = selectedProducts.value.map((product: LockerProduct) => ({
+        allow_description: true,
+        allow_price: true,
+        allow_title: true,
+        product_nickname: product.product_name,
+        description: product.description,
+        product_note: product.description,
+        product_price: '',
+        product_locker_room_id: product.id,
+        product_urls: {
+          front_url: product.product_front_url,
+          back_url: product.product_back_url
+        }
+      }))
+
+      // Fetch target collection if needed
+      let collectionToUpdate = targetCollection
+      if (!targetCollection.details_fetched) {
+        await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
+        const updated = lockerRoomStore.collections.find(c => c.id === targetCollection.id)
+        if (updated) collectionToUpdate = updated
       }
-    }))
 
-    // Fetch target collection if needed
-    let collectionToUpdate = targetCollection
-    if (!targetCollection.details_fetched) {
-      await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
-      const updated = lockerRoomStore.collections.find(c => c.id === targetCollection.id)
-      if (updated) collectionToUpdate = updated
-    }
+      // Merge products
+      const existingProducts = (collectionToUpdate.collection_products || []).map((p, index) => ({
+        id: p.id,
+        product_nickname: p.product_nickname,
+        product_note: p.product_note,
+        product_price: p.product_price,
+        order_number: index + 1,
+        product_locker_room_id: p.id
+      }))
 
-    // Merge products
-    const existingProducts = (collectionToUpdate.collection_products || []).map((p, index) => ({
-      id: p.id,
-      product_nickname: p.product_nickname,
-      product_note: p.product_note,
-      product_price: p.product_price,
-      order_number: index + 1,
-      product_locker_room_id: p.id
-    }))
-
-    const newProducts = productsToAdd.map(
-      (p, index) =>
-        ({
-          product_nickname: p.product_nickname,
-          product_note: p.product_note,
-          product_price: p.product_price,
-          order_number: existingProducts.length + index + 1,
-          product_locker_room_id: p.product_locker_room_id,
-          product_urls: {
-            front_url: p.product_urls.front_url,
-            back_url: p.product_urls.back_url
-          }
-        }) as CollectionProduct
-    )
-
-    const allProducts = [...existingProducts, ...newProducts]
-
-    // Create manual FormData
-    const formData = new FormData()
-    formData.append('name', collectionToUpdate.name)
-    formData.append('link', collectionToUpdate.link || '')
-    formData.append(
-      'collection_logos_data',
-      JSON.stringify(
-        (collectionToUpdate.logos || []).map(logo => ({
-          name: logo.name,
-          path: logo.path
-        }))
+      const newProducts = productsToAdd.map(
+        (p, index) =>
+          ({
+            product_nickname: p.product_nickname,
+            product_note: p.product_note,
+            product_price: p.product_price,
+            order_number: existingProducts.length + index + 1,
+            product_locker_room_id: p.product_locker_room_id,
+            product_urls: {
+              front_url: p.product_urls.front_url,
+              back_url: p.product_urls.back_url
+            }
+          }) as CollectionProduct
       )
-    )
-    formData.append('deleted_logos_ids', JSON.stringify([]))
-    formData.append('_method', 'PUT')
-    // Add products array
-    allProducts.forEach(product => {
-      formData.append('products[]', JSON.stringify(product))
-    })
 
-    await lockerRoomStore.updateCollection(collectionToUpdate.id, formData)
+      const allProducts = [...existingProducts, ...newProducts]
 
-    // Refresh collection
-    await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
-    toast.success('Products added to collection successfully', {
-      position: 'top-right',
-      richColors: true
-    })
+      // Create manual FormData
+      const formData = new FormData()
+      formData.append('name', collectionToUpdate.name)
+      formData.append('link', collectionToUpdate.link || '')
+      formData.append(
+        'collection_logos_data',
+        JSON.stringify(
+          (collectionToUpdate.logos || []).map(logo => ({
+            name: logo.name,
+            path: logo.path
+          }))
+        )
+      )
+      formData.append('deleted_logos_ids', JSON.stringify([]))
+      formData.append('_method', 'PUT')
+      // Add products array
+      allProducts.forEach(product => {
+        formData.append('products[]', JSON.stringify(product))
+      })
 
-    // Clear selection for current locker so listing and footer stay in sync
-    if (currentLocker.value) {
-      selectedProductsByLocker.value = {
-        ...selectedProductsByLocker.value,
-        [currentLocker.value.id]: []
+      await lockerRoomStore.updateCollection(collectionToUpdate.id, formData)
+
+      // Refresh collection
+      await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
+      toast.success('Products added to collection successfully', {
+        position: 'top-right',
+        richColors: true
+      })
+
+      // Clear selection for current locker so listing and footer stay in sync
+      if (currentLocker.value) {
+        const lockerId = currentLocker.value.id
+        selectedProductsByLocker.value = {
+          ...selectedProductsByLocker.value,
+          [lockerId]: []
+        }
+        selectedLocker.value = selectedLocker.value.filter(id => Number(id) !== lockerId)
       }
+      selectedProducts.value = []
+    } finally {
+      isAddingToCollection.value = false
     }
-    selectedProducts.value = []
   }
 
   watch(
@@ -947,6 +991,8 @@
         :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
         :collection-creation-step="collectionCreationStep"
         :is-editing-collection-name="editingCollectionName"
+        :is-saving-collection="isSavingCollection"
+        :is-adding-to-collection="isAddingToCollection"
         @back="handleBackNavigation"
         @cancel-collection-edit="handleCancelCollectionEdit"
         @confirm-collection-edit="handleConfirmCollectionEdit"
