@@ -11,7 +11,7 @@
     type ComponentPublicInstance,
     shallowRef
   } from 'vue'
-  import { FabricImage, Canvas, Group, Rect, type FabricObject } from 'fabric'
+  import { FabricImage, Canvas, Group, Rect, FabricText, type FabricObject } from 'fabric'
   import * as fabric from 'fabric'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
@@ -59,6 +59,7 @@
   const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
   const customTextObjects = shallowRef<Map<string, FabricObject>>(new Map())
   const otherSideLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
+  const otherSideTextObjects = shallowRef<Map<string, FabricObject>>(new Map())
   const dimText = shallowRef<fabric.IText | null>(null)
   const dimensionTargetRef = shallowRef<FabricObject | FabricImage | null>(null)
   const suppressCustomLogosWatch = ref(false)
@@ -482,8 +483,9 @@
     await resetAndAddLogos()
     await resetAndAddTexts()
 
-    // Render mirrored logos coming from the opposite side (stored in sceneStore)
+    // Render mirrored logos and texts coming from the opposite side (stored in sceneStore)
     await renderOtherSideLogosFromStore()
+    await renderOtherSideTextsFromStore()
   }
 
   // All customization functions are now provided by useColorCustomization composable
@@ -525,12 +527,17 @@
     (newSide, oldSide) => {
       if (!props.mainPreview) return
       sceneStore.clearOtherSideLogos(oldSide as 'front' | 'back')
+      sceneStore.clearOtherSideTexts(oldSide as 'front' | 'back')
       if (canvas.value) {
         otherSideLogoObjects.value.forEach(obj => {
           canvas.value?.remove(obj as FabricObject)
         })
+        otherSideTextObjects.value.forEach(obj => {
+          canvas.value?.remove(obj)
+        })
       }
       otherSideLogoObjects.value = new Map()
+      otherSideTextObjects.value = new Map()
       // Clear old reference if side changed
       if (oldSide && oldSide !== newSide) {
         sceneStore.setTwoDSceneRef(null, oldSide as 'front' | 'back')
@@ -895,8 +902,9 @@
 
     let addLeft = target.left ?? 0
     let addTop = target.top ?? 0
-    const modelStart = modelRect.left - modelRect.width / 2 - 1
-    const modelEnd = modelRect.left + modelRect.width / 2 + 1
+    // Match old Scene.vue: model_start = left edge - 1, model_end = right edge + 1 (getBoundingRect gives top-left so left edge = left, right edge = left + width)
+    const modelStart = modelRect.left - 1
+    const modelEnd = modelRect.left + modelRect.width + 1
 
     if (
       canvas.value.isTargetTransparent(design as unknown as FabricObject, checkPointX, checkPointY)
@@ -985,6 +993,158 @@
       ) as 'front' | 'back'
       const idx = (target as unknown as { logo_index?: number }).logo_index ?? 0
       sceneStore.removeOtherSideLogo(destSide, idx)
+    }
+  }
+
+  /**
+   * Mirror text to the opposite side and store its data (same pattern as addToOtherSide for logos).
+   */
+  function addTextToOtherSide(target: FabricObject) {
+    if (!canvas.value || !designObject.value) return
+
+    const customTextIndex = (target as unknown as { custom_text_index?: number }).custom_text_index
+    const itemIndex = (target as unknown as { custom_text_item_index?: number })
+      .custom_text_item_index
+    if (customTextIndex == null || itemIndex == null) return
+
+    const design = designObject.value
+    const modelRect = design.getBoundingRect()
+    const boundingRect = {
+      left: modelRect.left,
+      right: modelRect.left + modelRect.width,
+      top: modelRect.top,
+      bottom: modelRect.top + modelRect.height
+    }
+
+    const width = (target.width ?? 0) * (target.scaleX ?? 1)
+    const height = (target.height ?? 0) * (target.scaleY ?? 1)
+    const centerPoint = target.getCenterPoint()
+
+    let boundingDistance: Record<BoundKey, number> = {
+      left: Math.abs(boundingRect.left - centerPoint.x),
+      top: Math.abs(boundingRect.top - centerPoint.y),
+      right: Math.abs(boundingRect.right - centerPoint.x),
+      bottom: Math.abs(boundingRect.bottom - centerPoint.y)
+    }
+
+    let actualNearTo: BoundKey = 'left'
+    Object.keys(boundingDistance).forEach(key => {
+      const k = key as BoundKey
+      if (boundingDistance[k] < boundingDistance[actualNearTo]) {
+        actualNearTo = k
+      }
+    })
+
+    boundingDistance = {
+      left: Math.abs(boundingRect.left - centerPoint.x),
+      top: Math.abs(boundingRect.top - centerPoint.y) + 100,
+      right: Math.abs(boundingRect.right - centerPoint.x),
+      bottom: Math.abs(boundingRect.bottom - centerPoint.y) + 100
+    }
+
+    let nearTo: BoundKey = 'left'
+    Object.keys(boundingDistance).forEach(key => {
+      const k = key as BoundKey
+      if (boundingDistance[k] < boundingDistance[nearTo]) {
+        nearTo = k
+      }
+    })
+    const moreTowards: 'left' | 'right' =
+      boundingDistance.right < boundingDistance.left ? 'right' : 'left'
+    const isActualTop = actualNearTo === ('top' as BoundKey)
+
+    let checkPointX = (target.left ?? 0) + width / 2
+    if (nearTo === 'left') {
+      checkPointX = (target.left ?? 0) - width / 2
+    }
+
+    let checkPointY = centerPoint.y
+    if (isActualTop) {
+      checkPointY = (target.top ?? 0) - height / 3
+    }
+
+    let addLeft = target.left ?? 0
+    let addTop = target.top ?? 0
+    // Match old Scene.vue: model_start = left edge - 1, model_end = right edge + 1
+    const modelStart = modelRect.left - 1
+    const modelEnd = modelRect.left + modelRect.width + 1
+
+    const destSide = (props.side === 'back' ? 'front' : 'back') as 'front' | 'back'
+
+    if (
+      canvas.value.isTargetTransparent(design as unknown as FabricObject, checkPointX, checkPointY)
+    ) {
+      if (isActualTop) {
+        const direction = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          centerPoint.x,
+          centerPoint.y - height,
+          0,
+          1,
+          'bottom'
+        )
+        addTop = direction.top - checkPointY
+        addLeft = props.canvasWidth - (target.left ?? 0)
+      } else if (moreTowards === 'left') {
+        const direction = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          checkPointX,
+          centerPoint.y,
+          0,
+          1,
+          'right'
+        )
+        const directionFromRight = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          modelEnd,
+          checkPointY,
+          0,
+          1,
+          'left'
+        )
+        const outside = direction.left - checkPointX
+        const modelSpaceLeft = directionFromRight.left + width / 2 - 3
+        addLeft = modelSpaceLeft - outside
+        addTop = target.top ?? 0
+      } else {
+        const direction = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          (target.left ?? 0) + width,
+          target.top ?? 0,
+          0,
+          1,
+          'left'
+        )
+        const directionFromRight = targetNonTransparent(
+          canvas.value,
+          design as unknown as FabricObject,
+          modelStart,
+          centerPoint.y,
+          0,
+          1,
+          'right'
+        )
+        const outside = checkPointX - direction.left
+        const modelSpaceRight = directionFromRight.left - width / 2 - 3
+        addLeft = modelSpaceRight + outside
+        addTop = target.top ?? 0
+      }
+      sceneStore.addOtherSideText({
+        customTextIndex,
+        itemIndex,
+        side: destSide,
+        left: addLeft,
+        top: addTop,
+        rotation: -(target.angle ?? 0),
+        scaleX: target.scaleX ?? 1,
+        scaleY: target.scaleY ?? 1
+      })
+    } else {
+      sceneStore.removeOtherSideText(destSide, customTextIndex, itemIndex)
     }
   }
 
@@ -1357,10 +1517,21 @@
     const key = getTextObjectKey(customTextIndex, itemIndex)
     const textObj = customTextObjects.value.get(key)
     if (textObj) {
+      const reclipAndClampText = async () => {
+        await applyClipPath(textObj)
+        showDimensions(textObj)
+        if (canvas.value) canvas.value.requestRenderAll()
+      }
       textObj.on('selected', () => showDimensions(textObj))
-      textObj.on('moving', () => showDimensions(textObj))
-      textObj.on('scaling', () => showDimensions(textObj))
-      textObj.on('rotating', () => showDimensions(textObj))
+      textObj.on('moving', reclipAndClampText)
+      textObj.on('scaling', reclipAndClampText)
+      textObj.on('rotating', reclipAndClampText)
+      textObj.on('modified', () => {
+        addTextToOtherSide(textObj)
+        showDimensions(textObj)
+        customizationStore.saveToLocalStorage()
+      })
+      addTextToOtherSide(textObj)
     }
   }
 
@@ -1461,6 +1632,75 @@
     canvas.value.requestRenderAll()
   }
 
+  /**
+   * Render texts stored for the opposite side onto this side's canvas (mirror of text from other side).
+   */
+  async function renderOtherSideTextsFromStore(): Promise<void> {
+    if (!canvas.value) return
+    const entries = sceneStore.getOtherSideTexts(props.side as 'front' | 'back')
+    const productId = effectiveProductId.value
+    const raw =
+      productId && customizationStore.customization?.product_custom_texts?.[String(productId)]
+    const allTexts: OutputProductText[] = Array.isArray(raw) ? raw : []
+    const seen = new Set<string>()
+    const heightScale = heightScaleForText.value
+
+    for (const stored of entries) {
+      const key = getTextObjectKey(stored.customTextIndex, stored.itemIndex)
+      seen.add(key)
+      const entry = allTexts[stored.customTextIndex]
+      const item = entry?.items?.[stored.itemIndex]
+      if (!entry || !item) continue
+
+      const fontSize = heightScale * Number(item.height) || 16
+      const fontFamily = entry.font_family?.trim() || 'Ubuntu'
+      const textObj = new FabricText(entry.value, {
+        left: stored.left,
+        top: stored.top,
+        angle: stored.rotation ?? 0,
+        scaleX: stored.scaleX ?? 1,
+        scaleY: stored.scaleY ?? 1,
+        originX: 'center',
+        originY: 'center',
+        fontFamily,
+        fontSize,
+        fill: item.color || '#000000',
+        stroke: item.outline_enabled ? item.outline_color : undefined,
+        strokeWidth: item.outline_enabled ? (item.outline_width ?? 0) : 0,
+        paintFirst: 'stroke',
+        selectable: false,
+        evented: false,
+        globalCompositeOperation: 'source-atop'
+      })
+
+      const existing = otherSideTextObjects.value.get(key)
+      if (existing) {
+        existing.set({
+          left: stored.left,
+          top: stored.top,
+          angle: stored.rotation ?? 0,
+          scaleX: stored.scaleX ?? existing.scaleX,
+          scaleY: stored.scaleY ?? existing.scaleY
+        })
+        existing.setCoords()
+        continue
+      }
+
+      otherSideTextObjects.value.set(key, textObj as FabricObject)
+      canvas.value.add(textObj as FabricObject)
+      await applyClipPath(textObj as unknown as FabricImage)
+    }
+
+    for (const [key, obj] of otherSideTextObjects.value.entries()) {
+      if (!seen.has(key)) {
+        canvas.value.remove(obj)
+        otherSideTextObjects.value.delete(key)
+      }
+    }
+
+    canvas.value.requestRenderAll()
+  }
+
   // Watch for changes in default colors from customization store
   watch(
     () => customizationStore.customization?.default_colors,
@@ -1491,6 +1731,15 @@
     async () => {
       if (isPlacementMode.value || !mounted.value) return
       await renderOtherSideLogosFromStore()
+    },
+    { deep: true }
+  )
+
+  watch(
+    () => sceneStore.getOtherSideTexts(props.side as 'front' | 'back'),
+    async () => {
+      if (isPlacementMode.value || !mounted.value) return
+      await renderOtherSideTextsFromStore()
     },
     { deep: true }
   )

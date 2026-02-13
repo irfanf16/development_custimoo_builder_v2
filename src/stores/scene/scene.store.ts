@@ -19,6 +19,17 @@ export type OtherSideLogo = {
   rotation?: number
   excluded_clip_id?: string
 }
+
+export type OtherSideText = {
+  customTextIndex: number
+  itemIndex: number
+  side: 'front' | 'back'
+  left: number
+  top: number
+  rotation?: number
+  scaleX?: number
+  scaleY?: number
+}
 /**
  * Store for scene component references
  * Used to access mainPreview scene components globally
@@ -31,6 +42,9 @@ export const useSceneStore = defineStore('sceneStore', () => {
   // Mirrored logos per side, keyed by logo_index
   const otherSideFront = ref<Record<number, OtherSideLogo>>({})
   const otherSideBack = ref<Record<number, OtherSideLogo>>({})
+  // Mirrored texts per side, keyed by `${customTextIndex}_${itemIndex}`
+  const otherSideFrontTexts = ref<Record<string, OtherSideText>>({})
+  const otherSideBackTexts = ref<Record<string, OtherSideText>>({})
 
   /**
    * Set 3D scene reference
@@ -83,6 +97,35 @@ export const useSceneStore = defineStore('sceneStore', () => {
     }
   }
 
+  function getOtherSideTextKey(customTextIndex: number, itemIndex: number): string {
+    return `${customTextIndex}_${itemIndex}`
+  }
+
+  function addOtherSideText(text: OtherSideText) {
+    const key = getOtherSideTextKey(text.customTextIndex, text.itemIndex)
+    const target = text.side === 'front' ? otherSideFrontTexts : otherSideBackTexts
+    target.value[key] = text
+  }
+
+  function getOtherSideTexts(side: 'front' | 'back'): OtherSideText[] {
+    const source = side === 'front' ? otherSideFrontTexts.value : otherSideBackTexts.value
+    return Object.values(source)
+  }
+
+  function removeOtherSideText(side: 'front' | 'back', customTextIndex: number, itemIndex: number) {
+    const key = getOtherSideTextKey(customTextIndex, itemIndex)
+    const target = side === 'front' ? otherSideFrontTexts : otherSideBackTexts
+    delete target.value[key]
+  }
+
+  function clearOtherSideTexts(side: 'front' | 'back') {
+    if (side === 'front') {
+      otherSideFrontTexts.value = {}
+    } else {
+      otherSideBackTexts.value = {}
+    }
+  }
+
   return {
     threeDSceneRef,
     twoDSceneFrontRef,
@@ -95,6 +138,11 @@ export const useSceneStore = defineStore('sceneStore', () => {
     addOtherSideLogo,
     removeOtherSideLogo,
     getOtherSideLogos,
-    clearOtherSideLogos
+    clearOtherSideLogos,
+    addOtherSideText,
+    getOtherSideTexts,
+    removeOtherSideText,
+    clearOtherSideTexts,
+    getOtherSideTextKey
   }
 })
