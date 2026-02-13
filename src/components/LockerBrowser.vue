@@ -324,6 +324,7 @@
   })
 
   const handleSaveCollection = async () => {
+    debugger
     if (!lockerRoomHeaderRef.value) return
     isSavingCollection.value = true
     try {
@@ -801,11 +802,7 @@
         description: product.description,
         product_note: product.description,
         product_price: '',
-        product_locker_room_id: product.id,
-        product_urls: {
-          front_url: product.product_front_url,
-          back_url: product.product_back_url
-        }
+        product_locker_room_id: product.id
       }))
 
       // Fetch target collection if needed
@@ -823,24 +820,24 @@
         product_note: p.product_note,
         product_price: p.product_price,
         order_number: index + 1,
-        product_locker_room_id: p.id
+        product_locker_room_id: p.product_locker_room_id,
+        allow_description: p.allow_description,
+        allow_price: p.allow_price,
+        allow_title: p.allow_title
       }))
 
-      const newProducts = productsToAdd.map(
-        (p, index) =>
-          ({
-            product_nickname: p.product_nickname,
-            product_note: p.product_note,
-            product_price: p.product_price,
-            order_number: existingProducts.length + index + 1,
-            product_locker_room_id: p.product_locker_room_id,
-            product_urls: {
-              front_url: p.product_urls.front_url,
-              back_url: p.product_urls.back_url
-            }
-          }) as CollectionProduct
-      )
-
+      const newProducts = productsToAdd.map((p, index) => {
+        return {
+          product_nickname: p.product_nickname,
+          product_note: p.product_note,
+          product_price: p.product_price,
+          order_number: existingProducts.length + index + 1,
+          product_locker_room_id: p.product_locker_room_id,
+          allow_description: true,
+          allow_price: true,
+          allow_title: true
+        } as CollectionProduct
+      })
       const allProducts = [...existingProducts, ...newProducts]
 
       // Create manual FormData
