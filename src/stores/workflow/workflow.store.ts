@@ -470,7 +470,24 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     currentHeaderConfig.value = null
     currentFooterConfig.value = null
   }
-
+  function resetWorkFlowStore() {
+    activeStep.value = null
+    resetWorkflowSubSteps()
+    selectedCategoryId.value = null
+    selectedSubCategoryId.value = null
+    selectedDesignCategoryId.value = null
+    clearHeaderAndFooterConfig()
+    activeLogoId.value = null
+    activeLogoIndex.value = null
+    activeColorAccordionIndex.value = null
+    textClipboard.value = null
+    activeTextId.value = null
+    activeTextItemIndex.value = null
+    pendingTextTemplateId.value = null
+    activeCanvasSide.value = 'front'
+    canvasZoom.value = 1
+    panelOpen.value = true
+  }
   // ===== RETURN =====
   return {
     // State
@@ -544,6 +561,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     currentFooterConfig,
     setCurrentHeaderConfig,
     setCurrentFooterConfig,
-    clearHeaderAndFooterConfig
+    clearHeaderAndFooterConfig,
+    resetWorkFlowStore
   }
 })

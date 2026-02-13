@@ -95,6 +95,7 @@ export function useLogoActions() {
     while (defaultColors.length < 4) {
       defaultColors.push({ color: null, pantone: null, name: null })
     }
+    workflowStore.setActiveLogoId(String(logo.id))
 
     // Set default_colors in customization store
     if (customizationStore.customization) {

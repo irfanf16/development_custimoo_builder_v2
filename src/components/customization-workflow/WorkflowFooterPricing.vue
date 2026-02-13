@@ -5,18 +5,32 @@
   import { Button } from '@/components/ui/button'
   import { ShoppingCart } from 'lucide-vue-next'
   import { toast } from 'vue-sonner'
-  import { summary_mrsp, summary_for, summary_pcs, price_add_to_cart } from '@/paraglide/messages'
+  import {
+    summary_mrsp,
+    summary_for,
+    summary_pcs,
+    price_add_to_cart,
+    minimum_quantity
+  } from '@/paraglide/messages'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { usePricing } from '@/composables/usePricing'
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { useCompanyStore } from '@/stores/company/company.store'
+  import { useRoster } from './WorkflowSteps/roster/useRoster'
+
   const uiStore = useUIStore()
   // Stores
   const profileStore = useProfileStore()
   const cartStore = useCartStore()
   const authStore = useAuthStore()
   const companyStore = useCompanyStore()
-  const { activeProductPrice, minimumActiveProductQuantityByDesign, showPricing } = usePricing()
+  const {
+    activeProductPrice,
+    showPricing,
+    minimumActiveProductQuantityByDesignToCard,
+    isQuantityByDesign
+  } = usePricing()
+  const { totalRosterQuantity } = useRoster()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
 
   // const estimatedDeliveryDate = computed(() => {
@@ -31,6 +45,29 @@
   // Add to cart
   async function handleAddToCart() {
     try {
+      const rosterQty = totalRosterQuantity.value
+      const minDesignQty = minimumActiveProductQuantityByDesignToCard.value
+      const isByDesign = isQuantityByDesign.value
+
+      if (rosterQty <= 0) {
+        toast.error('Please add at least one item to the roster before adding to cart.', {
+          position: 'top-right',
+          richColors: true
+        })
+        return
+      }
+
+      if (isByDesign && rosterQty < minDesignQty) {
+        toast.error(
+          `Please add at least ${minDesignQty} items to the roster before adding to cart.`,
+          {
+            position: 'top-right',
+            richColors: true
+          }
+        )
+        return
+      }
+
       const { factory_product, product_assets } = await buildFactoryProductPayload()
 
       await cartStore.addProductToCart({
@@ -70,10 +107,22 @@
         </p>
         <p class="text-sm text-muted-foreground">
           {{ summary_for({}, { locale: profileStore.currentLocale }) }}
-          {{ minimumActiveProductQuantityByDesign }}
+          {{ totalRosterQuantity }}
           {{ summary_pcs({}, { locale: profileStore.currentLocale }) }}
         </p>
       </div>
+      <p
+        class="text-xs"
+        :class="
+          totalRosterQuantity < minimumActiveProductQuantityByDesignToCard
+            ? 'text-red-500'
+            : 'text-green-500'
+        "
+      >
+        {{ minimum_quantity({}, { locale: profileStore.currentLocale }) }}:&nbsp;
+        {{ minimumActiveProductQuantityByDesignToCard }}
+      </p>
+
       <!-- <p class="text-xs text-muted-foreground">
         {{ estimated_shipping_date({}, { locale }) }} {{ estimatedDeliveryDate }}
       </p> -->
@@ -83,7 +132,12 @@
       variant="primary"
       :size="uiStore.isMobile ? 'sm' : 'lg'"
       class="w-full"
-      @click="handleAddToCart"
+      :disabled="
+        totalRosterQuantity <= 0 ||
+        (isQuantityByDesign && totalRosterQuantity < minimumActiveProductQuantityByDesignToCard) ||
+        !authStore.isAuthenticated
+      "
+      @click.once="handleAddToCart"
     >
       <ShoppingCart class="size-4" />
       {{ price_add_to_cart({}, { locale: profileStore.currentLocale }) }}

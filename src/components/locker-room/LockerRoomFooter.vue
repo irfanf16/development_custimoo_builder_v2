@@ -255,7 +255,7 @@
   )
   const fullLockersFromStore = computed(() =>
     fullLockerIds.value
-      .map(id => storeLockers.value.find(l => l.id === Number(id)))
+      .map(id => storeLockers.value.find((l: Locker) => l.id === Number(id)))
       .filter((l): l is Locker => !!l)
   )
   // List mode: show products count (sum of full lockers' product_count + individually selected products)

@@ -41,7 +41,10 @@ export type OutputProductDetails = OutputProductPreview & {
   shareable: number
   company_product: {
     is_custom_prices: number
+    is_custom_moq: number
     product_id: number
+    minimum_order_quantity_type: 'by_design' | 'by_cart'
+    minimum_order_quantity: number
     skucurrency: Array<{
       id: number
       code: string

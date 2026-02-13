@@ -435,5 +435,7 @@
   "time_ago_months": "{count} måned siden",
   "time_ago_months_plural": "{count} måneder siden",
   "time_ago_years": "{count} år siden",
-  "time_ago_years_plural": "{count} år siden"
+  "time_ago_years_plural": "{count} år siden",
+  "minimum_quantity": "Minimum Antal",
+  "minimum_order_quantity": "Minimum bestillingsmængde"
 }

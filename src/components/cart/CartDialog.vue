@@ -5,7 +5,7 @@
   import { Pencil, Trash2, Users } from 'lucide-vue-next'
   import { useCart } from './useCart'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import { cart_note_placeholder } from '@/paraglide/messages'
+  import { cart_note_placeholder, minimum_order_quantity } from '@/paraglide/messages'
 
   import { useLoadCartProductIntoCustomizer } from '@/composables/useLoadCartProductIntoCustomizer'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -56,7 +56,8 @@
     editProduct: _editProduct,
     totalItems,
     totalPrice,
-    fetchCart
+    fetchCart,
+    minimumCartQuantity
   } = useCart()
 
   // Handle remove product with confirmation
@@ -334,7 +335,6 @@
       <DialogHeader class="p-4 border-b sticky top-0 z-10 shrink-0">
         <DialogTitle class="text-lg font-semibold">Cart</DialogTitle>
       </DialogHeader>
-
       <ScrollArea class="flex-1 overflow-y-auto">
         <!-- Cart Items -->
         <div class="divide-y">
@@ -493,10 +493,20 @@
                   <span>Total</span>
                   <span>{{ formatPrice(totalPrice) }}</span>
                 </div>
+                <div>
+                  <span
+                    class="text-xs"
+                    :class="totalItems < minimumCartQuantity() ? 'text-red-500' : 'text-green-500'"
+                  >
+                    {{
+                      minimum_order_quantity({}, { locale: profileStore.currentLocale })
+                    }}:&nbsp;{{ minimumCartQuantity() }}
+                  </span>
+                </div>
               </div>
               <button
                 class="w-full mt-4 px-4 py-3 bg-teal-500 text-white rounded-md font-medium hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="!canConfirmOrder || isPlacingOrder"
+                :disabled="!canConfirmOrder || isPlacingOrder || totalItems < minimumCartQuantity()"
                 @click="handleConfirmOrder"
               >
                 {{ isPlacingOrder ? 'Placing order...' : 'Confirm order' }}

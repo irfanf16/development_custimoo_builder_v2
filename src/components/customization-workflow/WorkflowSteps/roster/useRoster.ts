@@ -274,6 +274,12 @@ export function useRoster() {
       console.error('Failed to download template:', error)
     }
   }
+  const totalRosterQuantity = computed(() => {
+    return rosterEntries.value.reduce((total, entry) => {
+      const qty = Number(entry.quantity)
+      return total + (Number.isFinite(qty) && qty > 0 ? qty : 0)
+    }, 0)
+  })
 
   return {
     rosterEntries,
@@ -293,7 +299,8 @@ export function useRoster() {
     presetNameId,
     presetNumberId,
     customizedPresetName,
-    customizedPresetNumber
+    customizedPresetNumber,
+    totalRosterQuantity
   }
 }
 

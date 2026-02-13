@@ -96,6 +96,13 @@ export const useSceneStore = defineStore('sceneStore', () => {
       otherSideBack.value = {}
     }
   }
+  function resetSceneStore() {
+    threeDSceneRef.value = null
+    twoDSceneFrontRef.value = null
+    twoDSceneBackRef.value = null
+    otherSideFront.value = {}
+    otherSideBack.value = {}
+  }
 
   function getOtherSideTextKey(customTextIndex: number, itemIndex: number): string {
     return `${customTextIndex}_${itemIndex}`
@@ -143,6 +150,7 @@ export const useSceneStore = defineStore('sceneStore', () => {
     getOtherSideTexts,
     removeOtherSideText,
     clearOtherSideTexts,
-    getOtherSideTextKey
+    getOtherSideTextKey,
+    resetSceneStore
   }
 })

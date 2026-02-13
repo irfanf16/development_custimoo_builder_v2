@@ -166,6 +166,14 @@ export const useLogosStore = defineStore('logosStore', () => {
     }
     return response
   }
+  function resetLogosStore() {
+    logos.value = null
+    recentLogos.value = null
+    activeLogo.value = null
+    isLoadingRecentLogos.value = false
+    isLoadingUploadLogo.value = false
+    error.value = null
+  }
 
   return {
     // State
@@ -186,6 +194,7 @@ export const useLogosStore = defineStore('logosStore', () => {
     uploadLogo,
     deleteRecentLogo,
     updateAndPostNewLogo,
-    editLogo
+    editLogo,
+    resetLogosStore
   }
 })

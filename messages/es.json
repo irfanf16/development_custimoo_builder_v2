@@ -435,5 +435,7 @@
   "time_ago_months": "hace {count} mes",
   "time_ago_months_plural": "hace {count} meses",
   "time_ago_years": "hace {count} año",
-  "time_ago_years_plural": "hace {count} años"
+  "time_ago_years_plural": "hace {count} años",
+  "minimum_quantity": "Cantidad Mínima",
+  "minimum_order_quantity": "Cantidad mínima de pedido"
 }

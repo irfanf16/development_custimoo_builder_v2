@@ -1,5 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { useCartStore } from '@/stores/cart/cart.store'
+import { useCompanyStore } from '@/stores/company/company.store'
 
 export interface CartProduct {
   // Internal IDs for API operations
@@ -14,6 +15,7 @@ export interface CartProduct {
   price: number
   style: string
   addons: Array<{ id: number; name: string }>
+  minimum_order_quantity: number
 
   // Additional fields for display
   front_image?: string
@@ -23,6 +25,7 @@ export interface CartProduct {
 export function useCart() {
   // ===== DEPENDENCIES =====
   const cartStore = useCartStore()
+  const companyStore = useCompanyStore()
 
   // ===== STATE =====
   const products = ref<CartProduct[]>([])
@@ -85,7 +88,13 @@ export function useCart() {
           style: String(fp?.style_name || ''),
           addons: allAddons,
           front_image: fp?.front_image ? String(fp.front_image) : undefined,
-          back_image: fp?.back_image ? String(fp.back_image) : undefined
+          back_image: fp?.back_image ? String(fp.back_image) : undefined,
+          minimum_order_quantity:
+            fp?.is_custom_moq == 'true' && fp.minimum_order_quantity_type === 'by_cart'
+              ? Number(fp.minimum_order_quantity)
+              : fp.sku_minimum_order_quantity_type === 'by_cart'
+                ? Number(fp.sku_minimum_order_quantity)
+                : 1
         })
       }
     }
@@ -171,6 +180,23 @@ export function useCart() {
   const formatAddons = (addons: Array<{ id: number; name: string }>): string => {
     return addons.map(addon => addon.name).join(', ')
   }
+  const minimumCartQuantity = () => {
+    const settingMoq = Number(companyStore?.settings?.settings?.moq)
+
+    // 1) Use global setting if > 0
+    if (settingMoq && settingMoq > 0) {
+      return settingMoq
+    }
+
+    // 2) Fallback to max product minimum_order_quantity
+    if (!products.value?.length) return 1
+
+    const maxProductMoq = products.value.reduce((max, product) => {
+      return Math.max(max, Number(product.minimum_order_quantity || 0))
+    }, 0)
+
+    return maxProductMoq > 0 ? maxProductMoq : 1
+  }
 
   // ===== WATCHERS =====
   // Watch cart store changes and update products automatically
@@ -203,6 +229,7 @@ export function useCart() {
     editProduct,
     addProduct,
     updateProductQuantity,
+    minimumCartQuantity,
 
     // Utilities
     formatPrice,

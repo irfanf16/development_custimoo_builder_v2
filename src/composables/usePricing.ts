@@ -36,14 +36,106 @@ export const usePricing = () => {
     }
     return null
   }
+  const minimumActiveProductQuantityByDesignToCard = computed(() => {
+    const details = activeProductDetails.value
+    if (!details) return 1
+
+    const companyType = details.company_product?.minimum_order_quantity_type
+    const companyQty = Number(details.company_product?.minimum_order_quantity)
+
+    const skuType = details.sku?.minimum_order_quantity_type
+    const skuQty = Number(details.sku?.minimum_order_quantity)
+
+    const raw = details?.company_product?.is_custom_moq
+    const isCustomQuanity = ['1', 1, true, 'true'].includes(raw as string | number | boolean)
+
+    if (isCustomQuanity) {
+      if (companyType === 'by_design') {
+        return companyQty > 0 ? companyQty : 1
+      }
+      if (companyType === 'by_cart') {
+        return 1
+      }
+    } else {
+      // Fallback to SKU by design
+      if (skuType === 'by_design') {
+        return skuQty > 0 ? skuQty : 1
+      }
+    }
+    // Fallback to SKU by design
+    return 1
+  })
+
+  const minimumActiveProductQuantityByCartToCard = computed(() => {
+    const details = activeProductDetails.value
+    if (!details) return 1
+
+    const companyType = details.company_product?.minimum_order_quantity_type
+    const companyQty = Number(details.company_product?.minimum_order_quantity)
+
+    const skuType = details.sku?.minimum_order_quantity_type
+    const skuQty = Number(details.sku?.minimum_order_quantity)
+
+    // Company product has priority
+    if (companyType === 'by_cart' && companyQty > 0) {
+      return companyQty
+    }
+
+    // Fallback to SKU
+    if (skuType === 'by_cart' && skuQty > 0) {
+      return skuQty
+    }
+
+    return 1
+  })
+
+  const isQuantityByDesign = computed(() => {
+    const details = activeProductDetails.value
+    if (!details) return false
+
+    const companyType = details.company_product?.minimum_order_quantity_type
+    const companyQty = Number(details.company_product?.minimum_order_quantity)
+
+    const skuType = details.sku?.minimum_order_quantity_type
+    const skuQty = Number(details.sku?.minimum_order_quantity)
+
+    const raw = details?.company_product?.is_custom_moq
+    const isCustomQuantity =
+      raw != null && ['1', 1, true, 'true'].includes(raw as string | number | boolean)
+
+    // If company controls MOQ
+    if (isCustomQuantity) {
+      if (companyType === 'by_design' && companyQty > 0) return true
+      if (companyType === 'by_cart') return false
+      return false
+    }
+
+    // Otherwise fallback to SKU
+    if (skuType === 'by_design' && skuQty > 0) return true
+
+    return false
+  })
 
   const getMinimumProductQuantityByDesign = (product: OutputProductDetails) => {
-    return product.sku?.minimum_order_quantity_type === 'by_design' &&
-      product.sku?.minimum_order_quantity > 0
-      ? product.sku?.minimum_order_quantity
-      : 1
-  }
+    if (!product) return 1
 
+    // Company product has priority
+    if (
+      product.company_product?.minimum_order_quantity_type === 'by_design' &&
+      Number(product.company_product?.minimum_order_quantity) > 0
+    ) {
+      return Number(product.company_product.minimum_order_quantity)
+    }
+    // Fallback to SKU
+    if (
+      product.sku?.minimum_order_quantity_type === 'by_design' &&
+      Number(product.sku?.minimum_order_quantity) > 0
+    ) {
+      return Number(product.sku.minimum_order_quantity)
+    }
+
+    return 1
+  }
   const minimumActiveProductQuantityByDesign = computed(() => {
     return activeProductDetails.value?.sku?.minimum_order_quantity_type === 'by_design' &&
       activeProductDetails.value?.sku?.minimum_order_quantity > 0
@@ -128,7 +220,10 @@ export const usePricing = () => {
     getProductPrice,
     activeProductPrice,
     minimumActiveProductQuantityByDesign,
+    minimumActiveProductQuantityByDesignToCard,
+    minimumActiveProductQuantityByCartToCard,
     showPricing,
+    isQuantityByDesign,
     getMinimumProductQuantityByDesign,
     getTotalAddonPrice
   }

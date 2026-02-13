@@ -16,7 +16,7 @@
   "summary_logo_placement": "Logo placement",
   "summary_logo_size": "Size",
   "summary_edit_roster": "Edit roster",
-  "summary_mrsp": "MRSP",
+  "summary_mrsp": "MSRP",
   "summary_for": "for",
   "summary_pcs": "pcs",
   "summary_estimated_delivery": "Estimated delivered date",
@@ -435,5 +435,7 @@
   "time_ago_months": "{count} month ago",
   "time_ago_months_plural": "{count} months ago",
   "time_ago_years": "{count} year ago",
-  "time_ago_years_plural": "{count} years ago"
+  "time_ago_years_plural": "{count} years ago",
+  "minimum_quantity": "Minimum Quantity",
+  "minimum_order_quantity": "Minimum order quantity"
 }

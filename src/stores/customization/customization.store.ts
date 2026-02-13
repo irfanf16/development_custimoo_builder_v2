@@ -625,6 +625,10 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     reorderData.value = { orderItemId, factoryProductId }
     saveToLocalStorage()
   }
+  const resetCustomizationStore = () => {
+    customization.value = null
+    clearLocalStorage()
+  }
 
   function clearReorderData() {
     reorderData.value = { orderItemId: null, factoryProductId: null }
@@ -679,6 +683,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     initializeProductTextsFromDetails,
     generateTemporaryTextId,
     setSelectedRosterPreviewIndex,
-    updateProductTextValueById
+    updateProductTextValueById,
+    resetCustomizationStore
   }
 })

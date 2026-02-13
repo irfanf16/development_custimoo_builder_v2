@@ -159,7 +159,7 @@
               :title="orders_action_add_to_cart({}, { locale })"
               :disabled="loadingCart[`${index}-${pIdx}`]"
               :loading="loadingCart[`${index}-${pIdx}`]"
-              @click="addToCart(product, item, index, pIdx)"
+              @click.once="addToCart(product, item, index, pIdx)"
             >
               <i-flex-line-cart class="size-4" />
             </Button>

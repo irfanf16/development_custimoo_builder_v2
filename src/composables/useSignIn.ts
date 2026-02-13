@@ -5,6 +5,10 @@ import { useProfileStore } from '@/stores/profile/profile.store'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+import { useSceneStore } from '@/stores/scene/scene.store'
+import { useLogosStore } from '@/stores/logos/logos.store'
+import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+import { useCustomizationStore } from '@/stores/customization/customization.store'
 
 // ============================================================================
 // Shared Singleton State - Single source of truth for dialog visibility
@@ -54,7 +58,6 @@ function closeAllDialogs() {
 export function useSignIn() {
   const authStore = useAuthStore()
   const profileStore = useProfileStore()
-  const { clearAll } = useLocalStorage()
   const companyStore = useCompanyStore()
   const {
     isLoading,
@@ -176,6 +179,11 @@ export function useSignIn() {
   const handleLogout = (options?: LogoutOptions) => {
     const { company } = companyStore
     const { resetLockerState } = useLockerRoomStore()
+    const { resetSceneStore } = useSceneStore()
+    const { resetLogosStore } = useLogosStore()
+    const { clearAll } = useLocalStorage()
+    const { resetWorkFlowStore } = useWorkflowStore()
+    const { resetCustomizationStore } = useCustomizationStore()
     const loginCode = companyStore.company?.login_code
 
     // Determine platform-specific logout action
@@ -194,6 +202,10 @@ export function useSignIn() {
       authStore.logout()
     }
     resetLockerState() // Clear locker room state on logout
+    resetSceneStore() // Clear scene store state on logout
+    resetLogosStore() // Clear logos store state on logout
+    resetWorkFlowStore() // Clear workflow store state on logout
+    resetCustomizationStore() // Clear customization store state on logout
 
     // Close any opened authentication dialogs
     closeAllDialogs()

@@ -160,6 +160,9 @@
       'x_axis_3d',
       'y_axis_3d',
       'height',
+      'width',
+      'placement',
+      'name_of_placement',
       'rotation',
       'scaleX',
       'scaleY'

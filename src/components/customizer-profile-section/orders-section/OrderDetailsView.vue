@@ -129,7 +129,6 @@
                 >
                   <i-flex-line-cart class="size-4" /> {{ topbar_cart({}, { locale }) }}
                 </Button>
-                <!-- :disabled="product.can_reorder === false" -->
                 <Button
                   size="sm"
                   class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
