@@ -23,9 +23,14 @@
     useColorCustomization,
     useColorGrouping,
     addLogoToCanvas,
+    addTextToCanvas,
+    getTextObjectKey,
+    useDimensionDisplayComputed,
     setupFabricControls,
     deleteLogoFromCanvas,
-    syncLogosOnCanvas
+    syncLogosOnCanvas,
+    syncTextsOnCanvas,
+    FABRIC_CONTROL_VISIBILITY
   } from '@/composables/scene'
   import type { CustomLogo } from '@/services/logos/types'
   import {
@@ -34,8 +39,13 @@
   } from '@/composables/scene/useCanvasImage'
   import { useSceneStore } from '@/stores/scene/scene.store'
   import { useCompanyStore } from '@/stores/company/company.store'
+  import { useProductsFontsStore } from '@/stores/products-fonts/products-fonts.store'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
-  import type { OutputProductLogosSetting } from '@/services/products/types'
+  import type {
+    OutputProductLogosSetting,
+    OutputProductText,
+    OutputProductTextItem
+  } from '@/services/products/types'
 
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
@@ -47,9 +57,12 @@
   const designObject = shallowRef<FabricObject | FabricImage | null>(null)
   const modelObjects = shallowRef<(FabricObject | FabricImage)[]>([])
   const customLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
+  const customTextObjects = shallowRef<Map<string, FabricObject>>(new Map())
   const otherSideLogoObjects = shallowRef<Map<number, FabricImage>>(new Map())
   const dimText = shallowRef<fabric.IText | null>(null)
+  const dimensionTargetRef = shallowRef<FabricObject | FabricImage | null>(null)
   const suppressCustomLogosWatch = ref(false)
+  const suppressCustomTextsWatch = ref(false)
   const safeZone = shallowRef<Group | null>(null)
   const boundary = shallowRef<Group | null>(null)
   const placementRect = shallowRef<FabricObject | null>(null)
@@ -92,6 +105,14 @@
     colorGrouping?: Record<string, string[]> | string | null
     // Optional placement overlay (used for logo placement preview)
     placementSetting?: OutputProductLogosSetting
+    // Optional text placement overlay (used for text placement preview)
+    textPlacement?: {
+      x_axis: number
+      y_axis: number
+      width?: number | null
+      height: number
+      side: string
+    }
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -113,10 +134,11 @@
     svgParts: undefined,
     // Color grouping - defaults to undefined (will be extracted from design if not provided)
     colorGrouping: undefined,
-    placementSetting: undefined
+    placementSetting: undefined,
+    textPlacement: undefined
   })
 
-  const isPlacementMode = computed(() => !!props.placementSetting)
+  const isPlacementMode = computed(() => !!props.placementSetting || !!props.textPlacement)
 
   // get current instance at mounted
   const instance = getCurrentInstance()
@@ -167,6 +189,40 @@
     all.forEach((logo: CustomLogo, index: number) => {
       if (logo.side === props.side) {
         map.set(index, filterFields(logo, [...fields]) as CustomLogo)
+      }
+    })
+    return map
+  })
+
+  // ===== CUSTOM TEXTS =====
+  // Map: key = index in product_custom_texts, value = entry + items for this side only
+  const customTexts = computed<
+    Map<
+      number,
+      {
+        entry: OutputProductText
+        itemsForSide: { itemIndex: number; item: OutputProductTextItem }[]
+      }
+    >
+  >(() => {
+    const productId = effectiveProductId.value
+    if (!productId || !customizationStore.customization) return new Map()
+    const key = String(productId)
+    const all = customizationStore.customization.product_custom_texts?.[key] || []
+    const map = new Map<
+      number,
+      {
+        entry: OutputProductText
+        itemsForSide: { itemIndex: number; item: OutputProductTextItem }[]
+      }
+    >()
+    const sideLower = props.side?.toLowerCase()
+    all.forEach((text: OutputProductText, index: number) => {
+      const itemsForSide = (text.items ?? [])
+        .map((item, itemIndex) => ({ itemIndex, item }))
+        .filter(({ item }) => item.placement?.toLowerCase() === sideLower)
+      if (itemsForSide.length > 0) {
+        map.set(index, { entry: text, itemsForSide })
       }
     })
     return map
@@ -277,6 +333,12 @@
   )
 
   onMounted(async () => {
+    if (props.mainPreview && productsStore.activeProductDetails) {
+      const productsFontsStore = useProductsFontsStore()
+      const storageUrl = import.meta.env.VITE_APP_STORAGE_URL || ''
+      await productsFontsStore.initFromProducts([productsStore.activeProductDetails], storageUrl)
+    }
+
     // Parts are now initialized in useSvgGroups composable from props
     // If not provided as props, they will be set from active design (svgGroups) after extraction
 
@@ -404,9 +466,9 @@
     // Ensure models are on top of design
     bringModelToFront()
 
-    // in here call the add rect if placementSetting is set
+    // in here call the add rect if placement overlay is set (logo or text)
     if (isPlacementMode.value) {
-      await addRect(props.placementSetting as OutputProductLogosSetting)
+      await addRect()
       return
     }
 
@@ -416,8 +478,9 @@
 
     canvas.value.requestRenderAll()
 
-    // Load logos after scene is loaded
+    // Load logos and texts after scene is loaded
     await resetAndAddLogos()
+    await resetAndAddTexts()
 
     // Render mirrored logos coming from the opposite side (stored in sceneStore)
     await renderOtherSideLogosFromStore()
@@ -490,11 +553,14 @@
   })
 
   // ===== LOGO UTILITIES =====
-  function calculatePosition2D(logoData: CustomLogo): { x: number; y: number } {
+  function calculatePosition2D(logoData: CustomLogo | OutputProductTextItem): {
+    x: number
+    y: number
+  } {
     const { widthRatio, heightRatio } = calculateScaleRatios2D()
     return {
-      x: widthRatio * logoData.x_axis,
-      y: heightRatio * logoData.y_axis
+      x: widthRatio * Number(logoData.x_axis),
+      y: heightRatio * Number(logoData.y_axis)
     }
   }
 
@@ -519,12 +585,6 @@
     const ratio = productsStore.activeProductDetails?.measurement_ratio ?? 1
     const unit = companyStore.settings?.settings?.measurement_unit
     return { ratio, unit }
-  }
-
-  function formatMeasurement(value: number): string {
-    const unit = getMeasurementConfig().unit?.unit ?? 'px'
-    const converted = convertSizeToMeasurement(value)
-    return `${converted.toFixed(1)}${unit}`
   }
 
   function convertSizeToMeasurement(value: number): number {
@@ -558,7 +618,24 @@
     canvas.value.add(dimText.value as unknown as FabricObject)
   }
 
+  const dimensionDisplayComputed = useDimensionDisplayComputed(dimensionTargetRef, {
+    getProductId: () => effectiveProductId.value ?? null,
+    getCustomization: () => customizationStore.customization,
+    getUnit: () => getMeasurementConfig().unit?.unit ?? 'px',
+    convertSizeToMeasurement
+  })
+
+  watch(dimensionDisplayComputed, val => {
+    if (val && dimText.value?.visible) {
+      dimText.value.set({
+        text: `Size (W)${val.displayW}${val.unit} x (H)${val.displayH}${val.unit}`
+      })
+      canvas.value?.requestRenderAll()
+    }
+  })
+
   function hideDimensions() {
+    dimensionTargetRef.value = null
     if (!dimText.value || !canvas.value) return
     dimText.value.set({ visible: false })
     canvas.value.requestRenderAll()
@@ -569,16 +646,10 @@
     ensureDimText()
     if (!dimText.value) return
 
-    const width = (target.width ?? 0) * (target.scaleX ?? 1)
-    const height = (target.height ?? 0) * (target.scaleY ?? 1)
-    let displayWidth = width
-    let displayHeight = height
-
-    if ((target as unknown as { type?: string }).type === 'text') {
-      const strokeWidth = (target as unknown as { strokeWidth?: number }).strokeWidth ?? 0
-      displayWidth += strokeWidth * (target.scaleX ?? 1)
-      displayHeight += strokeWidth * (target.scaleY ?? 1)
-    }
+    dimensionTargetRef.value = target
+    const dim = dimensionDisplayComputed.value
+    const text =
+      dim != null ? `Size (W)${dim.displayW}${dim.unit} x (H)${dim.displayH}${dim.unit}` : ''
 
     dimText.value.set({
       left: target.left,
@@ -587,7 +658,7 @@
         ((target.height ?? 0) * (target.scaleY ?? 1)) / 2 +
         (dimText.value.height ?? 0) * (dimText.value.scaleY ?? 1) +
         20,
-      text: `Size (W)${formatMeasurement(displayWidth)} x (H)${formatMeasurement(displayHeight)}`,
+      text,
       visible: true
     })
     canvas.value.bringObjectToFront(dimText.value as unknown as FabricObject)
@@ -918,6 +989,19 @@
   }
 
   const placementOverlay = computed(() => {
+    const text = props.textPlacement
+    if (text && text.side === props.side) {
+      const { widthRatio, heightRatio } = calculateScaleRatios2D()
+      const sizeW = (text.width ?? text.height ?? 300) * widthRatio
+      const sizeH = text.height * heightRatio
+      if (!sizeW || !sizeH) return null
+      const { x, y } = calculatePosition2D({
+        x_axis: text.x_axis,
+        y_axis: text.y_axis
+      } as CustomLogo)
+      return { left: x, top: y, width: sizeW, height: sizeH }
+    }
+
     const setting = props.placementSetting
     if (!setting) return null
     if (setting.side && setting.side !== props.side) return null
@@ -940,11 +1024,9 @@
     }
   })
 
-  async function addRect(setting: OutputProductLogosSetting): Promise<void> {
+  async function addRect(): Promise<void> {
     if (!canvas.value) return
-    if (setting.side && setting.side !== props.side) return
 
-    // remove previous
     if (placementRect.value) {
       canvas.value.remove(placementRect.value)
       placementRect.value = null
@@ -1238,11 +1320,82 @@
     }
   }
 
+  // ===== TEXT UTILITIES (sync from customTexts watch) =====
+  const heightScaleForText = computed(() => props.canvasHeight / (props.mainCanvasHeight || 600))
+
+  async function addText(
+    entry: OutputProductText,
+    customTextIndex: number,
+    itemIndex: number
+  ): Promise<void> {
+    if (isPlacementMode.value || !canvas.value) return
+    const item = entry.items?.[itemIndex]
+    if (!item) return
+    if (item.placement?.toLowerCase() !== props.side?.toLowerCase()) return
+
+    const renderCanvas = () => canvas.value?.requestRenderAll()
+    await addTextToCanvas({
+      entry,
+      customTextIndex,
+      itemIndex,
+      canvas: canvas.value,
+      textObjects: customTextObjects,
+      calculatePosition: calculatePosition2D,
+      calculateRotation: calculateRotation2D,
+      heightScale: heightScaleForText.value,
+      renderCanvas,
+      applyClipPath,
+      controlVisibility: FABRIC_CONTROL_VISIBILITY,
+      canvasSelection: true,
+      mainPreview: props.mainPreview,
+      productId: effectiveProductId.value as number,
+      suppressWatchRef: suppressCustomTextsWatch,
+      getScaleRatios: calculateScaleRatios2D,
+      is_3d: false,
+      convertSize: convertSizeToMeasurement
+    })
+    const key = getTextObjectKey(customTextIndex, itemIndex)
+    const textObj = customTextObjects.value.get(key)
+    if (textObj) {
+      textObj.on('selected', () => showDimensions(textObj))
+      textObj.on('moving', () => showDimensions(textObj))
+      textObj.on('scaling', () => showDimensions(textObj))
+      textObj.on('rotating', () => showDimensions(textObj))
+    }
+  }
+
+  /**
+   * Reset and add all texts
+   * Clears existing text objects and adds all texts from customTexts (filtered by side and selected)
+   */
+  async function resetAndAddTexts(): Promise<void> {
+    if (isPlacementMode.value) return
+    if (!canvas.value) return
+
+    customTextObjects.value.forEach(obj => {
+      canvas.value?.remove(obj)
+    })
+    customTextObjects.value.clear()
+
+    for (const [customTextIndex, { entry, itemsForSide }] of customTexts.value) {
+      for (const { itemIndex, item } of itemsForSide) {
+        if (!item?.selected) continue
+        await addText(entry, customTextIndex, itemIndex)
+      }
+    }
+
+    if (canvas.value) {
+      canvas.value.requestRenderAll()
+    }
+  }
+
   // Expose functions for external use
   defineExpose({
     getImageFromCanvas,
     addLogo,
-    resetAndAddLogos
+    resetAndAddLogos,
+    resetAndAddTexts,
+    customTexts
   })
 
   /**
@@ -1384,6 +1537,35 @@
         calculateScaleRatios: calculateScaleRatios2D,
         filterLogo: (logo: CustomLogo) => logo.side === props.side,
         suppressWatchRef: suppressCustomLogosWatch,
+        onAfterSync: () => {
+          if (canvas.value) {
+            canvas.value.requestRenderAll()
+          }
+        }
+      })
+    },
+    { deep: true }
+  )
+
+  // Watch for changes in customTexts from customization store
+  watch(
+    customTexts,
+    async newTexts => {
+      if (suppressCustomTextsWatch.value) {
+        suppressCustomTextsWatch.value = false
+        return
+      }
+      if (isPlacementMode.value) return
+      if (!mounted.value) return
+      await syncTextsOnCanvas({
+        newTexts: newTexts ?? new Map(),
+        canvas: canvas.value,
+        textObjects: customTextObjects,
+        addText,
+        calculatePosition: calculatePosition2D,
+        calculateRotation: calculateRotation2D,
+        heightScale: heightScaleForText.value,
+        getScaleRatios: calculateScaleRatios2D,
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()

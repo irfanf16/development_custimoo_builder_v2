@@ -9,6 +9,7 @@ import type {
   OutputDesignPreviewBack,
   OutputProductLogosSetting,
   OutputProductText,
+  OutputProductTextItem,
   GradientColor
 } from '@/services/products/types'
 import { API } from '@/services'
@@ -104,6 +105,53 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const bucket = root.product_custom_texts[key]
     if (!bucket) return
     bucket.splice(index, 1)
+    saveToLocalStorage()
+  }
+
+  /**
+   * Set a text item's selected state (e.g. when user deletes the text from canvas).
+   * Keeps the entry but marks the placement as not selected so it no longer appears.
+   * If all items in the entry become unselected, the entry's value is set to ''.
+   */
+  function setProductTextItemSelected(
+    productId: number,
+    entryIndex: number,
+    itemIndex: number,
+    selected: boolean
+  ): void {
+    const root = customization.value
+    if (!root) return
+    const key = String(productId)
+    const bucket = root.product_custom_texts[key]
+    const entry = bucket?.[entryIndex]
+    const item = entry?.items?.[itemIndex]
+    if (!item) return
+    item.selected = selected
+    const allUnselected = entry?.items?.every(it => it.selected === false) ?? false
+    if (allUnselected && entry) {
+      entry.value = ''
+    }
+    saveToLocalStorage()
+  }
+
+  /**
+   * Update a single text item's placement data (e.g. after user moves/scales/rotates on canvas).
+   * Payload may include optional 3D/original fields (x_axis_3d, y_axis_3d, originalWidth, originalHeight).
+   */
+  function updateProductTextItem(
+    productId: number,
+    entryIndex: number,
+    itemIndex: number,
+    payload: Partial<OutputProductTextItem> & Record<string, unknown>
+  ): void {
+    const root = customization.value
+    if (!root) return
+    const key = String(productId)
+    const bucket = root.product_custom_texts[key]
+    const entry = bucket?.[entryIndex]
+    const item = entry?.items?.[itemIndex]
+    if (!item) return
+    entry.items[itemIndex] = { ...item, ...payload }
     saveToLocalStorage()
   }
 
@@ -606,6 +654,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     ensureTextEntry,
     upsertTextEntry,
     removeTextEntry,
+    setProductTextItemSelected,
+    updateProductTextItem,
     clearRosterEntries,
     initializeProductTextsFromDetails,
     generateTemporaryTextId,

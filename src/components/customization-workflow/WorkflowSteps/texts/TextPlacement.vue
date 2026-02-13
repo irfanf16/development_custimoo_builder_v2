@@ -5,7 +5,6 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useHistoryStore } from '@/stores/history/history.store'
-  import { useUIStore } from '@/stores/ui/ui.store'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
     nav_text,
@@ -13,12 +12,9 @@
     texts_no_product_placements
   } from '@/paraglide/messages'
 
-  import ProductPreviewCanvas from '@/components/customization-workflow/WorkflowSteps/ProductPreviewCanvas.vue'
-  import type { OutputProductText } from '@/services/products/types'
+  import TwoDScene from '@/components/scene/TwoDScene.vue'
+  import type { OutputProductText, OutputDesignDetails } from '@/services/products/types'
   import { useTextPlacements, type TextItemPlacement } from './useTextPlacements'
-
-  const uiStore = useUIStore()
-  const { isMobile } = storeToRefs(uiStore)
 
   // ===== STORES =====
   const productsStore = useProductsStore()
@@ -42,14 +38,34 @@
   const { activeProductId } = storeToRefs(customizationStore)
   const { activeTextId, pendingTextTemplateId } = storeToRefs(workflowStore)
 
-  // ===== CONSTANTS =====
-
-  /** Preview canvas size in pixels (for overlay calculations) */
-  const PREVIEW_SIZE = 176
-  /** Base canvas size in pixels (actual product canvas size) */
-  const CANVAS_BASE = 600
-
   // ===== COMPUTED =====
+
+  const designBase = computed<OutputDesignDetails | null>(() => activeDesignDetails.value ?? null)
+
+  /**
+   * Returns design (file_url, safe_zone, boundary) for the given placement's side.
+   * Used by TwoDScene to show the product design with the text placement overlay.
+   */
+  function getPlacementDesign(placement: TextItemPlacement) {
+    if (!designBase.value) return undefined
+    const side = placement.side === 'back' ? 'back' : 'front'
+    const design = side === 'back' ? designBase.value.back_design : designBase.value.front_design
+    if (!design?.file_url) return undefined
+    const safeZone =
+      side === 'back'
+        ? designBase.value.backsafezone_design?.file_url
+        : designBase.value.frontsafezone_design?.file_url
+    const boundary =
+      side === 'back'
+        ? designBase.value.backboundary_design?.file_url
+        : designBase.value.frontboundary_design?.file_url
+    return {
+      file_url: design.file_url,
+      file_extension: design.file_extension || 'svg',
+      safe_zone_url: safeZone,
+      boundary_url: boundary
+    }
+  }
 
   /**
    * Available text templates from product details
@@ -62,44 +78,6 @@
    * These are user-added or customized texts
    */
   const textEntries = computed(() => customizationStore.activeProductTexts)
-
-  /**
-   * Placements with calculated overlay rectangles for preview display
-   *
-   * This computed property:
-   * 1. Gets all available placements from product_texts items
-   * 2. Calculates overlay rectangles scaled to preview size
-   * 3. Centers the overlay on the placement coordinates
-   *
-   * The overlay is used to highlight where text will be placed on the product preview.
-   */
-  const placementsWithOverlay = computed(() => {
-    const placements = availableTextPlacements.value
-    if (!placements || placements.length === 0) return []
-
-    // Calculate scale factor to convert from canvas coordinates to preview coordinates
-    const scale = PREVIEW_SIZE / CANVAS_BASE
-
-    return placements.map(placement => {
-      // Get dimensions: use width if available, otherwise use height, fallback to 300
-      const width = Number(placement.width ?? placement.height ?? 300)
-      const height = Number(placement.height ?? width)
-
-      // Calculate overlay rectangle:
-      // - Position: center the overlay on placement coordinates (subtract half width/height)
-      // - Size: scale dimensions to preview size
-      // - Color: semi-transparent blue for visibility
-      const overlay = {
-        x: (Number(placement.x_axis) - width / 2) * scale,
-        y: (Number(placement.y_axis) - height / 2) * scale,
-        width: width * scale,
-        height: height * scale,
-        color: 'rgba(59,130,246,0.35)'
-      }
-
-      return { placement, overlay }
-    })
-  })
 
   const headerConfig = computed(() => ({
     breadcrumbs: [
@@ -192,32 +170,41 @@
 </script>
 
 <template>
-  <!-- Content -->
   <div class="flex flex-col gap-4">
-    <div v-if="placementsWithOverlay.length" class="grid grid-cols-2">
+    <div v-if="availableTextPlacements.length" class="grid grid-cols-2">
       <div
-        v-for="item in placementsWithOverlay"
-        :key="item.placement.id"
-        class="flex flex-col gap-4 items-center cursor-pointer w-full p-4 group"
-        @click="handleSelectPlacement(item.placement)"
+        v-for="placement in availableTextPlacements"
+        :key="placement.id"
+        class="flex flex-col gap-4 items-center cursor-pointer w-full p-4"
+        @click="handleSelectPlacement(placement)"
       >
         <div
           class="flex-start w-full text-base font-semibold truncate leading-none overflow-visible"
         >
-          {{ item.placement.name_of_placement }}
+          {{ placement.name_of_placement }}
         </div>
-        <div class="relative" width="112" height="112">
-          <ProductPreviewCanvas
-            v-if="activeProductDetails && activeStyleDetails && activeDesignDetails"
-            :product="activeProductDetails"
-            :style-base="activeStyleDetails"
-            :design-base="activeDesignDetails"
-            :width="isMobile ? 130 : 176"
-            :height="isMobile ? 130 : 176"
-            :side="item.placement.side === 'back' ? 'back' : 'front'"
-            :overlay-rect="item.overlay"
-          />
-        </div>
+        <TwoDScene
+          v-if="
+            activeProductDetails &&
+            activeStyleDetails &&
+            designBase &&
+            getPlacementDesign(placement)
+          "
+          :design="getPlacementDesign(placement)"
+          :side="(placement.side as 'front' | 'back') || 'front'"
+          :canvas-width="150"
+          :canvas-height="150"
+          :main-canvas-width="600"
+          :main-canvas-height="600"
+          :main-preview="false"
+          :text-placement="{
+            x_axis: placement.x_axis,
+            y_axis: placement.y_axis,
+            width: placement.width ?? undefined,
+            height: placement.height,
+            side: placement.side
+          }"
+        />
       </div>
     </div>
     <div
