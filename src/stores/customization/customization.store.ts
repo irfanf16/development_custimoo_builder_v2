@@ -635,6 +635,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
   // ===== RETURN =====
+
+  // ===== RETURN =====
   return {
     // State
     customization,
