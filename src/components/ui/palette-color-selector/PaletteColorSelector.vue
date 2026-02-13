@@ -109,7 +109,6 @@
     rooms => {
       if (rooms?.length) {
         activeRoomId.value = String(rooms[0].id)
-        console.log('Initial room ID set to:', activeRoomId.value)
         activeFolderName.value = rooms[0].folders?.[0]?.folder_name || ''
       }
     },
