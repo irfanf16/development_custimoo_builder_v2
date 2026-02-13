@@ -61,7 +61,6 @@
   }
 
   function handlePlacementSelection(_placement: OutputProductLogosSetting) {
-    console.log('Selected placement:', _placement)
     if (logosStore.activeLogo) {
       addActiveLogoToCustomization(logosStore.activeLogo, _placement)
     }
