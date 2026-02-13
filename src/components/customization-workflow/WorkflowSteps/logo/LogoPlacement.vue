@@ -61,6 +61,7 @@
   }
 
   function handlePlacementSelection(_placement: OutputProductLogosSetting) {
+    console.log('Selected placement:', _placement)
     if (logosStore.activeLogo) {
       addActiveLogoToCustomization(logosStore.activeLogo, _placement)
     }
@@ -92,7 +93,7 @@
         v-for="s in placements"
         :key="s.id"
         class="flex flex-col gap-4 items-center cursor-pointer w-full p-4"
-        @click="handlePlacementSelection(s)"
+        @click.once="handlePlacementSelection(s)"
       >
         <div
           class="flex-start w-full text-base font-semibold truncate leading-none overflow-visible"
