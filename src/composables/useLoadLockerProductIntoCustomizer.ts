@@ -15,7 +15,10 @@ import type {
 import type { LockerProduct } from '@/services/lockers/types'
 import type { ProductRosterDetail } from '@/services/products/types'
 import type { CustomLogo } from '@/services/logos/types'
-import type { APCustomizationRosterEntry } from '@/services/products/types/customization'
+import type {
+  APCustomizationRosterEntry,
+  CustomSvgGroupDisplay
+} from '@/services/products/types/customization'
 
 // ===== UTILITY FUNCTIONS =====
 
@@ -454,6 +457,25 @@ function buildCustomizationFromLocker(
 
   if (rosterEntries.length)
     next.products_rosters = { ...next.products_rosters, [productKey]: rosterEntries }
+
+  // Extract custom svg groups (is_custom: true) for readonly display in color step
+  const rawSvgGroups = lockerRecord['svg_groups']
+  if (Array.isArray(rawSvgGroups) && rawSvgGroups.length > 0) {
+    const customGroups: CustomSvgGroupDisplay[] = rawSvgGroups
+      .filter((g: unknown) => isRecord(g) && (g as { is_custom?: boolean }).is_custom === true)
+      .map((g: unknown) => {
+        const r = g as Record<string, unknown>
+        return {
+          id: asSafeString(r.id),
+          name: asSafeString(r.name),
+          color: asSafeString(r.color),
+          pantone: asSafeString(r.pantone) || undefined
+        } satisfies CustomSvgGroupDisplay
+      })
+    if (customGroups.length > 0) {
+      next.custom_svg_groups = customGroups
+    }
+  }
 
   return next
 }

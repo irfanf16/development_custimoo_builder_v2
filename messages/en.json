@@ -212,6 +212,7 @@
   "colors_copy": "Copy",
   "colors_paste": "Paste",
   "colors_gradient_label": "Gradient {index}",
+  "colors_custom_color_groups": "Custom color groups (not shown in mockup)",
   "texts_help_insert_style": "Insert and style text.",
   "texts_label_player_name": "Player name",
   "texts_label_player_number": "Player number",

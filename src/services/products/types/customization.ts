@@ -35,6 +35,13 @@ export type APCustomizationAddonsInfoEntry = {
 
 export type APCustomizationAddonsInfo = Record<string, APCustomizationAddonsInfoEntry>
 
+export type CustomSvgGroupDisplay = {
+  id: string
+  name: string
+  color: string
+  pantone?: string
+}
+
 export type ActiveProductCustomization = {
   fixed_logo_index: number
   category_index: number
@@ -63,4 +70,6 @@ export type ActiveProductCustomization = {
   group_patterns: Record<string, unknown>
   sub_category_id: number | null
   sub_category_index: number | null
+  /** Readonly custom color groups from factory product (e.g. reorder/share), shown below interactive groups */
+  custom_svg_groups?: CustomSvgGroupDisplay[]
 }

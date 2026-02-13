@@ -14,9 +14,12 @@ import type {
 } from '@/services/products/types'
 import type { FactoryProduct as CartFactoryProduct } from '@/services/cart/types'
 import type { CustomLogo } from '@/services/logos/types'
-import type { APCustomizationRosterEntry } from '@/services/products/types/customization'
+import type {
+  APCustomizationRosterEntry,
+  CustomSvgGroupDisplay
+} from '@/services/products/types/customization'
 
-type ShareProductDetails = {
+export type ShareProductDetails = {
   factoryProducts: CartFactoryProduct[]
   factoryProductActiveIndex: number
   lockerProductId: number | null
@@ -243,7 +246,7 @@ function normalizeRosterEntries(
 
 // ===== SHARE PRODUCT RESOLUTION =====
 
-function resolveShareProduct(shareResult: ShareProductDetails): CartFactoryProduct | null {
+export function resolveShareProduct(shareResult: ShareProductDetails): CartFactoryProduct | null {
   if (!Array.isArray(shareResult.factoryProducts)) {
     return null
   }
@@ -263,7 +266,7 @@ function resolveShareProduct(shareResult: ShareProductDetails): CartFactoryProdu
   return null
 }
 
-function extractShareProductIds(factoryProduct: Record<string, unknown>): {
+export function extractShareProductIds(factoryProduct: Record<string, unknown>): {
   productId: number
   styleId: number
   designId: number
@@ -291,7 +294,7 @@ function findActiveProductIdFromPreviews(
   return typeof mapped === 'number' && mapped > 0 ? mapped : null
 }
 
-async function resolveActiveProductId(
+export async function resolveActiveProductId(
   shareBaseProductId: number,
   styleId: number,
   productsStore: ReturnType<typeof useProductsStore>,
@@ -367,7 +370,7 @@ function extractShareCustomTexts(
   return null
 }
 
-function buildCustomizationFromShareProduct(
+export function buildCustomizationFromShareProduct(
   factoryProduct: CartFactoryProduct,
   base: ActiveProductCustomization,
   designName: string
@@ -432,12 +435,31 @@ function buildCustomizationFromShareProduct(
   if (rosterEntries.length)
     next.products_rosters = { ...next.products_rosters, [productKey]: rosterEntries }
 
+  // Extract custom svg groups (is_custom: true) for readonly display in color step
+  const rawSvgGroups = factoryProductRecord['svg_groups']
+  if (Array.isArray(rawSvgGroups) && rawSvgGroups.length > 0) {
+    const customGroups: CustomSvgGroupDisplay[] = rawSvgGroups
+      .filter((g: unknown) => isRecord(g) && (g as { is_custom?: boolean }).is_custom === true)
+      .map((g: unknown) => {
+        const r = g as Record<string, unknown>
+        return {
+          id: asSafeString(r.id),
+          name: asSafeString(r.name),
+          color: asSafeString(r.color),
+          pantone: asSafeString(r.pantone) || undefined
+        } satisfies CustomSvgGroupDisplay
+      })
+    if (customGroups.length > 0) {
+      next.custom_svg_groups = customGroups
+    }
+  }
+
   return next
 }
 
 // ===== PRODUCT ID REMAPPING =====
 
-function remapProductIdKeys(
+export function remapProductIdKeys(
   customization: ActiveProductCustomization,
   fromProductId: number,
   toProductId: number
@@ -465,7 +487,7 @@ function remapProductIdKeys(
 
 // ===== PRESET TEXT UPDATES =====
 
-function updatePresetTextsWithShareFlags(
+export function updatePresetTextsWithShareFlags(
   presetTexts: OutputProductText[],
   shareTexts: OutputProductText[]
 ): OutputProductText[] {

@@ -11,6 +11,7 @@ export const useAppStore = defineStore('appStore', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const shareUrl = ref<string | null>(null)
+  const isReorderFlow = ref(false)
 
   function loadAppInfoFromGlobalVariable() {
     if (typeof window !== 'undefined') {
@@ -53,14 +54,21 @@ export const useAppStore = defineStore('appStore', () => {
     shareUrl.value = url
   }
 
+  function setReorderFlow(value: boolean) {
+    isReorderFlow.value = value
+  }
+
   return {
     appInfo,
     isLoading,
     error,
     shareUrl,
+    isReorderFlow,
     loadAppInfoFromGlobalVariable,
     setLoading,
     setError,
-    setShareUrl
+    setAppInfo,
+    setShareUrl,
+    setReorderFlow
   }
 })

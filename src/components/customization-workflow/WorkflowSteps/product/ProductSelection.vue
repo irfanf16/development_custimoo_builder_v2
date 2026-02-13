@@ -8,6 +8,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useCartStore } from '@/stores/cart/cart.store'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { useAppStore } from '@/stores/app/app.store'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import { Button } from '@/components/ui/button'
   import { Badge } from '@/components/ui/badge'
@@ -33,6 +34,7 @@
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeProductId: selectedProductId } = storeToRefs(customizationStore)
+  const appStore = useAppStore()
   const { productSearchModel, showCustomizerStockFilter, customizerStockFilterModel } =
     useProductConfig()
   const previews = computed(() => productsStore.productPreviews || [])
@@ -72,6 +74,28 @@
 
   async function handleSelectProduct(productId: number) {
     try {
+      // Check if we're in reorder flow and selecting a different product
+      if (appStore.isReorderFlow) {
+        const currentProductId = customizationStore.activeProductId
+        if (currentProductId && currentProductId !== productId) {
+          const confirmed = await confirmDialog({
+            title: 'Leave Reorder Flow?',
+            description:
+              'You are in a reorder flow. Do you want to leave and select a different product?',
+            confirmText: 'Leave',
+            cancelText: 'Cancel'
+          })
+
+          if (!confirmed) {
+            return
+          }
+          appStore.setReorderFlow(false)
+        } else {
+          // Same product, allow selection
+          return
+        }
+      }
+
       // Check if we're editing a cart or locker product
       const isEditingCartProduct = cartStore.isEditingCartProduct
       const isEditingLockerProduct = lockerRoomStore.isEditingLockerProduct

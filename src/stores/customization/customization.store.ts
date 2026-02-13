@@ -40,6 +40,10 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const key = String(prodId)
     return customization.value?.product_custom_texts?.[key] || []
   })
+  const reorderData = ref<{ orderItemId: number | null; factoryProductId: string | null }>({
+    orderItemId: null,
+    factoryProductId: null
+  })
 
   const rosterEntries = computed(() => {
     const prodId = customization.value?.product_id
@@ -209,17 +213,21 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   // ===== PERSISTENCE =====
   function saveToLocalStorage() {
     setItem('activeProductCustomization', customization.value)
+    setItem('reorderData', reorderData.value)
   }
 
   function loadFromLocalStorage(): boolean {
     const parsed = getItem<ActiveProductCustomization>('activeProductCustomization')
+    const reorderParsed = getItem<typeof reorderData.value>('reorderData')
     if (!parsed) return false
     customization.value = parsed
+    reorderData.value = reorderParsed || { orderItemId: null, factoryProductId: null }
     return true
   }
 
   function clearLocalStorage() {
     removeItem('activeProductCustomization')
+    removeItem('reorderData')
   }
 
   // ===== ACTIONS =====
@@ -613,7 +621,15 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     }
     return true
   }
+  function setReorderData(orderItemId: number, factoryProductId: string) {
+    reorderData.value = { orderItemId, factoryProductId }
+    saveToLocalStorage()
+  }
 
+  function clearReorderData() {
+    reorderData.value = { orderItemId: null, factoryProductId: null }
+    saveToLocalStorage()
+  }
   // ===== RETURN =====
   return {
     // State
@@ -628,6 +644,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     activeProductTexts,
     rosterEntries,
     selectedRosterPreviewIndex,
+    reorderData,
     // Persistence
     saveToLocalStorage,
     loadFromLocalStorage,
@@ -646,6 +663,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     getMergedCustomizationLogo,
     updateCustomLogo,
     removeCustomLogo,
+    setReorderData,
+    clearReorderData,
     // Business Logic
     ensureCustomization,
     resetCustomizationToCurrentProductDefaults,

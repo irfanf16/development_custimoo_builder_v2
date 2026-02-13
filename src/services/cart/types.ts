@@ -7,6 +7,8 @@ export interface SvgGroup {
   color: string
   count: number
   pantone?: string | null
+  /** When true, show in a readonly "Custom color groups" section below interactive groups */
+  is_custom?: boolean
 }
 
 export interface ProductPriceObject {

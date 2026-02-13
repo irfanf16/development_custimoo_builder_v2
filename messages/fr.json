@@ -212,6 +212,7 @@
   "colors_copy": "Copier",
   "colors_paste": "Coller",
   "colors_gradient_label": "Dégradé {index}",
+  "colors_custom_color_groups": "Groupes de couleurs personnalisés (non affichés dans la maquette)",
   "texts_help_insert_style": "Insérez et stylisez du texte.",
   "texts_label_player_name": "Nom du joueur",
   "texts_label_player_number": "Numéro du joueur",

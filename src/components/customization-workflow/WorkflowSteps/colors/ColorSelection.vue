@@ -33,6 +33,7 @@
     colors_choose_from_locker,
     colors_copy,
     colors_paste,
+    colors_custom_color_groups,
     nav_color
   } from '@/paraglide/messages'
   import { storeToRefs } from 'pinia'
@@ -43,7 +44,8 @@
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
   const workflowStore = useWorkflowStore()
-  const { effectiveSvgGroups } = useEffectiveSelectors()
+  const { effectiveSvgGroups, effectiveSvgGroupsInteractive, effectiveSvgGroupsCustom } =
+    useEffectiveSelectors()
   const history = useHistoryStore()
   const { shuffleColors } = useColorActions()
   const { clipboardColor, copyColor } = useColorClipboard()
@@ -371,7 +373,7 @@
         </div>
       </div>
     </div>
-    <!-- Color slots -->
+    <!-- Color slots (interactive groups only) -->
     <Accordion
       type="single"
       collapsible
@@ -379,7 +381,7 @@
       @update:model-value="handleAccordionChange"
     >
       <AccordionItem
-        v-for="(svgGroup, idx) in effectiveSvgGroups"
+        v-for="(svgGroup, idx) in effectiveSvgGroupsInteractive"
         :key="svgGroup.id"
         :value="String(idx)"
         class="px-4 md:px-6 max-w-full"
@@ -474,6 +476,36 @@
         </AccordionContent>
       </AccordionItem>
     </Accordion>
+
+    <!-- Custom color groups (readonly, underneath interactive groups) -->
+    <div
+      v-if="effectiveSvgGroupsCustom.length > 0"
+      class="flex flex-col gap-3 px-4 md:px-6 pt-4 border-t border-border"
+    >
+      <div class="text-sm font-medium text-muted-foreground">
+        {{ colors_custom_color_groups({}, { locale: profileStore.currentLocale }) }}
+      </div>
+      <div class="flex flex-col gap-2">
+        <div
+          v-for="customGroup in effectiveSvgGroupsCustom"
+          :key="customGroup.id"
+          class="flex items-center gap-2 md:gap-3 py-2"
+        >
+          <ColorSelector
+            class="shrink-0"
+            :color="customGroup.color"
+            :disabled="true"
+            :size="'sm'"
+          />
+          <span class="text-base font-semibold text-foreground shrink-0">{{
+            customGroup.name
+          }}</span>
+          <span class="text-muted-foreground text-sm shrink-0">
+            {{ customGroup.pantone || '' }}
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

@@ -18,4 +18,6 @@ export type OutputSvgGroupColor = {
   name: string
   count: number
   gradient_colors?: Array<GradientColor>
+  /** When true, show in a readonly "Custom color groups" section below interactive groups */
+  is_custom?: boolean
 }

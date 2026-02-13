@@ -103,19 +103,21 @@
 
               <!-- Actions -->
               <div class="flex flex-wrap items-center gap-2">
-                <button
-                  class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
+                <Button
+                  size="sm"
+                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
                   :title="orders_action_save({}, { locale })"
                 >
                   <i-flex-line-save class="size-4" /> {{ orders_action_save({}, { locale }) }}
-                </button>
+                </Button>
 
-                <button
-                  class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
+                <Button
+                  size="sm"
+                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
                   :title="orders_action_share({}, { locale })"
                 >
                   <i-flex-line-share class="size-4" /> {{ orders_action_share({}, { locale }) }}
-                </button>
+                </Button>
 
                 <Button
                   size="sm"
@@ -123,17 +125,20 @@
                   :title="orders_action_add_to_cart({}, { locale })"
                   :disabled="loadingCart[`${index}-${pIdx}`]"
                   :loading="loadingCart[`${index}-${pIdx}`]"
-                  @click="addToCart(product, item, index, pIdx)"
+                  @click.once="addToCart(product, item, index, pIdx)"
                 >
                   <i-flex-line-cart class="size-4" /> {{ topbar_cart({}, { locale }) }}
                 </Button>
-
-                <button
-                  class="flex items-center justify-center gap-1 border text-base text-sm px-4 py-2 rounded-md transition"
+                <!-- :disabled="product.can_reorder === false" -->
+                <Button
+                  size="sm"
+                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
                   :title="orders_action_reorder({}, { locale })"
+                  :disabled="product.can_reorder === false"
+                  @click.once="handleReorder(item, product)"
                 >
                   <i-flex-line-reorder class="size-4" /> {{ orders_action_reorder({}, { locale }) }}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -164,20 +169,26 @@
     orders_action_reorder,
     topbar_cart
   } from '@/paraglide/messages'
+  import { useLoadReorderProductIntoCustomizer } from '@/composables/useLoadReorderProductIntoCustomizer'
+  import type { Item, FactoryProduct } from '@/services/orders/types'
   import Button from '@/components/ui/button/Button.vue'
   import { useCartStore } from '@/stores/cart/cart.store'
   import { toast } from 'vue-sonner'
-
-  defineProps<{ order: Order }>()
-  defineEmits<{ (e: 'back'): void }>()
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  const props = defineProps<{ order: Order }>()
+  const emit = defineEmits<{ (e: 'back'): void; (e: 'reorder-success'): void }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
   const store = useOrdersStore()
   const profileStore = useProfileStore()
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { component: 'OrderDetailsView' } })
+  const { loadReorderProductIntoCustomizer } =
+    // isLoading: isReorderLoading
+    useLoadReorderProductIntoCustomizer()
   const showQuoteModal = ref(false)
   const locale = computed(() => profileStore.currentLocale || 'en')
   const cartStore = useCartStore()
   const loadingCart = ref<Record<string, boolean>>({})
+  const customizationStore = useCustomizationStore()
 
   async function handleAcceptQuote() {
     showQuoteModal.value = true
@@ -216,6 +227,28 @@
           response.axiosError?.response?.data?.message ||
           'Failed to accept quote'
       )
+    }
+  }
+
+  async function handleReorder(orderItem: Item, factoryProduct: FactoryProduct) {
+    if (!props.order?.id || orderItem?.id == null || factoryProduct?.id == null) return
+    const orderId = Number(props.order.id)
+    const orderItemId = Number(orderItem.id)
+    const factoryProductId = factoryProduct.id
+    const productId = Number(factoryProduct.product_id)
+    if (!orderId || !orderItemId || !factoryProductId || !productId) return
+    // Save reorder data to customization store
+    customizationStore.setReorderData(orderItemId, String(factoryProductId))
+
+    const success = await loadReorderProductIntoCustomizer({
+      orderItemId,
+      factoryProductId
+    })
+    if (success) {
+      emit('reorder-success')
+    } else {
+      alert('Failed to load reorder product. Please try again.')
+      customizationStore.clearReorderData()
     }
   }
   async function addToCart(product: any, item: any, index: number, pIdx: number) {

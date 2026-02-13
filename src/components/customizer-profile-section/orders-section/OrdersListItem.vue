@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import type { Order } from '@/services/orders/types'
+  import type { FactoryProduct, Item, Order } from '@/services/orders/types'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
   import { useOrdersStore } from '@/stores/orders/orders.store'
@@ -16,6 +16,8 @@
   import { useTryCatchApi } from '@/composables'
   import { API } from '@/services'
   import { toast } from 'vue-sonner'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { useLoadReorderProductIntoCustomizer } from '@/composables/useLoadReorderProductIntoCustomizer'
 
   const props = defineProps<{
     order: Order
@@ -24,10 +26,15 @@
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || '' // Vite-compatible env usage
   const store = useOrdersStore()
   const profileStore = useProfileStore()
+  const customizationStore = useCustomizationStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
+  const emit = defineEmits<{ (e: 'back'): void; (e: 'reorder-success'): void }>()
   const cartStore = useCartStore()
   const loadingCart = ref<Record<string, boolean>>({})
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { component: 'OrderDetailsView' } })
+  const { loadReorderProductIntoCustomizer } =
+    // isLoading: isReorderLoading
+    useLoadReorderProductIntoCustomizer()
 
   function showOrderDetails(order: Order) {
     store.openOrderDetails(order)
@@ -69,6 +76,27 @@
         { position: 'top-right', richColors: true }
       )
       loadingCart.value[key] = false
+    }
+  }
+  async function handleReorder(orderItem: Item, factoryProduct: FactoryProduct) {
+    if (!props.order?.id || orderItem?.id == null || factoryProduct?.id == null) return
+    const orderId = Number(props.order.id)
+    const orderItemId = Number(orderItem.id)
+    const factoryProductId = factoryProduct.id
+    const productId = Number(factoryProduct.product_id)
+    if (!orderId || !orderItemId || !factoryProductId || !productId) return
+    // Save reorder data to customization store
+    customizationStore.setReorderData(orderItemId, String(factoryProductId))
+
+    const success = await loadReorderProductIntoCustomizer({
+      orderItemId,
+      factoryProductId
+    })
+    if (success) {
+      emit('reorder-success')
+    } else {
+      alert('Failed to load reorder product. Please try again.')
+      customizationStore.clearReorderData()
     }
   }
 </script>
@@ -135,12 +163,15 @@
             >
               <i-flex-line-cart class="size-4" />
             </Button>
-            <button
-              class="bg-background rounded-full p-1.5 shadow transition"
+            <Button
+              size="sm"
+              class="hover:bg-transparent rounded-full p-1.5 hover:text-primary hover:border hover:border-primary"
               :title="orders_action_reorder({}, { locale })"
+              :disabled="product.can_reorder === false"
+              @click.once="handleReorder(item, product)"
             >
               <i-flex-line-reorder class="size-4" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

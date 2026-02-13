@@ -69,9 +69,7 @@ export const usePricing = () => {
       if (companyCurrencies.length) {
         const match = companyCurrencies.find(c => c.code === preferredCode)
         const currency = match ?? companyCurrencies[0]
-        console.log(`Addon ID: ${addonId}, Company Addon Price: ${currency?.price ?? 0}`)
         totalAddonPrice += Number(currency?.price ?? 0)
-        console.log('Total Addon Price after company addon:', totalAddonPrice)
         continue
       }
 

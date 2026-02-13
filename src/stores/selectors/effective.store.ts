@@ -40,6 +40,7 @@ export function useEffectiveSelectors() {
     const overrides = customizationStore.customization?.group_colors || {}
     return base.map(svgGroup => {
       const customized = overrides[svgGroup.id]
+      const isCustom = svgGroup.is_custom === true
       if (customized) {
         // If customized has gradient_colors, preserve them and merge with base percentage if missing
         if (customized.gradient_colors) {
@@ -60,7 +61,8 @@ export function useEffectiveSelectors() {
             color: customized.color ?? svgGroup.color,
             pantone: '',
             count: svgGroup.count ?? 0,
-            gradient_colors: mergedGradientColors
+            gradient_colors: mergedGradientColors,
+            ...(isCustom ? { is_custom: true } : {})
           }
         }
         // Regular color override
@@ -69,11 +71,41 @@ export function useEffectiveSelectors() {
           name: customized.name ?? '',
           color: customized.color ?? '',
           pantone: '',
-          count: svgGroup.count ?? 0
+          count: svgGroup.count ?? 0,
+          ...(isCustom ? { is_custom: true } : {})
         }
       }
       return svgGroup
     })
+  })
+
+  /** Interactive groups (exclude is_custom) for accordion and color picker */
+  const effectiveSvgGroupsInteractive = computed<OutputSvgGroupColor[]>(() => {
+    const groups = effectiveSvgGroups.value ?? []
+    return groups.filter(g => g.is_custom !== true)
+  })
+
+  /** Custom groups (is_custom or from customization.custom_svg_groups) for readonly display */
+  const effectiveSvgGroupsCustom = computed<OutputSvgGroupColor[]>(() => {
+    const fromBase = (effectiveSvgGroups.value ?? []).filter(g => g.is_custom === true)
+    const fromCustomization = customizationStore.customization?.custom_svg_groups ?? []
+    const fromCustomizationMapped: OutputSvgGroupColor[] = fromCustomization.map(c => ({
+      id: c.id,
+      name: c.name,
+      color: c.color,
+      pantone: c.pantone ?? '',
+      count: 0,
+      is_custom: true
+    }))
+    const seen = new Set<string>()
+    const merged: OutputSvgGroupColor[] = []
+    for (const g of [...fromBase, ...fromCustomizationMapped]) {
+      if (!seen.has(g.id)) {
+        seen.add(g.id)
+        merged.push(g)
+      }
+    }
+    return merged
   })
 
   const effectiveLogos = computed<CustomLogo[]>(() => {
@@ -127,6 +159,8 @@ export function useEffectiveSelectors() {
     effectiveDesignId,
     // Computed Derived
     effectiveSvgGroups,
+    effectiveSvgGroupsInteractive,
+    effectiveSvgGroupsCustom,
     effectiveLogos,
     renderVersion,
     groupsVersion

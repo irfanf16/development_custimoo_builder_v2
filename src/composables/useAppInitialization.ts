@@ -342,6 +342,36 @@ export function useAppInitialization() {
     }
   }
 
+  const loadReorderProduct = async (
+    customizationStore: ReturnType<typeof useCustomizationStore>
+  ): Promise<void> => {
+    const reorderData = customizationStore?.reorderData
+
+    if (reorderData?.orderItemId && reorderData.factoryProductId) {
+      const { useLoadReorderProductIntoCustomizer } = await import(
+        '@/composables/useLoadReorderProductIntoCustomizer'
+      )
+      const { loadReorderProductIntoCustomizer } = useLoadReorderProductIntoCustomizer()
+
+      const orderItemId = reorderData.orderItemId
+      const factoryProductId = reorderData.factoryProductId
+      const productId = customizationStore.activeProductId ?? 0
+      if (orderItemId && factoryProductId && productId) {
+        const success = await loadReorderProductIntoCustomizer({
+          orderItemId,
+          factoryProductId
+        })
+        if (success) {
+          customizationStore.saveToLocalStorage()
+          wf.setActiveStep('designs')
+          return
+        } else {
+          customizationStore.clearReorderData()
+        }
+      }
+    }
+  }
+
   // ============================================================================
   // Phase 5: Reload State with Correct Prefix
   // ============================================================================
@@ -360,6 +390,37 @@ export function useAppInitialization() {
       await loadShareProduct(customizationStore, productsStore)
       return
     }
+    // Reload reorder data
+    await loadReorderProduct(customizationStore)
+
+    // Priority 2: Reorder URL params (is_reorder, order_id, order_item_id, factory_product_id)
+    // const urlParams = categoryParamsComposable.urlQueryParams.value
+    // if (
+    //   urlParams.is_reorder === 'true' &&
+    //   urlParams.order_id &&
+    //   urlParams.order_item_id &&
+    //   urlParams.factory_product_id
+    // ) {
+    //   const orderId = parseInt(urlParams.order_id, 10)
+    //   const orderItemId = parseInt(urlParams.order_item_id, 10)
+    //   const factoryProductId = parseInt(urlParams.factory_product_id, 10)
+    //   if (!Number.isNaN(orderId) && !Number.isNaN(orderItemId) && !Number.isNaN(factoryProductId)) {
+    //     const { useLoadReorderProductIntoCustomizer } = await import(
+    //       '@/composables/useLoadReorderProductIntoCustomizer'
+    //     )
+    //     const { loadReorderProductIntoCustomizer } = useLoadReorderProductIntoCustomizer()
+    //     const success = await loadReorderProductIntoCustomizer({
+    //       orderId,
+    //       orderItemId,
+    //       factoryProductId
+    //     })
+    //     if (success) {
+    //       customizationStore.saveToLocalStorage()
+    //       wf.setActiveStep('designs')
+    //     }
+    //     return
+    //   }
+    // }
 
     if (hasSyncId.value) {
       if (updateCart.value && updateItem.value) {

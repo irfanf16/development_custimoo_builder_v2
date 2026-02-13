@@ -212,6 +212,7 @@
   "colors_copy": "Kopiér",
   "colors_paste": "Indsæt",
   "colors_gradient_label": "Farveforløb {index}",
+  "colors_custom_color_groups": "Brugerdefinerede farvegrupper (vises ikke i mockup)",
   "texts_help_insert_style": "Indsæt og formater tekst.",
   "texts_label_player_name": "Spillernavn",
   "texts_label_player_number": "Spillernummer",

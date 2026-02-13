@@ -29,6 +29,7 @@
   const profileStore = useProfileStore()
   const uiStore = useUIStore()
   const isMobile = uiStore.isMobile
+  const emit = defineEmits<{ (e: 'reorder-success'): void }>()
 
   const SEARCH_INPUT_SELECTOR = 'input[data-orders-search-input="true"]'
   const searchInputEl = ref<HTMLInputElement | null>(null)
@@ -306,6 +307,7 @@
               @cancel="store.cancelOrder"
               @pdf="() => {}"
               @details="() => showOrderDetails(order)"
+              @reorder-success="emit('reorder-success')"
             />
           </div>
           <div v-else-if="!store.isLoadingOrders" class="flex justify-center py-10 text-foreground">
@@ -335,6 +337,7 @@
         v-if="store.activeOrderView === 'details'"
         :order="store.activeOrder"
         @back="store.closeOrderDetails"
+        @reorder-success="emit('reorder-success')"
       />
       <OrderTimeline v-else :order="store.activeOrder" />
     </component>
@@ -343,6 +346,7 @@
         v-if="store.activeOrderView === 'details'"
         :order="store.activeOrder"
         @back="store.closeOrderDetails"
+        @reorder-success="emit('reorder-success')"
       />
       <OrderTimeline v-else :order="store.activeOrder" />
     </div>

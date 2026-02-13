@@ -173,7 +173,7 @@
                 />
               </TabsContent>
               <TabsContent value="orders" class="mt-0 h-full min-h-0">
-                <OrdersTab title="Orders" />
+                <OrdersTab title="Orders" @reorder-success="emit('update:open', false)" />
               </TabsContent>
               <TabsContent value="address" class="mt-0 h-full min-h-0">
                 <AddressTab
@@ -255,7 +255,7 @@
                   />
                 </TabsContent>
                 <TabsContent value="orders" class="mt-0 h-full">
-                  <OrdersTab title="Orders" />
+                  <OrdersTab title="Orders" @reorder-success="emit('update:open', false)" />
                 </TabsContent>
                 <TabsContent value="address" class="mt-0 h-full">
                   <AddressTab

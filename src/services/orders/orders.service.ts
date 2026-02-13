@@ -1,5 +1,6 @@
 import http from '../api'
 import type { CancelOrderResponse, CommentResponse, Order, OrderDetailResponse } from './types'
+import type { FactoryProduct } from '@/services/cart/types'
 
 export type OrdersResponse = {
   result: {
@@ -91,6 +92,21 @@ async function placeOrder(payload: {
   return http.post('/orders', payload)
 }
 
+export type ReorderProductResponse = {
+  result: {
+    factoryProducts: FactoryProduct[]
+    factoryProductActiveIndex: number
+  }
+}
+
+async function getReorderProduct(orderItemId: number, factoryProductId: string) {
+  return http.post<ReorderProductResponse>(`orders/reorder-product/detail`, {
+    active_product_type: 'reorder_product',
+    item_id: orderItemId,
+    factory_product_id: factoryProductId
+  })
+}
+
 export default {
   getOrders,
   cancelOrder,
@@ -103,5 +119,6 @@ export default {
   getDesignFileUrl,
   acceptQuote,
   rejectQuote,
-  placeOrder
+  placeOrder,
+  getReorderProduct
 }
