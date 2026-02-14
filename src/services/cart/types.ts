@@ -1,6 +1,8 @@
 // Cart types
 import type { CartProduct } from '@/services/products/types'
 
+/** custom_logos sent in factory_product: array of logo items; each has logo_technologies (number[]) and logo_technology (selected object). See CustomLogosPayload in @/services/logos/types */
+
 export interface SvgGroup {
   id: string
   name: string

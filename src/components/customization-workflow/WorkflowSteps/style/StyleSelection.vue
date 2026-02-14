@@ -84,7 +84,9 @@
 
   const visibleAddons = computed(() => {
     const details = productsStore.activeProductDetails
-    if (details?.company_addons?.length) {
+    const raw = details?.company_product?.is_custom_addons
+    const isCustomAddons = ['1', 1, true, 'true'].includes(raw as string | number | boolean)
+    if (details?.company_addons?.length && isCustomAddons) {
       return details.company_addons.map(a => ({
         addon_id: a.addon_id,
         title: a.addon_data?.title || ''
@@ -93,7 +95,8 @@
     if (details?.product_addons?.length) {
       return details.product_addons.map(a => ({
         addon_id: a.addon_id,
-        title: a.title || ''
+        title: a.title || '',
+        price: a.currencies[0]?.price.toString() || '0'
       })) as Array<{ addon_id: number; title: string; price: string }>
     }
     return []
@@ -115,10 +118,13 @@
   ): { code: string; name: string; price: number; symbol: string } | null {
     const preferredCode = companyStore.localization.currency.code
     const details = productsStore.activeProductDetails
+
+    const raw = details?.company_product?.is_custom_addons
+    const isCustomAddons = ['1', 1, true, 'true'].includes(raw as string | number | boolean)
     // Prefer company_addons
     const companyAddon = details?.company_addons?.find(a => a.addon_id === addonId)
     const companyCurrencies = companyAddon?.addon_data?.currencies || []
-    if (companyCurrencies.length) {
+    if (companyCurrencies.length && isCustomAddons) {
       const match = companyCurrencies.find(c => c.code === preferredCode)
       return match ?? companyCurrencies[0]!
     }

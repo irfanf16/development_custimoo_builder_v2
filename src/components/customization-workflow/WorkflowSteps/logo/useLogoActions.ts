@@ -97,6 +97,7 @@ export function useLogoActions() {
     }
     workflowStore.setActiveLogoId(String(logo.id))
 
+    workflowStore.setActiveLogoId(String(logo.id))
     // Set default_colors in customization store
     if (customizationStore.customization) {
       customizationStore.customization.default_colors = defaultColors.slice(0, 4)

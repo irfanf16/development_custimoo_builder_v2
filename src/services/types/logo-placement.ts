@@ -40,7 +40,8 @@ export type LogoPlacementBase = {
 
   // Bookkeeping
   logo_colors: LogoColor[]
-  logo_technologies?: string[] | null
+  /** Available logo tech sku_ids (number[]) when sent to backend; may be string[] from product settings */
+  logo_technologies?: number[] | string[] | null
   logo_index: number
   created_at?: string
   updated_at?: string

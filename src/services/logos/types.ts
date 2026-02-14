@@ -19,8 +19,17 @@ export type CustomLogo = LogoPlacementBase & {
   scaleX?: number
   scaleY?: number
   placement?: string
+  /** Selected logo technology (single object). Sent with custom_logos to cart/locker/share APIs. */
   logo_technology: OutputProductLogoTechnology | null
 }
+
+/**
+ * Shape of custom_logos array sent to backend (add to cart, locker, share product).
+ * Each item has:
+ * - logo_technologies: array of available logo tech sku_ids (numbers)
+ * - logo_technology: the selected logo technology object, or null
+ */
+export type CustomLogosPayload = CustomLogo[]
 
 export type OutputRecentLogos = {
   data: CustomLogo[]

@@ -16,10 +16,14 @@
   import { usePricing } from '@/composables/usePricing'
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { useCompanyStore } from '@/stores/company/company.store'
-  import { useRoster } from './WorkflowSteps/roster/useRoster'
+  import { useSignIn } from '@/composables/useSignIn'
+  import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
+  import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
+  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
+  import { storeToRefs } from 'pinia'
+  import { computed } from 'vue'
 
   const uiStore = useUIStore()
-  // Stores
   const profileStore = useProfileStore()
   const cartStore = useCartStore()
   const authStore = useAuthStore()
@@ -32,18 +36,26 @@
   } = usePricing()
   const { totalRosterQuantity } = useRoster()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
+  const { openSignInDialog } = useSignIn()
+  const { setPending } = usePendingPostLoginAction()
+  const { rosterEntries, ensureEditableRoster } = useRoster()
+  const { menuItems, goTo } = useCustomizerMenu()
 
-  // const estimatedDeliveryDate = computed(() => {
-  //   // This would come from API, using placeholder for now
-  //   return 'March 25-27, 2025'
-  // })
+  const { isAuthenticated: isLoggedIn } = storeToRefs(authStore)
+  const isEditingCartProduct = computed(() => cartStore.isEditingCartProduct)
 
   defineProps<{
     isExpanded?: boolean
   }>()
 
-  // Add to cart
-  async function handleAddToCart() {
+  async function handleUpdateCartProduct() {
+    if (!cartStore.editingCartItemId || !cartStore.editingFactoryProductId) {
+      toast.error('No cart product selected for update', {
+        position: 'top-right',
+        richColors: true
+      })
+      return
+    }
     try {
       const rosterQty = totalRosterQuantity.value
       const minDesignQty = minimumActiveProductQuantityByDesignToCard.value
@@ -69,12 +81,40 @@
       }
 
       const { factory_product, product_assets } = await buildFactoryProductPayload()
+      const result = await cartStore.updateCartItem(cartStore.editingCartItemId, {
+        factory_product,
+        product_assets
+      })
+      if (result && !result.errors.length) {
+        cartStore.clearEditingCartProduct()
+        toast.success('Cart updated', { position: 'top-right', richColors: true })
+      }
+    } catch (error) {
+      toast.error('Failed to update cart', { position: 'top-right', richColors: true })
+      console.error('Update cart error:', error)
+    }
+  }
 
+  async function handleAddToCart() {
+    const totalQuantity = rosterEntries.value.reduce((sum, entry) => sum + (entry.quantity || 0), 0)
+    if (totalQuantity === 0) {
+      toast.error('Please add roster entries with quantities before adding to cart', {
+        position: 'top-right',
+        richColors: true
+      })
+      const visibleSteps = menuItems.value.map(i => i.step)
+      if (visibleSteps.includes('roster')) {
+        await goTo('roster')
+        await ensureEditableRoster()
+      }
+      return
+    }
+    try {
+      const { factory_product, product_assets } = await buildFactoryProductPayload()
       await cartStore.addProductToCart({
         factory_product,
         product_assets
       })
-
       toast.success('Product added to cart', {
         position: 'top-right',
         richColors: true
@@ -87,6 +127,25 @@
       console.error('Add to cart error:', error)
     }
   }
+
+  async function handleButtonClick() {
+    if (!isLoggedIn.value) {
+      setPending(isEditingCartProduct.value ? 'updateCart' : 'addToCart')
+      openSignInDialog()
+      return
+    }
+    if (isEditingCartProduct.value) {
+      await handleUpdateCartProduct()
+    } else {
+      await handleAddToCart()
+    }
+  }
+
+  const buttonLabel = computed(() =>
+    isEditingCartProduct.value
+      ? 'Update'
+      : price_add_to_cart({}, { locale: profileStore.currentLocale })
+  )
 </script>
 
 <template>
@@ -128,7 +187,7 @@
       </p> -->
     </div>
     <Button
-      v-if="!(companyStore.isEcommercePlatform && authStore.hasAdminToken)"
+      v-if="isLoggedIn && !(companyStore.isEcommercePlatform && authStore.hasAdminToken)"
       variant="primary"
       :size="uiStore.isMobile ? 'sm' : 'lg'"
       class="w-full"
@@ -137,10 +196,11 @@
         (isQuantityByDesign && totalRosterQuantity < minimumActiveProductQuantityByDesignToCard) ||
         !authStore.isAuthenticated
       "
+      @click="handleButtonClick"
       @click.once="handleAddToCart"
     >
       <ShoppingCart class="size-4" />
-      {{ price_add_to_cart({}, { locale: profileStore.currentLocale }) }}
+      {{ buttonLabel }}
     </Button>
   </div>
 </template>

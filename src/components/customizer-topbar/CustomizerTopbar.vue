@@ -42,6 +42,7 @@
   import SignInDialog from '@/components/auth/SignInDialog.vue'
   import { CartDialog } from '@/components/cart'
   import { useSignIn } from '@/composables/useSignIn'
+  import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
   import { computed, ref } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { confirmDialog } from '@/lib/confirm-dialog'
@@ -88,6 +89,7 @@
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
   const { rosterEntries, ensureEditableRoster } = useRoster()
   const { openSignInDialog, handleLogout } = useSignIn()
+  const { getPending, clearPending } = usePendingPostLoginAction()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
 
@@ -569,9 +571,16 @@
     }
   }
   async function onLoginSuccess() {
+    const pending = getPending()
+    clearPending()
     await lockerRoomStore.fetchLockersWithcolors()
     await logosStore.fetchRecentLogos()
     await cartStore.fetchCart(true)
+    if (pending === 'updateCart') {
+      await handleUpdateCartProduct()
+    } else if (pending === 'addToCart') {
+      await handleAddToCart()
+    }
   }
 
   /**

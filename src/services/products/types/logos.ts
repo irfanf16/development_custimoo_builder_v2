@@ -21,7 +21,7 @@ export type OutputProductLogoTechnology = {
   currency_symbol: string
   is_default: 0 | 1
   label: string
-  net_price: number
+  net_price: number | null
   preselected: 0 | 1
   price: number
   product_id: number

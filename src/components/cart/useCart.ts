@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { useCartStore } from '@/stores/cart/cart.store'
 import { useCompanyStore } from '@/stores/company/company.store'
+import type { Addon } from '@/services/orders/types'
 
 export interface CartProduct {
   // Internal IDs for API operations
@@ -14,12 +15,22 @@ export interface CartProduct {
   quantity: number
   price: number
   style: string
-  addons: Array<{ id: number; name: string }>
+  addons: Array<{ id: number; title: string; price: number }>
   minimum_order_quantity: number
-
   // Additional fields for display
   front_image?: string
   back_image?: string
+  logo_technology?: { label: string; price: number }
+}
+
+export type PricingRowType = 'product' | 'addon' | 'logo_technology' | 'subtotal'
+
+export interface PricingRow {
+  label: string
+  qty: number
+  unitPrice: number
+  total: number
+  type: PricingRowType
 }
 
 export function useCart() {
@@ -39,7 +50,13 @@ export function useCart() {
   })
 
   const totalPrice = computed(() => {
-    return products.value.reduce((sum, product) => sum + product.price * product.quantity, 0)
+    return products.value.reduce(
+      (sum, product) =>
+        sum +
+        (product.price + product.addons.reduce((sum, addon) => sum + addon.price, 0)) *
+          product.quantity,
+      0
+    )
   })
 
   // ===== UTILITIES =====
@@ -57,25 +74,69 @@ export function useCart() {
 
     for (const item of cartStore.cart.items) {
       const factoryProducts: any[] = item.factory_products || []
+
       for (const fp of factoryProducts) {
         // Safely extract addons
         const groupedAddons: any[] = Array.isArray(fp.grouped_addons) ? fp.grouped_addons : []
         const ungroupedAddons: any[] = Array.isArray(fp.ungrouped_addons) ? fp.ungrouped_addons : []
         const generalAddons: any[] = Array.isArray(fp.addons) ? fp.addons : []
-        const allAddons: Array<{ id: number; name: string }> = []
+        const allAddons: Array<{ id: number; title: string; price: number }> = []
 
-        for (const addon of groupedAddons) {
-          allAddons.push({ id: Number(addon?.id) || 0, name: String(addon?.name || 'Unknown') })
+        for (const addon of groupedAddons as Addon[]) {
+          allAddons.push({
+            id: Number(addon?.id) || 0,
+            title: String(addon?.title || 'Unknown'),
+            price: Number(addon?.currencies[0]?.price?.toString() || '0')
+          })
         }
-        for (const addon of ungroupedAddons) {
-          allAddons.push({ id: Number(addon?.id) || 0, name: String(addon?.name || 'Unknown') })
+        for (const addon of ungroupedAddons as Addon[]) {
+          allAddons.push({
+            id: Number(addon?.id) || 0,
+            title: String(addon?.title || 'Unknown'),
+            price: Number(addon?.currencies[0]?.price?.toString() || '0')
+          })
         }
 
-        for (const addon of generalAddons) {
-          allAddons.push({ id: Number(addon?.id) || 0, name: String(addon?.title || 'Unknown') })
+        for (const addon of generalAddons as Addon[]) {
+          allAddons.push({
+            id: Number(addon?.id) || 0,
+            title: String(addon?.title || 'Unknown'),
+            price: Number(addon?.currencies[0]?.price?.toString() || '0')
+          })
         }
 
         const priceObj: any = fp.product_price_object
+
+        // Logo technology: from fp.logo_technology (root) or from fp.custom_logos[].logo_technology
+        let logoTechnology: { label: string; price: number } | undefined
+        const ltRoot: any = fp.logo_technology
+        if (ltRoot && typeof ltRoot === 'object') {
+          const price = Number(ltRoot.price)
+          if (!Number.isNaN(price)) {
+            logoTechnology = { label: String(ltRoot.label || 'Logo technology'), price }
+          }
+        }
+        if (!logoTechnology) {
+          const customLogos: any[] = Array.isArray(fp.custom_logos) ? fp.custom_logos : []
+          let totalLogoPrice = 0
+          let firstLabel: string | null = null
+          for (const logo of customLogos) {
+            const lt: any = logo?.logo_technology
+            if (lt && typeof lt === 'object') {
+              const p = Number(lt.price)
+              if (!Number.isNaN(p)) {
+                totalLogoPrice += p
+                if (firstLabel === null) firstLabel = String(lt.label || 'Logo technology')
+              }
+            }
+          }
+          if (totalLogoPrice > 0) {
+            logoTechnology = {
+              label: firstLabel || 'Logo technology',
+              price: totalLogoPrice
+            }
+          }
+        }
 
         mappedProducts.push({
           cart_item_id: item.id,
@@ -89,6 +150,7 @@ export function useCart() {
           addons: allAddons,
           front_image: fp?.front_image ? String(fp.front_image) : undefined,
           back_image: fp?.back_image ? String(fp.back_image) : undefined,
+          logo_technology: logoTechnology,
           minimum_order_quantity:
             fp?.is_custom_moq == 'true' && fp.minimum_order_quantity_type === 'by_cart'
               ? Number(fp.minimum_order_quantity)
@@ -177,8 +239,80 @@ export function useCart() {
     return `$${price.toFixed(2)}`
   }
 
-  const formatAddons = (addons: Array<{ id: number; name: string }>): string => {
-    return addons.map(addon => addon.name).join(', ')
+  const formatAddons = (addons: Array<{ id: number; title: string }>): string => {
+    return addons.map(addon => addon.title).join(', ')
+  }
+
+  /**
+   * Item subtotal: (quantity × unit price) + sum(addon × quantity) + logo technology price
+   */
+  function getItemSubtotal(product: CartProduct): number {
+    const productTotal = product.quantity * product.price
+    const addonsTotal = product.addons.reduce(
+      (sum, addon) => sum + addon.price * product.quantity,
+      0
+    )
+    const logoTotal = product.logo_technology?.price ?? 0
+    return productTotal + addonsTotal + logoTotal
+  }
+
+  /**
+   * Pricing rows for per-item breakdown (product, addons, logo technology, subtotal)
+   */
+  function getItemPricingRows(product: CartProduct): PricingRow[] {
+    const rows: PricingRow[] = []
+
+    rows.push({
+      label: product.product_name,
+      qty: product.quantity,
+      unitPrice: product.price,
+      total: product.quantity * product.price,
+      type: 'product'
+    })
+
+    for (const addon of product.addons) {
+      rows.push({
+        label: addon.title,
+        qty: product.quantity,
+        unitPrice: addon.price,
+        total: addon.price * product.quantity,
+        type: 'addon'
+      })
+    }
+
+    if (product.logo_technology) {
+      rows.push({
+        label: product.logo_technology.label,
+        qty: 1,
+        unitPrice: product.logo_technology.price,
+        total: product.logo_technology.price,
+        type: 'logo_technology'
+      })
+    }
+
+    rows.push({
+      label: 'Subtotal',
+      qty: 0,
+      unitPrice: 0,
+      total: getItemSubtotal(product),
+      type: 'subtotal'
+    })
+
+    return rows
+  }
+
+  /**
+   * Validate cart for checkout: no item must have quantity 0
+   */
+  function validateCartForCheckout(): { valid: boolean; invalidFactoryProductIds: string[] } {
+    console.log(products.value)
+    const invalidFactoryProductIds = products.value
+      .filter(p => p.quantity === 0)
+      .map(p => p.factory_product_id)
+    return {
+      valid: invalidFactoryProductIds.length === 0,
+      invalidFactoryProductIds
+    }
   }
   const minimumCartQuantity = () => {
     const settingMoq = Number(companyStore?.settings?.settings?.moq)
@@ -233,6 +367,9 @@ export function useCart() {
 
     // Utilities
     formatPrice,
-    formatAddons
+    formatAddons,
+    getItemSubtotal,
+    getItemPricingRows,
+    validateCartForCheckout
   }
 }

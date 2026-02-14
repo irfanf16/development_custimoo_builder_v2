@@ -52,6 +52,7 @@ export type OutputProductDetails = OutputProductPreview & {
       symbol: string
       price: string
     }>
+    is_custom_addons: string
   }
   sku: {
     id: number

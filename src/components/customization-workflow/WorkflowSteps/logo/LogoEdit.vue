@@ -24,7 +24,7 @@
   import type { CustomLogo } from '@/services/logos/types'
   import LogoCard from './LogoCard.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { Checkbox } from '@/components/ui/checkbox'
+  import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
   import { useLogoActions, type BackgroundRemovalMode } from './useLogoActions'
   import { useLogos } from './useLogos'
   import { useLogoPlacements, type PlacementOption } from './useLogoPlacements'
@@ -437,15 +437,33 @@
     }
   }
 
+  // Radio group value for logo technology (syncs with selectedLogoTechnology)
+  const logoTechnologyRadioValue = computed({
+    get: () => (selectedLogoTechnology.value ? String(selectedLogoTechnology.value.sku_id) : ''),
+    set: (val: string) => {
+      if (!val) {
+        selectLogoTechnologyClear()
+        return
+      }
+      const tech = logoTechnologies.value.find(t => String(t.sku_id) === val)
+      if (tech) selectLogoTechnology(tech)
+    }
+  })
+
   function selectLogoTechnology(technology: OutputProductLogoTechnology) {
     if (!customLogo.value || !productKey.value) return
+    selectedLogoTechnology.value = technology
+    applyLogoTechnologyToStore()
+  }
 
-    // Toggle selection: if already selected, deselect; otherwise select
-    if (selectedLogoTechnology.value?.sku_id === technology.sku_id) {
-      selectedLogoTechnology.value = null
-    } else {
-      selectedLogoTechnology.value = technology
-    }
+  function selectLogoTechnologyClear() {
+    if (!customLogo.value || !productKey.value) return
+    selectedLogoTechnology.value = null
+    applyLogoTechnologyToStore()
+  }
+
+  function applyLogoTechnologyToStore() {
+    if (!customLogo.value || !productKey.value) return
 
     // Update the logo in customization store
     const logoIndex = getActiveLogoIndex(customLogo.value.id)
@@ -529,21 +547,25 @@
           </div>
         </AccordionTrigger>
         <AccordionContent class="space-y-6 px-4 md:px-6 py-5">
-          <div class="space-y-3 text-left">
+          <RadioGroup v-model="logoTechnologyRadioValue" class="space-y-3 text-left">
+            <div class="flex items-center space-x-2">
+              <RadioGroupItem id="logo-tech-none" value="" />
+              <Label
+                for="logo-tech-none"
+                class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+              >
+                None
+              </Label>
+            </div>
             <div
               v-for="(technology, index) in logoTechnologies"
               :key="technology.sku_id"
               class="flex items-center space-x-2"
             >
-              <Checkbox
-                :id="`logo-tech-${index}`"
-                :checked="selectedLogoTechnology?.sku_id === technology.sku_id"
-                @update:checked="() => selectLogoTechnology(technology)"
-              />
+              <RadioGroupItem :id="`logo-tech-${index}`" :value="String(technology.sku_id)" />
               <Label
                 :for="`logo-tech-${index}`"
                 class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                @click="selectLogoTechnology(technology)"
               >
                 {{ technology.label }}
                 <template v-if="showPricing && technology.price">
@@ -553,7 +575,7 @@
                 </template>
               </Label>
             </div>
-          </div>
+          </RadioGroup>
         </AccordionContent>
       </AccordionItem>
 

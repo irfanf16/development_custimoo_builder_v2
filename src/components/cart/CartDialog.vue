@@ -51,14 +51,19 @@
   const {
     products,
     formatPrice,
-    formatAddons,
+    // formatAddons,
     removeProduct: _removeProduct,
     editProduct: _editProduct,
     totalItems,
     totalPrice,
     fetchCart,
+    getItemPricingRows,
+    validateCartForCheckout,
     minimumCartQuantity
   } = useCart()
+
+  // Invalid quantity state (Task 2: quantity === 0 blocks checkout)
+  const invalidQuantityIds = ref<string[]>([])
 
   // Handle remove product with confirmation
   function handleRemoveClick(factoryProductId: string) {
@@ -238,6 +243,7 @@
     () => props.open,
     isOpen => {
       if (isOpen) {
+        invalidQuantityIds.value = []
         // Only fetch if not already fetched on page load
         // The watcher in useCart with immediate: true will map existing cart data
         if (!cartStore.hasFetchedOnPageLoad) {
@@ -296,6 +302,16 @@
       return
     }
 
+    const cartValidation = validateCartForCheckout()
+    if (!cartValidation.valid) {
+      invalidQuantityIds.value = cartValidation.invalidFactoryProductIds
+      toast.error('Some items have quantity 0. Please update before checkout.', {
+        position: 'top-right',
+        richColors: true
+      })
+      return
+    }
+
     isPlacingOrder.value = true
     try {
       const payload = {
@@ -338,7 +354,16 @@
       <ScrollArea class="flex-1 overflow-y-auto">
         <!-- Cart Items -->
         <div class="divide-y">
-          <div v-for="item in products" :key="item.factory_product_id" class="p-4">
+          <div
+            v-for="item in products"
+            :key="item.factory_product_id"
+            class="p-4"
+            :class="{
+              'border-l-4 border-red-500 bg-red-50/50': invalidQuantityIds.includes(
+                item.factory_product_id
+              )
+            }"
+          >
             <div class="flex gap-4">
               <!-- Product Image -->
               <div
@@ -381,32 +406,76 @@
                   </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 mt-3 text-sm">
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-x-4 gap-y-2 mt-3 text-sm">
                   <div>
                     <p class="text-gray-500 text-xs">Design ID</p>
                     <p class="font-medium">#{{ item.design_id }}</p>
                   </div>
+
                   <div>
+                    <p class="text-gray-500 text-xs">Style</p>
+                    <p class="font-medium">{{ item.style }}</p>
+                  </div>
+                  <!-- <div>
                     <p class="text-gray-500 text-xs">Quantity</p>
                     <p class="font-medium">{{ item.quantity }}</p>
                   </div>
                   <div v-if="showPricing">
                     <p class="text-gray-500 text-xs">Price</p>
                     <p class="font-medium">{{ formatPrice(item.price) }}</p>
-                  </div>
+                  </div> -->
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm">
-                  <div>
+                  <!-- <div>
                     <p class="text-gray-500 text-xs">Style</p>
                     <p class="font-medium">{{ item.style }}</p>
-                  </div>
-                  <div>
+                  </div> -->
+                  <!-- <div>
                     <p class="text-gray-500 text-xs">Addons</p>
                     <p class="font-medium text-gray-700">
                       {{ formatAddons(item.addons) || 'None' }}
                     </p>
-                  </div>
+                  </div> -->
+                </div>
+
+                <p
+                  v-if="invalidQuantityIds.includes(item.factory_product_id)"
+                  class="text-xs text-red-500 mt-2"
+                >
+                  Quantity must be greater than 0 to checkout.
+                </p>
+
+                <!-- Per-item pricing breakdown (Task 1) -->
+                <div v-if="showPricing" class="mt-3 overflow-x-auto">
+                  <table class="w-full min-w-[280px] text-sm border-collapse">
+                    <thead>
+                      <tr class="text-left text-gray-500 border-b">
+                        <th class="py-1.5 pr-2 font-medium">Product / Addon / LogoTechnology</th>
+                        <th class="py-1.5 pr-2 font-medium text-right">Qty</th>
+                        <th class="py-1.5 pr-2 font-medium text-right">Unit Price</th>
+                        <th class="py-1.5 pr-2 font-medium text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="(row, idx) in getItemPricingRows(item)"
+                        :key="idx"
+                        :class="{
+                          'border-t font-semibold': row.type === 'subtotal'
+                        }"
+                      >
+                        <td class="py-1.5 pr-2">{{ row.label }}</td>
+                        <td class="py-1.5 pr-2 text-right">
+                          {{ row.type === 'subtotal' ? '—' : row.qty }}
+                        </td>
+                        <td class="py-1.5 pr-2 text-right">
+                          {{ row.type === 'subtotal' ? '—' : formatPrice(row.unitPrice) }}
+                        </td>
+                        <td class="py-1.5 pr-2 text-right">{{ formatPrice(row.total) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>

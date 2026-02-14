@@ -101,6 +101,7 @@ export type LockerPayloadJsonValue = object
  * Save Locker Product payload interface for API requests
  * Contains all fields required when saving or updating a locker product.
  * JSON fields use plain objects/arrays so the request body is serialized once (no double encoding).
+ * custom_logos: use CustomLogosPayload (array; each item has logo_technologies: number[], logo_technology: selected object). See @/services/logos/types
  */
 export interface SaveLockerProductPayload {
   id?: number

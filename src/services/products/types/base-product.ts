@@ -7,6 +7,7 @@ import type {
 } from './customization'
 import type { OutputProductText } from './texts'
 import type { SvgGroup } from '@/services/cart/types'
+import type { CustomLogosPayload } from '@/services/logos/types'
 
 /**
  * Product roster detail entry
@@ -45,11 +46,8 @@ export interface BaseProduct extends ProductBase {
   svg_groups: SvgGroup[]
   style_id: number
   design_id: number
-  custom_logos:
-    | APCustomizationLogosMap
-    | Array<import('@/services/logos/types').CustomLogo>
-    | string
-    | null
+  /** In-app: LogosMap keyed by product; when sending to backend (cart/locker/share): CustomLogosPayload (array; each item has logo_technologies and logo_technology) */
+  custom_logos: APCustomizationLogosMap | CustomLogosPayload | string | null
   text?: OutputProductText[] | string | null
   product_custom_text?: OutputProductText[] | string | null
   shuffle_color_number: number
@@ -84,6 +82,7 @@ export interface ShareDesignProduct extends BaseProduct {
  * Share Design payload interface for API requests
  * Contains all required fields for sharing a design
  * Note: Many fields are JSON-stringified for API compatibility
+ * custom_logos: CustomLogosPayload (array; each item has logo_technologies, logo_technology). See @/services/logos/types
  */
 export interface ShareDesignPayload {
   addons: APCustomizationAddonsInfo
