@@ -10,7 +10,7 @@
     LockerProduct
   } from '@/services/lockers/types'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-  import { ref, watch, computed } from 'vue'
+  import { ref, watch, computed, provide } from 'vue'
   import { storeToRefs } from 'pinia'
   import LockerRoomFooter from './locker-room/LockerRoomFooter.vue'
   import LockerRoomHeader from './locker-room/LockerRoomHeader.vue'
@@ -28,11 +28,14 @@
       open: boolean
       /** When set and browser opens, navigate to this locker's detail view (e.g. after saving a design). */
       initialLockerId?: number | null
+      /** When set, opening a locker will switch to this tab (e.g. from Colors/Logos/Roster "Choose from locker"). */
+      initialTab?: LockerTab | null
     }>(),
-    { initialLockerId: null }
+    { initialLockerId: null, initialTab: null }
   )
 
   const emit = defineEmits([
+    'clear-initial-tab',
     'update:open',
     'add-to-cart',
     'create-locker',
@@ -47,6 +50,8 @@
   const lockerRoomStore = useLockerRoomStore()
   const { lockers: storeLockers } = storeToRefs(lockerRoomStore)
   const currentMode = ref<'list' | 'detail'>('list')
+
+  provide('closeLockerBrowser', () => emit('update:open', false))
   const tab = ref<'lockers' | 'collections'>('lockers')
   const lockerTab = ref<LockerTab>('products')
   const collectionTab = ref<CollectionTab>('products')
@@ -140,6 +145,10 @@
       ? ((await lockerRoomStore.fetchLockerProducts(locker.id)) ?? null)
       : locker
     currentMode.value = 'detail'
+    if (props.initialTab) {
+      lockerTab.value = props.initialTab
+      emit('clear-initial-tab')
+    }
     // When adding products to a collection, keep existing selection (collection products as stubs); don't overwrite with locker-only aggregate
     if (!(isCreatingCollection.value && currentCollection.value)) {
       selectedProducts.value = aggregateSelectedProductsFromStore()

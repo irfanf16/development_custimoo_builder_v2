@@ -1,5 +1,4 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import TwoDScene from '@/components/scene/TwoDScene.vue'
   // import ThreePreview from './ThreePreview.vue'
@@ -10,9 +9,6 @@
   const productsStore = useProductsStore()
   const { activeProductDetails } = storeToRefs(productsStore)
   const workflowStore = useWorkflowStore()
-  // const products = useProductsStore()
-  //const { activeRenderMode: mode } = storeToRefs(products)
-  const previewContainer = ref<HTMLElement>()
 </script>
 
 <template>

@@ -21,9 +21,11 @@
   } from '@/paraglide/messages'
   import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
   import { useRosterConfig } from './useRosterConfig'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
 
   const workflowStore = useWorkflowStore()
   const authStore = useAuthStore()
+  const lockerRoomStore = useLockerRoomStore()
   const { isAuthenticated } = storeToRefs(authStore)
   const uiStore = useUIStore()
   const { isMobile } = storeToRefs(uiStore)
@@ -127,7 +129,12 @@
       <Separator class="flex-1 bg-border" />
     </div>
     <div class="grid gap-3 sm:grid-cols-2">
-      <Button variant="secondary" :disabled="!isAuthenticated" aria-disabled="true">
+      <Button
+        variant="secondary"
+        :disabled="!isAuthenticated"
+        aria-disabled="!isAuthenticated"
+        @click="lockerRoomStore.setOpenLockerWithIntent('rosters')"
+      >
         {{ colors_choose_from_locker({}, { locale }) }}
       </Button>
       <Button variant="default" @click="handleManualCreate">

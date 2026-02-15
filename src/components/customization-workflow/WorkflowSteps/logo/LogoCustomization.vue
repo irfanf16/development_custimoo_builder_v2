@@ -24,14 +24,17 @@
     logos_recent_thumbnail_alt,
     nav_logo
   } from '@/paraglide/messages'
+  import { colors_choose_from_locker, colors_separator_or } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useAuthStore } from '@/stores/auth/auth.store'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { Trash } from 'lucide-vue-next'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import LogoCard from './LogoCard.vue'
   const profileStore = useProfileStore()
   const logosStore = useLogosStore()
   const authStore = useAuthStore()
+  const lockerRoomStore = useLockerRoomStore()
   const isLoggedIn = computed(() => authStore.isAuthenticated)
 
   // ===== COMPOSABLES =====
@@ -162,6 +165,26 @@
               class="hidden"
               @change="handleFileChange"
             />
+
+            <div
+              v-if="isLoggedIn"
+              class="flex flex-col gap-3 w-full mt-4 pt-4 border-t border-border"
+            >
+              <div class="flex items-center justify-center text-xs text-muted-foreground gap-2">
+                <div class="flex-1 h-px bg-border" />
+                <span class="px-3 text-foreground font-medium">{{
+                  colors_separator_or({}, { locale: profileStore.currentLocale })
+                }}</span>
+                <div class="flex-1 h-px bg-border" />
+              </div>
+              <Button
+                class="w-full bg-card"
+                variant="default"
+                @click="lockerRoomStore.setOpenLockerWithIntent('assets')"
+              >
+                {{ colors_choose_from_locker({}, { locale: profileStore.currentLocale }) }}
+              </Button>
+            </div>
           </div>
           <LogoUploadingSkeleton v-if="logosStore.isLoadingUploadLogo && !hasAnyLogo" />
 
@@ -178,7 +201,7 @@
               @delete="removeLogo(logo)"
             />
 
-            <div v-if="!logosStore.isLoadingUploadLogo">
+            <div v-if="!logosStore.isLoadingUploadLogo" class="flex flex-col gap-3">
               <Button variant="default" class="rounded-lg w-full" @click="onClickUpload">
                 {{ logos_add_logo({}, { locale: profileStore.currentLocale }) }}
               </Button>
@@ -189,6 +212,22 @@
                 class="hidden"
                 @change="handleFileChange"
               />
+              <template v-if="isLoggedIn">
+                <div class="flex items-center justify-center text-xs text-muted-foreground gap-2">
+                  <div class="flex-1 h-px bg-border" />
+                  <span class="px-3 text-foreground font-medium">{{
+                    colors_separator_or({}, { locale: profileStore.currentLocale })
+                  }}</span>
+                  <div class="flex-1 h-px bg-border" />
+                </div>
+                <Button
+                  class="w-full bg-card"
+                  variant="secondary"
+                  @click="lockerRoomStore.setOpenLockerWithIntent('assets')"
+                >
+                  {{ colors_choose_from_locker({}, { locale: profileStore.currentLocale }) }}
+                </Button>
+              </template>
             </div>
             <LogoUploadingSkeleton v-else />
           </div>

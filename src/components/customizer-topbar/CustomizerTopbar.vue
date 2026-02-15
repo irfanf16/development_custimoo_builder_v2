@@ -43,7 +43,7 @@
   import { CartDialog } from '@/components/cart'
   import { useSignIn } from '@/composables/useSignIn'
   import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import LockerBrowser from '@/components/LockerBrowser.vue'
@@ -99,6 +99,19 @@
   const showCartDialog = ref(false)
   const showSaveDesignDialog = ref(false)
   const initialLockerIdToOpen = ref<number | null>(null)
+  const initialLockerTabToOpen = ref<'products' | 'assets' | 'colours' | 'rosters' | null>(null)
+
+  // When a workflow step (Colors/Logos/Roster) requests "Choose from locker", open the browser with the right tab
+  watch(
+    () => lockerRoomStore.openLockerWithIntent,
+    intent => {
+      if (intent) {
+        showLockerBrowser.value = true
+        initialLockerTabToOpen.value = intent.tab
+        lockerRoomStore.clearOpenLockerWithIntent()
+      }
+    }
+  )
   const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
   const sharedUrl = ref<string | null>(null)
   const showShareTooltip = ref(false)
@@ -1039,9 +1052,16 @@
     <LockerBrowser
       :open="showLockerBrowser"
       :initial-locker-id="initialLockerIdToOpen"
-      @update:open="showLockerBrowser = $event"
+      :initial-tab="initialLockerTabToOpen"
+      @update:open="
+        evt => {
+          showLockerBrowser = evt
+          if (!evt) initialLockerTabToOpen = null
+        }
+      "
       @edit-product="handleEditLockerProduct"
       @initial-locker-opened="initialLockerIdToOpen = null"
+      @clear-initial-tab="initialLockerTabToOpen = null"
     />
     <SaveDesignDialog
       :open="showSaveDesignDialog"

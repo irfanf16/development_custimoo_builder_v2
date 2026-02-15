@@ -31,6 +31,19 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   const isDeletingProducts = ref<boolean>(false)
   const isCopyingProducts = ref<boolean>(false)
 
+  /** When set, opening the locker browser should switch to this tab when user selects a locker (used from Colors/Logos/Roster steps). */
+  const openLockerWithIntent = ref<{
+    tab: 'products' | 'assets' | 'colours' | 'rosters'
+  } | null>(null)
+
+  function setOpenLockerWithIntent(tab: 'products' | 'assets' | 'colours' | 'rosters') {
+    openLockerWithIntent.value = { tab }
+  }
+
+  function clearOpenLockerWithIntent() {
+    openLockerWithIntent.value = null
+  }
+
   //lockers methods
   async function fetchLockers() {
     isLoading.value = true
@@ -488,6 +501,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     isCopyingProducts,
     isEditingLockerProduct,
     lockerRoomsWithColors,
+    openLockerWithIntent,
+    setOpenLockerWithIntent,
+    clearOpenLockerWithIntent,
     //functions
     fetchLockers,
     fetchLockerProducts,

@@ -5,6 +5,8 @@
   import { Switch } from '@/components/ui/switch'
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useProductsStore } from '@/stores/products/products.store'
+  import { storeToRefs } from 'pinia'
   import { Info, Maximize2, Minimize2 } from 'lucide-vue-next'
   import { computed, ref } from 'vue'
   import type { BreadcrumbItem, HeaderConfiguration } from './types'
@@ -22,7 +24,10 @@
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
+  const { activeProductDetails } = storeToRefs(useProductsStore())
   const props = defineProps<Props>()
+
+  const productName = computed(() => activeProductDetails.value?.display_name ?? null)
 
   const locale = computed(() => profileStore.currentLocale || 'en')
 
@@ -69,6 +74,9 @@
 
 <template>
   <div class="w-full flex flex-col gap-1">
+    <h1 v-if="productName" class="font-medium text-foreground truncate">
+      {{ productName }}
+    </h1>
     <div
       class="flex items-center gap-2 h-7 justify-center"
       :class="props.config?.isExpandable ? 'h-9' : ''"

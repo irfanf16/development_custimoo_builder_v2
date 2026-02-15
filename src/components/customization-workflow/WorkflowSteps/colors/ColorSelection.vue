@@ -19,6 +19,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useColorClipboard } from '@/composables/useColorClipboard'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { useAuthStore } from '@/stores/auth/auth.store'
   import {
     color_shuffle_design_colors,
     color_shuffle_heading_1,
@@ -51,6 +52,8 @@
   const { clipboardColor, copyColor } = useColorClipboard()
   const lockerRoomStore = useLockerRoomStore()
   const { lockerRoomsWithColors } = storeToRefs(lockerRoomStore)
+  const authStore = useAuthStore()
+  const { isAuthenticated } = storeToRefs(authStore)
 
   // Parse locker rooms response into usable structure
   const parsedLockerRooms = computed(() => {
@@ -367,7 +370,12 @@
           <div class="flex-1 h-px bg-border" />
         </div>
         <div>
-          <Button class="w-full bg-card" variant="default">
+          <Button
+            class="w-full bg-card"
+            variant="default"
+            :disabled="!isAuthenticated"
+            @click="lockerRoomStore.setOpenLockerWithIntent('colours')"
+          >
             {{ colors_choose_from_locker({}, { locale: profileStore.currentLocale }) }}
           </Button>
         </div>
