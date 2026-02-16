@@ -170,7 +170,7 @@ export function useCart() {
    * Fetch cart from API
    */
   async function fetchCart() {
-    await cartStore.fetchCart()
+    await cartStore.fetchCart(true)
     // Always map cart data to products, even if fetch returned early
     // (e.g., if cart was already fetched on page load)
     products.value = mapCartItemsToProducts()

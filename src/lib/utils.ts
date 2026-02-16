@@ -250,6 +250,8 @@ export function loadCustomFont(url: string, fontFamily: string): Promise<void> {
     fontFormat = 'woff'
   } else if (fileExt === 'ttf') {
     fontFormat = 'truetype'
+  } else if (fileExt === 'otf') {
+    fontFormat = 'opentype'
   }
 
   const style = document.createElement('style')

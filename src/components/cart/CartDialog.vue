@@ -522,7 +522,7 @@
                     v-model="orderReference"
                     type="text"
                     :class="[
-                      'mt-1 w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent',
+                      'mt-1 w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
                       orderReferenceError ? 'border-red-500' : ''
                     ]"
                   />
@@ -536,7 +536,7 @@
                     v-model="comments"
                     rows="3"
                     :placeholder="cart_note_placeholder({}, { locale })"
-                    class="mt-1 w-full px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    class="mt-1 w-full px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
               </div>
@@ -574,7 +574,7 @@
                 </div>
               </div>
               <button
-                class="w-full mt-4 px-4 py-3 bg-teal-500 text-white rounded-md font-medium hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full mt-4 px-4 py-3 bg-primary text-white rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="!canConfirmOrder || isPlacingOrder || totalItems < minimumCartQuantity()"
                 @click="handleConfirmOrder"
               >

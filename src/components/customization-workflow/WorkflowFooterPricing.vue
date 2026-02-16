@@ -197,7 +197,6 @@
         !authStore.isAuthenticated
       "
       @click="handleButtonClick"
-      @click.once="handleAddToCart"
     >
       <ShoppingCart class="size-4" />
       {{ buttonLabel }}
