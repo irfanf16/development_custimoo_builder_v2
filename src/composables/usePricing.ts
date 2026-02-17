@@ -5,6 +5,7 @@ import { useCustomizationStore } from '@/stores/customization/customization.stor
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useProfileStore } from '@/stores/profile/profile.store'
+import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
 
 export const usePricing = () => {
   const companyStore = useCompanyStore()
@@ -13,6 +14,7 @@ export const usePricing = () => {
   const customizationStore = useCustomizationStore()
   const { activeProductDetails } = storeToRefs(productsStore)
   const locale = computed(() => profileStore.currentLocale || 'en')
+  const { totalRosterQuantity } = useRoster()
 
   const getProductPrice = (
     product: OutputProductDetails,
@@ -194,7 +196,7 @@ export const usePricing = () => {
       return null
     }
 
-    const minimumQuantity = Number(details?.sku?.minimum_order_quantity) || 1
+    const minimumQuantity = Number(totalRosterQuantity.value) || 1
 
     const totalAddonPrice = Number(getTotalAddonPrice()) || 0
 
