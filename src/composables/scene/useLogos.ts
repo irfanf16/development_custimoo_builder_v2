@@ -9,6 +9,7 @@ import {
 import { useStorage } from './useStorage'
 import { useSceneCommon } from './useSceneCommon'
 import { FABRIC_CONTROL_VISIBILITY } from './useFabricControls'
+import { useDebounceFn } from '@vueuse/core'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { CustomLogo } from '@/services/logos/types'
 
@@ -121,6 +122,24 @@ function isLogoEmpty(logo: CustomLogo | null | undefined): boolean {
   return !logo.url || logo.url.trim() === ''
 }
 
+const debouncedLogoStoreUpdate = useDebounceFn(
+  (payload: {
+    logoIndex: number
+    productId: number | null
+    data: Partial<CustomLogo>
+    suppressWatchRef: Ref<boolean>
+  }) => {
+    payload.suppressWatchRef.value = true
+    const customizationStore = useCustomizationStore()
+    customizationStore.updateCustomLogo({
+      custom_logo_index: payload.logoIndex,
+      productId: payload.productId,
+      data: payload.data
+    })
+  },
+  500
+)
+
 /**
  * Add logo to canvas
  */
@@ -156,8 +175,6 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
 
   // Load image using common image load function
   return (async () => {
-    const customizationStore = useCustomizationStore()
-
     // Use common image loading function from useSceneCommon
     // Extract file extension from URL or default to 'png'
     const fileExtension = logo.url.split('.').pop()?.toLowerCase() || 'png'
@@ -242,24 +259,22 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
     // Add to canvas
     canvas.add(img as FabricObject)
 
-    // Update store if main preview; suppress watcher using provided ref if present
-    suppressWatchRef.value = true
+    // Update store if main preview (debounced 500ms so rapid adds only run last) todo we need to check how other main previews should not trigger watcher.
     if (mainPreview) {
-      setTimeout(() => {
-        customizationStore.updateCustomLogo({
-          custom_logo_index: logoIndex,
-          productId: productId ?? logo.product_id ?? null,
-          data: {
-            scaleX: img.scaleX / widthRatio,
-            scaleY: img.scaleY / heightRatio,
-            ...(is_3d ? { x_axis_3d: position.x, y_axis_3d: position.y } : {}), // store 3D position in store for 3D only
-            originalWidth: convertSize(img.width * img.scaleX),
-            originalHeight: convertSize(img.height * img.scaleY),
-            actualWidth: img.width ?? 0,
-            actualHeight: img.height ?? 0
-          }
-        })
-      }, 100)
+      void debouncedLogoStoreUpdate({
+        logoIndex,
+        productId: productId ?? logo.product_id ?? null,
+        data: {
+          scaleX: img.scaleX / widthRatio,
+          scaleY: img.scaleY / heightRatio,
+          ...(is_3d ? { x_axis_3d: position.x, y_axis_3d: position.y } : {}), // store 3D position in store for 3D only
+          originalWidth: convertSize(img.width * img.scaleX),
+          originalHeight: convertSize(img.height * img.scaleY),
+          actualWidth: img.width ?? 0,
+          actualHeight: img.height ?? 0
+        },
+        suppressWatchRef
+      })
 
       img.on('modified', event =>
         updateLogoPositionInStore({
@@ -276,8 +291,6 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
           convertSize
         })
       )
-    } else {
-      suppressWatchRef.value = false
     }
 
     // Store reference in map

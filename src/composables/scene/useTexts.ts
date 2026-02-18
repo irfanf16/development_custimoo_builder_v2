@@ -6,6 +6,7 @@ import {
   type Canvas,
   type FabricObject
 } from 'fabric'
+import { useDebounceFn } from '@vueuse/core'
 import { FABRIC_CONTROL_VISIBILITY } from './useFabricControls'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
@@ -295,6 +296,33 @@ export function updateTextPositionInStore(options: UpdateTextPositionOptions): v
   customizationStore.updateProductTextItem(productId, customTextIndex, itemIndex, data)
 }
 
+const debouncedTextStoreUpdate = useDebounceFn(
+  (payload: {
+    productId: number
+    customTextIndex: number
+    itemIndex: number
+    data: Partial<OutputProductTextItem> & Record<string, unknown>
+    suppressWatchRef: Ref<boolean>
+  }) => {
+    payload.suppressWatchRef.value = true
+    const customizationStore = useCustomizationStore() as {
+      updateProductTextItem(
+        productId: number,
+        entryIndex: number,
+        itemIndex: number,
+        payload: Partial<OutputProductTextItem> & Record<string, unknown>
+      ): void
+    }
+    customizationStore.updateProductTextItem(
+      payload.productId,
+      payload.customTextIndex,
+      payload.itemIndex,
+      payload.data
+    )
+  },
+  500
+)
+
 /**
  * Add a single custom text item to the canvas (same pattern as addLogoToCanvas).
  */
@@ -454,37 +482,32 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
     convertSize
   } = options
 
-  // Update store on modified (exact same pattern as logo) when mainPreview and getScaleRatios/suppressWatchRef provided
-  suppressWatchRef.value = true
+  // Update store on modified (debounced 500ms, same pattern as logo)
   if (mainPreview) {
-    setTimeout(() => {
-      const { widthRatio, heightRatio } = getScaleRatios()
-      const customizationStore = useCustomizationStore() as {
-        updateProductTextItem(
-          productId: number,
-          entryIndex: number,
-          itemIndex: number,
-          payload: Partial<OutputProductTextItem> & Record<string, unknown>
-        ): void
-      }
-      const scaleX = textObj.scaleX ?? 1
-      const scaleY = textObj.scaleY ?? 1
-      const data: Partial<OutputProductTextItem> & Record<string, unknown> = {
-        scaleX: scaleX / widthRatio,
-        scaleY: scaleY / heightRatio,
-        ...(is_3d ? { x_axis_3d: position.x, y_axis_3d: position.y } : {}),
-        actualWidth: textObj.width ?? 0,
-        actualHeight: textObj.height ?? 0
-      }
-      if (convertSize != null && textObj.width != null && textObj.height != null) {
-        const strokeW = (textObj as unknown as { strokeWidth?: number }).strokeWidth ?? 0
-        const totalWidthPx = textObj.width * scaleX + strokeW * scaleX
-        const totalHeightPx = textObj.height * scaleY + strokeW * scaleY
-        data.originalWidth = convertSize(totalWidthPx)
-        data.originalHeight = convertSize(totalHeightPx)
-      }
-      customizationStore.updateProductTextItem(productId, customTextIndex, itemIndex, data)
-    }, 100)
+    const { widthRatio, heightRatio } = getScaleRatios()
+    const scaleX = textObj.scaleX ?? 1
+    const scaleY = textObj.scaleY ?? 1
+    const data: Partial<OutputProductTextItem> & Record<string, unknown> = {
+      scaleX: scaleX / widthRatio,
+      scaleY: scaleY / heightRatio,
+      ...(is_3d ? { x_axis_3d: position.x, y_axis_3d: position.y } : {}),
+      actualWidth: textObj.width ?? 0,
+      actualHeight: textObj.height ?? 0
+    }
+    if (convertSize != null && textObj.width != null && textObj.height != null) {
+      const strokeW = (textObj as unknown as { strokeWidth?: number }).strokeWidth ?? 0
+      const totalWidthPx = textObj.width * scaleX + strokeW * scaleX
+      const totalHeightPx = textObj.height * scaleY + strokeW * scaleY
+      data.originalWidth = convertSize(totalWidthPx)
+      data.originalHeight = convertSize(totalHeightPx)
+    }
+    void debouncedTextStoreUpdate({
+      productId,
+      customTextIndex,
+      itemIndex,
+      data,
+      suppressWatchRef
+    })
 
     textObj.on('modified', (event: unknown) => {
       updateTextPositionInStore({
@@ -502,8 +525,6 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
         convertSize
       })
     })
-  } else if (suppressWatchRef) {
-    suppressWatchRef.value = false
   }
 
   renderCanvas()
