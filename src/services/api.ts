@@ -28,7 +28,7 @@ instance.interceptors.request.use(
 
     if (needsRefresh) {
       const refreshed = await authStore.refreshAccessToken()
-      tokenToUse = refreshed ? authStore.accessToken : null
+      tokenToUse = refreshed ? authStore.refreshToken : null
     }
 
     if (tokenToUse) {
