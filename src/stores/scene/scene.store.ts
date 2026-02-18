@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
+import type { GetImageFromCanvasOptions } from '@/composables/scene/useCanvasImage'
+
 type TwoDSceneRef = {
-  getImageFromCanvas: () => string
+  getImageFromCanvas: () => Promise<string>
 } | null
 type ThreeDSceneRef = {
-  getImageFromCanvas: () => string
+  getImageFromCanvas: (side?: CanvasSide, options?: GetImageFromCanvasOptions) => Promise<string>
 } | null
 export type OtherSideLogo = {
   logo_index: number

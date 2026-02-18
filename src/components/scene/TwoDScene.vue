@@ -291,8 +291,10 @@
           colorCustomization,
           mainPreview: props.mainPreview
         })
+        if (!canvas.value) return
 
         await addBoundary(newDesign.safe_zone_url, newDesign.boundary_url)
+        if (!canvas.value) return
 
         canvas.value.requestRenderAll()
       }
@@ -334,39 +336,43 @@
   )
 
   onMounted(async () => {
-    if (props.mainPreview && productsStore.activeProductDetails) {
-      const productsFontsStore = useProductsFontsStore()
-      const storageUrl = import.meta.env.VITE_APP_STORAGE_URL || ''
-      await productsFontsStore.initFromProducts([productsStore.activeProductDetails], storageUrl)
-    }
-
-    // Parts are now initialized in useSvgGroups composable from props
-    // If not provided as props, they will be set from active design (svgGroups) after extraction
-
-    // Wait for next tick to ensure canvas element is available
-    await nextTick()
-
-    if (!canvasEl.value) {
-      console.warn('Canvas element not available')
-      return
-    }
-
-    initCanvas(canvasEl.value, props.canvasWidth, props.canvasHeight)
-    ensureDimText()
-    canvas.value?.on('selection:cleared', hideDimensions)
-
-    // Setup custom Fabric controls with icons (scale/rotate/delete)
-    setupFabricControls({
-      onRemoveLogo: (logoIndex: number, canvasInstance: Canvas) => {
-        deleteLogoFromCanvas(logoIndex, canvasInstance, customLogoObjects)
+    try {
+      if (props.mainPreview && productsStore.activeProductDetails) {
+        const productsFontsStore = useProductsFontsStore()
+        const storageUrl = import.meta.env.VITE_APP_STORAGE_URL || ''
+        await productsFontsStore.initFromProducts([productsStore.activeProductDetails], storageUrl)
       }
-      // Text removal can be added here if needed
-    })
 
-    // Ensure canvas is initialized before loading scene
-    if (canvas.value) {
-      await loadScene()
-      mounted.value = true
+      // Parts are now initialized in useSvgGroups composable from props
+      // If not provided as props, they will be set from active design (svgGroups) after extraction
+
+      // Wait for next tick to ensure canvas element is available
+      await nextTick()
+
+      if (!canvasEl.value) {
+        console.warn('Canvas element not available')
+        return
+      }
+
+      initCanvas(canvasEl.value, props.canvasWidth, props.canvasHeight)
+      ensureDimText()
+      canvas.value?.on('selection:cleared', hideDimensions)
+
+      // Setup custom Fabric controls with icons (scale/rotate/delete)
+      setupFabricControls({
+        onRemoveLogo: (logoIndex: number, canvasInstance: Canvas) => {
+          deleteLogoFromCanvas(logoIndex, canvasInstance, customLogoObjects)
+        }
+        // Text removal can be added here if needed
+      })
+
+      // Ensure canvas is initialized before loading scene
+      if (canvas.value) {
+        await loadScene()
+        mounted.value = true
+      }
+    } catch (err) {
+      console.error('[TwoDScene] mounted hook error:', err)
     }
   })
 
@@ -433,7 +439,8 @@
   }
 
   /**
-   * Load the complete scene with design and models
+   * Load the complete scene with design and models.
+   * Bails out after each await if canvas was disposed (e.g. component unmounted or design changed).
    */
   async function loadScene(): Promise<void> {
     if (!canvas.value) return
@@ -453,6 +460,7 @@
         colorCustomization,
         mainPreview: props.mainPreview
       })
+      if (!canvas.value) return
     }
 
     // Load models
@@ -463,6 +471,7 @@
     }
 
     await Promise.all(promises)
+    if (!canvas.value) return
 
     // Ensure models are on top of design
     bringModelToFront()
@@ -476,15 +485,19 @@
     if (effectiveDesign.value?.safe_zone_url || effectiveDesign.value?.boundary_url) {
       await addBoundary(effectiveDesign.value?.safe_zone_url, effectiveDesign.value?.boundary_url)
     }
+    if (!canvas.value) return
 
     canvas.value.requestRenderAll()
 
     // Load logos and texts after scene is loaded
     await resetAndAddLogos()
+    if (!canvas.value) return
     await resetAndAddTexts()
+    if (!canvas.value) return
 
     // Render mirrored logos and texts coming from the opposite side (stored in sceneStore)
     await renderOtherSideLogosFromStore()
+    if (!canvas.value) return
     await renderOtherSideTextsFromStore()
   }
 
@@ -493,13 +506,11 @@
   // findClosestColorIndex, changeDefaultColors, changeGroupColors, resetToInitialColors, applyCustomization
 
   /**
-   * Get image from canvas
-   * TwoDScene only handles single side, so no side parameter needed
-   * Adapted from old Helpers.ts getImageFromCanvas function
+   * Get image from canvas. Waits for canvas to paint before capturing (two rAF).
+   * TwoDScene only handles single side, so no side parameter needed.
    */
-  function getImageFromCanvas(options: GetImageFromCanvasOptions = {}): string {
+  async function getImageFromCanvas(options: GetImageFromCanvasOptions = {}): Promise<string> {
     if (!canvas.value) return ''
-    // Type assertion needed because canvas.value is typed as Canvas but may have additional properties
     return getImageFrom2DCanvas(canvas.value as unknown as Canvas, options)
   }
 
@@ -514,9 +525,12 @@
 
   onMounted(() => {
     if (props.mainPreview && props.side) {
-      // Get component instance from template ref
       nextTick(() => {
-        updateSceneRef()
+        try {
+          updateSceneRef()
+        } catch (err) {
+          console.error('[TwoDScene] updateSceneRef error:', err)
+        }
       })
     }
   })

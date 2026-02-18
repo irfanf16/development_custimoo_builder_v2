@@ -440,34 +440,31 @@
 
       const frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
       if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
-        frontImage = (
+        frontImage = await (
           frontImageComponentRef as unknown as ComponentPublicInstance & {
-            getImageFromCanvas: () => string
+            getImageFromCanvas: () => Promise<string>
           }
         ).getImageFromCanvas()
       }
 
       const backImageComponentRef = sceneStore.getTwoDSceneRef('back')
       if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
-        backImage = (
+        backImage = await (
           backImageComponentRef as unknown as ComponentPublicInstance & {
-            getImageFromCanvas: () => string
+            getImageFromCanvas: () => Promise<string>
           }
         ).getImageFromCanvas()
       }
 
       const componentRef = sceneStore.threeDSceneRef
       if (componentRef && 'getImageFromCanvas' in componentRef) {
-        frontImage = (
+        const getImage = (
           componentRef as unknown as ComponentPublicInstance & {
-            getImageFromCanvas: (side?: string) => string
+            getImageFromCanvas: (side?: string) => Promise<string>
           }
-        ).getImageFromCanvas('front')
-        backImage = (
-          componentRef as unknown as ComponentPublicInstance & {
-            getImageFromCanvas: (side?: string) => string
-          }
-        ).getImageFromCanvas('back')
+        ).getImageFromCanvas
+        frontImage = await getImage('front')
+        backImage = await getImage('back')
       }
 
       // Upload images
@@ -608,34 +605,31 @@
 
       const frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
       if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
-        frontImage = (
+        frontImage = await (
           frontImageComponentRef as unknown as ComponentPublicInstance & {
-            getImageFromCanvas: () => string
+            getImageFromCanvas: () => Promise<string>
           }
         ).getImageFromCanvas()
       }
 
       const backImageComponentRef = sceneStore.getTwoDSceneRef('back')
       if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
-        backImage = (
+        backImage = await (
           backImageComponentRef as unknown as ComponentPublicInstance & {
-            getImageFromCanvas: () => string
+            getImageFromCanvas: () => Promise<string>
           }
         ).getImageFromCanvas()
       }
 
       const componentRef = sceneStore.threeDSceneRef
       if (componentRef && 'getImageFromCanvas' in componentRef) {
-        frontImage = (
+        const getImage = (
           componentRef as unknown as ComponentPublicInstance & {
-            getImageFromCanvas: (side?: string) => string
+            getImageFromCanvas: (side?: string) => Promise<string>
           }
-        ).getImageFromCanvas('front')
-        backImage = (
-          componentRef as unknown as ComponentPublicInstance & {
-            getImageFromCanvas: (side?: string) => string
-          }
-        ).getImageFromCanvas('back')
+        ).getImageFromCanvas
+        frontImage = await getImage('front')
+        backImage = await getImage('back')
       }
 
       if (!frontImage || !backImage) {

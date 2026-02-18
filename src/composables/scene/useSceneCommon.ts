@@ -261,6 +261,9 @@ export function useSceneCommon(
       flipY ? { flipY: true } : undefined
     )
 
+    // Canvas may have been disposed during the async load (e.g. user navigated away)
+    if (!canvas.value) return null
+
     // Apply scaling based on mode
     if (scaleMode === 'resolution' && canvasResolution !== undefined) {
       // Scale to exact resolution (for 3D scene)
@@ -323,6 +326,7 @@ export function useSceneCommon(
     // This callback receives the loaded design object and is called after automatic operations
     if (onLoaded) {
       await onLoaded(designAsObject)
+      if (!canvas.value) return null
     }
 
     void canvas.value.requestRenderAll()

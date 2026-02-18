@@ -64,7 +64,7 @@
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
   type TwoDSceneRef = {
-    getImageFromCanvas: () => string
+    getImageFromCanvas: () => Promise<string>
   } | null
   const props = defineProps<{
     open: boolean
@@ -181,37 +181,11 @@
     const isLockerValid = validateLockerSelection()
     return isDesignNameValid && isLockerValid
   }
+
   let frontImageComponentRef: TwoDSceneRef = sceneStore.getTwoDSceneRef('front')
-  if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
-    frontImage.value = (
-      frontImageComponentRef as unknown as ComponentPublicInstance & {
-        getImageFromCanvas: () => string
-      }
-    ).getImageFromCanvas()
-  }
-
   let backImageComponentRef: TwoDSceneRef = sceneStore.getTwoDSceneRef('back')
-  if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
-    backImage.value = (
-      backImageComponentRef as unknown as ComponentPublicInstance & {
-        getImageFromCanvas: () => string
-      }
-    ).getImageFromCanvas()
-  }
-
   let componentRef = sceneStore.threeDSceneRef
-  if (componentRef && 'getImageFromCanvas' in componentRef) {
-    frontImage.value = (
-      componentRef as unknown as ComponentPublicInstance & {
-        getImageFromCanvas: (side?: string) => string
-      }
-    ).getImageFromCanvas('front')
-    backImage.value = (
-      componentRef as unknown as ComponentPublicInstance & {
-        getImageFromCanvas: (side?: string) => string
-      }
-    ).getImageFromCanvas('back')
-  }
+
   const handleSave = async () => {
     formSubmitted.value = true
     // Validate before proceeding
@@ -358,33 +332,22 @@
         }
         frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
         if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
-          frontImage.value = (
-            frontImageComponentRef as unknown as TwoDSceneRef & {
-              getImageFromCanvas: () => string
-            }
-          ).getImageFromCanvas()
+          frontImage.value = await frontImageComponentRef.getImageFromCanvas()
         }
 
         backImageComponentRef = sceneStore.getTwoDSceneRef('back')
         if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
-          backImage.value = (
-            backImageComponentRef as unknown as TwoDSceneRef & {
-              getImageFromCanvas: () => string
-            }
-          ).getImageFromCanvas()
+          backImage.value = await backImageComponentRef.getImageFromCanvas()
         }
         componentRef = sceneStore.threeDSceneRef
         if (componentRef && 'getImageFromCanvas' in componentRef) {
-          frontImage.value = (
+          const getImage = (
             componentRef as unknown as ComponentPublicInstance & {
-              getImageFromCanvas: (side?: string) => string
+              getImageFromCanvas: (side?: string) => Promise<string>
             }
-          ).getImageFromCanvas('front')
-          backImage.value = (
-            componentRef as unknown as ComponentPublicInstance & {
-              getImageFromCanvas: (side?: string) => string
-            }
-          ).getImageFromCanvas('back')
+          ).getImageFromCanvas
+          frontImage.value = await getImage('front')
+          backImage.value = await getImage('back')
         }
       }
     }

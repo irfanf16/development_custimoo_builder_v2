@@ -1997,14 +1997,13 @@
   }
 
   /**
-   * Get image from canvas
-   * Handles side internally - renders with appropriate camera, gets image, then restores
-   * Adapted from old Helpers.ts getImageFromCanvas function
+   * Get image from canvas. Waits for render to complete before capturing (two rAF), then returns.
+   * Handles side internally - renders with appropriate camera, gets image, then restores.
    */
-  function getImageFromCanvas(
+  async function getImageFromCanvas(
     side: CanvasSide = 'front',
     options: GetImageFromCanvasOptions = {}
-  ): string {
+  ): Promise<string> {
     if (!renderer.value || !composer.value) return ''
     return getImageFrom3DCanvas(
       renderer.value,

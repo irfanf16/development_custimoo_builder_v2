@@ -14,62 +14,70 @@ export interface GetImageFromCanvasOptions {
 }
 
 /**
- * Get image from 2D Fabric.js canvas
+ * Get image from 2D Fabric.js canvas.
+ * Waits two animation frames so the canvas has painted, then captures.
+ * Defaults: 600×600 logical → 1200×1200 export with zoom 2. Pass options to override.
  */
 export function getImageFrom2DCanvas(
   canvas: Canvas | StaticCanvas | null,
   options: GetImageFromCanvasOptions = {}
-): string {
-  if (!canvas) return ''
+): Promise<string> {
+  return new Promise(resolve => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!canvas) {
+          resolve('')
+          return
+        }
 
-  const canvasOptions = {
-    original_width: 600,
-    original_height: 600,
-    image_type: 'image/png',
-    width: 1200,
-    height: 1200,
-    zoom: 2,
-    ...options
-  }
+        const canvasOptions = {
+          original_width: 600,
+          original_height: 600,
+          image_type: 'image/png',
+          width: 1200,
+          height: 1200,
+          zoom: 2,
+          ...options
+        }
 
-  // Only call discardActiveObject if it's a Canvas (not StaticCanvas)
-  if ('discardActiveObject' in canvas) {
-    canvas.discardActiveObject()
-  }
-  canvas.requestRenderAll()
+        if ('discardActiveObject' in canvas) {
+          canvas.discardActiveObject()
+        }
+        canvas.requestRenderAll()
 
-  // Store original transform and dimensions
-  const originalTransform = canvas.viewportTransform
-  const originalWidth = canvas.getWidth()
-  const originalHeight = canvas.getHeight()
+        const originalTransform = canvas.viewportTransform
+        const originalWidth = canvas.getWidth()
+        const originalHeight = canvas.getHeight()
 
-  // Temporarily resize canvas
-  canvas.setDimensions({
-    width: canvasOptions.width,
-    height: canvasOptions.height
+        canvas.setDimensions({
+          width: canvasOptions.width,
+          height: canvasOptions.height
+        })
+        canvas.viewportTransform = [canvasOptions.zoom, 0, 0, canvasOptions.zoom, 0, 0]
+        canvas.requestRenderAll()
+
+        const base64Image = (canvas.toDataURL as (format?: string) => string)(
+          canvasOptions.image_type
+        )
+
+        canvas.setDimensions({
+          width: originalWidth,
+          height: originalHeight
+        })
+        canvas.viewportTransform = originalTransform
+        canvas.requestRenderAll()
+
+        resolve(base64Image)
+      })
+    })
   })
-  canvas.viewportTransform = [canvasOptions.zoom, 0, 0, canvasOptions.zoom, 0, 0]
-  canvas.requestRenderAll()
-
-  // Get image data
-  // Fabric.js toDataURL accepts format string directly (e.g., 'image/png')
-  // Using type assertion to match Fabric.js API
-  const base64Image = (canvas.toDataURL as (format?: string) => string)(canvasOptions.image_type)
-
-  // Restore original dimensions and transform
-  canvas.setDimensions({
-    width: originalWidth,
-    height: originalHeight
-  })
-  canvas.viewportTransform = originalTransform
-  canvas.requestRenderAll()
-
-  return base64Image
 }
 
 /**
- * Get image from 3D Three.js renderer
- * Simplified version matching old codebase
+ * Get image from 3D Three.js renderer.
+ * Waits two animation frames so the render has completed, then captures.
+ * If options.width/height are set, temporarily resizes the renderer for export so the image
+ * is that size (avoids small/blank images when the container is small).
  */
 export function getImageFrom3DCanvas(
   renderer: WebGLRenderer,
@@ -85,48 +93,71 @@ export function getImageFrom3DCanvas(
   isAnimationRunning: { value: boolean },
   canvas: Canvas | null,
   options: GetImageFromCanvasOptions = {}
-): string {
-  const canvasOptions = {
-    image_type: 'image/png',
-    ...options
-  }
+): Promise<string> {
+  return new Promise(resolve => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const canvasOptions = {
+          image_type: 'image/png',
+          width: 1200,
+          height: 1200,
+          ...options
+        }
 
-  if (!renderer || !renderer.domElement) return ''
+        if (!renderer || !renderer.domElement) {
+          resolve('')
+          return
+        }
 
-  const targetCamera = side === 'back' ? backCamera : frontCamera
-  if (!targetCamera) return ''
+        const targetCamera = side === 'back' ? backCamera : frontCamera
+        if (!targetCamera) {
+          resolve('')
+          return
+        }
 
-  // Cancel animation
-  if (animationId.value !== null) {
-    cancelAnimationFrame(animationId.value)
-    animationId.value = null
-  }
+        // Cancel animation
+        if (animationId.value !== null) {
+          cancelAnimationFrame(animationId.value)
+          animationId.value = null
+        }
 
-  // Update canvas
-  if (canvas && typeof canvas !== 'boolean') {
-    canvas.discardActiveObject()
-    canvas.renderAll()
-  }
+        // Resize renderer for export to requested size so image is never tiny (default 1200x1200)
+        const exportWidth = canvasOptions.width || 1200
+        const exportHeight = canvasOptions.height || 1200
+        const prevPixelRatio = renderer.getPixelRatio()
+        const prevBufferWidth = renderer.domElement.width
+        const prevBufferHeight = renderer.domElement.height
+        const prevLogicalWidth = prevBufferWidth / prevPixelRatio
+        const prevLogicalHeight = prevBufferHeight / prevPixelRatio
+        renderer.setPixelRatio(1)
+        renderer.setSize(exportWidth, exportHeight)
 
-  // Render with target camera
-  if (renderPass) {
-    renderPass.camera = targetCamera
-  }
-  addShaderPasses(targetCamera)
-  composer.render()
+        if (canvas && typeof canvas !== 'boolean') {
+          canvas.discardActiveObject()
+          canvas.renderAll()
+        }
 
-  // Get image
-  const base64Image = renderer.domElement.toDataURL(canvasOptions.image_type)
+        if (renderPass) {
+          renderPass.camera = targetCamera
+        }
+        addShaderPasses(targetCamera)
+        composer.render()
 
-  // Restore and resume
-  if (renderPass && camera) {
-    renderPass.camera = camera
-  }
-  if (animationId.value === null && isAnimationRunning.value) {
-    animate()
-  }
+        const base64Image = renderer.domElement.toDataURL(canvasOptions.image_type)
 
-  return base64Image
+        renderer.setSize(prevLogicalWidth, prevLogicalHeight)
+        renderer.setPixelRatio(prevPixelRatio)
+        if (renderPass && camera) {
+          renderPass.camera = camera
+        }
+        if (animationId.value === null && isAnimationRunning.value) {
+          animate()
+        }
+
+        resolve(base64Image)
+      })
+    })
+  })
 }
 
 /**
