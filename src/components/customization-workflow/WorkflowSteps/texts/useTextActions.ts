@@ -5,7 +5,11 @@ import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useHistoryStore } from '@/stores/history/history.store'
-import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
+import type {
+  OutputProductText,
+  OutputProductTextItem,
+  APCustomizationRosterEntry
+} from '@/services/products/types'
 import { clone, toNumber } from './useTextUtils'
 import { selectedPlacementId } from './useTextPlacements'
 
@@ -60,7 +64,8 @@ export function useTextActions() {
     height: 0,
     width: 0,
     angle: 0,
-    placement: 'Front' as 'Front' | 'Back'
+    placement: 'Front' as 'Front' | 'Back',
+    number: ''
   })
 
   // ===== COMPUTED =====
@@ -455,9 +460,61 @@ export function useTextActions() {
       }
     }
   }
+  function ensureRosterRowExists() {
+    const newproductId = productId.value
+    if (!newproductId) return
 
-  // ===== WATCHERS =====
-  // Watch for activeTextId changes (when switching between texts) to sync form
+    const rosterEntries = customizationStore.rosterEntries
+
+    if (!rosterEntries || rosterEntries.length === 0) {
+      customizationStore.addEmptyRosterRow({
+        text: form.text || '',
+        size: '',
+        quantity: 1
+      })
+      workflowStore.setRosterSubStep('edit')
+    }
+  }
+  // from text fields
+  function updateTextAndRoster() {
+    ensureRosterRowExists()
+
+    const rosterEntries = customizationStore.rosterEntries
+    if (rosterEntries && rosterEntries.length > 0) {
+      customizationStore.updateRosterRow(0, {
+        text: form.text || ''
+      })
+    }
+
+    updateEntryInStore()
+  }
+  // from text number
+  function syncTextToRosterAndEntry(formFromNumber: string) {
+    const newProductId = productId.value
+    if (!newProductId) return
+
+    const rosterEntries = customizationStore.rosterEntries
+
+    if (!rosterEntries || rosterEntries.length === 0) {
+      customizationStore.addEmptyRosterRow({
+        number: formFromNumber || '',
+        size: '',
+        quantity: 1
+      })
+
+      workflowStore.setRosterSubStep('edit')
+    } else {
+      const firstEntry = rosterEntries[0]
+      const updates: Partial<APCustomizationRosterEntry> = {
+        text: firstEntry?.text || '',
+        number: formFromNumber || ''
+      }
+      customizationStore.updateRosterRow(0, updates)
+    }
+
+    updateEntryInStore()
+  }
+
   watch(
     activeTextId,
     () => {
@@ -471,7 +528,9 @@ export function useTextActions() {
   watch(
     () => currentEntry.value,
     () => {
-      if (!isUserInput.value) {
+      const isOnRosterEditTab =
+        workflowStore.activeStep === 'roster' && workflowStore.rosterSubStep === 'edit'
+      if (!isUserInput.value && !isOnRosterEditTab) {
         syncFormWithEntry()
       }
     },
@@ -481,14 +540,46 @@ export function useTextActions() {
   // Watch debounced attributes (text, angle, height) - update canvas immediately, save to history with debounce
   watch(
     () => form.text,
-    () => {
-      const textId: number | null = activeTextId.value
-      if (!currentEntry.value || textId == null) return
+    newText => {
+      if (!isUserInput.value) return
 
-      // Capture previous state before updating
-      capturePreviousStateIfNeeded()
-      updateEntryInStore()
-      void debouncedSaveAttributeToHistory('text')
+      // Ensure there is at least one roster row for this product
+      const prodId = productId.value
+      if (!prodId) return
+
+      const roster = customizationStore.rosterEntries
+      if (!roster || roster.length === 0) {
+        // create first row with current text and number from form
+        customizationStore.addEmptyRosterRow({
+          text: newText,
+          number: form.number || ''
+        })
+      } else {
+        // update first row only - preserve number field if it exists
+        const firstEntry = roster[0]
+        const updates: Partial<APCustomizationRosterEntry> = { text: newText }
+        // Preserve number field from roster if form doesn't have it
+        if (firstEntry?.number && !form.number) {
+          updates.number = firstEntry.number
+        } else if (form.number) {
+          updates.number = form.number
+        }
+        customizationStore.updateRosterRow(0, updates)
+      }
+
+      // Also update the active product text entry value (so Text tab stays in sync)
+      const textId = activeTextId.value
+      if (textId != null) {
+        customizationStore.updateProductTextValueById(textId, newText, { persist: true })
+      }
+    }
+  )
+  watch(
+    () => form.outline_width,
+    () => {
+      if (isUserInput.value && form.outline_enabled) {
+        updateTextAndRoster()
+      }
     }
   )
 
@@ -656,6 +747,27 @@ export function useTextActions() {
 
       // Capture previous state before updating
       capturePreviousStateIfNeeded()
+      // Reset 3D coordinates when placement changes
+      const prodId: number | null = productId.value
+      if (prodId && customizationStore.customization) {
+        const key = String(prodId)
+        const texts = customizationStore.customization.product_custom_texts[key]
+        if (texts) {
+          const entryIndex = texts.findIndex(e => e.id === textId)
+          if (entryIndex !== -1) {
+            const targetEntry = texts[entryIndex]
+            if (!targetEntry) return // Early return if targetEntry is undefined
+            const itemIndex = targetEntry.active_item_index ?? 0
+            if (targetEntry.items?.[itemIndex]) {
+              const item = targetEntry.items[itemIndex]
+              if (item && typeof item === 'object') {
+                ;(item as { x_axis_3d?: number }).x_axis_3d = 0
+                ;(item as { y_axis_3d?: number }).y_axis_3d = 0
+              }
+            }
+          }
+        }
+      }
       updateEntryInStore()
       void saveAttributeToHistory('placement')
     }
@@ -671,13 +783,19 @@ export function useTextActions() {
 
   // ===== RETURN =====
   return {
-    // State
     form,
     currentEntry,
     currentItem,
-    currentTextEditRef,
-    // Actions
+    textEntries,
+    productId,
+    updateEntryInStore,
+    updateEntryInStoreOptimized,
     buildUpdatedEntry,
-    syncFormWithEntry
+    debouncedSaveToLocalStorage,
+    isUserInput,
+    previousState,
+    ensureRosterRowExists,
+    updateTextAndRoster,
+    syncTextToRosterAndEntry
   }
 }

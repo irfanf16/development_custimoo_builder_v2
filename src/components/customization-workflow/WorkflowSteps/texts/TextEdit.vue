@@ -49,7 +49,7 @@
   } from '@/paraglide/messages'
 
   // ===== COMPOSABLES =====
-  const { form, currentEntry, currentItem } = useTextActions()
+  const { form, currentEntry, currentItem, isUserInput, updateTextAndRoster } = useTextActions()
   const { fontOptions, colorPalettes } = useTexts()
   const { clipboardColor, copyColor } = useColorClipboard()
   const profileStore = useProfileStore()
@@ -135,7 +135,7 @@
    */
   function handleOriginalDimensionUpdate(dimension: 'width' | 'height', value: string | number) {
     const str = String(value)
-    const productId = customizationStore.activeProductId
+    const productId = customizationStore.customization?.product_id
     const textId = workflowStore.activeTextId
     if (productId == null || textId == null) return
     const key = String(productId)
@@ -239,6 +239,16 @@
     }
     return texts_color_custom({}, { locale: locale.value })
   }
+  /**
+   * Handle text input - mark as user input and sync to roster
+   */
+  function handleTextInput(event: Event) {
+    const target = event.target as HTMLInputElement
+    isUserInput.value = true
+    form.text = target.value
+    updateTextAndRoster()
+    isUserInput.value = false
+  }
 </script>
 
 <template>
@@ -251,6 +261,7 @@
           rows="3"
           :placeholder="texts_text_input_placeholder({}, { locale })"
           class="text-lg h-[3.5rem]"
+          @input="handleTextInput"
         />
       </div>
 

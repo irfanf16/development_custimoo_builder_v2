@@ -10,7 +10,8 @@ import type {
   OutputProductLogosSetting,
   OutputProductText,
   OutputProductTextItem,
-  GradientColor
+  GradientColor,
+  APCustomizationRosterEntry
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
@@ -38,7 +39,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const prodId = customization.value?.product_id
     if (!prodId) return []
     const key = String(prodId)
-    return customization.value?.product_custom_texts?.[key] || []
+    return customization.value?.product_custom_texts?.[key] ?? []
   })
   const reorderData = ref<{ orderItemId: number | null; factoryProductId: string | null }>({
     orderItemId: null,
@@ -192,14 +193,14 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const existing = customization.value.product_custom_texts[key]
 
     // Only initialize if the key doesn't exist or the array is empty
-    if (!existing || existing.length === 0) {
-      // Deep clone the texts to avoid reference issues
+    if (!Array.isArray(existing) || existing.length === 0) {
       customization.value.product_custom_texts[key] = productTexts.map(text => ({
         ...text,
         items: text.items ? [...text.items] : [],
         following_products: text.following_products ? [...text.following_products] : [],
         following_product_ids: text.following_product_ids ? [...text.following_product_ids] : []
       }))
+
       saveToLocalStorage()
     }
   }
@@ -537,8 +538,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     newCustomization.group_colors = {}
     newCustomization.shuffle_color_number = 0
 
-    console.log('newCustomization', newCustomization)
-
     setCustomization(newCustomization)
   }
 
@@ -563,7 +562,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const designId = productsStore.activeDesignDetails?.id ?? 0
     const categoryId = customization.value?.category_id ?? 0
 
-    console.log('productId', productId)
     setCustomization(
       createDefaultCustomization({
         productId,
@@ -629,6 +627,56 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     customization.value = null
     clearLocalStorage()
   }
+  function generateTemporaryId(): number {
+    if (!customization.value) return -1
+    const prodId = customization.value.product_id
+    if (!prodId) return -1
+    const key = String(prodId)
+    const entries = customization.value.products_rosters?.[key] || []
+
+    let minId = 0
+    for (const entry of entries) {
+      if (entry.id != null && entry.id < 0 && entry.id < minId) {
+        minId = entry.id
+      }
+    }
+    return minId - 1
+  }
+  function addEmptyRosterRow(initialData?: Partial<APCustomizationRosterEntry>) {
+    if (!customization.value) return
+
+    const newRow: APCustomizationRosterEntry = {
+      id: generateTemporaryId(),
+      text: initialData?.text || '',
+      number: initialData?.number || '',
+      size: initialData?.size || '',
+      quantity: initialData?.quantity || 1
+    }
+
+    const productId = customization.value.product_id
+    const key = String(productId)
+    if (!customization.value.products_rosters[key]) {
+      customization.value.products_rosters[key] = []
+    }
+
+    customization.value.products_rosters[key].push(newRow)
+    saveToLocalStorage()
+  }
+
+  /**
+   * Update roster row by index
+   */
+  function updateRosterRow(index: number, payload: Partial<APCustomizationRosterEntry>) {
+    if (!customization.value) return
+
+    const key = String(customization.value.product_id)
+    const entries = customization.value.products_rosters[key]
+
+    if (!entries || !entries[index]) return
+
+    Object.assign(entries[index], payload)
+    saveToLocalStorage()
+  }
 
   function clearReorderData() {
     reorderData.value = { orderItemId: null, factoryProductId: null }
@@ -686,6 +734,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     generateTemporaryTextId,
     setSelectedRosterPreviewIndex,
     updateProductTextValueById,
-    resetCustomizationStore
+    resetCustomizationStore,
+    addEmptyRosterRow,
+    updateRosterRow
   }
 })

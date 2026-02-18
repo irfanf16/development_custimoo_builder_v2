@@ -17,11 +17,12 @@ export type APCustomizationGroupColor = {
 }
 
 export type APCustomizationRosterEntry = {
+  id?: number | undefined
   text: string
   number: string
   size: string
   quantity: number
-  information: string
+  information?: string
 }
 
 export type APCustomizationProductsRosters = Record<string, APCustomizationRosterEntry[]>

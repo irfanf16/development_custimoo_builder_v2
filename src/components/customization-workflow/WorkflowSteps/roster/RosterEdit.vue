@@ -26,6 +26,7 @@
 
   const playersCount = computed(() => rosterEntries.value.length)
   const showInlineMessage = computed(() => lastImportSummary.value != null)
+  const canDeleteRows = computed(() => rosterEntries.value.length > 1)
 
   function handleDismissInline() {
     setLastImportSummary(null)
@@ -72,7 +73,6 @@
         </button>
       </Alert>
     </transition>
-
     <div v-if="hasEntries" class="space-y-4">
       <RosterTable
         v-model:selected-row-index="selectedRosterIndexModel"
@@ -80,6 +80,7 @@
         :show-name-column="!!presetNameId"
         :show-number-column="!!presetNumberId"
         :size-options="availableSizes"
+        :can-delete="canDeleteRows"
         @update:entry="updateRow"
         @remove="removeRow"
       />

@@ -9,6 +9,7 @@ import { useSceneStore } from '@/stores/scene/scene.store'
 import { useLogosStore } from '@/stores/logos/logos.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useProductsStore } from '@/stores/products/products.store'
 
 // ============================================================================
 // Shared Singleton State - Single source of truth for dialog visibility
@@ -183,7 +184,9 @@ export function useSignIn() {
     const { resetLogosStore } = useLogosStore()
     const { clearAll } = useLocalStorage()
     const { resetWorkFlowStore } = useWorkflowStore()
-    const { resetCustomizationStore } = useCustomizationStore()
+    const { clearCustomization, initializeProductTextsFromDetails, clearReorderData } =
+      useCustomizationStore()
+    const productsStore = useProductsStore()
     const loginCode = companyStore.company?.login_code
 
     // Determine platform-specific logout action
@@ -205,7 +208,12 @@ export function useSignIn() {
     resetSceneStore() // Clear scene store state on logout
     resetLogosStore() // Clear logos store state on logout
     resetWorkFlowStore() // Clear workflow store state on logout
-    resetCustomizationStore() // Clear customization store state on logout
+    clearCustomization()
+    const details = productsStore.activeProductDetails
+    if (details?.product_texts?.length) {
+      initializeProductTextsFromDetails(details.id, details.product_texts)
+    }
+    clearReorderData()
 
     // Close any opened authentication dialogs
     closeAllDialogs()

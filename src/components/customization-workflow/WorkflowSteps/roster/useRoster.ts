@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { APCustomizationRosterEntry } from '@/services/products/types'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -22,6 +22,13 @@ export function useRoster() {
   const workflowStore = useWorkflowStore()
   const historyStore = useHistoryStore()
   const { selectedRosterPreviewIndex } = storeToRefs(customizationStore)
+
+  const selectedRosterIndexModel = computed<number | null>({
+    get: () => selectedRosterPreviewIndex.value ?? null,
+    set: value => {
+      setRosterPreviewIndex(value ?? null)
+    }
+  })
 
   const rosterEntries = computed(() => customizationStore.rosterEntries)
   const hasEntries = computed(() => rosterEntries.value.length > 0)
@@ -73,11 +80,6 @@ export function useRoster() {
       workflowStore.setRosterSubStep('list')
     }
   })
-
-  function setRosterPreviewIndex(index: number | null) {
-    customizationStore.setSelectedRosterPreviewIndex(index)
-  }
-
   watch(
     () => rosterEntries.value.length,
     newLength => {
@@ -113,6 +115,10 @@ export function useRoster() {
       })
     }
   }
+  function setRosterPreviewIndex(index: number | null) {
+    customizationStore.setSelectedRosterPreviewIndex(index)
+    syncRosterPreviewTexts()
+  }
 
   watch(
     [selectedRosterPreviewIndex, rosterEntries, () => workflowStore.rosterSubStep],
@@ -121,6 +127,9 @@ export function useRoster() {
     },
     { immediate: true, deep: true }
   )
+  onUnmounted(() => {
+    selectedRosterIndexModel.value = 0
+  })
 
   async function addEmptyRow(payload?: Partial<APCustomizationRosterEntry>) {
     if (!rosterKey.value) return

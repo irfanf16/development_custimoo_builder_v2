@@ -99,6 +99,9 @@
     const template = GRID_TEMPLATE_CLASS_MAP[key] ?? GRID_TEMPLATE_CLASS_MAP['false-false']
     return `${template.base} ${template.desktop}`
   })
+  function handleSelectRow(index: number) {
+    selectedRowIndexModel.value = index
+  }
 </script>
 
 <template>
@@ -129,9 +132,11 @@
         :show-number-column="showNumberColumn"
         :value="String(index)"
         :minimum-quantity="1"
+        :is-selected="selectedRowIndexModel === index"
         @update="handleUpdate"
         @remove="handleRemove"
         @cell-keydown="handleCellKeydown"
+        @select="handleSelectRow"
       />
     </RadioGroup>
   </div>

@@ -153,13 +153,17 @@
                 rosterEntries = parsed
                   .map(item => {
                     if (typeof item === 'object' && item !== null) {
-                      return {
+                      const rosterItem: APCustomizationRosterEntry = {
                         text: String((item as Record<string, unknown>).text || ''),
                         number: String((item as Record<string, unknown>).number || ''),
                         size: String((item as Record<string, unknown>).size || ''),
-                        quantity: Number((item as Record<string, unknown>).quantity || 0),
-                        information: String((item as Record<string, unknown>).information || '')
-                      } satisfies APCustomizationRosterEntry
+                        quantity: Number((item as Record<string, unknown>).quantity || 0)
+                      }
+                      const information = (item as Record<string, unknown>).information
+                      if (information !== undefined && information !== null) {
+                        rosterItem.information = String(information)
+                      }
+                      return rosterItem
                     }
                     return null
                   })

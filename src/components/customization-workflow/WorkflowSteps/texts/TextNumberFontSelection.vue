@@ -20,6 +20,7 @@
     texts_no_text_placements,
     texts_placement_generic_label
   } from '@/paraglide/messages'
+  import { useTextActions } from './useTextActions'
 
   type ManagedTextItem = OutputProductTextItem & {
     placement_id?: number
@@ -42,6 +43,7 @@
   const productsStore = useProductsStore()
   const { fontOptions } = useTexts()
   const profileStore = useProfileStore()
+  const { syncTextToRosterAndEntry } = useTextActions()
   const locale = computed(() => profileStore.currentLocale || 'en')
 
   const { activeTextId } = storeToRefs(workflowStore)
@@ -459,6 +461,9 @@
     (next, prev) => {
       if (isSyncingForm.value) return
       if (next === prev) return
+      // Pass the number value directly to syncTextToRosterAndEntry
+      // This ensures we use the correct value from TextNumberFontSelection's form
+      syncTextToRosterAndEntry(next)
       void handleNumberChange(next)
     }
   )

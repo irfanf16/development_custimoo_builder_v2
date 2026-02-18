@@ -7,7 +7,6 @@ import { getFontUrl } from './useTextUtils'
 export function useTexts() {
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
-
   // ===== COMPUTED =====
 
   /**

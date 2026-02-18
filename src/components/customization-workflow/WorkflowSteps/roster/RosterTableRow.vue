@@ -34,15 +34,21 @@
     showNumberColumn: boolean
     value: string
     minimumQuantity: number
+    isSelected?: boolean
+    canDelete?: boolean
   }
 
-  const props = defineProps<Props>()
+  const props = withDefaults(defineProps<Props>(), {
+    isSelected: false,
+    canDelete: true
+  })
 
   const entryLocal = ref<APCustomizationRosterEntry>({ ...props.entry })
 
   const emit = defineEmits<{
     (e: 'update', index: number, payload: Partial<APCustomizationRosterEntry>): void
     (e: 'remove', index: number): void
+    (e: 'select', index: number): void
     (
       e: 'cell-keydown',
       payload: { event: KeyboardEvent; column: RosterColumnKey; index: number }
@@ -146,6 +152,7 @@
 
   // Combined function that updates local state immediately and debounces the emit
   function updateField(field: keyof APCustomizationRosterEntry, value: string | number) {
+    emit('select', props.index)
     // For quantity field, use vee-validate's handleChange for validation
     if (field === 'quantity') {
       const numValue = typeof value === 'string' ? Number(value) : value
@@ -161,6 +168,7 @@
 
   // Handle blur events to ensure value is saved immediately when user leaves the field
   function handleBlur(field: keyof APCustomizationRosterEntry, value: string | number) {
+    emit('select', props.index)
     // For quantity field, use vee-validate's handleBlur and validate
     if (field === 'quantity') {
       handleQuantityBlur()
@@ -228,6 +236,10 @@
       `${props.showNameColumn}-${props.showNumberColumn}` as keyof typeof GRID_TEMPLATE_CLASS_MAP
     const template = GRID_TEMPLATE_CLASS_MAP[key] ?? GRID_TEMPLATE_CLASS_MAP['false-false']
     return `${template.base} ${template.desktop}`
+  })
+  const deleteDisabled = computed(() => {
+    // Disable delete if: it's the first row OR we can't delete
+    return props.index === 0 || !props.canDelete
   })
 </script>
 
@@ -314,6 +326,8 @@
       variant="ghost"
       size="icon"
       class="h-9 w-9 text-muted-foreground"
+      :disabled="deleteDisabled"
+      :title="props.index === 0 ? 'Cannot delete first row' : ''"
       :aria-label="roster_remove_row({}, { locale })"
       @click="removeRow"
     >
