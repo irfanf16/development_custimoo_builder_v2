@@ -126,6 +126,10 @@
     })
     if (ok) {
       customizationStore.clearCustomization()
+      const details = productsStore.activeProductDetails
+      if (details?.product_texts?.length) {
+        customizationStore.initializeProductTextsFromDetails(details.id, details.product_texts)
+      }
       history.clear()
     }
   }
@@ -547,6 +551,7 @@
         design_id: customization.design_id || 0,
         custom_logos: customLogos,
         text: productCustomTexts,
+        product_custom_texts: productCustomTexts,
         colors: customization.group_colors ?? [],
         shuffle_color_number: customization.shuffle_color_number || 0,
         defaultcolors: defaultColors,

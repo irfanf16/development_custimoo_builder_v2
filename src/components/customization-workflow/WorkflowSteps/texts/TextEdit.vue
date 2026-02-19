@@ -22,6 +22,7 @@
   } from '@/components/ui/select'
   import { useTextActions } from './useTextActions'
   import { useTexts } from './useTexts'
+  import { useTextDimensions } from './useTextDimensions'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -57,6 +58,82 @@
   const workflowStore = useWorkflowStore()
   const companyStore = useCompanyStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
+
+  // Dimension update handler (needed for useTextDimensions)
+  function handleOriginalDimensionUpdate(dimension: 'width' | 'height', value: string | number) {
+    const str = String(value)
+    const productId = customizationStore.customization?.product_id
+    const textId = workflowStore.activeTextId
+    if (productId == null || textId == null) return
+    const key = String(productId)
+    const texts = customizationStore.customization?.product_custom_texts?.[key]
+    if (!texts) return
+    const entryIndex = texts.findIndex((e: { id: number }) => e.id === textId)
+    if (entryIndex === -1) return
+    const entry = texts[entryIndex]
+    if (!entry?.items) return
+    const itemIndex = entry.active_item_index ?? 0
+    const item = entry.items[itemIndex] as
+      | {
+          originalWidth?: string | number
+          originalHeight?: string | number
+          scaleX?: number
+          scaleY?: number
+        }
+      | undefined
+    if (!item) return
+
+    const numeric = Number.parseFloat(str)
+    const nextOriginal = Number.isFinite(numeric) ? Number(Number(numeric).toFixed(2)) : str
+    const originalNum =
+      dimension === 'width' ? Number(item.originalWidth) : Number(item.originalHeight)
+    let scaleX = item.scaleX ?? 1
+    let scaleY = item.scaleY ?? 1
+    let ratio = 1
+    if (
+      Number.isFinite(numeric) &&
+      numeric > 0 &&
+      Number.isFinite(originalNum) &&
+      originalNum > 0
+    ) {
+      ratio = numeric / originalNum
+      scaleX = scaleX * ratio
+      scaleY = scaleY * ratio
+      const precision = 12
+      scaleX = Number(scaleX.toFixed(precision))
+      scaleY = Number(scaleY.toFixed(precision))
+    }
+    const payload: Record<string, unknown> = { scaleX, scaleY }
+    if (dimension === 'width') {
+      payload.originalWidth = nextOriginal
+      const otherNum = Number(item.originalHeight)
+      if (Number.isFinite(otherNum) && otherNum > 0) {
+        payload.originalHeight = Number((otherNum * ratio).toFixed(2))
+      }
+    } else {
+      payload.originalHeight = nextOriginal
+      const otherNum = Number(item.originalWidth)
+      if (Number.isFinite(otherNum) && otherNum > 0) {
+        payload.originalWidth = Number((otherNum * ratio).toFixed(2))
+      }
+    }
+    customizationStore.updateProductTextItem(productId, entryIndex, itemIndex, payload)
+  }
+
+  // Use text dimensions composable
+  const {
+    widthInputValue,
+    heightInputValue,
+    isWidthFocused,
+    isHeightFocused,
+    handleWidthInputEvent,
+    handleHeightInputEvent,
+    handleWidthInput,
+    handleHeightInput,
+    handleBlurWidth,
+    handleBlurHeight,
+    MAX_DECIMALS
+  } = useTextDimensions(currentItem, handleOriginalDimensionUpdate)
 
   // ===== COMPUTED =====
 
@@ -99,113 +176,6 @@
     if (unit.toLowerCase() === 'cm') return 'cm'
     return unit
   })
-
-  const originalHeightText = computed(() => {
-    const item = currentItem.value as { originalHeight?: string | number } | null
-    const raw = item?.originalHeight
-    if (raw === undefined || raw === null || raw === '') return ''
-    const num = Number(raw)
-    if (Number.isFinite(num)) return `${num.toFixed(1)}`
-    return String(raw)
-  })
-
-  const heightModelValue = computed(() => {
-    if (originalHeightText.value) return originalHeightText.value
-    return String(form.height)
-  })
-
-  const originalWidthText = computed(() => {
-    const item = currentItem.value as { originalWidth?: string | number } | null
-    const raw = item?.originalWidth
-    if (raw === undefined || raw === null || raw === '') return ''
-    const num = Number(raw)
-    if (Number.isFinite(num)) return `${num.toFixed(1)}`
-    return String(raw)
-  })
-
-  const widthModelValue = computed(() => {
-    if (originalWidthText.value) return originalWidthText.value
-    return String(form.width)
-  })
-
-  /**
-   * Shared handler for originalWidth and originalHeight.
-   * Both use the same scaleX/scaleY, so changing either dimension applies the same ratio to both scales
-   * and to the other stored dimension, so width and height fields stay in sync.
-   */
-  function handleOriginalDimensionUpdate(dimension: 'width' | 'height', value: string | number) {
-    const str = String(value)
-    const productId = customizationStore.customization?.product_id
-    const textId = workflowStore.activeTextId
-    if (productId == null || textId == null) return
-    const key = String(productId)
-    const texts = customizationStore.customization?.product_custom_texts?.[key]
-    if (!texts) return
-    const entryIndex = texts.findIndex((e: { id: number }) => e.id === textId)
-    if (entryIndex === -1) return
-    const entry = texts[entryIndex]
-    if (!entry?.items) return
-    const itemIndex = entry.active_item_index ?? 0
-    const item = entry.items[itemIndex] as
-      | {
-          originalWidth?: string | number
-          originalHeight?: string | number
-          scaleX?: number
-          scaleY?: number
-        }
-      | undefined
-    if (!item) return
-
-    const numeric = Number.parseFloat(str)
-    const nextOriginal = Number.isFinite(numeric) ? Number(Number(numeric).toFixed(1)) : str
-    const originalNum =
-      dimension === 'width' ? Number(item.originalWidth) : Number(item.originalHeight)
-    let scaleX = item.scaleX ?? 1
-    let scaleY = item.scaleY ?? 1
-    let ratio = 1
-    if (
-      Number.isFinite(numeric) &&
-      numeric > 0 &&
-      Number.isFinite(originalNum) &&
-      originalNum > 0
-    ) {
-      ratio = numeric / originalNum
-      scaleX = scaleX * ratio
-      scaleY = scaleY * ratio
-      const precision = 12
-      scaleX = Number(scaleX.toFixed(precision))
-      scaleY = Number(scaleY.toFixed(precision))
-    }
-    const payload: Record<string, unknown> = { scaleX, scaleY }
-    if (dimension === 'width') {
-      payload.originalWidth = nextOriginal
-      const otherNum = Number(item.originalHeight)
-      if (Number.isFinite(otherNum) && otherNum > 0) {
-        payload.originalHeight = Number((otherNum * ratio).toFixed(1))
-      }
-    } else {
-      payload.originalHeight = nextOriginal
-      const otherNum = Number(item.originalWidth)
-      if (Number.isFinite(otherNum) && otherNum > 0) {
-        payload.originalWidth = Number((otherNum * ratio).toFixed(1))
-      }
-    }
-    customizationStore.updateProductTextItem(productId, entryIndex, itemIndex, payload)
-  }
-
-  function handleBlurWidth() {
-    const num = Number.parseFloat(widthModelValue.value)
-    if (!Number.isNaN(num)) {
-      handleOriginalDimensionUpdate('width', num.toFixed(1))
-    }
-  }
-
-  function handleBlurHeight() {
-    const num = Number.parseFloat(heightModelValue.value)
-    if (!Number.isNaN(num)) {
-      handleOriginalDimensionUpdate('height', num.toFixed(1))
-    }
-  }
 
   // ===== WATCHERS =====
 
@@ -437,11 +407,12 @@
                 <InputGroup>
                   <InputGroupInput
                     id="text-width"
+                    :model-value="widthInputValue"
                     inputmode="decimal"
-                    :model-value="widthModelValue"
-                    @update:model-value="
-                      (v: string | number) => handleOriginalDimensionUpdate('width', v)
-                    "
+                    :max-decimals="MAX_DECIMALS"
+                    @input="handleWidthInputEvent"
+                    @update:model-value="handleWidthInput"
+                    @focus="isWidthFocused = true"
                     @blur="handleBlurWidth"
                   />
                   <InputGroupAddon class="pr-3 text-xs">{{ heightUnitLabel }}</InputGroupAddon>
@@ -454,11 +425,12 @@
                 <InputGroup>
                   <InputGroupInput
                     id="text-height"
+                    :model-value="heightInputValue"
                     inputmode="decimal"
-                    :model-value="heightModelValue"
-                    @update:model-value="
-                      (v: string | number) => handleOriginalDimensionUpdate('height', v)
-                    "
+                    :max-decimals="MAX_DECIMALS"
+                    @input="handleHeightInputEvent"
+                    @update:model-value="handleHeightInput"
+                    @focus="isHeightFocused = true"
                     @blur="handleBlurHeight"
                   />
                   <InputGroupAddon class="pr-3 text-xs">{{ heightUnitLabel }}</InputGroupAddon>

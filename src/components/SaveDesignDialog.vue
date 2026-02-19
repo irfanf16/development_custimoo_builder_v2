@@ -193,6 +193,44 @@
       return
     }
 
+    // Validate that images are available
+    if (!frontImage.value || !backImage.value) {
+      // Try to get images again before saving
+      const is3DProduct = activeProductDetails.value?.is_3d_product
+      if (is3DProduct) {
+        componentRef = sceneStore.threeDSceneRef
+        if (componentRef && 'getImageFromCanvas' in componentRef) {
+          const getImage = (
+            componentRef as unknown as ComponentPublicInstance & {
+              getImageFromCanvas: (side?: string) => Promise<string>
+            }
+          ).getImageFromCanvas
+          if (!frontImage.value) frontImage.value = await getImage('front')
+          if (!backImage.value) backImage.value = await getImage('back')
+        }
+      } else {
+        if (!frontImage.value) {
+          frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
+          if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
+            frontImage.value = await frontImageComponentRef.getImageFromCanvas()
+          }
+        }
+        if (!backImage.value) {
+          backImageComponentRef = sceneStore.getTwoDSceneRef('back')
+          if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
+            backImage.value = await backImageComponentRef.getImageFromCanvas()
+          }
+        }
+      }
+    }
+
+    // Final check - if still missing, show error
+    if (!frontImage.value || !backImage.value) {
+      console.error('Failed to get images from canvas')
+      isSubmitting.value = false
+      return
+    }
+
     isSubmitting.value = true
     const signedUrls = await lockerStore.getSignedUrl(selectedLockerId.value!)
     if (!signedUrls) {
@@ -210,6 +248,7 @@
           file_side: u.file_side
         }
       })
+
       const results = await uploadPresignedFiles(preparedFiles)
       if (results.every(r => r.success)) {
         const customization = customizationStore.customization
@@ -263,7 +302,6 @@
         const ungroupedAddons = Object.values(addonsInfo).flatMap(
           (addonInfo: any) => addonInfo?.ungrouped_addons || []
         )
-
         // Build locker product payload (plain JSON values — no double encoding)
         const locker: SaveLockerProductPayload = {
           addons: addonsInfo,
@@ -276,6 +314,7 @@
           design_id: customizationStore.activeDesignId || 0,
           custom_logos: customLogos,
           text: productCustomTexts,
+          product_custom_texts: productCustomTexts,
           colors: customization?.group_colors ?? [],
           shuffle_color_number: customization?.shuffle_color_number || 0,
           defaultcolors: defaultColors,
@@ -291,6 +330,7 @@
           category_id: customizationStore.activeCategoryId ?? undefined,
           sub_category_id: customizationStore.activeSubCategoryId ?? null
         }
+
         const success = await lockerStore.saveDesignToLocker(
           locker,
           selectedLockerId.value!,
@@ -330,24 +370,33 @@
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()
         }
-        frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
-        if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
-          frontImage.value = await frontImageComponentRef.getImageFromCanvas()
-        }
 
-        backImageComponentRef = sceneStore.getTwoDSceneRef('back')
-        if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
-          backImage.value = await backImageComponentRef.getImageFromCanvas()
-        }
-        componentRef = sceneStore.threeDSceneRef
-        if (componentRef && 'getImageFromCanvas' in componentRef) {
-          const getImage = (
-            componentRef as unknown as ComponentPublicInstance & {
-              getImageFromCanvas: (side?: string) => Promise<string>
-            }
-          ).getImageFromCanvas
-          frontImage.value = await getImage('front')
-          backImage.value = await getImage('back')
+        // Check if it's a 3D product
+        const is3DProduct = activeProductDetails.value?.is_3d_product
+
+        if (is3DProduct) {
+          // Use 3D scene for 3D products
+          componentRef = sceneStore.threeDSceneRef
+          if (componentRef && 'getImageFromCanvas' in componentRef) {
+            const getImage = (
+              componentRef as unknown as ComponentPublicInstance & {
+                getImageFromCanvas: (side?: string) => Promise<string>
+              }
+            ).getImageFromCanvas
+            frontImage.value = await getImage('front')
+            backImage.value = await getImage('back')
+          }
+        } else {
+          // Use 2D scenes for 2D products
+          frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
+          if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
+            frontImage.value = await frontImageComponentRef.getImageFromCanvas()
+          }
+
+          backImageComponentRef = sceneStore.getTwoDSceneRef('back')
+          if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
+            backImage.value = await backImageComponentRef.getImageFromCanvas()
+          }
         }
       }
     }

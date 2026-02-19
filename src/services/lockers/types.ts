@@ -115,6 +115,7 @@ export interface SaveLockerProductPayload {
   design_id: number
   custom_logos: LockerPayloadJsonValue
   text: LockerPayloadJsonValue
+  product_custom_texts: LockerPayloadJsonValue
   colors: LockerPayloadJsonValue
   shuffle_color_number: number
   defaultcolors: LockerPayloadJsonValue
