@@ -28,8 +28,9 @@
   import { useLogoActions, type BackgroundRemovalMode } from './useLogoActions'
   import { useLogos } from './useLogos'
   import { useLogoPlacements, type PlacementOption } from './useLogoPlacements'
+  import { useLogoDimensions } from './useLogoDimensions'
   import { useLogoPosition } from './useLogoPosition'
-  import { rgbArrayToHex } from './useLogoUtils'
+  import { rgbArrayToHex, MAX_DECIMALS } from './useLogoUtils'
   import type { Palette } from '@/composables/useColorActions'
   import { Label } from '@/components/ui/label'
   import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
@@ -150,31 +151,19 @@
     return unit
   })
 
-  const originalHeightText = computed(() => {
-    const raw = customLogo.value?.originalHeight
-    if (raw === undefined || raw === null || raw === '') return ''
-    const num = Number(raw)
-    if (Number.isFinite(num)) return `${num.toFixed(1)}`
-    return String(raw)
-  })
-
-  const heightModelValue = computed(() => {
-    if (originalHeightText.value) return originalHeightText.value
-    return positionForm.height
-  })
-
-  const originalWidthText = computed(() => {
-    const raw = customLogo.value?.originalWidth
-    if (raw === undefined || raw === null || raw === '') return ''
-    const num = Number(raw)
-    if (Number.isFinite(num)) return `${num.toFixed(1)}`
-    return String(raw)
-  })
-
-  const widthModelValue = computed(() => {
-    if (originalWidthText.value) return originalWidthText.value
-    return ''
-  })
+  // ===== DIMENSION HANDLING =====
+  const {
+    widthInputValue,
+    heightInputValue,
+    isWidthFocused,
+    isHeightFocused,
+    handleWidthInputEvent,
+    handleHeightInputEvent,
+    handleWidthInput,
+    handleHeightInput,
+    handleBlurWidth,
+    handleBlurHeight
+  } = useLogoDimensions(customLogo, productKey, positionForm, getActiveLogoIndex)
 
   const widthLabel = computed(() => {
     const locale = profileStore.currentLocale || 'en'
@@ -191,7 +180,6 @@
   const {
     activeLogoIndex,
     angleText,
-    handleBlurHeight,
     handleAngleCommit,
     resetPositionToCenter,
     pinLogo,
@@ -320,7 +308,7 @@
     previousPlacementOption.value = option
     if (option.width) currentWidth.value = option.width
     if (option.height) {
-      positionForm.height = option.height.toFixed(1)
+      positionForm.height = option.height.toFixed(2)
     }
   }
 
@@ -367,74 +355,6 @@
       prevWidth: customLogo.value.width ?? null,
       prevHeight: customLogo.value.height ?? null
     })
-  }
-
-  /**
-   * Shared handler for originalWidth and originalHeight.
-   * Both use the same scaleX/scaleY; changing either dimension applies the same ratio to both scales
-   * and to the other stored dimension so width and height fields stay in sync.
-   */
-  function handleOriginalDimensionUpdate(dimension: 'width' | 'height', value: string | number) {
-    const str = String(value)
-    if (!customLogo.value || !productKey.value) return
-    const arr = customizationStore.customization?.custom_logos?.[productKey.value]
-    if (!arr) return
-    const index = getActiveLogoIndex(customLogo.value.id)
-    if (index === -1 || !arr[index]) return
-
-    const numeric = Number.parseFloat(str)
-    const nextOriginal = Number.isFinite(numeric) ? Number(Number(numeric).toFixed(1)) : str
-    const logo = arr[index] as CustomLogo & {
-      originalWidth?: number | string
-      originalHeight?: number | string
-      scaleX?: number
-      scaleY?: number
-    }
-
-    let scaleX = logo.scaleX ?? 1
-    let scaleY = logo.scaleY ?? 1
-    const originalNum =
-      dimension === 'width' ? Number(logo.originalWidth) : Number(logo.originalHeight)
-    let ratio = 1
-    if (
-      Number.isFinite(numeric) &&
-      numeric > 0 &&
-      Number.isFinite(originalNum) &&
-      originalNum > 0
-    ) {
-      ratio = numeric / originalNum
-      scaleX = scaleX * ratio
-      scaleY = scaleY * ratio
-      const precision = 12
-      scaleX = Number(scaleX.toFixed(precision))
-      scaleY = Number(scaleY.toFixed(precision))
-    }
-    const updated = { ...logo, scaleX, scaleY }
-    if (dimension === 'width') {
-      updated.originalWidth = nextOriginal
-      const otherNum = Number(logo.originalHeight)
-      if (Number.isFinite(otherNum) && otherNum > 0) {
-        updated.originalHeight = Number((otherNum * ratio).toFixed(1))
-      }
-    } else {
-      updated.originalHeight = nextOriginal
-      const otherNum = Number(logo.originalWidth)
-      if (Number.isFinite(otherNum) && otherNum > 0) {
-        updated.originalWidth = Number((otherNum * ratio).toFixed(1))
-      }
-    }
-    arr.splice(index, 1, updated as CustomLogo)
-    if (dimension === 'height') {
-      positionForm.height = String(nextOriginal)
-    }
-    customizationStore.saveToLocalStorage()
-  }
-
-  function handleBlurWidth() {
-    const num = Number.parseFloat(widthModelValue.value)
-    if (!Number.isNaN(num)) {
-      handleOriginalDimensionUpdate('width', num.toFixed(1))
-    }
   }
 
   // Radio group value for logo technology (syncs with selectedLogoTechnology)
@@ -661,11 +581,12 @@
               <InputGroup>
                 <InputGroupInput
                   id="logo-width"
+                  :model-value="widthInputValue"
                   inputmode="decimal"
-                  :model-value="widthModelValue"
-                  @update:model-value="
-                    (v: string | number) => handleOriginalDimensionUpdate('width', v)
-                  "
+                  :max-decimals="MAX_DECIMALS"
+                  @input="handleWidthInputEvent"
+                  @update:model-value="handleWidthInput"
+                  @focus="isWidthFocused = true"
                   @blur="handleBlurWidth"
                 />
                 <InputGroupAddon class="pr-3 text-xs">{{ heightUnitLabel }}</InputGroupAddon>
@@ -678,11 +599,12 @@
               <InputGroup>
                 <InputGroupInput
                   id="logo-height"
+                  :model-value="heightInputValue"
                   inputmode="decimal"
-                  :model-value="heightModelValue"
-                  @update:model-value="
-                    (v: string | number) => handleOriginalDimensionUpdate('height', v)
-                  "
+                  :max-decimals="MAX_DECIMALS"
+                  @input="handleHeightInputEvent"
+                  @update:model-value="handleHeightInput"
+                  @focus="isHeightFocused = true"
                   @blur="handleBlurHeight"
                 />
                 <InputGroupAddon class="pr-3 text-xs">{{ heightUnitLabel }}</InputGroupAddon>
