@@ -407,7 +407,7 @@
                 <span class="text-base font-semibold text-foreground">{{
                   texts_sizing_section_title({}, { locale })
                 }}</span>
-                <span class="text-base text-muted-foreground">{{ form.placement }}</span>
+                <!-- <span class="text-base text-muted-foreground">{{ form.placement }}</span> -->
               </div>
             </div>
           </AccordionTrigger>
