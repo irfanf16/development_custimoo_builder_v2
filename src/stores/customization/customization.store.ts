@@ -11,7 +11,8 @@ import type {
   OutputProductText,
   OutputProductTextItem,
   GradientColor,
-  APCustomizationRosterEntry
+  APCustomizationRosterEntry,
+  APCustomizationDefaultColor
 } from '@/services/products/types'
 import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
@@ -381,6 +382,42 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
+  const nullDefaultColorSlot: APCustomizationDefaultColor = {
+    color: null,
+    pantone: null,
+    name: null
+  }
+
+  function setDefaultColorAt(index: number, value: APCustomizationDefaultColor | null) {
+    if (!customization.value) return
+    if (index < 0 || index > 3) return
+    let arr = customization.value.default_colors
+    if (!Array.isArray(arr)) arr = []
+    while (arr.length < 4) {
+      arr.push({ ...nullDefaultColorSlot })
+    }
+    arr[index] = value ? { ...value } : { ...nullDefaultColorSlot }
+    customization.value.default_colors = arr.slice(0, 4)
+    saveToLocalStorage()
+  }
+
+  function removeDefaultColorAt(index: number) {
+    setDefaultColorAt(index, null)
+  }
+
+  /** Clear all four default_colors slots (e.g. for "Use original colors"). */
+  function clearDefaultColors() {
+    if (!customization.value) return
+    const arr = [
+      { ...nullDefaultColorSlot },
+      { ...nullDefaultColorSlot },
+      { ...nullDefaultColorSlot },
+      { ...nullDefaultColorSlot }
+    ]
+    customization.value.default_colors = arr
+    saveToLocalStorage()
+  }
+
   function appendLogoColors(colors?: LogoColor[]) {
     if (!customization.value) return
     if (!colors || !colors.length) return
@@ -712,6 +749,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     setDesign,
     setAddons,
     setGroupColor,
+    setDefaultColorAt,
+    removeDefaultColorAt,
+    clearDefaultColors,
     appendLogoColors,
     addLogoToCustomizationFromSource,
     getMergedCustomizationLogo,

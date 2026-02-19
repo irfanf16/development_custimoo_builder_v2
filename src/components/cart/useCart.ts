@@ -11,7 +11,7 @@ export interface CartProduct {
   // Display fields
   product_id: number
   product_name: string
-  design_id: number
+  design_id: number | string
   quantity: number
   price: number
   style: string
@@ -21,6 +21,7 @@ export interface CartProduct {
   front_image?: string
   back_image?: string
   logo_technology?: { label: string; price: number }
+  roster?: number
 }
 
 export type PricingRowType = 'product' | 'addon' | 'logo_technology' | 'subtotal'
@@ -143,7 +144,7 @@ export function useCart() {
           factory_product_id: String(fp?.id || ''),
           product_id: Number(fp?.product_id || 0),
           product_name: String(fp?.product_display_name || fp?.product_name || ''),
-          design_id: Number(fp?.design_id || 0),
+          design_id: typeof fp?.design_id === 'number' ? fp?.design_id : String(fp?.design_id),
           quantity: Number(priceObj?.quantity || 0),
           price: Number(priceObj?.product_price || 0),
           style: String(fp?.style_name || ''),
@@ -151,6 +152,7 @@ export function useCart() {
           front_image: fp?.front_image ? String(fp.front_image) : undefined,
           back_image: fp?.back_image ? String(fp.back_image) : undefined,
           logo_technology: logoTechnology,
+          roster: fp?.product_roster_detail?.length || 0,
           minimum_order_quantity:
             fp?.is_custom_moq == 'true' && fp.minimum_order_quantity_type === 'by_cart'
               ? Number(fp.minimum_order_quantity)

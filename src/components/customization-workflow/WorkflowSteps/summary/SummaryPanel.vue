@@ -35,11 +35,13 @@
   } from '@/paraglide/messages'
   import type { GradientColor, OutputProductText } from '@/services/products/types'
   import TwoDScene from '@/components/scene/TwoDScene.vue'
+  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   // Stores
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
   const workflowStore = useWorkflowStore()
+  const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const { effectiveLogos, effectiveSvgGroups } = useEffectiveSelectors()
 
   const { activeProductDetails, activeStyleDetails } = storeToRefs(productsStore)
@@ -116,26 +118,28 @@
   const roster = computed(() => rosterEntries.value ?? [])
   const rosterCount = computed(() => roster.value.length)
 
-  // Navigation handlers
+  // Navigation handlers – use visible steps so we never land on a hidden tab
+  const visibleSteps = computed(() => menuItems.value.map(i => i.step))
+
   function handleLogoClick(logoId: string) {
     workflowStore.setActiveLogoId(logoId)
     workflowStore.setLogosSubStep('edit')
-    workflowStore.setActiveStep('logos')
+    void goTo(pickStepOrNextAvailable('logos', visibleSteps.value))
   }
 
   function handleColorClick(colorIndex: number) {
     workflowStore.setActiveColorAccordionIndex(colorIndex)
-    workflowStore.setActiveStep('colors')
+    void goTo(pickStepOrNextAvailable('colors', visibleSteps.value))
   }
 
   function handleTextClick(textId: number) {
     workflowStore.setActiveTextId(textId)
     workflowStore.setTextsSubStep('edit')
-    workflowStore.setActiveStep('texts')
+    void goTo(pickStepOrNextAvailable('texts', visibleSteps.value))
   }
 
   function handleEditRoster() {
-    workflowStore.setActiveStep('roster')
+    void goTo(pickStepOrNextAvailable('roster', visibleSteps.value))
   }
 
   // Generate gradient CSS string

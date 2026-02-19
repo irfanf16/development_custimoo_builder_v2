@@ -36,7 +36,7 @@
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
-  const { shouldShowStyles } = useCustomizerMenu()
+  const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const { isLoading, fetchProductDetailsAndDesignsForProductPreview } = productsStore
   const { getProductPrice, getMinimumProductQuantityByDesign, showPricing } = usePricing()
 
@@ -193,11 +193,8 @@
         await productsStore.fetchDesignPreviewsByStyleId(styleDetails.id)
       }
 
-      if (shouldShowStyles.value) {
-        workflowStore.setActiveStep('styles')
-      } else {
-        workflowStore.setActiveStep('logos')
-      }
+      const visibleSteps = menuItems.value.map(i => i.step)
+      await goTo(pickStepOrNextAvailable('styles', visibleSteps))
       workflowStore.resetWorkflowSubSteps()
 
       emit('update:open', false)

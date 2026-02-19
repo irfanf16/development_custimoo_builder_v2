@@ -39,6 +39,19 @@ export function useCustomizerMenu() {
     return stylesCount > 1 || hasAddons
   })
 
+  // Colors tab: show only when product has SVG parts (colorable groups)
+  const shouldShowColors = computed(() => (productsStore.svgGroups?.length ?? 0) > 0)
+
+  // Logos tab: show only when product has logo placements
+  const shouldShowLogos = computed(
+    () => (productsStore.activeProductDetails?.logos_setting?.length ?? 0) > 0
+  )
+
+  // Texts tab: show only when product has text placements
+  const shouldShowTexts = computed(
+    () => (productsStore.activeProductDetails?.product_texts?.length ?? 0) > 0
+  )
+
   function isActive(label: CustomizerStep) {
     // Handle the case when no categories are available
     if (!shouldShowProductsMenuItem.value && label === 'product') {
@@ -153,6 +166,32 @@ export function useCustomizerMenu() {
     workflowStore.setActiveStep(nextStep)
   }
 
+  /** If desired step is visible, return it; else return first visible step after it in order, or first visible. */
+  function pickStepOrNextAvailable(
+    desired: CustomizerStep,
+    visible: CustomizerStep[]
+  ): CustomizerStep {
+    if (visible.includes(desired)) return desired
+    const order: CustomizerStep[] = [
+      'product',
+      'designs',
+      'styles',
+      'logos',
+      'colors',
+      'patterns',
+      'texts',
+      'roster',
+      'summary'
+    ]
+    const desiredIndex = order.indexOf(desired)
+    const fallbackStart = desiredIndex >= 0 ? desiredIndex + 1 : 0
+    for (let i = fallbackStart; i < order.length; i += 1) {
+      const candidate = order[i]
+      if (candidate && visible.includes(candidate)) return candidate
+    }
+    return visible[0] ?? 'product'
+  }
+
   // Helper function to get translated text for a navigation step
   function getNavText(step: CustomizerStep) {
     switch (step) {
@@ -196,11 +235,11 @@ export function useCustomizerMenu() {
       },
       {
         step: 'logos' as CustomizerStep,
-        show: true
+        show: shouldShowLogos.value
       },
       {
         step: 'colors' as CustomizerStep,
-        show: true
+        show: shouldShowColors.value
       },
       {
         step: 'patterns' as CustomizerStep,
@@ -208,7 +247,7 @@ export function useCustomizerMenu() {
       },
       {
         step: 'texts' as CustomizerStep,
-        show: true
+        show: shouldShowTexts.value
       },
       {
         step: 'roster' as CustomizerStep,
@@ -226,8 +265,12 @@ export function useCustomizerMenu() {
   return {
     shouldShowProductsMenuItem,
     shouldShowStyles,
+    shouldShowColors,
+    shouldShowLogos,
+    shouldShowTexts,
     isActive,
     goTo,
+    pickStepOrNextAvailable,
     getNavText,
     menuItems
   }

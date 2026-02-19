@@ -13,6 +13,7 @@ import type {
   WorkflowRouteStep,
   NavigationItem
 } from './workflow.store.types'
+import type { APCustomizationGroupColor } from '@/services/products/types'
 import type {
   FooterConfiguration,
   HeaderConfiguration
@@ -58,6 +59,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const activeLogoIndex = ref<number | null>(null)
   const textClipboard = ref<{ style: unknown } | null>(null)
   const activeColorAccordionIndex = ref<number | null>(null)
+  /** Snapshot of group_colors before applying logo colors (for "Use original colors"). */
+  const groupColorsBeforeLogoApply = ref<Record<string, APCustomizationGroupColor> | null>(null)
 
   // Canvas state
   const activeCanvasSide = ref<CanvasSide>('front')
@@ -354,6 +357,22 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
+  function setGroupColorsBeforeLogoApply(data: Record<string, APCustomizationGroupColor>) {
+    groupColorsBeforeLogoApply.value = JSON.parse(JSON.stringify(data)) as Record<
+      string,
+      APCustomizationGroupColor
+    >
+  }
+
+  function getAndClearGroupColorsBeforeLogoApply(): Record<
+    string,
+    APCustomizationGroupColor
+  > | null {
+    const snapshot = groupColorsBeforeLogoApply.value
+    groupColorsBeforeLogoApply.value = null
+    return snapshot
+  }
+
   function setTextClipboard(payload: { style: unknown } | null) {
     textClipboard.value = payload
     // Note: textClipboard is not persisted to localStorage - it's runtime-only
@@ -533,6 +552,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setActiveLogoId,
     setActiveLogoIndex,
     setActiveColorAccordionIndex,
+    setGroupColorsBeforeLogoApply,
+    getAndClearGroupColorsBeforeLogoApply,
     setTextClipboard,
     resetWorkflowSubSteps,
     // Business Logic

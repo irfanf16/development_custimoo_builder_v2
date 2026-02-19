@@ -102,6 +102,8 @@ export function useLogoActions() {
     if (customizationStore.customization) {
       customizationStore.customization.default_colors = defaultColors.slice(0, 4)
       customizationStore.customization.shuffle_color_number = 1
+      // Save snapshot for "Use original colors" before clearing
+      workflowStore.setGroupColorsBeforeLogoApply(customizationStore.customization.group_colors)
       // Clear group_colors when applying logo colors
       customizationStore.customization.group_colors = {}
       customizationStore.saveToLocalStorage()
