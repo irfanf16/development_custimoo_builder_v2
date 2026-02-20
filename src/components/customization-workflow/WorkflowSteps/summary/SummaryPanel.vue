@@ -173,7 +173,6 @@
       >
         <TwoDScene
           :side="'front'"
-          :main-preview="true"
           :canvas-width="128"
           :canvas-height="128"
           canvas-class="rounded-xl"

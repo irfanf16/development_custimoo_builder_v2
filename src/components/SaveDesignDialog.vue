@@ -380,7 +380,6 @@
             <div class="size-24 flex items-center justify-center">
               <TwoDScene
                 :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
-                :main-preview="true"
                 :canvas-width="600"
                 :canvas-height="600"
                 canvas-class="w-full h-full object-contain rounded-lg transition-opacity duration-300"
