@@ -576,6 +576,28 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     newCustomization.shuffle_color_number = 0
 
     setCustomization(newCustomization)
+
+    // Re-initialize product texts from product details to restore default preset texts
+    // Clear the value field to reset text content to empty
+    if (
+      productId &&
+      productsStore.activeProductDetails?.product_texts?.length &&
+      customization.value
+    ) {
+      const key = String(productId)
+      const productTexts = productsStore.activeProductDetails.product_texts
+
+      // Initialize with cleared values
+      customization.value.product_custom_texts[key] = productTexts.map(text => ({
+        ...text,
+        value: '', // Clear the value field on reset
+        items: text.items ? [...text.items] : [],
+        following_products: text.following_products ? [...text.following_products] : [],
+        following_product_ids: text.following_product_ids ? [...text.following_product_ids] : []
+      }))
+
+      saveToLocalStorage()
+    }
   }
 
   // ===== BUSINESS LOGIC =====

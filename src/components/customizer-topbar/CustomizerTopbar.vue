@@ -408,12 +408,13 @@
       toast.error('Failed to load locker product', { position: 'top-right', richColors: true })
       return
     }
+    console.log('tjhere')
 
     workflowStore.resetWorkflowSubSteps()
     const visibleSteps = menuItems.value.map(i => i.step)
     const nextStep = pickStepOrNextAvailable(desiredStep, visibleSteps)
-
     await goTo(nextStep)
+    await ensureEditableRoster()
   }
 
   function handleCancelLockerProductEdit() {

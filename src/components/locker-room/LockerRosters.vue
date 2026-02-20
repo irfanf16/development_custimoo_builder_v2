@@ -7,7 +7,7 @@
   import type { ProductRosterDetail } from '@/services/products/types'
   import type { APCustomizationRosterEntry } from '@/services/products/types'
   import { UsersIcon } from 'lucide-vue-next'
-  import { computed, ref } from 'vue'
+  import { computed, ref, inject } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
@@ -37,6 +37,7 @@
 
   const { replaceRoster, ensureEditableRoster, presetNameId, presetNumberId } = useRoster()
   const { menuItems, goTo } = useCustomizerMenu()
+  const closeLockerBrowser = inject<(() => void) | undefined>('closeLockerBrowser')
 
   // Convert ProductRosterDetail to APCustomizationRosterEntry
   function normalizeRosterEntries(
@@ -82,6 +83,9 @@
     } else {
       toast.error('Roster step is not available', { position: 'top-right', richColors: true })
     }
+
+    // Close the locker browser dialog
+    closeLockerBrowser?.()
   }
 
   function handlePreview(roster: ProductRosterDetail[] | undefined, groupName: string) {
