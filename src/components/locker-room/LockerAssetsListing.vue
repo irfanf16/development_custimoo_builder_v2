@@ -12,6 +12,7 @@
   import { storeToRefs } from 'pinia'
   import { computed, inject, onMounted, type ComputedRef } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import { locker_use_in_design } from '@/paraglide/messages'
 
   const props = defineProps<{ locker: Locker }>()
@@ -24,6 +25,7 @@
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const historyStore = useHistoryStore()
+  const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const closeLockerBrowser = inject<(() => void) | undefined>('closeLockerBrowser')
 
   const logos: ComputedRef<Logo[]> = computed(() => {
@@ -70,7 +72,12 @@
     } as CustomLogo
     const merged = customizationStore.getMergedCustomizationLogo(lockerLogoAsCustom, firstPlacement)
     historyStore.execute('logo.add', { key, logo: merged })
-    workflowStore.setActiveStep('logos')
+    void goTo(
+      pickStepOrNextAvailable(
+        'logos',
+        menuItems.value.map(i => i.step)
+      )
+    )
     workflowStore.setLogosSubStep('list')
     closeLockerBrowser?.()
   }

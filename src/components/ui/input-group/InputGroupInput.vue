@@ -1,12 +1,12 @@
 <script lang="ts" setup>
-  import type { HTMLAttributes } from 'vue'
+  import { useAttrs, type HTMLAttributes } from 'vue'
   import { cn } from '@/lib/utils'
   import { Input } from '../input'
 
   const props = defineProps<{
     class?: HTMLAttributes['class']
   }>()
-
+  const attrs = useAttrs()
   const emits = defineEmits<{
     (e: 'focus', event: FocusEvent): void
     (e: 'blur', event: FocusEvent): void
@@ -23,6 +23,7 @@
 
 <template>
   <Input
+    v-bind="attrs"
     data-slot="input-group-control"
     :class="
       cn(

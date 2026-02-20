@@ -420,6 +420,10 @@
                     <p class="text-gray-500 text-xs">Style</p>
                     <p class="font-medium">{{ item.style }}</p>
                   </div>
+                  <div>
+                    <p class="text-gray-500 text-xs">Roster</p>
+                    <p class="font-medium">{{ item.roster }}</p>
+                  </div>
                   <!-- <div>
                     <p class="text-gray-500 text-xs">Quantity</p>
                     <p class="font-medium">{{ item.quantity }}</p>

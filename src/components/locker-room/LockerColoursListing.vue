@@ -5,10 +5,10 @@
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useProductsStore } from '@/stores/products/products.store'
-  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { storeToRefs } from 'pinia'
   import { computed, inject, onMounted, type ComputedRef } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import { locker_use_in_design } from '@/paraglide/messages'
 
   type ColourProps = {
@@ -23,7 +23,7 @@
   const { lockers } = storeToRefs(lockerStore)
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
-  const workflowStore = useWorkflowStore()
+  const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const closeLockerBrowser = inject<(() => void) | undefined>('closeLockerBrowser')
 
   const colour_groups: ComputedRef<ColourProps[]> = computed(() => {
@@ -56,7 +56,12 @@
         position: 0
       })
     }
-    workflowStore.setActiveStep('colors')
+    void goTo(
+      pickStepOrNextAvailable(
+        'colors',
+        menuItems.value.map(i => i.step)
+      )
+    )
     closeLockerBrowser?.()
   }
 

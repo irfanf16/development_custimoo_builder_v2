@@ -18,7 +18,7 @@
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const profileStore = useProfileStore()
-  const { shouldShowStyles } = useCustomizerMenu()
+  const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
@@ -63,11 +63,8 @@
     setTimeout(() => {
       emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
     }, 100)
-    if (shouldShowStyles.value) {
-      workflowStore.setActiveStep('styles')
-    } else {
-      workflowStore.setActiveStep('logos')
-    }
+    const visibleSteps = menuItems.value.map(i => i.step)
+    await goTo(pickStepOrNextAvailable('styles', visibleSteps))
   }
 
   const filteredPreviews = computed(() => {

@@ -67,7 +67,7 @@ export function useLogoPlacements() {
       const option = placementOptions.value[0] ?? null
       positionForm.placementOption = option
       previousPlacementOption.value = option
-      positionForm.height = option?.height ? option.height.toFixed(1) : ''
+      positionForm.height = option?.height ? option.height.toFixed(2) : ''
       return
     }
 
@@ -111,7 +111,7 @@ export function useLogoPlacements() {
     const logoWidth = Number(logo.width)
     const logoHeight = Number(logo.height)
     currentWidth.value = logoWidth || 0
-    positionForm.height = logoHeight ? logoHeight.toFixed(1) : ''
+    positionForm.height = logoHeight ? logoHeight.toFixed(2) : ''
     isSyncingAngle.value = true
     positionForm.angle = [Number(logo.rotation || 0)]
     rotationChangeStart.value = null

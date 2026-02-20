@@ -1,9 +1,10 @@
 <script setup lang="ts">
-  import { computed, ref, onMounted, isRef, type Ref as VueRef } from 'vue'
+  import { computed, ref, onMounted, watch, isRef, type Ref as VueRef } from 'vue'
   import type { HeaderConfiguration, FooterConfiguration } from './types'
   import WorkflowHeader from './WorkflowHeader.vue'
   import { useWorkflow } from '@/composables/useWorkflow'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import {
     ProductsEntry,
     DesignSelection,
@@ -22,7 +23,21 @@
   import WorkflowFooterPricing from './WorkflowFooterPricing.vue'
   const uiStore = useUIStore()
   const workflowStore = useWorkflowStore()
+  const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const { initializeEffects } = useWorkflow()
+
+  // When active step is not in visible tabs (e.g. product changed and logos tab hidden), redirect to a visible step
+  watch(
+    () => [workflowStore.activeStep, menuItems.value] as const,
+    ([activeStep, items]) => {
+      const visibleSteps = items.map(i => i.step)
+      const step = activeStep ?? 'product'
+      if (visibleSteps.length && !visibleSteps.includes(step)) {
+        void goTo(pickStepOrNextAvailable(step, visibleSteps))
+      }
+    },
+    { immediate: true }
+  )
 
   const isExpanded = ref(false)
   const menuPanelRef = ref<{

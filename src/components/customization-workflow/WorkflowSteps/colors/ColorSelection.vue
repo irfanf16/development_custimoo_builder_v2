@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed, type Ref } from 'vue'
+  import { ref, computed, watch, type Ref } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -32,12 +32,16 @@
     color_shuffle_text_4,
     colors_separator_or,
     colors_choose_from_locker,
+    colors_choose_color,
+    colors_extracted_from_logo,
+    colors_use_original_colors,
     colors_copy,
     colors_paste,
     colors_custom_color_groups,
     nav_color
   } from '@/paraglide/messages'
   import { storeToRefs } from 'pinia'
+  import { Plus, X } from 'lucide-vue-next'
   // no emits
 
   // Store (kept in case we want to wire real data later)
@@ -296,6 +300,130 @@
     shuffleColors(computedPalettes.value?.[0]?.id)
   }
 
+  /** Shuffle current extracted logo colors and assign them to SVG groups (for the applied logo colors block). */
+  function shuffleExtractedColorsAmongSvgParts() {
+    const colors = appliedLogoColors.value.map(item => ({
+      name: item.name ?? '',
+      value: item.color,
+      position: 0
+    })) as OutputColor[]
+    if (!colors.length || !effectiveSvgGroupsInteractive.value?.length) return
+    const shuffled = [...colors].sort(() => Math.random() - 0.5)
+    const groups = effectiveSvgGroupsInteractive.value
+    void history.runBatch('Shuffle extracted colors', add => {
+      groups.forEach((group, index) => {
+        const nextColor = shuffled[index % shuffled.length]
+        if (!nextColor) return
+        const prevRaw = customizationStore.customization?.group_colors?.[group.id]
+        const prevColor = prevRaw
+          ? { name: prevRaw.name || '', value: prevRaw.color || '', position: 0 }
+          : null
+        add('color.set-group', {
+          groupId: group.id,
+          prevColor,
+          nextColor
+        })
+      })
+    })
+  }
+
+  function useOriginalColors() {
+    const snapshot = workflowStore.getAndClearGroupColorsBeforeLogoApply()
+    if (customizationStore.customization) {
+      customizationStore.customization.group_colors = snapshot ? { ...snapshot } : {}
+      customizationStore.clearDefaultColors()
+      customizationStore.saveToLocalStorage()
+    }
+    workflowStore.setActiveColorAccordionIndex(null)
+  }
+
+  // Shuffle is only relevant when product has SVG parts (colorable groups)
+  const hasSvgParts = computed(() => (effectiveSvgGroupsInteractive.value?.length ?? 0) > 0)
+
+  // Show applied logo colors block only when product has at least one custom logo
+  const hasCustomLogos = computed(() => getCustomeLogos().length > 0)
+
+  // When user removes all logos, clear applied default_colors and close add-color accordion
+  watch(
+    hasCustomLogos,
+    has => {
+      if (!has) {
+        if (customizationStore.customization?.default_colors) {
+          for (let i = 0; i < 4; i++) {
+            customizationStore.removeDefaultColorAt(i)
+          }
+        }
+        if (workflowStore.activeColorAccordionIndex === 0) {
+          workflowStore.setActiveColorAccordionIndex(null)
+        }
+        editingDefaultColorIndex.value = null
+      }
+    },
+    { immediate: false }
+  )
+
+  // Applied logo colors (default_colors) – shown when hasCustomLogos; add/remove only touch default_colors
+  const appliedLogoColors = computed(() => {
+    const dc = customizationStore.customization?.default_colors || []
+    const arr: Array<{
+      index: number
+      color: string
+      pantone: string | null
+      name: string | null
+    }> = []
+    for (let i = 0; i < 4; i++) {
+      const slot = dc[i]
+      if (slot?.color)
+        arr.push({
+          index: i,
+          color: slot.color,
+          pantone: slot.pantone ?? null,
+          name: slot.name ?? null
+        })
+    }
+    return arr
+  })
+  const canAddMore = computed(() => appliedLogoColors.value.length < 4)
+  const firstEmptySlotIndex = computed(() => {
+    const dc = customizationStore.customization?.default_colors || []
+    for (let i = 0; i < 4; i++) {
+      if (!dc[i]?.color) return i
+    }
+    return 4
+  })
+
+  const palettesForAddColor = computed(() => {
+    const first = effectiveSvgGroupsInteractive.value?.[0]
+    const palette = first ? getSvgGroupPalette(first.id) : null
+    if (palette) return [palette] as Palette[]
+    return computedPalettes.value || []
+  })
+
+  // When opening palette from swatch click we edit this slot; when from plus we add (use first empty)
+  const editingDefaultColorIndex = ref<number | null>(null)
+
+  function addColorFromPicker(color: OutputColor) {
+    const idx = editingDefaultColorIndex.value ?? firstEmptySlotIndex.value
+    if (idx >= 4) return
+    const pantone = (color as { pantone?: string }).pantone ?? null
+    customizationStore.setDefaultColorAt(idx, {
+      color: color.value,
+      pantone,
+      name: color.name ?? null
+    })
+    editingDefaultColorIndex.value = null
+    workflowStore.setActiveColorAccordionIndex(null)
+  }
+
+  function openPaletteForSlot(slotIndex: number | null) {
+    editingDefaultColorIndex.value = slotIndex
+    workflowStore.setActiveColorAccordionIndex(0)
+  }
+
+  function removeAppliedColorAt(index: number) {
+    customizationStore.removeDefaultColorAt(index)
+  }
+
   // Accordion control - open the accordion item corresponding to activeColorAccordionIndex
   const accordionValue = computed(() => {
     if (workflowStore.activeColorAccordionIndex !== null) {
@@ -324,7 +452,7 @@
 <template>
   <!-- Content -->
   <div class="flex flex-col gap-4 md:gap-6">
-    <!-- Lucky / Locker actions -->
+    <!-- Lucky / Locker actions (first) -->
     <div class="flex flex-col gap-3">
       <div class="rounded-xl border border-border bg-primary/10 p-4 mx-6">
         <div class="flex items-start gap-3">
@@ -356,7 +484,7 @@
           </div>
         </div>
         <div class="mt-4">
-          <Button class="w-full" variant="default" @click="shuffleAll">{{
+          <Button class="w-full" variant="default" :disabled="!hasSvgParts" @click="shuffleAll">{{
             color_shuffle_design_colors({}, { locale: profileStore.currentLocale })
           }}</Button>
         </div>
@@ -381,17 +509,109 @@
         </div>
       </div>
     </div>
-    <!-- Color slots (interactive groups only) -->
+
+    <!-- Applied logo colors (Choose Color) – only when logo colors have been applied; after Lucky/Locker -->
+    <div v-if="appliedLogoColors.length > 0" class="px-4 md:px-6 flex flex-col gap-2">
+      <!-- When all 4 slots are filled, hide the "Choose Color" add UI (heading + plus); swatches stay for editing -->
+      <template v-if="canAddMore">
+        <h2 class="text-base font-semibold text-foreground">
+          {{ colors_choose_color({}, { locale: profileStore.currentLocale }) }}
+        </h2>
+        <p v-if="appliedLogoColors.length > 0" class="text-base font-semibold text-foreground">
+          {{ colors_extracted_from_logo({}, { locale: profileStore.currentLocale }) }}
+        </p>
+      </template>
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-2">
+          <div
+            v-for="item in appliedLogoColors"
+            :key="item.index"
+            class="relative group/swatch shrink-0"
+          >
+            <button
+              type="button"
+              class="rounded-full p-0 border-0 bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              aria-label="Change color"
+              @click="openPaletteForSlot(item.index)"
+            >
+              <ColorSelector
+                :color="item.color"
+                :size="'sm'"
+                class="rounded-full pointer-events-none"
+                :disabled="true"
+              />
+            </button>
+            <button
+              type="button"
+              class="absolute -top-1 -right-1 size-4 rounded-full bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center opacity-0 group-hover/swatch:opacity-100 transition-opacity"
+              :aria-label="'Remove color'"
+              @click.stop="removeAppliedColorAt(item.index)"
+            >
+              <X class="size-2.5" />
+            </button>
+          </div>
+          <button
+            v-if="canAddMore"
+            type="button"
+            class="size-8 rounded-full border border-border bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground shrink-0"
+            aria-label="Add color"
+            @click="openPaletteForSlot(null)"
+          >
+            <Plus class="size-4" />
+          </button>
+        </div>
+        <Button
+          class="ml-auto bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+          :disabled="!hasSvgParts || appliedLogoColors.length === 0"
+          @click="shuffleExtractedColorsAmongSvgParts"
+        >
+          {{ color_shuffle_design_colors({}, { locale: profileStore.currentLocale }) }}
+        </Button>
+      </div>
+      <Button variant="outline" class="w-full shrink-0" @click="useOriginalColors">
+        {{ colors_use_original_colors({}, { locale: profileStore.currentLocale }) }}
+      </Button>
+    </div>
+
+    <!-- Color slots: add-color palette (index 0) + interactive SVG groups (index 1..n) -->
     <Accordion
       type="single"
       collapsible
       :model-value="accordionValue"
       @update:model-value="handleAccordionChange"
     >
+      <!-- Add/edit color from palette (opens when plus or swatch is clicked); only when applied logo colors exist -->
+      <AccordionItem v-if="appliedLogoColors.length > 0" value="0" class="px-4 md:px-6 max-w-full">
+        <AccordionTrigger
+          class="w-full overflow-hidden items-center no-underline hover:no-underline"
+        >
+          <div class="flex items-center gap-2 md:gap-3">
+            <Plus class="size-4 text-muted-foreground shrink-0" />
+            <span class="text-base font-semibold text-foreground">{{
+              colors_choose_color({}, { locale: profileStore.currentLocale })
+            }}</span>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent>
+          <PaletteColorSelector
+            v-if="palettesForAddColor.length"
+            :palettes="palettesForAddColor"
+            :custom-palettes="getCustomLogosPalettes()"
+            :allow-custom-color="productsStore.activeProductDetails?.is_custom_color_allowed"
+            :has-svg-colors="
+              effectiveSvgGroupsInteractive[0]
+                ? !!getSvgGroupColors(effectiveSvgGroupsInteractive[0].id)
+                : false
+            "
+            :parsed-locker-rooms="parsedLockerRooms"
+            @color-select="addColorFromPicker"
+          />
+        </AccordionContent>
+      </AccordionItem>
       <AccordionItem
         v-for="(svgGroup, idx) in effectiveSvgGroupsInteractive"
         :key="svgGroup.id"
-        :value="String(idx)"
+        :value="String(idx + 1)"
         class="px-4 md:px-6 max-w-full"
       >
         <AccordionTrigger
