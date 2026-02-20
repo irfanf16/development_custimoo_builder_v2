@@ -320,14 +320,14 @@
           .join(',') || ''
 
       if (newModelUrls !== oldModelUrls) {
-        // Remove all existing models
-        removeModels()
+        // Load all model images first (no canvas changes yet)
+        const modelImages = await Promise.all(newModels.map(model => addModel(model)))
+        if (!canvas.value) return
 
-        // Add new models
-        if (newModels.length > 0) {
-          await Promise.all(newModels.map(model => addModel(model)))
-          bringModelToFront()
-        }
+        // Remove previous models, then add the new ones
+        removeModels()
+        addModelObjectsToCanvas(modelImages)
+        bringModelToFront()
 
         canvas.value.requestRenderAll()
       }
@@ -386,19 +386,19 @@
   function removeModels(): void {
     if (!canvas.value || !modelObjects.value.length) return
 
-    const c = canvas.value
     modelObjects.value.forEach(model => {
       const modelObj = model as unknown as FabricObject
-      c.remove(modelObj)
+      canvas.value?.remove(modelObj)
     })
     modelObjects.value = []
   }
 
   /**
-   * Add model image to the canvas
+   * Load model image and return it. Does not add to canvas or modelObjects.
+   * Caller must remove previous models, then add returned images to canvas and modelObjects.
    */
-  async function addModel(modelData: ModelData): Promise<void> {
-    if (!canvas.value || !modelData) return
+  async function addModel(modelData: ModelData): Promise<FabricObject | FabricImage | null> {
+    if (!canvas.value || !modelData) return null
 
     // Use file_url for main preview, thumb_sm_url for thumbnails
     const modelUrl = modelData.file_url || modelData.thumb_sm_url
@@ -410,7 +410,7 @@
     })) as FabricImage
 
     // Check canvas again after async operation (it might have been disposed)
-    if (!canvas.value) return
+    if (!canvas.value) return null
 
     // Scale to fit canvas with padding
     const padding = 10
@@ -423,11 +423,21 @@
     }
 
     img.setCoords()
+    return img as FabricObject
+  }
 
-    // Add to canvas
-    canvas.value.add(img as FabricObject)
-    canvas.value.viewportCenterObject(img as FabricObject)
-    modelObjects.value.push(img as FabricObject)
+  function addModelObjectsToCanvas(images: (FabricObject | FabricImage | null)[]): void {
+    if (!canvas.value) return
+    const valid = images.filter((img): img is FabricObject => img != null)
+    valid.forEach((img, index) => {
+      canvas.value!.add(img)
+      canvas.value!.viewportCenterObject(img)
+      if (modelObjects.value[index]) {
+        canvas.value!.remove(modelObjects.value[index] as FabricObject)
+        modelObjects.value.splice(index, 1)
+      }
+      modelObjects.value.push(img)
+    })
   }
 
   function bringModelToFront(): void {
@@ -445,8 +455,6 @@
   async function loadScene(): Promise<void> {
     if (!canvas.value) return
 
-    const promises: Promise<void>[] = []
-
     // Load design
     if (effectiveDesign.value) {
       await addDesign(effectiveDesign.value, {
@@ -463,14 +471,13 @@
       if (!canvas.value) return
     }
 
-    // Load models
+    // Load model images first (no canvas changes yet), then remove previous and add new
     if (effectiveModels.value.length > 0) {
-      effectiveModels.value.forEach(model => {
-        promises.push(addModel(model))
-      })
+      const modelImages = await Promise.all(effectiveModels.value.map(model => addModel(model)))
+      if (!canvas.value) return
+      removeModels()
+      addModelObjectsToCanvas(modelImages)
     }
-
-    await Promise.all(promises)
     if (!canvas.value) return
 
     // Ensure models are on top of design
@@ -498,7 +505,9 @@
     // Render mirrored logos and texts coming from the opposite side (stored in sceneStore)
     await renderOtherSideLogosFromStore()
     if (!canvas.value) return
-    await renderOtherSideTextsFromStore()
+    setTimeout(async () => {
+      await renderOtherSideTextsFromStore()
+    }, 500)
   }
 
   // All customization functions are now provided by useColorCustomization composable
@@ -1458,6 +1467,7 @@
       })
       if (added) {
         addToOtherSide(added)
+        bringModelToFront()
       }
     } catch (error) {
       console.error('Failed to add logo:', error)
@@ -1752,8 +1762,10 @@
   watch(
     () => sceneStore.getOtherSideTexts(props.side as 'front' | 'back'),
     async () => {
-      if (isPlacementMode.value || !mounted.value) return
-      await renderOtherSideTextsFromStore()
+      if (isPlacementMode.value) return
+      setTimeout(async () => {
+        await renderOtherSideTextsFromStore()
+      }, 500)
     },
     { deep: true }
   )

@@ -9,6 +9,7 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import { storeToRefs } from 'pinia'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useDebounceFn } from '@vueuse/core'
   import MobileActionBar from '@/components/customizer-canvas-preview/MobileActionBar.vue'
   import { useProductsStore } from '@/stores/products/products.store'
   const uiStore = useUIStore()
@@ -16,9 +17,9 @@
   const workflowStore = useWorkflowStore()
   const productsStore = useProductsStore()
   const { activeProductDetails } = storeToRefs(productsStore)
-  function handleClick() {
+  const handleClick = useDebounceFn(() => {
     workflowStore.toggleActiveCanvasSide()
-  }
+  }, 500)
 </script>
 
 <template>

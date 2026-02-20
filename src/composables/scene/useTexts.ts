@@ -643,8 +643,10 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
     }
   }
 
-  available.forEach(({ obj }) => {
-    canvas.remove(obj)
+  // Remove leftover unmatched objects from textObjects and from canvas
+  available.forEach(entry => {
+    textObjects.value.delete(entry.key)
+    canvas.remove(entry.obj)
   })
 
   textObjects.value = nextMap

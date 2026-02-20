@@ -1558,6 +1558,22 @@
       console.warn('Missing model or design data')
       return
     }
+
+    // Remove existing model, design, logos, and texts before adding new ones
+    removeModel()
+    if (canvas.value && designObject.value) {
+      canvas.value.remove(designObject.value as FabricObject)
+      designObject.value = null
+    }
+    customLogoObjects.value.forEach(logo => {
+      if (canvas.value) canvas.value.remove(logo as unknown as FabricObject)
+    })
+    customLogoObjects.value.clear()
+    customTextObjects.value.forEach(obj => {
+      canvas.value?.remove(obj)
+    })
+    customTextObjects.value.clear()
+
     // Load model and design in parallel
     await Promise.all([
       addModel(
@@ -1878,6 +1894,80 @@
     })
   }
 
+  /**
+   * Remove current 3D model from scene and dispose all related resources.
+   * Call before loading a new model so existing model, meshes, and materials are cleared.
+   */
+  function removeModel(): void {
+    if (canvas.value && canvasRenderHandler.value) {
+      canvas.value.off('after:render', canvasRenderHandler.value)
+      canvasRenderHandler.value = null
+    }
+
+    if (frontMesh.value && scene.value) {
+      scene.value.remove(frontMesh.value)
+    }
+    if (backMesh.value && scene.value) {
+      scene.value.remove(backMesh.value)
+    }
+    if (model.value && scene.value) {
+      scene.value.remove(model.value)
+    }
+
+    if (outerMaterial.value) {
+      const mat = outerMaterial.value
+      if (mat.map) mat.map.dispose()
+      if (mat.normalMap) mat.normalMap.dispose()
+      if (mat.roughnessMap) mat.roughnessMap.dispose()
+      if (mat.metalnessMap) mat.metalnessMap.dispose()
+      if (mat.aoMap) mat.aoMap.dispose()
+      if (mat.alphaMap) mat.alphaMap.dispose()
+      if (mat.envMap) mat.envMap.dispose()
+      mat.dispose()
+      outerMaterial.value = null
+    }
+
+    if (innerMaterial.value) {
+      innerMaterial.value.dispose()
+      innerMaterial.value = null
+    }
+
+    if (model.value) {
+      model.value.traverse(obj => {
+        if (obj instanceof THREE.Mesh) {
+          if (obj.geometry) obj.geometry.dispose()
+          if (obj.material) {
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach(m => {
+                if (m.map) m.map.dispose()
+                if (m.normalMap) m.normalMap.dispose()
+                if (m.roughnessMap) m.roughnessMap.dispose()
+                if (m.metalnessMap) m.metalnessMap.dispose()
+                if (m.aoMap) m.aoMap.dispose()
+                if (m.alphaMap) m.alphaMap.dispose()
+                if (m.envMap) m.envMap.dispose()
+                if (m.dispose) m.dispose()
+              })
+            } else {
+              if (obj.material.map) obj.material.map.dispose()
+              if (obj.material.normalMap) obj.material.normalMap.dispose()
+              if (obj.material.roughnessMap) obj.material.roughnessMap.dispose()
+              if (obj.material.metalnessMap) obj.material.metalnessMap.dispose()
+              if (obj.material.aoMap) obj.material.aoMap.dispose()
+              if (obj.material.alphaMap) obj.material.alphaMap.dispose()
+              if (obj.material.envMap) obj.material.envMap.dispose()
+              if (obj.material.dispose) obj.material.dispose()
+            }
+          }
+        }
+      })
+      model.value = null
+    }
+
+    frontMesh.value = null
+    backMesh.value = null
+  }
+
   // ===== SHADER PASSES =====
   /**
    * Add shader passes for post-processing (brightness, contrast, saturation, SMAA)
@@ -2123,91 +2213,8 @@
 
       if (newModelUrl !== oldModelUrl) {
         const work = async () => {
-          // Remove canvas render handler if exists
-          if (canvas.value && canvasRenderHandler.value) {
-            canvas.value.off('after:render', canvasRenderHandler.value)
-            canvasRenderHandler.value = null
-          }
+          removeModel()
 
-          // Remove front mesh from scene
-          if (frontMesh.value && scene.value) {
-            scene.value.remove(frontMesh.value)
-          }
-
-          // Remove back mesh from scene
-          if (backMesh.value && scene.value) {
-            scene.value.remove(backMesh.value)
-          }
-
-          // Remove old model from scene
-          if (model.value && scene.value) {
-            scene.value.remove(model.value)
-          }
-
-          // Dispose of outer material and all its textures
-          if (outerMaterial.value) {
-            const mat = outerMaterial.value
-
-            // Dispose all textures
-            if (mat.map) mat.map.dispose()
-            if (mat.normalMap) mat.normalMap.dispose()
-            if (mat.roughnessMap) mat.roughnessMap.dispose()
-            if (mat.metalnessMap) mat.metalnessMap.dispose()
-            if (mat.aoMap) mat.aoMap.dispose()
-            if (mat.alphaMap) mat.alphaMap.dispose()
-            if (mat.envMap) mat.envMap.dispose()
-
-            // Dispose material
-            mat.dispose()
-            outerMaterial.value = null
-          }
-
-          // Dispose of inner material
-          if (innerMaterial.value) {
-            innerMaterial.value.dispose()
-            innerMaterial.value = null
-          }
-
-          // Dispose of old model geometry and materials
-          if (model.value) {
-            model.value.traverse(obj => {
-              if (obj instanceof THREE.Mesh) {
-                if (obj.geometry) obj.geometry.dispose()
-                if (obj.material) {
-                  if (Array.isArray(obj.material)) {
-                    obj.material.forEach(m => {
-                      // Dispose textures in material
-                      if (m.map) m.map.dispose()
-                      if (m.normalMap) m.normalMap.dispose()
-                      if (m.roughnessMap) m.roughnessMap.dispose()
-                      if (m.metalnessMap) m.metalnessMap.dispose()
-                      if (m.aoMap) m.aoMap.dispose()
-                      if (m.alphaMap) m.alphaMap.dispose()
-                      if (m.envMap) m.envMap.dispose()
-                      if (m.dispose) m.dispose()
-                    })
-                  } else {
-                    // Dispose textures in material
-                    if (obj.material.map) obj.material.map.dispose()
-                    if (obj.material.normalMap) obj.material.normalMap.dispose()
-                    if (obj.material.roughnessMap) obj.material.roughnessMap.dispose()
-                    if (obj.material.metalnessMap) obj.material.metalnessMap.dispose()
-                    if (obj.material.aoMap) obj.material.aoMap.dispose()
-                    if (obj.material.alphaMap) obj.material.alphaMap.dispose()
-                    if (obj.material.envMap) obj.material.envMap.dispose()
-                    if (obj.material.dispose) obj.material.dispose()
-                  }
-                }
-              }
-            })
-            model.value = null
-          }
-
-          // Clear mesh refs
-          frontMesh.value = null
-          backMesh.value = null
-
-          // Load new model (loaders are created inside addModel)
           await addModel(
             newModel.model_url,
             newModel.texture_url || '',

@@ -293,6 +293,11 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
       )
     }
 
+    if (logoObjects.value.get(logoIndex)) {
+      canvas.remove(logoObjects.value.get(logoIndex) as FabricObject)
+      logoObjects.value.delete(logoIndex)
+    }
+
     // Store reference in map
     logoObjects.value.set(logoIndex, img)
 
@@ -474,8 +479,9 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
     }
   }
 
-  // Remove leftover unmatched objects
+  // Remove leftover unmatched objects from canvas and from logoObjects
   available.forEach(entry => {
+    logoObjects.value.delete(entry.idx)
     canvas.remove(entry.obj as FabricObject)
   })
 
