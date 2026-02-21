@@ -69,7 +69,7 @@
       return
     }
     if (isEditMode.value && props.locker) {
-      const updated = { ...props.locker, room_name: name }
+      const updated = { ...props.locker, room_name: name, updated_at: new Date().toISOString() }
       await lockerStore.updateLockers(updated)
       emit('updated', updated)
       emit('update:open', false)

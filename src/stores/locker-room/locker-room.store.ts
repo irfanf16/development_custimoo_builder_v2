@@ -92,7 +92,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
         id: data.locker.id,
         product_count: 0,
         product_thumbnails: data.locker.product_thumbnails,
-        room_name: data.locker.room_name
+        room_name: data.locker.room_name,
+        updated_at: data.locker.updated_at,
+        created_at: data.locker.created_at
       } as Locker
       lockers.value.push(created)
       isLoading.value = false
@@ -105,6 +107,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
   }
 
   async function updateLockers(locker: Locker) {
+    isLoading.value = true
     const resp = await tryCatchApi(
       API.lockers.updateLocker({ id: locker.id, room_name: locker.room_name }),
       {
@@ -114,18 +117,22 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     )
     if (!resp.success) {
       setError('Failed to update locker')
+      isLoading.value = false
       return
     }
 
     setSuccessMessage('Locker updated successfully')
     lockers.value = lockers.value.map(l => {
-      if (l.id === locker.id) {
-        return {
-          ...locker,
-          product_thumbnails: locker.product.map(prod => prod.product_front_url).slice(0, 4)
-        }
-      } else {
-        return l
+      if (l.id !== locker.id) return l
+      const productList = locker.product ?? l.product ?? []
+      const product_thumbnails = productList
+        .map((prod: LockerProduct) => prod.product_front_url)
+        .slice(0, 4)
+      isLoading.value = false
+      return {
+        ...l,
+        ...locker,
+        product_thumbnails
       }
     })
   }
@@ -183,13 +190,16 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       isDeletingProducts.value = false
     }
   }
-  //Copy Locker Products
-  async function copyProducts(payload: CopyProductPayload, sourceLockerId: number) {
+  //Copy Locker Products. Returns true on success, false on failure.
+  async function copyProducts(
+    payload: CopyProductPayload,
+    sourceLockerId: number
+  ): Promise<boolean> {
     const sourceLocker = lockers.value.find(l => l.id === sourceLockerId)
 
     if (!sourceLocker) {
       setError('Source locker not found')
-      return
+      return false
     }
 
     payload.products.forEach(item => {
@@ -217,8 +227,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
 
       if (!resp.success) {
         setError('Copy failed')
+        return false
       }
       setSuccessMessage('Products copied successfully')
+      return true
     } finally {
       isCopyingProducts.value = false
     }
@@ -253,7 +265,6 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     })
     if (!resp.success) {
       const errors = Object.values(resp.axiosError?.response?.data.errors || {})
-      console.log(errors)
       if (errors.length > 0) {
         errors.forEach((error: string[] | string) => {
           if (Array.isArray(error)) {
@@ -325,7 +336,6 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     lockerId: number,
     lockerProduct?: LockerProduct
   ) {
-    console.log('setEditingLockerProduct', lockerProductId, lockerId)
     editingLockerProductId.value = lockerProductId
     editingLockerId.value = lockerId
     editingLockerProduct.value = lockerProduct || null

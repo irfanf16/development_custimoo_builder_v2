@@ -77,7 +77,7 @@
   const collectionTab = computed(() => props.collectionTab)
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
-  const search = ref('')
+  const search = defineModel<string>('search', { required: true })
   const isEditingLocker = ref(false)
   const isEditingCollection = ref(false)
   const lockerRoomStore = useLockerRoomStore()

@@ -176,16 +176,6 @@
     createEditDialogOpen.value = true
   }
 
-  function onDialogCreated() {
-    createEditDialogOpen.value = false
-    lockerToEdit.value = null
-  }
-
-  function onDialogUpdated() {
-    createEditDialogOpen.value = false
-    lockerToEdit.value = null
-  }
-
   defineExpose({ createLocker })
 
   async function handleLockerDelete(id: number) {
@@ -331,8 +321,11 @@
   <CreateLockerDialog
     :open="createEditDialogOpen"
     :locker="lockerToEdit"
-    @update:open="createEditDialogOpen = $event"
-    @created="onDialogCreated"
-    @updated="onDialogUpdated"
+    @update:open="
+      evt => {
+        createEditDialogOpen = evt
+        lockerToEdit = null
+      }
+    "
   />
 </template>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
+  import { useSceneStore } from '@/stores/scene/scene.store'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
@@ -34,15 +35,44 @@
     roster_table_quantity
   } from '@/paraglide/messages'
   import type { GradientColor, OutputProductText } from '@/services/products/types'
-  import TwoDScene from '@/components/scene/TwoDScene.vue'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
   // Stores
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
   const workflowStore = useWorkflowStore()
+  const sceneStore = useSceneStore()
   const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const { effectiveLogos, effectiveSvgGroups } = useEffectiveSelectors()
+  // Summary product preview: image from canvas instead of live TwoDScene
+
+  const summaryPreviewImage = ref('')
+  const summaryImageLoading = ref(true)
+  onMounted(async () => {
+    summaryImageLoading.value = true
+    summaryPreviewImage.value = ''
+    try {
+      const is3DProduct = activeProductDetails.value?.is_3d_product
+      const thumbOptions = { width: 256, height: 256 }
+      if (is3DProduct) {
+        const componentRef = sceneStore.threeDSceneRef
+        if (componentRef?.getImageFromCanvas) {
+          summaryPreviewImage.value = await componentRef.getImageFromCanvas('front', thumbOptions)
+        }
+      } else {
+        const frontRef = sceneStore.getTwoDSceneRef('front')
+        const getImage = frontRef?.getImageFromCanvas as
+          | ((opts?: { width?: number; height?: number }) => Promise<string>)
+          | undefined
+        if (getImage) {
+          summaryPreviewImage.value = await getImage(thumbOptions)
+        }
+      }
+    } finally {
+      summaryImageLoading.value = false
+    }
+  })
 
   const { activeProductDetails, activeStyleDetails } = storeToRefs(productsStore)
   const { activeProductTexts, rosterEntries } = storeToRefs(customizationStore)
@@ -175,11 +205,14 @@
       <div
         class="shrink-0 w-32 h-32 rounded-xl border bg-muted overflow-hidden flex items-center justify-center"
       >
-        <TwoDScene
-          :side="'front'"
-          :canvas-width="128"
-          :canvas-height="128"
-          canvas-class="rounded-xl"
+        <template v-if="summaryImageLoading">
+          <Spinner class="size-8 text-muted-foreground" />
+        </template>
+        <img
+          v-else-if="summaryPreviewImage"
+          :src="summaryPreviewImage"
+          :alt="productTitle"
+          class="w-full h-full object-contain rounded-xl"
         />
       </div>
       <div class="flex-1 flex flex-col gap-2">

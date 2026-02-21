@@ -94,7 +94,8 @@
     'close',
     'products-deleted',
     'cancel-collection-edit',
-    'confirm-collection-edit'
+    'confirm-collection-edit',
+    'clear-selection'
   ])
 
   const isEditingCollection = computed(() => {
@@ -321,11 +322,13 @@
     isAddingToCart.value = true
     try {
       await cartStore.addLockerProductsToCart(lockerCartPayload.value)
+      emit('clear-selection')
       const total = listModeSelectedCount.value
       toast.success(`Added ${total} item(s) to cart`, {
         position: 'top-right',
         richColors: true
       })
+      emit('clear-selection')
     } catch (error) {
       toast.error('Failed to add products to cart', {
         position: 'top-right',
@@ -559,7 +562,7 @@
               <TrashIcon class="size-4 text-destructive" /> {{ locker_delete({}, { locale }) }}
             </Button>
           </template>
-          <Button v-else variant="outline" class="text-destructive ml-2" @click="handleCancel">
+          <Button v-else variant="secondary" class="ml-2" @click="handleCancel">
             {{ locker_cancel({}, { locale }) }}
           </Button>
         </div>
@@ -572,7 +575,13 @@
     @update:open="showCopyDialog = $event"
     @copy-products="
       async payload => {
-        if (currentLocker) await lockerRoomStore.copyProducts(payload, currentLocker.id)
+        if (currentLocker) {
+          const success = await lockerRoomStore.copyProducts(payload, currentLocker.id)
+          if (success) {
+            showCopyDialog = false
+            emit('clear-selection')
+          }
+        }
       }
     "
   />

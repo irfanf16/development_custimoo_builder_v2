@@ -25,7 +25,8 @@
   const workflowStore = useWorkflowStore()
   const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const { initializeEffects } = useWorkflow()
-
+  const customizationStore = useCustomizationStore()
+  const { customization } = storeToRefs(customizationStore)
   // When active step is not in visible tabs (e.g. product changed and logos tab hidden), redirect to a visible step
   watch(
     () => [workflowStore.activeStep, menuItems.value] as const,
@@ -91,6 +92,8 @@
   import { usePatternsConfig } from './WorkflowSteps/patterns/usePatternsConfig'
   import { useRosterConfig } from './WorkflowSteps/roster/useRosterConfig'
   import { useSummaryConfig } from './WorkflowSteps/summary/useSummaryConfig'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { storeToRefs } from 'pinia'
   // Repeat for other steps as available ...
 
   // Instantiate step configs
@@ -212,7 +215,10 @@
           <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
           <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" />
           <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" />
-          <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" />
+          <SummaryPanel
+            v-else-if="workflowStore.currentStep === 'summary'"
+            :key="JSON.stringify(customization)"
+          />
         </WorkflowPanel>
       </transition>
     </div>

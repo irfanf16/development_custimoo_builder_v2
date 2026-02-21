@@ -273,7 +273,6 @@ export const useAuthStore = defineStore('authStore', () => {
 
   // ===== PERSISTENCE =====
   async function saveToLocalStorage(): Promise<void> {
-    console.log('saveToLocalStorage')
     if (!hasWindow) return
 
     if (customer.value) {

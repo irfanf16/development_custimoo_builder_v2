@@ -145,6 +145,7 @@
       ? ((await lockerRoomStore.fetchLockerProducts(locker.id)) ?? null)
       : locker
     currentMode.value = 'detail'
+    search.value = ''
     if (props.initialTab) {
       lockerTab.value = props.initialTab
       emit('clear-initial-tab')
@@ -333,7 +334,6 @@
   })
 
   const handleSaveCollection = async () => {
-    debugger
     if (!lockerRoomHeaderRef.value) return
     isSavingCollection.value = true
     try {
@@ -921,6 +921,7 @@
     <DialogContent variant="large" class="flex flex-col w-full overflow-hidden">
       <LockerRoomHeader
         ref="lockerRoomHeaderRef"
+        v-model:search="search"
         :current-collection="currentCollection"
         :current-mode="currentMode"
         :sort-option="sortOption"
@@ -1068,6 +1069,7 @@
         @add-products-to-collection="handleAddProductsToCollection"
         @unselect-all-list="handleUnselectAllList"
         @unselect-all-detail="handleUnselectAllDetail"
+        @clear-selection="handleUnselectAllList"
         @products-deleted="handleProductsDeleted"
       />
     </DialogContent>

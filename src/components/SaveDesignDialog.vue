@@ -1,5 +1,4 @@
 <script setup lang="ts">
-  import ProductPreview from '@/components/product-preview/ProductPreview.vue'
   import { Button } from '@/components/ui/button'
   import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
   import { Input } from '@/components/ui/input'
@@ -19,9 +18,7 @@
   import type { Locker } from '@/services/lockers/types'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useSceneStore } from '@/stores/scene/scene.store'
-  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { storeToRefs } from 'pinia'
-  import TwoDScene from './scene/TwoDScene.vue'
 
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import CreateLockerDialog from './locker-room/CreateLockerDialog.vue'
@@ -58,6 +55,7 @@
     time_ago_years_plural
   } from '@/paraglide/messages'
   import Spinner from './ui/spinner/Spinner.vue'
+  import { PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
@@ -79,7 +77,7 @@
   ])
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
-  const sortOption = ref<SortOption>('alphabetical')
+  const sortOption = ref<SortOption>('lastModified')
   const sceneStore = useSceneStore()
   const productName = ref('')
   const selectedLockerId = ref<number | null>(null)
@@ -91,8 +89,9 @@
 
   const frontImage = ref('')
   const backImage = ref('')
+  const mainDisplaySide = ref<'front' | 'back'>('front')
+  const imagesLoading = ref(false)
   const lockerStore = useLockerRoomStore()
-  const workflowStore = useWorkflowStore()
   const lockerStoreRef = storeToRefs(lockerStore)
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
@@ -346,9 +345,17 @@
       }
     }
   }
-  const handlePreviewToggle = () => {
-    workflowStore.toggleActiveCanvasSide()
+  const togglePreviewSide = () => {
+    mainDisplaySide.value = mainDisplaySide.value === 'front' ? 'back' : 'front'
   }
+
+  const mainImageUrl = computed(() =>
+    mainDisplaySide.value === 'front' ? frontImage.value : backImage.value
+  )
+  const thumbnailImageUrl = computed(() =>
+    mainDisplaySide.value === 'front' ? backImage.value : frontImage.value
+  )
+  const imagesReady = computed(() => !!frontImage.value && !!backImage.value)
 
   watch(
     () => props.open,
@@ -366,6 +373,8 @@
     () => props.open,
     async (newVal: boolean) => {
       if (newVal) {
+        mainDisplaySide.value = 'front'
+        imagesLoading.value = true
         productName.value = activeProductDetails.value!.display_name ?? ''
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()
@@ -398,6 +407,7 @@
             backImage.value = await backImageComponentRef.getImageFromCanvas()
           }
         }
+        imagesLoading.value = false
       }
     }
   )
@@ -409,32 +419,37 @@
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="w-full flex flex-col gap-0 p-0 overflow-hidden">
+    <DialogContent
+      variant="large"
+      class="w-full flex flex-col gap-0 p-0 pb-3 overflow-hidden h-fit"
+    >
       <!-- HEADER -->
       <DialogHeader class="p-4">
         <h2 class="text-lg font-semibold">{{ save_design_title({}, { locale }) }}</h2>
       </DialogHeader>
-      <div class="flex overflow-hidden p-4">
-        <!-- LEFT: PRODUCT PREVIEW -->
+      <div class="flex overflow-hidden p-4 max-h-[640px]">
+        <!-- LEFT: IMAGE-ONLY PREVIEW (no canvas) -->
         <div
-          class="w-[60%] p-6 flex items-center justify-center bg-accent relative h-fit! rounded-[20px]"
+          class="w-[60%] p-6 flex items-center justify-center bg-accent relative h-full! rounded-[20px] max-h-[640px]"
         >
-          <ProductPreview class="h-fit!" />
-
-          <div
-            v-if="!activeProductDetails?.is_3d_product"
-            class="w-fit h-fit p-2 rounded-2xl backdrop-blur-sm bg-white absolute right-6 bottom-6 z-[100] cursor-pointer"
-            @click="handlePreviewToggle"
-          >
-            <div class="size-24 flex items-center justify-center">
-              <TwoDScene
-                :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
-                :canvas-width="600"
-                :canvas-height="600"
-                canvas-class="w-full h-full object-contain rounded-lg transition-opacity duration-300"
+          <template v-if="imagesLoading">
+            <div class="flex items-center justify-center size-full">
+              <Spinner class="w-10 h-10 text-muted-foreground" />
+            </div>
+          </template>
+          <template v-else-if="imagesReady">
+            <img :src="mainImageUrl" alt="Design preview" class="w-[80%] object-contain" />
+            <div
+              class="size-28 p-2 rounded-2xl backdrop-blur-sm absolute right-6 bottom-6 z-[100] cursor-pointer border border-accent-foreground bg-accent"
+              @click="togglePreviewSide"
+            >
+              <img
+                :src="thumbnailImageUrl"
+                alt="Other side"
+                class="w-full h-full object-contain rounded-lg transition-opacity duration-300"
               />
             </div>
-          </div>
+          </template>
         </div>
 
         <!-- RIGHT: LOCKER LIST -->
@@ -549,11 +564,18 @@
                   locker.product_thumbnails.length >= 4 && 'grid-cols-2 grid-rows-2'
                 ]"
               >
+                <template v-if="locker.product_thumbnails.length">
+                  <img
+                    v-for="(img, i) in locker.product_thumbnails.slice(0, 4)"
+                    :key="i"
+                    :src="baseStorageUrl + img"
+                    class="object-contain w-full h-full"
+                  />
+                </template>
                 <img
-                  v-for="(img, i) in locker.product_thumbnails.slice(0, 4)"
-                  :key="i"
-                  :src="baseStorageUrl + img"
-                  class="object-contain w-full h-full"
+                  v-else
+                  :src="PLACEHOLDER_IMAGE"
+                  class="h-full overflow-hidden object-contain rounded-md mx-auto w-full"
                 />
               </div>
 
