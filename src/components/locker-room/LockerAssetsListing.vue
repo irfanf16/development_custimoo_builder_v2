@@ -107,7 +107,7 @@
 
       <!-- Metadata -->
       <div class="flex flex-col items-center justify-center gap-2">
-        <div class="mt-2 text-sm text-center font-medium text-wrap w-full">
+        <div class="mt-2 text-sm text-center font-medium w-full break-all">
           {{ logo.logo_name }}
         </div>
         <Button variant="outline" class="w-full" @click="handleUseInDesign(logo)">

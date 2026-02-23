@@ -64,7 +64,10 @@
     )
     closeLockerBrowser?.()
   }
-
+  const getGridCols = (length: number) => {
+    const cols = Math.ceil(Math.sqrt(length))
+    return length < 4 ? `grid-cols-${length}` : `grid-cols-${cols}`
+  }
   onMounted(() => {
     if (!props.locker.colours_fetched) {
       useLockerRoomStore().fetchLockerAssets(props.locker.id)
@@ -78,16 +81,18 @@
       :key="group_index"
       class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative !gap-0 h-fit duration-150 border-0"
     >
+      {{ color.colour_group.length }}
       <div
         class="bg-secondary rounded-md aspect-video overflow-hidden grid border relative place-items-center"
-        :class="{
+        :class="getGridCols(color.colour_group.length)"
+      >
+        <!-- :class="{
           'grid-cols-3': color.colour_group.length >= 3,
           'grid-cols-2': color.colour_group.length === 2,
           'grid-cols-1': color.colour_group.length === 1
-        }"
-      >
+        }" -->
         <div
-          v-for="(c, cInd) in color.colour_group.slice(0, 3)"
+          v-for="(c, cInd) in color.colour_group"
           :key="cInd"
           class="w-full h-full"
           :style="{ backgroundColor: c.value }"

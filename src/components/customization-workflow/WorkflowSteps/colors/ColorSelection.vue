@@ -561,7 +561,7 @@
           </button>
         </div>
         <Button
-          class="ml-auto bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+          class="ml-auto bg-primary hover:bg-primary/90 text-white shrink-0"
           :disabled="!hasSvgParts || appliedLogoColors.length === 0"
           @click="shuffleExtractedColorsAmongSvgParts"
         >

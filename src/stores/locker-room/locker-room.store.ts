@@ -176,6 +176,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
 
       setSuccessMessage('Products deleted successfully')
       await fetchLockerProducts(locker_id)
+      await fetchLockerAssets(locker_id)
       // Sync thumbnails and count from product array so list shows correct state after delete
       lockers.value = lockers.value.map(l => {
         if (l.id !== locker_id) return l
@@ -183,7 +184,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
         return {
           ...l,
           product_count: productList.length,
-          product_thumbnails: productList.map(p => p.product_front_url).slice(0, 4)
+          product_thumbnails: productList.map(p => p.product_front_url).slice(0, 4),
+          updated_at: new Date().toISOString()
         }
       })
     } finally {
@@ -291,6 +293,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     })
     setSuccessMessage('Design saved successfully')
     await fetchLockerProducts(locker_id)
+    await fetchLockerAssets(locker_id)
     // Sync thumbnails from product array so new product image is reflected in the list
     lockers.value = lockers.value.map(l => {
       if (l.id !== locker_id || !l.product?.length) return l
@@ -316,12 +319,14 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     }
     // Refresh locker products to get updated data
     await fetchLockerProducts(locker_id)
+    await fetchLockerAssets(locker_id)
     // Sync thumbnails from product array so updated product image is reflected in the list
     lockers.value = lockers.value.map(l => {
       if (l.id !== locker_id || !l.product?.length) return l
       return {
         ...l,
-        product_thumbnails: l.product.map(p => p.product_front_url).slice(0, 4)
+        product_thumbnails: l.product.map(p => p.product_front_url).slice(0, 4),
+        updated_at: new Date().toISOString()
       }
     })
     setSuccessMessage('Design updated successfully')

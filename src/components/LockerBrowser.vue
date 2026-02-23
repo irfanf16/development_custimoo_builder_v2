@@ -997,6 +997,7 @@
               >
                 <LockerDetail
                   ref="lockerDetailsRef"
+                  :key="currentLocker.id"
                   :is-creating-collection="lockerRoomHeaderRef?.creatingCollection ?? false"
                   :locker-tab="lockerTab"
                   :locker="currentLocker"
