@@ -16,8 +16,10 @@ import {
   FileIcon
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
+import { useFileDownload } from '@/composables/useFileDownload'
 
 export function useOrderTimeline() {
+  const { downloadFiles, isLoading } = useFileDownload()
   const CustimooOrderFlowStatuses: Record<string, string> = {
     quote_requested: 'Quote Requested',
     quote_rejected: 'Quote Rejected',
@@ -293,12 +295,24 @@ export function useOrderTimeline() {
   const isNullOrEmpty = (value: string | null | undefined): boolean => {
     return value === null || value === undefined || value === '' || value === 'null'
   }
+  const downloadStatusActivityImages = async (
+    activity_files: Array<{ url: string; name?: string; alt?: string }> = []
+  ): Promise<void> => {
+    if (!activity_files.length) {
+      console.warn('No activity files to download')
+      return
+    }
+
+    await downloadFiles(activity_files)
+  }
 
   return {
     activityStatus,
     CustimooOrderFlowStatuses,
     getActivityIcon,
     getActivityContent,
-    isNullOrEmpty
+    isNullOrEmpty,
+    downloadStatusActivityImages,
+    isLoading
   }
 }

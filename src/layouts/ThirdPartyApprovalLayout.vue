@@ -2,6 +2,7 @@
   import { useThirdPartyApprovalInitialization } from '@/composables/useThirdPartyApprovalInitialization'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
   import { Button } from '@/components/ui/button'
+  import { ScrollArea } from '@/components/ui/scroll-area'
 
   const { isLoading, unauthorized, error, isInitialized, initializeApp } =
     useThirdPartyApprovalInitialization()
@@ -72,8 +73,8 @@
     </div>
 
     <!-- Success State - Render Slot -->
-    <div v-else-if="isInitialized">
+    <ScrollArea v-else-if="isInitialized" class="h-screen w-full overflow-y-auto">
       <slot />
-    </div>
+    </ScrollArea>
   </div>
 </template>

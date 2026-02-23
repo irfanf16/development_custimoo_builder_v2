@@ -1,8 +1,18 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API } from '@/services'
-import type { Order, OrderDetailResponse } from '@/services/orders/types'
+import type { Order, OrderDetailResponse, Item, FactoryProduct } from '@/services/orders/types'
 import { useLocalStorage } from '@/composables/useLocalStorage'
+import { confirmDialog } from '@/lib/confirm-dialog'
+import { toast } from 'vue-sonner'
+import { useTryCatchApi } from '@/composables/useTryCatchApi'
+import { useCartStore } from '@/stores/cart/cart.store'
+import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useLoadReorderProductIntoCustomizer } from '@/composables/useLoadReorderProductIntoCustomizer'
+import { useProductsStore } from '@/stores/products/products.store'
+import { useAppStore } from '@/stores/app/app.store'
+import { generateRandomString } from '@/lib/utils'
+import type { ShareDesignPayload } from '@/services/products/types/base-product'
 
 export const useOrdersStore = defineStore('ordersStore', () => {
   // --- STATE ---
@@ -152,7 +162,7 @@ export const useOrdersStore = defineStore('ordersStore', () => {
       if (filter) params += `&filter=${encodeURIComponent(filter)}`
 
       const res = await API.orders.getOrders(params, ordersPageType.value)
-      const newOrders = (res.data ?? []) as Order[]
+      const newOrders = res.data ?? []
       orders.value.push(...newOrders)
       makePagination(res)
       saveToLocalStorage()
@@ -181,19 +191,190 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     await filterOrders()
   }
 
-  async function cancelOrder(order: { id: number | string; order_no?: string }) {
-    const title = order.order_no ? `Order no: ${order.order_no}` : 'Order pending confirmation'
-    const msg = `${title}\nAre you sure you want to cancel this order?`
-    if (!window.confirm(msg)) return
+  // Loading states for order actions
+  const isCancelling = ref(false)
+  const loadingCart = ref<Record<string, boolean>>({})
+  const loadingShare = ref<Record<string, boolean>>({})
 
-    isLoadingOrders.value = true
+  // Dependencies for order actions
+  const cartStore = useCartStore()
+  const customizationStore = useCustomizationStore()
+  const productsStore = useProductsStore()
+  const appStore = useAppStore()
+  const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'ordersStore' } })
+  const { loadReorderProductIntoCustomizer } = useLoadReorderProductIntoCustomizer()
+
+  /**
+   * Download PDF for an order
+   */
+  async function downloadOrderPdf(order: Order) {
+    if (!order?.id) return
+
+    const response = await tryCatchApi(API.orders.getDesignFileUrl(order.id), {
+      operation: 'downloadOrderPdf',
+      order_id: order.id
+    })
+
+    if (response.success && response.content?.result?.url) {
+      window.open(response.content.result.url, '_blank')
+    } else if (!response.success) {
+      toast.error('Failed to load PDF. Please try again.', {
+        position: 'top-right',
+        richColors: true
+      })
+    }
+  }
+
+  /**
+   * Cancel an order with confirmation dialog
+   */
+  async function cancelOrder(order: Order) {
+    if (!order?.id) return
+
+    // Build confirmation message
+    const title = order.order_no ? `Order no: ${order.order_no}` : 'Order pending confirmation'
+    const description = 'Are you sure that you want to cancel this order?'
+
+    // Show confirmation dialog
+    const confirmed = await confirmDialog({
+      title,
+      description,
+      confirmText: 'Confirm',
+      cancelText: 'Cancel'
+    })
+
+    if (!confirmed) return
+
+    isCancelling.value = true
     try {
-      const res = await API.orders.cancelOrder(order.id)
-      if (res.success) await fetchOrders()
-    } catch (e: unknown) {
-      console.error('Cancel order failed:', e)
+      const response = await API.orders.cancelOrder(order.id)
+
+      if (response.success) {
+        toast.success(response.message || 'Order cancelled successfully', {
+          position: 'top-right',
+          richColors: true
+        })
+        // Refresh order details if it's the active order
+        if (activeOrder.value?.id === order.id) {
+          await fetchOrderDetails(order.id)
+        }
+        // Refresh orders list
+        await fetchOrders()
+      } else {
+        toast.error(response.message || 'ERROR! Could not cancel the order, please try again.', {
+          position: 'top-right',
+          richColors: true
+        })
+      }
+    } catch (_error) {
+      toast.error('ERROR! Could not cancel the order, please try again.', {
+        position: 'top-right',
+        richColors: true
+      })
     } finally {
-      isLoadingOrders.value = false
+      isCancelling.value = false
+    }
+  }
+
+  /**
+   * Add product to cart from order
+   */
+  async function addProductToCartFromOrder(
+    product: FactoryProduct,
+    item: Item,
+    key: string
+  ): Promise<boolean> {
+    if (!product?.product_id || !item?.id || !product?.id) return false
+
+    const productId = Number(product.product_id)
+    if (!Number.isFinite(productId)) return false
+
+    loadingCart.value[key] = true
+    try {
+      const response = await tryCatchApi(
+        API.cart.addToCartFromOrder(productId, item.id, product.id),
+        {
+          operation: 'addProductToCartFromOrder'
+        }
+      )
+
+      if (response.success) {
+        const successMessage =
+          (response.content as { message?: string })?.message ||
+          'Product added to cart successfully'
+        toast.success(successMessage, {
+          position: 'top-right',
+          richColors: true
+        })
+        void cartStore.fetchCart(true)
+        return true
+      } else {
+        let errorMessage = 'Failed to add product to cart'
+
+        if (
+          response.axiosError?.response?.data &&
+          typeof response.axiosError.response.data === 'object' &&
+          'message' in response.axiosError.response.data
+        ) {
+          const axiosMessage = (response.axiosError.response.data as { message?: unknown }).message
+          if (typeof axiosMessage === 'string') {
+            errorMessage = axiosMessage
+          }
+        }
+
+        toast.error(errorMessage, {
+          position: 'top-right',
+          richColors: true
+        })
+        return false
+      }
+    } catch (_error) {
+      toast.error('Failed to add product to cart', {
+        position: 'top-right',
+        richColors: true
+      })
+      return false
+    } finally {
+      loadingCart.value[key] = false
+    }
+  }
+
+  /**
+   * Reorder a product from an order
+   */
+  async function reorderProduct(
+    order: Order,
+    orderItem: Item,
+    factoryProduct: FactoryProduct,
+    onSuccess?: () => void
+  ): Promise<boolean> {
+    if (!order?.id || orderItem?.id == null || factoryProduct?.id == null) return false
+
+    const orderId = Number(order.id)
+    const orderItemId = Number(orderItem.id)
+    const factoryProductId = factoryProduct.id
+    const productId = Number(factoryProduct.product_id)
+
+    if (!orderId || !orderItemId || !factoryProductId || !productId) return false
+
+    // Save reorder data to customization store
+    customizationStore.setReorderData(orderItemId, String(factoryProductId))
+
+    const success = await loadReorderProductIntoCustomizer({
+      orderItemId,
+      factoryProductId
+    })
+
+    if (success) {
+      if (onSuccess) onSuccess()
+      return true
+    } else {
+      toast.error('Failed to load reorder product. Please try again.', {
+        position: 'top-right',
+        richColors: true
+      })
+      customizationStore.clearReorderData()
+      return false
     }
   }
 
@@ -261,6 +442,169 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     saveToLocalStorage()
   }
 
+  function getShareBaseUrl() {
+    if (typeof window === 'undefined') return ''
+    const origin = window.location.origin
+    if (!appStore.appInfo?.is_subpage) return origin
+    const subpageUrl = appStore.appInfo?.suppage_url ?? ''
+    if (!subpageUrl) return origin
+    const normalizedSubpage = `/${subpageUrl.replace(/^\/+/, '').replace(/\/+$/, '')}`
+    return `${origin}${normalizedSubpage}`
+  }
+
+  /**
+   * Share design for an order product
+   */
+  async function shareOrderProductDesign(
+    order: Order,
+    orderItem: Item,
+    factoryProduct: FactoryProduct
+  ): Promise<string | null> {
+    if (!orderItem?.id || !factoryProduct?.id) {
+      toast.error('Invalid order product', { position: 'top-right', richColors: true })
+      return null
+    }
+
+    const key = `${orderItem.id}-${factoryProduct.id}`
+    loadingShare.value[key] = true
+
+    try {
+      // Get full product data from reorder API
+      const reorderResp = await tryCatchApi(
+        API.orders.getReorderProduct(Number(orderItem.id), factoryProduct.id),
+        {
+          operation: 'shareOrderProductDesign',
+          order_item_id: orderItem.id,
+          factory_product_id: factoryProduct.id
+        }
+      )
+
+      if (!reorderResp.success || !reorderResp.content?.result?.factoryProducts?.length) {
+        toast.error('Failed to load product data for sharing', {
+          position: 'top-right',
+          richColors: true
+        })
+        return null
+      }
+
+      const fullProduct = reorderResp.content.result.factoryProducts[0]
+      if (!fullProduct) {
+        toast.error('Product data not found', { position: 'top-right', richColors: true })
+        return null
+      }
+
+      // Build share design payload
+      const productId = Number(fullProduct.product_id || factoryProduct.product_id)
+      if (!productId) {
+        toast.error('Product ID not found', { position: 'top-right', richColors: true })
+        return null
+      }
+
+      const productName = fullProduct.product_name || factoryProduct.product_name || 'Product'
+      const encodedName = encodeURIComponent(productName).replace(/%20/g, '+')
+      const randString = generateRandomString()
+
+      // Normalize image paths - ensure they're file paths, not full URLs
+
+      const frontImage = (fullProduct.front_image as string) || factoryProduct.front_image
+
+      const backImage = (fullProduct.back_image as string) || factoryProduct.back_image
+
+      // Extract customization data from full product
+      const sharePayload: ShareDesignPayload = {
+        addons:
+          (fullProduct.addons as ShareDesignPayload['addons']) ||
+          ({} as ShareDesignPayload['addons']),
+        roster_url: `${getShareBaseUrl()}/share/${encodedName}/${randString}`,
+        product_id: productId,
+        product_name: productName,
+        svg_parts: (fullProduct.svg_parts as ShareDesignPayload['svg_parts']) || [],
+        style_id: Number(fullProduct.style_id || factoryProduct.style_id || 0),
+        design_id: Number(fullProduct.design_id || factoryProduct.design_id || 0),
+        custom_logos: (fullProduct.custom_logos as ShareDesignPayload['custom_logos']) || [],
+        text: (fullProduct.text as ShareDesignPayload['text']) || [],
+        colors: (fullProduct.colors as ShareDesignPayload['colors']) || [],
+        shuffle_color_number: Number(fullProduct.shuffle_color_number) || 0,
+        defaultcolors: (fullProduct.defaultcolors as ShareDesignPayload['defaultcolors']) || [],
+        groupcolors: (fullProduct.groupcolors as ShareDesignPayload['groupcolors']) || {},
+        front_image: frontImage ?? '',
+        back_image: backImage ?? '',
+        product_roster_detail:
+          (fullProduct.product_roster_detail as ShareDesignPayload['product_roster_detail']) || [],
+        fixed_logo_index: Number(fullProduct.fixed_logo_index) || 0,
+        svgcolors: (fullProduct.svgcolors as ShareDesignPayload['svgcolors']) || [],
+        grouped_addons: (fullProduct.grouped_addons as ShareDesignPayload['grouped_addons']) || {},
+        ungrouped_addons:
+          (fullProduct.ungrouped_addons as ShareDesignPayload['ungrouped_addons']) || [],
+        group_patterns: (fullProduct.group_patterns as ShareDesignPayload['group_patterns']) || {},
+        rand_string: randString,
+        room_id: null,
+        category_id:
+          typeof fullProduct.category_id === 'number' ? fullProduct.category_id : undefined,
+        sub_category_id:
+          typeof fullProduct.sub_category_id === 'number' || fullProduct.sub_category_id === null
+            ? fullProduct.sub_category_id
+            : null
+      }
+
+      const response = await productsStore.shareDesign(sharePayload)
+
+      if (response.success && response.content?.url) {
+        // Update the product with share URL
+        if (!factoryProduct.share_design_info) {
+          factoryProduct.share_design_info = {}
+        }
+        factoryProduct.share_design_info.share_url = response.content.url
+
+        // Update in active order if it's the current one
+        if (activeOrder.value?.id === order.id) {
+          const item = activeOrder.value.items?.find(i => i.id === orderItem.id)
+          if (item) {
+            const prod = item.factory_products?.find(p => p.id === factoryProduct.id)
+            if (prod && !prod.share_design_info) {
+              prod.share_design_info = {}
+            }
+            if (prod?.share_design_info) {
+              prod.share_design_info.share_url = response.content.url
+            }
+          }
+        }
+
+        // Update in orders list
+        const orderInList = orders.value.find(o => o.id === order.id)
+        if (orderInList) {
+          const item = orderInList.items?.find(i => i.id === orderItem.id)
+          if (item) {
+            const prod = item.factory_products?.find(p => p.id === factoryProduct.id)
+            if (prod && !prod.share_design_info) {
+              prod.share_design_info = {}
+            }
+            if (prod?.share_design_info) {
+              prod.share_design_info.share_url = response.content.url
+            }
+          }
+        }
+
+        toast.success('Design shared successfully!', {
+          position: 'top-right',
+          richColors: true,
+          duration: 3000
+        })
+
+        return response.content.url
+      } else {
+        toast.error('Failed to share design', { position: 'top-right', richColors: true })
+        return null
+      }
+    } catch (error) {
+      console.error('Share order product design error:', error)
+      toast.error('Failed to share design', { position: 'top-right', richColors: true })
+      return null
+    } finally {
+      loadingShare.value[key] = false
+    }
+  }
+
   // --- RETURN ---
   return {
     // State
@@ -275,6 +619,9 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     activeOrder,
     activeOrderView,
     isLoadingMore,
+    isCancelling,
+    loadingCart,
+    loadingShare,
 
     // Actions
     fetchOrders,
@@ -284,6 +631,10 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     clearSearch,
     clearFilter,
     cancelOrder,
+    downloadOrderPdf,
+    addProductToCartFromOrder,
+    reorderProduct,
+    shareOrderProductDesign,
     setView,
     openOrderDetails,
     fetchOrderDetails,

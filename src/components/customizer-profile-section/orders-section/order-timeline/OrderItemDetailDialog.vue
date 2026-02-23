@@ -135,11 +135,12 @@
                 </div>
               </div>
               <button
-                class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="!previewImages || previewImages.length === 0"
+                class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+                :disabled="!previewImages || previewImages.length === 0 || isLoading"
                 @click="downloadPreviewImages"
               >
-                Download Preview Images
+                <Loader2Icon v-if="isLoading" class="w-4 h-4 animate-spin mr-2" />
+                <span>{{ isLoading ? 'Downloading...' : 'Download Preview Images' }}</span>
               </button>
             </div>
           </div>
@@ -158,10 +159,14 @@
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
   import { useTryCatchApi } from '@/composables/useTryCatchApi'
   import { API } from '@/services'
+  import { useFileDownload } from '@/composables/useFileDownload'
+  import { Loader2Icon } from 'lucide-vue-next'
 
   const { tryCatchApi } = useTryCatchApi({
     defaultProperties: { component: 'OrderItemDetailDialog' }
   })
+
+  const { downloadFiles, isLoading } = useFileDownload()
 
   interface Props {
     open?: boolean
@@ -219,34 +224,36 @@
   async function downloadPreviewImages() {
     if (!props.previewImages || props.previewImages.length === 0) return
 
-    try {
-      // Convert URLs to base64 and download
-      const base64Files = await Promise.all(
-        props.previewImages.map(async image => {
-          const imageUrl = image.url.startsWith('http') ? image.url : `${storageUrl}${image.url}`
-          const response = await fetch(imageUrl)
-          const blob = await response.blob()
-          return new Promise<string>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onloadend = () => resolve(reader.result as string)
-            reader.onerror = reject
-            reader.readAsDataURL(blob)
-          })
-        })
-      )
+    // Prepare images with relative URLs (no storage prefix) and proper names
 
-      // Create download links for each image
-      base64Files.forEach((base64File, index) => {
-        const link = document.createElement('a')
-        link.href = base64File
-        link.download = props.previewImages[index]?.name || `preview_image_${index + 1}.png`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      })
-    } catch (error) {
-      console.error('Error downloading preview images:', error)
-    }
+    const preparedImages = props.previewImages.map(image => {
+      let imageUrl = image.url || ''
+      if (imageUrl.startsWith('http')) {
+        try {
+          const urlObj = new URL(imageUrl)
+          imageUrl = urlObj.pathname.startsWith('/') ? urlObj.pathname.slice(1) : urlObj.pathname
+        } catch {
+          const match = imageUrl.match(/\/company_\d+\/.*$/)
+          if (match) {
+            imageUrl = match[0].startsWith('/') ? match[0].slice(1) : match[0]
+          }
+        }
+      }
+
+      // Use provided name or generate from URL
+      const fileName =
+        image.name ||
+        (imageUrl ? imageUrl.split('/').pop() || 'preview_image.png' : 'preview_image.png')
+
+      return {
+        url: imageUrl,
+        name: fileName,
+        alt: image.alt
+      }
+    })
+
+    // Use the composable which handles loading state and base64 conversion
+    await downloadFiles(preparedImages)
   }
 
   async function handleDownloadPdf() {

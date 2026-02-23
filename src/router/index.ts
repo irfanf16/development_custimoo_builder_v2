@@ -25,12 +25,12 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/third-party-approval/:order_item_id',
+    path: '/third-party-feedback/:order_item_id',
     name: 'ThirdPartyApproval',
     component: () => import('@/views/ThirdPartyApproval.vue'),
     meta: {
       layout: 'third-party-approval',
-      intitializationType: 'third-party-approval',
+      initializationType: 'third-party-approval',
       title: 'Third Party Approval'
     }
   },

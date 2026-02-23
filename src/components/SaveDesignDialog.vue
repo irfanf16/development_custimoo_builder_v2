@@ -24,6 +24,7 @@
   import CreateLockerDialog from './locker-room/CreateLockerDialog.vue'
   import type { SaveLockerProductPayload } from '@/services/lockers/types'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import {
     design_name_placeholder,
     design_search_locker_placeholder,
@@ -95,10 +96,14 @@
   const lockerStoreRef = storeToRefs(lockerStore)
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
+  const uiStore = useUIStore()
   const isSubmitting = ref<boolean>(false)
   const createLocker = ref<boolean>(false)
   const { activeProductDetails } = storeToRefs(productsStore)
   const customizationStoreRef = storeToRefs(customizationStore)
+
+  // Check if we have order product data
+  const orderProductData = computed(() => uiStore.orderProductData)
 
   const timeAgoMessages = computed(() => ({
     just_now: () => time_ago_just_now({}, { locale: locale.value }),
@@ -375,6 +380,7 @@
       if (newVal) {
         mainDisplaySide.value = 'front'
         imagesLoading.value = true
+        console.log('orderProductData in watch:', orderProductData.value)
         productName.value = activeProductDetails.value!.display_name ?? ''
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()

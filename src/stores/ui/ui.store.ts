@@ -14,6 +14,16 @@ export const useUIStore = defineStore('uiStore', () => {
   const containerWidth = ref<number>(0)
   const containerHeight = ref<number>(0)
   const isFullscreen = ref(false)
+  // Shared dialog states - managed centrally to avoid duplication
+  const showSaveDesignDialog = ref(false)
+  const showLockerBrowser = ref(false)
+  const initialLockerIdToOpen = ref<number | null>(null)
+  // Order product data for save design dialog
+  const orderProductData = ref<{
+    product: import('@/services/orders/types').FactoryProduct
+    item: import('@/services/orders/types').Item
+    order: import('@/services/orders/types').Order
+  } | null>(null)
   let resizeObserver: ResizeObserver | null = null
   let fullscreenRestore: (() => void) | null = null
   let lastViewportScroll = 0
@@ -410,6 +420,42 @@ export const useUIStore = defineStore('uiStore', () => {
     )
   }
 
+  // Shared dialog management methods
+  function openSaveDesignDialog(
+    orderProductDataParams?: {
+      product: import('@/services/orders/types').FactoryProduct
+      item: import('@/services/orders/types').Item
+      order: import('@/services/orders/types').Order
+    } | null
+  ) {
+    if (orderProductDataParams) {
+      orderProductData.value = orderProductDataParams
+    }
+    showSaveDesignDialog.value = true
+  }
+
+  function closeSaveDesignDialog() {
+    showSaveDesignDialog.value = false
+    orderProductData.value = null
+  }
+
+  function openLockerBrowser(lockerId?: number | null) {
+    if (lockerId !== undefined) {
+      initialLockerIdToOpen.value = lockerId
+    }
+    showLockerBrowser.value = true
+  }
+
+  function closeLockerBrowser() {
+    showLockerBrowser.value = false
+    initialLockerIdToOpen.value = null
+  }
+
+  function handleSavedToLocker(lockerId: number) {
+    closeSaveDesignDialog()
+    openLockerBrowser(lockerId)
+  }
+
   return {
     isMobileMenuOpen,
     isLoginDialogOpen,
@@ -440,6 +486,16 @@ export const useUIStore = defineStore('uiStore', () => {
     setContainerSize,
     mobileBreakpoint,
     isFullscreen,
-    toggleFullscreen
+    toggleFullscreen,
+    // Shared dialog states
+    showSaveDesignDialog,
+    showLockerBrowser,
+    initialLockerIdToOpen,
+    orderProductData,
+    openSaveDesignDialog,
+    closeSaveDesignDialog,
+    openLockerBrowser,
+    closeLockerBrowser,
+    handleSavedToLocker
   }
 })

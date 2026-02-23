@@ -23,6 +23,9 @@ export interface FactoryProduct {
   is_possible_reorder?: boolean
   design_nick_name?: string
   addons?: Addon[]
+  share_design_info?: {
+    share_url?: string
+  }
 }
 export interface OrdersResponse {
   data: Order[]

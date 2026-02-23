@@ -22,24 +22,26 @@
           </Button>
         </template>
         <Button
-          v-if="order.items?.some(i => i.status === 'submitted_for_factory_review')"
+          v-if="order.items?.every(i => i.status === 'submitted_for_factory_review')"
           size="sm"
-          variant="ghost"
-          class="text-xs border"
-          @click="emit('cancel', order)"
+          class="hover:bg-transparent hover:text-red-600 hover:border hover:border-red-600"
+          @click="handleCancelOrder"
         >
           Cancel
         </Button>
 
-        <Button size="sm" variant="ghost" class="text-xs border" @click="emit('pdf', order)">
+        <Button
+          size="sm"
+          class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+          @click="handleDownloadPdf"
+        >
           PDF
         </Button>
 
         <Button
           v-if="!showTimeline"
           size="sm"
-          variant="ghost"
-          class="text-xs border"
+          class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
           @click="emit('details', order)"
         >
           Order Details
@@ -122,6 +124,7 @@
   })
 
   const store = useOrdersStore()
+
   function getTotalQuantity(order: Order): number {
     if (!order?.items?.length) return 0
 
@@ -133,9 +136,18 @@
       return total + factoryTotal
     }, 0)
   }
+
   function openTimeline() {
     if (!props.order?.id) return
     // Fetch latest detail and update breadcrumb to include timeline wording
     store.openOrderTimeline(props.order.id)
+  }
+
+  function handleDownloadPdf() {
+    emit('pdf', props.order)
+  }
+
+  function handleCancelOrder() {
+    emit('cancel', props.order)
   }
 </script>

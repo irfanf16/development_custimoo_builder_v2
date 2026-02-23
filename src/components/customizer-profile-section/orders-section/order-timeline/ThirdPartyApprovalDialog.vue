@@ -8,7 +8,7 @@
       </DialogHeader>
 
       <div class="space-y-4 py-4">
-        <div class="space-y-2">
+        <div class="space-y-2 flex flex-col">
           <label for="approvalEmail" class="text-sm font-medium text-foreground">
             Enter Email for Approval
           </label>

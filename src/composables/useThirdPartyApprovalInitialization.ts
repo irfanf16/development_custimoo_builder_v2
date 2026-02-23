@@ -116,9 +116,11 @@ export function useThirdPartyApprovalInitialization() {
     })
 
     if (response.success && response.content) {
+      const data = response.content as { success?: boolean; message?: string }
+      // Backend may not send success; treat 2xx response as success unless success is explicitly false
       return {
-        success: response.content.success,
-        message: response.content.message
+        success: data.success !== false,
+        message: data.message
       }
     }
 

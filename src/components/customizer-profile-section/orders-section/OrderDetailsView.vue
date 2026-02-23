@@ -6,7 +6,7 @@
         :order="order"
         :show-timeline="true"
         @cancel="store.cancelOrder"
-        @pdf="() => {}"
+        @pdf="store.downloadOrderPdf"
         @details="() => {}"
         @accept-quote="handleAcceptQuote"
         @reject-quote="handleRejectQuote"
@@ -107,36 +107,57 @@
                   size="sm"
                   class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
                   :title="orders_action_save({}, { locale })"
+                  @click="handleSaveToLocker(item, product)"
                 >
                   <i-flex-line-save class="size-4" /> {{ orders_action_save({}, { locale }) }}
                 </Button>
 
+                <template v-if="product.share_design_info?.share_url">
+                  <Button
+                    size="sm"
+                    class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+                    title="Copy Share Url"
+                    @click="copyShareUrl(product.share_design_info.share_url!, $event)"
+                  >
+                    <Copy class="size-4" /> Copy Share Url
+                  </Button>
+                </template>
                 <Button
+                  v-else
                   size="sm"
-                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary disabled:cursor-not-allowed"
                   :title="orders_action_share({}, { locale })"
+                  :disabled="store.loadingShare[`${item.id}-${product.id}`]"
+                  :loading="store.loadingShare[`${item.id}-${product.id}`]"
+                  @click="handleShareDesign(item, product)"
                 >
-                  <i-flex-line-share class="size-4" /> {{ orders_action_share({}, { locale }) }}
+                  <i-flex-line-share
+                    v-if="!store.loadingShare[`${item.id}-${product.id}`]"
+                    class="size-4"
+                  />
+                  <RefreshCw v-else class="size-4 animate-spin" />
+                  {{ orders_action_share({}, { locale }) }}
                 </Button>
 
                 <Button
                   size="sm"
-                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary disabled:cursor-not-allowed"
                   :title="orders_action_add_to_cart({}, { locale })"
-                  :disabled="loadingCart[`${index}-${pIdx}`]"
-                  :loading="loadingCart[`${index}-${pIdx}`]"
+                  :disabled="store.loadingCart[`${index}-${pIdx}`]"
+                  :loading="store.loadingCart[`${index}-${pIdx}`]"
                   @click.once="addToCart(product, item, index, pIdx)"
                 >
                   <i-flex-line-cart class="size-4" /> {{ topbar_cart({}, { locale }) }}
                 </Button>
                 <Button
                   size="sm"
-                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+                  class="hover:bg-transparent hover:text-primary hover:border hover:border-primary disabled:cusror-not-allowed"
                   :title="orders_action_reorder({}, { locale })"
-                  :disabled="product.can_reorder === false"
+                  :disabled="!product.can_reorder || Boolean(order.order_no) === false"
                   @click.once="handleReorder(item, product)"
                 >
-                  <i-flex-line-reorder class="size-4" /> {{ orders_action_reorder({}, { locale }) }}
+                  <RefreshCw class="size-4" />
+                  {{ orders_action_reorder({}, { locale }) }}
                 </Button>
               </div>
             </div>
@@ -168,26 +189,20 @@
     orders_action_reorder,
     topbar_cart
   } from '@/paraglide/messages'
-  import { useLoadReorderProductIntoCustomizer } from '@/composables/useLoadReorderProductIntoCustomizer'
   import type { Item, FactoryProduct } from '@/services/orders/types'
   import Button from '@/components/ui/button/Button.vue'
-  import { useCartStore } from '@/stores/cart/cart.store'
+  import { RefreshCw, Copy } from 'lucide-vue-next'
   import { toast } from 'vue-sonner'
-  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
   const props = defineProps<{ order: Order }>()
   const emit = defineEmits<{ (e: 'back'): void; (e: 'reorder-success'): void }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
   const store = useOrdersStore()
   const profileStore = useProfileStore()
+  const uiStore = useUIStore()
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { component: 'OrderDetailsView' } })
-  const { loadReorderProductIntoCustomizer } =
-    // isLoading: isReorderLoading
-    useLoadReorderProductIntoCustomizer()
   const showQuoteModal = ref(false)
   const locale = computed(() => profileStore.currentLocale || 'en')
-  const cartStore = useCartStore()
-  const loadingCart = ref<Record<string, boolean>>({})
-  const customizationStore = useCustomizationStore()
 
   async function handleAcceptQuote() {
     showQuoteModal.value = true
@@ -230,51 +245,44 @@
   }
 
   async function handleReorder(orderItem: Item, factoryProduct: FactoryProduct) {
-    if (!props.order?.id || orderItem?.id == null || factoryProduct?.id == null) return
-    const orderId = Number(props.order.id)
-    const orderItemId = Number(orderItem.id)
-    const factoryProductId = factoryProduct.id
-    const productId = Number(factoryProduct.product_id)
-    if (!orderId || !orderItemId || !factoryProductId || !productId) return
-    // Save reorder data to customization store
-    customizationStore.setReorderData(orderItemId, String(factoryProductId))
-
-    const success = await loadReorderProductIntoCustomizer({
-      orderItemId,
-      factoryProductId
-    })
-    if (success) {
+    const success = await store.reorderProduct(props.order, orderItem, factoryProduct, () => {
       emit('reorder-success')
-    } else {
-      alert('Failed to load reorder product. Please try again.')
-      customizationStore.clearReorderData()
+    })
+    if (!success) {
+      // Error is already handled in store
     }
   }
-  async function addToCart(product: any, item: any, index: number, pIdx: number) {
-    const key = `${index}-${pIdx}`
-    loadingCart.value[key] = true
 
-    const response = await tryCatchApi(
-      API.cart.addToCartFromOrder(product.product_id, item.id, product.id),
-      {
-        operation: 'addToCartFromOrder'
-      }
-    )
-    if (response.success) {
-      toast.success(response.content?.message || 'Product added to cart successfully', {
-        position: 'top-right',
-        richColors: true
-      })
-      cartStore.fetchCart(true)
-      loadingCart.value[key] = false
-    } else {
-      toast.error(
-        (response.content as any)?.message ||
-          response.axiosError?.response?.data?.message ||
-          'Failed to add product to cart',
-        { position: 'top-right', richColors: true }
-      )
-      loadingCart.value[key] = false
+  async function addToCart(product: FactoryProduct, item: Item, index: number, pIdx: number) {
+    const key = `${index}-${pIdx}`
+    await store.addProductToCartFromOrder(product, item, key)
+  }
+
+  async function handleShareDesign(item: Item, product: FactoryProduct) {
+    await store.shareOrderProductDesign(props.order, item, product)
+  }
+
+  async function handleSaveToLocker(item: Item, product: FactoryProduct) {
+    // Pass order product data to save design dialog
+    uiStore.openSaveDesignDialog({
+      product,
+      item,
+      order: props.order
+    })
+  }
+
+  function copyShareUrl(url: string, event?: Event) {
+    if (event) {
+      event.preventDefault()
+      event.stopPropagation()
     }
+    if (!url) return
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success('Link copied to clipboard!', {
+        position: 'top-right',
+        richColors: true,
+        duration: 2000
+      })
+    })
   }
 </script>

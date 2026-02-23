@@ -95,10 +95,9 @@
 
   // Reactive state
   const showProfileDialog = ref(false)
-  const showLockerBrowser = ref(false)
   const showCartDialog = ref(false)
-  const showSaveDesignDialog = ref(false)
-  const initialLockerIdToOpen = ref<number | null>(null)
+  // Use shared dialog state from UI store to avoid duplication
+  const { showLockerBrowser, showSaveDesignDialog, initialLockerIdToOpen } = storeToRefs(uiStore)
   const initialLockerTabToOpen = ref<'products' | 'assets' | 'colours' | 'rosters' | null>(null)
 
   // When a workflow step (Colors/Logos/Roster) requests "Choose from locker", open the browser with the right tab
@@ -106,7 +105,7 @@
     () => lockerRoomStore.openLockerWithIntent,
     intent => {
       if (intent) {
-        showLockerBrowser.value = true
+        uiStore.openLockerBrowser()
         initialLockerTabToOpen.value = intent.tab
         lockerRoomStore.clearOpenLockerWithIntent()
       }
@@ -252,7 +251,7 @@
       await handleUpdateCartProduct()
     } else {
       // Save as draft to locker
-      showSaveDesignDialog.value = true
+      uiStore.openSaveDesignDialog()
     }
   }
 
@@ -948,7 +947,7 @@
 
       <!-- Locker Room Button -->
       <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <Button variant="outline" size="default" @click="showLockerBrowser = true">
+        <Button variant="outline" size="default" @click="uiStore.openLockerBrowser()">
           <LayoutGrid class="size-4" />
           <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
@@ -1008,7 +1007,7 @@
           </DropdownMenuItem>
           <DropdownMenuItem
             v-if="uiStore.isMobile && authStore.isAuthenticated"
-            @click="showLockerBrowser = true"
+            @click="uiStore.openLockerBrowser()"
           >
             <LayoutGrid class="size-4 mr-2" />
             <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
@@ -1055,23 +1054,22 @@
       :initial-tab="initialLockerTabToOpen"
       @update:open="
         evt => {
-          showLockerBrowser = evt
-          if (!evt) initialLockerTabToOpen = null
+          if (evt) {
+            uiStore.openLockerBrowser(initialLockerIdToOpen)
+          } else {
+            uiStore.closeLockerBrowser()
+            initialLockerTabToOpen = null
+          }
         }
       "
       @edit-product="handleEditLockerProduct"
-      @initial-locker-opened="initialLockerIdToOpen = null"
+      @initial-locker-opened="uiStore.closeLockerBrowser()"
       @clear-initial-tab="initialLockerTabToOpen = null"
     />
     <SaveDesignDialog
       :open="showSaveDesignDialog"
-      @update:open="showSaveDesignDialog = $event"
-      @saved-to-locker="
-        id => {
-          initialLockerIdToOpen = id
-          showLockerBrowser = true
-        }
-      "
+      @update:open="evt => (evt ? uiStore.openSaveDesignDialog() : uiStore.closeSaveDesignDialog())"
+      @saved-to-locker="uiStore.handleSavedToLocker"
     />
     <CartDialog v-if="isLoggedIn" :open="showCartDialog" @update:open="showCartDialog = $event" />
   </div>

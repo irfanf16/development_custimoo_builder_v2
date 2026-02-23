@@ -63,11 +63,13 @@
               {{ orders_action_reorder({}, { locale }) }}
             </button>
             <button
-              class="inline-flex items-center justify-center p-1.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+              class="inline-flex items-center justify-center p-1.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
               :title="orders_action_download_images({}, { locale })"
-              @click.stop="downloadStatusActivityImages(content.images, index)"
+              :disabled="downloadingIndex === index"
+              @click.stop="handleDownloadImages(content.images, index)"
             >
-              <DownloadIcon class="w-4 h-4" />
+              <DownloadIcon v-if="downloadingIndex !== index" class="w-4 h-4" />
+              <Loader2Icon v-else class="w-4 h-4 animate-spin" />
             </button>
             <button
               class="inline-flex items-center justify-center p-1.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
@@ -328,7 +330,7 @@
 
 <script setup lang="ts">
   import { ref, computed } from 'vue'
-  import { DownloadIcon, ListIcon } from 'lucide-vue-next'
+  import { DownloadIcon, ListIcon, Loader2Icon } from 'lucide-vue-next'
   import { onImageError, PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
   import { useOrderTimeline } from '@/components/customizer-profile-section/orders-section/order-timeline/useOrderTimeline'
   import type {
@@ -394,7 +396,8 @@
     ): void
     (e: 'order-item-updated', orderItem: Item): void
   }>()
-  const { isNullOrEmpty, CustimooOrderFlowStatuses } = useOrderTimeline()
+  const { isNullOrEmpty, CustimooOrderFlowStatuses, downloadStatusActivityImages } =
+    useOrderTimeline()
   const companyStore = useCompanyStore()
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
@@ -424,6 +427,7 @@
   const selectedFactoryProduct = ref<FactoryProduct | undefined>(undefined)
   const selectedPreviewImages = ref<Array<{ url: string; alt?: string; name?: string }>>([])
   const rosterData = ref<APCustomizationRosterEntry[]>([])
+  const downloadingIndex = ref<number | null>(null)
 
   const onImageClick = (
     image_url: string | null,
@@ -435,65 +439,6 @@
     } else if (image_url) {
       // Fallback: emit as array with single image
       emit('showPreview', [{ url: image_url }])
-    }
-  }
-
-  async function downloadStatusActivityImages(
-    images: Array<{ url: string; alt?: string; name?: string }> = [],
-    contentIndex: number
-  ) {
-    if (images.length === 0) {
-      if (
-        status_activity.value?.activity_items &&
-        status_activity.value.activity_items[contentIndex]
-      ) {
-        const activityItem = status_activity.value.activity_items[contentIndex]
-        if (activityItem.activity_files) {
-          images = activityItem.activity_files.map(
-            (file: { url?: string; alt?: string; name?: string } | string) => ({
-              url: typeof file === 'string' ? file : file.url || '',
-              alt: typeof file === 'string' ? 'preview image' : file.alt || 'preview image',
-              name:
-                typeof file === 'string'
-                  ? `preview_${Date.now()}.png`
-                  : file.name || `preview_${Date.now()}.png`
-            })
-          )
-        }
-      }
-    }
-
-    if (images.length === 0) return
-
-    try {
-      const base64Files = await Promise.all(
-        images.map(async image => {
-          const imageUrl = image.url.startsWith('http') ? image.url : `${storage_url}${image.url}`
-          const response = await fetch(imageUrl)
-          const blob = await response.blob()
-          return new Promise<{ base64: string; name: string }>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onloadend = () =>
-              resolve({
-                base64: reader.result as string,
-                name: image.name || `preview_${Date.now()}.png`
-              })
-            reader.onerror = reject
-            reader.readAsDataURL(blob)
-          })
-        })
-      )
-
-      base64Files.forEach(base64File => {
-        const link = document.createElement('a')
-        link.href = base64File.base64
-        link.download = base64File.name
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      })
-    } catch (error) {
-      console.error('Error downloading preview images:', error)
     }
   }
 
@@ -595,6 +540,37 @@
     const redirectUrl = `${customizerUrl}order_id=${props.order.id}&order_item_id=${order_item.value.id}&order_item_status_activity_id=${status_activity.value.id}`
 
     window.location.href = redirectUrl
+  }
+
+  async function handleDownloadImages(
+    images: Array<{ url: string; alt?: string; name?: string; ext?: string }>,
+    contentIndex: number
+  ) {
+    if (!images || images.length === 0) return
+
+    downloadingIndex.value = contentIndex
+
+    try {
+      // Prepare images with relative URLs (no storage prefix) and proper names
+      const preparedImages = images.map(image => {
+        // Keep relative URL as-is (API expects relative paths)
+        const imageUrl = image.url || ''
+
+        // Generate filename from URL if name is not provided
+        const fileName =
+          image.name || (image.url ? image.url.split('/').pop() || 'image.png' : 'image.png')
+
+        return {
+          url: imageUrl,
+          name: fileName,
+          alt: image.alt
+        }
+      })
+
+      await downloadStatusActivityImages(preparedImages)
+    } finally {
+      downloadingIndex.value = null
+    }
   }
 
   function handleReorder(contentIndex: number) {
