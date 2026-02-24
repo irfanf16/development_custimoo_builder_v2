@@ -773,6 +773,7 @@
         design_id: customization.design_id || 0,
         custom_logos: customLogos,
         text: productCustomTexts,
+        product_custom_texts: productCustomTexts,
         colors: customization.group_colors ?? [],
         shuffle_color_number: customization.shuffle_color_number || 0,
         defaultcolors: defaultColors,
@@ -1063,7 +1064,7 @@
         }
       "
       @edit-product="handleEditLockerProduct"
-      @initial-locker-opened="uiStore.closeLockerBrowser()"
+      @initial-locker-opened="initialLockerIdToOpen = null"
       @clear-initial-tab="initialLockerTabToOpen = null"
     />
     <SaveDesignDialog

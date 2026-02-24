@@ -94,6 +94,7 @@ export interface ShareDesignPayload {
   design_id: number
   custom_logos: LockerPayloadJsonValue
   text: LockerPayloadJsonValue
+  product_custom_texts: OutputProductText[]
   colors: LockerPayloadJsonValue
   shuffle_color_number: number
   defaultcolors: LockerPayloadJsonValue

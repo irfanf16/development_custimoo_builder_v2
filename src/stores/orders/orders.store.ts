@@ -546,6 +546,8 @@ export const useOrdersStore = defineStore('ordersStore', () => {
         design_id: Number(fullProduct.design_id || factoryProduct.design_id || 0),
         custom_logos: (fullProduct.custom_logos as ShareDesignPayload['custom_logos']) || [],
         text: (fullProduct.text as ShareDesignPayload['text']) || [],
+        product_custom_texts:
+          (fullProduct.product_custom_texts as ShareDesignPayload['product_custom_texts']) || [],
         colors: (fullProduct.colors as ShareDesignPayload['colors']) || [],
         shuffle_color_number: Number(fullProduct.shuffle_color_number) || 0,
         defaultcolors: (fullProduct.defaultcolors as ShareDesignPayload['defaultcolors']) || [],

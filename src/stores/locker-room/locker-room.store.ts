@@ -288,7 +288,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       return {
         ...locker,
         product_thumbnails: newThumbnails,
-        product_count: (locker.product_count ?? 0) + 1
+        product_count: (locker.product_count ?? 0) + 1,
+        updated_at: new Date().toISOString()
       }
     })
     setSuccessMessage('Design saved successfully')

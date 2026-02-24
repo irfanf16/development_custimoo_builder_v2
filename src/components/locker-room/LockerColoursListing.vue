@@ -68,6 +68,29 @@
     const cols = Math.ceil(Math.sqrt(length))
     return length < 4 ? `grid-cols-${length}` : `grid-cols-${cols}`
   }
+
+  const getItemSpanClass = (length: number, index: number) => {
+    // Case 1: 1, 2, 3 items
+    if (length <= 3) {
+      return `col-span-${6 / length}`
+    }
+
+    const remainder = length % 3
+
+    // Case 2: last row has 1 item
+    if (remainder === 1 && index === length - 1) {
+      return 'col-span-6'
+    }
+
+    // Case 3: last row has 2 items
+    if (remainder === 2 && index >= length - 2) {
+      return 'col-span-3'
+    }
+
+    // Normal 3-per-row layout
+    return 'col-span-2'
+  }
+
   onMounted(() => {
     if (!props.locker.colours_fetched) {
       useLockerRoomStore().fetchLockerAssets(props.locker.id)
@@ -81,21 +104,16 @@
       :key="group_index"
       class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative !gap-0 h-fit duration-150 border-0"
     >
-      {{ color.colour_group.length }}
       <div
-        class="bg-secondary rounded-md aspect-video overflow-hidden grid border relative place-items-center"
+        class="bg-secondary rounded-md aspect-video overflow-hidden grid border relative place-items-center grid-cols-6 auto-rows-fr grid-flow-dense"
         :class="getGridCols(color.colour_group.length)"
       >
-        <!-- :class="{
-          'grid-cols-3': color.colour_group.length >= 3,
-          'grid-cols-2': color.colour_group.length === 2,
-          'grid-cols-1': color.colour_group.length === 1
-        }" -->
         <div
           v-for="(c, cInd) in color.colour_group"
-          :key="cInd"
-          class="w-full h-full"
-          :style="{ backgroundColor: c.value }"
+          :key="JSON.stringify(c)"
+          :class="getItemSpanClass(color.colour_group.length, cInd)"
+          class="w-full h-full siz"
+          :style="{ backgroundColor: c.value ?? c.color }"
           :title="c.name"
         ></div>
       </div>

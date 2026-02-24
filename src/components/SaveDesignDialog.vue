@@ -16,6 +16,7 @@
   import { InputSearchGroup } from '@/components/ui/input-search-group'
   import { base64ToFile, timeAgo as timeAgoUtil, uploadPresignedFiles } from '@/lib/utils'
   import type { Locker } from '@/services/lockers/types'
+  import { urlToBase64 } from '@/services/files/file.service'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useSceneStore } from '@/stores/scene/scene.store'
   import { storeToRefs } from 'pinia'
@@ -102,8 +103,15 @@
   const { activeProductDetails } = storeToRefs(productsStore)
   const customizationStoreRef = storeToRefs(customizationStore)
 
-  // Check if we have order product data
+  // Check if we have order product data (factory product with front/back images for display and urlToBase64 save flow)
   const orderProductData = computed(() => uiStore.orderProductData)
+  const factoryProduct = computed(() => orderProductData.value?.product ?? null)
+  const useFactoryProductImages = computed(
+    () => !!factoryProduct.value?.front_image && !!factoryProduct.value?.back_image
+  )
+
+  const toDisplayImageUrl = (pathOrUrl: string) =>
+    pathOrUrl.startsWith('http') ? pathOrUrl : baseStorageUrl.value + pathOrUrl
 
   const timeAgoMessages = computed(() => ({
     just_now: () => time_ago_just_now({}, { locale: locale.value }),
@@ -192,47 +200,59 @@
 
   const handleSave = async () => {
     formSubmitted.value = true
-    // Validate before proceeding
     if (!validateForm()) {
       return
     }
 
-    // Validate that images are available
-    if (!frontImage.value || !backImage.value) {
-      // Try to get images again before saving
-      const is3DProduct = activeProductDetails.value?.is_3d_product
-      if (is3DProduct) {
-        componentRef = sceneStore.threeDSceneRef
-        if (componentRef && 'getImageFromCanvas' in componentRef) {
-          const getImage = (
-            componentRef as unknown as ComponentPublicInstance & {
-              getImageFromCanvas: (side?: string) => Promise<string>
-            }
-          ).getImageFromCanvas
-          if (!frontImage.value) frontImage.value = await getImage('front')
-          if (!backImage.value) backImage.value = await getImage('back')
-        }
-      } else {
-        if (!frontImage.value) {
-          frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
-          if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
-            frontImage.value = await frontImageComponentRef.getImageFromCanvas()
+    let frontBase64: string
+    let backBase64: string
+
+    if (useFactoryProductImages.value && factoryProduct.value) {
+      // Convert factory product image URLs to base64 via API
+      const fileUrls = [factoryProduct.value.front_image!, factoryProduct.value.back_image!]
+      const base64Files = await urlToBase64(fileUrls)
+      if (base64Files.length < 2) {
+        console.error('URL_TO_BASE64 did not return both front and back images')
+        return
+      }
+      frontBase64 = base64Files[0]!
+      backBase64 = base64Files[1]!
+    } else {
+      // Use canvas images; ensure we have them
+      if (!frontImage.value || !backImage.value) {
+        const is3DProduct = activeProductDetails.value?.is_3d_product
+        if (is3DProduct) {
+          componentRef = sceneStore.threeDSceneRef
+          if (componentRef && 'getImageFromCanvas' in componentRef) {
+            const getImage = (
+              componentRef as unknown as ComponentPublicInstance & {
+                getImageFromCanvas: (side?: string) => Promise<string>
+              }
+            ).getImageFromCanvas
+            if (!frontImage.value) frontImage.value = await getImage('front')
+            if (!backImage.value) backImage.value = await getImage('back')
           }
-        }
-        if (!backImage.value) {
-          backImageComponentRef = sceneStore.getTwoDSceneRef('back')
-          if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
-            backImage.value = await backImageComponentRef.getImageFromCanvas()
+        } else {
+          if (!frontImage.value) {
+            frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
+            if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
+              frontImage.value = await frontImageComponentRef.getImageFromCanvas()
+            }
+          }
+          if (!backImage.value) {
+            backImageComponentRef = sceneStore.getTwoDSceneRef('back')
+            if (backImageComponentRef && 'getImageFromCanvas' in backImageComponentRef) {
+              backImage.value = await backImageComponentRef.getImageFromCanvas()
+            }
           }
         }
       }
-    }
-
-    // Final check - if still missing, show error
-    if (!frontImage.value || !backImage.value) {
-      console.error('Failed to get images from canvas')
-      isSubmitting.value = false
-      return
+      if (!frontImage.value || !backImage.value) {
+        console.error('Failed to get images from canvas')
+        return
+      }
+      frontBase64 = frontImage.value
+      backBase64 = backImage.value
     }
 
     isSubmitting.value = true
@@ -247,8 +267,8 @@
           file_type: u.file_type,
           file:
             u.file_side === 'front'
-              ? base64ToFile(frontImage.value, 'front.png')
-              : base64ToFile(backImage.value, 'back.png'),
+              ? base64ToFile(frontBase64, 'front.png')
+              : base64ToFile(backBase64, 'back.png'),
           file_side: u.file_side
         }
       })
@@ -380,18 +400,24 @@
       if (newVal) {
         mainDisplaySide.value = 'front'
         imagesLoading.value = true
-        console.log('orderProductData in watch:', orderProductData.value)
-
-        productName.value = activeProductDetails.value!.display_name ?? ''
+        productName.value =
+          activeProductDetails.value?.display_name ?? factoryProduct.value?.product_name ?? ''
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()
         }
 
-        // Check if it's a 3D product
+        // When opened with order product data, use factory product front/back image URLs for display
+        if (useFactoryProductImages.value && factoryProduct.value) {
+          frontImage.value = toDisplayImageUrl(factoryProduct.value.front_image!)
+          backImage.value = toDisplayImageUrl(factoryProduct.value.back_image!)
+          imagesLoading.value = false
+          return
+        }
+
+        // Otherwise get images from canvas (2D or 3D)
         const is3DProduct = activeProductDetails.value?.is_3d_product
 
         if (is3DProduct) {
-          // Use 3D scene for 3D products
           componentRef = sceneStore.threeDSceneRef
           if (componentRef && 'getImageFromCanvas' in componentRef) {
             const getImage = (
@@ -403,7 +429,6 @@
             backImage.value = await getImage('back')
           }
         } else {
-          // Use 2D scenes for 2D products
           frontImageComponentRef = sceneStore.getTwoDSceneRef('front')
           if (frontImageComponentRef && 'getImageFromCanvas' in frontImageComponentRef) {
             frontImage.value = await frontImageComponentRef.getImageFromCanvas()

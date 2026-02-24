@@ -518,8 +518,12 @@ export interface Contact {
 }
 
 export interface Colour {
-  name: string
-  value: string
+  name?: string
+  value?: string
+  color?: string
+  id?: string
+  count?: number
+  pantone?: string
 }
 
 //Collection Types

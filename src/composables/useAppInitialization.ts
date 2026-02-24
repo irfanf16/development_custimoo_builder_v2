@@ -330,9 +330,8 @@ export function useAppInitialization() {
     const shareUrl = appStore.shareUrl
     if (!shareUrl) return
 
-    const { useLoadShareProductIntoCustomizer } = await import(
-      '@/composables/useLoadShareProductIntoCustomizer'
-    )
+    const { useLoadShareProductIntoCustomizer } =
+      await import('@/composables/useLoadShareProductIntoCustomizer')
     const { loadShareProductIntoCustomizer: loadShare } = useLoadShareProductIntoCustomizer()
 
     const success = await loadShare(shareUrl)
@@ -348,9 +347,8 @@ export function useAppInitialization() {
     const reorderData = customizationStore?.reorderData
 
     if (reorderData?.orderItemId && reorderData.factoryProductId) {
-      const { useLoadReorderProductIntoCustomizer } = await import(
-        '@/composables/useLoadReorderProductIntoCustomizer'
-      )
+      const { useLoadReorderProductIntoCustomizer } =
+        await import('@/composables/useLoadReorderProductIntoCustomizer')
       const { loadReorderProductIntoCustomizer } = useLoadReorderProductIntoCustomizer()
 
       const orderItemId = reorderData.orderItemId
@@ -460,8 +458,11 @@ export function useAppInitialization() {
     // Initialize user locale preferences
     const profileStore = useProfileStore()
     const cartStore = useCartStore()
+    const authStore = useAuthStore()
     await profileStore.initializeLocale()
-    await cartStore.fetchCart(true)
+    if (authStore.isAuthenticated) {
+      await cartStore.fetchCart(true)
+    }
 
     const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
     if (!hasCategories) {
