@@ -562,3 +562,9 @@ v-customizer * {
 .product-card:hover .accessibilty-menu {
   opacity: 1 !important;
 }
+
+div[id^='design-'] .upper-canvas,
+div[id^='product-'] .upper-canvas,
+#canvas-controls-container-inner .upper-canvas {
+  z-index: -1;
+}
