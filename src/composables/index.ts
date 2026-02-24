@@ -9,6 +9,8 @@ export { useWorkflow } from './useWorkflow'
 export { useProfileDialogState } from './useProfileDialogState'
 export { useLocalStorage } from './useLocalStorage'
 export { useSignIn, type LogoutOptions } from './useSignIn'
+export { useAddToCartVisibility } from './useAddToCartVisibility'
+export { usePermissions } from './usePermissions'
 export { useResetCustomization } from './useResetCustomization'
 export { useTryCatchApi, type UseTryCatchApiOptions } from './useTryCatchApi'
 export {

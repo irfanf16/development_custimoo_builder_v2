@@ -43,6 +43,7 @@
   import { CartDialog } from '@/components/cart'
   import { useSignIn } from '@/composables/useSignIn'
   import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
+  import { useAddToCartVisibility } from '@/composables/useAddToCartVisibility'
   import { computed, ref, watch } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { confirmDialog } from '@/lib/confirm-dialog'
@@ -90,6 +91,7 @@
   const { rosterEntries, ensureEditableRoster } = useRoster()
   const { openSignInDialog, handleLogout } = useSignIn()
   const { getPending, clearPending } = usePendingPostLoginAction()
+  const { shouldShowAddToCartButton } = useAddToCartVisibility()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
 
@@ -891,10 +893,7 @@
               <Save class="size-4 mr-2" />
               Save to Locker
             </DropdownMenuItem>
-            <DropdownMenuItem
-              v-if="!(companyStore.isEcommercePlatform && authStore.hasAdminToken)"
-              @click="handleAddToCart"
-            >
+            <DropdownMenuItem v-if="shouldShowAddToCartButton" @click="handleAddToCart">
               <ShoppingCart class="size-4 mr-2" />
               Add to Cart
             </DropdownMenuItem>
@@ -953,10 +952,14 @@
           <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
         </Button>
       </ButtonGroup>
-
       <!-- Cart Button -->
       <ButtonGroup
-        v-if="!uiStore.isMobile && authStore.isAuthenticated && !companyStore.isEcommercePlatform"
+        v-if="
+          !uiStore.isMobile &&
+          authStore.isAuthenticated &&
+          shouldShowAddToCartButton &&
+          !companyStore.isEcommercePlatform
+        "
       >
         <Button variant="outline" size="default" class="relative" @click="handleCartClick">
           <ShoppingCart class="size-4" />

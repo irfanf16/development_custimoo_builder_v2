@@ -23,6 +23,8 @@
   import { Button } from '@/components/ui/button'
   import { DialogFooter } from '@/components/ui/dialog'
   import { usePricing } from '@/composables/usePricing'
+  import { usePermissions } from '@/composables/usePermissions'
+
   const props = defineProps<{ open: boolean }>()
   const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 
@@ -35,6 +37,9 @@
   const companyStore = useCompanyStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
   const { showPricing } = usePricing()
+  const { can } = usePermissions()
+  const canSkipMoq = computed(() => can('skip-moq'))
+
   // Address selection state
   const showProfileDialog = ref(false)
   const showOrdersProfileDialog = ref(false)
@@ -570,7 +575,7 @@
                   <span>Total</span>
                   <span>{{ formatPrice(totalPrice) }}</span>
                 </div>
-                <div>
+                <div v-if="!canSkipMoq">
                   <span
                     class="text-xs"
                     :class="totalItems < minimumCartQuantity() ? 'text-red-500' : 'text-green-500'"
@@ -583,7 +588,11 @@
               </div>
               <button
                 class="w-full mt-4 px-4 py-3 bg-primary text-white rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="!canConfirmOrder || isPlacingOrder || totalItems < minimumCartQuantity()"
+                :disabled="
+                  !canConfirmOrder ||
+                  isPlacingOrder ||
+                  (!canSkipMoq && totalItems < minimumCartQuantity())
+                "
                 @click="handleConfirmOrder"
               >
                 {{ isPlacingOrder ? 'Placing order...' : 'Confirm order' }}

@@ -10,7 +10,7 @@
   import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
   import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
-  import { useCompanyStore } from '@/stores/company/company.store'
+  import { useAddToCartVisibility } from '@/composables/useAddToCartVisibility'
   import { storeToRefs } from 'pinia'
   import { computed } from 'vue'
   import { toast } from 'vue-sonner'
@@ -19,7 +19,7 @@
   const profileStore = useProfileStore()
   const cartStore = useCartStore()
   const authStore = useAuthStore()
-  const companyStore = useCompanyStore()
+  const { shouldShowAddToCartButton } = useAddToCartVisibility()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
   const { openSignInDialog } = useSignIn()
   const { setPending } = usePendingPostLoginAction()
@@ -108,7 +108,7 @@
         </div>
       </div>
       <Button
-        v-if="isLoggedIn && !(companyStore.isEcommercePlatform && authStore.hasAdminToken)"
+        v-if="isLoggedIn && shouldShowAddToCartButton"
         size="sm"
         class="rounded-xl px-5"
         @click="handleButtonClick"

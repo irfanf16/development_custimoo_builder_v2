@@ -81,6 +81,7 @@ export const useAuthStore = defineStore('authStore', () => {
     refreshToken.value = null
     refreshPromise.value = null
     encryptionKey.value = null
+    permissions.value = undefined
     isHydrated.value = false
     lastHydrationResult = false
   }
@@ -428,13 +429,18 @@ export const useAuthStore = defineStore('authStore', () => {
         // Hydrate the auth state
         await loadFromLocalStorage({ force: true })
 
-        // Fetch cart if authenticated
+        // Fetch cart and permissions if authenticated
         if (isAuthenticated.value) {
           try {
             const cartStore = useCartStore()
             await cartStore.fetchCart()
           } catch {
             // Ignore cart fetch errors
+          }
+          try {
+            await getPermissions()
+          } catch {
+            // Ignore permissions fetch errors
           }
         }
       }
@@ -542,6 +548,13 @@ export const useAuthStore = defineStore('authStore', () => {
       } catch {
         // Ignore cart fetch errors - cart will be fetched when needed
       }
+
+      // Fetch customer permissions after successful authentication
+      try {
+        await getPermissions()
+      } catch {
+        // Ignore permissions fetch errors
+      }
     }
   }
 
@@ -606,8 +619,21 @@ export const useAuthStore = defineStore('authStore', () => {
     const output = await tryCatchApi(API.permissions.getPermissions(), {
       operation: 'getPermissions'
     })
-    if (output.success) {
-      permissions.value = output.content.result
+    if (output.success && output.content) {
+      const content = output.content
+      // API returns array of permissions e.g. ["place-order"]
+      if (Array.isArray(content)) {
+        permissions.value = { permissions: content as string[] }
+      } else {
+        const raw = content as Record<string, unknown>
+        const result = raw.result as Permissions | undefined
+        const topLevelPermissions = raw.permissions
+        if (result && Array.isArray(result.permissions)) {
+          permissions.value = result
+        } else if (Array.isArray(topLevelPermissions)) {
+          permissions.value = { permissions: topLevelPermissions as string[] }
+        }
+      }
     }
     return output
   }

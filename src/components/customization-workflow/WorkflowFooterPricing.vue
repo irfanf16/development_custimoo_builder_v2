@@ -15,19 +15,20 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import { usePricing } from '@/composables/usePricing'
   import { useAuthStore } from '@/stores/auth/auth.store'
-  import { useCompanyStore } from '@/stores/company/company.store'
   import { useSignIn } from '@/composables/useSignIn'
   import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
   import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
+  import { useAddToCartVisibility } from '@/composables/useAddToCartVisibility'
+  import { usePermissions } from '@/composables/usePermissions'
   import { storeToRefs } from 'pinia'
   import { computed } from 'vue'
 
   const uiStore = useUIStore()
+  const { can } = usePermissions()
   const profileStore = useProfileStore()
   const cartStore = useCartStore()
   const authStore = useAuthStore()
-  const companyStore = useCompanyStore()
   const {
     activeProductPrice,
     showPricing,
@@ -40,8 +41,10 @@
   const { setPending } = usePendingPostLoginAction()
   const { rosterEntries, ensureEditableRoster } = useRoster()
   const { menuItems, goTo } = useCustomizerMenu()
+  const { shouldShowAddToCartButton } = useAddToCartVisibility()
 
   const { isAuthenticated: isLoggedIn } = storeToRefs(authStore)
+  const canSkipMoq = computed(() => can('skip-moq'))
   const isEditingCartProduct = computed(() => cartStore.isEditingCartProduct)
 
   defineProps<{
@@ -171,6 +174,7 @@
         </p>
       </div>
       <p
+        v-if="!canSkipMoq"
         class="text-xs"
         :class="
           totalRosterQuantity < minimumActiveProductQuantityByDesignToCard
@@ -187,13 +191,15 @@
       </p> -->
     </div>
     <Button
-      v-if="isLoggedIn && !(companyStore.isEcommercePlatform && authStore.hasAdminToken)"
+      v-if="isLoggedIn && shouldShowAddToCartButton"
       variant="primary"
       :size="uiStore.isMobile ? 'sm' : 'lg'"
       class="w-full"
       :disabled="
         totalRosterQuantity <= 0 ||
-        (isQuantityByDesign && totalRosterQuantity < minimumActiveProductQuantityByDesignToCard) ||
+        (!canSkipMoq &&
+          isQuantityByDesign &&
+          totalRosterQuantity < minimumActiveProductQuantityByDesignToCard) ||
         !authStore.isAuthenticated
       "
       @click="handleButtonClick"

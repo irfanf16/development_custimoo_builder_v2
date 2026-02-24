@@ -460,8 +460,10 @@ export function useAppInitialization() {
     const cartStore = useCartStore()
     const authStore = useAuthStore()
     await profileStore.initializeLocale()
+
     if (authStore.isAuthenticated) {
       await cartStore.fetchCart(true)
+      await authStore.getPermissions()
     }
 
     const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0
