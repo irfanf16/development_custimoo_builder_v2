@@ -10,11 +10,12 @@
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { storeToRefs } from 'pinia'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import { Copy, Pencil, SwitchCamera, Share2 } from 'lucide-vue-next'
+  import { Copy, Pencil, SwitchCamera, Share2, Download, Loader2Icon } from 'lucide-vue-next'
   import CopyProductsDialog from './CopyProductsDialog.vue'
   import { toast } from 'vue-sonner'
   import lockersService from '@/services/lockers/lockers.service'
   import ShareUrlTooltip from '@/components/shared/ShareUrlTooltip.vue'
+  import { useFileDownload } from '@/composables/useFileDownload'
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
   const props = withDefaults(
@@ -51,6 +52,8 @@
   const showBack = ref<Record<number, boolean>>({})
   const productShareUrls = ref<Record<number, string | null>>({})
   const showShareTooltip = ref<Record<number, boolean>>({})
+  const downloadingProductId = ref<number | null>(null)
+  const { downloadFiles } = useFileDownload()
 
   const computedProducts = computed(() => props.products)
   const filteredProducts = computed(() => {
@@ -176,6 +179,53 @@
       })
     }
   }
+
+  function toRelativeUrl(url: string): string {
+    if (!url) return ''
+    if (url.startsWith('http')) {
+      try {
+        const urlObj = new URL(url)
+        return urlObj.pathname.startsWith('/') ? urlObj.pathname.slice(1) : urlObj.pathname
+      } catch {
+        const match = url.match(/\/company_\d+\/.*$/)
+        if (match) return match[0].startsWith('/') ? match[0].slice(1) : match[0]
+      }
+    }
+    return url
+  }
+
+  async function downloadPreviewImages(prod: LockerProduct) {
+    const urls: { url: string; name: string }[] = []
+    if (prod.product_front_url) {
+      urls.push({
+        url: toRelativeUrl(prod.product_front_url),
+        name: prod.product_front_url.split('/').pop() || 'front.png'
+      })
+    }
+    if (prod.product_back_url) {
+      urls.push({
+        url: toRelativeUrl(prod.product_back_url),
+        name: prod.product_back_url.split('/').pop() || 'back.png'
+      })
+    }
+    if (urls.length === 0) {
+      toast.error('No preview images to download', {
+        position: 'top-right',
+        richColors: true
+      })
+      return
+    }
+    downloadingProductId.value = prod.id
+    try {
+      await downloadFiles(urls)
+    } finally {
+      downloadingProductId.value = null
+    }
+  }
+
+  const hasPreviewImages = (prod: LockerProduct) =>
+    !!(prod.product_front_url || prod.product_back_url)
+
   onMounted(() => {
     selectedProducts.value = [...props.preSelectedProducts]
   })
@@ -300,6 +350,27 @@
                   <Share2 class="w-3.5 h-3.5" />
                 </Button>
               </ShareUrlTooltip>
+              <Tooltip v-if="!isCreatingCollection && hasPreviewImages(prod)">
+                <TooltipTrigger as-child>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    class="h-7 w-7 rounded-full shadow"
+                    title="Download Preview Images"
+                    :disabled="downloadingProductId === prod.id"
+                    @click="downloadPreviewImages(prod)"
+                  >
+                    <Loader2Icon
+                      v-if="downloadingProductId === prod.id"
+                      class="w-3.5 h-3.5 animate-spin"
+                    />
+                    <Download v-else class="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Download Preview Images</p>
+                </TooltipContent>
+              </Tooltip>
             </TooltipProvider>
           </div>
         </div>

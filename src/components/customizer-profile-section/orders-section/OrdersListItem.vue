@@ -1,9 +1,8 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import type { FactoryProduct, Item, Order } from '@/services/orders/types'
+  import type { Order } from '@/services/orders/types'
   import OrderSummaryHeader from './OrderSummaryHeader.vue'
   import { PLACEHOLDER_IMAGE, onImageError } from '@/helpers/imageHelper'
-  import { useOrdersStore } from '@/stores/orders/orders.store'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
     orders_action_save,
@@ -13,19 +12,19 @@
   } from '@/paraglide/messages'
   import Button from '@/components/ui/button/Button.vue'
   import { RefreshCw, Copy } from 'lucide-vue-next'
-  import { toast } from 'vue-sonner'
-  import { useUIStore } from '@/stores/ui/ui.store'
+  import { useOrderProductActions } from './order-timeline/useOrderTimeline'
 
   const props = defineProps<{
     order: Order
     expanded?: boolean
   }>()
-  const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
-  const store = useOrdersStore()
-  const profileStore = useProfileStore()
-  const uiStore = useUIStore()
-  const locale = computed(() => profileStore.currentLocale || 'en')
   const emit = defineEmits<{ (e: 'back'): void; (e: 'reorder-success'): void }>()
+  const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
+
+  const { store, copyShareUrl, handleShareDesign, addToCart, handleReorder, handleSaveToLocker } =
+    useOrderProductActions(props.order, () => emit('reorder-success'))
 
   function showOrderDetails(order: Order) {
     store.openOrderDetails(order)
@@ -43,48 +42,6 @@
       }) || []
     )
   })
-
-  async function addToCart(product: FactoryProduct, item: Item, index: number, pIdx: number) {
-    const key = `${index}-${pIdx}`
-    await store.addProductToCartFromOrder(product, item, key)
-  }
-
-  async function handleReorder(orderItem: Item, factoryProduct: FactoryProduct) {
-    const success = await store.reorderProduct(props.order, orderItem, factoryProduct, () => {
-      emit('reorder-success')
-    })
-    if (!success) {
-      // Error is already handled in store
-    }
-  }
-
-  async function handleShareDesign(item: Item, product: FactoryProduct) {
-    await store.shareOrderProductDesign(props.order, item, product)
-  }
-
-  async function handleSaveToLocker(item: Item, product: FactoryProduct) {
-    // Pass order product data to save design dialog
-    uiStore.openSaveDesignDialog({
-      product,
-      item,
-      order: props.order
-    })
-  }
-
-  function copyShareUrl(url: string, event?: Event) {
-    if (event) {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-    if (!url) return
-    navigator.clipboard.writeText(url).then(() => {
-      toast.success('Link copied to clipboard!', {
-        position: 'top-right',
-        richColors: true,
-        duration: 2000
-      })
-    })
-  }
 </script>
 
 <template>
@@ -126,8 +83,9 @@
             @error="onImageError"
           />
 
-          <!-- Hover Actions -->
+          <!-- Hover Actions (hidden for manual orders) -->
           <div
+            v-if="!order?.additional_fields?.is_manual_order"
             class="absolute bottom-0 left-0 right-0 bg-foreground/40 backdrop-blur-sm py-2 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200"
           >
             <Button

@@ -17,6 +17,9 @@ import {
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { useFileDownload } from '@/composables/useFileDownload'
+import { useOrdersStore } from '@/stores/orders/orders.store'
+import { useUIStore } from '@/stores/ui/ui.store'
+import { toast } from 'vue-sonner'
 
 export function useOrderTimeline() {
   const { downloadFiles, isLoading } = useFileDownload()
@@ -234,7 +237,8 @@ export function useOrderTimeline() {
       if (reorder_data) {
         if (
           Object.prototype.hasOwnProperty.call(factory_product, 'is_possible_reorder') &&
-          ((factory_product as Record<string, any>).is_possible_reorder as boolean) === true
+          ((factory_product as { is_possible_reorder?: boolean })
+            .is_possible_reorder as boolean) === true
         ) {
           message = `Note: Possible reorder of ${reorder_data.order_number ? 'order' : 'order_id'} #${reorder_data.order_number ? (reorder_data.order_number as string) : (reorder_data.order_id as string)} `
           if (reorder_data.roster_change === true && reorder_data.design_change === true) {
@@ -314,5 +318,77 @@ export function useOrderTimeline() {
     isNullOrEmpty,
     downloadStatusActivityImages,
     isLoading
+  }
+}
+
+/**
+ * Shared order product actions for list and detail views.
+ * Use in OrdersListItem and OrderDetailsView to avoid duplicating copy/share/add-to-cart/reorder/save logic.
+ */
+export function useOrderProductActions(order: Order, onReorderSuccess?: () => void) {
+  const store = useOrdersStore()
+  const uiStore = useUIStore()
+
+  function copyShareUrl(url: string, event?: Event) {
+    if (event) {
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    if (!url) return
+    void navigator.clipboard.writeText(url).then(() => {
+      toast.success('Link copied to clipboard!', {
+        position: 'top-right',
+        richColors: true,
+        duration: 2000
+      })
+    })
+  }
+
+  async function handleShareDesign(item: Item, product: FactoryProduct) {
+    const url = await store.shareOrderProductDesign(order, item, product)
+    if (url) {
+      try {
+        await navigator.clipboard.writeText(url)
+        toast.success('Link copied to clipboard!', {
+          position: 'top-right',
+          richColors: true,
+          duration: 2000
+        })
+      } catch {
+        toast.info('Share link ready. Copy from the Copy Share Url button.', {
+          position: 'top-right',
+          richColors: true
+        })
+      }
+    }
+  }
+
+  async function addToCart(product: FactoryProduct, item: Item, index: number, pIdx: number) {
+    const key = `${index}-${pIdx}`
+    await store.addProductToCartFromOrder(product, item, key)
+  }
+
+  async function handleReorder(orderItem: Item, factoryProduct: FactoryProduct) {
+    const success = await store.reorderProduct(order, orderItem, factoryProduct, onReorderSuccess)
+    if (!success) {
+      // Error is already handled in store
+    }
+  }
+
+  function handleSaveToLocker(item: Item, product: FactoryProduct) {
+    uiStore.openSaveDesignDialog({
+      product,
+      item,
+      order
+    })
+  }
+
+  return {
+    store,
+    copyShareUrl,
+    handleShareDesign,
+    addToCart,
+    handleReorder,
+    handleSaveToLocker
   }
 }

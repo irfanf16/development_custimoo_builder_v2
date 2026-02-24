@@ -101,8 +101,11 @@
                 </span>
               </div>
 
-              <!-- Actions -->
-              <div class="flex flex-wrap items-center gap-2">
+              <!-- Actions (hidden for manual orders) -->
+              <div
+                v-if="!order?.additional_fields?.is_manual_order"
+                class="flex flex-wrap items-center gap-2"
+              >
                 <Button
                   size="sm"
                   class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
@@ -189,20 +192,21 @@
     orders_action_reorder,
     topbar_cart
   } from '@/paraglide/messages'
-  import type { Item, FactoryProduct } from '@/services/orders/types'
   import Button from '@/components/ui/button/Button.vue'
   import { RefreshCw, Copy } from 'lucide-vue-next'
-  import { toast } from 'vue-sonner'
-  import { useUIStore } from '@/stores/ui/ui.store'
+  import { useOrderProductActions } from './order-timeline/useOrderTimeline'
+
   const props = defineProps<{ order: Order }>()
   const emit = defineEmits<{ (e: 'back'): void; (e: 'reorder-success'): void }>()
   const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
-  const store = useOrdersStore()
+  const ordersStore = useOrdersStore()
   const profileStore = useProfileStore()
-  const uiStore = useUIStore()
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { component: 'OrderDetailsView' } })
   const showQuoteModal = ref(false)
   const locale = computed(() => profileStore.currentLocale || 'en')
+
+  const { store, copyShareUrl, handleShareDesign, addToCart, handleReorder, handleSaveToLocker } =
+    useOrderProductActions(props.order, () => emit('reorder-success'))
 
   async function handleAcceptQuote() {
     showQuoteModal.value = true
@@ -217,7 +221,7 @@
     })
     if (response.success && response.content?.success) {
       alert(response.content.message || 'Quote rejected successfully')
-      await store.fetchOrderDetails(order.id)
+      await ordersStore.fetchOrderDetails(order.id)
     } else {
       alert(
         response.content?.message ||
@@ -234,7 +238,7 @@
     })
     if (response.success && response.content?.success) {
       alert(response.content.message || 'Quote accepted successfully')
-      await store.fetchOrderDetails(order.id)
+      await ordersStore.fetchOrderDetails(order.id)
     } else {
       alert(
         response.content?.message ||
@@ -242,47 +246,5 @@
           'Failed to accept quote'
       )
     }
-  }
-
-  async function handleReorder(orderItem: Item, factoryProduct: FactoryProduct) {
-    const success = await store.reorderProduct(props.order, orderItem, factoryProduct, () => {
-      emit('reorder-success')
-    })
-    if (!success) {
-      // Error is already handled in store
-    }
-  }
-
-  async function addToCart(product: FactoryProduct, item: Item, index: number, pIdx: number) {
-    const key = `${index}-${pIdx}`
-    await store.addProductToCartFromOrder(product, item, key)
-  }
-
-  async function handleShareDesign(item: Item, product: FactoryProduct) {
-    await store.shareOrderProductDesign(props.order, item, product)
-  }
-
-  async function handleSaveToLocker(item: Item, product: FactoryProduct) {
-    // Pass order product data to save design dialog
-    uiStore.openSaveDesignDialog({
-      product,
-      item,
-      order: props.order
-    })
-  }
-
-  function copyShareUrl(url: string, event?: Event) {
-    if (event) {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-    if (!url) return
-    navigator.clipboard.writeText(url).then(() => {
-      toast.success('Link copied to clipboard!', {
-        position: 'top-right',
-        richColors: true,
-        duration: 2000
-      })
-    })
   }
 </script>
