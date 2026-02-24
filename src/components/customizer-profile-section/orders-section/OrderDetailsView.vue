@@ -107,7 +107,7 @@
                   size="sm"
                   class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
                   :title="orders_action_save({}, { locale })"
-                  @click="handleSaveToLocker(item, product)"
+                  @click.stop="handleSaveToLocker(item, product)"
                 >
                   <i-flex-line-save class="size-4" /> {{ orders_action_save({}, { locale }) }}
                 </Button>
@@ -117,7 +117,7 @@
                     size="sm"
                     class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
                     title="Copy Share Url"
-                    @click="copyShareUrl(product.share_design_info.share_url!, $event)"
+                    @click.stop="copyShareUrl(product.share_design_info.share_url!, $event)"
                   >
                     <Copy class="size-4" /> Copy Share Url
                   </Button>
@@ -129,7 +129,7 @@
                   :title="orders_action_share({}, { locale })"
                   :disabled="store.loadingShare[`${item.id}-${product.id}`]"
                   :loading="store.loadingShare[`${item.id}-${product.id}`]"
-                  @click="handleShareDesign(item, product)"
+                  @click.stop="handleShareDesign(item, product)"
                 >
                   <i-flex-line-share
                     v-if="!store.loadingShare[`${item.id}-${product.id}`]"
@@ -145,7 +145,7 @@
                   :title="orders_action_add_to_cart({}, { locale })"
                   :disabled="store.loadingCart[`${index}-${pIdx}`]"
                   :loading="store.loadingCart[`${index}-${pIdx}`]"
-                  @click.once="addToCart(product, item, index, pIdx)"
+                  @click.once.stop="addToCart(product, item, index, pIdx)"
                 >
                   <i-flex-line-cart class="size-4" /> {{ topbar_cart({}, { locale }) }}
                 </Button>
@@ -154,7 +154,7 @@
                   class="hover:bg-transparent hover:text-primary hover:border hover:border-primary disabled:cusror-not-allowed"
                   :title="orders_action_reorder({}, { locale })"
                   :disabled="!product.can_reorder || Boolean(order.order_no) === false"
-                  @click.once="handleReorder(item, product)"
+                  @click.once.stop="handleReorder(item, product)"
                 >
                   <RefreshCw class="size-4" />
                   {{ orders_action_reorder({}, { locale }) }}

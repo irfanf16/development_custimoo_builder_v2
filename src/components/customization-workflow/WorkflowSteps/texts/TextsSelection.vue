@@ -6,7 +6,7 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { Button } from '@/components/ui/button'
   import type { OutputProductText } from '@/services/products/types'
-  import { Plus } from 'lucide-vue-next'
+  import { Plus, Trash2 } from 'lucide-vue-next'
   import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
   import { useTexts } from './useTexts'
   import { useProductsStore } from '@/stores/products/products.store'
@@ -247,6 +247,20 @@
     return typeof text.value === 'string' && text.value.trim().length > 0
   }
 
+  /**
+   * Delete a manually-added custom text entry (with undo support)
+   */
+  async function handleDeleteCustomText(customText: OutputProductText) {
+    if (!customText?.manually_added || effectiveProductId.value == null) return
+    const key = String(effectiveProductId.value)
+    const storeIndex = activeProductTexts.value.findIndex(e => e.id === customText.id)
+    if (storeIndex < 0) return
+    await history.execute('text.remove-entry', {
+      key,
+      index: storeIndex
+    })
+  }
+
   const headerConfig = computed(() => ({
     breadcrumbs: [{ label: nav_text({}, { locale: locale.value }) }]
   }))
@@ -264,10 +278,23 @@
         @click="() => goToEdit(customText, index)"
       >
         <template #content>
-          <div v-if="!hasTextValue(customText)" class="flex w-full items-center">
+          <div
+            v-if="!hasTextValue(customText)"
+            class="flex w-full items-center justify-between gap-2"
+          >
             <span class="text-sm font-semibold text-foreground">
               {{ getAddLabel(customText) }}
             </span>
+            <Button
+              v-if="customText.manually_added"
+              size="sm"
+              variant="ghost"
+              class="h-8 w-8 p-0 shrink-0 text-muted-foreground hover:text-destructive"
+              :title="'Delete'"
+              @click.stop="handleDeleteCustomText(customText)"
+            >
+              <Trash2 class="size-4" />
+            </Button>
           </div>
           <div v-else class="flex w-full items-center gap-4 group">
             <div class="flex min-w-0 flex-1 flex-col gap-1 items-start">
@@ -297,6 +324,16 @@
                 @click.stop="handlePasteStyle(index)"
               >
                 {{ texts_paste_style({}, { locale }) }}
+              </Button>
+              <Button
+                v-if="customText.manually_added"
+                size="sm"
+                variant="outline"
+                class="h-8 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                title="Delete"
+                @click.stop="handleDeleteCustomText(customText)"
+              >
+                <Trash2 class="size-4" />
               </Button>
             </div>
           </div>

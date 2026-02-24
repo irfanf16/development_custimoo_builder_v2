@@ -168,7 +168,7 @@
               :title="orders_action_add_to_cart({}, { locale })"
               :disabled="store.loadingCart[`${index}-${pIdx}`]"
               :loading="store.loadingCart[`${index}-${pIdx}`]"
-              @click.once="addToCart(product, item, index, pIdx)"
+              @click.once.stop="addToCart(product, item, index, pIdx)"
             >
               <i-flex-line-cart class="size-4" />
             </Button>
@@ -177,7 +177,7 @@
               class="hover:bg-transparent rounded-full p-1.5 hover:text-primary hover:border hover:border-primary disabled:cursor-not-allowed"
               :title="orders_action_reorder({}, { locale })"
               :disabled="!product.can_reorder || Boolean(order.order_no) === false"
-              @click.once="handleReorder(item, product)"
+              @click.once.stop="handleReorder(item, product)"
             >
               <RefreshCw class="size-4" />
             </Button>
