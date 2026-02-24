@@ -4,6 +4,8 @@ import type { APCustomizationRosterEntry } from '../products/types/customization
 export interface CancelOrderResponse {
   success: boolean
   message?: string
+  /** Updated order from the server (e.g. with cancelled status) */
+  result?: Order
 }
 export interface FactoryProduct {
   id: string

@@ -249,19 +249,42 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     try {
       const response = await API.orders.cancelOrder(order.id)
 
-      if (response.success) {
+      // Treat as success when backend sends success !== false or when we have result (backend may omit success)
+      const isSuccess = response && response.success !== false
+      const rawResult: unknown = response?.result
+      let updatedOrder: Order | undefined
+      if (rawResult && typeof rawResult === 'object' && 'order' in rawResult) {
+        updatedOrder = (rawResult as { order: Order }).order
+      } else if (rawResult && typeof rawResult === 'object') {
+        updatedOrder = rawResult as Order
+      } else {
+        updatedOrder = undefined
+      }
+
+      if (isSuccess) {
         toast.success(response.message || 'Order cancelled successfully', {
           position: 'top-right',
           richColors: true
         })
-        // Refresh order details if it's the active order
-        if (activeOrder.value?.id === order.id) {
-          await fetchOrderDetails(order.id)
+        if (updatedOrder) {
+          if (activeOrder.value?.id === order.id) {
+            activeOrder.value = updatedOrder
+          }
+          const idx = orders.value.findIndex(o => String(o.id) === String(order.id))
+          if (idx !== -1) {
+            const next = [...orders.value]
+            next[idx] = updatedOrder
+            orders.value = next
+          }
+          saveToLocalStorage()
+        } else {
+          if (activeOrder.value?.id === order.id) {
+            await fetchOrderDetails(order.id)
+          }
+          await fetchOrders()
         }
-        // Refresh orders list
-        await fetchOrders()
       } else {
-        toast.error(response.message || 'ERROR! Could not cancel the order, please try again.', {
+        toast.error(response?.message || 'ERROR! Could not cancel the order, please try again.', {
           position: 'top-right',
           richColors: true
         })

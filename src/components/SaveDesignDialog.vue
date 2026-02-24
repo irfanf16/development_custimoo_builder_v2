@@ -381,6 +381,7 @@
         mainDisplaySide.value = 'front'
         imagesLoading.value = true
         console.log('orderProductData in watch:', orderProductData.value)
+
         productName.value = activeProductDetails.value!.display_name ?? ''
         if (!lockerStoreRef.lockers.value.length) {
           await lockerStore.fetchLockers()

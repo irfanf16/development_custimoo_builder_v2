@@ -133,15 +133,13 @@
       store.fetchOrderDetails(store.activeOrder.id)
     }
 
-    // Fetch orders if none loaded
-    if (!store.orders.length) {
-      const query = new URLSearchParams()
-      const { search, filter } = store.ordersParams
-      if (search) query.set('search', search)
-      if (filter) query.set('filter', filter)
-      const params = query.toString() ? `?${query.toString()}` : ''
-      store.fetchOrders(params)
-    }
+    // Refetch orders every time the tab is opened so the list is up to date
+    const query = new URLSearchParams()
+    const { search, filter } = store.ordersParams
+    if (search) query.set('search', search)
+    if (filter) query.set('filter', filter)
+    const params = query.toString() ? `?${query.toString()}` : ''
+    store.fetchOrders(params)
   })
 
   async function loadMore() {

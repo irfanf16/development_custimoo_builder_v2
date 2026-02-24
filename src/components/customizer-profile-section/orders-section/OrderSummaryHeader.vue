@@ -25,15 +25,16 @@
           v-if="order.items?.every(i => i.status === 'submitted_for_factory_review')"
           size="sm"
           class="hover:bg-transparent hover:text-red-600 hover:border hover:border-red-600"
-          @click="handleCancelOrder"
+          @click.stop="handleCancelOrder"
         >
           Cancel
         </Button>
 
+
         <Button
           size="sm"
           class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
-          @click="handleDownloadPdf"
+          @click.stop="handleDownloadPdf"
         >
           PDF
         </Button>
@@ -51,7 +52,7 @@
           size="sm"
           variant="ghost"
           class="text-xs border"
-          @click="openTimeline()"
+          @click.stop="openTimeline()"
         >
           Order Timeline
         </Button>
