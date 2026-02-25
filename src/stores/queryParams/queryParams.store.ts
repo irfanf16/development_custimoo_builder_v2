@@ -10,6 +10,10 @@ export interface QueryParams {
   update_cart?: number
   line?: number
   roster?: number
+  /** Admin/customer impersonation token (read from URL, consumed by auth store, then removed from URL) */
+  token?: string
+  /** Alias for admin login token */
+  adminToken?: string
   [key: string]: string | number | undefined
 }
 
@@ -56,6 +60,15 @@ export const useQueryParamsStore = defineStore('queryParams', () => {
     params.value = {}
   }
 
+  /**
+   * Clear a single parameter (e.g. after auth consumes token/adminToken)
+   */
+  function clearParam(key: keyof QueryParams) {
+    const next = { ...params.value }
+    delete next[key]
+    params.value = next
+  }
+
   return {
     // Readonly state
     params: readonly(params),
@@ -64,6 +77,7 @@ export const useQueryParamsStore = defineStore('queryParams', () => {
     getParam,
     hasParam,
     getAllParams,
-    clearParams
+    clearParams,
+    clearParam
   }
 })

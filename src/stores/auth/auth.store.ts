@@ -13,6 +13,7 @@ import type { APIResponse } from '@/services/types'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import type { PermissionResponse, Permissions } from '@/services/permissions/types'
 import { useCartStore } from '@/stores/cart/cart.store'
+import { useQueryParamsStore } from '@/stores/queryParams/queryParams.store'
 
 export const useAuthStore = defineStore('authStore', () => {
   // ===== DEPENDENCIES =====
@@ -322,16 +323,106 @@ export const useAuthStore = defineStore('authStore', () => {
     }
 
     const operation = (async () => {
-      // If the query string url has params jwtToken or adminToken, set them in localStorage
+      // Helper: get query param from URL (supports ?param= and #/?param= for hash routing)
+      const getUrlParam = (name: string): string | null => {
+        const search = window.location.search
+        const hash = window.location.hash
+        if (search) {
+          const value = new URLSearchParams(search.substring(1)).get(name)
+          if (value) return value
+        }
+        if (hash && hash.includes('?')) {
+          const hashQuery = hash.split('?')[1]?.split('#')[0] || ''
+          if (hashQuery) {
+            const value = new URLSearchParams(hashQuery).get(name)
+            if (value) return value
+          }
+        }
+        return null
+      }
+
+      // Admin impersonation: token from query params store (read by initQueryParams) or URL fallback
+      const queryParamsStore = useQueryParamsStore()
+      const tokenFromStore =
+        (queryParamsStore.getParam('token')) ??
+        (queryParamsStore.getParam('adminToken'))
+      const urlToken = getUrlParam('token') ?? getUrlParam('adminToken')
+      const impersonationToken = tokenFromStore ?? urlToken
+
+      if (impersonationToken) {
+        const output = await tryCatchApi(API.authentication.refreshToken(impersonationToken), {
+          operation: 'loginFromToken'
+        })
+        const raw = output.content as Record<string, unknown> | null
+        const data =
+          raw && typeof raw.result === 'object' ? (raw.result as Record<string, unknown>) : raw
+        const userFromApi = data && (data.user ?? data.customer)
+        const accessTokenFromApi =
+          data && typeof data.access_token === 'string' ? data.access_token : null
+        const refreshTokenFromApi =
+          data && typeof data.refresh_token === 'string' ? data.refresh_token : undefined
+        const accessTokenToUse = accessTokenFromApi ?? impersonationToken
+
+        if (output.success && data && userFromApi && accessTokenToUse) {
+          const payload: OutputLogin = {
+            user: userFromApi as Customer,
+            access_token: accessTokenToUse,
+            ...(refreshTokenFromApi ? { refresh_token: refreshTokenFromApi } : {})
+          }
+          await initCustomerAndAccessToken(payload)
+          storage.setItemRaw(ADMIN_TOKEN_STORAGE_KEY, impersonationToken)
+          await saveToLocalStorage()
+          // Clear token from query params store (already removed from URL by initQueryParams when present)
+          queryParamsStore.clearParam('token')
+          queryParamsStore.clearParam('adminToken')
+          // Remove token params from URL if still present (e.g. fallback when token was read from URL)
+          try {
+            const search = window.location.search
+            const hash = window.location.hash
+            let newSearch = search
+            let newHash = hash
+            if (search) {
+              const p = new URLSearchParams(search.substring(1))
+              if (p.has('token') || p.has('adminToken')) {
+                p.delete('token')
+                p.delete('adminToken')
+                newSearch = p.toString() ? `?${p.toString()}` : ''
+              }
+            }
+            if (hash && hash.includes('?')) {
+              const [hashPath, hashQuery] = hash.split('?')
+              const qPart = hashQuery?.split('#')[0] ?? ''
+              const frag = hashQuery?.includes('#')
+                ? `#${hashQuery.split('#').slice(1).join('#')}`
+                : ''
+              const p = new URLSearchParams(qPart)
+              if (p.has('token') || p.has('adminToken')) {
+                p.delete('token')
+                p.delete('adminToken')
+                const qs = p.toString()
+                newHash = qs ? `${hashPath}?${qs}${frag}` : `${hashPath}${frag}`
+              }
+            }
+            const newUrl = window.location.pathname + newSearch + newHash
+            window.history.replaceState(null, '', newUrl)
+          } catch {
+            // ignore URL update errors
+          }
+          lastHydrationResult = true
+          isHydrated.value = true
+          return true
+        }
+      }
+
+      // If the query string has jwtToken or adminToken (storage-only, no exchange), set them in storage
       const checkForQueryStringParams = () => {
-        const url = new URL(window.location.href)
-        const jwtToken = url.searchParams.get('jwtToken')
-        const adminToken = url.searchParams.get('adminToken')
+        const jwtToken = getUrlParam('jwtToken')
+        const adminToken = getUrlParam('adminToken')
         if (jwtToken) {
-          storage.setItemRaw('jwtToken', jwtToken)
+          storage.setItemRaw(ACCESS_TOKEN_STORAGE_KEY, jwtToken)
         }
         if (adminToken) {
-          storage.setItemRaw('jwtToken', adminToken)
+          storage.setItemRaw(ACCESS_TOKEN_STORAGE_KEY, adminToken)
           storage.setItemRaw(ADMIN_TOKEN_STORAGE_KEY, adminToken)
         }
       }

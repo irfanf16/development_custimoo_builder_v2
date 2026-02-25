@@ -4,8 +4,17 @@ import type { QueryParams } from '@/stores/queryParams/queryParams.store'
 
 /**
  * List of query parameters that should be extracted and removed from URL
+ * Includes token/adminToken for admin login flow (consumed by auth store after init)
  */
-const HANDLED_PARAMS = ['sync_id', 'update_item', 'update_cart', 'line', 'roster'] as const
+const HANDLED_PARAMS = [
+  'sync_id',
+  'update_item',
+  'update_cart',
+  'line',
+  'roster',
+  'token',
+  'adminToken'
+] as const
 
 /**
  * Parse a query parameter value to the appropriate type
@@ -16,7 +25,7 @@ function parseQueryValue(key: string, value: string): string | number {
     const num = parseInt(value, 10)
     return isNaN(num) ? value : num
   }
-  // Return string for other params
+  // token, adminToken and update_item stay as string
   return value
 }
 

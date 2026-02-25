@@ -25,6 +25,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/login',
+    name: 'LoginAsAdmin',
+    component: () => import('@/views/Customizer.vue'),
+    meta: {
+      layout: 'default',
+      title: 'Customizer'
+    }
+  },
+  {
     path: '/third-party-feedback/:order_item_id',
     name: 'ThirdPartyApproval',
     component: () => import('@/views/ThirdPartyApproval.vue'),
@@ -64,7 +73,21 @@ const router = createRouter({
 })
 
 // Navigation guard for authentication
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
+  // Admin login: process token from URL (via query params store), then redirect to home
+  if (to.path === '/admin/login') {
+    const routeToken = (to.query.token ?? to.query.adminToken) as string | undefined
+    if (routeToken) {
+      const { useQueryParamsStore } = await import('@/stores/queryParams/queryParams.store')
+      const queryParamsStore = useQueryParamsStore()
+      queryParamsStore.setParams({ ...queryParamsStore.getAllParams(), token: routeToken })
+    }
+    const authStore = useAuthStore()
+    await authStore.ensureHydrated()
+    next({ path: '/', replace: true })
+    return
+  }
+
   // Handle share URLs: redirect /share/... to / and let initialization extract the share URL
   if (to.path.startsWith('/share/')) {
     // Extract the share URL part (everything after /share/) and include the 'share/' prefix
