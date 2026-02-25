@@ -19,6 +19,33 @@ import { useProductsStore } from '../products/products.store'
 import type { CustomLogo, LogoColor } from '@/services/logos/types'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 
+const HISTORY_MAX_SIZE = 10
+const CUSTOMIZATION_STORAGE_KEY = 'activeProductCustomization'
+const REORDER_DATA_STORAGE_KEY = 'reorderData'
+
+export interface HistoryEntry {
+  state: ActiveProductCustomization
+  actionTitle: string
+}
+
+export interface PersistedCustomizationPayload {
+  history: HistoryEntry[]
+  historyIndex: number
+  currentActionTitle: string
+  reorderData: { orderItemId: number | null; factoryProductId: string | null }
+}
+
+function deepClone<T>(value: T): T {
+  if (typeof structuredClone === 'function') {
+    try {
+      return structuredClone(value)
+    } catch {
+      return JSON.parse(JSON.stringify(value)) as T
+    }
+  }
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
 export const useCustomizationStore = defineStore('customizationStore', () => {
   // ===== DEPENDENCIES =====
   const productsStore = useProductsStore()
@@ -26,6 +53,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
   // ===== STATE =====
   const customization = ref<ActiveProductCustomization | null>(null)
+  const history = ref<HistoryEntry[]>([])
+  const historyIndex = ref(0)
+  const currentActionTitle = ref('')
 
   // ===== COMPUTED =====
   const activeProductId = computed(() =>
@@ -101,7 +131,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const entry = ensureTextEntry(productId, index)
     if (!entry) return
     Object.assign(entry, payload)
-    saveToLocalStorage()
+    pushHistoryState('Updated text')
   }
 
   const removeTextEntry = (productId: number, index: number) => {
@@ -111,7 +141,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const bucket = root.product_custom_texts[key]
     if (!bucket) return
     bucket.splice(index, 1)
-    saveToLocalStorage()
+    pushHistoryState('Removed text')
   }
 
   /**
@@ -137,7 +167,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (allUnselected && entry) {
       entry.value = ''
     }
-    saveToLocalStorage()
+    pushHistoryState('Updated text selection')
   }
 
   /**
@@ -158,7 +188,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const item = entry?.items?.[itemIndex]
     if (!item) return
     entry.items[itemIndex] = { ...item, ...payload }
-    saveToLocalStorage()
+    pushHistoryState('Updated text placement')
   }
 
   /**
@@ -209,32 +239,126 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   function clearRosterEntries() {
     if (!customization.value) return
     customization.value.products_rosters = {}
+    pushHistoryState('Cleared roster')
+  }
+
+  // ===== UNDO / REDO =====
+  const canUndo = computed(() => historyIndex.value > 0)
+  const canRedo = computed(() => historyIndex.value < history.value.length - 1)
+  const nextRedoActionTitle = computed(() => {
+    const next = historyIndex.value + 1
+    return history.value[next]?.actionTitle ?? ''
+  })
+
+  /**
+   * Push current customization state to history with an action title.
+   * Truncates redo stack if not at tip. Caps history at HISTORY_MAX_SIZE.
+   */
+  function pushHistoryState(actionTitle: string): void {
+    if (!customization.value) return
+    if (historyIndex.value < history.value.length - 1) {
+      history.value = history.value.slice(0, historyIndex.value + 1)
+    }
+    history.value.push({
+      state: deepClone(customization.value),
+      actionTitle
+    })
+    while (history.value.length > HISTORY_MAX_SIZE) {
+      history.value.shift()
+      historyIndex.value = Math.max(0, historyIndex.value - 1)
+    }
+    historyIndex.value = history.value.length - 1
+    currentActionTitle.value = actionTitle
+    saveToLocalStorage()
+  }
+
+  function undo(): void {
+    if (historyIndex.value <= 0) return
+    historyIndex.value--
+    const entry = history.value[historyIndex.value]
+    if (entry) {
+      customization.value = deepClone(entry.state)
+      currentActionTitle.value = entry.actionTitle
+    }
+    saveToLocalStorage()
+  }
+
+  function redo(): void {
+    if (historyIndex.value >= history.value.length - 1) return
+    historyIndex.value++
+    const entry = history.value[historyIndex.value]
+    if (entry) {
+      customization.value = deepClone(entry.state)
+      currentActionTitle.value = entry.actionTitle
+    }
     saveToLocalStorage()
   }
 
   // ===== PERSISTENCE =====
-  function saveToLocalStorage() {
-    setItem('activeProductCustomization', customization.value)
-    setItem('reorderData', reorderData.value)
+  function saveToLocalStorage(): void {
+    setItem(CUSTOMIZATION_STORAGE_KEY, {
+      history: history.value,
+      historyIndex: historyIndex.value,
+      currentActionTitle: currentActionTitle.value,
+      reorderData: reorderData.value
+    } as PersistedCustomizationPayload)
   }
 
   function loadFromLocalStorage(): boolean {
-    const parsed = getItem<ActiveProductCustomization>('activeProductCustomization')
-    const reorderParsed = getItem<typeof reorderData.value>('reorderData')
+    const parsed = getItem<PersistedCustomizationPayload | ActiveProductCustomization>(
+      CUSTOMIZATION_STORAGE_KEY
+    )
+    const reorderParsed = getItem<typeof reorderData.value>(REORDER_DATA_STORAGE_KEY)
     if (!parsed) return false
-    customization.value = parsed
-    reorderData.value = reorderParsed || { orderItemId: null, factoryProductId: null }
+
+    if (Array.isArray((parsed as PersistedCustomizationPayload).history)) {
+      const payload = parsed as PersistedCustomizationPayload
+      history.value = payload.history
+      historyIndex.value = Math.min(
+        Math.max(0, payload.historyIndex),
+        Math.max(0, payload.history.length - 1)
+      )
+      currentActionTitle.value = payload.currentActionTitle ?? ''
+      reorderData.value = payload.reorderData ??
+        reorderParsed ?? { orderItemId: null, factoryProductId: null }
+      const entry = history.value[historyIndex.value]
+      if (entry) {
+        customization.value = deepClone(entry.state)
+      } else if (history.value.length > 0) {
+        const first = history.value[0]
+        if (first) {
+          customization.value = deepClone(first.state)
+          historyIndex.value = 0
+          currentActionTitle.value = first.actionTitle
+        } else {
+          customization.value = null
+        }
+      } else {
+        customization.value = null
+      }
+    } else {
+      const legacy = parsed as ActiveProductCustomization
+      const cloned = deepClone(legacy)
+      history.value = [{ state: cloned, actionTitle: '' }]
+      historyIndex.value = 0
+      currentActionTitle.value = ''
+      customization.value = cloned
+      reorderData.value = reorderParsed ?? { orderItemId: null, factoryProductId: null }
+    }
     return true
   }
 
-  function clearLocalStorage() {
-    removeItem('activeProductCustomization')
-    removeItem('reorderData')
+  function clearLocalStorage(): void {
+    removeItem(CUSTOMIZATION_STORAGE_KEY)
+    removeItem(REORDER_DATA_STORAGE_KEY)
   }
 
   // ===== ACTIONS =====
   function setCustomization(initial: ActiveProductCustomization) {
     customization.value = initial
+    history.value = [{ state: deepClone(initial), actionTitle: 'Initial' }]
+    historyIndex.value = 0
+    currentActionTitle.value = 'Initial'
     saveToLocalStorage()
   }
 
@@ -268,7 +392,10 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const next = productId
     if (prev === next) return
     customization.value.product_id = next
-    // Fetch orchestration handled in products store watcher
+    // Reset history to a fresh single state for the new product
+    history.value = [{ state: deepClone(customization.value), actionTitle: 'Initial' }]
+    historyIndex.value = 0
+    currentActionTitle.value = 'Initial'
     saveToLocalStorage()
   }
 
@@ -321,7 +448,12 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  function setGroupColor(groupName: string, groupColor: OutputColor, gradientIndex?: number) {
+  function setGroupColor(
+    groupName: string,
+    groupColor: OutputColor,
+    gradientIndex?: number,
+    options?: { skipHistory?: boolean }
+  ) {
     if (!customization.value) return
 
     const existing = customization.value.group_colors[groupName]
@@ -379,7 +511,11 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
         name: groupColor.name
       }
     }
-    saveToLocalStorage()
+    if (options?.skipHistory) {
+      saveToLocalStorage()
+    } else {
+      pushHistoryState('Changed color')
+    }
   }
 
   const nullDefaultColorSlot: APCustomizationDefaultColor = {
@@ -398,7 +534,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     }
     arr[index] = value ? { ...value } : { ...nullDefaultColorSlot }
     customization.value.default_colors = arr.slice(0, 4)
-    saveToLocalStorage()
+    pushHistoryState('Changed default color')
   }
 
   function removeDefaultColorAt(index: number) {
@@ -415,7 +551,23 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       { ...nullDefaultColorSlot }
     ]
     customization.value.default_colors = arr
-    saveToLocalStorage()
+    pushHistoryState('Cleared default colors')
+  }
+
+  /**
+   * Clear default_colors and group_colors in one go (e.g. when all custom logos are removed).
+   * Pushes a single history entry so undo can restore.
+   */
+  function clearLogoColorsAndApplied() {
+    if (!customization.value) return
+    customization.value.default_colors = [
+      { ...nullDefaultColorSlot },
+      { ...nullDefaultColorSlot },
+      { ...nullDefaultColorSlot },
+      { ...nullDefaultColorSlot }
+    ]
+    customization.value.group_colors = {}
+    pushHistoryState('Cleared logo colors')
   }
 
   function appendLogoColors(colors?: LogoColor[]) {
@@ -423,7 +575,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (!colors || !colors.length) return
     if (!Array.isArray(customization.value.logo_colors)) customization.value.logo_colors = []
     colors.forEach(c => customization.value!.logo_colors.push(c))
-    saveToLocalStorage()
+    pushHistoryState('Added logo')
   }
 
   function addLogoToCustomizationFromSource(logo: CustomLogo) {
@@ -497,7 +649,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const arr = customization.value.custom_logos[productKey]
     if (!arr || logoIndex < 0 || logoIndex >= arr.length) return
     arr.splice(logoIndex, 1)
-    saveToLocalStorage()
+    pushHistoryState('Removed logo')
   }
 
   // Helper function to create default customization with preserved IDs
@@ -596,7 +748,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
         following_product_ids: text.following_product_ids ? [...text.following_product_ids] : []
       }))
 
-      saveToLocalStorage()
+      pushHistoryState('Reset customization')
     }
   }
 
@@ -639,7 +791,10 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     return customization.value.roster_preview_selection
   }
 
-  function setSelectedRosterPreviewIndex(index: number | null) {
+  function setSelectedRosterPreviewIndex(
+    index: number | null,
+    options?: { skipHistory?: boolean }
+  ) {
     if (!customization.value) return
     const prodId = customization.value.product_id
     if (!prodId) return
@@ -651,7 +806,11 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     } else {
       map[key] = index
     }
-    saveToLocalStorage()
+    if (options?.skipHistory) {
+      saveToLocalStorage()
+    } else {
+      pushHistoryState('Changed roster preview')
+    }
   }
 
   function updateProductTextValueById(
@@ -674,16 +833,19 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       value
     }
     if (options?.persist) {
-      saveToLocalStorage()
+      pushHistoryState('Updated text value')
     }
     return true
   }
   function setReorderData(orderItemId: number, factoryProductId: string) {
     reorderData.value = { orderItemId, factoryProductId }
-    saveToLocalStorage()
+    pushHistoryState('Set reorder data')
   }
   const resetCustomizationStore = () => {
     customization.value = null
+    history.value = []
+    historyIndex.value = 0
+    currentActionTitle.value = ''
     clearLocalStorage()
   }
   function generateTemporaryId(): number {
@@ -701,7 +863,10 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     }
     return minId - 1
   }
-  function addEmptyRosterRow(initialData?: Partial<APCustomizationRosterEntry>) {
+  function addEmptyRosterRow(
+    initialData?: Partial<APCustomizationRosterEntry>,
+    options?: { skipHistory?: boolean }
+  ) {
     if (!customization.value) return
 
     const newRow: APCustomizationRosterEntry = {
@@ -719,13 +884,21 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     }
 
     customization.value.products_rosters[key].push(newRow)
-    saveToLocalStorage()
+    if (options?.skipHistory) {
+      saveToLocalStorage()
+    } else {
+      pushHistoryState('Added roster row')
+    }
   }
 
   /**
    * Update roster row by index
    */
-  function updateRosterRow(index: number, payload: Partial<APCustomizationRosterEntry>) {
+  function updateRosterRow(
+    index: number,
+    payload: Partial<APCustomizationRosterEntry>,
+    options?: { skipHistory?: boolean }
+  ) {
     if (!customization.value) return
 
     const key = String(customization.value.product_id)
@@ -734,12 +907,16 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (!entries || !entries[index]) return
 
     Object.assign(entries[index], payload)
-    saveToLocalStorage()
+    if (options?.skipHistory) {
+      saveToLocalStorage()
+    } else {
+      pushHistoryState('Updated roster row')
+    }
   }
 
   function clearReorderData() {
     reorderData.value = { orderItemId: null, factoryProductId: null }
-    saveToLocalStorage()
+    pushHistoryState('Cleared reorder data')
   }
   // ===== RETURN =====
 
@@ -747,6 +924,16 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   return {
     // State
     customization,
+    history,
+    historyIndex,
+    currentActionTitle,
+    // Undo / Redo
+    pushHistoryState,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    nextRedoActionTitle,
     // Computed
     activeProductId,
     activeStyleId,
@@ -774,6 +961,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     setDefaultColorAt,
     removeDefaultColorAt,
     clearDefaultColors,
+    clearLogoColorsAndApplied,
     appendLogoColors,
     addLogoToCustomizationFromSource,
     getMergedCustomizationLogo,

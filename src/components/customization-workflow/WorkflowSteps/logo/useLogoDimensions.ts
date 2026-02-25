@@ -77,14 +77,7 @@ export function useLogoDimensions(
     if (!Number.isFinite(numeric) || numeric < 0) return
 
     const nextOriginal = Number(numeric.toFixed(MAX_DECIMALS))
-    const logo = arr[index] as CustomLogo & {
-      originalWidth?: number | string
-      originalHeight?: number | string
-      scaleX?: number
-      scaleY?: number
-      width?: number
-      height?: number
-    }
+    const logo = arr[index]
 
     let scaleX = logo.scaleX ?? 1
     let scaleY = logo.scaleY ?? 1
@@ -128,7 +121,7 @@ export function useLogoDimensions(
     }
 
     arr.splice(index, 1, updated as CustomLogo)
-    customizationStore.saveToLocalStorage()
+    customizationStore.pushHistoryState('Changed logo dimensions')
 
     // Update position form height if dimension is height
     if (dimension === 'height') {

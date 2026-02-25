@@ -84,12 +84,12 @@ export function useRoster() {
     () => rosterEntries.value.length,
     newLength => {
       if (newLength === 0) {
-        setRosterPreviewIndex(null)
+        setRosterPreviewIndex(null, { skipHistory: true })
         return
       }
       const current = selectedRosterPreviewIndex.value
       if (current == null || current >= newLength) {
-        setRosterPreviewIndex(0)
+        setRosterPreviewIndex(0, { skipHistory: true })
       }
     },
     { immediate: true }
@@ -115,8 +115,8 @@ export function useRoster() {
       })
     }
   }
-  function setRosterPreviewIndex(index: number | null) {
-    customizationStore.setSelectedRosterPreviewIndex(index)
+  function setRosterPreviewIndex(index: number | null, options?: { skipHistory?: boolean }) {
+    customizationStore.setSelectedRosterPreviewIndex(index, options)
     syncRosterPreviewTexts()
   }
 

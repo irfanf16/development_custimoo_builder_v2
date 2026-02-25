@@ -401,7 +401,7 @@
     } as CustomLogo & { logo_technology?: OutputProductLogoTechnology | null }
 
     arr[logoIndex] = updatedLogo as CustomLogo
-    customizationStore.saveToLocalStorage()
+    customizationStore.pushHistoryState('Changed logo technology')
 
     // Update active logo if it's the same one
     if (logosStore.activeLogo?.id === customLogo.value.id) {

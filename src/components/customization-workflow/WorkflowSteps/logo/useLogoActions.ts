@@ -97,16 +97,14 @@ export function useLogoActions() {
     }
     workflowStore.setActiveLogoId(String(logo.id))
 
-    workflowStore.setActiveLogoId(String(logo.id))
-    // Set default_colors in customization store
     if (customizationStore.customization) {
+      // Push current state (with design colors) so undo can restore it
+      customizationStore.pushHistoryState('Design colors')
       customizationStore.customization.default_colors = defaultColors.slice(0, 4)
       customizationStore.customization.shuffle_color_number = 1
-      // Save snapshot for "Use original colors" before clearing
       workflowStore.setGroupColorsBeforeLogoApply(customizationStore.customization.group_colors)
-      // Clear group_colors when applying logo colors
       customizationStore.customization.group_colors = {}
-      customizationStore.saveToLocalStorage()
+      customizationStore.pushHistoryState('Applied logo colors')
     }
   }
 
@@ -124,7 +122,7 @@ export function useLogoActions() {
     // Just update the shuffle_color_number and return
     if (filteredColors.length === 1) {
       customizationStore.customization.shuffle_color_number = Math.floor(Math.random() * 24) + 1
-      customizationStore.saveToLocalStorage()
+      customizationStore.pushHistoryState('Shuffled colors')
       return
     }
 
@@ -157,7 +155,7 @@ export function useLogoActions() {
     // Clear group_colors when applying logo colors
     customizationStore.customization.group_colors = {}
 
-    customizationStore.saveToLocalStorage()
+    customizationStore.pushHistoryState('Shuffled colors')
   }
 
   async function recolorLogo(logo: CustomLogo, color: OutputColor) {

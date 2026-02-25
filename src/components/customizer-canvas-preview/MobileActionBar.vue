@@ -1,19 +1,19 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import { useHistoryStore } from '@/stores/history/history.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useColorActions } from '@/composables/useColorActions'
   import { useResetCustomization } from '@/composables/useResetCustomization'
   import { Shuffle, Undo2, Redo2, Crosshair, RotateCcw } from 'lucide-vue-next'
   import { computed } from 'vue'
 
-  const history = useHistoryStore()
+  const customizationStore = useCustomizationStore()
   const workflow = useWorkflowStore()
   const { shuffleColors } = useColorActions()
   const { openResetDialog } = useResetCustomization()
 
-  const canUndo = computed(() => history.undoStack.length > 0)
-  const canRedo = computed(() => history.redoStack.length > 0)
+  const canUndo = computed(() => customizationStore.canUndo)
+  const canRedo = computed(() => customizationStore.canRedo)
 
   function centerCanvas() {
     // Center current canvas view
@@ -49,7 +49,7 @@
       variant="ghost"
       class="flex flex-col items-center justify-center h-14 w-[60px] gap-0.5 p-0 hover:bg-transparent hover:text-background"
       :disabled="!canUndo"
-      @click="history.undo()"
+      @click="customizationStore.undo()"
     >
       <Undo2 class="size-4" />
       <span class="text-xs font-normal">Undo</span>
@@ -58,7 +58,7 @@
       variant="ghost"
       class="flex flex-col items-center justify-center h-14 w-[60px] gap-0.5 p-0 hover:bg-transparent hover:text-background"
       :disabled="!canRedo"
-      @click="history.redo()"
+      @click="customizationStore.redo()"
     >
       <Redo2 class="size-4" />
       <span class="text-xs font-normal">Redo</span>

@@ -1463,7 +1463,7 @@
       added?.on('modified', () => {
         addToOtherSide(added)
         showDimensions(added)
-        customizationStore.saveToLocalStorage()
+        customizationStore.pushHistoryState('Moved logo')
       })
       if (added) {
         addToOtherSide(added)
@@ -1553,7 +1553,7 @@
       textObj.on('modified', () => {
         addTextToOtherSide(textObj)
         showDimensions(textObj)
-        customizationStore.saveToLocalStorage()
+        customizationStore.pushHistoryState('Moved text')
       })
       addTextToOtherSide(textObj)
     }

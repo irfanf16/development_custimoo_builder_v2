@@ -16,6 +16,8 @@
   import { useHistoryStore } from '@/stores/history/history.store'
   import { useColorActions } from '@/composables/useColorActions'
   import type { Palette } from '@/composables/useColorActions'
+  import type { CustomLogo } from '@/services/logos/types'
+  import type { LogoColor } from '@/services/types'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useColorClipboard } from '@/composables/useColorClipboard'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
@@ -60,37 +62,47 @@
   const { isAuthenticated } = storeToRefs(authStore)
 
   // Parse locker rooms response into usable structure
+  /** Raw room from API may have folders as string[] or array of objects */
+  type RoomWithFolders = { id: number; room_name?: string; folders?: unknown[] }
+  /** Parsed folder shape (folder_name/folderName, color string or array) */
+  type ParsedFolder = { folder_name?: string; folderName?: string; color?: string | unknown[] }
+  /** Raw color item from locker API */
+  type RawColor = { name?: string; value?: string; hex?: string }
+
   const parsedLockerRooms = computed(() => {
     const raw = lockerRoomsWithColors?.value || []
-    return raw.map(room => {
-      const foldersRaw = (room as any).folders || []
-      const folders = foldersRaw.map((f: any) => {
+    return raw.map((room: RoomWithFolders) => {
+      const foldersRaw = room.folders || []
+      const folders = foldersRaw.map((f: unknown) => {
         // folder may be a JSON string or object
-        let parsed: any = f
+        let parsed: ParsedFolder
         if (typeof f === 'string') {
           try {
-            parsed = JSON.parse(f)
+            parsed = JSON.parse(f) as ParsedFolder
           } catch {
-            // not JSON, treat as folder name
             parsed = { folder_name: String(f), color: '[]' }
           }
+        } else if (typeof f === 'object' && f !== null) {
+          parsed = f as ParsedFolder
+        } else {
+          parsed = { folder_name: String(f), color: '[]' }
         }
 
         // parsed.color may be a JSON string or already array
-        let colorsArr: any[] = []
-        if (parsed && parsed.color) {
+        let colorsArr: RawColor[] = []
+        if (parsed && parsed.color !== undefined) {
           if (typeof parsed.color === 'string') {
             try {
-              colorsArr = JSON.parse(parsed.color)
+              colorsArr = JSON.parse(parsed.color) as RawColor[]
             } catch {
               colorsArr = []
             }
           } else if (Array.isArray(parsed.color)) {
-            colorsArr = parsed.color
+            colorsArr = parsed.color as RawColor[]
           }
         }
 
-        const colors: OutputColor[] = colorsArr.map((c: any, idx: number) => ({
+        const colors: OutputColor[] = colorsArr.map((c: RawColor, idx: number) => ({
           position: idx,
           name: c.name || '',
           value: c.value || c.hex || ''
@@ -128,11 +140,11 @@
     }
     return false
   }
-  function getCustomeLogos(): any[] {
+  function getCustomeLogos(): CustomLogo[] {
     const logos =
       customizationStore.customization?.custom_logos[productsStore.activeProductDetails?.id || '']
     if (logos && Array.isArray(logos)) {
-      return logos as any[]
+      return logos as CustomLogo[]
     }
     return []
   }
@@ -167,13 +179,20 @@
     // Convert each group into a Palette
     const palettes: Palette[] = Object.entries(logosByPlacement).map(([placementName, logos]) => {
       const colors: OutputColor[] = logos.flatMap(logo =>
-        (logo.logo_colors ?? []).map((colorArray: number[], index: number) => {
-          const r = colorArray[0] ?? 0
-          const g = colorArray[1] ?? 0
-          const b = colorArray[2] ?? 0
+        (logo.logo_colors ?? []).map((color: LogoColor, index: number) => {
+          if (Array.isArray(color)) {
+            const r = color[0] ?? 0
+            const g = color[1] ?? 0
+            const b = color[2] ?? 0
+            return {
+              name: logo.name_of_placement || `Logo Color ${index + 1}`,
+              value: `rgb(${r}, ${g}, ${b})`,
+              position: index
+            } as OutputColor
+          }
           return {
-            name: logo.name_of_placement || `Logo Color ${index + 1}`,
-            value: `rgb(${r}, ${g}, ${b})`,
+            name: color.name ?? logo.name_of_placement ?? `Logo Color ${index + 1}`,
+            value: color.hex ?? '',
             position: index
           } as OutputColor
         })
@@ -310,21 +329,12 @@
     if (!colors.length || !effectiveSvgGroupsInteractive.value?.length) return
     const shuffled = [...colors].sort(() => Math.random() - 0.5)
     const groups = effectiveSvgGroupsInteractive.value
-    void history.runBatch('Shuffle extracted colors', add => {
-      groups.forEach((group, index) => {
-        const nextColor = shuffled[index % shuffled.length]
-        if (!nextColor) return
-        const prevRaw = customizationStore.customization?.group_colors?.[group.id]
-        const prevColor = prevRaw
-          ? { name: prevRaw.name || '', value: prevRaw.color || '', position: 0 }
-          : null
-        add('color.set-group', {
-          groupId: group.id,
-          prevColor,
-          nextColor
-        })
-      })
+    groups.forEach((group, index) => {
+      const nextColor = shuffled[index % shuffled.length]
+      if (!nextColor) return
+      customizationStore.setGroupColor(group.id, nextColor, undefined, { skipHistory: true })
     })
+    customizationStore.pushHistoryState('Shuffle extracted colors')
   }
 
   function useOriginalColors() {
@@ -332,7 +342,7 @@
     if (customizationStore.customization) {
       customizationStore.customization.group_colors = snapshot ? { ...snapshot } : {}
       customizationStore.clearDefaultColors()
-      customizationStore.saveToLocalStorage()
+      customizationStore.pushHistoryState('Use original colors')
     }
     workflowStore.setActiveColorAccordionIndex(null)
   }
@@ -343,16 +353,12 @@
   // Show applied logo colors block only when product has at least one custom logo
   const hasCustomLogos = computed(() => getCustomeLogos().length > 0)
 
-  // When user removes all logos, clear applied default_colors and close add-color accordion
+  // When user removes all logos, clear default_colors and group_colors in one go
   watch(
     hasCustomLogos,
     has => {
       if (!has) {
-        if (customizationStore.customization?.default_colors) {
-          for (let i = 0; i < 4; i++) {
-            customizationStore.removeDefaultColorAt(i)
-          }
-        }
+        customizationStore.clearLogoColorsAndApplied()
         if (workflowStore.activeColorAccordionIndex === 0) {
           workflowStore.setActiveColorAccordionIndex(null)
         }

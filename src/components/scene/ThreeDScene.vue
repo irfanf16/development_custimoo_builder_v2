@@ -1423,7 +1423,7 @@
         added.on('rotating', () => showDimensions(added))
         added.on('modified', () => {
           showDimensions(added)
-          customizationStore.saveToLocalStorage()
+          customizationStore.pushHistoryState('Moved logo')
         })
       }
     } catch (error) {
@@ -1517,7 +1517,7 @@
       added.on('rotating', () => showDimensions(added))
       added.on('modified', () => {
         showDimensions(added)
-        customizationStore.saveToLocalStorage()
+        customizationStore.pushHistoryState('Moved text')
       })
     }
   }

@@ -32,8 +32,16 @@
       locker?.folders?.map(folder => {
         const color = folder.color
         const parsed = typeof color === 'string' ? (JSON.parse(color) as Colour[]) : color
+        const raw = Array.isArray(parsed) ? parsed : []
+        const seen = new Set<string>()
+        const colour_group = raw.filter(c => {
+          const key = (c.value ?? c.color ?? '').trim().toLowerCase()
+          if (!key || seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
         return {
-          colour_group: Array.isArray(parsed) ? parsed : [],
+          colour_group,
           group_name: folder.folder_name
         }
       }) ?? []

@@ -120,8 +120,8 @@ export function useTextActions() {
   /**
    * Debounced localStorage save for smooth slider interactions
    */
-  const debouncedSaveToLocalStorage = useDebounceFn(() => {
-    customizationStore.saveToLocalStorage()
+  const debouncedPushHistory = useDebounceFn(() => {
+    customizationStore.pushHistoryState('Updated text')
   }, 300)
 
   /**
@@ -193,10 +193,10 @@ export function useTextActions() {
     texts[entryIndex] = updatedEntry
 
     // Debounced localStorage save
-    void debouncedSaveToLocalStorage()
+    // void debouncedSaveToLocalStorage()
   }
 
-  function updateEntryInStore(skipLocalStorage = false) {
+  function updateEntryInStore() {
     const textId: number | null = activeTextId.value
     const prodId: number | null = productId.value
     const entry = currentEntry.value
@@ -220,12 +220,8 @@ export function useTextActions() {
     // Update the entry in place
     texts[entryIndex] = updated
 
-    // Save to localStorage (debounced for slider attributes, immediate for others)
-    if (!skipLocalStorage) {
-      customizationStore.saveToLocalStorage()
-    } else {
-      void debouncedSaveToLocalStorage()
-    }
+    // Always debounce history push so typing does not create one entry per keystroke
+    void debouncedPushHistory()
 
     // Reset flag after a short delay to allow store updates to propagate
     setTimeout(() => {
@@ -537,41 +533,37 @@ export function useTextActions() {
     { deep: true }
   )
 
-  // Watch debounced attributes (text, angle, height) - update canvas immediately, save to history with debounce
+  // Watch text content: update store/roster immediately, push history once per pause (debounced)
   watch(
     () => form.text,
     newText => {
       if (!isUserInput.value) return
 
-      // Ensure there is at least one roster row for this product
       const prodId = productId.value
       if (!prodId) return
 
       const roster = customizationStore.rosterEntries
       if (!roster || roster.length === 0) {
-        // create first row with current text and number from form
-        customizationStore.addEmptyRosterRow({
-          text: newText,
-          number: form.number || ''
-        })
+        customizationStore.addEmptyRosterRow(
+          { text: newText, number: form.number || '' },
+          { skipHistory: true }
+        )
       } else {
-        // update first row only - preserve number field if it exists
         const firstEntry = roster[0]
         const updates: Partial<APCustomizationRosterEntry> = { text: newText }
-        // Preserve number field from roster if form doesn't have it
         if (firstEntry?.number && !form.number) {
           updates.number = firstEntry.number
         } else if (form.number) {
           updates.number = form.number
         }
-        customizationStore.updateRosterRow(0, updates)
+        customizationStore.updateRosterRow(0, updates, { skipHistory: true })
       }
 
-      // Also update the active product text entry value (so Text tab stays in sync)
       const textId = activeTextId.value
       if (textId != null) {
-        customizationStore.updateProductTextValueById(textId, newText, { persist: true })
+        customizationStore.updateProductTextValueById(textId, newText, { persist: false })
       }
+      void debouncedPushHistory()
     }
   )
   watch(
@@ -791,7 +783,7 @@ export function useTextActions() {
     updateEntryInStore,
     updateEntryInStoreOptimized,
     buildUpdatedEntry,
-    debouncedSaveToLocalStorage,
+    // debouncedSaveToLocalStorage,
     isUserInput,
     previousState,
     ensureRosterRowExists,

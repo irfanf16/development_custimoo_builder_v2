@@ -12,7 +12,7 @@
     Layers3,
     Shuffle
   } from 'lucide-vue-next'
-  import { useHistoryStore } from '@/stores/history/history.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
   // import { useColorActions } from '@/composables/useColorActions'
   import { useLogoActions } from '@/components/customization-workflow/WorkflowSteps/logo/useLogoActions'
   import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
@@ -33,14 +33,13 @@
   import { computed } from 'vue'
 
   const workflowStore = useWorkflowStore()
-  const history = useHistoryStore()
+  const customizationStore = useCustomizationStore()
   // const { shuffleColors: shuffleDesignColors } = useColorActions()
   const { shuffleColors: shuffleLogoColors } = useLogoActions()
   const profileStore = useProfileStore()
 
-  // Determine if undo/redo stacks are empty
-  const isUndoDisabled = computed(() => history.undoStack.length === 0)
-  const isRedoDisabled = computed(() => history.redoStack.length === 0)
+  const isUndoDisabled = computed(() => !customizationStore.canUndo)
+  const isRedoDisabled = computed(() => !customizationStore.canRedo)
 
   const locale = computed(() => profileStore.currentLocale || 'en')
 
@@ -118,14 +117,14 @@
       id: 'undo',
       icon: Undo2,
       label: toolbar_undo({}, { locale: locale.value }),
-      action: () => history.undo(),
+      action: () => customizationStore.undo(),
       disabled: isUndoDisabled.value
     },
     {
       id: 'redo',
       icon: Redo2,
       label: toolbar_redo({}, { locale: locale.value }),
-      action: () => history.redo(),
+      action: () => customizationStore.redo(),
       disabled: isRedoDisabled.value
     }
   ])
@@ -138,7 +137,10 @@
   >
     <template v-for="t in tools" :key="t.id">
       <TooltipProvider>
-        <Tooltip :delay-duration="200">
+        <Tooltip
+          :delay-duration="200"
+          :disable-closing-trigger="t.id === 'undo' || t.id === 'redo'"
+        >
           <TooltipTrigger as-child>
             <Button
               variant="default"
@@ -152,11 +154,11 @@
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">
-            <span v-if="t.id === 'undo' && history.nextUndoDescription">
-              {{ undoPrefix }}{{ history.nextUndoDescription }}
+            <span v-if="t.id === 'undo' && customizationStore.currentActionTitle">
+              {{ undoPrefix }}{{ customizationStore.currentActionTitle }}
             </span>
-            <span v-else-if="t.id === 'redo' && history.nextRedoDescription">
-              {{ redoPrefix }}{{ history.nextRedoDescription }}
+            <span v-else-if="t.id === 'redo' && customizationStore.nextRedoActionTitle">
+              {{ redoPrefix }}{{ customizationStore.nextRedoActionTitle }}
             </span>
             <span v-else>{{ t.label }}</span>
           </TooltipContent>
