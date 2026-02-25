@@ -112,6 +112,20 @@
       }
       return
     }
+
+    const minDesignQty = minimumActiveProductQuantityByDesignToCard.value
+    const isByDesign = isQuantityByDesign.value
+    if (!canSkipMoq.value && isByDesign && totalQuantity < minDesignQty) {
+      toast.error(
+        `Please add at least ${minDesignQty} items to the roster before adding to cart.`,
+        {
+          position: 'top-right',
+          richColors: true
+        }
+      )
+      return
+    }
+
     try {
       const { factory_product, product_assets } = await buildFactoryProductPayload()
       await cartStore.addProductToCart({

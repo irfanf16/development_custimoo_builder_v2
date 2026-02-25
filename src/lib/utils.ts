@@ -146,18 +146,47 @@ export function getFontFamilyCSS(fontFamily: string): string {
 }
 
 // Format date to "MMM DD, YYYY" (e.g., "Jan 01, 2023")
-export function formatDate(dateStr?: string): string {
+export function formatDate(dateStr?: string, format?: string): string {
   if (!dateStr) return 'N/A'
+
   const date = new Date(dateStr)
   if (isNaN(date.getTime())) return 'Invalid Date'
 
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric'
-  })
-}
+  // Default format (your current working one)
+  if (!format) {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric'
+    })
+  }
 
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const monthShort = date.toLocaleString('en-US', { month: 'short' })
+  const year = date.getFullYear()
+
+  const dayWithSuffix = getDayWithSuffix(date.getDate())
+
+  return format
+    .replace('HH', hours)
+    .replace('mm', minutes)
+    .replace('MM', minutes) // support your HH:MM usage
+    .replace('DDth', dayWithSuffix)
+    .replace('DD', day)
+    .replace('MMM', monthShort)
+    .replace('YYYY', String(year))
+}
+function getDayWithSuffix(day: number): string {
+  const j = day % 10
+  const k = day % 100
+
+  if (j === 1 && k !== 11) return day + 'st'
+  if (j === 2 && k !== 12) return day + 'nd'
+  if (j === 3 && k !== 13) return day + 'rd'
+  return day + 'th'
+}
 // To get date-time in past toned responses like: 1d ago, 2h ago, 3m ago
 export function timeAgo(
   dateTime: string,

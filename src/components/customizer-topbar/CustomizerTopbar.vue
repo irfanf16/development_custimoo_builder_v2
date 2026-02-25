@@ -71,6 +71,8 @@
   import { useLocalStorage } from '@/composables'
   import { useCompanyStore } from '@/stores/company/company.store'
   import { useLogosStore } from '@/stores/logos/logos.store'
+  import { usePricing } from '@/composables/usePricing'
+  import { usePermissions } from '@/composables/usePermissions'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
@@ -88,7 +90,10 @@
   const { menuItems, goTo } = useCustomizerMenu()
   const { loadLockerProductIntoCustomizer } = useLoadLockerProductIntoCustomizer()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
-  const { rosterEntries, ensureEditableRoster } = useRoster()
+  const { rosterEntries, ensureEditableRoster, totalRosterQuantity } = useRoster()
+  const { minimumActiveProductQuantityByDesignToCard, isQuantityByDesign } = usePricing()
+  const { can } = usePermissions()
+  const canSkipMoq = computed(() => can('skip-moq'))
   const { openSignInDialog, handleLogout } = useSignIn()
   const { getPending, clearPending } = usePendingPostLoginAction()
   const { shouldShowAddToCartButton } = useAddToCartVisibility()
@@ -266,6 +271,29 @@
       return
     }
 
+    const rosterQty = totalRosterQuantity.value
+    const minDesignQty = minimumActiveProductQuantityByDesignToCard.value
+    const isByDesign = isQuantityByDesign.value
+
+    if (rosterQty <= 0) {
+      toast.error('Please add at least one item to the roster before adding to cart.', {
+        position: 'top-right',
+        richColors: true
+      })
+      return
+    }
+
+    if (isByDesign && rosterQty < minDesignQty) {
+      toast.error(
+        `Please add at least ${minDesignQty} items to the roster before adding to cart.`,
+        {
+          position: 'top-right',
+          richColors: true
+        }
+      )
+      return
+    }
+
     const { factory_product, product_assets } = await buildFactoryProductPayload()
 
     const result = await cartStore.updateCartItem(cartStore.editingCartItemId, {
@@ -322,6 +350,19 @@
             }
           }
         }
+        return
+      }
+
+      const minDesignQty = minimumActiveProductQuantityByDesignToCard.value
+      const isByDesign = isQuantityByDesign.value
+      if (!canSkipMoq.value && isByDesign && totalQuantity < minDesignQty) {
+        toast.error(
+          `Please add at least ${minDesignQty} items to the roster before adding to cart.`,
+          {
+            position: 'top-right',
+            richColors: true
+          }
+        )
         return
       }
 

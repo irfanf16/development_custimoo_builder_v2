@@ -32,7 +32,7 @@
               :index="isaIdx"
               :total-items="item.status_activities.length"
               :alternating="false"
-              :activity-date-time="status_activity.created_at"
+              :activity-date-time="formatDate(status_activity.created_at, 'HH:MM DDth MMM YYYY')"
               :icon="getActivityIcon(status_activity.status)"
               :completed-icon="getActivityIcon(status_activity.status)"
               :activity-user="status_activity.user"
@@ -107,6 +107,7 @@
   import { API } from '@/services'
   import { useOrdersStore } from '@/stores/orders/orders.store'
   import { useTryCatchApi } from '@/composables/useTryCatchApi'
+  import { formatDate } from '@/lib/utils'
 
   const props = defineProps<{ order: Order }>()
   const order = computed(() => props.order)
