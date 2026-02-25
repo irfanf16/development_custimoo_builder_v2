@@ -23,7 +23,8 @@
 
 /* ===== A) TAILWIND V4 THEME TOKENS (utilities read these) ===== */
 @theme inline {
-  --font-brand: var(--font-brand); /* @see hostThemes.ts */
+  --font-brand: var(--font-brand);
+  /* @see hostThemes.ts */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -51,8 +52,10 @@
   --radius-2xl: calc(var(--radius) + 8px);
 
   /* Custom screen sizes */
-  --breakpoint-3xl: 1920px; /* 3xl */
-  --breakpoint-4xl: 2560px; /* 4xl */
+  --breakpoint-3xl: 1920px;
+  /* 3xl */
+  --breakpoint-4xl: 2560px;
+  /* 4xl */
 
   /* Animations - available as animate-* utilities */
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -65,6 +68,7 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--reka-accordion-content-height);
     }
@@ -74,6 +78,7 @@
     from {
       height: var(--reka-accordion-content-height);
     }
+
     to {
       height: 0;
     }
@@ -84,6 +89,7 @@
       opacity: 0;
       transform: translateY(16px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -95,6 +101,7 @@
       opacity: 1;
       transform: translateY(0);
     }
+
     to {
       opacity: 0;
       transform: translateY(-16px);
@@ -105,6 +112,7 @@
     from {
       transform: translateX(-100%);
     }
+
     to {
       transform: translateX(100%);
     }
@@ -119,8 +127,10 @@
   --icon-secondary: rgb(from currentColor r g b / 0.5);
   /* Colors will be set dynamically by JavaScript */
   /* --radius is defined below in light theme */
-  --font-sans: ui-sans-serif, system-ui, sans-serif; /* @see hostThemes.ts */
-  --font-brand: var(--font-brand); /* @see hostThemes.ts */
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  /* @see hostThemes.ts */
+  --font-brand: var(--font-brand);
+  /* @see hostThemes.ts */
   /* Base color references for dark-mode derivations */
   --primary-base: var(--primary);
   --secondary-base: var(--secondary);
@@ -150,10 +160,12 @@
   --secondary: #f5f5f5;
   --secondary-foreground: #171717;
   /* Base radius used to derive Tailwind radius scale tokens */
-  --radius: 0.5rem; /* @see hostThemes.ts */
+  --radius: 0.5rem;
+  /* @see hostThemes.ts */
   --muted: #f5f5f5;
   --muted-foreground: #737373;
-  --accent: #f5f5f5; /* @see hostThemes.ts */
+  --accent: #f5f5f5;
+  /* @see hostThemes.ts */
   --accent-foreground: #171717;
   --destructive: #dc2626;
   --destructive-foreground: #fef2f2;
@@ -178,7 +190,8 @@
     --secondary-foreground: #fafafa;
     --muted: #262626;
     --muted-foreground: #a3a3a3;
-    --accent: #404040; /*var(--accent);*/
+    --accent: #404040;
+    /*var(--accent);*/
     --accent-foreground: #fafafa;
     --destructive: #f87171;
     --border: #ffffff1a;
@@ -258,6 +271,7 @@
     /* @apply text-foreground font-sans; */
     @apply font-sans;
     @apply border-border outline-ring/50;
+
     .layout {
       @apply bg-accent text-foreground;
     }
@@ -312,6 +326,7 @@
   .icon-secondary-from-primary-50 {
     --icon-secondary: rgb(from currentColor r g b / 0.5);
   }
+
   .shadow-xs {
     box-shadow: var(--shadow-xs-offset-x, 0) var(--shadow-xs-offset-y, 1px)
       var(--shadow-xs-blur-radius, 2px) var(--shadow-xs-spread-radius, 0)
@@ -496,33 +511,40 @@ v-customizer * {
     transform 250ms ease,
     opacity 250ms ease;
 }
+
 .panel-slide-enter-from,
 .panel-slide-leave-to {
   transform: translateX(160px);
   opacity: 0;
 }
+
 .panel-slide-leave-from,
 .panel-slide-enter-to {
   transform: translateX(0);
   opacity: 1;
 }
+
 /* fade in/out transition - references animations from @theme */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 250ms ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
+
 .fade-enter-to,
 .fade-leave-from {
   opacity: 1;
 }
+
 /* Fade slide transition - references animations from @theme */
 .fade-slide-enter-active {
   animation: var(--animate-fade-slide-in) !important;
 }
+
 .fade-slide-leave-active {
   animation: var(--animate-fade-slide-out) !important;
 }
@@ -565,6 +587,7 @@ v-customizer * {
 
 div[id^='design-'] .upper-canvas,
 div[id^='product-'] .upper-canvas,
-#canvas-controls-container-inner .upper-canvas {
+#canvas-controls-container-inner .upper-canvas,
+div[role='region'][aria-roledescription='carousel'] .upper-canvas {
   z-index: -1;
 }
