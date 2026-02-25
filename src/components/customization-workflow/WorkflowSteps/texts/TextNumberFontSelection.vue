@@ -433,7 +433,7 @@
     const activeItem = sourceEntry.items[effectiveIndex] ?? null
     const placementId = (activeItem as ManagedTextItem | null)?.placement_id
     workflowStore.setActiveTextItemIndex(placementId != null ? placementId : effectiveIndex)
-    workflowStore.setTextsSubStep('edit')
+    workflowStore.setTextsSubStep('single')
   }
 
   watch(

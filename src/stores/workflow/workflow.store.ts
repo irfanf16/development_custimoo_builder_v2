@@ -179,14 +179,28 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
           ? customization.activeProductTexts.find(text => text.id === activeTextId.value)
           : null
 
+      const hasMultipleItems = (activeText?.items?.length ?? 0) > 1
+      const activeItemLabel =
+        textsSubStep.value === 'single' && hasMultipleItems
+          ? (() => {
+              const idx = activeText!.active_item_index ?? 0
+              const item = activeText!.items?.[idx]
+              const label = item && 'label' in item && item.label ? item.label : null
+              if (label?.trim()) return label
+              return `Placement ${idx + 1}`
+            })()
+          : null
+
       return buildTextsBreadcrumbs({
         textsSubStep: textsSubStep.value,
         activeTextMeta: activeText
           ? { value: activeText.value, label: activeText.label }
           : undefined,
-        onBackToList: () => {
-          setTextsSubStep('list')
-        },
+        activeItemLabel: activeItemLabel ?? null,
+        onBackToList: () => setTextsSubStep('list'),
+        onBackToMultipleItems: hasMultipleItems
+          ? () => setTextsSubStep('multipleitems')
+          : undefined,
         locale
       })
     }
@@ -240,13 +254,18 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
         | 'subcategory'
         | 'product'
         | null
-      const texts = getItemRaw('workflow.textsSubStep') as
-        | 'list'
-        | 'placement'
-        | 'edit'
-        | 'number-font'
-        | null
+      const textsRaw = getItemRaw('workflow.textsSubStep')
+      const textsMigrated: TextsSubStep | null = textsRaw
+        ? textsRaw === 'edit'
+          ? 'single'
+          : textsRaw === 'number-font'
+            ? 'multipleitems'
+            : ['list', 'placement', 'single', 'multipleitems'].includes(textsRaw)
+              ? (textsRaw as TextsSubStep)
+              : null
+        : null
       const textId = window.localStorage.getItem('workflow.textsActiveId')
+      const textItemIndex = getItemRaw('workflow.textsActiveItemIndex')
       const textIndexLegacy = getItemRaw('workflow.textsActiveIndex') // Legacy support
       const templateId = getItemRaw('workflow.textsPendingTemplate')
       const roster = getItemRaw('workflow.rosterSubStep') as 'list' | 'edit' | null
@@ -257,7 +276,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       const colorAccordionIndex = getItemRaw('workflow.activeColorAccordionIndex')
       if (logos) logosSubStep.value = logos
       if (products) productsSubStep.value = products
-      if (texts) textsSubStep.value = texts
+      if (textsMigrated) textsSubStep.value = textsMigrated
       if (textId) activeTextId.value = Number(textId)
       // Legacy: migrate from index to ID if needed
       else if (textIndexLegacy) {
@@ -266,6 +285,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
         if (texts[index]?.id) {
           activeTextId.value = texts[index].id
         }
+      }
+      if (textItemIndex !== undefined && textItemIndex !== null && textItemIndex !== '') {
+        const num = Number(textItemIndex)
+        if (!Number.isNaN(num)) activeTextItemIndex.value = num
       }
       if (templateId) pendingTextTemplateId.value = Number(templateId)
       if (roster) rosterSubStep.value = roster

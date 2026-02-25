@@ -13,6 +13,6 @@
 <template>
   <TextsSelection v-if="textsSubStep === 'list'" />
   <TextPlacement v-else-if="textsSubStep === 'placement'" />
-  <TextEdit v-else-if="textsSubStep === 'edit'" />
-  <TextNumberFontSelection v-else-if="textsSubStep === 'number-font'" />
+  <TextEdit v-else-if="textsSubStep === 'single'" />
+  <TextNumberFontSelection v-else-if="textsSubStep === 'multipleitems'" />
 </template>

@@ -66,20 +66,21 @@
    * Navigate to number font selection step
    * Used for number type texts (they have a special font selection step)
    */
-  function goToNumberFont() {
-    workflowStore.setTextsSubStep('number-font')
+  function goToMultipleItems() {
+    workflowStore.setTextsSubStep('multipleitems')
   }
 
   /**
-   * Navigate to text edit step
-   * Used for name and team_name type texts
+   * Navigate to text edit step (single item)
    */
-  function goToEditText() {
-    workflowStore.setTextsSubStep('edit')
+  function goToSingleItem() {
+    workflowStore.setTextsSubStep('single')
   }
 
   /**
-   * Navigate to the appropriate edit step based on text type
+   * Navigate to the appropriate edit step based on text entry
+   * - If the entry has multiple items (placements), go to number-font selection first
+   * - Otherwise go directly to edit
    *
    * @param customText - The text entry to edit
    * @param _index - Index in the list (unused, kept for consistency)
@@ -90,11 +91,11 @@
 
     workflowStore.setActiveTextId(customText.id)
 
-    // Navigate to appropriate step based on text type
-    if (customText.type === 'number') {
-      goToNumberFont()
+    const hasMultipleItems = (customText.items?.length ?? 0) > 1
+    if (hasMultipleItems) {
+      goToMultipleItems()
     } else {
-      goToEditText()
+      goToSingleItem()
     }
   }
 

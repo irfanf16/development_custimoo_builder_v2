@@ -131,7 +131,9 @@ export function buildLogoBreadcrumbs({
 export function buildTextsBreadcrumbs({
   textsSubStep,
   activeTextMeta,
+  activeItemLabel,
   onBackToList,
+  onBackToMultipleItems,
   locale
 }: {
   textsSubStep: TextsSubStep
@@ -139,7 +141,11 @@ export function buildTextsBreadcrumbs({
     value?: string | null
     label?: string | null
   } | null
+  /** Label for the active placement/item when editing (only shown on 'single' substep) */
+  activeItemLabel?: string | null
   onBackToList?: () => void
+  /** When on 'single' with multiple items, clicking entry name goes back to multipleitems list */
+  onBackToMultipleItems?: () => void
   locale?: ParaglideLocale
 }): BreadcrumbItem[] {
   const textsLabel = breadcrumbs_texts({}, { locale })
@@ -150,14 +156,30 @@ export function buildTextsBreadcrumbs({
   const metaValue = activeTextMeta?.value ?? ''
   const metaLabel = activeTextMeta?.label ?? ''
 
-  if (textsSubStep === 'number-font') {
-    const label = metaValue?.trim() ? metaValue : numberLabel
-    return [{ label: textsLabel, action: onBackToList }, { label }]
+  // multipleitems: list of placements – only 2 levels (Texts > Entry). No item label.
+  if (textsSubStep === 'multipleitems') {
+    const entryLabel = metaValue?.trim() ? metaValue : numberLabel
+    return [{ label: textsLabel, action: onBackToList }, { label: entryLabel }]
   }
 
-  if (textsSubStep === 'edit') {
-    const label = metaValue?.trim() || metaLabel?.trim() || editLabel
-    return [{ label: textsLabel, action: onBackToList }, { label }]
+  // single: editing one item – show 3 levels when multiple items; entry name is clickable to go back to list
+  if (textsSubStep === 'single') {
+    const entryLabel = metaValue?.trim() || metaLabel?.trim() || editLabel
+    if (activeItemLabel?.trim() && onBackToMultipleItems) {
+      return [
+        { label: textsLabel, action: onBackToList },
+        { label: entryLabel, action: onBackToMultipleItems },
+        { label: activeItemLabel }
+      ]
+    }
+    if (activeItemLabel?.trim()) {
+      return [
+        { label: textsLabel, action: onBackToList },
+        { label: entryLabel },
+        { label: activeItemLabel }
+      ]
+    }
+    return [{ label: textsLabel, action: onBackToList }, { label: entryLabel }]
   }
 
   if (textsSubStep === 'placement') {

@@ -19,10 +19,30 @@ export function useTextsConfig() {
         ? customizationStore.activeProductTexts.find(text => text.id === workflowStore.activeTextId)
         : null
 
+    // Only show item label in breadcrumb when on 'single' (editing one item). On 'multipleitems' we show only Texts > Entry.
+    const activeItemLabel =
+      workflowStore.textsSubStep === 'single' &&
+      activeText?.items?.length &&
+      activeText.items.length > 1
+        ? (() => {
+            const idx = activeText.active_item_index ?? 0
+            const item = activeText.items[idx]
+            const label = item && 'label' in item && item.label ? item.label : null
+            if (label?.trim()) return label
+            return `Placement ${idx + 1}`
+          })()
+        : null
+
+    const hasMultipleItems = (activeText?.items?.length ?? 0) > 1
+
     const breadcrumbs = buildTextsBreadcrumbs({
       textsSubStep: workflowStore.textsSubStep,
       activeTextMeta: activeText ? { value: activeText.value, label: activeText.label } : undefined,
+      activeItemLabel: activeItemLabel ?? null,
       onBackToList: () => workflowStore.setTextsSubStep('list'),
+      onBackToMultipleItems: hasMultipleItems
+        ? () => workflowStore.setTextsSubStep('multipleitems')
+        : undefined,
       locale: profileStore.currentLocale
     })
 

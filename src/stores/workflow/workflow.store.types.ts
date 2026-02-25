@@ -1,7 +1,7 @@
 export type LogosSubStep = 'list' | 'placement' | 'edit'
 export type ProductsSubStep = 'category' | 'subcategory' | 'product'
 export type PatternsSubStep = 'list' | 'edit'
-export type TextsSubStep = 'list' | 'placement' | 'edit' | 'number-font'
+export type TextsSubStep = 'list' | 'placement' | 'single' | 'multipleitems'
 export type RosterSubStep = 'list' | 'edit'
 export type CanvasSide = 'front' | 'back' | '3d'
 

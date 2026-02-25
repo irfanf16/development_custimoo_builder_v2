@@ -164,7 +164,9 @@
 
   function handleTextClick(textId: number) {
     workflowStore.setActiveTextId(textId)
-    workflowStore.setTextsSubStep('edit')
+    const text = activeProductTexts.value.find(t => t.id === textId)
+    const hasMultipleItems = (text?.items?.length ?? 0) > 1
+    workflowStore.setTextsSubStep(hasMultipleItems ? 'multipleitems' : 'single')
     void goTo(pickStepOrNextAvailable('texts', visibleSteps.value))
   }
 

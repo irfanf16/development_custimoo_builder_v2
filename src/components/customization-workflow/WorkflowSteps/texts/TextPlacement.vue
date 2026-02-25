@@ -141,7 +141,7 @@
         next: updatedEntry
       })
       workflowStore.setActiveTextId(existingEntry.id)
-      workflowStore.setTextsSubStep('edit')
+      workflowStore.setTextsSubStep('single')
     } else {
       // Create new entry (applies when: no existing entry OR existing is a preset)
       // Preset texts should never be overridden - always create new entry instead
@@ -159,7 +159,7 @@
 
       if (newEntry.id) {
         workflowStore.setActiveTextId(newEntry.id)
-        workflowStore.setTextsSubStep('edit')
+        workflowStore.setTextsSubStep('single')
       }
     }
 

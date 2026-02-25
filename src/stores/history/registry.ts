@@ -376,7 +376,7 @@ export const registry: Registry = {
         workflowStore.setActiveTextId(null)
         workflowStore.setActiveTextItemIndex(null)
 
-        if (workflowStore.textsSubStep === 'edit') {
+        if (workflowStore.textsSubStep === 'single') {
           workflowStore.setTextsSubStep('list')
         }
       }
