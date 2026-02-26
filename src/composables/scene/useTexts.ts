@@ -102,6 +102,8 @@ export type TextEntryWithItemsForSide = {
  * Called from a watch on customTexts.
  */
 export type SyncTextsOptions = {
+  /** Current product ID (used to update fabric object product_id on match, same as SyncLogosOptions) */
+  productId: number
   /** New texts map: key = index in product_custom_texts, value = entry + items for this side */
   newTexts: Map<number, TextEntryWithItemsForSide>
   /** Canvas instance */
@@ -122,12 +124,13 @@ export type SyncTextsOptions = {
   onAfterSync?: () => void
 }
 
-/** FabricObject with text sync metadata */
+/** FabricObject with text sync metadata (same pattern as logo: logo_index, product_id) */
 type TextFabricObject = FabricObject & {
   signature?: string
   signatureValuePlacement?: string
   custom_text_index?: number
   custom_text_item_index?: number
+  product_id?: number | null
 }
 
 /**
@@ -179,7 +182,8 @@ function isTextEntryEmpty(entry: OutputProductText | null | undefined): boolean 
 }
 
 /**
- * Options for updating text position in store after user modifies on canvas (exact same shape as updateLogoPositionInStore).
+ * Options for updating text position in store after user modifies on canvas (same pattern as updateLogoPositionInStore).
+ * custom_text_index, custom_text_item_index, product_id are read from fabricText so sync-updated indices are used.
  */
 export type UpdateTextPositionOptions = {
   fabricText: FabricObject & {
@@ -191,10 +195,10 @@ export type UpdateTextPositionOptions = {
     fontSize?: number
     width?: number
     height?: number
+    custom_text_index?: number
+    custom_text_item_index?: number
+    product_id?: number | null
   }
-  customTextIndex: number
-  itemIndex: number
-  productId: number
   getScaleRatios: () => { widthRatio: number; heightRatio: number }
   heightScale: number
   calculateRotation: (rotation: number) => number
@@ -216,9 +220,6 @@ export type UpdateTextPositionOptions = {
 export function updateTextPositionInStore(options: UpdateTextPositionOptions): void {
   const {
     fabricText,
-    customTextIndex,
-    itemIndex,
-    productId,
     getScaleRatios,
     heightScale,
     calculateRotation,
@@ -228,6 +229,14 @@ export function updateTextPositionInStore(options: UpdateTextPositionOptions): v
     suppressWatchRef,
     convertSize
   } = options
+  const customTextIndex = (fabricText as unknown as { custom_text_index?: number })
+    .custom_text_index
+  const itemIndex = (fabricText as unknown as { custom_text_item_index?: number })
+    .custom_text_item_index
+  const productId = (fabricText as unknown as { product_id?: number | null }).product_id
+  if (customTextIndex === undefined || itemIndex === undefined || productId == null) {
+    return
+  }
   const { widthRatio, heightRatio } = getScaleRatios()
   const customizationStore = useCustomizationStore() as {
     updateProductTextItem(
@@ -434,10 +443,11 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
     return fabricText as FabricObject
   }
 
-  // Metadata for matching and delete control (required by useFabricControls delete handler)
+  // Metadata for matching and store updates (same pattern as logo: indices + product_id)
   const textObjMeta = textObj as FabricObject & {
     custom_text_index?: number
     custom_text_item_index?: number
+    product_id?: number | null
     side?: string
     signature?: string
     signatureValuePlacement?: string
@@ -446,6 +456,7 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
   }
   textObjMeta.custom_text_index = customTextIndex
   textObjMeta.custom_text_item_index = itemIndex
+  textObjMeta.product_id = options.productId ?? null
   textObjMeta.side = item.placement
   textObjMeta.signature = getTextSignature(entry, itemIndex)
   textObjMeta.signatureValuePlacement = getTextSignatureValuePlacement(entry, item)
@@ -512,9 +523,6 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
     textObj.on('modified', (event: unknown) => {
       updateTextPositionInStore({
         fabricText: textObj,
-        customTextIndex,
-        itemIndex,
-        productId: productId ?? null,
         getScaleRatios,
         heightScale,
         calculateRotation,
@@ -536,6 +544,7 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
  */
 export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void> {
   const {
+    productId,
     newTexts,
     canvas,
     textObjects,
@@ -599,6 +608,9 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
     if (matchIdx >= 0) {
       const match = available.splice(matchIdx, 1)[0]
       if (match) {
+        match.obj.custom_text_index = d.customTextIndex
+        match.obj.custom_text_item_index = d.itemIndex
+        match.obj.product_id = productId
         nextMap.set(key, match.obj)
         matchedKeys.add(key)
       }
@@ -633,6 +645,7 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
         }
         obj.custom_text_index = d.customTextIndex
         obj.custom_text_item_index = d.itemIndex
+        obj.product_id = productId
         obj.signature = d.signature
         obj.signatureValuePlacement = d.signatureValuePlacement
         obj.setCoords()

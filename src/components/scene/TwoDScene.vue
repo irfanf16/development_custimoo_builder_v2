@@ -1802,6 +1802,7 @@
       if (isPlacementMode.value) return
       if (!mounted.value) return
       await syncLogosOnCanvas({
+        productId: effectiveProductId.value as number,
         newLogos,
         canvas: canvas.value,
         logoObjects: customLogoObjects,
@@ -1833,6 +1834,7 @@
       if (isPlacementMode.value) return
       if (!mounted.value) return
       await syncTextsOnCanvas({
+        productId: effectiveProductId.value ?? 0,
         newTexts: newTexts ?? new Map(),
         canvas: canvas.value,
         textObjects: customTextObjects,

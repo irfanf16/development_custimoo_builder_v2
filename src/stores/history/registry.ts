@@ -789,6 +789,7 @@ export const registry: Registry = {
       arr.splice(at, 0, payload.logo)
       customizationStore.appendLogoColors(payload.logo.logo_colors)
       customizationStore.saveToLocalStorage()
+      customizationStore.replicateActiveProductLogosToMatchingPlacements()
     },
     revert(ctx: HistoryContext, payload: LogoAddPayload) {
       const customizationStore = ctx.customizationStore
@@ -816,6 +817,7 @@ export const registry: Registry = {
       payload.logo = arr[payload.index]
       arr.splice(payload.index, 1)
       customizationStore.saveToLocalStorage()
+      customizationStore.replicateActiveProductLogosToMatchingPlacements()
     },
     revert(ctx: HistoryContext, payload: LogoRemovePayload) {
       const customizationStore = ctx.customizationStore
@@ -869,6 +871,8 @@ export const registry: Registry = {
       // Replace the entire logo object to capture all field changes
       arr[payload.index] = { ...arr[payload.index], ...payload.nextLogo }
       customizationStore.saveToLocalStorage()
+      // Sync active product logos to other products with matching placement names
+      customizationStore.replicateActiveProductLogosToMatchingPlacements()
     },
     revert(ctx: HistoryContext, payload: LogoUpdateUrlPayload) {
       const customizationStore = ctx.customizationStore

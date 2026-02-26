@@ -13,6 +13,7 @@ import { useStorage } from './useStorage'
 import { useSvgGroups } from './useSvgGroups'
 import type { useColorCustomization } from './useColorCustomization'
 import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
+import { patchCanvas2DWillReadFrequently, setCanvas2DWillReadFrequently } from '@/lib/canvas'
 
 // Polyfill: ensure requestRenderAll exists (fallback to renderAll)
 const canvasProto = Canvas.prototype as Canvas & {
@@ -161,6 +162,10 @@ export function useSceneCommon(
     }
 
     if (!canvasEl) return
+
+    // Apply globally so Fabric's internal canvases (e.g. upper canvas) also get the hint
+    patchCanvas2DWillReadFrequently()
+    setCanvas2DWillReadFrequently(canvasEl)
 
     // Merge default options with provided options
     const canvasOptions: Partial<CanvasOptions> = {

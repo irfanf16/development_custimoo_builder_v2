@@ -14,6 +14,7 @@ export type OutputProductPreview = {
   is_3d_product: number
   show_3d: number
   product_type: 'customized' | 'personalized'
+  logos_setting: OutputProductLogosSetting[]
 }
 
 export type OutputProductDesignCategory = {

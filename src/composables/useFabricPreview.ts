@@ -13,6 +13,7 @@ import {
 import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { getFontUrl } from '@/components/customization-workflow/WorkflowSteps/texts/useTextUtils'
+import { patchCanvas2DWillReadFrequently, setCanvas2DWillReadFrequently } from '@/lib/canvas'
 import type { CustomLogo } from '@/services/logos/types'
 import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
 
@@ -179,6 +180,8 @@ export function useFabricPreview(applyActiveCustomizationOverrides = computed(()
   function initCanvas(options?: Partial<CanvasOptions>) {
     canvasOptions.value = options ?? {}
     if (!canvasEl.value) return
+    patchCanvas2DWillReadFrequently()
+    setCanvas2DWillReadFrequently(canvasEl.value)
     canvas.value = new Canvas(canvasEl.value, options)
   }
 

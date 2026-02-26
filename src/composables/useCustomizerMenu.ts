@@ -131,6 +131,7 @@ export function useCustomizerMenu() {
           Array.isArray(productsStore.productPreviews) && productsStore.productPreviews.length > 0
         if (!hasPreviews) {
           await productsStore.fetchProductPreviews(categoryId, subCategoryId ?? undefined)
+          customizationStore.replicateActiveProductLogosToMatchingPlacements()
         }
       } else {
         // No category in customization → show category listing

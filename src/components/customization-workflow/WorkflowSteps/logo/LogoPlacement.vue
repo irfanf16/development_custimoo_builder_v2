@@ -77,11 +77,13 @@
   void headerConfig.value
 
   function addActiveLogoToCustomization(_logo: CustomLogo, _placement: OutputProductLogosSetting) {
-    const res = customizationStore.addLogoToCustomizationFromSource(
-      customizationStore.getMergedCustomizationLogo(_logo, _placement)
-    )
+    const merged = customizationStore.getMergedCustomizationLogo(_logo, _placement)
+    const res = customizationStore.addLogoToCustomizationFromSource(merged)
     // Set default placement
-    if (res) historyStore.execute('logo.add', res)
+
+    if (res) {
+      historyStore.execute('logo.add', res)
+    }
   }
 </script>
 

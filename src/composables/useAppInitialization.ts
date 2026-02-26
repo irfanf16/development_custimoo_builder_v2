@@ -549,6 +549,7 @@ export function useAppInitialization() {
     categoryInfo: CategoryInfo
   ): Promise<void> => {
     await productsStore.fetchProductPreviews(categoryInfo.categoryId, categoryInfo.subCategoryId)
+    useCustomizationStore().replicateActiveProductLogosToMatchingPlacements()
   }
 
   const syncWorkflowForCategoryAvailability = (
@@ -693,6 +694,7 @@ export function useAppInitialization() {
 
       // Fetch product previews for the restored category/subcategory
       await productsStore.fetchProductPreviews(categoryId, subCategoryId ?? undefined)
+      customizationStore.replicateActiveProductLogosToMatchingPlacements()
 
       // Determine the correct productsSubStep based on category/subcategory state
       const hasCategories = (productsStore.categories?.data?.length ?? 0) > 0

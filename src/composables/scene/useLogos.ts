@@ -89,6 +89,8 @@ export type AddLogoOptions = {
 }
 
 export type SyncLogosOptions = {
+  /** Current product ID */
+  productId: number
   /** New logos map: key = index in custom_logos array, value = logo */
   newLogos: Map<number, CustomLogo>
   /** Canvas instance */
@@ -230,7 +232,8 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
       signature: getLogoSignature(logo),
       signatureUrlSide: getLogoSignatureUrlSide(logo),
       side: logo.side,
-      logo_index: logoIndex
+      logo_index: logoIndex,
+      product_id: productId
     })
 
     // Apply scale if provided
@@ -276,12 +279,9 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
         suppressWatchRef
       })
 
-      img.on('modified', event =>
+      img.on('modified', event => {
         updateLogoPositionInStore({
           img,
-          logoIndex,
-          logo,
-          productId,
           calculateScaleRatios,
           is_3d,
           findPositionOn2D,
@@ -290,7 +290,7 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
           suppressWatchRef,
           convertSize
         })
-      )
+      })
     }
 
     if (logoObjects.value.get(logoIndex)) {
@@ -308,9 +308,6 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
 
 export function updateLogoPositionInStore(options: {
   img: FabricImage
-  logoIndex: number
-  logo: CustomLogo
-  productId?: number | null
   calculateScaleRatios: () => { widthRatio: number; heightRatio: number }
   is_3d: boolean
   findPositionOn2D?: (
@@ -326,9 +323,6 @@ export function updateLogoPositionInStore(options: {
 }): void {
   const {
     img,
-    logoIndex,
-    logo,
-    productId,
     calculateScaleRatios,
     is_3d,
     findPositionOn2D,
@@ -366,8 +360,8 @@ export function updateLogoPositionInStore(options: {
 
   suppressWatchRef.value = true
   customizationStore.updateCustomLogo({
-    custom_logo_index: logoIndex,
-    productId: productId ?? logo.product_id ?? null,
+    custom_logo_index: (img as unknown as { logo_index?: number }).logo_index as number,
+    productId: (img as unknown as { product_id?: number }).product_id,
     data: {
       x_axis: left / widthRatio,
       y_axis: top / heightRatio,
@@ -388,6 +382,7 @@ export function updateLogoPositionInStore(options: {
  */
 export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void> {
   const {
+    productId,
     newLogos,
     canvas,
     logoObjects,
@@ -431,6 +426,10 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
     if (matchIndex >= 0) {
       const match = available.splice(matchIndex, 1)[0]
       if (match) {
+        match.obj.set({
+          product_id: productId,
+          logo_index: idx
+        })
         nextMap.set(idx, match.obj as unknown as FabricImage)
         matchedIdx.add(idx)
         continue
@@ -450,7 +449,9 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
           top: position.y,
           angle,
           signature: getLogoSignature(logo),
-          signatureUrlSide: getLogoSignatureUrlSide(logo)
+          signatureUrlSide: getLogoSignatureUrlSide(logo),
+          product_id: productId,
+          logo_index: idx
         })
 
         // Scale image based on aspect ratio

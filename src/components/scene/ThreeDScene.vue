@@ -2257,6 +2257,7 @@
       }
 
       await syncLogosOnCanvas({
+        productId: effectiveProductId.value as number,
         newLogos,
         canvas: canvas.value,
         logoObjects: customLogoObjects,
@@ -2293,6 +2294,7 @@
         await sceneLoadPromise.value
       }
       await syncTextsOnCanvas({
+        productId: effectiveProductId.value ?? 0,
         newTexts: newTexts ?? new Map(),
         canvas: canvas.value,
         textObjects: customTextObjects,

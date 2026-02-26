@@ -652,6 +652,89 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     pushHistoryState('Removed logo')
   }
 
+  /**
+   * Replicate active product's logos to other products by placement name.
+   * Logos are matched exactly per placement: if active has two logos on "Chest", other products
+   * with "Chest" get two logos (update by index, add missing, remove extras). Call on add, update, or delete.
+   */
+  function replicateActiveProductLogosToMatchingPlacements() {
+    if (!customization.value?.custom_logos) return
+    const map = customization.value.custom_logos
+    const activeProductId = customization.value.product_id
+    if (!activeProductId) return
+    const currentProductKey = String(activeProductId)
+    const activeLogos = map[currentProductKey]
+    if (!Array.isArray(activeLogos)) return
+
+    const byPlacement = new Map<string, CustomLogo[]>()
+    for (const logo of activeLogos) {
+      const name = logo?.name_of_placement?.trim()
+      if (!name) continue
+      const key = name.toLowerCase()
+      const list = byPlacement.get(key) ?? []
+      list.push(logo)
+      byPlacement.set(key, list)
+    }
+
+    const previews = productsStore.productPreviews ?? []
+    let changed = false
+    for (const item of previews) {
+      const product = item.productPreview
+      if (!product || product.id === activeProductId) continue
+      const productKey = String(product.id)
+      if (!map[productKey]) map[productKey] = []
+      const arr = map[productKey]
+
+      for (const placement of product.logos_setting ?? []) {
+        const nameOfPlacement = placement.name_of_placement?.trim()
+        if (!nameOfPlacement) continue
+        const placementKey = nameOfPlacement.toLowerCase()
+        const activeForPlacement = byPlacement.get(placementKey) ?? []
+        const targetIndices: number[] = []
+        for (let i = 0; i < arr.length; i++) {
+          const logoPlacement = (arr[i]?.name_of_placement ?? '').trim().toLowerCase()
+          if (logoPlacement === placementKey) targetIndices.push(i)
+        }
+
+        for (let i = 0; i < activeForPlacement.length; i++) {
+          const logo = activeForPlacement[i]!
+          const urlPayload = {
+            url: logo.url,
+            transparent_logo_url: logo.transparent_logo_url,
+            smart_transparent_logo_url: logo.smart_transparent_logo_url,
+            original_logo_url: logo.original_logo_url
+          }
+          if (i < targetIndices.length) {
+            const idx = targetIndices[i]!
+            const existingLogo = arr[idx]!
+            const logoWithNewUrl = { ...existingLogo, ...urlPayload } as CustomLogo
+            const placementAsLogo = existingLogo as unknown as OutputProductLogosSetting
+            arr[idx] = getMergedCustomizationLogo(logoWithNewUrl, placementAsLogo)
+            changed = true
+          } else {
+            const logoFromPlacement = {
+              ...(placement as unknown as CustomLogo),
+              ...urlPayload
+            } as CustomLogo
+            const newLogo = getMergedCustomizationLogo(logoFromPlacement, placement)
+            newLogo.product_id = product.id
+            arr.push(newLogo)
+            appendLogoColors(newLogo.logo_colors)
+            changed = true
+          }
+        }
+
+        if (targetIndices.length > activeForPlacement.length) {
+          for (let j = targetIndices.length - 1; j >= activeForPlacement.length; j--) {
+            arr.splice(targetIndices[j]!, 1)
+            changed = true
+          }
+        }
+      }
+    }
+    if (changed) saveToLocalStorage()
+  }
+
   // Helper function to create default customization with preserved IDs
   function createDefaultCustomization(
     preservedIds: {
@@ -967,6 +1050,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     getMergedCustomizationLogo,
     updateCustomLogo,
     removeCustomLogo,
+    replicateActiveProductLogosToMatchingPlacements,
     setReorderData,
     clearReorderData,
     // Business Logic

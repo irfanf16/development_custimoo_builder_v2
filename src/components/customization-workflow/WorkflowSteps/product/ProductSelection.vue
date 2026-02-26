@@ -43,14 +43,15 @@
   // Constants
   const SCROLL_DELAY_MS = 100
 
-  function loadPreviewsForCurrentCategory(isColdStart: boolean = false) {
+  async function loadPreviewsForCurrentCategory(isColdStart: boolean = false) {
     // isColdStart is true when the component is mounted without a selected subcategory.
     // For example, when the app loads for the first time or when the user navigates back to the product step.
     const categoryId = workflowStore.selectedCategoryId ?? customizationStore.activeCategoryId
     const subcategoryId = isColdStart
       ? (workflowStore.selectedSubCategoryId ?? null)
       : customizationStore.activeSubCategoryId
-    productsStore.fetchProductPreviews(categoryId, subcategoryId || undefined)
+    await productsStore.fetchProductPreviews(categoryId, subcategoryId || undefined)
+    customizationStore.replicateActiveProductLogosToMatchingPlacements()
   }
 
   onMounted(() => {
