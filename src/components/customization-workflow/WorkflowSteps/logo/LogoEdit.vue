@@ -254,7 +254,7 @@
     handleBackToLogos()
   }
 
-  function handlePlacementChange(option: PlacementOption | null) {
+  async function handlePlacementChange(option: PlacementOption | null) {
     positionForm.placementOption = option
     if (!customLogo.value || !productKey.value || !option) return
     const index = activeLogoIndex.value
@@ -285,7 +285,7 @@
       return
     }
 
-    void historyStore.execute('logo.update-placement', {
+    await historyStore.execute('logo.update-placement', {
       key: productKey.value,
       index,
       prevPlacementLabel: prevLabel,
@@ -304,6 +304,7 @@
       prevWidth,
       prevHeight
     })
+    customizationStore.pushHistoryState('Changed logo placement')
 
     previousPlacementOption.value = option
     if (option.width) currentWidth.value = option.width
@@ -323,7 +324,7 @@
     handlePlacementChange(option)
   }
 
-  function handleSideChange(value: string | null | AcceptableValue) {
+  async function handleSideChange(value: string | null | AcceptableValue) {
     const normalized = typeof value === 'string' ? value : null
     if (!customLogo.value || !productKey.value || !normalized) return
 
@@ -336,7 +337,7 @@
     const index = activeLogoIndex.value
     if (index === -1) return
 
-    void historyStore.execute('logo.update-placement', {
+    await historyStore.execute('logo.update-placement', {
       key: productKey.value,
       index,
       prevPlacementLabel: customLogo.value.name_of_placement || null,
@@ -355,6 +356,7 @@
       prevWidth: customLogo.value.width ?? null,
       prevHeight: customLogo.value.height ?? null
     })
+    customizationStore.pushHistoryState('Changed logo placement')
   }
 
   // Radio group value for logo technology (syncs with selectedLogoTechnology)

@@ -23,13 +23,6 @@ export function useRoster() {
   const historyStore = useHistoryStore()
   const { selectedRosterPreviewIndex } = storeToRefs(customizationStore)
 
-  const selectedRosterIndexModel = computed<number | null>({
-    get: () => selectedRosterPreviewIndex.value ?? null,
-    set: value => {
-      setRosterPreviewIndex(value ?? null)
-    }
-  })
-
   const rosterEntries = computed(() => customizationStore.rosterEntries)
   const hasEntries = computed(() => rosterEntries.value.length > 0)
 
@@ -128,7 +121,7 @@ export function useRoster() {
     { immediate: true, deep: true }
   )
   onUnmounted(() => {
-    selectedRosterIndexModel.value = 0
+    setRosterPreviewIndex(0, { skipHistory: true })
   })
 
   async function addEmptyRow(payload?: Partial<APCustomizationRosterEntry>) {

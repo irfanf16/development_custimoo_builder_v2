@@ -58,9 +58,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     }
     isLoading.value = false
   }
-  async function fetchLockerProducts(locker_id: number): Promise<Locker | undefined> {
-    isLoading.value = true
-    error.value = null
+  /** Core fetch + merge; no loader, no error toast. Used by fetchLockerProducts and for background refresh after copy. */
+  async function fetchLockerProductsCore(locker_id: number): Promise<Locker | undefined> {
     const resp = await tryCatchApi(API.lockers.getLockerProducts(locker_id), {
       operation: 'fetchLockerProducts',
       locker_id
@@ -70,12 +69,20 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       lockers.value = lockers.value.map((l: Locker) =>
         l.id === locker_id ? { ...l, ...data[0], products_fetched: true } : l
       )
-      isLoading.value = false
       return data[0]
-    } else {
+    }
+    return undefined
+  }
+
+  async function fetchLockerProducts(locker_id: number): Promise<Locker | undefined> {
+    isLoading.value = true
+    error.value = null
+    const result = await fetchLockerProductsCore(locker_id)
+    if (!result) {
       setError('Failed to load locker products')
     }
     isLoading.value = false
+    return result
   }
 
   async function createLocker(name: string): Promise<Locker | null> {
@@ -232,6 +239,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
         return false
       }
       setSuccessMessage('Products copied successfully')
+      const targetLockerIds = [...new Set(payload.products.map(p => p.room_id))]
+      Promise.all(targetLockerIds.map(id => fetchLockerProductsCore(id))).catch(() => {})
       return true
     } finally {
       isCopyingProducts.value = false

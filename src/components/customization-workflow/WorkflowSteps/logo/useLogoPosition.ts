@@ -97,7 +97,7 @@ export function useLogoPosition(
     arr.splice(index, 1, updated)
   }
 
-  function commitHeightChange() {
+  async function commitHeightChange() {
     if (!logo.value || !productKey.value) return
     const index = activeLogoIndex.value
     if (index === -1) return
@@ -111,7 +111,7 @@ export function useLogoPosition(
     }
     const widthValue = Number(logo.value.width || currentWidth.value || option?.width || 0)
     currentWidth.value = widthValue
-    void historyStore.execute('logo.update-size', {
+    await historyStore.execute('logo.update-size', {
       key: productKey.value,
       index,
       prevWidth: widthValue,
@@ -119,6 +119,7 @@ export function useLogoPosition(
       nextWidth: widthValue,
       nextHeight: heightValue
     })
+    customizationStore.pushHistoryState('Changed logo size')
     heightChangeStart.value = null
   }
 
@@ -140,10 +141,10 @@ export function useLogoPosition(
 
   function handleBlurHeight() {
     positionForm.height = formatDimension(positionForm.height)
-    commitHeightChange()
+    void commitHeightChange()
   }
 
-  function handleAngleCommit(value: number[]) {
+  async function handleAngleCommit(value: number[]) {
     if (!logo.value || !productKey.value) {
       rotationChangeStart.value = null
       return
@@ -158,7 +159,8 @@ export function useLogoPosition(
     const prevRotation = rotationChangeStart.value ?? Number(logo.value.rotation || 0)
     rotationChangeStart.value = null
     if (Math.abs(prevRotation - nextRotation) < 0.1) return
-    void historyStore.execute('logo.update-rotation', {
+    customizationStore.pushHistoryState('Changed logo angle')
+    await historyStore.execute('logo.update-rotation', {
       key: productKey.value,
       index,
       prevRotation,
@@ -185,24 +187,6 @@ export function useLogoPosition(
         if (isSyncingAngle.value) return
         if (!Number.isFinite(nextAngle)) return
         applyDraftRotation(Number(nextAngle))
-      }
-    )
-
-    watch(
-      () => positionForm.angle[0],
-      (nextAngle, previousAngle) => {
-        if (nextAngle === previousAngle) return
-        if (!logo.value || !productKey.value) return
-        const index = activeLogoIndex.value
-        if (index === -1) return
-        const prevRotation = Number(logo.value.rotation || 0)
-        if (Math.abs(prevRotation - Number(nextAngle)) < 0.001) return
-        void historyStore.execute('logo.update-rotation', {
-          key: productKey.value,
-          index,
-          prevRotation,
-          nextRotation: Number(nextAngle)
-        })
       }
     )
   }

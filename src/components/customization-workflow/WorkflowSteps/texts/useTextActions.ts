@@ -415,6 +415,13 @@ export function useTextActions() {
       }
     }
     await saveAttributeToHistory(attribute)
+    if (attribute === 'angle') {
+      customizationStore.pushHistoryState('Changed text angle')
+    } else if (attribute === 'height') {
+      customizationStore.pushHistoryState('Changed text height')
+    } else if (attribute === 'outline_width') {
+      customizationStore.pushHistoryState('Changed text outline width')
+    }
     // Clear the initial value after saving
     debouncedAttributeInitialValues.delete(attribute)
   }, 500)

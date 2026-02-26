@@ -38,9 +38,6 @@
   const { shuffleColors: shuffleLogoColors } = useLogoActions()
   const profileStore = useProfileStore()
 
-  const isUndoDisabled = computed(() => !customizationStore.canUndo)
-  const isRedoDisabled = computed(() => !customizationStore.canRedo)
-
   const locale = computed(() => profileStore.currentLocale || 'en')
 
   const undoPrefix = computed(() => toolbar_undo_prefix({}, { locale: locale.value }))
@@ -118,25 +115,25 @@
       icon: Undo2,
       label: toolbar_undo({}, { locale: locale.value }),
       action: () => customizationStore.undo(),
-      disabled: isUndoDisabled.value
+      disabled: false
     },
     {
       id: 'redo',
       icon: Redo2,
       label: toolbar_redo({}, { locale: locale.value }),
       action: () => customizationStore.redo(),
-      disabled: isRedoDisabled.value
+      disabled: false
     }
   ])
 </script>
 
 <template>
   <!-- Glass toolbar wrapper -->
-  <div
-    class="w-12 p-1 bg-background/20 rounded-full outline outline-border backdrop-blur-sm flex flex-col gap-1"
-  >
-    <template v-for="t in tools" :key="t.id">
-      <TooltipProvider>
+  <TooltipProvider>
+    <div
+      class="w-12 p-1 bg-background/20 rounded-full outline outline-border backdrop-blur-sm flex flex-col gap-1"
+    >
+      <template v-for="t in tools" :key="t.id">
         <Tooltip
           :delay-duration="200"
           :disable-closing-trigger="t.id === 'undo' || t.id === 'redo'"
@@ -147,7 +144,13 @@
               size="icon"
               class="rounded-full size-10 p-0 bg-card outline outline-border border-0 shadow-none"
               :aria-label="t.label"
-              :disabled="t.disabled"
+              :disabled="
+                t.id === 'undo'
+                  ? !customizationStore.canUndo || customizationStore.undoRedoInProgress
+                  : t.id === 'redo'
+                    ? !customizationStore.canRedo || customizationStore.undoRedoInProgress
+                    : t.disabled
+              "
               @click="t.action"
             >
               <component :is="t.icon" class="size-4" :stroke-width="1.75" />
@@ -163,9 +166,9 @@
             <span v-else>{{ t.label }}</span>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
-    </template>
-  </div>
+      </template>
+    </div>
+  </TooltipProvider>
 </template>
 
 <style scoped></style>

@@ -56,6 +56,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   const history = ref<HistoryEntry[]>([])
   const historyIndex = ref(0)
   const currentActionTitle = ref('')
+  const undoRedoInProgress = ref(false)
 
   // ===== COMPUTED =====
   const activeProductId = computed(() =>
@@ -272,26 +273,48 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     saveToLocalStorage()
   }
 
-  function undo(): void {
-    if (historyIndex.value <= 0) return
-    historyIndex.value--
-    const entry = history.value[historyIndex.value]
-    if (entry) {
-      customization.value = deepClone(entry.state)
-      currentActionTitle.value = entry.actionTitle
-    }
+  /**
+   * Replace entire history with a single entry for the current state.
+   * Use after product change (once style/design are set) so undo never restores previous product.
+   */
+  function replaceHistoryWithCurrentState(): void {
+    if (!customization.value) return
+    history.value = [{ state: deepClone(customization.value), actionTitle: 'Initial' }]
+    historyIndex.value = 0
+    currentActionTitle.value = 'Initial'
     saveToLocalStorage()
   }
 
-  function redo(): void {
-    if (historyIndex.value >= history.value.length - 1) return
-    historyIndex.value++
-    const entry = history.value[historyIndex.value]
-    if (entry) {
-      customization.value = deepClone(entry.state)
-      currentActionTitle.value = entry.actionTitle
+  function undo(): void {
+    if (undoRedoInProgress.value || historyIndex.value <= 0) return
+    undoRedoInProgress.value = true
+    try {
+      historyIndex.value--
+      const entry = history.value[historyIndex.value]
+      if (entry) {
+        customization.value = deepClone(entry.state)
+        currentActionTitle.value = entry.actionTitle
+      }
+      saveToLocalStorage()
+    } finally {
+      undoRedoInProgress.value = false
     }
-    saveToLocalStorage()
+  }
+
+  function redo(): void {
+    if (undoRedoInProgress.value || historyIndex.value >= history.value.length - 1) return
+    undoRedoInProgress.value = true
+    try {
+      historyIndex.value++
+      const entry = history.value[historyIndex.value]
+      if (entry) {
+        customization.value = deepClone(entry.state)
+        currentActionTitle.value = entry.actionTitle
+      }
+      saveToLocalStorage()
+    } finally {
+      undoRedoInProgress.value = false
+    }
   }
 
   // ===== PERSISTENCE =====
@@ -415,8 +438,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const prev = customization.value.style_id
     if (prev === styleId) return
     customization.value.style_id = styleId
-    // Fetch orchestration handled in products store watcher
-    saveToLocalStorage()
+    pushHistoryState('Changed style')
   }
 
   function setDesign(
@@ -792,6 +814,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const categoryId = (existing && Number(existing.category_id)) || 0
     const subCategoryId = existing?.sub_category_id ?? null
 
+    pushHistoryState('Customization before reset')
+
     const newCustomization = createDefaultCustomization({
       productId,
       styleId,
@@ -810,7 +834,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     newCustomization.group_colors = {}
     newCustomization.shuffle_color_number = 0
 
-    setCustomization(newCustomization)
+    customization.value = newCustomization
 
     // Re-initialize product texts from product details to restore default preset texts
     // Clear the value field to reset text content to empty
@@ -830,9 +854,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
         following_products: text.following_products ? [...text.following_products] : [],
         following_product_ids: text.following_product_ids ? [...text.following_product_ids] : []
       }))
-
-      pushHistoryState('Reset customization')
     }
+
+    pushHistoryState('Reset customization')
   }
 
   // ===== BUSINESS LOGIC =====
@@ -884,6 +908,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const key = String(prodId)
     const map = ensureRosterPreviewSelectionMap()
     if (!map) return
+    const current = map[key]
+    const newVal = index == null || index < 0 ? undefined : index
+    if (current === newVal) return
     if (index == null || index < 0) {
       delete map[key]
     } else {
@@ -1012,8 +1039,10 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     currentActionTitle,
     // Undo / Redo
     pushHistoryState,
+    replaceHistoryWithCurrentState,
     undo,
     redo,
+    undoRedoInProgress,
     canUndo,
     canRedo,
     nextRedoActionTitle,

@@ -328,6 +328,7 @@ export const useProductsStore = defineStore('productsStore', () => {
           details.productDetails.product_texts
         )
       }
+      customization.replaceHistoryWithCurrentState()
     } else {
       setError('Error getting active product details')
     }

@@ -24,6 +24,7 @@
       )
     "
     v-bind="forwarded"
+    @value-commit="(payload: number[]) => emits('valueCommit', payload)"
   >
     <SliderTrack
       data-slot="slider-track"
