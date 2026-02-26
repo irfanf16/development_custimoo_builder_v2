@@ -12,7 +12,6 @@
     DialogTitle
   } from '@/components/ui/dialog'
   import { Button } from '@/components/ui/button'
-  import { Input } from '@/components/ui/input'
   import {
     Select,
     SelectContent,
@@ -21,7 +20,14 @@
     SelectValue
   } from '@/components/ui/select'
   import { ScrollArea } from '@/components/ui/scroll-area'
-  import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+  import {
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+    FormTextField
+  } from '@/components/ui/form'
   import { useForm } from 'vee-validate'
   import { toTypedSchema } from '@vee-validate/zod'
   import { z } from 'zod'
@@ -225,68 +231,36 @@
         <DialogTitle>{{ auth_create_account({}, { locale }) }}</DialogTitle>
         <DialogDescription> Enter your information to create a new account. </DialogDescription>
       </DialogHeader>
-      <component :is="isMobile ? 'div' : ScrollArea" class="h-full overflow-y-auto">
+      <component :is="isMobile ? 'div' : ScrollArea" class="h-full max-h-[70vh] overflow-y-auto">
         <form class="space-y-4" @submit.prevent="onSubmit">
-          <FormField v-slot="{ componentField }" name="first_name">
-            <FormItem>
-              <FormLabel>{{ profile_first_name({}, { locale }) }}</FormLabel>
-              <FormControl>
-                <Input
-                  id="first_name"
-                  type="text"
-                  :placeholder="auth_placeholder_first_name({}, { locale })"
-                  autocomplete="given-name"
-                  v-bind="componentField"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-          <FormField v-slot="{ componentField }" name="last_name">
-            <FormItem>
-              <FormLabel>{{ profile_last_name({}, { locale }) }}</FormLabel>
-              <FormControl>
-                <Input
-                  id="last_name"
-                  type="text"
-                  :placeholder="auth_placeholder_last_name({}, { locale })"
-                  autocomplete="family-name"
-                  v-bind="componentField"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-          <FormField v-slot="{ componentField }" name="email">
-            <FormItem>
-              <FormLabel>{{ profile_email({}, { locale }) }}</FormLabel>
-              <FormControl>
-                <Input
-                  id="email"
-                  type="email"
-                  :placeholder="auth_placeholder_email({}, { locale })"
-                  autocomplete="email"
-                  v-bind="componentField"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-          <FormField v-slot="{ componentField }" name="company_name">
-            <FormItem>
-              <FormLabel>{{ profile_company_name({}, { locale }) }}</FormLabel>
-              <FormControl>
-                <Input
-                  id="company_name"
-                  type="text"
-                  :placeholder="auth_placeholder_company_name({}, { locale })"
-                  autocomplete="organization"
-                  v-bind="componentField"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
+          <FormTextField
+            name="first_name"
+            :label="profile_first_name({}, { locale })"
+            type="text"
+            :placeholder="auth_placeholder_first_name({}, { locale })"
+            autocomplete="given-name"
+          />
+          <FormTextField
+            name="last_name"
+            :label="profile_last_name({}, { locale })"
+            type="text"
+            :placeholder="auth_placeholder_last_name({}, { locale })"
+            autocomplete="family-name"
+          />
+          <FormTextField
+            name="email"
+            :label="profile_email({}, { locale })"
+            type="email"
+            :placeholder="auth_placeholder_email({}, { locale })"
+            autocomplete="email"
+          />
+          <FormTextField
+            name="company_name"
+            :label="profile_company_name({}, { locale })"
+            type="text"
+            :placeholder="auth_placeholder_company_name({}, { locale })"
+            autocomplete="organization"
+          />
           <FormField v-slot="{ field }" name="countryId">
             <FormItem>
               <FormLabel>{{ profile_country({}, { locale }) }}</FormLabel>
@@ -309,41 +283,25 @@
               <FormMessage />
             </FormItem>
           </FormField>
-          <FormField v-slot="{ componentField }" name="password">
-            <FormItem>
-              <FormLabel>{{ auth_password_label({}, { locale }) }}</FormLabel>
-              <FormControl>
-                <Input
-                  id="password"
-                  type="password"
-                  :placeholder="auth_placeholder_create_password({}, { locale })"
-                  autocomplete="new-password"
-                  v-bind="componentField"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-          <FormField v-slot="{ componentField }" name="confirmPassword">
-            <FormItem>
-              <FormLabel>{{ auth_confirm_password_label({}, { locale }) }}</FormLabel>
-              <FormControl>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  :placeholder="auth_placeholder_confirm_password({}, { locale })"
-                  autocomplete="new-password"
-                  v-bind="componentField"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
+          <FormTextField
+            name="password"
+            :label="auth_password_label({}, { locale })"
+            type="password"
+            :placeholder="auth_placeholder_create_password({}, { locale })"
+            autocomplete="new-password"
+          />
+          <FormTextField
+            name="confirmPassword"
+            :label="auth_confirm_password_label({}, { locale })"
+            type="password"
+            :placeholder="auth_placeholder_confirm_password({}, { locale })"
+            autocomplete="new-password"
+          />
           <div v-if="authError" class="text-sm text-red-600">
             {{ authError }}
           </div>
           <DialogFooter>
-            <div class="flex flex-row gap-4 md:flex-col md:w-full">
+            <div class="flex flex-row gap-4 md:flex-col md:w-full pb-4">
               <Button class="w-full" type="button" variant="default" @click="handleCancel">
                 {{ auth_cancel({}, { locale }) }}
               </Button>
