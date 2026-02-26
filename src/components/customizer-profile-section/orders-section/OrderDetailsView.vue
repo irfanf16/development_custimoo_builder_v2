@@ -80,7 +80,11 @@
             <!-- Product Info -->
             <div class="flex-1 flex flex-col gap-2">
               <div class="font-semibold text-foreground text-base">
-                {{ product.product_name || 'Unnamed Product' }}
+                {{
+                  product.is_custom_product
+                    ? product.new_product_name
+                    : product.product_name || 'Unnamed Product'
+                }}
               </div>
 
               <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">

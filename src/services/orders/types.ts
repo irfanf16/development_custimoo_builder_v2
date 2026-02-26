@@ -28,6 +28,7 @@ export interface FactoryProduct {
   share_design_info?: {
     share_url?: string
   }
+  new_product_name?: string
 }
 export interface OrdersResponse {
   data: Order[]
