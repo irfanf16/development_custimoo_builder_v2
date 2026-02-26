@@ -90,7 +90,7 @@ export function useTextActions() {
   // ===== ACTIONS =====
   function buildUpdatedEntry(entry: OutputProductText): OutputProductText {
     const next = clone(entry)
-    next.value = form.text
+    next.value = entry.type === 'number' ? form.number : form.text
     next.font_family = form.font
     const idx = next.active_item_index ?? 0
     if (!next.items) next.items = []
@@ -429,7 +429,11 @@ export function useTextActions() {
 
     // Only update form if not currently user input (to avoid circular updates)
     if (!isUserInput.value) {
-      form.text = entry.value || ''
+      if (entry.type === 'number') {
+        form.number = entry.value || ''
+      } else {
+        form.text = entry.value || ''
+      }
       form.font = entry.font_family || ''
       form.fill = item.color || '#000000'
       form.outline = item.outline_color || '#ffffff'
@@ -538,6 +542,7 @@ export function useTextActions() {
     () => form.text,
     newText => {
       if (!isUserInput.value) return
+      if (currentEntry.value?.type === 'number') return
 
       const prodId = productId.value
       if (!prodId) return
@@ -566,6 +571,21 @@ export function useTextActions() {
       void debouncedPushHistory()
     }
   )
+
+  // When single number entry is edited in TextEdit, persist number to entry and roster
+  watch(
+    () => form.number,
+    () => {
+      const entry = currentEntry.value
+      if (!entry || entry.type !== 'number') return
+      isUserInput.value = true
+      syncTextToRosterAndEntry(form.number)
+      setTimeout(() => {
+        isUserInput.value = false
+      }, 0)
+    }
+  )
+
   watch(
     () => form.outline_width,
     () => {

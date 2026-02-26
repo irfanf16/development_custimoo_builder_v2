@@ -46,7 +46,8 @@
     texts_side_front,
     texts_side_back,
     colors_copy,
-    colors_paste
+    colors_paste,
+    texts_number_input_placeholder
   } from '@/paraglide/messages'
 
   // ===== COMPOSABLES =====
@@ -234,6 +235,16 @@
           @input="handleTextInput"
         />
       </div>
+      <div v-else class="space-y-2 px-4 md:px-6 pt-1">
+        <div class="h-14">
+          <Input
+            v-model="form.number"
+            :placeholder="texts_number_input_placeholder({}, { locale })"
+            class="h-14 text-lg"
+            inputmode="numeric"
+          />
+        </div>
+      </div>
 
       <!-- Font Selection Section -->
       <div v-if="!isNumberEntry" class="space-y-2 px-4 md:px-6">
@@ -241,6 +252,14 @@
           texts_font_label({}, { locale })
         }}</Label>
         <FontSelector v-model="form.font" :options="fontOptions" />
+      </div>
+      <div v-else class="space-y-2 px-4 md:px-6">
+        <Label class="text-sm font-medium text-foreground">{{
+          texts_font_label({}, { locale })
+        }}</Label>
+        <div class="h-14">
+          <FontSelector v-model="form.font" :options="fontOptions" />
+        </div>
       </div>
 
       <!-- Color and Sizing Accordion -->
