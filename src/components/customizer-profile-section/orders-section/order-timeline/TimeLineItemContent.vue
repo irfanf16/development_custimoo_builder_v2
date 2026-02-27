@@ -22,7 +22,9 @@
       >
         <div
           v-if="
-            content.third_party_approval_obj && content.third_party_approval_obj.approval_status
+            content.third_party_approval_obj &&
+            content.third_party_approval_obj.approval_status &&
+            isNullOrEmpty(content.skipReason)
           "
           class="mb-3"
         >
@@ -43,6 +45,9 @@
               content.third_party_approval_obj.approval_status.slice(1)
             }}
           </span>
+        </div>
+        <div v-else class="mb-3">
+          <span class="inline-block px-3 py-1.5 text-xs font-medium rounded-full"></span>
         </div>
 
         <div
