@@ -307,6 +307,10 @@ export function useBuildFactoryProduct() {
     if (cartStore.isEditingCartProduct && cartStore.editingFactoryProductId) {
       factoryProduct.id = cartStore.editingFactoryProductId
     }
+    if (customizationStore.reorderData) {
+      factoryProduct.reorder_data = { ...customizationStore.reorderData }
+      factoryProduct.is_reorder = true
+    }
 
     return {
       factory_product: factoryProduct,

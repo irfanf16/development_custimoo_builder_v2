@@ -44,6 +44,8 @@ export interface Item {
   status_activities: StatusActivity[]
   tracking_no?: string
   tracking_link?: string
+  factory_id?: number
+  factory_name?: string
 }
 
 export interface StatusActivity {

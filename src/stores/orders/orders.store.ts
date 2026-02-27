@@ -371,6 +371,7 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     factoryProduct: FactoryProduct,
     onSuccess?: () => void
   ): Promise<boolean> {
+    console.log('Starting reorderProduct with', { order, orderItem, factoryProduct })
     if (!order?.id || orderItem?.id == null || factoryProduct?.id == null) return false
 
     const orderId = Number(order.id)
@@ -380,8 +381,13 @@ export const useOrdersStore = defineStore('ordersStore', () => {
 
     if (!orderId || !orderItemId || !factoryProductId || !productId) return false
 
-    // Save reorder data to customization store
-    customizationStore.setReorderData(orderItemId, String(factoryProductId))
+    customizationStore.setReorderData({
+      order_item_id: orderItemId,
+      factory_product_id: String(factoryProductId),
+      order_number: order.order_no ?? undefined,
+      factory_id: orderItem?.factory_id ?? undefined,
+      factory_name: orderItem?.factory_name ?? undefined
+    })
 
     const success = await loadReorderProductIntoCustomizer({
       orderItemId,

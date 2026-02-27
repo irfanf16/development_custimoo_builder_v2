@@ -32,7 +32,7 @@ export interface PersistedCustomizationPayload {
   history: HistoryEntry[]
   historyIndex: number
   currentActionTitle: string
-  reorderData: { orderItemId: number | null; factoryProductId: string | null }
+  reorderData: Record<string, unknown> | null
 }
 
 function deepClone<T>(value: T): T {
@@ -73,10 +73,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const key = String(prodId)
     return customization.value?.product_custom_texts?.[key] ?? []
   })
-  const reorderData = ref<{ orderItemId: number | null; factoryProductId: string | null }>({
-    orderItemId: null,
-    factoryProductId: null
-  })
+  // holds arbitrary metadata returned when starting a reorder flow
+  const reorderData = ref<Record<string, unknown> | null>(null)
 
   const rosterEntries = computed(() => {
     const prodId = customization.value?.product_id
@@ -342,8 +340,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
         Math.max(0, payload.history.length - 1)
       )
       currentActionTitle.value = payload.currentActionTitle ?? ''
-      reorderData.value = payload.reorderData ??
-        reorderParsed ?? { orderItemId: null, factoryProductId: null }
+      reorderData.value = payload.reorderData ?? reorderParsed ?? null
       const entry = history.value[historyIndex.value]
       if (entry) {
         customization.value = deepClone(entry.state)
@@ -366,7 +363,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       historyIndex.value = 0
       currentActionTitle.value = ''
       customization.value = cloned
-      reorderData.value = reorderParsed ?? { orderItemId: null, factoryProductId: null }
+      reorderData.value = reorderParsed ?? null
     }
     return true
   }
@@ -947,8 +944,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     }
     return true
   }
-  function setReorderData(orderItemId: number, factoryProductId: string) {
-    reorderData.value = { orderItemId, factoryProductId }
+
+  function setReorderData(data: Record<string, unknown>) {
+    reorderData.value = { ...data }
     pushHistoryState('Set reorder data')
   }
   const resetCustomizationStore = () => {
@@ -1025,7 +1023,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   }
 
   function clearReorderData() {
-    reorderData.value = { orderItemId: null, factoryProductId: null }
+    reorderData.value = null
     pushHistoryState('Cleared reorder data')
   }
   // ===== RETURN =====

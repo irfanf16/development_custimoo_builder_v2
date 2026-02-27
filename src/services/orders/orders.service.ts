@@ -84,11 +84,13 @@ async function rejectQuote(orderId: number | string) {
   })
 }
 
-async function placeOrder(payload: {
+export interface PlaceOrderPayload {
   address_id: number
   customer_reference_no: string
   general_comments: string
-}) {
+}
+
+async function placeOrder(payload: PlaceOrderPayload) {
   return http.post('/orders', payload)
 }
 

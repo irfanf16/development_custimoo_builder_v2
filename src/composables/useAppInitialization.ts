@@ -330,8 +330,9 @@ export function useAppInitialization() {
     const shareUrl = appStore.shareUrl
     if (!shareUrl) return
 
-    const { useLoadShareProductIntoCustomizer } =
-      await import('@/composables/useLoadShareProductIntoCustomizer')
+    const { useLoadShareProductIntoCustomizer } = await import(
+      '@/composables/useLoadShareProductIntoCustomizer'
+    )
     const { loadShareProductIntoCustomizer: loadShare } = useLoadShareProductIntoCustomizer()
 
     const success = await loadShare(shareUrl)
@@ -347,14 +348,15 @@ export function useAppInitialization() {
     const reorderData = customizationStore?.reorderData
 
     if (reorderData?.orderItemId && reorderData.factoryProductId) {
-      const { useLoadReorderProductIntoCustomizer } =
-        await import('@/composables/useLoadReorderProductIntoCustomizer')
+      const { useLoadReorderProductIntoCustomizer } = await import(
+        '@/composables/useLoadReorderProductIntoCustomizer'
+      )
       const { loadReorderProductIntoCustomizer } = useLoadReorderProductIntoCustomizer()
 
-      const orderItemId = reorderData.orderItemId
-      const factoryProductId = reorderData.factoryProductId
+      const orderItemId = Number(reorderData.orderItemId)
+      const factoryProductId = reorderData.factoryProductId as string
       const productId = customizationStore.activeProductId ?? 0
-      if (orderItemId && factoryProductId && productId) {
+      if (!Number.isNaN(orderItemId) && factoryProductId && productId) {
         const success = await loadReorderProductIntoCustomizer({
           orderItemId,
           factoryProductId
