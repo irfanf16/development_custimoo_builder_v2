@@ -243,7 +243,8 @@ export function updateTextPositionInStore(options: UpdateTextPositionOptions): v
       productId: number,
       entryIndex: number,
       itemIndex: number,
-      payload: Partial<OutputProductTextItem> & Record<string, unknown>
+      payload: Partial<OutputProductTextItem> & Record<string, unknown>,
+      options?: { skipHistory?: boolean }
     ): void
   }
 
@@ -302,7 +303,9 @@ export function updateTextPositionInStore(options: UpdateTextPositionOptions): v
     data.originalWidth = convertSize(totalWidthPx)
     data.originalHeight = convertSize(totalHeightPx)
   }
-  customizationStore.updateProductTextItem(productId, customTextIndex, itemIndex, data)
+  customizationStore.updateProductTextItem(productId, customTextIndex, itemIndex, data, {
+    skipHistory: true
+  })
 }
 
 const debouncedTextStoreUpdate = useDebounceFn(
@@ -319,14 +322,16 @@ const debouncedTextStoreUpdate = useDebounceFn(
         productId: number,
         entryIndex: number,
         itemIndex: number,
-        payload: Partial<OutputProductTextItem> & Record<string, unknown>
+        payload: Partial<OutputProductTextItem> & Record<string, unknown>,
+        options?: { skipHistory?: boolean }
       ): void
     }
     customizationStore.updateProductTextItem(
       payload.productId,
       payload.customTextIndex,
       payload.itemIndex,
-      payload.data
+      payload.data,
+      { skipHistory: true }
     )
   },
   500

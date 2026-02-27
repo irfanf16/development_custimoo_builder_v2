@@ -474,11 +474,14 @@ export function useTextActions() {
     const rosterEntries = customizationStore.rosterEntries
 
     if (!rosterEntries || rosterEntries.length === 0) {
-      customizationStore.addEmptyRosterRow({
-        text: form.text || '',
-        size: '',
-        quantity: 1
-      })
+      customizationStore.addEmptyRosterRow(
+        {
+          text: form.text || '',
+          size: '',
+          quantity: 1
+        },
+        { skipHistory: true }
+      )
       workflowStore.setRosterSubStep('edit')
     }
   }
@@ -488,9 +491,7 @@ export function useTextActions() {
 
     const rosterEntries = customizationStore.rosterEntries
     if (rosterEntries && rosterEntries.length > 0) {
-      customizationStore.updateRosterRow(0, {
-        text: form.text || ''
-      })
+      customizationStore.updateRosterRow(0, { text: form.text || '' }, { skipHistory: true })
     }
 
     updateEntryInStore()
@@ -503,11 +504,14 @@ export function useTextActions() {
     const rosterEntries = customizationStore.rosterEntries
 
     if (!rosterEntries || rosterEntries.length === 0) {
-      customizationStore.addEmptyRosterRow({
-        number: formFromNumber || '',
-        size: '',
-        quantity: 1
-      })
+      customizationStore.addEmptyRosterRow(
+        {
+          number: formFromNumber || '',
+          size: '',
+          quantity: 1
+        },
+        { skipHistory: true }
+      )
 
       workflowStore.setRosterSubStep('edit')
     } else {
@@ -516,7 +520,7 @@ export function useTextActions() {
         text: firstEntry?.text || '',
         number: formFromNumber || ''
       }
-      customizationStore.updateRosterRow(0, updates)
+      customizationStore.updateRosterRow(0, updates, { skipHistory: true })
     }
 
     updateEntryInStore()

@@ -1823,6 +1823,33 @@
     { deep: true }
   )
 
+  // Re-sync logos when undo/redo restores state so canvas reflects restored rotation/position
+  watch(
+    () => customizationStore.historyIndex,
+    async () => {
+      if (isPlacementMode.value) return
+      if (!mounted.value) return
+      await syncLogosOnCanvas({
+        productId: effectiveProductId.value as number,
+        newLogos: customLogos.value,
+        canvas: canvas.value,
+        logoObjects: customLogoObjects,
+        applyClipPath,
+        addLogo,
+        calculatePosition: calculatePosition2D,
+        calculateRotation: calculateRotation2D,
+        calculateScaleRatios: calculateScaleRatios2D,
+        filterLogo: (logo: CustomLogo) => logo.side === props.side,
+        suppressWatchRef: suppressCustomLogosWatch,
+        onAfterSync: () => {
+          if (canvas.value) {
+            canvas.value.requestRenderAll()
+          }
+        }
+      })
+    }
+  )
+
   // Watch for changes in customTexts from customization store
   watch(
     customTexts,

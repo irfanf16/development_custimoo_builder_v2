@@ -172,12 +172,14 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   /**
    * Update a single text item's placement data (e.g. after user moves/scales/rotates on canvas).
    * Payload may include optional 3D/original fields (x_axis_3d, y_axis_3d, originalWidth, originalHeight).
+   * Use skipHistory: true when updating from canvas sync so only the scene's single "Moved text" push is used.
    */
   function updateProductTextItem(
     productId: number,
     entryIndex: number,
     itemIndex: number,
-    payload: Partial<OutputProductTextItem> & Record<string, unknown>
+    payload: Partial<OutputProductTextItem> & Record<string, unknown>,
+    options?: { skipHistory?: boolean }
   ): void {
     const root = customization.value
     if (!root) return
@@ -187,7 +189,11 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const item = entry?.items?.[itemIndex]
     if (!item) return
     entry.items[itemIndex] = { ...item, ...payload }
-    pushHistoryState('Updated text placement')
+    if (!options?.skipHistory) {
+      pushHistoryState('Updated text placement')
+    } else {
+      saveToLocalStorage()
+    }
   }
 
   /**
@@ -449,8 +455,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (prev === design.id) return
     customization.value.design_id = design.id
     customization.value.design_name = design.design_name
-    // Fetch orchestration handled in products store watcher
-    saveToLocalStorage()
+    pushHistoryState('Changed design')
   }
 
   function setAddons(addons: OutputAddon[]) {

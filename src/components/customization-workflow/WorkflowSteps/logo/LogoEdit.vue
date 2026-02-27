@@ -437,6 +437,14 @@
     }
   )
 
+  // Re-sync form when undo/redo restores state so angle/height inputs reflect restored logo
+  watch(
+    () => customizationStore.historyIndex,
+    () => {
+      syncFormWithLogo(customLogo.value)
+    }
+  )
+
   // Setup angle watchers
   onMounted(() => {
     setupAngleWatcher()

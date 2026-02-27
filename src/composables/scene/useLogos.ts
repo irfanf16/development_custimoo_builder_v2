@@ -442,7 +442,7 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
       const match = available.splice(matchIndex, 1)[0]
       if (match) {
         const { widthRatio, heightRatio } = calculateScaleRatios()
-        const position = calculatePosition(logo)
+        const position = await Promise.resolve(calculatePosition(logo))
         const angle = calculateRotation(logo.rotation)
         match.obj.set({
           left: position.x,

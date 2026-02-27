@@ -1,4 +1,4 @@
-import { computed, watch, type ComputedRef } from 'vue'
+import { computed, nextTick, watch, type ComputedRef } from 'vue'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useHistoryStore } from '@/stores/history/history.store'
 import type { CustomLogo } from '@/services/logos/types'
@@ -154,11 +154,20 @@ export function useLogoPosition(
       rotationChangeStart.value = null
       return
     }
+    const arr = customizationStore.customization?.custom_logos?.[productKey.value]
+    if (!arr || !arr[index]) {
+      rotationChangeStart.value = null
+      return
+    }
     const [rawNext] = value
     const nextRotation = Number(rawNext ?? 0)
     const prevRotation = rotationChangeStart.value ?? Number(logo.value.rotation || 0)
     rotationChangeStart.value = null
     if (Math.abs(prevRotation - nextRotation) < 0.1) return
+
+    // Push history for the state *before* the angle change (store currently has new rotation from applyDraftRotation)
+    const current = arr[index]
+    arr.splice(index, 1, { ...current, rotation: prevRotation })
     customizationStore.pushHistoryState('Changed logo angle')
     await historyStore.execute('logo.update-rotation', {
       key: productKey.value,
@@ -168,10 +177,31 @@ export function useLogoPosition(
     })
   }
 
-  function resetPositionToCenter() {
-    if (!logo.value || !customizationStore.customization?.product_id) return
+  async function resetPositionToCenter() {
+    if (!logo.value || !productKey.value) return
+    const index = activeLogoIndex.value
+    if (index === -1) return
+    const arr = customizationStore.customization?.custom_logos?.[productKey.value]
+    if (!arr) return
+    const current = arr[index]
+    if (!current) return
+    const prevRotation = Number(current.rotation || 0)
+    if (Math.abs(prevRotation) < 0.1) return
+    const updated = { ...current, rotation: 0 }
+    arr.splice(index, 1, updated)
+    await historyStore.execute('logo.update-rotation', {
+      key: productKey.value,
+      index,
+      prevRotation,
+      nextRotation: 0
+    })
+    customizationStore.pushHistoryState('Centered logo')
+    isSyncingAngle.value = true
     positionForm.angle = [0]
-    // TODO: dispatch history action to reset logo coordinates once available
+    rotationChangeStart.value = null
+    void nextTick(() => {
+      isSyncingAngle.value = false
+    })
   }
 
   function pinLogo() {

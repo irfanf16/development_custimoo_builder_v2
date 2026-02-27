@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed, watch } from 'vue'
+  import { useDebounceFn } from '@vueuse/core'
   import { Input } from '@/components/ui/input'
   import { Button } from '@/components/ui/button'
   import ColorSelector from '@/components/ui/color-selector/ColorSelector.vue'
@@ -60,6 +61,11 @@
   const companyStore = useCompanyStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
 
+  // Debounced history push for dimension edits so we get one entry per editing session, not per keypress
+  const debouncedPushDimensionHistory = useDebounceFn(() => {
+    customizationStore.pushHistoryState('Changed text dimensions')
+  }, 500)
+
   // Dimension update handler (needed for useTextDimensions)
   function handleOriginalDimensionUpdate(dimension: 'width' | 'height', value: string | number) {
     const str = String(value)
@@ -118,7 +124,10 @@
         payload.originalWidth = Number((otherNum * ratio).toFixed(2))
       }
     }
-    customizationStore.updateProductTextItem(productId, entryIndex, itemIndex, payload)
+    customizationStore.updateProductTextItem(productId, entryIndex, itemIndex, payload, {
+      skipHistory: true
+    })
+    debouncedPushDimensionHistory()
   }
 
   // Use text dimensions composable

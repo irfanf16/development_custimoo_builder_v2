@@ -19,6 +19,9 @@ export function useLogoDimensions(
   const heightInputValue = ref<string>('')
   const isWidthFocused = ref(false)
   const isHeightFocused = ref(false)
+  // Track if user edited since last blur so we only push history when something actually changed
+  const widthDimensionDirty = ref(false)
+  const heightDimensionDirty = ref(false)
 
   // Sync input values from logo when not focused
   watch(
@@ -59,8 +62,13 @@ export function useLogoDimensions(
    * Shared handler for originalWidth and originalHeight.
    * Both use the same scaleX/scaleY; changing either dimension applies the same ratio to both scales
    * and to the other stored dimension so width and height fields stay in sync.
+   * Use skipHistory: true when called from input handlers so history is pushed only on blur.
    */
-  function handleOriginalDimensionUpdate(dimension: 'width' | 'height', value: string | number) {
+  function handleOriginalDimensionUpdate(
+    dimension: 'width' | 'height',
+    value: string | number,
+    options?: { skipHistory?: boolean }
+  ) {
     const str = String(value).trim()
     if (!customLogo.value || !productKey.value) return
 
@@ -121,7 +129,12 @@ export function useLogoDimensions(
     }
 
     arr.splice(index, 1, updated as CustomLogo)
-    customizationStore.pushHistoryState('Changed logo dimensions')
+    if (!options?.skipHistory) {
+      customizationStore.pushHistoryState('Changed logo dimensions')
+    } else {
+      if (dimension === 'width') widthDimensionDirty.value = true
+      else heightDimensionDirty.value = true
+    }
 
     // Update position form height if dimension is height
     if (dimension === 'height') {
@@ -144,11 +157,11 @@ export function useLogoDimensions(
       widthInputValue.value = sanitized
     }
 
-    // Update store in real-time if value is valid
+    // Update store in real-time if value is valid (no history until blur)
     if (sanitized !== '' && sanitized !== '.') {
       const num = Number.parseFloat(sanitized)
       if (Number.isFinite(num) && num >= 0) {
-        handleOriginalDimensionUpdate('width', sanitized)
+        handleOriginalDimensionUpdate('width', sanitized, { skipHistory: true })
       }
     }
   }
@@ -168,11 +181,11 @@ export function useLogoDimensions(
       heightInputValue.value = sanitized
     }
 
-    // Update store in real-time if value is valid
+    // Update store in real-time if value is valid (no history until blur)
     if (sanitized !== '' && sanitized !== '.') {
       const num = Number.parseFloat(sanitized)
       if (Number.isFinite(num) && num >= 0) {
-        handleOriginalDimensionUpdate('height', sanitized)
+        handleOriginalDimensionUpdate('height', sanitized, { skipHistory: true })
       }
     }
   }
@@ -184,11 +197,11 @@ export function useLogoDimensions(
     const sanitized = restrictDecimalInput(String(value), MAX_DECIMALS)
     widthInputValue.value = sanitized
 
-    // Update store in real-time if value is valid
+    // Update store in real-time if value is valid (no history until blur)
     if (sanitized !== '' && sanitized !== '.') {
       const num = Number.parseFloat(sanitized)
       if (Number.isFinite(num) && num >= 0) {
-        handleOriginalDimensionUpdate('width', sanitized)
+        handleOriginalDimensionUpdate('width', sanitized, { skipHistory: true })
       }
     }
   }
@@ -200,17 +213,18 @@ export function useLogoDimensions(
     const sanitized = restrictDecimalInput(String(value), MAX_DECIMALS)
     heightInputValue.value = sanitized
 
-    // Update store in real-time if value is valid
+    // Update store in real-time if value is valid (no history until blur)
     if (sanitized !== '' && sanitized !== '.') {
       const num = Number.parseFloat(sanitized)
       if (Number.isFinite(num) && num >= 0) {
-        handleOriginalDimensionUpdate('height', sanitized)
+        handleOriginalDimensionUpdate('height', sanitized, { skipHistory: true })
       }
     }
   }
 
   /**
-   * Handles width blur - formats and validates
+   * Handles width blur - formats and validates.
+   * Only push history when the value actually changed (avoids extra entry when user focuses height and blurs without editing).
    */
   function handleBlurWidth() {
     const raw = customLogo.value?.originalWidth
@@ -222,11 +236,16 @@ export function useLogoDimensions(
         : '1.00'
 
     widthInputValue.value = formatOnBlur(widthInputValue.value, defaultValue, MAX_DECIMALS)
+    if (widthDimensionDirty.value) {
+      customizationStore.pushHistoryState('Changed logo dimensions')
+      widthDimensionDirty.value = false
+    }
     isWidthFocused.value = false
   }
 
   /**
-   * Handles height blur - formats and validates
+   * Handles height blur - formats and validates.
+   * Only push history when the value actually changed (avoids extra entry when user focuses and blurs without editing).
    */
   function handleBlurHeight() {
     const raw = customLogo.value?.originalHeight
@@ -234,12 +253,16 @@ export function useLogoDimensions(
       raw !== undefined && raw !== null && raw !== ''
         ? Number.isFinite(Number(raw))
           ? Number(raw).toFixed(MAX_DECIMALS)
-          : '1.00'
+          : String(raw)
         : '1.00'
 
     heightInputValue.value = formatOnBlur(heightInputValue.value, defaultValue, MAX_DECIMALS)
     if (heightInputValue.value) {
       positionForm.height = heightInputValue.value
+    }
+    if (heightDimensionDirty.value) {
+      customizationStore.pushHistoryState('Changed logo dimensions')
+      heightDimensionDirty.value = false
     }
     isHeightFocused.value = false
   }

@@ -149,6 +149,7 @@ export function useRoster() {
       entry,
       index: rosterEntries.value.length
     })
+    customizationStore.pushHistoryState('Added roster row')
   }
 
   async function updateRow(index: number, payload: Partial<APCustomizationRosterEntry>) {
@@ -194,6 +195,15 @@ export function useRoster() {
         nextQuantity: payload.quantity
       })
     }
+
+    const hasChanges =
+      (payload.text !== undefined && payload.text !== currentEntry.text) ||
+      (payload.number !== undefined && payload.number !== currentEntry.number) ||
+      (payload.size !== undefined && payload.size !== currentEntry.size) ||
+      (payload.quantity !== undefined && payload.quantity !== currentEntry.quantity)
+    if (hasChanges) {
+      customizationStore.pushHistoryState('Updated roster row')
+    }
   }
 
   async function removeRow(index: number) {
@@ -228,6 +238,7 @@ export function useRoster() {
         })
       })
     })
+    customizationStore.pushHistoryState('Uploaded roster')
   }
 
   async function ensureEditableRoster() {
