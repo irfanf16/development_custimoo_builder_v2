@@ -265,8 +265,15 @@ export function useBuildFactoryProduct() {
       ecommerce_variant_id: '',
       ecommerce_modifier_id: '',
       sync_id: '',
+      size_variants_mapping: null,
       category_id: customizationStore.activeCategoryId ?? undefined,
-      sub_category_id: customizationStore.activeSubCategoryId ?? null
+      sub_category_id: customizationStore.activeSubCategoryId ?? null,
+      product_price_object: {
+        product_price: 0,
+        currency_code: '',
+        currency_symbol: '',
+        quantity: 0
+      }
     }
 
     // Try to get ecommerce values from product details
@@ -278,6 +285,7 @@ export function useBuildFactoryProduct() {
           ecommerce_variant_id?: string
           ecommerce_modifier_id?: string
           sync_id?: string | number
+          size_variants?: Record<string, string>
         }>
       }
 
@@ -293,6 +301,9 @@ export function useBuildFactoryProduct() {
           factoryProduct.ecommerce_variant_id = ecommerce.ecommerce_variant_id || ''
           factoryProduct.ecommerce_modifier_id = ecommerce.ecommerce_modifier_id || ''
           factoryProduct.sync_id = ecommerce.sync_id ? String(ecommerce.sync_id) : ''
+          factoryProduct.size_variants_mapping = ecommerce.size_variants
+            ? ecommerce.size_variants
+            : null
         }
       } else {
         // Fallback to direct properties if ecommerceproduct array doesn't exist
