@@ -7,6 +7,7 @@ import {
   type Canvas
 } from 'fabric'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useStorage } from './useStorage'
 
 /**
  * Common control visibility settings for Fabric.js objects
@@ -51,18 +52,19 @@ export type SetupFabricControlsOptions = {
  */
 export function setupFabricControls(options: SetupFabricControlsOptions = {}): void {
   const { onRemoveLogo, onRemoveText } = options
+  const { fromStorage } = useStorage()
 
   const scaleImg = new Image()
   scaleImg.crossOrigin = 'anonymous'
-  scaleImg.src = '/scale.png'
+  scaleImg.src = fromStorage('scale.png')
 
   const rotationImg = new Image()
   rotationImg.crossOrigin = 'anonymous'
-  rotationImg.src = '/rotation.png'
+  rotationImg.src = fromStorage('rotation.png')
 
   const deleteImg = new Image()
   deleteImg.crossOrigin = 'anonymous'
-  deleteImg.src = '/delete.png'
+  deleteImg.src = fromStorage('delete.png')
 
   let imagesLoaded = 0
   const totalImages = 3

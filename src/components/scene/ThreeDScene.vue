@@ -44,7 +44,9 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
   import { useSceneStore } from '@/stores/scene/scene.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useCompanyStore } from '@/stores/company/company.store'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { useProductsFontsStore } from '@/stores/products-fonts/products-fonts.store'
   import type { DesignData } from '@/composables/scene'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
@@ -139,7 +141,9 @@
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
   const sceneStore = useSceneStore()
+  const workflowStore = useWorkflowStore()
   const companyStore = useCompanyStore()
+  const { effectiveSvgGroupsInteractive } = useEffectiveSelectors()
 
   // ===== LOGOS COMPOSABLE =====
   // Note: fromStorage is already available from useSceneCommon
@@ -153,6 +157,7 @@
     const all = customizationStore.customization.custom_logos?.[key] || []
     const map = new Map<number, CustomLogo>()
     const fields = [
+      'id',
       'url',
       'side',
       'x_axis',
@@ -306,6 +311,7 @@
   const pointerBridgeHandlers = shallowRef<{
     mousedown?: (e: MouseEvent) => void
     mouseup?: (e: MouseEvent) => void
+    dblclick?: (e: MouseEvent) => void
     touchstart?: (e: TouchEvent) => void
     touchend?: (e: TouchEvent) => void
   }>({})
@@ -315,6 +321,7 @@
   const lastKnownObjectPos = ref<{ left: number; top: number } | null>(null)
   const dimText = shallowRef<fabric.IText | null>(null)
   const dimensionTargetRef = shallowRef<FabricObject | FabricImage | null>(null)
+  const colorDblclickElRef = shallowRef<HTMLCanvasElement | null>(null)
 
   // ===== LIFECYCLE =====
   onMounted(async () => {
@@ -329,6 +336,11 @@
   })
 
   onBeforeUnmount(() => {
+    const el = colorDblclickElRef.value
+    if (el) {
+      el.removeEventListener('dblclick', handleDesignPartDblclick)
+      colorDblclickElRef.value = null
+    }
     removeGetPointerFromFabricPrototype()
     cleanup()
   })
@@ -496,6 +508,11 @@
           }
         }
 
+        const forwardDblclick = (ev: MouseEvent) => {
+          const evt = cloneMouseEvent('dblclick', ev)
+          upperCanvas.dispatchEvent(evt)
+        }
+
         const forwardTouch = (type: 'touchstart' | 'touchend', ev: TouchEvent) => {
           const touch = ev.changedTouches?.[0]
           if (!touch) return
@@ -543,12 +560,14 @@
         const handlers = {
           mousedown: (ev: MouseEvent) => forwardMouse('mousedown', ev),
           mouseup: (ev: MouseEvent) => forwardMouse('mouseup', ev),
+          dblclick: forwardDblclick,
           touchstart: (ev: TouchEvent) => forwardTouch('touchstart', ev),
           touchend: (ev: TouchEvent) => forwardTouch('touchend', ev)
         }
 
         rendererEl.value.addEventListener('mousedown', handlers.mousedown)
         rendererEl.value.addEventListener('mouseup', handlers.mouseup)
+        rendererEl.value.addEventListener('dblclick', handlers.dblclick)
         rendererEl.value.addEventListener('touchstart', handlers.touchstart, { passive: false })
         rendererEl.value.addEventListener('touchend', handlers.touchend, { passive: false })
 
@@ -649,6 +668,7 @@
     const handlers = pointerBridgeHandlers.value
     if (handlers.mousedown) rendererEl.value.removeEventListener('mousedown', handlers.mousedown)
     if (handlers.mouseup) rendererEl.value.removeEventListener('mouseup', handlers.mouseup)
+    if (handlers.dblclick) rendererEl.value.removeEventListener('dblclick', handlers.dblclick)
     if (handlers.touchstart)
       rendererEl.value.removeEventListener('touchstart', handlers.touchstart as EventListener)
     if (handlers.touchend)
@@ -902,6 +922,15 @@
       ensureDimText(true)
       canvas.value?.on('selection:cleared', hideDimensions)
 
+      // Double-click on design part: listen on Fabric canvas; pointer bridge forwards dblclick from 3D renderer to this element
+      const canvasForDblclick =
+        (canvas.value as unknown as { upperCanvasEl?: HTMLCanvasElement })?.upperCanvasEl ??
+        canvasEl.value
+      if (canvasForDblclick) {
+        canvasForDblclick.addEventListener('dblclick', handleDesignPartDblclick)
+        colorDblclickElRef.value = canvasForDblclick
+      }
+
       // Prevent objects from moving outside the model by reverting to last valid position
       const fabricCanvas = canvas.value as Canvas
       fabricCanvas.on('object:moving', evt => {
@@ -1027,9 +1056,9 @@
   // Calculate rotation (opposite angle for 3D)
   function calculateRotation(rotation: number): number {
     if (rotation < 0) {
-      return oppositeAngle(360 - rotation)
+      return Math.round(oppositeAngle(360 - rotation))
     }
-    return oppositeAngle(rotation)
+    return Math.round(oppositeAngle(rotation))
   }
 
   /**
@@ -1349,6 +1378,33 @@
   }
 
   /**
+   * Double-click on design part: open color editor with that part's group selected.
+   * Design is not evented (no move/scale), so we hit-test by pointer: find which design child contains the click.
+   */
+  function handleDesignPartDblclick(evt: MouseEvent) {
+    const fabricCanvas = canvas.value
+    if (!fabricCanvas || !designObject.value) return
+    const pointer = fabricCanvas.getPointer(evt as unknown as fabric.TPointerEvent)
+    if (!pointer) return
+    const design = designObject.value
+    const objects: FabricObject[] = (design as Group & { _objects?: FabricObject[] })._objects
+      ? ((design as Group)._objects ?? [])
+      : [design as FabricObject]
+    for (let i = objects.length - 1; i >= 0; i--) {
+      const obj = objects[i] as FabricObject & { id?: string }
+      if (!obj?.id) continue
+      if (obj.containsPoint(pointer)) {
+        const groupId = obj.id.split('_')[0] || obj.id
+        const groups = effectiveSvgGroupsInteractive.value ?? []
+        const accordionIndex = groups.findIndex(g => g.id === groupId.toLowerCase())
+        console.log('designIndex', accordionIndex, groupId)
+        workflowStore.openColorEditorFromCustomizer(groupId, accordionIndex)
+        return
+      }
+    }
+  }
+
+  /**
    * Apply safe zone as clip path to an object (logo or text). Same as old ThreeDScene: obj.clipPath = this.safe_zone
    */
   function applyClipPath(target: FabricImage | FabricObject): void {
@@ -1417,7 +1473,12 @@
 
       const added = customLogoObjects.value.get(logoIndex)
       if (added) {
-        added.on('selected', () => showDimensions(added))
+        added.on('selected', () => {
+          showDimensions(added)
+          const logoIndex = (added as unknown as { logo_index?: number }).logo_index
+          const logoId = customLogos.value.get(logoIndex!)?.id
+          workflowStore.openLogoEditorFromCustomizer(logoIndex, logoId)
+        })
         added.on('moving', () => showDimensions(added))
         added.on('scaling', () => showDimensions(added))
         added.on('rotating', () => showDimensions(added))
@@ -1511,7 +1572,17 @@
     const key = `${customTextIndex}_${itemIndex}`
     const added = customTextObjects.value.get(key)
     if (added) {
-      added.on('selected', () => showDimensions(added))
+      added.on('selected', () => {
+        showDimensions(added)
+        const customTextIdx = (added as unknown as { custom_text_index?: number }).custom_text_index
+        const itemIdx = (added as unknown as { custom_text_item_index?: number })
+          .custom_text_item_index
+        if (customTextIdx === undefined || itemIdx === undefined) return
+        const data = customTexts.value.get(customTextIdx)
+        const textId = data?.entry?.id
+        if (textId == null || !data) return
+        workflowStore.openTextEditorFromCustomizer(textId, itemIdx)
+      })
       added.on('moving', () => showDimensions(added))
       added.on('scaling', () => showDimensions(added))
       added.on('rotating', () => showDimensions(added))

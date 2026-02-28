@@ -59,6 +59,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const activeLogoIndex = ref<number | null>(null)
   const textClipboard = ref<{ style: unknown } | null>(null)
   const activeColorAccordionIndex = ref<number | null>(null)
+  /** Active SVG group ID for color selection (set when opening color editor from canvas part double-click). */
+  const activeColorGroupId = ref<string | number | null>(null)
   /** Snapshot of group_colors before applying logo colors (for "Use original colors"). */
   const groupColorsBeforeLogoApply = ref<Record<string, APCustomizationGroupColor> | null>(null)
 
@@ -350,6 +352,26 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
+  /**
+   * FROM CUSTOMIZER - Open text editor (e.g. when user selects a text on canvas).
+   * Binds itemIndex to the text entry's active_item_index in the customization store so the rest of the app uses the same variable.
+   * @param textId - Text ID (required for identification)
+   * @param itemIndex - Item index in text.items array
+   */
+  function openTextEditorFromCustomizer(textId: number, itemIndex: number) {
+    const prodId = customization.activeProductId
+    if (prodId != null && customization.customization?.product_custom_texts) {
+      const key = String(prodId)
+      const texts = customization.customization.product_custom_texts[key]
+      const entry = texts?.find((e: { id: number }) => e.id === textId)
+      if (entry) entry.active_item_index = itemIndex
+    }
+    setActiveStep('texts')
+    setActiveTextId(textId)
+    setTextsSubStep('single')
+    setActiveTextItemIndex(itemIndex)
+  }
+
   function setPendingTextTemplateId(templateId: number | null) {
     pendingTextTemplateId.value = templateId
     saveSubStepsToLocalStorage()
@@ -375,9 +397,35 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
+  /**
+   * FROM CUSTOMIZER - Open logo editor (e.g. when user selects a logo on canvas).
+   * @param logoId - Logo ID (optional, use index if not available)
+   * @param logoIndex - Logo index in custom_logos array
+   */
+  function openLogoEditorFromCustomizer(logoIndex?: number, logoId?: number) {
+    setActiveStep('logos')
+    setLogosSubStep('edit')
+    setActiveLogoIndex(logoIndex!)
+    setActiveLogoId(String(logoId!))
+  }
+
   function setActiveColorAccordionIndex(index: number | null) {
     activeColorAccordionIndex.value = index
     saveSubStepsToLocalStorage()
+  }
+
+  /**
+   * FROM CUSTOMIZER - Open color editor (e.g. when user double-clicks a design part on canvas).
+   * @param groupId - SVG group ID (used as key in selectedGradientIndex)
+   * @param accordionIndex - Index in effectiveSvgGroupsInteractive (0-based, or null for palette)
+   */
+  function openColorEditorFromCustomizer(
+    groupId: string | number,
+    accordionIndex: number | null = null
+  ) {
+    setActiveStep('colors')
+    setActiveColorAccordionIndex(accordionIndex! + 1)
+    activeColorGroupId.value = groupId
   }
 
   function setGroupColorsBeforeLogoApply(data: Record<string, APCustomizationGroupColor>) {
@@ -411,6 +459,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     activeLogoId.value = null
     activeLogoIndex.value = null
     activeColorAccordionIndex.value = null
+    activeColorGroupId.value = null
     textClipboard.value = null
     activeTextId.value = null
     activeTextItemIndex.value = null
@@ -520,6 +569,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     activeLogoId.value = null
     activeLogoIndex.value = null
     activeColorAccordionIndex.value = null
+    activeColorGroupId.value = null
     textClipboard.value = null
     activeTextId.value = null
     activeTextItemIndex.value = null
@@ -547,6 +597,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     activeLogoId,
     activeLogoIndex,
     activeColorAccordionIndex,
+    activeColorGroupId,
     selectedCategoryId,
     selectedSubCategoryId,
     selectedDesignCategoryId,
@@ -570,11 +621,14 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setActiveTextIndex,
     setPendingTextTemplateId,
     setActiveTextItemIndex,
+    openTextEditorFromCustomizer,
     setRosterSubStep,
     setActivePatternSubStep,
     setActiveLogoId,
     setActiveLogoIndex,
+    openLogoEditorFromCustomizer,
     setActiveColorAccordionIndex,
+    openColorEditorFromCustomizer,
     setGroupColorsBeforeLogoApply,
     getAndClearGroupColorsBeforeLogoApply,
     setTextClipboard,

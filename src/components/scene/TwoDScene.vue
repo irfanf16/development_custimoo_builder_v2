@@ -38,7 +38,9 @@
     type GetImageFromCanvasOptions
   } from '@/composables/scene/useCanvasImage'
   import { useSceneStore } from '@/stores/scene/scene.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useCompanyStore } from '@/stores/company/company.store'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { useProductsFontsStore } from '@/stores/products-fonts/products-fonts.store'
   import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
   import type {
@@ -50,7 +52,9 @@
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
   const sceneStore = useSceneStore()
+  const workflowStore = useWorkflowStore()
   const companyStore = useCompanyStore()
+  const { effectiveSvgGroupsInteractive } = useEffectiveSelectors()
 
   // Canvas refs
   const canvasEl = shallowRef<HTMLCanvasElement | null>(null)
@@ -68,6 +72,7 @@
   const boundary = shallowRef<Group | null>(null)
   const placementRect = shallowRef<FabricObject | null>(null)
   const mounted = ref(false)
+  const colorDblclickElRef = shallowRef<HTMLCanvasElement | null>(null)
 
   // Model type based on style preview structure
   type ModelData = {
@@ -178,6 +183,7 @@
     const all = customizationStore.customization.custom_logos?.[key] || []
     const map = new Map<number, CustomLogo>()
     const fields = [
+      'id',
       'url',
       'side',
       'x_axis',
@@ -358,6 +364,15 @@
       ensureDimText()
       canvas.value?.on('selection:cleared', hideDimensions)
 
+      // Double-click on design part → open color editor
+      const canvasForDblclick =
+        (canvas.value as unknown as { upperCanvasEl?: HTMLCanvasElement })?.upperCanvasEl ??
+        canvasEl.value
+      if (canvasForDblclick) {
+        canvasForDblclick.addEventListener('dblclick', handleDesignPartDblclick)
+        colorDblclickElRef.value = canvasForDblclick
+      }
+
       // Setup custom Fabric controls with icons (scale/rotate/delete)
       setupFabricControls({
         onRemoveLogo: (logoIndex: number, canvasInstance: Canvas) => {
@@ -377,6 +392,11 @@
   })
 
   onBeforeUnmount(() => {
+    const el = colorDblclickElRef.value
+    if (el) {
+      el.removeEventListener('dblclick', handleDesignPartDblclick)
+      colorDblclickElRef.value = null
+    }
     disposeCanvas()
   })
 
@@ -596,9 +616,9 @@
 
   function calculateRotation2D(rotation: number): number {
     if (rotation < 0) {
-      return 360 - rotation
+      return Math.round(360 - rotation)
     }
-    return rotation
+    return Math.round(rotation)
   }
 
   function calculateScaleRatios2D() {
@@ -693,6 +713,33 @@
     })
     canvas.value.bringObjectToFront(dimText.value as unknown as FabricObject)
     canvas.value.requestRenderAll()
+  }
+
+  /**
+   * Double-click on design part: open color editor with that part's group selected.
+   * Design is not evented (no move/scale), so we hit-test by pointer: find which design child contains the click.
+   */
+  function handleDesignPartDblclick(evt: MouseEvent) {
+    const fabricCanvas = canvas.value
+    if (!fabricCanvas || !designObject.value) return
+    const pointer = fabricCanvas.getPointer(evt as unknown as fabric.TPointerEvent)
+    if (!pointer) return
+    const design = designObject.value
+    const objects: FabricObject[] = (design as Group & { _objects?: FabricObject[] })._objects
+      ? ((design as Group)._objects ?? [])
+      : [design as FabricObject]
+    // Iterate reverse so topmost (last drawn) wins
+    for (let i = objects.length - 1; i >= 0; i--) {
+      const obj = objects[i] as FabricObject & { id?: string }
+      if (!obj?.id) continue
+      if (obj.containsPoint(pointer)) {
+        const groupId = obj.id.split('_')[0] || obj.id
+        const groups = effectiveSvgGroupsInteractive.value ?? []
+        const accordionIndex = groups.findIndex(g => g.id === groupId.toLowerCase())
+        workflowStore.openColorEditorFromCustomizer(groupId, accordionIndex)
+        return
+      }
+    }
   }
 
   /**
@@ -1456,7 +1503,12 @@
         }
       }
       const added = customLogoObjects.value.get(logoIndex)
-      added?.on('selected', () => showDimensions(added))
+      added?.on('selected', () => {
+        showDimensions(added)
+        const logoIndex = (added as unknown as { logo_index?: number }).logo_index
+        const logoId = customLogos.value.get(logoIndex!)?.id
+        workflowStore.openLogoEditorFromCustomizer(logoIndex, logoId)
+      })
       added?.on('moving', reclipAndClamp)
       added?.on('scaling', reclipAndClamp)
       added?.on('rotating', reclipAndClamp)
@@ -1546,7 +1598,18 @@
         showDimensions(textObj)
         if (canvas.value) canvas.value.requestRenderAll()
       }
-      textObj.on('selected', () => showDimensions(textObj))
+      textObj.on('selected', () => {
+        showDimensions(textObj)
+        const customTextIndex = (textObj as unknown as { custom_text_index?: number })
+          .custom_text_index
+        const itemIdx = (textObj as unknown as { custom_text_item_index?: number })
+          .custom_text_item_index
+        if (customTextIndex === undefined || itemIdx === undefined) return
+        const data = customTexts.value.get(customTextIndex)
+        const textId = data?.entry?.id
+        if (textId == null || !data) return
+        workflowStore.openTextEditorFromCustomizer(textId, itemIdx)
+      })
       textObj.on('moving', reclipAndClampText)
       textObj.on('scaling', reclipAndClampText)
       textObj.on('rotating', reclipAndClampText)
