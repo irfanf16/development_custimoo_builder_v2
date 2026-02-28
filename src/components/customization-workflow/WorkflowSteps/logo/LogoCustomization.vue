@@ -50,7 +50,7 @@
     if (!isLoggedIn.value) return []
     if (!logosStore.recentLogos) return []
     const reversed = [...logosStore.recentLogos]
-    return showAllRecent.value ? reversed : reversed.slice(0, 4)
+    return showAllRecent.value ? reversed : reversed.slice(0, 8)
   })
   const shouldShowRecentSection = computed(
     () =>
@@ -134,7 +134,7 @@
           <!-- Empty state uploader (shown when no logos yet) -->
           <div
             v-if="!hasAnyLogo && !logosStore.isLoadingUploadLogo"
-            class="relative rounded-xl border border-dashed border-border p-4 md:p-6 flex flex-col items-center justify-center gap-2 text-center mx-4 md:mx-6 transition-colors"
+            class="relative rounded-xl border border-dashed border-border p-4 md:p-6 flex flex-col items-center justify-center gap-2 text-center mx-4 md:mx-2 transition-colors"
             :class="isDragOver ? 'bg-secondary/20 border-primary/60 ring-2 ring-primary/30' : ''"
             @dragover="onDragOver"
             @dragleave="onDragLeave"
@@ -235,7 +235,7 @@
           <div class="h-px bg-border" />
 
           <!-- Recent logos -->
-          <div v-if="shouldShowRecentSection" class="flex flex-col gap-2 px-4 md:px-6">
+          <div v-if="shouldShowRecentSection" class="flex flex-col gap-2 px-4 md:px-2">
             <div class="flex items-center justify-between">
               <div class="text-base leading-none font-semibold font-brand">
                 {{ logos_recent({}, { locale: profileStore.currentLocale }) }}
@@ -277,7 +277,7 @@
               >
                 <img
                   :src="baseStorageUrl + logo.url"
-                  class="w-full h-full object-cover"
+                  class="w-full h-full object-contain"
                   :alt="logos_recent_thumbnail_alt({}, { locale: profileStore.currentLocale })"
                 />
                 <Button

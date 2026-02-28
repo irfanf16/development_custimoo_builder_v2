@@ -8,6 +8,9 @@
 
   type ProductsPanel = 'category' | 'subcategory' | 'product'
 
+  defineProps<{
+    isExpanded?: boolean
+  }>()
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const { handleCategorySelect: selectCategory, handleSubcategorySelect: selectSubcategory } =
@@ -81,6 +84,11 @@
       @select-subcategory="handleSubcategorySelect"
     />
 
-    <ProductSelection v-else key="products-product" @scroll-to-element="handleProductScroll" />
+    <ProductSelection
+      v-else
+      key="products-product"
+      :is-expanded="isExpanded"
+      @scroll-to-element="handleProductScroll"
+    />
   </Transition>
 </template>

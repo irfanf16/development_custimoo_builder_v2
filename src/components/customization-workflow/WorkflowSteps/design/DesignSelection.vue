@@ -30,8 +30,10 @@
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
   }
 
+  defineProps<{
+    isExpanded?: boolean
+  }>()
   const emit = defineEmits<Emits>()
-
   const previews = computed(() => productsStore.designPreviews || [])
   const designSelectionContainer = ref<HTMLElement | null>(null)
 
@@ -108,12 +110,20 @@
 
 <template>
   <!-- Content -->
-  <div ref="designSelectionContainer" class="flex flex-wrap justify-around mb-4 md:mb-6">
+  <div
+    ref="designSelectionContainer"
+    class="mb-4 md:mb-6 gap-4"
+    :class="
+      isExpanded
+        ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'
+        : 'flex flex-wrap gap-2'
+    "
+  >
     <div
       v-for="item in filteredPreviews"
       :id="`design-${item.design_name}`"
       :key="item.id"
-      class="group relative flex flex-col items-center flex-shrink-0 gap-4 md:gap-6 p-4 md:p-6"
+      class="group relative flex flex-col items-center flex-1 gap-4 md:gap-6 p-2 md:p-2"
       :class="[
         'relative rounded-sm transition-colors cursor-pointer',
         'hover:border-border hover:bg-primary/10 hover:outline-ring',
@@ -122,7 +132,7 @@
       @click="selectDesign(item)"
     >
       <div
-        class="text-base font-medium text-left w-full text-foreground truncate max-w-[145px] overflow-ellipsis leading-none"
+        class="text-base font-medium text-left w-full text-foreground truncate max-w-[160px] overflow-ellipsis leading-none"
       >
         {{ item.front_design.design_name }}
       </div>

@@ -23,6 +23,10 @@
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
   }
 
+  defineProps<{
+    isExpanded?: boolean
+  }>()
+
   const emit = defineEmits<Emits>()
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
@@ -206,12 +210,18 @@
 </script>
 
 <template>
-  <div class="flex flex-wrap justify-around mb-4 md:mb-6">
+  <div
+    :class="
+      isExpanded
+        ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'
+        : 'flex flex-wrap gap-2'
+    "
+  >
     <div
       v-for="item in filteredPreviews"
       :id="`product-${item.productPreview.id}`"
       :key="item.productPreview.id"
-      class="group relative flex flex-col items-center flex-shrink-0 gap-4 p-4"
+      class="group relative flex flex-col items-center flex-1 gap-4 md:gap-6 p-2 md:p-2"
       :class="[
         'relative rounded-sm transition-colors cursor-pointer',
         'hover:border-border hover:bg-primary/10 hover:outline-ring',
@@ -239,7 +249,7 @@
         >
         </span>
         <div
-          class="text-sm md:text-base font-medium text-left w-full text-foreground truncate max-w-[145px] overflow-ellipsis leading-none self-start"
+          class="text-sm md:text-base font-medium text-left w-full text-foreground truncate max-w-[180px] overflow-ellipsis leading-none self-start"
         >
           {{ item.productPreview.display_name }}
         </div>

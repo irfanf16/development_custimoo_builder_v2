@@ -204,20 +204,37 @@
             </div>
           </template>
 
-          <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
+          <ProductsEntry v-if="workflowStore.currentStep === 'product'" :is-expanded="isExpanded" />
           <DesignSelection
             v-else-if="workflowStore.currentStep === 'designs'"
+            :is-expanded="isExpanded"
             @scroll-to-element="handleScrollToElement"
           />
-          <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" />
-          <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" />
-          <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" />
-          <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
-          <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" />
-          <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" />
+          <StyleSelection
+            v-else-if="workflowStore.currentStep === 'styles'"
+            :is-expanded="isExpanded"
+          />
+          <LogoSelection
+            v-else-if="workflowStore.currentStep === 'logos'"
+            :is-expanded="isExpanded"
+          />
+          <ColorSelection
+            v-else-if="workflowStore.currentStep === 'colors'"
+            :is-expanded="isExpanded"
+          />
+          <PatternSelection
+            v-else-if="workflowStore.currentStep === 'patterns'"
+            :is-expanded="isExpanded"
+          />
+          <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" :is-expanded="isExpanded" />
+          <RosterEntry
+            v-else-if="workflowStore.currentStep === 'roster'"
+            :is-expanded="isExpanded"
+          />
           <SummaryPanel
             v-else-if="workflowStore.currentStep === 'summary'"
             :key="JSON.stringify(customization)"
+            :is-expanded="isExpanded"
           />
         </WorkflowPanel>
       </transition>
@@ -255,18 +272,29 @@
         </div>
       </template>
 
-      <ProductsEntry v-if="workflowStore.currentStep === 'product'" />
+      <ProductsEntry v-if="workflowStore.currentStep === 'product'" :is-expanded="isExpanded" />
       <DesignSelection
         v-else-if="workflowStore.currentStep === 'designs'"
+        :is-expanded="isExpanded"
         @scroll-to-element="handleScrollToElement"
       />
       <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" />
-      <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" />
-      <ColorSelection v-else-if="workflowStore.currentStep === 'colors'" />
-      <PatternSelection v-else-if="workflowStore.currentStep === 'patterns'" />
-      <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" ref="currentStepRef" />
-      <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" />
-      <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" />
+      <LogoSelection v-else-if="workflowStore.currentStep === 'logos'" :is-expanded="isExpanded" />
+      <ColorSelection
+        v-else-if="workflowStore.currentStep === 'colors'"
+        :is-expanded="isExpanded"
+      />
+      <PatternSelection
+        v-else-if="workflowStore.currentStep === 'patterns'"
+        :is-expanded="isExpanded"
+      />
+      <TextsEntry
+        v-else-if="workflowStore.currentStep === 'texts'"
+        ref="currentStepRef"
+        :is-expanded="isExpanded"
+      />
+      <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" :is-expanded="isExpanded" />
+      <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" :is-expanded="isExpanded" />
     </WorkflowPanel>
   </div>
 </template>

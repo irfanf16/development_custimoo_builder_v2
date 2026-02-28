@@ -4,7 +4,7 @@
   import { ScrollArea } from '@/components/ui/scroll-area'
   import { useUIStore } from '@/stores/ui/ui.store'
   import type { HeaderConfiguration } from './types'
-  import { usePricing } from '@/composables/usePricing'
+  // import { usePricing } from '@/composables/usePricing'
 
   interface Props {
     headerConfig?: HeaderConfiguration
@@ -27,7 +27,7 @@
   const emit = defineEmits<Emits>()
 
   const uiStore = useUIStore()
-  const { showPricing } = usePricing()
+  // const { showPricing } = usePricing()
   // Use computed to get the current expanded state from props
   const isExpanded = computed(() => !uiStore.isMobile && props.isExpanded)
 
@@ -56,49 +56,50 @@
       return 'justify-start gap-0 overflow-hidden flex flex-col max-h-full'
     }
     const baseClasses =
-      'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col max-h-full transition-width duration-200'
+      'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col max-h-full! h-full! transition-width duration-200 md:py-3!'
     return [baseClasses, isExpanded.value ? 'w-[75vw]' : 'w-[29rem]']
   })
 
-  const scrollAreaMaxHeight = computed(() => {
-    // Since WorkflowFooterPricing is now always present in all customization steps,
-    // we always account for the footer height (~7rem)
-    if (uiStore.isMobile) {
-      if (props.hasFooterButtons) {
-        return 'calc(65vh - 19rem)'
-      }
-      return 'calc(65vh - 17rem)'
-    }
-    let sizeReduction = 4
-    if (
-      props.headerConfig?.designCategories?.categories?.length &&
-      props.headerConfig?.designCategories?.categories?.length > 0
-    ) {
-      sizeReduction += 4
-    }
-    if (showPricing) {
-      sizeReduction += 6
-    }
-    if (props.hasFooterButtons) {
-      sizeReduction += 2
-    }
-    // if (props.hasFooterButtons) {
-    //   if (
-    //     props.headerConfig?.designCategories?.categories?.length &&
-    //     props.headerConfig?.designCategories?.categories?.length > 0
-    //   ) {
-    //     return 'calc(60vh - 25rem)'
-    //   }
-    //   return 'calc(60vh - 12rem)'
-    // }
-    return `calc(60vh - ${sizeReduction}rem)`
-  })
+  // const scrollAreaMaxHeight = computed(() => {
+  //   // Since WorkflowFooterPricing is now always present in all customization steps,
+  //   // we always account for the footer height (~7rem)
+  //   if (uiStore.isMobile) {
+  //     if (props.hasFooterButtons) {
+  //       return 'calc(65vh - 19rem)'
+  //     }
+  //     return 'calc(65vh - 17rem)'
+  //   }
+  //   let sizeReduction = 4
+  //   if (
+  //     props.headerConfig?.designCategories?.categories?.length &&
+  //     props.headerConfig?.designCategories?.categories?.length > 0
+  //   ) {
+  //     sizeReduction += 4
+  //   }
+  //   if (showPricing) {
+  //     sizeReduction += 6
+  //   }
+  //   if (props.hasFooterButtons) {
+  //     sizeReduction += 2
+  //   }
+  //   // if (props.hasFooterButtons) {
+  //   //   if (
+  //   //     props.headerConfig?.designCategories?.categories?.length &&
+  //   //     props.headerConfig?.designCategories?.categories?.length > 0
+  //   //   ) {
+  //   //     return 'calc(60vh - 25rem)'
+  //   //   }
+  //   //   return 'calc(60vh - 12rem)'
+  //   // }
+  //   console.log(sizeReduction)
+  //   return `calc(60vh - ${sizeReduction}rem)`
+  // })
 
   const footerClasses = computed(() => {
     if (uiStore.isMobile) {
-      return 'border-t pt-4'
+      return 'border-t pt-2!'
     }
-    return 'px-4 md:px-6 flex-shrink-0 pt-4 md:pt-6 border-t'
+    return 'px-2 md:px-2 flex-shrink-0 pt-2! md:pt-2! border-t'
   })
 
   /**
@@ -198,18 +199,18 @@
       <!-- Header slot - panels can provide their own header content -->
       <template v-if="$slots.header">
         <CardHeader
-          class="pb-4 pt-0 px-4 md:pb-6 md:px-6 flex flex-row items-center justify-between gap-2"
+          class="pb-2 pt-0 px-2 md:pb-2 md:px-2 flex flex-row items-center justify-between gap-2"
         >
           <slot name="header" :is-expanded="isExpanded" />
         </CardHeader>
       </template>
 
-      <CardContent class="h-full p-0 px-0 md:p-0 md:px-0 min-h-0">
-        <ScrollArea>
-          <div class="transition-height duration-200" :style="{ maxHeight: scrollAreaMaxHeight }">
+      <CardContent class="flex-1 min-h-0 p-0 md:p-0!">
+        <ScrollArea class="h-full">
+          <div class="h-full">
             <!-- Content slot for different panel types -->
             <Transition name="panel-slide" mode="out-in" appear>
-              <div ref="cardContentRef" :key="props.contentKey" class="overflow-y-auto">
+              <div ref="cardContentRef" :key="props.contentKey" class="h-full overflow-y-auto">
                 <slot :is-expanded="isExpanded" />
               </div>
             </Transition>

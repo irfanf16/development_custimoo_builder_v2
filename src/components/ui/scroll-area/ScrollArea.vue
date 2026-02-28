@@ -48,7 +48,7 @@
       data-slot="scroll-area-viewport"
       :class="
         cn(
-          'w-full h-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px]',
+          'w-full h-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] overscroll-contain',
           viewportClass
         )
       "
