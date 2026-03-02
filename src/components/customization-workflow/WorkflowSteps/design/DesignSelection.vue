@@ -2,7 +2,6 @@
   import { computed, nextTick, onMounted, ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store.ts'
-  import ProductPreviewCanvas from '../ProductPreviewCanvas.vue'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -101,7 +100,6 @@
   // header/footer config moved to config.ts
 
   // Hint to TS that these are used via the template
-  void ProductPreviewCanvas
   void filteredPreviews.value
   void selectedDesignName.value
   void designSelectionContainer.value

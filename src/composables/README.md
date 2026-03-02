@@ -132,32 +132,6 @@ const { palettes, shuffleColors } = useColorActions()
 shuffleColors(currentPaletteId.value)
 ```
 
-### useFabricPreview.ts
-
-Manages Fabric.js canvas operations for product preview rendering.
-
-**Key responsibilities:**
-
-- Handle canvas initialization and management
-- Manage layer operations (model, design)
-- Provide animation utilities (fade in/out)
-- Handle SVG processing and color application
-
-**Key functions:**
-
-- `initCanvas(options?)` - Initialize Fabric.js canvas
-- `addModelLayer(url, composition)` - Add model layer to canvas
-- `addDesignLayer(url, ext)` - Add design layer with color overrides
-- `fadeOut(duration?)` / `fadeIn()` - Canvas animation utilities
-
-**Example:**
-
-```ts
-const { canvasEl, initCanvas, addDesignLayer } = useFabricPreview()
-initCanvas({ selection: false })
-await addDesignLayer(designUrl, 'svg')
-```
-
 ### useBrandStyling.ts
 
 Manages theme and color scheme application.
