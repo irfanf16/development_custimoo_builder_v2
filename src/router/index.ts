@@ -1,8 +1,13 @@
-import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
+import {
+  createRouter,
+  createWebHashHistory,
+  createWebHistory,
+  createMemoryHistory
+} from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { useAppStore } from '@/stores/app/app.store'
-import { isWidgetMode } from '@/lib/widgetUtils'
+import { isWidgetMode, canUseHistoryApi } from '@/lib/widgetUtils'
 import { usePostHog } from '@/composables/usePostHog'
 
 const routes: RouteRecordRaw[] = [
@@ -57,11 +62,17 @@ const routes: RouteRecordRaw[] = [
 // Determine router mode based on environment
 const isSPAMode = () => document.getElementById('app') !== null
 
+// In iframe/srcdoc (e.g. embedded widget) History API throws SecurityError; use memory history
+const useMemoryHistory = !canUseHistoryApi()
 // Use hash mode for widgets (default), history mode for SPA
-const useHashMode = isWidgetMode() || !isSPAMode()
+const useHashMode = !useMemoryHistory && (isWidgetMode() || !isSPAMode())
 
 const router = createRouter({
-  history: useHashMode ? createWebHashHistory() : createWebHistory(),
+  history: useMemoryHistory
+    ? createMemoryHistory()
+    : useHashMode
+      ? createWebHashHistory()
+      : createWebHistory(),
   routes,
   scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {

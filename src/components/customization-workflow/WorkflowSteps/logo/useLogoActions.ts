@@ -152,6 +152,7 @@ export function useLogoActions() {
     // Set random shuffle_color_number between 1-24
     customizationStore.customization.shuffle_color_number = Math.floor(Math.random() * 24) + 1
 
+    console.log(customizationStore.customization.shuffle_color_number, 'shuffle_color_number')
     // Clear group_colors when applying logo colors
     customizationStore.customization.group_colors = {}
 

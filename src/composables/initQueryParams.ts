@@ -1,6 +1,7 @@
 import type { Pinia } from 'pinia'
 import { useQueryParamsStore } from '@/stores/queryParams/queryParams.store'
 import type { QueryParams } from '@/stores/queryParams/queryParams.store'
+import { canUseHistoryApi } from '@/lib/widgetUtils'
 
 /**
  * List of query parameters that should be extracted and removed from URL
@@ -30,51 +31,90 @@ function parseQueryValue(key: string, value: string): string | number {
 }
 
 /**
- * Extract query parameters from URL
- * Works in both regular browser and Shadow DOM contexts
- * Handles both hash-based routing (#/?param=value) and regular query params (?param=value)
+ * Extract query parameters from URL.
+ * Works in both regular browser and Shadow DOM contexts.
+ * Handles hash-based routing (#/?param=value) and regular query params (?param=value).
+ * In iframe/srcdoc (when current document has no real URL), falls back to parent window's URL
+ * so sync_id, token, etc. are still available (same as old custimoo_builder).
  */
 function extractQueryParams(): QueryParams {
   if (typeof window === 'undefined') {
     return {}
   }
 
-  const params: QueryParams = {}
-
-  // Check if we have hash-based routing (e.g., #/?sync_id=55)
-  // In hash routing, query params come after the hash
   const hash = window.location.hash
   const search = window.location.search
+  const queryString =
+    getQueryStringFromLocation(window.location.href, hash) || (search ? search.substring(1) : '')
 
-  // Determine which source to use: hash fragment or search params
-  let queryString = ''
+  let params = parseQueryStringToParams(queryString)
 
-  if (hash && hash.includes('?')) {
-    // Hash-based routing: extract query string from hash (e.g., #/?sync_id=55)
-    const hashParts = hash.split('?')
-    if (hashParts.length > 1 && hashParts[1]) {
-      queryString = hashParts[1].split('#')[0] || '' // Remove any trailing hash
+  // In iframe/srcdoc the document URL is about:srcdoc with no hash – use parent URL for params
+  // Same approach as old custimoo_builder: getUrlParameter uses getWindowObject().location
+  if (!canUseHistoryApi() && Object.keys(params).length === 0) {
+    const parentParams = extractQueryParamsFromParent()
+    if (Object.keys(parentParams).length > 0) {
+      params = parentParams
     }
-  } else if (search) {
-    // Regular query params: use search string (e.g., ?sync_id=55)
-    queryString = search.substring(1) // Remove leading '?'
-  }
-
-  // Parse the query string
-  if (queryString) {
-    const urlParams = new URLSearchParams(queryString)
-
-    HANDLED_PARAMS.forEach(key => {
-      const value = urlParams.get(key)
-      if (value !== null && value !== '') {
-        const parsedValue = parseQueryValue(key, value)
-        // Type assertion needed because QueryParams allows undefined
-        ;(params as Record<string, string | number>)[key] = parsedValue
-      }
-    })
   }
 
   return params
+}
+
+/**
+ * Extract query string from a URL (href) and optional hash.
+ * Parses both search (?key=val) and hash-based params (#/?key=val).
+ */
+function getQueryStringFromLocation(href: string, hash: string): string {
+  let queryString = ''
+  if (hash && hash.includes('?')) {
+    const hashParts = hash.split('?')
+    if (hashParts.length > 1 && hashParts[1]) {
+      queryString = hashParts[1].split('#')[0] || ''
+    }
+  }
+  if (!queryString && href.includes('?')) {
+    const searchStart = href.indexOf('?')
+    const hashStart = href.indexOf('#')
+    const searchEnd = hashStart === -1 ? href.length : hashStart
+    queryString = href.slice(searchStart + 1, searchEnd)
+  }
+  return queryString
+}
+
+/**
+ * Extract query parameters from a given query string into a QueryParams object.
+ */
+function parseQueryStringToParams(queryString: string): QueryParams {
+  const params: QueryParams = {}
+  if (!queryString) return params
+  const urlParams = new URLSearchParams(queryString)
+  HANDLED_PARAMS.forEach(key => {
+    const value = urlParams.get(key)
+    if (value !== null && value !== '') {
+      const parsedValue = parseQueryValue(key, value)
+      ;(params as Record<string, string | number>)[key] = parsedValue
+    }
+  })
+  return params
+}
+
+/**
+ * Try to read query params from parent window (for iframe embed).
+ * Same approach as old custimoo_builder: getUrlParameter uses getWindowObject().location.
+ * Returns empty object if cross-origin or not in browser.
+ */
+function extractQueryParamsFromParent(): QueryParams {
+  if (typeof window === 'undefined' || window === window.parent) return {}
+  try {
+    const parent = window.parent
+    const href = parent.location.href
+    const hash = parent.location.hash ?? ''
+    const queryString = getQueryStringFromLocation(href, hash)
+    return parseQueryStringToParams(queryString)
+  } catch {
+    return {}
+  }
 }
 
 /**
@@ -138,17 +178,16 @@ function removeQueryParamsFromUrl(): void {
     newSearch = remainingQuery ? `?${remainingQuery}` : ''
   }
 
-  // Only update URL if there were changes
-  if (hasChanges) {
+  // Only update URL if there were changes and History API is allowed (not in iframe srcdoc)
+  if (hasChanges && canUseHistoryApi()) {
     const newUrl = window.location.pathname + newSearch + newHash
-    // Use replaceState to update URL without adding to history
-    // This must be synchronous to prevent router from seeing the old URL
-    const currentState = window.history.state as unknown
-    window.history.replaceState(currentState, '', newUrl)
-
-    // Force a synchronous update by dispatching a popstate event
-    // This ensures the browser URL bar is updated immediately
-    window.dispatchEvent(new PopStateEvent('popstate', { state: currentState }))
+    try {
+      const currentState = window.history.state as unknown
+      window.history.replaceState(currentState, '', newUrl)
+      window.dispatchEvent(new PopStateEvent('popstate', { state: currentState }))
+    } catch {
+      // Ignore SecurityError in srcdoc/restricted contexts
+    }
   }
 }
 
@@ -158,9 +197,9 @@ function removeQueryParamsFromUrl(): void {
  * This function should be called once during app initialization (e.g., in bootstrap.ts or main.ts)
  *
  * It will:
- * 1. Extract handled query parameters from the URL
+ * 1. Extract handled query parameters from the URL (or from parent window when in iframe/srcdoc)
  * 2. Store them in the global queryParams store
- * 3. Remove them from the address bar using history.replaceState (synchronously, before router init)
+ * 3. Remove them from the address bar using history.replaceState (skipped in iframe/srcdoc)
  *
  * @param pinia - Pinia instance (optional, will use default if not provided)
  *

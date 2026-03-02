@@ -11,7 +11,7 @@ import type { OutputDesignDetails } from '../services/products/types'
 import { useProfileStore } from '@/stores/profile/profile.store'
 import { useLocalStorage } from './useLocalStorage'
 import { useAppStore } from '@/stores/app/app.store'
-import { getCustomizerIframe } from '../lib/widgetUtils'
+import { getCustomizerIframe, canUseHistoryApi } from '../lib/widgetUtils'
 import router from '../router'
 import { useCartStore } from '@/stores/cart/cart.store'
 import { useQueryParams } from '@/composables/useQueryParams'
@@ -111,16 +111,19 @@ export function useAppInitialization() {
       const newPath = currentPath.replace(/\/share\/.+?$/, '/').replace(/\/+/g, '/')
       const newHash = hashPath.replace(/[#/]share\/.+?(?:\?|$|#)/, '#/')
 
-      // Update URL without reload
-      if (hashPath) {
-        // Hash routing mode
-        window.history.replaceState(null, '', newHash || '#/')
-      } else {
-        // History mode
-        router.replace(newPath || '/').catch((err: unknown) => {
-          // Ignore navigation errors
-          console.error('Error replacing route:', err)
-        })
+      // Update URL without reload (skip in iframe srcdoc where History API throws SecurityError)
+      if (canUseHistoryApi()) {
+        if (hashPath) {
+          try {
+            window.history.replaceState(null, '', newHash || '#/')
+          } catch {
+            // Ignore SecurityError in srcdoc/restricted contexts
+          }
+        } else {
+          router.replace(newPath || '/').catch((err: unknown) => {
+            console.error('Error replacing route:', err)
+          })
+        }
       }
     }
   }
@@ -330,9 +333,8 @@ export function useAppInitialization() {
     const shareUrl = appStore.shareUrl
     if (!shareUrl) return
 
-    const { useLoadShareProductIntoCustomizer } = await import(
-      '@/composables/useLoadShareProductIntoCustomizer'
-    )
+    const { useLoadShareProductIntoCustomizer } =
+      await import('@/composables/useLoadShareProductIntoCustomizer')
     const { loadShareProductIntoCustomizer: loadShare } = useLoadShareProductIntoCustomizer()
 
     const success = await loadShare(shareUrl)
@@ -348,9 +350,8 @@ export function useAppInitialization() {
     const reorderData = customizationStore?.reorderData
 
     if (reorderData?.orderItemId && reorderData.factoryProductId) {
-      const { useLoadReorderProductIntoCustomizer } = await import(
-        '@/composables/useLoadReorderProductIntoCustomizer'
-      )
+      const { useLoadReorderProductIntoCustomizer } =
+        await import('@/composables/useLoadReorderProductIntoCustomizer')
       const { loadReorderProductIntoCustomizer } = useLoadReorderProductIntoCustomizer()
 
       const orderItemId = Number(reorderData.orderItemId)

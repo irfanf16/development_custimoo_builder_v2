@@ -31,6 +31,18 @@ export function isWidgetMode(): boolean {
   return document.querySelector(WIDGET_ELEMENT_SELECTOR) !== null
 }
 
+/**
+ * Whether the History API (replaceState/pushState) can be used safely.
+ * In an iframe with srcdoc the document URL is 'about:srcdoc', and the browser
+ * throws SecurityError when trying to set history state to another URL (e.g. parent's).
+ * Use memory history and avoid replaceState in that case.
+ */
+export function canUseHistoryApi(): boolean {
+  if (typeof window === 'undefined' || typeof window.location === 'undefined') return false
+  const url = window.location.href
+  return url !== 'about:srcdoc' && !url.startsWith('about:')
+}
+
 const getWindowObject = () => {
   try {
     return window.parent
