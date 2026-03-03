@@ -17,9 +17,12 @@
     sizeOptions: string[]
     showNameColumn: boolean
     showNumberColumn: boolean
+    enableRowSelect?: boolean
   }
 
-  const props = defineProps<Props>()
+  const props = withDefaults(defineProps<Props>(), {
+    enableRowSelect: true
+  })
   const emit = defineEmits<{
     (e: 'update:entry', index: number, payload: Partial<APCustomizationRosterEntry>): void
     (e: 'remove', index: number): void
@@ -136,7 +139,7 @@
         @update="handleUpdate"
         @remove="handleRemove"
         @cell-keydown="handleCellKeydown"
-        @select="handleSelectRow"
+        @select="enableRowSelect ? handleSelectRow($event) : undefined"
       />
     </RadioGroup>
   </div>

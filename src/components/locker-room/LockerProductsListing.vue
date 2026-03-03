@@ -10,12 +10,14 @@
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { storeToRefs } from 'pinia'
   import { useUIStore } from '@/stores/ui/ui.store'
-  import { Copy, Pencil, SwitchCamera, Share2, Download, Loader2Icon } from 'lucide-vue-next'
+  import { Copy, Pencil, SwitchCamera, Share2, Download, Loader2Icon, List } from 'lucide-vue-next'
   import CopyProductsDialog from './CopyProductsDialog.vue'
   import { toast } from 'vue-sonner'
   import lockersService from '@/services/lockers/lockers.service'
   import ShareUrlTooltip from '@/components/shared/ShareUrlTooltip.vue'
   import { useFileDownload } from '@/composables/useFileDownload'
+  import RosterDialog from '@/components/roster/RosterDialog.vue'
+
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
   const props = withDefaults(
@@ -31,11 +33,13 @@
       sort: 'lastModified'
     }
   )
+
   type EditLockerProductPayload = {
     lockerProductId: number
     lockerId: number
     lockerProduct: LockerProduct
   }
+
   const emit = defineEmits<{
     (e: 'select-product', products: LockerProduct[]): void
     (e: 'edit-product', payload: EditLockerProductPayload): void
@@ -53,24 +57,54 @@
   const productShareUrls = ref<Record<number, string | null>>({})
   const showShareTooltip = ref<Record<number, boolean>>({})
   const downloadingProductId = ref<number | null>(null)
+
+  // ─── Roster dialog state ──────────────────────────────────────────────────────
+
+  const rosterDialogOpen = ref(false)
+  const activeRosterProductId = ref<number | null>(null)
+  const activeRosterProductName = ref<string>('Roster')
+
+  function openRosterDialog(prod: LockerProduct): void {
+    // Set which product's roster we're editing, then open the dialog.
+    // RosterDialog's internal watch([open, lockerId]) fires and kicks off fetchRoster().
+    activeRosterProductId.value = prod.id
+    activeRosterProductName.value = prod.product_name ?? prod.name ?? 'Roster'
+    rosterDialogOpen.value = true
+  }
+
+  function handleRosterClose(): void {
+    rosterDialogOpen.value = false
+    // Delay clearing the id slightly so the dialog close animation can finish
+    // without the title flickering to 'Roster' mid-animation.
+    setTimeout(() => {
+      activeRosterProductId.value = null
+      activeRosterProductName.value = 'Roster'
+    }, 300)
+  }
+
+  function handleRosterUpdated(payload: { id: number; totalQuantity: number }): void {
+    // Optionally refresh the product list or update local state after a successful save.
+    // For now, just log — replace with a store call or emit when the endpoint is live.
+    console.log('Roster saved for product', payload.id, 'total qty:', payload.totalQuantity)
+  }
+
+  // ─── Product grid helpers (unchanged from original) ───────────────────────────
+
   const { downloadFiles } = useFileDownload()
 
   const computedProducts = computed(() => props.products)
   const filteredProducts = computed(() => {
     const search = props.search?.toLowerCase() || ''
-
     return [...computedProducts.value]
       .filter(c => c.name.toLowerCase().includes(search))
       .sort((a, b) => {
         switch (props.sort) {
           case 'alphabetical':
             return a.name.localeCompare(b.name)
-
           case 'createdDate':
             return (
               new Date(b.product?.created_at).getTime() - new Date(a.product?.created_at).getTime()
             )
-
           case 'lastModified':
           default:
             return (
@@ -79,41 +113,30 @@
         }
       })
   })
+
   const handleSelect = (id: string | number) => {
     if (isDeletingProducts.value) return
     const existingIndex = selectedProducts.value.findIndex(p => p.id === id)
-
     if (existingIndex === -1) {
-      // selecting → find product ONLY from current list
       const prod = props.products.find(p => p.id === id)
-      if (prod) {
-        selectedProducts.value.push(prod)
-      }
+      if (prod) selectedProducts.value.push(prod)
     } else {
-      // unselecting → remove only that product
       selectedProducts.value.splice(existingIndex, 1)
     }
-
     emit('select-product', [...selectedProducts.value])
   }
+
   const selecteAllProducts = () => {
     const currentIds = new Set(selectedProducts.value.map(p => p.id))
-
     props.products.forEach(prod => {
-      if (!currentIds.has(prod.id)) {
-        selectedProducts.value.push(prod)
-      }
+      if (!currentIds.has(prod.id)) selectedProducts.value.push(prod)
     })
-
     emit('select-product', [...selectedProducts.value])
   }
 
   const unSelectAllProducts = () => {
-    // remove only products from current list
     const currentIds = new Set(props.products.map(p => p.id))
-
     selectedProducts.value = selectedProducts.value.filter(p => !currentIds.has(p.id))
-
     emit('select-product', [...selectedProducts.value])
   }
 
@@ -133,50 +156,33 @@
   const toggleImage = (prodId: number) => {
     showBack.value[prodId] = !showBack.value[prodId]
   }
+
   const isSelected = (id: number | string) => selectedProducts.value.some(p => p.id === id)
 
   const shareProduct = async (prod: LockerProduct) => {
-    // Check if product already has a share URL
     const existingShareUrl = prod.shared_url || prod.shared_product?.[0]?.shared_url
-
     if (existingShareUrl) {
-      // Use existing share URL
       productShareUrls.value[prod.id] = existingShareUrl
       showShareTooltip.value[prod.id] = true
       return
     }
-
-    // Generate new share URL
     try {
       const productId = prod.product_id
       if (!productId) {
-        toast.error('Product ID not found', {
-          position: 'top-right',
-          richColors: true
-        })
+        toast.error('Product ID not found', { position: 'top-right', richColors: true })
         return
       }
-
       const response = await lockersService.shareProduct(prod.id, productId)
-
-      // Extract share URL from response: result.url
       const shareUrl = response.data?.result?.url || null
-
       if (shareUrl) {
         productShareUrls.value[prod.id] = shareUrl
         showShareTooltip.value[prod.id] = true
       } else {
-        toast.error('Failed to generate share URL', {
-          position: 'top-right',
-          richColors: true
-        })
+        toast.error('Failed to generate share URL', { position: 'top-right', richColors: true })
       }
     } catch (error) {
       console.error('Share product error:', error)
-      toast.error('Failed to share product', {
-        position: 'top-right',
-        richColors: true
-      })
+      toast.error('Failed to share product', { position: 'top-right', richColors: true })
     }
   }
 
@@ -209,10 +215,7 @@
       })
     }
     if (urls.length === 0) {
-      toast.error('No preview images to download', {
-        position: 'top-right',
-        richColors: true
-      })
+      toast.error('No preview images to download', { position: 'top-right', richColors: true })
       return
     }
     downloadingProductId.value = prod.id
@@ -230,7 +233,6 @@
     selectedProducts.value = [...props.preSelectedProducts]
   })
 
-  // Keep local selection in sync with parent (e.g. when switching lockers or after add-to-collection)
   watch(
     () => props.preSelectedProducts,
     next => {
@@ -241,6 +243,7 @@
 
   defineExpose({ selecteAllProducts, unSelectAllProducts })
 </script>
+
 <template>
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
   <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
@@ -249,8 +252,6 @@
       :key="prodIndex"
       class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative !gap-0 h-fit duration-150 border-0"
     >
-      <!-- Hover Toolbar -->
-
       <Checkbox
         :id="`checkbox-addon-${prod.id}`"
         class="absolute top-2 left-2 z-10 size-5 bg-white"
@@ -280,7 +281,7 @@
           :class="uiStore.isMobile ? 'opacity-100' : 'opacity-0'"
           @click.stop
         >
-          <div class="flex items-center gap-2 flex-col">
+          <div class="flex flex-col flex-wrap items-start gap-2 max-h-full">
             <TooltipProvider>
               <Tooltip v-if="!isCreatingCollection">
                 <TooltipTrigger as-child>
@@ -294,10 +295,9 @@
                     <Pencil class="w-3.5 h-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Edit Product</p>
-                </TooltipContent>
+                <TooltipContent><p>Edit Product</p></TooltipContent>
               </Tooltip>
+
               <Tooltip v-if="!isCreatingCollection">
                 <TooltipTrigger as-child>
                   <Button
@@ -310,10 +310,9 @@
                     <Copy class="w-3.5 h-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Copy Product</p>
-                </TooltipContent>
+                <TooltipContent><p>Copy Product</p></TooltipContent>
               </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger as-child>
                   <Button
@@ -329,6 +328,7 @@
                   <p>Toggle {{ showBack[prod.id] ? 'Front' : 'Back' }} image</p>
                 </TooltipContent>
               </Tooltip>
+
               <ShareUrlTooltip
                 v-if="!isCreatingCollection"
                 :share-url="
@@ -350,6 +350,7 @@
                   <Share2 class="w-3.5 h-3.5" />
                 </Button>
               </ShareUrlTooltip>
+
               <Tooltip v-if="!isCreatingCollection && hasPreviewImages(prod)">
                 <TooltipTrigger as-child>
                   <Button
@@ -367,9 +368,23 @@
                     <Download v-else class="w-3.5 h-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Download Preview Images</p>
-                </TooltipContent>
+                <TooltipContent><p>Download Preview Images</p></TooltipContent>
+              </Tooltip>
+
+              <!-- Roster button — opens self-contained RosterDialog for this product -->
+              <Tooltip v-if="!isCreatingCollection">
+                <TooltipTrigger as-child>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    class="h-7 w-7 rounded-full shadow"
+                    :disabled="isDeletingProducts"
+                    @click="openRosterDialog(prod)"
+                  >
+                    <List class="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>Edit Roster</p></TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -381,11 +396,10 @@
         <div class="mt-2 text-sm font-medium">{{ prod.product_name }}</div>
         <div class="text-xs text-muted-foreground flex gap-1 items-center">
           <span class="flex items-center gap-1">
-            {{ prod.product_roster_detail?.reduce((acc, cur) => acc + cur.quantity, 0) || 0 }}
-            pcs</span
-          >
+            {{ prod.product_roster_detail?.reduce((acc, cur) => acc + cur.quantity, 0) || 0 }} pcs
+          </span>
           <DotSeparator class="bg-muted-foreground" />
-          <span class="flex items-center gap-1"> #{{ prod.design_id }} </span>
+          <span class="flex items-center gap-1">#{{ prod.design_id }}</span>
         </div>
       </div>
     </Card>
@@ -402,9 +416,24 @@
     "
     @copy-products="payload => lockerRoomStore.copyProducts(payload, lockerId)"
   />
+
+  <!--
+    Roster Edit Dialog — self-contained mode.
+    Passing `lockerId` (the locker product id) triggers RosterDialog to fetch,
+    display, and save the roster entirely internally.
+    The parent only needs to handle close and the post-save notification.
+  -->
+  <RosterDialog
+    mode="edit"
+    :open="rosterDialogOpen"
+    :locker-id="activeRosterProductId"
+    :title="activeRosterProductName"
+    @update:open="
+      val => {
+        if (!val) handleRosterClose()
+      }
+    "
+    @roster-updated="handleRosterUpdated"
+    @cancel="handleRosterClose"
+  />
 </template>
-<!-- <style>
-  .product-card:hover .accessibilty-menu {
-    opacity: 1 !important;
-  }
-</style> -->

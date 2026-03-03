@@ -13,6 +13,7 @@ import type {
   LockerUpdatePayload,
   SignedUrlResponse
 } from './types'
+import type { APCustomizationRosterEntry } from '@/services/products/types'
 
 async function getLockers() {
   return await http.get<LockerResponse<Locker[]>>('lockers')
@@ -78,6 +79,21 @@ async function saveDesign(payload: import('./types').SaveLockerProductPayload, l
   return await http[method]<LockerResponse<any>>(endpoint, payload)
 }
 
+async function getRoster(locker_product_id: number) {
+  return await http.get(`get-product-locker-roster/${locker_product_id}`)
+}
+
+async function updateRoster(locker_product_id: number, entries: APCustomizationRosterEntry[]) {
+  return await http.post('update-roster', {
+    locker_product_id,
+    product_roster_detail: JSON.stringify(entries)
+  })
+}
+
+async function downloadRosterTemplate(product_id: number) {
+  return await http.get(`template/download/${product_id}`, { responseType: 'blob' })
+}
+
 //collection requests
 
 async function getCollections() {
@@ -137,7 +153,10 @@ export default {
   copyProducts,
   saveDesign,
   shareProduct,
-
+  // Roster endpoints
+  getRoster,
+  updateRoster,
+  downloadRosterTemplate,
   // collection endpoints
   getCollections,
   getCollectionProducts,
