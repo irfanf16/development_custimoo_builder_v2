@@ -1,6 +1,7 @@
 import http from '../api'
 import type {
   Collection,
+  CollectionByFileNameResponse,
   CollectionLogoPresignedUrlsResponse,
   CopyProductPayload,
   Locker,
@@ -99,6 +100,12 @@ async function downloadRosterTemplate(product_id: number) {
 async function getCollections() {
   return await http.get<LockerResponse<Collection[]>>(`collection`)
 }
+
+async function getCollectionByFileName(collectionFileName: string) {
+  return await http.get<CollectionByFileNameResponse>(`collection/${collectionFileName}`, {
+    // params: { collection_file_name: collectionFileName }
+  })
+}
 async function getCollectionProducts(collection_id: number) {
   return await http.post<LockerResponse<Collection>>(`collection/products`, {
     collection_id: collection_id,
@@ -159,6 +166,7 @@ export default {
   downloadRosterTemplate,
   // collection endpoints
   getCollections,
+  getCollectionByFileName,
   getCollectionProducts,
   saveCollection,
   updateCollection,

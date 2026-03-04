@@ -24,6 +24,10 @@ export const useUIStore = defineStore('uiStore', () => {
     item: import('@/services/orders/types').Item
     order: import('@/services/orders/types').Order
   } | null>(null)
+  // Collection product for save design dialog (from CollectionView)
+  const saveDesignDialogCollectionProduct = ref<
+    import('@/services/lockers/types').CollectionProductWithLockerRoom | null
+  >(null)
   let resizeObserver: ResizeObserver | null = null
   let fullscreenRestore: (() => void) | null = null
   let lastViewportScroll = 0
@@ -437,6 +441,13 @@ export const useUIStore = defineStore('uiStore', () => {
   function closeSaveDesignDialog() {
     showSaveDesignDialog.value = false
     orderProductData.value = null
+    saveDesignDialogCollectionProduct.value = null
+  }
+
+  function setSaveDesignDialogCollectionProduct(
+    product: import('@/services/lockers/types').CollectionProductWithLockerRoom | null
+  ) {
+    saveDesignDialogCollectionProduct.value = product
   }
 
   function openLockerBrowser(lockerId?: number | null) {
@@ -492,6 +503,8 @@ export const useUIStore = defineStore('uiStore', () => {
     showLockerBrowser,
     initialLockerIdToOpen,
     orderProductData,
+    saveDesignDialogCollectionProduct,
+    setSaveDesignDialogCollectionProduct,
     openSaveDesignDialog,
     closeSaveDesignDialog,
     openLockerBrowser,

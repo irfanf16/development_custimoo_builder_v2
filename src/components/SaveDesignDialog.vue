@@ -110,6 +110,16 @@
     () => !!factoryProduct.value?.front_image && !!factoryProduct.value?.back_image
   )
 
+  // Collection product context (from CollectionView): use folder-based image URLs and build payload from plr
+  const collectionProduct = computed(() => uiStore.saveDesignDialogCollectionProduct)
+  // const useCollectionProductImages = computed(
+  //   () =>
+  //     !!collectionProduct.value?.product_locker_room?.locker_product_images_folder &&
+  //     !!frontImage.value &&
+  //     !!backImage.value
+  // )
+  const baseStorageUrlForCollection = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
+
   const toDisplayImageUrl = (pathOrUrl: string) =>
     pathOrUrl.startsWith('http') ? pathOrUrl : baseStorageUrl.value + pathOrUrl
 
@@ -217,6 +227,16 @@
       }
       frontBase64 = base64Files[0]!
       backBase64 = base64Files[1]!
+    } else if (collectionProduct.value && frontImage.value && backImage.value) {
+      // Collection product: frontImage/backImage are full URLs (from locker_product_images_folder)
+      const fileUrls = [frontImage.value, backImage.value]
+      const base64Files = await urlToBase64(fileUrls)
+      if (base64Files.length < 2) {
+        console.error('URL_TO_BASE64 did not return both front and back images')
+        return
+      }
+      frontBase64 = base64Files[0]!
+      backBase64 = base64Files[1]!
     } else {
       // Use canvas images; ensure we have them
       if (!frontImage.value || !backImage.value) {
@@ -275,84 +295,116 @@
 
       const results = await uploadPresignedFiles(preparedFiles)
       if (results.every(r => r.success)) {
-        const customization = customizationStore.customization
-        const productId = activeProductDetails.value!.product_id
-        const productKey = String(productId)
+        const frontUrl = signedUrls.urls.find(item => item.file_side === 'front')!.original_url
+        const backUrl = signedUrls.urls.find(item => item.file_side === 'back')!.original_url
 
-        // Get svg_parts from active design details (normalize if API returned a string)
-        const rawSvgParts = productsStore.activeDesignDetails?.svg_parts || []
-        const svgParts = Array.isArray(rawSvgParts)
-          ? rawSvgParts
-          : typeof rawSvgParts === 'string'
-            ? JSON.parse(rawSvgParts)
-            : []
+        let locker: SaveLockerProductPayload
 
-        // Get custom logos
-        const customLogos = customization?.custom_logos[productKey] || []
+        if (collectionProduct.value) {
+          const plr = collectionProduct.value.product_locker_room
+          const parseJson = <T,>(s: string, fallback: T): T => {
+            if (!s || typeof s !== 'string') return fallback
+            try {
+              return JSON.parse(s) as T
+            } catch {
+              return fallback
+            }
+          }
+          const svgParts = parseJson<unknown[]>(plr.product_attribute, [])
+          const parsedSvgParts = Array.isArray(svgParts)
+            ? svgParts
+            : typeof svgParts === 'object' && svgParts !== null && 'svg_parts' in svgParts
+              ? ((svgParts as { svg_parts?: unknown[] }).svg_parts ?? [])
+              : []
+          locker = {
+            addons: {},
+            roster_url: false,
+            room_id: selectedLockerId.value!,
+            product_id: plr.product_id,
+            product_name: productName.value || plr.product_name || '',
+            svg_parts: parsedSvgParts,
+            style_id: plr.style_id,
+            design_id: plr.design_id,
+            custom_logos: parseJson(plr.custom_logos, []),
+            text: parseJson(plr.text as string, []),
+            product_custom_texts: parseJson(plr.text as string, []),
+            colors: parseJson(plr.colors, []),
+            shuffle_color_number: 0,
+            defaultcolors: parseJson(plr.defaultcolors, []),
+            groupcolors: parseJson(plr.groupcolors, {}),
+            front_image: frontUrl,
+            back_image: backUrl,
+            product_roster_detail: Array.isArray(plr.product_roster_detail)
+              ? plr.product_roster_detail
+              : parseJson(plr.product_roster_detail as unknown as string, []),
+            fixed_logo_index: 0,
+            svgcolors: [],
+            grouped_addons: {},
+            ungrouped_addons: [],
+            group_patterns: {}
+          }
+        } else {
+          const customization = customizationStore.customization
+          const productId = activeProductDetails.value!.product_id
+          const productKey = String(productId)
 
-        // Get product custom texts
-        const productCustomTexts = customization?.product_custom_texts[productKey] || []
-
-        // Get roster detail
-        const rosterDetail = customization?.products_rosters[productKey] || []
-
-        // Get default colors
-        const defaultColors = customization?.default_colors || []
-
-        // Get group colors
-        const groupColors = customization?.group_colors || {}
-
-        // Get svgcolors from svgGroups
-        const svgcolors = productsStore.svgGroups.map(group => ({
-          value: group.color || '',
-          name: group.name || '',
-          pantone: group.pantone || ''
-        }))
-
-        // Get addons info
-        const addonsInfo = customization?.addons_info || {}
-        // grouped_addons should be an object (empty object if no grouped addons)
-        const groupedAddons =
-          Object.keys(addonsInfo).length > 0
-            ? Object.values(addonsInfo).reduce(
-                (acc, addonInfo: any) => {
-                  // Merge all grouped_addons from all products
-                  const grouped = addonInfo?.grouped_addons || {}
-                  return { ...acc, ...grouped }
-                },
-                {} as Record<string, unknown>
-              )
-            : {}
-        const ungroupedAddons = Object.values(addonsInfo).flatMap(
-          (addonInfo: any) => addonInfo?.ungrouped_addons || []
-        )
-        // Build locker product payload (plain JSON values — no double encoding)
-        const locker: SaveLockerProductPayload = {
-          addons: addonsInfo,
-          roster_url: false,
-          room_id: selectedLockerId.value!,
-          product_id: productId,
-          product_name: productName.value || '',
-          svg_parts: svgParts,
-          style_id: customizationStoreRef.activeStyleId.value || 0,
-          design_id: customizationStore.activeDesignId || 0,
-          custom_logos: customLogos,
-          text: productCustomTexts,
-          product_custom_texts: productCustomTexts,
-          colors: customization?.group_colors ?? [],
-          shuffle_color_number: customization?.shuffle_color_number || 0,
-          defaultcolors: defaultColors,
-          groupcolors: groupColors,
-          front_image: signedUrls.urls.find(item => item.file_side === 'front')!.original_url,
-          back_image: signedUrls.urls.find(item => item.file_side === 'back')!.original_url,
-          product_roster_detail: rosterDetail,
-          fixed_logo_index: customization?.fixed_logo_index || 0,
-          svgcolors: svgcolors,
-          grouped_addons: groupedAddons,
-          ungrouped_addons: ungroupedAddons,
-          group_patterns: customization?.group_patterns || {},
-          category_id: customizationStore.activeCategoryId ?? undefined,
-          sub_category_id: customizationStore.activeSubCategoryId ?? null
+          const rawSvgParts = productsStore.activeDesignDetails?.svg_parts || []
+          const svgParts = Array.isArray(rawSvgParts)
+            ? rawSvgParts
+            : typeof rawSvgParts === 'string'
+              ? JSON.parse(rawSvgParts)
+              : []
+          const customLogos = customization?.custom_logos[productKey] || []
+          const productCustomTexts = customization?.product_custom_texts[productKey] || []
+          const rosterDetail = customization?.products_rosters[productKey] || []
+          const defaultColors = customization?.default_colors || []
+          const groupColors = customization?.group_colors || {}
+          const svgcolors = productsStore.svgGroups.map(group => ({
+            value: group.color || '',
+            name: group.name || '',
+            pantone: group.pantone || ''
+          }))
+          const addonsInfo = customization?.addons_info || {}
+          const groupedAddons =
+            Object.keys(addonsInfo).length > 0
+              ? Object.values(addonsInfo).reduce(
+                  (acc, addonInfo: any) => {
+                    const grouped = addonInfo?.grouped_addons || {}
+                    return { ...acc, ...grouped }
+                  },
+                  {} as Record<string, unknown>
+                )
+              : {}
+          const ungroupedAddons = Object.values(addonsInfo).flatMap(
+            (addonInfo: any) => addonInfo?.ungrouped_addons || []
+          )
+          locker = {
+            addons: addonsInfo,
+            roster_url: false,
+            room_id: selectedLockerId.value!,
+            product_id: productId,
+            product_name: productName.value || '',
+            svg_parts: svgParts,
+            style_id: customizationStoreRef.activeStyleId.value || 0,
+            design_id: customizationStore.activeDesignId || 0,
+            custom_logos: customLogos,
+            text: productCustomTexts,
+            product_custom_texts: productCustomTexts,
+            colors: customization?.group_colors ?? [],
+            shuffle_color_number: customization?.shuffle_color_number || 0,
+            defaultcolors: defaultColors,
+            groupcolors: groupColors,
+            front_image: frontUrl,
+            back_image: backUrl,
+            product_roster_detail: rosterDetail,
+            fixed_logo_index: customization?.fixed_logo_index || 0,
+            svgcolors: svgcolors,
+            grouped_addons: groupedAddons,
+            ungrouped_addons: ungroupedAddons,
+            group_patterns: customization?.group_patterns || {},
+            category_id: customizationStore.activeCategoryId ?? undefined,
+            sub_category_id: customizationStore.activeSubCategoryId ?? null
+          }
         }
 
         const success = await lockerStore.saveDesignToLocker(
@@ -410,6 +462,23 @@
         if (useFactoryProductImages.value && factoryProduct.value) {
           frontImage.value = toDisplayImageUrl(factoryProduct.value.front_image!)
           backImage.value = toDisplayImageUrl(factoryProduct.value.back_image!)
+          imagesLoading.value = false
+          return
+        }
+
+        // When opened from CollectionView, use locker_product_images_folder for image URLs
+        if (collectionProduct.value) {
+          const plr = collectionProduct.value.product_locker_room
+          const folder = plr.locker_product_images_folder
+          if (folder) {
+            const base = folder.startsWith('http')
+              ? folder
+              : baseStorageUrlForCollection.value + folder
+            const sep = base.endsWith('/') ? '' : '/'
+            frontImage.value = `${base}${sep}front.png`
+            backImage.value = `${base}${sep}back.png`
+          }
+          productName.value = collectionProduct.value.product_nickname || plr.product_name || ''
           imagesLoading.value = false
           return
         }

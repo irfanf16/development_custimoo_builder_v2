@@ -49,6 +49,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/collection/:collectionSlug/view',
+    name: 'CollectionView',
+    component: () => import('@/views/CollectionView.vue'),
+    meta: {
+      layout: 'default',
+      title: 'Collection'
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFound.vue'),

@@ -593,3 +593,96 @@ export interface CollectionLogo {
   updated_at: string
   deleted_at: any
 }
+
+/** Response for GET collection?collection_file_name=... */
+export interface CollectionByFileNameResponse {
+  success: boolean
+  message: string
+  result: {
+    collection: CollectionWithProducts
+  }
+  errors: unknown[]
+  status_code: number
+}
+
+export interface CollectionWithProducts {
+  id: number
+  name: string
+  link: string
+  pdf_link: string | null
+  random_string: string | null
+  file_name: string
+  company_id: number
+  customer_id: number
+  room_id: number | null
+  ecommerce_collection_id: number | null
+  is_exporting: number
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+  collection_products: CollectionProductWithLockerRoom[]
+  logos: unknown[]
+}
+
+export interface CollectionProductWithLockerRoom {
+  id: number
+  product_nickname: string
+  product_note: string
+  product_price: string
+  order_number: number
+  collection_id: number
+  product_locker_room_id: number
+  allow_description: boolean
+  allow_title: boolean
+  allow_price: boolean
+  ecommerce_product_id: number | null
+  ecommerce_variant_id: number | null
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+  description: string
+  key: number
+  product_locker_room: CollectionProductLockerRoom
+}
+
+/** Nested product_locker_room in collection-by-file-name response */
+export interface CollectionProductLockerRoom {
+  id: number
+  product_name: string
+  design_id: number
+  sort_order: number
+  random_string: string
+  product_id: number
+  style_id: number
+  room_id: number
+  custom_logos: string
+  colors: string
+  text: unknown
+  defaultcolors: string
+  groupcolors: string
+  product_roster_detail: unknown
+  product_attribute: string
+  locker_product_images_folder: string
+  logo_colors: string | null
+  product_type: string
+  is_private: number
+  design: { id: number; back_design_id: number } | null
+  product: CollectionProductLockerRoomProduct
+  room: CollectionProductLockerRoomRoom
+}
+
+export interface CollectionProductLockerRoomProduct {
+  id: number
+  url_slug: string
+  product_type: string
+  sku: { id: number; sku_id: string; description: string }
+  sizes?: unknown[]
+}
+
+export interface CollectionProductLockerRoomRoom {
+  id: number
+  room_name: string
+  customer_id: number
+  company_id: number
+  folders?: unknown[]
+}

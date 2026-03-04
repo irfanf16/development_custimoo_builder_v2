@@ -480,7 +480,9 @@ v-customizer * {
   flex-direction: column;
   box-sizing: border-box;
 }
-
+#v-customizer-container:has(#collection-view-container) {
+  height: 100%;
+}
 /* Desktop sizing (768px+ matches Tailwind md: breakpoint) */
 @media (min-width: 768px) {
   #v-customizer-container {

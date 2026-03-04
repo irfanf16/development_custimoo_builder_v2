@@ -45,11 +45,20 @@ export type OutputSettingsResponse = {
   status_code: number
 }
 
+/** Single item from collection_image_admin (hero images). API may return as JSON string. */
+export type CollectionImageAdminItem = {
+  index: number
+  img_url: string
+  full_width: boolean
+  dimension: { width: number | null; height: number | null }
+}
+
 export type OutputSettings = {
   factory_settings: FactorySetting[]
   settings: {
     allow_shuffle_colors: boolean
-    collection_image_admin: string
+    /** Hero images for collection view. Backend may send stringified JSON; parse before use. */
+    collection_image_admin: string | CollectionImageAdminItem[]
     collection_image_merchant: {
       collection: {
         index: number
