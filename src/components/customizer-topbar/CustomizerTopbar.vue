@@ -95,7 +95,7 @@
   const { can } = usePermissions()
   const canSkipMoq = computed(() => can('skip-moq'))
   const { openSignInDialog, handleLogout } = useSignIn()
-  const { getPending, clearPending } = usePendingPostLoginAction()
+  const { getPending, getPendingOrderId, clearPending } = usePendingPostLoginAction()
   const { shouldShowAddToCartButton } = useAddToCartVisibility()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
@@ -104,8 +104,16 @@
   const showProfileDialog = ref(false)
   const showCartDialog = ref(false)
   // Use shared dialog state from UI store to avoid duplication
-  const { showLockerBrowser, showSaveDesignDialog, initialLockerIdToOpen } = storeToRefs(uiStore)
+  const { showLockerBrowser, showSaveDesignDialog, initialLockerIdToOpen, openProfileWithOrderId } =
+    storeToRefs(uiStore)
   const initialLockerTabToOpen = ref<'products' | 'assets' | 'colours' | 'rosters' | null>(null)
+
+  // When openProfileWithOrderId is set (e.g. from /order/:id/detail or after login), open profile on Orders tab
+  watch(openProfileWithOrderId, id => {
+    if (id != null) {
+      showProfileDialog.value = true
+    }
+  })
 
   // When a workflow step (Colors/Logos/Roster) requests "Choose from locker", open the browser with the right tab
   watch(
@@ -630,6 +638,7 @@
   }
   async function onLoginSuccess() {
     const pending = getPending()
+    const pendingOrderId = getPendingOrderId()
     clearPending()
     await lockerRoomStore.fetchLockersWithcolors()
     await logosStore.fetchRecentLogos()
@@ -638,6 +647,8 @@
       await handleUpdateCartProduct()
     } else if (pending === 'addToCart') {
       await handleAddToCart()
+    } else if (pending === 'openOrderDetail' && pendingOrderId != null) {
+      uiStore.requestOpenProfileWithOrderId(pendingOrderId)
     }
   }
 
@@ -1089,7 +1100,12 @@
             Sign In
           </DropdownMenuItem>
         </DropdownMenuContent>
-        <ProfileDialog :open="showProfileDialog" @update:open="showProfileDialog = $event" />
+        <ProfileDialog
+          :open="showProfileDialog"
+          :initial-tab="openProfileWithOrderId != null ? 'orders' : undefined"
+          :initial-order-id="openProfileWithOrderId ?? undefined"
+          @update:open="showProfileDialog = $event"
+        />
         <SignInDialog @success="onLoginSuccess" />
       </DropdownMenu>
     </ButtonGroup>

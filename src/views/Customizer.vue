@@ -12,14 +12,43 @@
   import { useDebounceFn } from '@vueuse/core'
   import MobileActionBar from '@/components/customizer-canvas-preview/MobileActionBar.vue'
   import { useProductsStore } from '@/stores/products/products.store'
+  import { useRoute, useRouter } from 'vue-router'
+  import { useAuthStore } from '@/stores/auth/auth.store'
+  import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
+  import { useSignIn } from '@/composables/useSignIn'
+  import { onMounted } from 'vue'
+
   const uiStore = useUIStore()
   const { isMobile } = storeToRefs(uiStore)
   const workflowStore = useWorkflowStore()
   const productsStore = useProductsStore()
   const { activeProductDetails } = storeToRefs(productsStore)
+  const route = useRoute()
+  const router = useRouter()
+  const authStore = useAuthStore()
+  const { setPending } = usePendingPostLoginAction()
+  const { openSignInDialog } = useSignIn()
+
   const handleClick = useDebounceFn(() => {
     workflowStore.toggleActiveCanvasSide()
   }, 500)
+
+  onMounted(async () => {
+    const orderId = route.params.order_id
+    if (!orderId || Array.isArray(orderId)) return
+    const isOrderDetailRoute =
+      route.name === 'OrderDetail' || route.path.match(/^\/order\/[^/]+\/detail$/)
+    if (!isOrderDetailRoute) return
+
+    await authStore.ensureHydrated()
+    if (authStore.isAuthenticated) {
+      uiStore.requestOpenProfileWithOrderId(orderId)
+    } else {
+      setPending('openOrderDetail', orderId)
+      openSignInDialog()
+    }
+    router.replace({ path: '/' })
+  })
 </script>
 
 <template>

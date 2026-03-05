@@ -21,6 +21,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/order/:order_id/detail',
+    name: 'OrderDetail',
+    component: () => import('@/views/Customizer.vue'),
+    meta: {
+      layout: 'default',
+      title: 'Order Detail'
+    }
+  },
+  {
     path: '/auth',
     name: 'Auth',
     component: () => import('@/views/Auth.vue'),

@@ -18,6 +18,8 @@ export const useUIStore = defineStore('uiStore', () => {
   const showSaveDesignDialog = ref(false)
   const showLockerBrowser = ref(false)
   const initialLockerIdToOpen = ref<number | null>(null)
+  /** When set, profile dialog should open on Orders tab and show order timeline for this order id. */
+  const openProfileWithOrderId = ref<string | number | null>(null)
   // Order product data for save design dialog
   const orderProductData = ref<{
     product: import('@/services/orders/types').FactoryProduct
@@ -467,6 +469,14 @@ export const useUIStore = defineStore('uiStore', () => {
     openLockerBrowser(lockerId)
   }
 
+  function requestOpenProfileWithOrderId(orderId: string | number) {
+    openProfileWithOrderId.value = orderId
+  }
+
+  function clearOpenProfileWithOrderId() {
+    openProfileWithOrderId.value = null
+  }
+
   return {
     isMobileMenuOpen,
     isLoginDialogOpen,
@@ -509,6 +519,9 @@ export const useUIStore = defineStore('uiStore', () => {
     closeSaveDesignDialog,
     openLockerBrowser,
     closeLockerBrowser,
-    handleSavedToLocker
+    handleSavedToLocker,
+    openProfileWithOrderId,
+    requestOpenProfileWithOrderId,
+    clearOpenProfileWithOrderId
   }
 })

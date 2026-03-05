@@ -6,12 +6,13 @@
   import AccountTab from './account-section/AccountTab.vue'
   import OrdersTab from './orders-section/OrdersTab.vue'
   import AddressTab from './address-section/AddressTab.vue'
-  import { ref, watch, computed } from 'vue'
+  import { ref, watch, computed, nextTick } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { storeToRefs } from 'pinia'
   import Spinner from '../ui/spinner/Spinner.vue'
   import PreferencesTab from './preferences-section/PreferencesTab.vue'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useOrdersStore } from '@/stores/orders/orders.store'
   import { Button } from '@/components/ui/button'
   import { ArrowLeft } from 'lucide-vue-next'
   import { m as messages } from '@/paraglide/messages'
@@ -21,6 +22,7 @@
   const props = defineProps<{
     open: boolean
     initialTab?: 'account' | 'orders' | 'address' | 'preferences'
+    initialOrderId?: string | number
     showSelectAddressButton?: boolean
   }>()
   const emit = defineEmits<{
@@ -30,6 +32,7 @@
 
   const { tab, tabItems } = useProfileDialogState()
   const profileStore = useProfileStore()
+  const ordersStore = useOrdersStore()
   const { counters } = storeToRefs(profileStore)
   const { handleLogout } = useSignIn()
   const uiStore = useUIStore()
@@ -112,6 +115,13 @@
         // Reset mobile view to tab list when dialog opens
         if (uiStore.isMobile) {
           showMobileTabList.value = true
+        }
+        // Open order timeline when opened with initialOrderId (e.g. from /order/:id/detail)
+        if (props.initialOrderId != null && (props.initialTab ?? tab.value) === 'orders') {
+          nextTick(() => {
+            ordersStore.openOrderTimeline(props.initialOrderId!)
+            uiStore.clearOpenProfileWithOrderId()
+          })
         }
       }
     },
