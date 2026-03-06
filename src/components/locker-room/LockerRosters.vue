@@ -18,15 +18,19 @@
     locker_roster_players,
     locker_use_in_design,
     locker_preview,
+    locker_no_rosters,
     roster_table_size,
-    roster_table_quantity
+    roster_table_quantity,
+    msg_no_roster_data,
+    msg_failed_to_convert_roster,
+    msg_roster_step_not_available
   } from '@/paraglide/messages'
 
   type RosterProps = {
     roster_group: ProductRosterDetail[] | undefined
     group_name: string
   }
-  defineProps<{ rosters: RosterProps[] }>()
+  const props = defineProps<{ rosters: RosterProps[] }>()
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
@@ -38,6 +42,10 @@
   const { replaceRoster, ensureEditableRoster, presetNameId, presetNumberId } = useRoster()
   const { menuItems, goTo } = useCustomizerMenu()
   const closeLockerBrowser = inject<(() => void) | undefined>('closeLockerBrowser')
+
+  const hasAnyRoster = computed(
+    () => props.rosters?.some(r => r.roster_group && r.roster_group.length > 0) ?? false
+  )
 
   // Convert ProductRosterDetail to APCustomizationRosterEntry
   function normalizeRosterEntries(
@@ -61,14 +69,20 @@
 
   async function handleUseInDesign(roster: ProductRosterDetail[] | undefined) {
     if (!roster || roster.length === 0) {
-      toast.error('No roster data available', { position: 'top-right', richColors: true })
+      toast.error(msg_no_roster_data({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
 
     // Convert and load roster into customizer
     const rosterEntries = normalizeRosterEntries(roster)
     if (rosterEntries.length === 0) {
-      toast.error('Failed to convert roster data', { position: 'top-right', richColors: true })
+      toast.error(msg_failed_to_convert_roster({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
 
@@ -81,7 +95,10 @@
       await goTo('roster')
       await ensureEditableRoster()
     } else {
-      toast.error('Roster step is not available', { position: 'top-right', richColors: true })
+      toast.error(msg_roster_step_not_available({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     }
 
     // Close the locker browser dialog
@@ -90,7 +107,10 @@
 
   function handlePreview(roster: ProductRosterDetail[] | undefined, groupName: string) {
     if (!roster || roster.length === 0) {
-      toast.error('No roster data available', { position: 'top-right', richColors: true })
+      toast.error(msg_no_roster_data({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
     previewRoster.value = roster
@@ -101,6 +121,10 @@
 <template>
   <div class="w-full">
     <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
+
+    <div v-else-if="!hasAnyRoster" class="py-8 text-center text-muted-foreground">
+      {{ locker_no_rosters({}, { locale }) }}
+    </div>
 
     <div v-else class="flex flex-col gap-4 h-full p-4">
       <!-- Rosters Grid -->

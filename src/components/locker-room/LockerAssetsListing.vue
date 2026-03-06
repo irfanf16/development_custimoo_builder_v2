@@ -8,12 +8,12 @@
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  import { useHistoryStore } from '@/stores/history/history.store'
+  import { useLogosStore } from '@/stores/logos/logos.store'
   import { storeToRefs } from 'pinia'
   import { computed, inject, onMounted, type ComputedRef } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
-  import { locker_use_in_design } from '@/paraglide/messages'
+  import { locker_use_in_design, locker_no_assets } from '@/paraglide/messages'
 
   const props = defineProps<{ locker: Locker }>()
 
@@ -24,7 +24,7 @@
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
-  const historyStore = useHistoryStore()
+  const logosStore = useLogosStore()
   const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const closeLockerBrowser = inject<(() => void) | undefined>('closeLockerBrowser')
 
@@ -37,48 +37,45 @@
     const customization = customizationStore.customization
     const productDetails = productsStore.activeProductDetails
     const placements = productDetails?.logos_setting
-    const firstPlacement = placements?.[0]
-    if (!customization || !firstPlacement) return
-    const key = String(customization.product_id)
+    if (!customization || !placements?.length) return
     const productId = customization.product_id
     const styleId = customization.style_id ?? null
     const lockerLogoAsCustom: CustomLogo = {
       id: logo.id,
       product_id: productId,
-      product_style_id: styleId ?? null,
-      following_product_ids: firstPlacement.following_product_ids ?? null,
-      rotation: firstPlacement.rotation ?? 0,
-      originalWidth: firstPlacement.originalWidth ?? 0,
-      originalHeight: firstPlacement.originalHeight ?? 0,
-      width: firstPlacement.width ?? 0,
-      height: firstPlacement.height ?? 0,
-      name_of_placement: firstPlacement.name_of_placement ?? '',
-      side: (firstPlacement.side as 'front' | 'back') || 'front',
-      x_axis: firstPlacement.x_axis ?? 300,
-      y_axis: firstPlacement.y_axis ?? 300,
-      x_axis_3d: firstPlacement.x_axis_3d ?? 0,
-      y_axis_3d: firstPlacement.y_axis_3d ?? 0,
+      product_style_id: styleId,
+      following_product_ids: null,
+      rotation: undefined as unknown as number,
+      originalWidth: 0,
+      originalHeight: 0,
+      width: 0,
+      height: 0,
+      name_of_placement: '',
+      side: undefined as unknown as 'front',
+      x_axis: 0,
+      y_axis: 0,
+      x_axis_3d: 0,
+      y_axis_3d: 0,
       url: logo.logo_url,
       logo_name: logo.logo_name ?? '',
-      is_locked: firstPlacement.is_locked ?? 0,
+      is_locked: 0,
       is_vector: true,
       is_smart_transparent: false,
       haveControls: true,
       is_replace_success: false,
       logo_colors: [],
-      logo_technologies: firstPlacement.logo_technologies ?? null,
+      logo_technologies: null,
       logo_index: 0,
       logo_technology: null
     } as CustomLogo
-    const merged = customizationStore.getMergedCustomizationLogo(lockerLogoAsCustom, firstPlacement)
-    historyStore.execute('logo.add', { key, logo: merged })
+    logosStore.setActiveLogo(lockerLogoAsCustom)
     void goTo(
       pickStepOrNextAvailable(
         'logos',
         menuItems.value.map(i => i.step)
       )
     )
-    workflowStore.setLogosSubStep('list')
+    workflowStore.setLogosSubStep('placement')
     closeLockerBrowser?.()
   }
 
@@ -90,6 +87,9 @@
 </script>
 <template>
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
+  <div v-else-if="!logos.length" class="py-8 text-center text-muted-foreground">
+    {{ locker_no_assets({}, { locale }) }}
+  </div>
   <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(logo, logoIndex) in logos"

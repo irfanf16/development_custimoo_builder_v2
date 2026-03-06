@@ -5,7 +5,16 @@
   import { Pencil, Trash2, Users } from 'lucide-vue-next'
   import { useCart } from './useCart'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import { cart_note_placeholder, minimum_order_quantity } from '@/paraglide/messages'
+  import {
+    cart_note_placeholder,
+    minimum_order_quantity,
+    msg_failed_to_load_cart_product,
+    msg_address_selected,
+    msg_fill_required_fields,
+    msg_select_address,
+    msg_update_quantity_zero,
+    msg_order_placed_success
+  } from '@/paraglide/messages'
 
   import { useLoadCartProductIntoCustomizer } from '@/composables/useLoadCartProductIntoCustomizer'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -120,7 +129,10 @@
 
     const ok = await loadCartProductIntoCustomizer(factoryProductId)
     if (!ok) {
-      toast.error('Failed to load cart product', { position: 'top-right', richColors: true })
+      toast.error(msg_failed_to_load_cart_product({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
 
@@ -137,7 +149,10 @@
     // Load the cart product into customizer
     const ok = await loadCartProductIntoCustomizer(factoryProductId)
     if (!ok) {
-      toast.error('Failed to load cart product', { position: 'top-right', richColors: true })
+      toast.error(msg_failed_to_load_cart_product({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
 
@@ -279,7 +294,10 @@
   function handleAddressSelect(address: Address) {
     selectedAddress.value = address
     addressError.value = ''
-    toast.success('Address selected', { position: 'top-right', richColors: true })
+    toast.success(msg_address_selected({}, { locale: locale.value }), {
+      position: 'top-right',
+      richColors: true
+    })
   }
 
   function validateForm(): boolean {
@@ -288,7 +306,7 @@
     orderReferenceError.value = ''
 
     if (!selectedAddress.value) {
-      addressError.value = 'Please select an address'
+      addressError.value = msg_select_address({}, { locale: locale.value })
       isValid = false
     }
 
@@ -302,19 +320,25 @@
 
   async function handleConfirmOrder() {
     if (!validateForm()) {
-      toast.error('Please fill in all required fields', { position: 'top-right', richColors: true })
+      toast.error(msg_fill_required_fields({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
 
     if (!selectedAddress.value) {
-      toast.error('Please select an address', { position: 'top-right', richColors: true })
+      toast.error(msg_select_address({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
 
     const cartValidation = validateCartForCheckout()
     if (!cartValidation.valid) {
       invalidQuantityIds.value = cartValidation.invalidFactoryProductIds
-      toast.error('Some items have quantity 0. Please update before checkout.', {
+      toast.error(msg_update_quantity_zero({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -331,7 +355,10 @@
 
       await API.orders.placeOrder(payload)
 
-      toast.success('Order placed successfully!', { position: 'top-right', richColors: true })
+      toast.success(msg_order_placed_success({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
 
       // Refresh cart data after order placement
       await fetchCart()

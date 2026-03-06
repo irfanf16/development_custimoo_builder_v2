@@ -89,6 +89,7 @@
               <Input
                 v-model="item.name"
                 :placeholder="locker_product_name_placeholder({}, { locale })"
+                class="bg-transparent"
               />
             </div>
             <div class="w-full">

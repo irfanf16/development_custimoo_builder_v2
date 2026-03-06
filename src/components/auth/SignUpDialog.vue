@@ -51,7 +51,8 @@
     profile_last_name,
     profile_email,
     profile_company_name,
-    profile_country
+    profile_country,
+    msg_select_valid_country
   } from '@/paraglide/messages'
 
   const uiStore = useUIStore()
@@ -189,7 +190,7 @@
     const selectedCountry = countries.value.find(c => String(c.id) === values.countryId)
 
     if (!selectedCountry) {
-      authStore.setError('Please select a valid country')
+      authStore.setError(msg_select_valid_country({}, { locale: locale.value }))
       return
     }
 

@@ -96,32 +96,30 @@
           <CustomizerTopbar class="z-20" />
           <div
             id="canvas-controls-container"
-            class="flex flex-row w-full h-full justify-center 2xl:justify-start items-center p-[64px]"
+            class="flex flex-row w-full h-full justify-center 2xl:justify-start items-center gap-6 p-[64px]"
           >
             <ProductPreview />
-            <div class="w-0 z-10 self-start ml-[-50px]">
-              <div class="absolute">
-                <div
-                  id="canvas-controls-container-inner"
-                  class="flex flex-col gap-9 items-end justify-between h-full"
-                >
-                  <RightToolbar />
-                  <div
-                    v-if="!activeProductDetails?.is_3d_product"
-                    class="w-fit h-fit p-1 rounded-2xl backdrop-blur-sm bg-white/20 cursor-pointer"
-                    @click="handleClick"
-                  >
-                    <div class="bg-card border border-border rounded-[14px] p-3 relative">
-                      <div class="w-[9.75rem] h-[9.75rem] flex items-center justify-center">
-                        <TwoDScene
-                          :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
-                          :main-preview="true"
-                          :canvas-width="600"
-                          :canvas-height="600"
-                          canvas-class="w-full h-full object-contain rounded-lg transition-opacity duration-300"
-                        />
-                      </div>
-                    </div>
+
+            <div
+              id="canvas-controls-container-inner"
+              class="flex flex-col gap-9 items-center justify-between"
+            >
+              <RightToolbar />
+
+              <div
+                v-if="!activeProductDetails?.is_3d_product"
+                class="w-fit h-fit p-1 rounded-2xl backdrop-blur-sm bg-white/20 cursor-pointer"
+                @click="handleClick"
+              >
+                <div class="bg-card border border-border rounded-[14px] p-3 relative">
+                  <div class="w-[9.75rem] h-[9.75rem] flex items-center justify-center">
+                    <TwoDScene
+                      :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
+                      :main-preview="true"
+                      :canvas-width="600"
+                      :canvas-height="600"
+                      canvas-class="w-full h-full object-contain rounded-lg transition-opacity duration-300"
+                    />
                   </div>
                 </div>
               </div>

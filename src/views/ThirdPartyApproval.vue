@@ -10,7 +10,11 @@
   import { ChevronLeft, ChevronRight, Check, X } from 'lucide-vue-next'
   import type { ApprovalDetail } from '@/services/orders/thirdPartyApproval.service'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import { feedback_placeholder } from '@/paraglide/messages'
+  import {
+    feedback_placeholder,
+    msg_provide_rejection_feedback,
+    msg_review_all_samples
+  } from '@/paraglide/messages'
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
@@ -124,7 +128,7 @@
 
   function submitRejection() {
     if (!pendingFeedback.value.trim()) {
-      toast.error('Please provide feedback for the rejection')
+      toast.error(msg_provide_rejection_feedback({}, { locale: locale.value }))
       return
     }
 
@@ -150,7 +154,7 @@
   // ============================================================================
   async function submitAllSamples() {
     if (!allSamplesReviewed.value) {
-      toast.error('Please review all samples before submitting')
+      toast.error(msg_review_all_samples({}, { locale: locale.value }))
       return
     }
 

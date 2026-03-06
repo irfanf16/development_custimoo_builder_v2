@@ -37,7 +37,9 @@
     locker_select_all,
     locker_copy,
     locker_save,
-    locker_delete
+    locker_delete,
+    msg_added_items_to_cart,
+    msg_failed_to_add_products_to_cart
   } from '@/paraglide/messages'
 
   const profileStore = useProfileStore()
@@ -324,13 +326,13 @@
       await cartStore.addLockerProductsToCart(lockerCartPayload.value)
       emit('clear-selection')
       const total = listModeSelectedCount.value
-      toast.success(`Added ${total} item(s) to cart`, {
+      toast.success(msg_added_items_to_cart({ count: total }, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
       emit('clear-selection')
     } catch (error) {
-      toast.error('Failed to add products to cart', {
+      toast.error(msg_failed_to_add_products_to_cart({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })

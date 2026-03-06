@@ -19,6 +19,11 @@
   import { uploadPresignedFiles } from '@/lib/utils'
   import type { CustomLogo } from '@/services/logos/types'
   import { toast } from 'vue-sonner'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    msg_upload_logo_before_collection,
+    msg_products_added_to_collection
+  } from '@/paraglide/messages'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
   type LockerTab = 'products' | 'assets' | 'colours' | 'rosters'
@@ -48,6 +53,8 @@
   ])
 
   const lockerRoomStore = useLockerRoomStore()
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
   const { lockers: storeLockers } = storeToRefs(lockerRoomStore)
   const currentMode = ref<'list' | 'detail'>('list')
 
@@ -141,30 +148,34 @@
   }
 
   const getLockerDetail = async (locker: Locker) => {
-    currentLocker.value = !locker.products_fetched
-      ? ((await lockerRoomStore.fetchLockerProducts(locker.id)) ?? null)
-      : locker
+    if (!locker.products_fetched) {
+      currentLocker.value = (await lockerRoomStore.fetchLockerProducts(locker.id)) ?? null
+    } else {
+      currentLocker.value = locker
+      void lockerRoomStore.fetchLockerProductsCore(locker.id).then(updated => {
+        if (updated) currentLocker.value = updated
+      })
+    }
     currentMode.value = 'detail'
     search.value = ''
     if (props.initialTab) {
       lockerTab.value = props.initialTab
       emit('clear-initial-tab')
     }
-    // When adding products to a collection, keep existing selection (collection products as stubs); don't overwrite with locker-only aggregate
     if (!(isCreatingCollection.value && currentCollection.value)) {
       selectedProducts.value = aggregateSelectedProductsFromStore()
     }
   }
 
+  // When the locker browser opens, fetch fresh data in background (no loader) so the list updates without blocking UI
   watch(
-    () => [props.open, props.initialLockerId] as const,
-    async ([open, lockerId]) => {
-      if (!open || lockerId == null) return
-      let locker = storeLockers.value.find(l => l.id === lockerId)
-      if (!locker) {
-        await lockerRoomStore.fetchLockers()
-        locker = storeLockers.value.find(l => l.id === lockerId)
-      }
+    () => props.open,
+    async open => {
+      if (!open) return
+      void lockerRoomStore.fetchLockersInBackground()
+      const lockerId = props.initialLockerId
+      if (lockerId == null) return
+      const locker = storeLockers.value.find(l => l.id === lockerId)
       if (locker) {
         await getLockerDetail(locker)
         emit('initial-locker-opened')
@@ -382,7 +393,7 @@
       if (!isEditing) {
         const hasLogo = logos.some(logo => (logo.file || logo.url) && !logo.isDeleted)
         if (!hasLogo) {
-          toast.error('Please upload at least one logo before saving the collection', {
+          toast.error(msg_upload_logo_before_collection({}, { locale: locale.value }), {
             position: 'top-right',
             richColors: true
           })
@@ -873,7 +884,7 @@
 
       // Refresh collection
       await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
-      toast.success('Products added to collection successfully', {
+      toast.success(msg_products_added_to_collection({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })

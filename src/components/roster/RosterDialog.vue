@@ -44,7 +44,9 @@
     roster_total_label,
     roster_nav_aria_label,
     roster_edit_roster,
-    profile_cancel
+    profile_cancel,
+    msg_roster_updated_success,
+    msg_failed_to_update_roster
   } from '@/paraglide/messages'
 
   // ─── Types ────────────────────────────────────────────────────────────────────
@@ -808,7 +810,10 @@
           totalQuantity: totalQuantity.value
         })
         emit('save')
-        toast.success('Roster updated successfully', { position: 'top-right', richColors: true })
+        toast.success(msg_roster_updated_success({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
         handleClose()
       } else {
         /**
@@ -821,7 +826,10 @@
     } catch (err) {
       saveError.value =
         err instanceof Error ? err.message : 'Something went wrong, please try again.'
-      toast.error('Failed to update roster', { position: 'top-right', richColors: true })
+      toast.error(msg_failed_to_update_roster({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     } finally {
       isSaving.value = false
     }

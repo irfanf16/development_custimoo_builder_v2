@@ -41,7 +41,8 @@
     time_ago_months,
     time_ago_months_plural,
     time_ago_years,
-    time_ago_years_plural
+    time_ago_years_plural,
+    locker_no_items
   } from '@/paraglide/messages'
   import { timeAgo as timeAgoUtil } from '@/lib/utils'
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
@@ -190,6 +191,9 @@
 
 <template>
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
+  <div v-else-if="!lockersToShow.length" class="py-8 text-center text-muted-foreground">
+    {{ locker_no_items({}, { locale }) }}
+  </div>
   <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(locker, lockerIndex) in lockersToShow"

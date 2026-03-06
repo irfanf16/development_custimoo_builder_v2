@@ -18,6 +18,7 @@
   import { storeToRefs } from 'pinia'
   import { computed, ref, watch } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { toast } from 'vue-sonner'
   import {
     locker_collection_name_placeholder,
     ui_search_placeholder,
@@ -38,7 +39,8 @@
     locker_sort_alphabetically,
     locker_sort_created_date,
     locker_create_collection,
-    locker_create_locker
+    locker_create_locker,
+    locker_name_required
   } from '@/paraglide/messages'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
@@ -83,9 +85,12 @@
   const lockerRoomStore = useLockerRoomStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
   const { lockers, collections } = storeToRefs(lockerRoomStore)
-  const room_name = ref(props.currentLocker?.room_name)
+  const room_name = ref(props.currentLocker?.room_name ?? '')
   const collection_name = ref(props.currentCollection?.name ?? '')
   const creatingCollection = ref(props.creatingCollection ?? false)
+
+  // Track which locker is being edited so edit state only applies to that locker
+  const editingLockerId = ref<number | null>(null)
 
   // Computed properties for translated tab labels
   const tabLabel = computed(() => {
@@ -116,10 +121,33 @@
   })
 
   const updateLocker = () => {
-    if (props.currentLocker) {
-      emit('update-locker', { ...props.currentLocker, room_name: room_name.value })
-      isEditingLocker.value = false
+    const trimmed = room_name.value?.trim()
+    if (!trimmed) {
+      toast.error(locker_name_required({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
+      return
     }
+    if (props.currentLocker && editingLockerId.value === props.currentLocker.id) {
+      emit('update-locker', { ...props.currentLocker, room_name: trimmed })
+      isEditingLocker.value = false
+      editingLockerId.value = null
+    }
+  }
+
+  const startEditLocker = () => {
+    if (props.currentLocker) {
+      room_name.value = props.currentLocker.room_name ?? ''
+      editingLockerId.value = props.currentLocker.id
+      isEditingLocker.value = true
+    }
+  }
+
+  const cancelEditLocker = () => {
+    room_name.value = props.currentLocker?.room_name ?? ''
+    isEditingLocker.value = false
+    editingLockerId.value = null
   }
 
   const canEditCollection = computed(() => {
@@ -136,6 +164,17 @@
     isEditingCollection.value = true
     emit('start-edit-collection-name')
   }
+
+  watch(
+    () => props.currentLocker,
+    newLocker => {
+      room_name.value = newLocker?.room_name ?? ''
+      if (editingLockerId.value != null && newLocker?.id !== editingLockerId.value) {
+        isEditingLocker.value = false
+        editingLockerId.value = null
+      }
+    }
+  )
 
   watch(
     () => props.currentCollection,
@@ -213,8 +252,8 @@
               (!creatingCollection || collectionCreationStep === 1)
             "
           >
-            <!-- VIEW MODE -->
-            <template v-if="!isEditingLocker">
+            <!-- VIEW MODE: only show edit UI when we're editing THIS locker -->
+            <template v-if="!isEditingLocker || editingLockerId !== currentLocker.id">
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                   <Button variant="outline">
@@ -241,20 +280,20 @@
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button v-if="!creatingCollection" variant="outline" @click="isEditingLocker = true">
+              <Button v-if="!creatingCollection" variant="outline" @click="startEditLocker">
                 <PencilLine class="w-4 h-4" /> {{ locker_edit({}, { locale }) }}
               </Button>
             </template>
 
-            <!-- EDIT MODE -->
-            <template v-else>
+            <!-- EDIT MODE: only for current locker -->
+            <template v-else-if="editingLockerId === currentLocker.id">
               <Input v-model="room_name" class="w-[200px]" />
               <ButtonGroup>
-                <Button @click="updateLocker">
+                <Button :disabled="!room_name?.trim()" @click="updateLocker">
                   <Check class="w-4 h-4" />
                   {{ locker_update({}, { locale }) }}
                 </Button>
-                <Button @click="isEditingLocker = false">
+                <Button @click="cancelEditLocker">
                   <X class="w-4 h-4" /> {{ locker_cancel({}, { locale }) }}
                 </Button>
               </ButtonGroup>

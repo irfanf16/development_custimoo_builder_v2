@@ -17,6 +17,14 @@
   import ShareUrlTooltip from '@/components/shared/ShareUrlTooltip.vue'
   import { useFileDownload } from '@/composables/useFileDownload'
   import RosterDialog from '@/components/roster/RosterDialog.vue'
+  import {
+    locker_no_products,
+    msg_product_id_not_found,
+    msg_failed_to_generate_share_url,
+    msg_failed_to_share_product,
+    msg_no_preview_images_to_download
+  } from '@/paraglide/messages'
+  import { useProfileStore } from '@/stores/profile/profile.store'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
@@ -49,6 +57,8 @@
   const lockerRoomStore = useLockerRoomStore()
   const { isLoading, isDeletingProducts } = storeToRefs(lockerRoomStore)
   const uiStore = useUIStore()
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   const selectedProducts = ref<LockerProduct[]>([])
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
@@ -93,6 +103,16 @@
   const { downloadFiles } = useFileDownload()
 
   const computedProducts = computed(() => props.products)
+
+  function getProductDate(p: LockerProduct, kind: 'created' | 'updated'): number {
+    const raw =
+      kind === 'created'
+        ? ((p as { created_at?: string }).created_at ?? p.product?.created_at)
+        : ((p as { updated_at?: string }).updated_at ?? p.product?.updated_at)
+    const t = raw ? new Date(raw).getTime() : 0
+    return Number.isNaN(t) ? 0 : t
+  }
+
   const filteredProducts = computed(() => {
     const search = props.search?.toLowerCase() || ''
     return [...computedProducts.value]
@@ -102,14 +122,10 @@
           case 'alphabetical':
             return a.name.localeCompare(b.name)
           case 'createdDate':
-            return (
-              new Date(b.product?.created_at).getTime() - new Date(a.product?.created_at).getTime()
-            )
+            return getProductDate(b, 'created') - getProductDate(a, 'created')
           case 'lastModified':
           default:
-            return (
-              new Date(b.product?.updated_at).getTime() - new Date(a.product?.updated_at).getTime()
-            )
+            return getProductDate(b, 'updated') - getProductDate(a, 'updated')
         }
       })
   })
@@ -169,7 +185,10 @@
     try {
       const productId = prod.product_id
       if (!productId) {
-        toast.error('Product ID not found', { position: 'top-right', richColors: true })
+        toast.error(msg_product_id_not_found({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
         return
       }
       const response = await lockersService.shareProduct(prod.id, productId)
@@ -178,11 +197,17 @@
         productShareUrls.value[prod.id] = shareUrl
         showShareTooltip.value[prod.id] = true
       } else {
-        toast.error('Failed to generate share URL', { position: 'top-right', richColors: true })
+        toast.error(msg_failed_to_generate_share_url({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
       }
     } catch (error) {
       console.error('Share product error:', error)
-      toast.error('Failed to share product', { position: 'top-right', richColors: true })
+      toast.error(msg_failed_to_share_product({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     }
   }
 
@@ -215,7 +240,10 @@
       })
     }
     if (urls.length === 0) {
-      toast.error('No preview images to download', { position: 'top-right', richColors: true })
+      toast.error(msg_no_preview_images_to_download({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
     downloadingProductId.value = prod.id
@@ -246,6 +274,9 @@
 
 <template>
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
+  <div v-else-if="!filteredProducts.length" class="py-8 text-center text-muted-foreground">
+    {{ locker_no_products({}, { locale }) }}
+  </div>
   <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(prod, prodIndex) in filteredProducts"

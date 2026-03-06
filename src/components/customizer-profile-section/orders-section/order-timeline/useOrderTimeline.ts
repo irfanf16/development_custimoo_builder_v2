@@ -19,7 +19,9 @@ import type { Component } from 'vue'
 import { useFileDownload } from '@/composables/useFileDownload'
 import { useOrdersStore } from '@/stores/orders/orders.store'
 import { useUIStore } from '@/stores/ui/ui.store'
+import { useProfileStore } from '@/stores/profile/profile.store'
 import { toast } from 'vue-sonner'
+import { msg_link_copied, msg_share_link_ready } from '@/paraglide/messages'
 
 export function useOrderTimeline() {
   const { downloadFiles, isLoading } = useFileDownload()
@@ -335,8 +337,9 @@ export function useOrderProductActions(order: Order, onReorderSuccess?: () => vo
       event.stopPropagation()
     }
     if (!url) return
+    const locale = useProfileStore().currentLocale || 'en'
     void navigator.clipboard.writeText(url).then(() => {
-      toast.success('Link copied to clipboard!', {
+      toast.success(msg_link_copied({}, { locale }), {
         position: 'top-right',
         richColors: true,
         duration: 2000
@@ -347,15 +350,16 @@ export function useOrderProductActions(order: Order, onReorderSuccess?: () => vo
   async function handleShareDesign(item: Item, product: FactoryProduct) {
     const url = await store.shareOrderProductDesign(order, item, product)
     if (url) {
+      const locale = useProfileStore().currentLocale || 'en'
       try {
         await navigator.clipboard.writeText(url)
-        toast.success('Link copied to clipboard!', {
+        toast.success(msg_link_copied({}, { locale }), {
           position: 'top-right',
           richColors: true,
           duration: 2000
         })
       } catch {
-        toast.info('Share link ready. Copy from the Copy Share Url button.', {
+        toast.info(msg_share_link_ready({}, { locale }), {
           position: 'top-right',
           richColors: true
         })

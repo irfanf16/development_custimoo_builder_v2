@@ -51,9 +51,19 @@
     () => [props.open, props.locker] as const,
     ([open, locker]) => {
       if (open) {
-        locker_name.value = locker?.room_name ?? undefined
+        locker_name.value = locker?.room_name ?? ''
       } else {
         locker_name.value = undefined
+      }
+    },
+    { immediate: true }
+  )
+  // When dialog is already open and locker is set/updated (e.g. from list), keep input in sync
+  watch(
+    () => props.locker,
+    locker => {
+      if (props.open && locker) {
+        locker_name.value = locker.room_name ?? ''
       }
     },
     { immediate: true }

@@ -21,6 +21,8 @@
   import SaveDesignDialog from '@/components/SaveDesignDialog.vue'
   import { PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
   import { toast } from 'vue-sonner'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import { msg_failed_to_add_to_cart } from '@/paraglide/messages'
 
   const route = useRoute()
   const router = useRouter()
@@ -32,6 +34,8 @@
   const { setPending, getPending, getPendingSaveToLockerProduct, clearPending } =
     usePendingPostLoginAction()
 
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
   const isLoggedIn = computed(() => authStore.isAuthenticated)
   const storageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
 
@@ -148,7 +152,7 @@
       showCartDialog.value = true
     } catch (e) {
       console.error(e)
-      toast.error('Failed to add to cart')
+      toast.error(msg_failed_to_add_to_cart({}, { locale: locale.value }))
     }
   }
 

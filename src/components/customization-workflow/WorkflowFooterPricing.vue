@@ -10,7 +10,14 @@
     summary_for,
     summary_pcs,
     price_add_to_cart,
-    minimum_quantity
+    minimum_quantity,
+    msg_no_cart_product_selected,
+    msg_add_roster_before_cart,
+    msg_add_roster_entries_quantities,
+    msg_cart_updated,
+    msg_failed_to_update_cart,
+    msg_product_added_to_cart,
+    msg_failed_to_add_to_cart
   } from '@/paraglide/messages'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { usePricing } from '@/composables/usePricing'
@@ -51,9 +58,10 @@
     isExpanded?: boolean
   }>()
 
+  const locale = computed(() => profileStore.currentLocale || 'en')
   async function handleUpdateCartProduct() {
     if (!cartStore.editingCartItemId || !cartStore.editingFactoryProductId) {
-      toast.error('No cart product selected for update', {
+      toast.error(msg_no_cart_product_selected({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -65,7 +73,7 @@
       const isByDesign = isQuantityByDesign.value
 
       if (rosterQty <= 0) {
-        toast.error('Please add at least one item to the roster before adding to cart.', {
+        toast.error(msg_add_roster_before_cart({}, { locale: locale.value }), {
           position: 'top-right',
           richColors: true
         })
@@ -90,10 +98,16 @@
       })
       if (result && !result.errors.length) {
         cartStore.clearEditingCartProduct()
-        toast.success('Cart updated', { position: 'top-right', richColors: true })
+        toast.success(msg_cart_updated({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
       }
     } catch (error) {
-      toast.error('Failed to update cart', { position: 'top-right', richColors: true })
+      toast.error(msg_failed_to_update_cart({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       console.error('Update cart error:', error)
     }
   }
@@ -101,7 +115,7 @@
   async function handleAddToCart() {
     const totalQuantity = rosterEntries.value.reduce((sum, entry) => sum + (entry.quantity || 0), 0)
     if (totalQuantity === 0) {
-      toast.error('Please add roster entries with quantities before adding to cart', {
+      toast.error(msg_add_roster_entries_quantities({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -132,12 +146,12 @@
         factory_product,
         product_assets
       })
-      toast.success('Product added to cart', {
+      toast.success(msg_product_added_to_cart({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
     } catch (error) {
-      toast.error('Failed to add product to cart', {
+      toast.error(msg_failed_to_add_to_cart({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })

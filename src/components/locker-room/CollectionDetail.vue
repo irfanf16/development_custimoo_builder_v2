@@ -7,9 +7,15 @@
   import type { CustomLogo } from '@/services/logos/types'
   import type { LogoColor } from '@/services/logos/types'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   import { uploadPresignedFiles } from '@/lib/utils'
   import LogosService from '@/services/logos/logos.service'
   import { toast } from 'vue-sonner'
+  import {
+    msg_logo_uploaded_success,
+    msg_failed_to_upload_logo,
+    msg_failed_to_get_upload_url
+  } from '@/paraglide/messages'
 
   type PreviewBodyRef = {
     handleLogoSelected: (logo: CustomLogo, index: number) => void
@@ -37,6 +43,8 @@
   const selectedLogoIndex = ref(0)
   const previewBodyRef = ref<PreviewBodyRef | null>(null)
   const lockerRoomStore = useLockerRoomStore()
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
   const collectionProductListingRef = ref<InstanceType<typeof CollectionProductListing> | null>(
     null
   )
@@ -94,25 +102,27 @@
               // Replace logo at the target index (not add)
               previewBodyRef.value.handleLogoSelected(fullLogo as CustomLogo, targetIndex)
             }
-            toast.success('Logo uploaded successfully', {
+            toast.success(msg_logo_uploaded_success({}, { locale: locale.value }), {
               id: toastId,
               duration: 2000
             })
           } else {
-            toast.error('Failed to upload logo', {
+            toast.error(msg_failed_to_upload_logo({}, { locale: locale.value }), {
               id: toastId,
               duration: 3000
             })
           }
         } else {
-          toast.error('Failed to get upload URL', {
+          toast.error(msg_failed_to_get_upload_url({}, { locale: locale.value }), {
             id: toastId,
             duration: 3000
           })
         }
       } catch (err) {
         console.error('Failed uploading logo', err)
-        toast.error('Failed to upload logo', { duration: 3000 })
+        toast.error(msg_failed_to_upload_logo({}, { locale: locale.value }), {
+          duration: 3000
+        })
       }
     } else {
       // CustomLogo selected from recent logos - preview body will use existing URL/path directly

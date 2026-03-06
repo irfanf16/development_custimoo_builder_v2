@@ -6,7 +6,21 @@ import { useLocalStorage } from '@/composables/useLocalStorage'
 import { confirmDialog } from '@/lib/confirm-dialog'
 import { toast } from 'vue-sonner'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
+import { useProfileStore } from '@/stores/profile/profile.store'
 import { useCartStore } from '@/stores/cart/cart.store'
+import {
+  msg_failed_to_load_pdf,
+  msg_pdf_not_ready,
+  msg_cancel_order_error,
+  msg_failed_to_add_to_cart,
+  msg_failed_to_load_reorder_product,
+  msg_invalid_order_product,
+  msg_failed_to_load_product_sharing,
+  msg_product_data_not_found,
+  msg_product_id_not_found,
+  msg_design_shared_success,
+  msg_failed_to_share_design
+} from '@/paraglide/messages'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useLoadReorderProductIntoCustomizer } from '@/composables/useLoadReorderProductIntoCustomizer'
 import { useProductsStore } from '@/stores/products/products.store'
@@ -218,7 +232,14 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     if (response.success && response.content?.result?.url) {
       window.open(response.content.result.url, '_blank')
     } else if (!response.success) {
-      toast.error('Failed to load PDF. Please try again.', {
+      const locale = useProfileStore().currentLocale || 'en'
+      toast.error(msg_failed_to_load_pdf({}, { locale }), {
+        position: 'top-right',
+        richColors: true
+      })
+    } else {
+      const locale = useProfileStore().currentLocale || 'en'
+      toast.error(msg_pdf_not_ready({}, { locale }), {
         position: 'top-right',
         richColors: true
       })
@@ -284,13 +305,15 @@ export const useOrdersStore = defineStore('ordersStore', () => {
           await fetchOrders()
         }
       } else {
-        toast.error(response?.message || 'ERROR! Could not cancel the order, please try again.', {
+        const locale = useProfileStore().currentLocale || 'en'
+        toast.error(response?.message || msg_cancel_order_error({}, { locale }), {
           position: 'top-right',
           richColors: true
         })
       }
     } catch (_error) {
-      toast.error('ERROR! Could not cancel the order, please try again.', {
+      const locale = useProfileStore().currentLocale || 'en'
+      toast.error(msg_cancel_order_error({}, { locale }), {
         position: 'top-right',
         richColors: true
       })
@@ -352,7 +375,8 @@ export const useOrdersStore = defineStore('ordersStore', () => {
         return false
       }
     } catch (_error) {
-      toast.error('Failed to add product to cart', {
+      const locale = useProfileStore().currentLocale || 'en'
+      toast.error(msg_failed_to_add_to_cart({}, { locale }), {
         position: 'top-right',
         richColors: true
       })
@@ -398,7 +422,8 @@ export const useOrdersStore = defineStore('ordersStore', () => {
       if (onSuccess) onSuccess()
       return true
     } else {
-      toast.error('Failed to load reorder product. Please try again.', {
+      const locale = useProfileStore().currentLocale || 'en'
+      toast.error(msg_failed_to_load_reorder_product({}, { locale }), {
         position: 'top-right',
         richColors: true
       })
@@ -490,7 +515,11 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     factoryProduct: FactoryProduct
   ): Promise<string | null> {
     if (!orderItem?.id || !factoryProduct?.id) {
-      toast.error('Invalid order product', { position: 'top-right', richColors: true })
+      const locale = useProfileStore().currentLocale || 'en'
+      toast.error(msg_invalid_order_product({}, { locale }), {
+        position: 'top-right',
+        richColors: true
+      })
       return null
     }
 
@@ -509,7 +538,8 @@ export const useOrdersStore = defineStore('ordersStore', () => {
       )
 
       if (!reorderResp.success || !reorderResp.content?.result?.factoryProducts?.length) {
-        toast.error('Failed to load product data for sharing', {
+        const locale = useProfileStore().currentLocale || 'en'
+        toast.error(msg_failed_to_load_product_sharing({}, { locale }), {
           position: 'top-right',
           richColors: true
         })
@@ -518,14 +548,22 @@ export const useOrdersStore = defineStore('ordersStore', () => {
 
       const fullProduct = reorderResp.content.result.factoryProducts[0]
       if (!fullProduct) {
-        toast.error('Product data not found', { position: 'top-right', richColors: true })
+        const locale = useProfileStore().currentLocale || 'en'
+        toast.error(msg_product_data_not_found({}, { locale }), {
+          position: 'top-right',
+          richColors: true
+        })
         return null
       }
 
       // Build share design payload
       const productId = Number(fullProduct.product_id || factoryProduct.product_id)
       if (!productId) {
-        toast.error('Product ID not found', { position: 'top-right', richColors: true })
+        const locale = useProfileStore().currentLocale || 'en'
+        toast.error(msg_product_id_not_found({}, { locale }), {
+          position: 'top-right',
+          richColors: true
+        })
         return null
       }
 
@@ -616,7 +654,8 @@ export const useOrdersStore = defineStore('ordersStore', () => {
           }
         }
 
-        toast.success('Design shared successfully!', {
+        const locale = useProfileStore().currentLocale || 'en'
+        toast.success(msg_design_shared_success({}, { locale }), {
           position: 'top-right',
           richColors: true,
           duration: 3000
@@ -624,12 +663,20 @@ export const useOrdersStore = defineStore('ordersStore', () => {
 
         return response.content.url
       } else {
-        toast.error('Failed to share design', { position: 'top-right', richColors: true })
+        const locale = useProfileStore().currentLocale || 'en'
+        toast.error(msg_failed_to_share_design({}, { locale }), {
+          position: 'top-right',
+          richColors: true
+        })
         return null
       }
     } catch (error) {
       console.error('Share order product design error:', error)
-      toast.error('Failed to share design', { position: 'top-right', richColors: true })
+      const locale = useProfileStore().currentLocale || 'en'
+      toast.error(msg_failed_to_share_design({}, { locale }), {
+        position: 'top-right',
+        richColors: true
+      })
       return null
     } finally {
       loadingShare.value[key] = false

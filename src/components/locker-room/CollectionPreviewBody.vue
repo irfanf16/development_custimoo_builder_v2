@@ -5,6 +5,12 @@
   import { X, Loader2 } from 'lucide-vue-next'
   import LogosService from '@/services/logos/logos.service'
   import { toast } from 'vue-sonner'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    msg_colors_loaded_success,
+    msg_failed_to_fetch_logo_colors,
+    msg_invalid_logo_url
+  } from '@/paraglide/messages'
 
   const props = defineProps<{
     products: CollectionProduct[]
@@ -17,6 +23,9 @@
     (e: 'logo-selected', logo: File | CustomLogo, index: number): void
     (e: 'logo-removed', index: number, logoId?: number): void
   }>()
+
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   const logos = ref<
     Array<{
@@ -124,7 +133,7 @@
         const colors = await fetchLogoColors(path)
         if (colors && colors.length) {
           setBackgroundFromColors(colors)
-          toast.success('Colors loaded successfully', {
+          toast.success(msg_colors_loaded_success({}, { locale: locale.value }), {
             id: toastId,
             duration: 2000
           })
@@ -136,7 +145,7 @@
         toast.dismiss(toastId)
       }
     } catch (_error) {
-      toast.error('Failed to fetch logo colors', {
+      toast.error(msg_failed_to_fetch_logo_colors({}, { locale: locale.value }), {
         id: toastId,
         duration: 3000
       })
@@ -239,7 +248,7 @@
           const colors = await fetchLogoColors(path)
           if (colors && colors.length) {
             setBackgroundFromColors(colors)
-            toast.success('Colors loaded successfully', {
+            toast.success(msg_colors_loaded_success({}, { locale: locale.value }), {
               id: toastId,
               duration: 2000
             })
@@ -248,7 +257,7 @@
             toast.dismiss(toastId)
           }
         } catch (_error) {
-          toast.error('Failed to fetch logo colors', {
+          toast.error(msg_failed_to_fetch_logo_colors({}, { locale: locale.value }), {
             id: toastId,
             duration: 3000
           })
@@ -289,7 +298,7 @@
           : baseStorageUrl.value + logo.url
         : null
       if (!logoUrl) {
-        toast.error('Invalid logo URL', { duration: 3000 })
+        toast.error(msg_invalid_logo_url({}, { locale: locale.value }), { duration: 3000 })
         return
       }
 
@@ -316,7 +325,7 @@
         const colors = await fetchLogoColors(logoPath)
         if (colors && colors.length) {
           setBackgroundFromColors(colors)
-          toast.success('Colors loaded successfully', {
+          toast.success(msg_colors_loaded_success({}, { locale: locale.value }), {
             id: toastId,
             duration: 2000
           })
@@ -325,7 +334,7 @@
           toast.dismiss(toastId)
         }
       } catch (_error) {
-        toast.error('Failed to fetch logo colors', {
+        toast.error(msg_failed_to_fetch_logo_colors({}, { locale: locale.value }), {
           id: toastId,
           duration: 3000
         })

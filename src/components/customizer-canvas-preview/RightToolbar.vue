@@ -131,7 +131,7 @@
   <!-- Glass toolbar wrapper -->
   <TooltipProvider>
     <div
-      class="w-12 p-1 bg-background/20 rounded-full outline outline-border backdrop-blur-sm flex flex-col gap-1"
+      class="w-12 p-1 bg-background/20 rounded-full outline outline-border backdrop-blur-sm flex flex-col gap-1 ml-auto"
     >
       <template v-for="t in tools" :key="t.id">
         <Tooltip

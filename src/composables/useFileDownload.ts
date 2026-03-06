@@ -1,6 +1,13 @@
 import { ref } from 'vue'
 import { urlToBase64 } from '@/services/files/file.service'
 import { toast } from 'vue-sonner'
+import { useProfileStore } from '@/stores/profile/profile.store'
+import {
+  msg_no_files_to_download,
+  msg_failed_to_convert_files_download,
+  msg_files_downloading,
+  msg_failed_to_download_files
+} from '@/paraglide/messages'
 
 export function useFileDownload() {
   const isLoading = ref(false)
@@ -12,8 +19,12 @@ export function useFileDownload() {
   async function downloadFiles(
     files: Array<{ url: string; name?: string; alt?: string }>
   ): Promise<void> {
+    const locale = useProfileStore().currentLocale || 'en'
     if (!files.length) {
-      toast.error('No files to download', { position: 'top-right', richColors: true })
+      toast.error(msg_no_files_to_download({}, { locale }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
 
@@ -24,7 +35,7 @@ export function useFileDownload() {
       const base64Files = await urlToBase64(urls)
 
       if (!base64Files.length) {
-        toast.error('Failed to convert files for download', {
+        toast.error(msg_failed_to_convert_files_download({}, { locale }), {
           position: 'top-right',
           richColors: true
         })
@@ -37,14 +48,14 @@ export function useFileDownload() {
         downloadBase64File(base64File, fileName)
       })
 
-      toast.success('Files downloading...', {
+      toast.success(msg_files_downloading({}, { locale }), {
         position: 'top-right',
         richColors: true,
         duration: 2000
       })
     } catch (error) {
       console.error('Error downloading files:', error)
-      toast.error('Failed to download files', {
+      toast.error(msg_failed_to_download_files({}, { locale }), {
         position: 'top-right',
         richColors: true
       })

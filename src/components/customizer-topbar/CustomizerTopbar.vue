@@ -32,7 +32,26 @@
     topbar_cart,
     topbar_save_options,
     actions_reset_customization,
-    ui_aria_user_menu
+    ui_aria_user_menu,
+    msg_failed_share_pdf_aborted,
+    msg_missing_back_image_pdf,
+    msg_pdf_generated_success,
+    msg_something_went_wrong,
+    msg_no_cart_product_selected,
+    msg_add_roster_before_cart,
+    msg_add_roster_entries_quantities,
+    msg_failed_to_load_locker_product,
+    msg_no_locker_product_selected,
+    msg_failed_to_get_signed_urls,
+    msg_failed_to_upload_images,
+    msg_missing_product_customization,
+    msg_locker_product_updated_success,
+    msg_failed_to_update_locker_product,
+    msg_failed_to_get_images_from_canvas,
+    msg_company_id_not_found,
+    msg_failed_to_generate_signed_urls,
+    msg_failed_to_share_design,
+    msg_design_shared_success
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import SignInButton from '@/components/auth/SignInButton.vue'
@@ -99,6 +118,7 @@
   const { shouldShowAddToCartButton } = useAddToCartVisibility()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   // Reactive state
   const showProfileDialog = ref(false)
@@ -202,7 +222,7 @@
       // Run share design first to get the real shared URL for PDF generation
       const shared_url = await runShareDesignAndGetUrl()
       if (!shared_url) {
-        toast.error('Failed to share design. PDF generation aborted.', {
+        toast.error(msg_failed_share_pdf_aborted({}, { locale: locale.value }), {
           id: toastId,
           position: 'top-right',
           richColors: true
@@ -215,7 +235,7 @@
       const resolvedBackImage = normalizeImageValue(factory_product.back_image)
 
       if (!resolvedBackImage) {
-        toast.error('Missing back image for PDF generation', {
+        toast.error(msg_missing_back_image_pdf({}, { locale: locale.value }), {
           id: toastId,
           position: 'top-right',
           richColors: true
@@ -236,21 +256,21 @@
 
       if (response.success && response.content?.pdf) {
         downloadPdfFile(response.content.pdf, response.content.name)
-        toast.success('PDF generated successfully! Downloading...', {
+        toast.success(msg_pdf_generated_success({}, { locale: locale.value }), {
           id: toastId,
           position: 'top-right',
           richColors: true,
           duration: 4000
         })
       } else {
-        toast.error('Something went wrong', {
+        toast.error(msg_something_went_wrong({}, { locale: locale.value }), {
           id: toastId,
           position: 'top-right',
           richColors: true
         })
       }
     } catch (error) {
-      toast.error('Something went wrong', {
+      toast.error(msg_something_went_wrong({}, { locale: locale.value }), {
         id: toastId,
         position: 'top-right',
         richColors: true
@@ -272,7 +292,7 @@
 
   async function handleUpdateCartProduct() {
     if (!cartStore.editingCartItemId || !cartStore.editingFactoryProductId) {
-      toast.error('No cart product selected for update', {
+      toast.error(msg_no_cart_product_selected({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -284,7 +304,7 @@
     const isByDesign = isQuantityByDesign.value
 
     if (rosterQty <= 0) {
-      toast.error('Please add at least one item to the roster before adding to cart.', {
+      toast.error(msg_add_roster_before_cart({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -325,7 +345,7 @@
       )
 
       if (totalQuantity === 0) {
-        toast.error('Please add roster entries with quantities before adding to cart', {
+        toast.error(msg_add_roster_entries_quantities({}, { locale: locale.value }), {
           position: 'top-right',
           richColors: true
         })
@@ -455,10 +475,12 @@
       payload.lockerId
     )
     if (!ok) {
-      toast.error('Failed to load locker product', { position: 'top-right', richColors: true })
+      toast.error(msg_failed_to_load_locker_product({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       return
     }
-    console.log('tjhere')
 
     workflowStore.resetWorkflowSubSteps()
     const visibleSteps = menuItems.value.map(i => i.step)
@@ -474,7 +496,7 @@
 
   async function handleUpdateLockerProduct() {
     if (!lockerRoomStore.editingLockerProductId || !lockerRoomStore.editingLockerId) {
-      toast.error('No locker product selected for update', {
+      toast.error(msg_no_locker_product_selected({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -485,7 +507,10 @@
       const lockerId = lockerRoomStore.editingLockerId
       const signedUrls = await lockerRoomStore.getSignedUrl(lockerId)
       if (!signedUrls) {
-        toast.error('Failed to get signed URLs', { position: 'top-right', richColors: true })
+        toast.error(msg_failed_to_get_signed_urls({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
         return
       }
 
@@ -536,7 +561,10 @@
       })
       const results = await uploadPresignedFiles(preparedFiles)
       if (!results.every(r => r.success)) {
-        toast.error('Failed to upload images', { position: 'top-right', richColors: true })
+        toast.error(msg_failed_to_upload_images({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
         return
       }
 
@@ -544,7 +572,7 @@
       const customization = customizationStore.customization
       const productId = productsStore.activeProductDetails?.product_id
       if (!productId || !customization) {
-        toast.error('Missing product or customization data', {
+        toast.error(msg_missing_product_customization({}, { locale: locale.value }), {
           position: 'top-right',
           richColors: true
         })
@@ -623,13 +651,13 @@
 
       if (success) {
         lockerRoomStore.clearEditingLockerProduct()
-        toast.success('Locker product updated successfully', {
+        toast.success(msg_locker_product_updated_success({}, { locale: locale.value }), {
           position: 'top-right',
           richColors: true
         })
       }
     } catch (error) {
-      toast.error('Failed to update locker product', {
+      toast.error(msg_failed_to_update_locker_product({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -692,7 +720,7 @@
       }
 
       if (!frontImage || !backImage) {
-        toast.error('Failed to get images from canvas', {
+        toast.error(msg_failed_to_get_images_from_canvas({}, { locale: locale.value }), {
           position: 'top-right',
           richColors: true
         })
@@ -703,7 +731,10 @@
       const companyIdRaw = getItemRaw('__customizer_company_id__')
       const companyId = companyIdRaw ? Number(companyIdRaw) : undefined
       if (!companyId) {
-        toast.error('Company ID not found', { position: 'top-right', richColors: true })
+        toast.error(msg_company_id_not_found({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
         return null
       }
 
@@ -726,7 +757,7 @@
         !signedUrlResponse.result?.urls ||
         signedUrlResponse.result.urls.length === 0
       ) {
-        toast.error('Failed to generate signed upload URLs', {
+        toast.error(msg_failed_to_generate_signed_urls({}, { locale: locale.value }), {
           position: 'top-right',
           richColors: true
         })
@@ -771,14 +802,17 @@
 
       const uploadResults = await uploadPresignedFiles(presignedFiles)
       if (!uploadResults.every(r => r.success)) {
-        toast.error('Failed to upload images', { position: 'top-right', richColors: true })
+        toast.error(msg_failed_to_upload_images({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
         return null
       }
 
       const customization = customizationStore.customization
       const productId = productsStore.activeProductDetails?.product_id
       if (!productId || !customization) {
-        toast.error('Missing product or customization data', {
+        toast.error(msg_missing_product_customization({}, { locale: locale.value }), {
           position: 'top-right',
           richColors: true
         })
@@ -851,13 +885,13 @@
       if (response.success && response.content?.url) {
         return response.content.url
       }
-      toast.error('Failed to share design', {
+      toast.error(msg_failed_to_share_design({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
       return null
     } catch (error) {
-      toast.error('Failed to share design', {
+      toast.error(msg_failed_to_share_design({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -874,7 +908,7 @@
     if (url) {
       sharedUrl.value = url
       showShareTooltip.value = true
-      toast.success('Design shared successfully!', {
+      toast.success(msg_design_shared_success({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true,
         duration: 3000

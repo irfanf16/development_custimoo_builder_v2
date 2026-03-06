@@ -30,8 +30,8 @@
           Cancel
         </Button>
 
-
         <Button
+          v-if="!order.additional_fields.is_manual_order"
           size="sm"
           class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
           @click.stop="handleDownloadPdf"

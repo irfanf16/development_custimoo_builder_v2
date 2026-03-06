@@ -5,6 +5,7 @@ export type APIResponseSuccess<T> = {
   content: T
   status: number
   axiosError: null
+  message?: string
 }
 
 export type APIResponseError<T = unknown> = {
@@ -12,6 +13,7 @@ export type APIResponseError<T = unknown> = {
   content: null
   status: number
   axiosError: AxiosError<T> | null
+  message?: string
 }
 
 export type APIResponse<T> = APIResponseSuccess<T> | APIResponseError<T>

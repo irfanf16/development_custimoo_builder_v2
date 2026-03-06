@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
+  import { useDebounceFn } from '@vueuse/core'
   import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -49,16 +50,36 @@
 
   const summaryPreviewImage = ref('')
   const summaryImageLoading = ref(true)
-  onMounted(async () => {
+
+  /** Wait for canvas to be ready and paint (e.g. after customization load or page refresh). */
+  function waitForCanvasPaint(ms = 200): Promise<void> {
+    return new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(resolve, ms)
+        })
+      })
+    })
+  }
+
+  async function refreshSummaryPreviewImage(retryCount = 0): Promise<void> {
+    const maxRetries = 3
+    const retryDelays = [200, 400, 800]
+
     summaryImageLoading.value = true
-    summaryPreviewImage.value = ''
+    if (retryCount === 0) summaryPreviewImage.value = ''
+
+    await waitForCanvasPaint(retryCount === 0 ? 250 : (retryDelays[retryCount] ?? 400))
+
     try {
       const is3DProduct = activeProductDetails.value?.is_3d_product
       const thumbOptions = { width: 256, height: 256 }
+      let dataUrl = ''
+
       if (is3DProduct) {
         const componentRef = sceneStore.threeDSceneRef
         if (componentRef?.getImageFromCanvas) {
-          summaryPreviewImage.value = await componentRef.getImageFromCanvas('front', thumbOptions)
+          dataUrl = await componentRef.getImageFromCanvas('front', thumbOptions)
         }
       } else {
         const frontRef = sceneStore.getTwoDSceneRef('front')
@@ -66,13 +87,46 @@
           | ((opts?: { width?: number; height?: number }) => Promise<string>)
           | undefined
         if (getImage) {
-          summaryPreviewImage.value = await getImage(thumbOptions)
+          dataUrl = await getImage(thumbOptions)
         }
       }
+
+      // Retry if scene ref was null (canvas not ready yet) or capture was effectively empty
+      const noCapture = !dataUrl
+      const emptyImage = dataUrl.startsWith('data:') && dataUrl.length < 500
+      const isEmpty = noCapture || emptyImage
+      if (isEmpty && retryCount < maxRetries) {
+        void refreshSummaryPreviewImage(retryCount + 1)
+        return
+      }
+      if (!isEmpty) summaryPreviewImage.value = dataUrl
     } finally {
-      summaryImageLoading.value = false
+      const willRetry = retryCount < maxRetries && !summaryPreviewImage.value
+      if (!willRetry) summaryImageLoading.value = false
     }
+  }
+
+  onMounted(() => {
+    void refreshSummaryPreviewImage()
   })
+
+  // Refresh preview when user navigates to summary tab (e.g. after switching tabs)
+  watch(
+    () => workflowStore.activeStep,
+    step => {
+      if (step === 'summary') void refreshSummaryPreviewImage()
+    }
+  )
+
+  // Refresh preview when customization changes while on summary (e.g. after editing product from locker or page load)
+  const debouncedRefreshPreview = useDebounceFn(() => {
+    if (workflowStore.activeStep === 'summary') void refreshSummaryPreviewImage()
+  }, 600)
+  watch(
+    () => customizationStore.customization,
+    () => debouncedRefreshPreview(),
+    { deep: true }
+  )
 
   const { activeProductDetails, activeStyleDetails } = storeToRefs(productsStore)
   const { activeProductTexts, rosterEntries } = storeToRefs(customizationStore)

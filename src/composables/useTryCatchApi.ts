@@ -145,10 +145,19 @@ export function useTryCatchApi(options: UseTryCatchApiOptions = {}) {
         return { success: true, content: data, status: 200, axiosError: null }
       }
     } catch (error) {
-      const _error = error as AxiosError<T>
+      console.log('API call failed:', error)
+      const _error = error instanceof Error ? error : new Error(String(error))
+      const axiosError = _error as AxiosError<T>
+      const responseData = axiosError.response?.data as Record<string, unknown> | undefined
+      const message =
+        (Array.isArray(responseData?.errors) ? (responseData.errors[0] as string) : undefined) ||
+        (responseData?.message as string) ||
+        (responseData?.error as string) ||
+        axiosError.message ||
+        'Something went wrong'
 
       // Extract automatic context from the error
-      const exceptionContext = extractExceptionContext(_error)
+      const exceptionContext = extractExceptionContext(axiosError)
 
       // Try to get user context (non-blocking, with timeout)
       let userContext: Awaited<ReturnType<typeof getUserContextAsync>> = null
@@ -178,12 +187,13 @@ export function useTryCatchApi(options: UseTryCatchApiOptions = {}) {
         })
       }
 
-      posthog.captureException(_error, finalProperties)
+      posthog.captureException(axiosError, finalProperties)
       return {
         success: false,
         content: null,
-        status: _error.response?.status || 0,
-        axiosError: _error
+        status: axiosError.response?.status || 0,
+        message,
+        axiosError: axiosError
       }
     }
     return { success: false, content: null, status: 400, axiosError: null }

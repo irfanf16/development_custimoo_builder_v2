@@ -58,6 +58,16 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     }
     isLoading.value = false
   }
+
+  /** Fetch lockers in background without showing loader. Use when opening locker browser to refresh list. */
+  async function fetchLockersInBackground() {
+    const response = await tryCatchApi(API.lockers.getLockers(), {
+      operation: 'fetchLockers'
+    })
+    if (response.success && response.content) {
+      lockers.value = response.content.result
+    }
+  }
   /** Core fetch + merge; no loader, no error toast. Used by fetchLockerProducts and for background refresh after copy. */
   async function fetchLockerProductsCore(locker_id: number): Promise<Locker | undefined> {
     const resp = await tryCatchApi(API.lockers.getLockerProducts(locker_id), {
@@ -139,7 +149,8 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       return {
         ...l,
         ...locker,
-        product_thumbnails
+        product_thumbnails,
+        updated_at: new Date().toISOString()
       }
     })
   }
@@ -233,9 +244,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       const resp = await tryCatchApi(API.lockers.copyProducts(payload), {
         operation: 'copyProducts'
       })
-
+      console.log('Copy products response:', resp)
       if (!resp.success) {
-        setError('Copy failed')
+        setError(resp.message || 'Copy failed')
         return false
       }
       setSuccessMessage('Products copied successfully')
@@ -531,7 +542,9 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     clearOpenLockerWithIntent,
     //functions
     fetchLockers,
+    fetchLockersInBackground,
     fetchLockerProducts,
+    fetchLockerProductsCore,
     createLocker,
     updateLockers,
     deleteLocker,

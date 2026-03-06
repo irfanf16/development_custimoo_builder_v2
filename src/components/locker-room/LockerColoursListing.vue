@@ -4,12 +4,14 @@
   import type { Colour, Locker } from '@/services/lockers/types'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
-  import { useProductsStore } from '@/stores/products/products.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import { storeToRefs } from 'pinia'
   import { computed, inject, onMounted, type ComputedRef } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
-  import { locker_use_in_design } from '@/paraglide/messages'
+  import { getSelectedProductPantones, getClosestColor, getColorType } from '@/lib/utils'
+  import { locker_use_in_design, locker_no_colours } from '@/paraglide/messages'
 
   type ColourProps = {
     colour_group: Colour[]
@@ -22,7 +24,8 @@
   const lockerStore = useLockerRoomStore()
   const { lockers } = storeToRefs(lockerStore)
   const customizationStore = useCustomizationStore()
-  const productsStore = useProductsStore()
+  const workflowStore = useWorkflowStore()
+  const { effectiveSvgGroups } = useEffectiveSelectors()
   const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const closeLockerBrowser = inject<(() => void) | undefined>('closeLockerBrowser')
 
@@ -48,22 +51,53 @@
     )
   })
 
+  /**
+   * Apply locker colour group to product like applyLogoColors in useLogoActions:
+   * sets default_colors from the colour group, clears group_colors, pushes history.
+   */
   function handleUseInDesign(colorGroup: ColourProps) {
-    if (!customizationStore.customization) return
-    const svgGroups = productsStore.svgGroups
-    if (!svgGroups?.length) return
-    const groupIds = svgGroups.map(g => g.id)
     const colours = colorGroup.colour_group
-    for (let i = 0; i < colours.length && i < groupIds.length; i++) {
-      const groupId = groupIds[i]
-      const c = colours[i]
-      if (!c || groupId === undefined) continue
-      customizationStore.setGroupColor(groupId, {
-        name: c.name ?? '',
-        value: c.value ?? '',
-        position: 0
-      })
+    if (!colours?.length || !customizationStore.customization) return
+
+    const productId = customizationStore.activeProductId
+    if (productId == null) return
+
+    const svgGroup = effectiveSvgGroups.value?.[0]?.id ?? ''
+    const selectProductPantonesList = getSelectedProductPantones(productId, svgGroup)
+    const colorType = getColorType(svgGroup, productId)
+
+    const defaultColorsWithPantone = colours.map(c => {
+      const hex = (c.value ?? c.color ?? '').trim() || null
+      if (!hex)
+        return {
+          color: null as string | null,
+          pantone: null as string | null,
+          name: null as string | null
+        }
+      const closestColor = getClosestColor(hex, selectProductPantonesList, colorType)
+      return {
+        color: hex,
+        pantone: closestColor.pantone || c.pantone || null,
+        name: closestColor.name || c.name || null
+      }
+    })
+
+    const defaultColors: Array<{
+      color: string | null
+      pantone: string | null
+      name: string | null
+    }> = [...defaultColorsWithPantone]
+    while (defaultColors.length < 4) {
+      defaultColors.push({ color: null, pantone: null, name: null })
     }
+
+    customizationStore.pushHistoryState('Design colors')
+    customizationStore.customization.default_colors = defaultColors.slice(0, 4)
+    customizationStore.customization.shuffle_color_number = 1
+    workflowStore.setGroupColorsBeforeLogoApply(customizationStore.customization.group_colors ?? {})
+    customizationStore.customization.group_colors = {}
+    customizationStore.pushHistoryState('Applied logo colors')
+
     void goTo(
       pickStepOrNextAvailable(
         'colors',
@@ -106,7 +140,10 @@
   })
 </script>
 <template>
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-6 relative group">
+  <div v-if="!colour_groups.length" class="py-8 text-center text-muted-foreground">
+    {{ locker_no_colours({}, { locale }) }}
+  </div>
+  <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(color, group_index) in colour_groups"
       :key="group_index"

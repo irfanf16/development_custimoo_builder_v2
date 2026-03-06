@@ -487,11 +487,13 @@ export function useTextActions() {
   }
   // from text fields
   function updateTextAndRoster() {
-    ensureRosterRowExists()
-
-    const rosterEntries = customizationStore.rosterEntries
-    if (rosterEntries && rosterEntries.length > 0) {
-      customizationStore.updateRosterRow(0, { text: form.text || '' }, { skipHistory: true })
+    const isPlayerNameEntry = currentEntry.value?.manually_added !== true
+    if (isPlayerNameEntry) {
+      ensureRosterRowExists()
+      const rosterEntries = customizationStore.rosterEntries
+      if (rosterEntries && rosterEntries.length > 0) {
+        customizationStore.updateRosterRow(0, { text: form.text || '' }, { skipHistory: true })
+      }
     }
 
     updateEntryInStore()
@@ -549,6 +551,7 @@ export function useTextActions() {
   )
 
   // Watch text content: update store/roster immediately, push history once per pause (debounced)
+  // Only sync to roster when editing the player name (preset name), not when editing additional/fixed text
   watch(
     () => form.text,
     newText => {
@@ -558,21 +561,24 @@ export function useTextActions() {
       const prodId = productId.value
       if (!prodId) return
 
-      const roster = customizationStore.rosterEntries
-      if (!roster || roster.length === 0) {
-        customizationStore.addEmptyRosterRow(
-          { text: newText, number: form.number || '' },
-          { skipHistory: true }
-        )
-      } else {
-        const firstEntry = roster[0]
-        const updates: Partial<APCustomizationRosterEntry> = { text: newText }
-        if (firstEntry?.number && !form.number) {
-          updates.number = firstEntry.number
-        } else if (form.number) {
-          updates.number = form.number
+      const isPlayerNameEntry = currentEntry.value?.manually_added !== true
+      if (isPlayerNameEntry) {
+        const roster = customizationStore.rosterEntries
+        if (!roster || roster.length === 0) {
+          customizationStore.addEmptyRosterRow(
+            { text: newText, number: form.number || '' },
+            { skipHistory: true }
+          )
+        } else {
+          const firstEntry = roster[0]
+          const updates: Partial<APCustomizationRosterEntry> = { text: newText }
+          if (firstEntry?.number && !form.number) {
+            updates.number = firstEntry.number
+          } else if (form.number) {
+            updates.number = form.number
+          }
+          customizationStore.updateRosterRow(0, updates, { skipHistory: true })
         }
-        customizationStore.updateRosterRow(0, updates, { skipHistory: true })
       }
 
       const textId = activeTextId.value

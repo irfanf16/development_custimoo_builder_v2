@@ -4,6 +4,8 @@
   import { Copy } from 'lucide-vue-next'
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import { toast } from 'vue-sonner'
+  import { msg_link_copied } from '@/paraglide/messages'
+  import { useProfileStore } from '@/stores/profile/profile.store'
 
   const props = defineProps<{
     shareUrl: string | null
@@ -25,8 +27,10 @@
       event.stopPropagation()
     }
     if (!props.shareUrl) return
+    const profileStore = useProfileStore()
+    const locale = profileStore.currentLocale || 'en'
     navigator.clipboard.writeText(props.shareUrl).then(() => {
-      toast.success('Link copied to clipboard!', {
+      toast.success(msg_link_copied({}, { locale }), {
         position: 'top-right',
         richColors: true,
         duration: 2000

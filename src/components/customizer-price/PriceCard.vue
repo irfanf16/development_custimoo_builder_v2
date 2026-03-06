@@ -1,7 +1,14 @@
 <script setup lang="ts">
   import { Card, CardContent } from '@/components/ui/card'
   import { Button } from '@/components/ui/button'
-  import { price_line, price_add_to_cart } from '@/paraglide/messages'
+  import {
+    price_line,
+    price_add_to_cart,
+    msg_no_cart_product_selected,
+    msg_cart_updated,
+    msg_add_roster_entries_quantities,
+    msg_product_added_to_cart
+  } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useCartStore } from '@/stores/cart/cart.store'
   import { useAuthStore } from '@/stores/auth/auth.store'
@@ -28,10 +35,11 @@
 
   const { isAuthenticated: isLoggedIn } = storeToRefs(authStore)
   const isEditingCartProduct = computed(() => cartStore.isEditingCartProduct)
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   async function handleUpdateCartProduct() {
     if (!cartStore.editingCartItemId || !cartStore.editingFactoryProductId) {
-      toast.error('No cart product selected for update', {
+      toast.error(msg_no_cart_product_selected({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -44,14 +52,17 @@
     })
     if (result && !result.errors.length) {
       cartStore.clearEditingCartProduct()
-      toast.success('Cart updated', { position: 'top-right', richColors: true })
+      toast.success(msg_cart_updated({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     }
   }
 
   async function handleAddToCart() {
     const totalQuantity = rosterEntries.value.reduce((sum, entry) => sum + (entry.quantity || 0), 0)
     if (totalQuantity === 0) {
-      toast.error('Please add roster entries with quantities before adding to cart', {
+      toast.error(msg_add_roster_entries_quantities({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -67,7 +78,7 @@
       factory_product,
       product_assets
     })
-    toast.success('Product added to cart', {
+    toast.success(msg_product_added_to_cart({}, { locale: locale.value }), {
       position: 'top-right',
       richColors: true
     })
