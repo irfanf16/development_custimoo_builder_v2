@@ -13,14 +13,16 @@
   } from '@/paraglide/messages'
   import { X, Eye, EyeOff } from 'lucide-vue-next'
   import { Button } from '@/components/ui/button'
+  import EmptyState from '@/components/shared/EmptyState.vue'
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
   const props = withDefaults(
     defineProps<{
       products?: CollectionProduct[]
       sort: SortOption
+      isLockerCollection: boolean
     }>(),
-    { products: () => [], sort: 'lastModified' }
+    { products: () => [], sort: 'lastModified', isLockerCollection: false }
   )
 
   const emit = defineEmits<{
@@ -65,7 +67,13 @@
 </script>
 
 <template>
+  <EmptyState
+    v-if="filteredProducts.length === 0"
+    title="No products in this collection"
+    description="Add products from your lockers to build this collection."
+  />
   <Draggable
+    v-else
     v-model="localProducts"
     item-key="id"
     tag="div"
@@ -97,6 +105,7 @@
           class="rounded-xl p-4 space-y-3 cursor-move transition-all duration-200 relative"
         >
           <button
+            v-if="!isLockerCollection"
             class="absolute top-2 right-2 z-10 rounded-full bg-background border p-1 hover:bg-destructive hover:text-destructive-foreground transition-colors"
             @click.stop="
               () => {

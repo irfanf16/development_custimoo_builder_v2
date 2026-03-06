@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import type { Collection, CollectionProduct } from '@/services/lockers/types'
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import CollectionProductListing from './CollectionProductListing.vue'
   import CollectionPreviewBody from './CollectionPreviewBody.vue'
   import UploadCollectionLogoDialog from './UploadCollectionLogoDialog.vue'
@@ -17,13 +17,27 @@
     msg_failed_to_get_upload_url
   } from '@/paraglide/messages'
 
+  export type WorkingLogoSlot = {
+    file: File | null
+    url: string | null
+    logo: CustomLogo | null
+    id?: number
+    isDeleted?: boolean
+    uploadedPath?: string
+  }
+
   type PreviewBodyRef = {
-    handleLogoSelected: (logo: CustomLogo, index: number) => void
+    handleLogoSelected: (logo: File | CustomLogo, index: number) => void
     setBackgroundFromColors?: (colors: LogoColor[] | string[] | number[][]) => void
   }
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
   type CollectionTab = 'products' | 'preview'
+
+  const defaultLogoSlots = (): WorkingLogoSlot[] => [
+    { file: null, url: null, logo: null, isDeleted: false },
+    { file: null, url: null, logo: null, isDeleted: false }
+  ]
 
   const props = defineProps<{
     collection: Collection | null
@@ -38,6 +52,7 @@
     (e: 'logo-removed', index: number, logoId?: number): void
   }>()
 
+  const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const activeTab = computed(() => props.collectionTab)
   const showUploadLogoDialog = ref(false)
   const selectedLogoIndex = ref(0)
@@ -49,6 +64,42 @@
     null
   )
 
+  const workingLogos = ref<WorkingLogoSlot[]>(defaultLogoSlots())
+
+  watch(
+    () => [props.collection?.id, props.collection?.logos] as const,
+    ([_id, collectionLogos]) => {
+      if (!collectionLogos?.length) {
+        workingLogos.value = defaultLogoSlots()
+        return
+      }
+      const base = baseStorageUrl.value
+      workingLogos.value = [
+        { file: null, url: null, logo: null, isDeleted: false },
+        { file: null, url: null, logo: null, isDeleted: false }
+      ]
+      collectionLogos.forEach((cl, index) => {
+        if (index < workingLogos.value.length) {
+          workingLogos.value[index] = {
+            file: null,
+            url: base + cl.path,
+            logo: null,
+            id: cl.id,
+            isDeleted: false,
+            uploadedPath: cl.path
+          }
+        }
+      })
+    },
+    { immediate: true }
+  )
+
+  function setWorkingLogoAtIndex(index: number, slot: WorkingLogoSlot) {
+    if (index >= 0 && index < workingLogos.value.length) {
+      workingLogos.value = workingLogos.value.map((s, i) => (i === index ? slot : s))
+    }
+  }
+
   const handleUploadLogo = (index: number) => {
     selectedLogoIndex.value = index
     showUploadLogoDialog.value = true
@@ -59,6 +110,14 @@
     const targetIndex = Math.max(0, Math.min(selectedLogoIndex.value, 1))
 
     if (logo instanceof File) {
+      setWorkingLogoAtIndex(targetIndex, {
+        file: logo,
+        url: URL.createObjectURL(logo),
+        logo: null,
+        isDeleted: false,
+        uploadedPath: undefined
+      })
+
       const toastId = toast.loading('Uploading logo...', {
         duration: Infinity
       })
@@ -78,7 +137,6 @@
             }
           ]
 
-          // Upload file
           const uploadResult = await uploadPresignedFiles(preparedFile)
           if (uploadResult && uploadResult[0] && uploadResult[0].success) {
             const uploadedPath = presigned.path
@@ -102,6 +160,16 @@
               // Replace logo at the target index (not add)
               previewBodyRef.value.handleLogoSelected(fullLogo as CustomLogo, targetIndex)
             }
+
+            const logoUrl = baseStorageUrl.value + uploadedPath
+            setWorkingLogoAtIndex(targetIndex, {
+              file: null,
+              url: logoUrl,
+              logo: fullLogo as CustomLogo,
+              isDeleted: false,
+              uploadedPath
+            })
+
             toast.success(msg_logo_uploaded_success({}, { locale: locale.value }), {
               id: toastId,
               duration: 2000
@@ -125,10 +193,22 @@
         })
       }
     } else {
-      // CustomLogo selected from recent logos - preview body will use existing URL/path directly
-      if (previewBodyRef.value) {
-        // Replace logo at the target index (not add)
-        previewBodyRef.value.handleLogoSelected(logo, targetIndex)
+      const logoUrl = logo.url
+        ? logo.url.startsWith('http')
+          ? logo.url
+          : baseStorageUrl.value + logo.url
+        : null
+      const logoPath = logo.url?.startsWith('http')
+        ? logo.url.replace(baseStorageUrl.value, '')
+        : (logo.url ?? '')
+      if (logoUrl) {
+        setWorkingLogoAtIndex(targetIndex, {
+          file: null,
+          url: logoUrl,
+          logo,
+          isDeleted: false,
+          uploadedPath: logoPath
+        })
       }
     }
 
@@ -154,6 +234,7 @@
         ref="collectionProductListingRef"
         :products="preSelectedProducts"
         :sort="sort"
+        :is-locker-collection="collection?.room_id !== null"
         @remove-product="handleRemoveProduct"
       />
     </div>
@@ -163,7 +244,9 @@
         ref="previewBodyRef"
         :products="preSelectedProducts"
         :collection-logos="collection?.logos"
+        :working-logos="workingLogos"
         :collection-id="collection?.id"
+        @update:working-logos="workingLogos = $event"
         @upload-logo="handleUploadLogo"
         @logo-selected="handleLogoSelected"
         @logo-removed="handleLogoRemoved"

@@ -30,6 +30,7 @@
   import { timeAgo, downloadFromUrl } from '@/lib/utils'
   import AvatarQueue from '../ui/avatar-queue/AvatarQueue.vue'
   import ShareUrlTooltip from '@/components/shared/ShareUrlTooltip.vue'
+  import EmptyState from '@/components/shared/EmptyState.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import type { Collection } from '@/services/lockers/types'
@@ -250,149 +251,157 @@
       </Button>
     </div>
 
-    <Card
-      v-for="(collection, collectionIndex) in filteredCollections"
-      :key="collection.id"
-      class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative gap-2! h-fit duration-150 border-0 flex flex-row"
-      @click="emit('open-collection', collection)"
-    >
-      <div
-        class="bg-secondary rounded-md md:aspect-video flex justify-center items-center overflow-hidden gap-1 place-items-start p-[10px] border relative"
+    <EmptyState
+      v-if="filteredCollections.length === 0"
+      title="Nothing found"
+      description="No collections match your search or filter. Try a different search term or filter."
+    />
+
+    <template v-else>
+      <Card
+        v-for="(collection, collectionIndex) in filteredCollections"
+        :key="collection.id"
+        class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative gap-2! h-fit duration-150 border-0 flex flex-row"
+        @click="emit('open-collection', collection)"
       >
-        <template v-if="collection.collection_thumbnails.length">
-          <div class="w-[156px] flex justify-center">
-            <AvatarQueue
-              :size="'60'"
-              :images="
-                collection.collection_thumbnails
-                  .slice(0, 3)
-                  .map(thumbnail => baseStorageUrl + thumbnail.front_url)
-              "
-              :max="3"
-              :class="'overflow-hidden mr-2'"
-              :avatar-class="'!rounded-[13px] border-0 !ring-0 !bg-transparent !shadow-none '"
-            />
-          </div>
-        </template>
-        <template v-else>
-          <div class="w-[156px] flex justify-center">
-            <img
-              :src="PLACEHOLDER_IMAGE"
-              class="h-full overflow-hidden object-contain rounded-md w-full"
-            />
-          </div>
-        </template>
-      </div>
-
-      <!-- Edit Mode -->
-      <div
-        v-if="editingIndex === collectionIndex"
-        class="metadata flex gap-2 pt-2 items-center"
-        @click.stop
-      >
-        <Input
-          v-model="editName"
-          :placeholder="locker_name_placeholder({}, { locale })"
-          class="flex-1"
-        />
-
-        <ButtonGroup>
-          <Button variant="primary" size="default" @click.stop="saveEdit(collection)">
-            <Check class="size-4" />
-          </Button>
-
-          <Button size="default" variant="secondary" @click.stop="cancelEdit">
-            <X class="size-4" />
-          </Button>
-        </ButtonGroup>
-      </div>
-
-      <!-- Normal Metadata -->
-      <div
-        v-else
-        class="metadata flex flex-col justify-center flex-1 min-w-0"
-        @click.stop="emit('open-collection', collection)"
-      >
-        <div class="flex flex-row items-center justify-between gap-2 w-full">
-          <div class="min-w-0 flex-1">
-            <div
-              class="mt-2 text-base font-medium"
-              :class="{ 'cursor-text': !collection.room_id }"
-              @dblclick.stop="startEdit(collectionIndex, collection)"
-            >
-              {{ collection.name }}
+        <div
+          class="bg-secondary rounded-md md:aspect-video flex justify-center items-center overflow-hidden gap-1 place-items-start p-[10px] border relative"
+        >
+          <template v-if="collection.collection_thumbnails.length">
+            <div class="w-[156px] flex justify-center">
+              <AvatarQueue
+                :size="'60'"
+                :images="
+                  collection.collection_thumbnails
+                    .slice(0, 3)
+                    .map(thumbnail => baseStorageUrl + thumbnail.front_url)
+                "
+                :max="3"
+                :class="'overflow-hidden mr-2'"
+                :avatar-class="'!rounded-[13px] border-0 !ring-0 !bg-transparent !shadow-none '"
+              />
             </div>
-            <div class="text-sm text-muted-foreground flex gap-1 items-center flex-wrap">
-              <span class="flex items-center gap-1">
-                <ShoppingBag class="size-3.5 inline-block" />
-                {{ collection.collection_products_count || 0 }}
-                {{ locker_designs_count({}, { locale }) }}
-              </span>
-              <DotSeparator class="bg-muted-foreground" />
-              <span class="flex items-center gap-1">
-                <Calendar class="size-3.5 inline-block" />
-                {{ localizedTimeAgo(collection.updated_at) }}
-              </span>
-              <template v-if="collection.room_id">
-                <DotSeparator class="bg-muted-foreground" />
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <span class="flex items-center gap-1">
-                        <InfoIcon class="size-3.5 inline-block" />
-                        {{ locker_auto_generated({}, { locale }) }}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>{{
-                      locker_auto_generated_tooltip({}, { locale })
-                    }}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </template>
+          </template>
+          <template v-else>
+            <div class="w-[156px] flex justify-center">
+              <img
+                :src="PLACEHOLDER_IMAGE"
+                class="h-full overflow-hidden object-contain rounded-md w-full"
+              />
             </div>
-          </div>
-          <div class="flex items-center gap-1 shrink-0" @click.stop>
-            <ShareUrlTooltip
-              :share-url="getCollectionShareUrl(collection)"
-              :open="shareTooltipOpen[collection.id] || false"
-              @update:open="shareTooltipOpen[collection.id] = $event"
-            >
-              <Button variant="outline" size="sm" class="h-8">
-                <Share2 class="w-3.5 h-3.5 mr-1" />
-                Share
-              </Button>
-            </ShareUrlTooltip>
-            <Button
-              variant="outline"
-              size="sm"
-              class="h-8"
-              :disabled="!collection.pdf_link"
-              @click="handleDownloadPdf(collection, $event)"
-            >
-              <FileDown class="w-3.5 h-3.5 mr-1" />
-              Download PDF
+          </template>
+        </div>
+
+        <!-- Edit Mode -->
+        <div
+          v-if="editingIndex === collectionIndex"
+          class="metadata flex gap-2 pt-2 items-center"
+          @click.stop
+        >
+          <Input
+            v-model="editName"
+            :placeholder="locker_name_placeholder({}, { locale })"
+            class="flex-1"
+          />
+
+          <ButtonGroup>
+            <Button variant="primary" size="default" @click.stop="saveEdit(collection)">
+              <Check class="size-4" />
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <Button variant="outline" size="icon" class="h-8 w-8">
-                  <MoreVertical class="w-4 h-4" />
+
+            <Button size="default" variant="secondary" @click.stop="cancelEdit">
+              <X class="size-4" />
+            </Button>
+          </ButtonGroup>
+        </div>
+
+        <!-- Normal Metadata -->
+        <div
+          v-else
+          class="metadata flex flex-col justify-center flex-1 min-w-0"
+          @click.stop="emit('open-collection', collection)"
+        >
+          <div class="flex flex-row items-center justify-between gap-2 w-full">
+            <div class="min-w-0 flex-1">
+              <div
+                class="mt-2 text-base font-medium"
+                :class="{ 'cursor-text': !collection.room_id }"
+                @dblclick.stop="startEdit(collectionIndex, collection)"
+              >
+                {{ collection.name }}
+              </div>
+              <div class="text-sm text-muted-foreground flex gap-1 items-center flex-wrap">
+                <span class="flex items-center gap-1">
+                  <ShoppingBag class="size-3.5 inline-block" />
+                  {{ collection.collection_products_count || 0 }}
+                  {{ locker_designs_count({}, { locale }) }}
+                </span>
+                <DotSeparator class="bg-muted-foreground" />
+                <span class="flex items-center gap-1">
+                  <Calendar class="size-3.5 inline-block" />
+                  {{ localizedTimeAgo(collection.updated_at) }}
+                </span>
+                <template v-if="collection.room_id">
+                  <DotSeparator class="bg-muted-foreground" />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <span class="flex items-center gap-1">
+                          <InfoIcon class="size-3.5 inline-block" />
+                          {{ locker_auto_generated({}, { locale }) }}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>{{
+                        locker_auto_generated_tooltip({}, { locale })
+                      }}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </template>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0" @click.stop>
+              <ShareUrlTooltip
+                :share-url="getCollectionShareUrl(collection)"
+                :open="shareTooltipOpen[collection.id] || false"
+                @update:open="shareTooltipOpen[collection.id] = $event"
+              >
+                <Button variant="outline" size="sm" class="h-8">
+                  <Share2 class="w-3.5 h-3.5 mr-1" />
+                  Share
                 </Button>
-              </DropdownMenuTrigger>
-              <!-- <DropdownMenuPortal to="body"> -->
-              <DropdownMenuContent class="w-40 z-[9999]">
-                <DropdownMenuItem
-                  class="cursor-pointer text-destructive focus:text-destructive"
-                  @click="handleDeleteCollection(collection, $event)"
-                >
-                  <Trash2 class="size-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-              <!-- </DropdownMenuPortal> -->
-            </DropdownMenu>
+              </ShareUrlTooltip>
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-8"
+                :disabled="!collection.pdf_link"
+                @click="handleDownloadPdf(collection, $event)"
+              >
+                <FileDown class="w-3.5 h-3.5 mr-1" />
+                Download PDF
+              </Button>
+              <DropdownMenu v-if="!collection.room_id">
+                <DropdownMenuTrigger as-child>
+                  <Button variant="outline" size="icon" class="h-8 w-8">
+                    <MoreVertical class="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <!-- <DropdownMenuPortal to="body"> -->
+                <DropdownMenuContent class="w-40 z-[9999]">
+                  <DropdownMenuItem
+                    class="cursor-pointer text-destructive focus:text-destructive"
+                    @click="handleDeleteCollection(collection, $event)"
+                  >
+                    <Trash2 class="size-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+                <!-- </DropdownMenuPortal> -->
+              </DropdownMenu>
+            </div>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </template>
   </div>
 </template>

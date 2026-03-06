@@ -402,9 +402,7 @@
           >
             <div class="flex gap-4">
               <!-- Product Image -->
-              <div
-                class="w-20 h-20 md:w-24 md:h-24 bg-gray-100 rounded-lg shrink-0 overflow-hidden"
-              >
+              <div class="w-20 h-20 md:w-24 md:h-24 rounded-lg shrink-0 overflow-hidden border">
                 <img
                   :src="baseStorageUrl + item.front_image"
                   :alt="item.product_name"

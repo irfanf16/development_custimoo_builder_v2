@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import type { CollectionProduct, CollectionLogo } from '@/services/lockers/types'
+  import type { WorkingLogoSlot } from './CollectionDetail.vue'
   import { computed, ref, watch, onMounted } from 'vue'
   import type { CustomLogo, LogoColor } from '@/services/logos/types'
   import { X, Loader2 } from 'lucide-vue-next'
@@ -12,9 +13,16 @@
     msg_invalid_logo_url
   } from '@/paraglide/messages'
 
+  const defaultSlots = (): WorkingLogoSlot[] => [
+    { file: null, url: null, logo: null, isDeleted: false },
+    { file: null, url: null, logo: null, isDeleted: false }
+  ]
+
   const props = defineProps<{
     products: CollectionProduct[]
     collectionLogos?: CollectionLogo[]
+    /** When provided, parent owns logo state (controlled mode); display and emit updates. */
+    workingLogos?: WorkingLogoSlot[] | null
     collectionId?: number | null
   }>()
 
@@ -22,24 +30,15 @@
     (e: 'upload-logo', index: number): void
     (e: 'logo-selected', logo: File | CustomLogo, index: number): void
     (e: 'logo-removed', index: number, logoId?: number): void
+    (e: 'update:workingLogos', value: WorkingLogoSlot[]): void
   }>()
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
 
-  const logos = ref<
-    Array<{
-      file: File | null
-      url: string | null
-      logo: CustomLogo | null
-      id?: number
-      isDeleted?: boolean
-      uploadedPath?: string // Store the uploaded path after uploading to presigned URL
-    }>
-  >([
-    { file: null, url: null, logo: null, isDeleted: false },
-    { file: null, url: null, logo: null, isDeleted: false }
-  ])
+  const logos = ref<WorkingLogoSlot[]>(defaultSlots())
+
+  const displayLogos = computed(() => props.workingLogos ?? logos.value)
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const backgroundGradient = ref<string>(
@@ -99,7 +98,8 @@
 
   // Fetch colors for all active logos
   async function fetchColorsForActiveLogos() {
-    const activeLogos = logos.value.filter(logo => logo.url && !logo.isDeleted)
+    const source = displayLogos.value
+    const activeLogos = source.filter(logo => logo.url && !logo.isDeleted)
     if (activeLogos.length === 0) {
       backgroundGradient.value = 'linear-gradient(135deg, #6b73ff 0%, #000dff 50%, #ff6ec4 100%)'
       return
@@ -154,10 +154,11 @@
     }
   }
 
-  // Load logos from collection if editing
+  // Load logos from collection when not controlled by parent
   watch(
-    () => props.collectionLogos,
-    async newLogos => {
+    () => [props.workingLogos, props.collectionLogos] as const,
+    async ([working, newLogos]) => {
+      if (working != null) return
       if (newLogos && newLogos.length > 0) {
         newLogos.forEach((collectionLogo, index) => {
           if (index < logos.value.length) {
@@ -167,24 +168,20 @@
               logo: null,
               id: collectionLogo.id,
               isDeleted: false,
-              uploadedPath: collectionLogo.path // Store the path as uploadedPath for existing logos
+              uploadedPath: collectionLogo.path
             }
           }
         })
-        // Fetch colors for loaded logos
         await fetchColorsForActiveLogos()
       }
     },
     { immediate: true }
   )
 
-  // Watch for logo URL changes (but not when we're manually updating)
-  // This handles cases where logos are updated externally
   const isManuallyUpdating = ref(false)
   watch(
-    () => logos.value.map(logo => ({ url: logo.url, isDeleted: logo.isDeleted })),
+    () => displayLogos.value.map(logo => ({ url: logo.url, isDeleted: logo.isDeleted })),
     async () => {
-      // Skip if we're manually updating (to avoid duplicate API calls)
       if (isManuallyUpdating.value) {
         isManuallyUpdating.value = false
         return
@@ -196,37 +193,45 @@
 
   // Fetch colors on mount if logos are present
   onMounted(async () => {
-    const activeLogos = logos.value.filter(logo => logo.url && !logo.isDeleted)
+    const activeLogos = displayLogos.value.filter(logo => logo.url && !logo.isDeleted)
     if (activeLogos.length > 0) {
       await fetchColorsForActiveLogos()
     }
   })
 
   const handleRemoveLogo = async (index: number) => {
-    const logo = logos.value[index]
+    const source = displayLogos.value
+    const logo = source[index]
+    const defaultSlot = defaultSlots()[0]!
     isManuallyUpdating.value = true
-    if (logo?.id) {
-      // Mark as deleted if it has an ID (existing logo)
-      logos.value[index] = {
-        ...logo,
-        url: null,
-        file: null,
-        logo: null,
-        isDeleted: true
-      }
+
+    let afterRemove: WorkingLogoSlot[]
+    if (props.workingLogos != null) {
+      afterRemove = source.map((s, i) =>
+        i === index
+          ? logo?.id
+            ? { ...s, url: null, file: null, logo: null, isDeleted: true }
+            : defaultSlot
+          : s
+      )
+      emit('update:workingLogos', afterRemove)
     } else {
-      // Just clear if it's a new logo
-      logos.value[index] = {
-        file: null,
-        url: null,
-        logo: null,
-        isDeleted: false
+      if (logo?.id) {
+        logos.value[index] = {
+          ...logo,
+          url: null,
+          file: null,
+          logo: null,
+          isDeleted: true
+        }
+      } else {
+        logos.value[index] = defaultSlot
       }
+      afterRemove = logos.value
     }
     emit('logo-removed', index, logo?.id)
 
-    // After removal, fetch colors from remaining logos (first active logo)
-    const remainingLogos = logos.value.filter(l => l.url && !l.isDeleted)
+    const remainingLogos = afterRemove.filter((l: WorkingLogoSlot) => l.url && !l.isDeleted)
     if (remainingLogos.length > 0) {
       const logoToUse = remainingLogos[0]
       if (!logoToUse) return
@@ -272,7 +277,7 @@
   }
 
   const handleLogoSelected = async (logo: File | CustomLogo, index: number) => {
-    // Ensure index is within bounds (only 2 logos allowed)
+    if (props.workingLogos != null) return
     if (index < 0 || index >= logos.value.length) {
       console.warn('Invalid logo index:', index)
       return
@@ -280,7 +285,6 @@
 
     isManuallyUpdating.value = true
 
-    // Replace logo at the specified index (don't add new ones)
     if (logo instanceof File) {
       logos.value[index] = {
         file: logo,
@@ -289,7 +293,6 @@
         isDeleted: false,
         uploadedPath: undefined
       }
-      // For file uploads, parent will handle color fetching after upload
     } else {
       // CustomLogo selected from recent logos - use existing URL/path directly, no upload needed
       const logoUrl = logo.url
@@ -346,7 +349,7 @@
   }
 
   defineExpose({
-    logos: computed(() => logos.value),
+    logos: computed(() => displayLogos.value),
     handleLogoSelected,
     setBackgroundFromColors
   })
@@ -368,7 +371,7 @@
 
         <div class="flex gap-3 justify-center items-center">
           <div
-            v-for="(logo, index) in logos"
+            v-for="(logo, index) in displayLogos"
             :key="index"
             class="rounded-lg border bg-muted relative"
           >

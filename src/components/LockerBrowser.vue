@@ -606,9 +606,16 @@
       isSavingCollection.value = false
     }
   }
-  const handleCancelCollectionEdit = () => {
+  const handleCancelCollectionEdit = async () => {
     lockerRoomHeaderRef.value?.cancelEditCollection()
     editingCollectionName.value = false
+    const collectionId = currentCollection.value?.id
+    if (collectionId != null) {
+      const fresh = await lockerRoomStore.fetchCollectionProducts(collectionId)
+      if (fresh) {
+        currentCollection.value = fresh
+      }
+    }
   }
 
   const handleConfirmCollectionEdit = async () => {
