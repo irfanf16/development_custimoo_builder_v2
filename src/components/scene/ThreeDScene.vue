@@ -1630,6 +1630,8 @@
       return
     }
 
+    productsStore.setSceneLoadComplete(false)
+
     // Remove existing model, design, logos, and texts before adding new ones
     removeModel()
     if (canvas.value && designObject.value) {
@@ -1685,6 +1687,7 @@
     await resetAndAddLogos()
     await resetAndAddTexts()
 
+    productsStore.setSceneLoadComplete(true)
     mounted.value = true
   }
 

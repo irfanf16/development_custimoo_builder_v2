@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed, watch, type Ref } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -14,7 +14,6 @@
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
   import type { GradientColor, OutputColor } from '@/services/products/types'
   import { useHistoryStore } from '@/stores/history/history.store'
-  import { useColorActions } from '@/composables/useColorActions'
   import type { Palette } from '@/composables/useColorActions'
   import type { CustomLogo } from '@/services/logos/types'
   import type { LogoColor } from '@/services/types'
@@ -25,13 +24,7 @@
   import {
     color_shuffle_design_colors,
     color_shuffle_heading_1,
-    color_shuffle_heading_2,
-    color_shuffle_heading_3,
-    color_shuffle_heading_4,
     color_shuffle_text_1,
-    color_shuffle_text_2,
-    color_shuffle_text_3,
-    color_shuffle_text_4,
     colors_separator_or,
     colors_choose_from_locker,
     colors_choose_color,
@@ -40,7 +33,8 @@
     colors_copy,
     colors_paste,
     colors_custom_color_groups,
-    nav_color
+    nav_color,
+    logos_shuffle_colors
   } from '@/paraglide/messages'
   import { storeToRefs } from 'pinia'
   import { Plus, X } from 'lucide-vue-next'
@@ -54,7 +48,6 @@
   const { effectiveSvgGroups, effectiveSvgGroupsInteractive, effectiveSvgGroupsCustom } =
     useEffectiveSelectors()
   const history = useHistoryStore()
-  const { shuffleColors } = useColorActions()
   const { clipboardColor, copyColor } = useColorClipboard()
   const lockerRoomStore = useLockerRoomStore()
   const { lockerRoomsWithColors } = storeToRefs(lockerRoomStore)
@@ -211,13 +204,6 @@
   // Track selected gradient index for each group
   const selectedGradientIndex = ref<Record<string, number>>({})
 
-  const shuffleColorsHeadingIndex: Ref<0 | 1 | 2 | 3> = ref(
-    Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3
-  )
-  const shuffleColorsTextIndex: Ref<0 | 1 | 2 | 3> = ref(
-    Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3
-  )
-
   // Generate gradient CSS string from gradient_colors array
   function gradientColorString(gradientColors: GradientColor[]): string {
     if (!gradientColors || gradientColors.length === 0) return ''
@@ -238,24 +224,6 @@
   function setGradientIndex(groupId: string, index: number) {
     selectedGradientIndex.value[groupId] = index
   }
-
-  const shuffleColorsHeadings = computed(() => {
-    return [
-      color_shuffle_heading_1({}, { locale: profileStore.currentLocale }),
-      color_shuffle_heading_2({}, { locale: profileStore.currentLocale }),
-      color_shuffle_heading_3({}, { locale: profileStore.currentLocale }),
-      color_shuffle_heading_4({}, { locale: profileStore.currentLocale })
-    ]
-  })
-
-  const shuffleColorsTexts = computed(() => {
-    return [
-      color_shuffle_text_1({}, { locale: profileStore.currentLocale }),
-      color_shuffle_text_2({}, { locale: profileStore.currentLocale }),
-      color_shuffle_text_3({}, { locale: profileStore.currentLocale }),
-      color_shuffle_text_4({}, { locale: profileStore.currentLocale })
-    ]
-  })
 
   function setGroupColor(colorGroupId: string, color: OutputColor, gradientIndex?: number) {
     const prevRaw = customizationStore.customization?.group_colors?.[colorGroupId]
@@ -309,32 +277,40 @@
   }
 
   function shuffleAll() {
-    // Assign a random number from 0 to 3 that is not the same as the current value
-    function getRandomIndexExcluding(current: number): 0 | 1 | 2 | 3 {
-      const options = [0, 1, 2, 3].filter(i => i !== current)
-      return options[Math.floor(Math.random() * options.length)] as 0 | 1 | 2 | 3
+    const initialGroups = productsStore.initialSvgGroups ?? []
+    if (initialGroups.length === 0 || !customizationStore.customization) return
+
+    const seen = new Set<string>()
+    const uniqueByColor = initialGroups.filter(g => {
+      const c = (g.color ?? '').trim().toLowerCase()
+      if (!c || seen.has(c)) return false
+      seen.add(c)
+      return true
+    })
+    const shuffled = [...uniqueByColor].sort(() => Math.random() - 0.5)
+    const picked = shuffled.slice(0, 4)
+
+    const defaultColors: Array<{
+      color: string | null
+      pantone: string | null
+      name: string | null
+    }> = picked.map(g => ({
+      color: g.color ?? null,
+      pantone: g.pantone ?? null,
+      name: g.name ?? null
+    }))
+    while (defaultColors.length < 4) {
+      defaultColors.push({ color: null, pantone: null, name: null })
     }
-    shuffleColorsHeadingIndex.value = getRandomIndexExcluding(shuffleColorsHeadingIndex.value)
-    shuffleColorsTextIndex.value = getRandomIndexExcluding(shuffleColorsTextIndex.value)
-    shuffleColors(computedPalettes.value?.[0]?.id)
+    customizationStore.customization.default_colors = defaultColors.slice(0, 4)
+    customizationStore.customization.shuffle_color_number = Math.floor(Math.random() * 24) + 1
+    customizationStore.customization.group_colors = {}
+    customizationStore.pushHistoryState('Shuffle design colors')
   }
 
-  /** Shuffle current extracted logo colors and assign them to SVG groups (for the applied logo colors block). */
+  /** Shuffle current extracted logo colors by reordering default_colors (shared with logo shuffle). */
   function shuffleExtractedColorsAmongSvgParts() {
-    const colors = appliedLogoColors.value.map(item => ({
-      name: item.name ?? '',
-      value: item.color,
-      position: 0
-    })) as OutputColor[]
-    if (!colors.length || !effectiveSvgGroupsInteractive.value?.length) return
-    const shuffled = [...colors].sort(() => Math.random() - 0.5)
-    const groups = effectiveSvgGroupsInteractive.value
-    groups.forEach((group, index) => {
-      const nextColor = shuffled[index % shuffled.length]
-      if (!nextColor) return
-      customizationStore.setGroupColor(group.id, nextColor, undefined, { skipHistory: true })
-    })
-    customizationStore.pushHistoryState('Shuffle extracted colors')
+    customizationStore.shuffleDefaultColors('Shuffle extracted colors')
   }
 
   function useOriginalColors() {
@@ -464,29 +440,12 @@
         <div class="flex items-start gap-3">
           <i-flex-flat-paint-palette class="size-10 text-primary" />
           <div class="flex-1">
-            <Transition
-              name="fade-slide"
-              mode="out-in"
-              type="animation"
-              :duration="{ enter: 300, leave: 300 }"
-            >
-              <div
-                :key="shuffleColorsHeadingIndex"
-                class="text-base font-semibold text-foreground font-brand"
-              >
-                {{ shuffleColorsHeadings[shuffleColorsHeadingIndex] }}
-              </div>
-            </Transition>
-            <Transition
-              name="fade-slide"
-              mode="out-in"
-              type="animation"
-              :duration="{ enter: 300, leave: 300 }"
-            >
-              <div :key="shuffleColorsTextIndex" class="text-sm text-muted-foreground">
-                {{ shuffleColorsTexts[shuffleColorsTextIndex] }}
-              </div>
-            </Transition>
+            <div class="text-base font-semibold text-foreground font-brand">
+              {{ color_shuffle_heading_1({}, { locale: profileStore.currentLocale }) }}
+            </div>
+            <div class="text-sm text-muted-foreground">
+              {{ color_shuffle_text_1({}, { locale: profileStore.currentLocale }) }}
+            </div>
           </div>
         </div>
         <div class="mt-4">
@@ -571,7 +530,7 @@
           :disabled="!hasSvgParts || appliedLogoColors.length === 0"
           @click="shuffleExtractedColorsAmongSvgParts"
         >
-          {{ color_shuffle_design_colors({}, { locale: profileStore.currentLocale }) }}
+          {{ logos_shuffle_colors({}, { locale: profileStore.currentLocale }) }}
         </Button>
       </div>
       <Button variant="outline" class="w-full shrink-0" @click="useOriginalColors">

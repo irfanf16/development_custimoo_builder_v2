@@ -594,6 +594,42 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     pushHistoryState('Cleared logo colors')
   }
 
+  /**
+   * Shuffle the order of default_colors (non-empty slots), set random shuffle_color_number, clear group_colors.
+   * Shared by logo shuffle and colors panel "Shuffle extracted colors".
+   */
+  function shuffleDefaultColors(historyMessage = 'Shuffled colors'): void {
+    if (!customization.value) return
+    const currentDefaultColors = customization.value.default_colors || []
+    const filteredColors = currentDefaultColors.filter(
+      (color: { color?: string | null }) => color.color
+    )
+    if (filteredColors.length === 0) return
+
+    if (filteredColors.length === 1) {
+      customization.value.shuffle_color_number = Math.floor(Math.random() * 24) + 1
+      pushHistoryState(historyMessage)
+      return
+    }
+
+    const previousDefaultColors = JSON.parse(
+      JSON.stringify(filteredColors)
+    ) as APCustomizationDefaultColor[]
+    let shuffled = [...filteredColors].sort(() => Math.random() - 0.5)
+    while (JSON.stringify(shuffled) === JSON.stringify(previousDefaultColors)) {
+      shuffled = [...filteredColors].sort(() => Math.random() - 0.5)
+    }
+
+    const newDefaultColors: APCustomizationDefaultColor[] = [...shuffled]
+    while (newDefaultColors.length < 4) {
+      newDefaultColors.push({ ...nullDefaultColorSlot })
+    }
+    customization.value.default_colors = newDefaultColors.slice(0, 4)
+    customization.value.shuffle_color_number = Math.floor(Math.random() * 24) + 1
+    customization.value.group_colors = {}
+    pushHistoryState(historyMessage)
+  }
+
   function appendLogoColors(colors?: LogoColor[]) {
     if (!customization.value) return
     if (!colors || !colors.length) return
@@ -1077,6 +1113,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     removeDefaultColorAt,
     clearDefaultColors,
     clearLogoColorsAndApplied,
+    shuffleDefaultColors,
     appendLogoColors,
     addLogoToCustomizationFromSource,
     getMergedCustomizationLogo,

@@ -475,6 +475,8 @@
   async function loadScene(): Promise<void> {
     if (!canvas.value) return
 
+    productsStore.setSceneLoadComplete(false)
+
     // Load design
     if (effectiveDesign.value) {
       await addDesign(effectiveDesign.value, {
@@ -528,6 +530,8 @@
     setTimeout(async () => {
       await renderOtherSideTextsFromStore()
     }, 500)
+
+    productsStore.setSceneLoadComplete(true)
   }
 
   // All customization functions are now provided by useColorCustomization composable

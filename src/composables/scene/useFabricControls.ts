@@ -163,15 +163,22 @@ export function setupFabricControls(options: SetupFabricControlsOptions = {}): v
           onRemoveText(customTextIndex, customTextItemIndex, canvas)
         }
       } else if ('logo_index' in target && target.logo_index !== undefined) {
+        const logoIndex = target.logo_index
+        if (onRemoveLogo) {
+          onRemoveLogo(logoIndex, canvas)
+        } else {
+          canvas.remove(target as FabricObject)
+        }
         const customizationStore = useCustomizationStore() as {
           customization: { product_id?: number } | null
           removeCustomLogo(productKey: string, logoIndex: number): void
         }
         const productId = customizationStore.customization?.product_id
         if (productId != null) {
-          customizationStore.removeCustomLogo(String(productId), target.logo_index)
+          customizationStore.removeCustomLogo(String(productId), logoIndex)
         }
-        if (onRemoveLogo) onRemoveLogo(target.logo_index, canvas)
+        canvas.requestRenderAll()
+        return
       }
 
       canvas.remove(target as FabricObject)

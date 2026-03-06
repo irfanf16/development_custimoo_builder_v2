@@ -78,6 +78,13 @@ export const useProductsStore = defineStore('productsStore', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
+  /** Set true when scene has finished loading the design and extractSvgGroups has run (menu tabs e.g. Colors are then reliable). */
+  const sceneLoadComplete = ref(false)
+
+  function setSceneLoadComplete(complete: boolean): void {
+    sceneLoadComplete.value = complete
+  }
+
   // ===== COMPUTED =====
   // Product type flags from categories response
   const isCustomized = computed(() => categories.value?.customized ?? false)
@@ -539,6 +546,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     recentLogos,
     isLoading,
     error,
+    sceneLoadComplete,
+    setSceneLoadComplete,
     // Computed
     isCustomized,
     isPersonalized,
@@ -555,10 +564,10 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveDesignDetailsState,
     // Business Logic
     setSvgGroups,
+    saveCustomizationToLocalStorage,
     getProductById,
     reset,
     setActiveStep,
-    saveCustomizationToLocalStorage,
     applyDesignPreview,
     resetToDefaultsSnapshot,
     // API Functions

@@ -19,21 +19,24 @@
   import TextsEntry from '@/components/customization-workflow/WorkflowSteps/texts/index.vue'
   import WorkflowPanel from './WorkflowPanel.vue'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useProductsStore } from '@/stores/products/products.store'
   import WorkflowFooterButtons from './WorkflowFooterButtons.vue'
   import WorkflowFooterPricing from './WorkflowFooterPricing.vue'
   const uiStore = useUIStore()
   const workflowStore = useWorkflowStore()
+  const productsStore = useProductsStore()
   const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const { initializeEffects } = useWorkflow()
   const customizationStore = useCustomizationStore()
   const { customization } = storeToRefs(customizationStore)
-  // When active step is not in visible tabs (e.g. product changed and logos tab hidden), redirect to a visible step
+  // When active step is not in visible tabs (e.g. product changed and logos tab hidden), redirect to a visible step.
+  // Only redirect once scene load is complete (extractSvgGroups has run) so we don't kick user off color tab on refresh.
   watch(
-    () => [workflowStore.activeStep, menuItems.value] as const,
-    ([activeStep, items]) => {
+    () => [workflowStore.activeStep, menuItems.value, productsStore.sceneLoadComplete] as const,
+    ([activeStep, items, sceneLoadComplete]) => {
       const visibleSteps = items.map(i => i.step)
       const step = activeStep ?? 'product'
-      if (visibleSteps.length && !visibleSteps.includes(step)) {
+      if (visibleSteps.length && !visibleSteps.includes(step) && sceneLoadComplete) {
         void goTo(pickStepOrNextAvailable(step, visibleSteps))
       }
     },

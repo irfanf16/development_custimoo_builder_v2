@@ -3,7 +3,7 @@ import { useHistoryStore } from '@/stores/history/history.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
 import type { CustomLogo } from '@/services/logos/types'
-import type { OutputColor, APCustomizationDefaultColor } from '@/services/products/types'
+import type { OutputColor } from '@/services/products/types'
 import { rgbArrayToHex } from './useLogoUtils'
 import { useLogos } from './useLogos'
 import { getSelectedProductPantones, getClosestColor, getColorType } from '@/lib/utils'
@@ -109,54 +109,7 @@ export function useLogoActions() {
   }
 
   function shuffleColors() {
-    if (!customizationStore.customization) return
-
-    const currentDefaultColors = customizationStore.customization.default_colors || []
-    const filteredColors = currentDefaultColors.filter(
-      (color: { color?: string | null }) => color.color
-    )
-
-    if (filteredColors.length === 0) return
-
-    // If there's only one color, there's nothing to shuffle
-    // Just update the shuffle_color_number and return
-    if (filteredColors.length === 1) {
-      customizationStore.customization.shuffle_color_number = Math.floor(Math.random() * 24) + 1
-      customizationStore.pushHistoryState('Shuffled colors')
-      return
-    }
-
-    // Store previous default colors for potential rollback
-    const previousDefaultColors: APCustomizationDefaultColor[] = JSON.parse(
-      JSON.stringify(filteredColors)
-    ) as APCustomizationDefaultColor[]
-
-    // Shuffle the colors array
-    let shuffled = [...filteredColors].sort(() => Math.random() - 0.5)
-
-    // Ensure shuffled result is different from previous
-    // Only check if there are multiple colors (already handled single color case above)
-    while (JSON.stringify(shuffled) === JSON.stringify(previousDefaultColors)) {
-      shuffled = [...filteredColors].sort(() => Math.random() - 0.5)
-    }
-
-    // Create new default_colors array with shuffled colors
-    const newDefaultColors = [...shuffled]
-    while (newDefaultColors.length < 4) {
-      newDefaultColors.push({ color: null, pantone: null, name: null })
-    }
-
-    // Update default_colors in customization store
-    customizationStore.customization.default_colors = newDefaultColors.slice(0, 4)
-
-    // Set random shuffle_color_number between 1-24
-    customizationStore.customization.shuffle_color_number = Math.floor(Math.random() * 24) + 1
-
-    console.log(customizationStore.customization.shuffle_color_number, 'shuffle_color_number')
-    // Clear group_colors when applying logo colors
-    customizationStore.customization.group_colors = {}
-
-    customizationStore.pushHistoryState('Shuffled colors')
+    customizationStore.shuffleDefaultColors('Shuffled colors')
   }
 
   async function recolorLogo(logo: CustomLogo, color: OutputColor) {
