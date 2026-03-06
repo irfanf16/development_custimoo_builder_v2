@@ -416,28 +416,33 @@
                   <h3 class="font-medium text-sm md:text-base truncate">
                     {{ item.product_name }}
                   </h3>
-                  <div class="flex items-center gap-2 shrink-0">
-                    <button
-                      class="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm transition-colors hover:bg-gray-50"
-                      @click="editProduct(item.factory_product_id)"
-                    >
-                      <Pencil class="w-3.5 h-3.5" />
-                      <span class="hidden sm:inline">Edit design</span>
-                    </button>
-                    <button
-                      class="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm transition-colors hover:bg-gray-50"
-                      @click="editRoster(item.factory_product_id)"
-                    >
-                      <Users class="w-3.5 h-3.5" />
-                      <span class="hidden sm:inline">Edit roster</span>
-                    </button>
-                    <button
-                      class="p-1.5 border rounded-md transition-colors hover:bg-gray-50"
-                      @click="handleRemoveClick(item.factory_product_id)"
-                    >
-                      <Trash2 class="w-4 h-4 text-gray-500" />
-                    </button>
-                  </div>
+                  <template v-if="cartStore.editingFactoryProductId != item.factory_product_id">
+                    <div class="flex items-center gap-2 shrink-0">
+                      <button
+                        class="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm transition-colors hover:bg-gray-50"
+                        @click="editProduct(item.factory_product_id)"
+                      >
+                        <Pencil class="w-3.5 h-3.5" />
+                        <span class="hidden sm:inline">Edit design</span>
+                      </button>
+                      <button
+                        class="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm transition-colors hover:bg-gray-50"
+                        @click="editRoster(item.factory_product_id)"
+                      >
+                        <Users class="w-3.5 h-3.5" />
+                        <span class="hidden sm:inline">Edit roster</span>
+                      </button>
+                      <button
+                        class="p-1.5 border rounded-md transition-colors hover:bg-gray-50"
+                        @click="handleRemoveClick(item.factory_product_id)"
+                      >
+                        <Trash2 class="w-4 h-4 text-gray-500" />
+                      </button>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <span class="text-primary text-sm">Actions are disabled while editing</span>
+                  </template>
                 </div>
 
                 <div class="grid grid-cols-2 sm:grid-cols-5 gap-x-4 gap-y-2 mt-3 text-sm">
