@@ -562,5 +562,8 @@
   "msg_failed_to_load_collection_products": "Kunne ikke indlæse kollektionsprodukter",
   "msg_failed_to_save_collection": "Kunne ikke gemme kollektion",
   "msg_failed_to_update_collection": "Kunne ikke opdatere kollektion",
-  "msg_failed_to_get_collection_logo_presigned_urls": "Kunne ikke hente signerede URL'er for kollektion"
+  "msg_failed_to_get_collection_logo_presigned_urls": "Kunne ikke hente signerede URL'er for kollektion",
+  "auth_error_email_not_exist": "E-mail eksisterer ikke",
+  "auth_error_invalid_password": "Adgangskoden er ikke korrekt",
+  "auth_error_login_failed": "Login mislykkedes. Prøv igen."
 }

@@ -562,5 +562,8 @@
   "msg_failed_to_load_collection_products": "Échec du chargement des produits de la collection",
   "msg_failed_to_save_collection": "Échec de l'enregistrement de la collection",
   "msg_failed_to_update_collection": "Échec de la mise à jour de la collection",
-  "msg_failed_to_get_collection_logo_presigned_urls": "Échec de l'obtention des URL signées de la collection"
+  "msg_failed_to_get_collection_logo_presigned_urls": "Échec de l'obtention des URL signées de la collection",
+  "auth_error_email_not_exist": "L'email n'existe pas",
+  "auth_error_invalid_password": "Le mot de passe n'est pas correct",
+  "auth_error_login_failed": "Échec de la connexion. Veuillez réessayer."
 }

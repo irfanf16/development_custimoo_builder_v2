@@ -562,5 +562,8 @@
   "msg_failed_to_load_collection_products": "Error al cargar los productos de la colección",
   "msg_failed_to_save_collection": "Error al guardar la colección",
   "msg_failed_to_update_collection": "Error al actualizar la colección",
-  "msg_failed_to_get_collection_logo_presigned_urls": "Error al obtener las URL firmadas de la colección"
+  "msg_failed_to_get_collection_logo_presigned_urls": "Error al obtener las URL firmadas de la colección",
+  "auth_error_email_not_exist": "El correo no existe",
+  "auth_error_invalid_password": "La contraseña no es correcta",
+  "auth_error_login_failed": "Error al iniciar sesión. Inténtalo de nuevo."
 }

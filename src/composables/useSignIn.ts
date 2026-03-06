@@ -2,6 +2,11 @@ import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { useProfileStore } from '@/stores/profile/profile.store'
+import {
+  auth_error_email_not_exist,
+  auth_error_invalid_password,
+  auth_error_login_failed
+} from '@/paraglide/messages'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
@@ -115,6 +120,16 @@ export function useSignIn() {
       isSignInDialogOpen.value = false
       resetCredentials(authStore)
       return true
+    }
+    const errors = (result.axiosError?.response?.data as { errors?: Record<string, string[]> })
+      ?.errors
+    const locale = currentLocale.value
+    if (errors?.email) {
+      authStore.setError(auth_error_email_not_exist({}, { locale }))
+    } else if (errors?.password) {
+      authStore.setError(auth_error_invalid_password({}, { locale }))
+    } else {
+      authStore.setError(auth_error_login_failed({}, { locale }))
     }
     return false
   }

@@ -573,5 +573,8 @@
   "msg_order_item_id_missing": "Order item ID is missing",
   "msg_failed_to_add_comment": "Failed to add comment",
   "msg_failed_to_update_comment": "Failed to update comment",
-  "msg_failed_to_delete_comment": "Failed to delete comment"
+  "msg_failed_to_delete_comment": "Failed to delete comment",
+  "auth_error_email_not_exist": "Email does not exist",
+  "auth_error_invalid_password": "Password is not correct",
+  "auth_error_login_failed": "Login failed. Please try again."
 }
