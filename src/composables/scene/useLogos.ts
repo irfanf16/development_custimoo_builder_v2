@@ -113,6 +113,10 @@ export type SyncLogosOptions = {
   onAfterSync?: () => void
   /** Per-instance suppress flag for customLogos watcher (required) */
   suppressWatchRef: Ref<boolean>
+  /** When true, update store originalWidth/originalHeight via convertSize (main preview only) */
+  mainPreview: boolean
+  /** Converts px to measurement units; used when mainPreview is true */
+  convertSize: (px: number) => number
 }
 
 /**
@@ -392,7 +396,10 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
     calculateRotation,
     calculateScaleRatios,
     filterLogo,
-    onAfterSync
+    onAfterSync,
+    suppressWatchRef,
+    mainPreview,
+    convertSize
   } = options
 
   if (!canvas) return
@@ -476,6 +483,20 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
         match.obj.setCoords()
         nextMap.set(idx, match.obj as unknown as FabricImage)
         matchedIdx.add(idx)
+        if (mainPreview) {
+          const w = match.obj.width ?? 0
+          const h = match.obj.height ?? 0
+          const sx = match.obj.scaleX ?? 1
+          const sy = match.obj.scaleY ?? 1
+          const originalWidth = convertSize(w * sx)
+          const originalHeight = convertSize(h * sy)
+          void debouncedLogoStoreUpdate({
+            logoIndex: idx,
+            productId,
+            data: { originalWidth, originalHeight },
+            suppressWatchRef
+          })
+        }
       }
     }
   }

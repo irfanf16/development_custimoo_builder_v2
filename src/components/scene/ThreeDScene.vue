@@ -2341,6 +2341,8 @@
         calculateScaleRatios,
         applyClipPath: (img: FabricImage) => applyClipPath(img),
         suppressWatchRef: suppressCustomLogosWatch,
+        mainPreview: props.mainPreview,
+        convertSize: convertSizeToMeasurement,
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()
@@ -2374,6 +2376,8 @@
         calculateScaleRatios,
         applyClipPath: (img: FabricImage) => applyClipPath(img),
         suppressWatchRef: suppressCustomLogosWatch,
+        mainPreview: props.mainPreview,
+        convertSize: convertSizeToMeasurement,
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()

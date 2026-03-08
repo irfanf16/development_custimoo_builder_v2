@@ -1880,6 +1880,8 @@
         calculateScaleRatios: calculateScaleRatios2D,
         filterLogo: (logo: CustomLogo) => logo.side === props.side,
         suppressWatchRef: suppressCustomLogosWatch,
+        mainPreview: props.mainPreview,
+        convertSize: convertSizeToMeasurement,
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()
@@ -1908,6 +1910,8 @@
         calculateScaleRatios: calculateScaleRatios2D,
         filterLogo: (logo: CustomLogo) => logo.side === props.side,
         suppressWatchRef: suppressCustomLogosWatch,
+        mainPreview: props.mainPreview,
+        convertSize: convertSizeToMeasurement,
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()

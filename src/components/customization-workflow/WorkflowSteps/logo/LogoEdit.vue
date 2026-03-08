@@ -4,7 +4,6 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useLogosStore } from '@/stores/logos/logos.store'
-  import { useHistoryStore } from '@/stores/history/history.store'
   import { Button } from '@/components/ui/button'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
@@ -71,7 +70,6 @@
   const workflowStore = useWorkflowStore()
   const logosStore = useLogosStore()
   const productsStore = useProductsStore()
-  const historyStore = useHistoryStore()
   const profileStore = useProfileStore()
   const customizationStore = useCustomizationStore()
   const { showPricing } = usePricing()
@@ -254,7 +252,7 @@
     handleBackToLogos()
   }
 
-  async function handlePlacementChange(option: PlacementOption | null) {
+  function handlePlacementChange(option: PlacementOption | null) {
     positionForm.placementOption = option
     if (!customLogo.value || !productKey.value || !option) return
     const index = activeLogoIndex.value
@@ -262,49 +260,38 @@
     const prevLabel = customLogo.value.name_of_placement || null
     const prevPlacementKey = customLogo.value.placement ?? null
     const prevOption = previousPlacementOption.value
-    const nextPlacementId = option.placementId
-    const nextX = option.x_axis ?? null
-    const nextY = option.y_axis ?? null
-    const nextSide = option.side ?? customLogo.value.side ?? null
-    const prevX = prevOption?.x_axis ?? customLogo.value.x_axis ?? null
-    const prevY = prevOption?.y_axis ?? customLogo.value.y_axis ?? null
-    const prevSide = prevOption?.side ?? customLogo.value.side ?? null
-    // Add width and height to the history
-    const nextWidth = option.width ?? null
-    const nextHeight = option.height ?? null
-    const prevWidth = prevOption?.width ?? customLogo.value.width ?? null
-    const prevHeight = prevOption?.height ?? customLogo.value.height ?? null
+    const nextX = option.x_axis ?? customLogo.value.x_axis ?? 0
+    const nextY = option.y_axis ?? customLogo.value.y_axis ?? 0
+    const nextSide = option.side ?? customLogo.value.side ?? 'front'
 
     if (
       option.label === prevLabel &&
       option.placementKey === prevPlacementKey &&
-      nextX === prevX &&
-      nextY === prevY &&
-      nextSide === prevSide
+      nextX === (prevOption?.x_axis ?? customLogo.value.x_axis ?? 0) &&
+      nextY === (prevOption?.y_axis ?? customLogo.value.y_axis ?? 0) &&
+      nextSide === (prevOption?.side ?? customLogo.value.side ?? 'front')
     ) {
       return
     }
-
-    await historyStore.execute('logo.update-placement', {
-      key: productKey.value,
-      index,
-      prevPlacementLabel: prevLabel,
-      nextPlacementLabel: option.label,
-      placementId: nextPlacementId,
-      nextPlacementKey: option.placementKey ?? null,
-      prevPlacementKey: prevPlacementKey,
-      nextX,
-      nextY,
-      prevX,
-      prevY,
-      nextSide,
-      prevSide,
-      nextWidth,
-      nextHeight,
-      prevWidth,
-      prevHeight
+    console.log('option', option)
+    customizationStore.updateCustomLogo({
+      custom_logo_index: index,
+      data: {
+        name_of_placement: option.label,
+        placement: option.placementKey ?? undefined,
+        x_axis: nextX,
+        y_axis: nextY,
+        side: nextSide,
+        height: option.height!,
+        rotation: option.rotation!,
+        scaleX: 0,
+        scaleY: 0,
+        x_axis_3d: 0,
+        y_axis_3d: 0
+      },
+      productId: Number(productKey.value)
     })
-    customizationStore.pushHistoryState('Changed logo placement')
+    customizationStore.pushHistoryState('Moved logo')
 
     previousPlacementOption.value = option
     if (option.width) currentWidth.value = option.width
@@ -324,39 +311,24 @@
     handlePlacementChange(option)
   }
 
-  async function handleSideChange(value: string | null | AcceptableValue) {
+  function handleSideChange(value: string | null | AcceptableValue) {
     const normalized = typeof value === 'string' ? value : null
     if (!customLogo.value || !productKey.value || !normalized) return
 
     const newSide = normalized as 'front' | 'back'
     const prevSide = customLogo.value.side || 'front'
 
-    // Don't update if the side hasn't changed
     if (newSide === prevSide) return
 
     const index = activeLogoIndex.value
     if (index === -1) return
 
-    await historyStore.execute('logo.update-placement', {
-      key: productKey.value,
-      index,
-      prevPlacementLabel: customLogo.value.name_of_placement || null,
-      nextPlacementLabel: customLogo.value.name_of_placement || null,
-      placementId: positionForm.placementOption?.placementId,
-      nextPlacementKey: customLogo.value.placement ?? null,
-      prevPlacementKey: customLogo.value.placement ?? null,
-      nextX: customLogo.value.x_axis ?? null,
-      nextY: customLogo.value.y_axis ?? null,
-      prevX: customLogo.value.x_axis ?? null,
-      prevY: customLogo.value.y_axis ?? null,
-      nextSide: newSide,
-      prevSide: prevSide,
-      nextWidth: customLogo.value.width ?? null,
-      nextHeight: customLogo.value.height ?? null,
-      prevWidth: customLogo.value.width ?? null,
-      prevHeight: customLogo.value.height ?? null
+    customizationStore.updateCustomLogo({
+      custom_logo_index: index,
+      data: { side: newSide, x_axis_3d: 0, y_axis_3d: 0 },
+      productId: Number(productKey.value)
     })
-    customizationStore.pushHistoryState('Changed logo placement')
+    customizationStore.pushHistoryState('Moved logo')
   }
 
   // Radio group value for logo technology (syncs with selectedLogoTechnology)

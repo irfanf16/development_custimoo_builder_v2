@@ -14,6 +14,7 @@ export interface PlacementOption {
   width: number | null
   height: number | null
   side: 'front' | 'back'
+  rotation: number
 }
 
 export function useLogoPlacements() {
@@ -51,7 +52,8 @@ export function useLogoPlacements() {
         placementKey: `${placement.name_of_placement}_${placement.id}_${placement.x_axis}_${placement.y_axis}_${placement.width}_${placement.height}_${placement.side}`,
         width: placement.width ?? null,
         height: placement.height ?? null,
-        side: placement.side
+        side: placement.side,
+        rotation: placement.rotation
       }))
       .sort((a, b) => a.label.localeCompare(b.label))
   )
