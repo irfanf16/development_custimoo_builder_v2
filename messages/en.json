@@ -452,7 +452,6 @@
   "time_ago_years_plural": "{count} years ago",
   "minimum_quantity": "Minimum Quantity",
   "minimum_order_quantity": "Minimum order quantity",
-
   "msg_failed_to_load_cart": "Failed to load cart",
   "msg_failed_to_add_to_cart": "Failed to add product to cart",
   "msg_failed_to_add_products_to_cart": "Failed to add products to cart",
@@ -474,7 +473,6 @@
   "msg_failed_to_place_order": "Failed to place order. Please try again.",
   "msg_address_selected": "Address selected",
   "msg_failed_to_load_cart_product": "Failed to load cart product",
-
   "msg_failed_to_load_orders": "Failed to load orders",
   "msg_failed_to_load_order_details": "Failed to load order details",
   "msg_failed_to_load_pdf": "Failed to load PDF. Please try again.",
@@ -528,7 +526,6 @@
   "msg_failed_to_share_design": "Failed to share design",
   "msg_failed_to_accept_quote": "Failed to accept quote",
   "msg_failed_to_reject_quote": "Failed to reject quote",
-
   "msg_failed_to_load_lockers": "Failed to load lockers",
   "msg_failed_to_load_locker_products": "Failed to load locker products",
   "msg_logo_uploaded_success": "Logo uploaded successfully",
@@ -547,11 +544,9 @@
   "msg_failed_to_generate_share_url": "Failed to generate share URL",
   "msg_failed_to_share_product": "Failed to share product",
   "msg_no_preview_images_to_download": "No preview images to download",
-
   "msg_no_roster_data": "No roster data available",
   "msg_failed_to_convert_roster": "Failed to convert roster data",
   "msg_roster_step_not_available": "Roster step is not available",
-
   "msg_link_copied": "Link copied to clipboard!",
   "msg_share_link_ready": "Share link ready. Copy from the Copy Share Url button.",
   "msg_pdf_generated_success": "PDF generated successfully! Downloading...",
@@ -562,7 +557,6 @@
   "msg_failed_to_convert_files_download": "Failed to convert files for download",
   "msg_files_downloading": "Files downloading...",
   "msg_failed_to_download_files": "Failed to download files",
-
   "msg_provide_rejection_feedback": "Please provide feedback for the rejection",
   "msg_review_all_samples": "Please review all samples before submitting",
   "msg_passwords_do_not_match": "Passwords do not match",
@@ -576,5 +570,30 @@
   "msg_failed_to_delete_comment": "Failed to delete comment",
   "auth_error_email_not_exist": "Email does not exist",
   "auth_error_invalid_password": "Password is not correct",
-  "auth_error_login_failed": "Login failed. Please try again."
+  "auth_error_login_failed": "Login failed. Please try again.",
+  "privacy_policy_page_title": "Custimoo Privacy Policy",
+  "privacy_policy_effective_date": "Effective Date: 30/04/2025",
+  "privacy_policy_title": "Privacy Policy",
+  "auth_agree_privacy_policy": "By signing up, you agree to our",
+  "privacy_policy_intro": "<p>Custimoo (\"we\", \"our\", or \"us\") is committed to protecting your privacy. This Privacy Policy describes how we collect, use, store, and protect the personal information collected through our white-label customizer solution integrated on third-party websites.</p>",
+  "privacy_policy_s1_title": "1. Information We Collect",
+  "privacy_policy_s1_content": "<p>When you use a website that integrates our customizer, we may collect the following data:</p><ul><li><strong>Personal Information:</strong> Name, email address, and shipping address.</li><li><strong>User-Uploaded Assets:</strong> Logos, images, and custom artwork.</li><li><strong>Team Roster Data:</strong> Player name, number, and size preferences.</li><li><strong>Authentication Data:</strong> Information derived from JWT tokens if the host website has its own CRM.</li></ul><p>We begin collecting this data as soon as a logged-in customer enters the customizer.</p>",
+  "privacy_policy_s2_title": "2. How We Collect Data",
+  "privacy_policy_s2_content": "<p>We collect data in two ways:</p><ul><li><strong>Via Integration with Client Systems:</strong> If the host website has its own CRM or login system, user authentication is passed to us via JWT tokens.</li><li><strong>Direct Collection:</strong> If the host website lacks a login system, we collect the necessary data directly through our interface.</li></ul>",
+  "privacy_policy_s3_title": "3. Use of Personal Data",
+  "privacy_policy_s3_content": "<p>We use the information collected to:</p><ul><li>Power customization features (e.g., save designs, generate previews).</li><li>Manage user accounts and saved designs.</li><li>Facilitate order fulfillment and shipping.</li><li>Improve the performance and reliability of our customizer.</li></ul>",
+  "privacy_policy_s4_title": "4. Data Sharing",
+  "privacy_policy_s4_content": "<p>We do not share, sell, rent, or disclose your data to any third parties. All data is used solely for the purposes described in this policy.</p>",
+  "privacy_policy_s5_title": "5. Data Storage and Security",
+  "privacy_policy_s5_content": "<p>All data is securely stored on Amazon Web Services (AWS) servers located in the United States. We employ industry-standard safeguards to protect your data from unauthorized access, disclosure, or destruction.</p>",
+  "privacy_policy_s6_title": "6. Data Retention",
+  "privacy_policy_s6_content": "<p>We retain user data for as long as it is necessary to fulfill the purposes outlined in this policy, or as required by applicable law.</p>",
+  "privacy_policy_s7_title": "7. Your Rights",
+  "privacy_policy_s7_content": "<p>In accordance with the General Data Protection Regulation (GDPR) and the California Consumer Privacy Act (CCPA), users may:</p><ul><li>Request access to their data.</li><li>Request correction of inaccurate or incomplete data.</li><li>Request deletion of their personal data.</li><li>Object to the processing of their data in certain circumstances.</li></ul><p>To exercise these rights, contact us at: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p>",
+  "privacy_policy_s8_title": "8. Children's Privacy",
+  "privacy_policy_s8_content": "<p>Our services are not intended for children under the age of 13, and we do not knowingly collect personal data from children.</p>",
+  "privacy_policy_s9_title": "9. Changes to This Policy",
+  "privacy_policy_s9_content": "<p>We may update this Privacy Policy periodically. Any changes will be posted with an updated effective date. Continued use of the customizer after changes constitutes acceptance of the updated policy.</p>",
+  "privacy_policy_s10_title": "10. Contact Us",
+  "privacy_policy_s10_content": "<p>If you have questions about this Privacy Policy, please contact us at:</p><p>Email: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Address:<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 Copenhagen<br>DENMARK</p>"
 }

@@ -52,8 +52,11 @@
     profile_email,
     profile_company_name,
     profile_country,
-    msg_select_valid_country
+    msg_select_valid_country,
+    auth_agree_privacy_policy,
+    privacy_policy_title
   } from '@/paraglide/messages'
+  import PrivacyPolicyDialog from './PrivacyPolicyDialog.vue'
 
   const uiStore = useUIStore()
   const isMobile = uiStore.isMobile
@@ -223,6 +226,8 @@
   const handleCancel = () => {
     isOpen.value = false
   }
+
+  const isPrivacyPolicyOpen = ref(false)
 </script>
 
 <template>
@@ -315,11 +320,17 @@
         </form>
       </component>
       <div class="text-center text-xs text-muted-foreground px-6 pb-4">
-        By signing up, you agree to our
-        <a href="#" class="text-primary hover:underline">Terms of Service</a>
-        and
-        <a href="#" class="text-primary hover:underline">Privacy Policy</a>
+        {{ auth_agree_privacy_policy({}, { locale }) }}
+        <button
+          type="button"
+          class="text-primary hover:underline font-medium"
+          @click="isPrivacyPolicyOpen = true"
+        >
+          {{ privacy_policy_title({}, { locale }) }}
+        </button>
       </div>
     </DialogContent>
   </Dialog>
+
+  <PrivacyPolicyDialog :open="isPrivacyPolicyOpen" @update:open="isPrivacyPolicyOpen = $event" />
 </template>
