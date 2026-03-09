@@ -22,6 +22,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
     msg_upload_logo_before_collection,
+    msg_collection_name_required,
     msg_products_added_to_collection
   } from '@/paraglide/messages'
 
@@ -80,6 +81,9 @@
   const isAddingToCollection = ref<boolean>(false)
   /** True when we entered "Add products" from a collection; selection is the source of truth and save replaces collection products. */
   const addedProductsFlowFromCollection = ref<boolean>(false)
+
+  /** When creating a new collection, holds the editable product list (price, description, allow_*) so save uses it. */
+  const workingCollectionProducts = ref<CollectionProduct[]>([])
 
   /** Build a minimal LockerProduct-like object from a collection product for selection display and sync (e.g. when entering add-products). */
   function collectionProductToStubLockerProduct(cp: CollectionProduct): LockerProduct {
@@ -291,8 +295,29 @@
     // Otherwise, clear it for new collection creation
     if (!currentCollection.value) {
       // This is a new collection, so we'll create it
-      // Ensure currentCollection is null
       currentCollection.value = null
+      workingCollectionProducts.value = selectedProducts.value.map((product, index) => ({
+        id: product.id,
+        allow_description: true,
+        allow_price: true,
+        allow_title: true,
+        product_nickname: product.product_name ?? product.name ?? '',
+        description: product.description ?? '',
+        product_note: product.description ?? '',
+        product_price: '',
+        product_locker_room_id: product.id,
+        product_urls: {
+          front_url: product.product_front_url ?? '',
+          back_url: product.product_back_url ?? ''
+        },
+        order_number: index + 1,
+        collection_id: 0,
+        created_at: '',
+        updated_at: '',
+        logos: [],
+        ecommerce_product_id: null,
+        ecommerce_variant_id: null
+      })) as CollectionProduct[]
     } else {
       // Adding products to existing collection: selection is the source of truth (replace list so removals are reflected)
       const asCollectionProducts = selectedProducts.value.map((product, index) => ({
@@ -320,32 +345,27 @@
   const collectionProducts = computed(() => {
     if (currentCollection.value) {
       return currentCollection.value.collection_products
-    } else {
-      if (selectedProducts.value.length) {
-        return selectedProducts.value.map(product => {
-          return {
-            allow_description: true,
-            allow_price: true,
-            allow_title: true,
-            product_nickname: product.product_name,
-            description: product.description,
-            product_note: product.description,
-            product_price: '',
-            product_locker_room_id: product.id,
-            product_urls: {
-              front_url: product.product_front_url,
-              back_url: product.product_back_url
-            }
-          } as CollectionProduct
-        })
-      } else {
-        return []
-      }
     }
+    return workingCollectionProducts.value
   })
 
   const handleSaveCollection = async () => {
     if (!lockerRoomHeaderRef.value) return
+    const header = lockerRoomHeaderRef.value as { collection_name?: { value?: string } | string }
+    const nameVal =
+      header?.collection_name &&
+      typeof header.collection_name === 'object' &&
+      'value' in header.collection_name
+        ? header.collection_name.value
+        : (header?.collection_name ?? '')
+    const collectionNameRaw = String(nameVal ?? '').trim()
+    if (!collectionNameRaw) {
+      toast.error(msg_collection_name_required({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
+      return
+    }
     isSavingCollection.value = true
     try {
       const collectionDetailRef = lockerDetailsRef.value as InstanceType<
@@ -354,7 +374,7 @@
       const previewBodyRef = collectionDetailRef?.previewBodyRef
 
       const baseStorageUrl = import.meta.env.VITE_APP_STORAGE_URL || ''
-      const collectionName = lockerRoomHeaderRef.value.collection_name || 'New Collection'
+      const collectionName = collectionNameRaw
       const isEditing = !!currentCollection.value
       const collectionId = currentCollection.value?.id
 
@@ -507,17 +527,16 @@
           productsData = [...existingProducts, ...newProducts]
         }
       } else {
-        // Creating new collection - use all products from collectionProducts
-        productsData = selectedProducts.value.map((p, index) => ({
-          id: p.id,
-          product_nickname: p.name,
-          product_note: p.description,
-          product_price: '',
+        // Creating new collection - use working collection products (user-edited price, description, allow_*)
+        productsData = workingCollectionProducts.value.map((p, index) => ({
+          product_nickname: p.product_nickname,
+          product_note: p.product_note ?? '',
+          product_price: p.product_price ?? '',
           order_number: index + 1,
-          product_locker_room_id: p.id,
-          allow_description: true,
-          allow_price: true,
-          allow_title: true
+          product_locker_room_id: p.product_locker_room_id,
+          allow_description: p.allow_description ?? true,
+          allow_price: p.allow_price ?? true,
+          allow_title: p.allow_title ?? true
         }))
       }
 
@@ -598,6 +617,7 @@
         const newCollection = lockerRoomStore.collections.find(c => c.name === collectionName)
         if (newCollection) {
           await getCollectionDetail(newCollection)
+          handleBackNavigation()
         } else {
           handleBackNavigation()
         }
@@ -621,8 +641,16 @@
   const handleConfirmCollectionEdit = async () => {
     const headerRef = lockerRoomHeaderRef.value as any
     const collection = currentCollection.value
-    if (!collection?.id || !headerRef?.collection_name) return
-    const collectionName = headerRef.collection_name
+    if (!collection?.id) return
+    const nameVal = headerRef?.collection_name?.value ?? headerRef?.collection_name ?? ''
+    const collectionName = String(nameVal).trim()
+    if (!collectionName) {
+      toast.error(msg_collection_name_required({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
+      return
+    }
     const logoData = (collection.logos || []).map(
       (logo: { name: string; path: string; id?: number }) => ({
         name: logo.name,
@@ -636,7 +664,10 @@
       product_note: p.product_note,
       product_price: p.product_price,
       order_number: index + 1,
-      product_locker_room_id: p.product_locker_room_id
+      product_locker_room_id: p.product_locker_room_id,
+      allow_description: p.allow_description,
+      allow_price: p.allow_price,
+      allow_title: p.allow_title
     }))
     const formData = new FormData()
     formData.append('name', collectionName)
@@ -656,8 +687,8 @@
   }
 
   const handleRemoveProduct = (products: CollectionProduct[]) => {
+    const updatedProducts = [...products]
     if (currentCollection.value) {
-      const updatedProducts = [...products]
       currentCollection.value = {
         ...currentCollection.value,
         collection_products: updatedProducts
@@ -667,7 +698,14 @@
         const keptIds = new Set(updatedProducts.map(p => p.product_locker_room_id))
         selectedProducts.value = selectedProducts.value.filter(p => keptIds.has(p.id))
       }
+    } else {
+      // Create flow: sync working collection products so save uses the updated list
+      workingCollectionProducts.value = updatedProducts
     }
+  }
+
+  const handleUpdateCollectionProducts = (products: CollectionProduct[]) => {
+    workingCollectionProducts.value = products
   }
 
   const handleLogoRemoved = (_index: number, _logoId?: number) => {
@@ -1041,6 +1079,7 @@
                   :sort="sortOption"
                   @select-product="handleSelectCollectionProducts"
                   @remove-product="handleRemoveProduct"
+                  @update:collection-products="handleUpdateCollectionProducts"
                   @logo-removed="handleLogoRemoved"
                 />
               </div>

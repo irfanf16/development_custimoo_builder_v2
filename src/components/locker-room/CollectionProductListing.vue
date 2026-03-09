@@ -27,6 +27,7 @@
 
   const emit = defineEmits<{
     (e: 'remove-product', products: CollectionProduct[]): void
+    (e: 'update:products', products: CollectionProduct[]): void
   }>()
   const computedProducts = computed(() => [...props.products])
   const filteredProducts = computed(() => {
@@ -52,6 +53,46 @@
       localProducts.value = [...newVal]
     }
   )
+
+  function emitProducts() {
+    emit('update:products', [...localProducts.value])
+  }
+
+  function toggleAllowTitle(el: CollectionProduct) {
+    el.allow_title = !el.allow_title
+    emitProducts()
+  }
+
+  function toggleAllowDescription(el: CollectionProduct) {
+    el.allow_description = !el.allow_description
+    emitProducts()
+  }
+
+  function toggleAllowPrice(el: CollectionProduct) {
+    el.allow_price = !el.allow_price
+    emitProducts()
+  }
+
+  function onPriceInput(e: Event, el: CollectionProduct) {
+    const input = e.target as HTMLInputElement
+    const val = input.value
+    const num = parseFloat(val)
+    if (val !== '' && !isNaN(num) && num < 0) {
+      el.product_price = '0'
+      input.value = '0'
+    }
+    emitProducts()
+  }
+
+  function onDragStart() {
+    isDragging.value = true
+  }
+
+  function onDragEnd() {
+    isDragging.value = false
+    dropIndex.value = null
+    emitProducts()
+  }
 
   const isDragging = ref(false)
   const dropIndex = ref<number | null>(null)
@@ -83,13 +124,8 @@
     chosen-class="drag-chosen"
     drag-class="dragging"
     @move="onMove"
-    @start="() => (isDragging = true)"
-    @end="
-      () => {
-        isDragging = false
-        dropIndex = null
-      }
-    "
+    @start="onDragStart"
+    @end="onDragEnd"
   >
     <template #header>
       <span v-show="false"></span>
@@ -105,7 +141,7 @@
           class="rounded-xl p-4 space-y-3 cursor-move transition-all duration-200 relative"
         >
           <button
-            v-if="!isLockerCollection"
+            v-if="!isLockerCollection && localProducts.length > 1"
             class="absolute top-2 right-2 z-10 rounded-full bg-background border p-1 hover:bg-destructive hover:text-destructive-foreground transition-colors"
             @click.stop="
               () => {
@@ -135,13 +171,13 @@
                   variant="ghost"
                   size="sm"
                   class="h-6 w-6 p-0"
-                  @click.stop="element.allow_title = !element.allow_title"
+                  @click.stop="toggleAllowTitle(element)"
                 >
                   <Eye v-if="element.allow_title" class="h-3 w-3" />
                   <EyeOff v-else class="h-3 w-3" />
                 </Button>
               </div>
-              <Input v-model="element.product_nickname" />
+              <Input v-model="element.product_nickname" @input="emitProducts" />
             </div>
 
             <div>
@@ -153,7 +189,7 @@
                   variant="ghost"
                   size="sm"
                   class="h-6 w-6 p-0"
-                  @click.stop="element.allow_description = !element.allow_description"
+                  @click.stop="toggleAllowDescription(element)"
                 >
                   <Eye v-if="element.allow_description" class="h-3 w-3" />
                   <EyeOff v-else class="h-3 w-3" />
@@ -162,6 +198,7 @@
               <Input
                 v-model="element.product_note"
                 :placeholder="locker_description_placeholder({}, { locale })"
+                @input="emitProducts"
               />
             </div>
 
@@ -174,13 +211,21 @@
                   variant="ghost"
                   size="sm"
                   class="h-6 w-6 p-0"
-                  @click.stop="element.allow_price = !element.allow_price"
+                  @click.stop="toggleAllowPrice(element)"
                 >
                   <Eye v-if="element.allow_price" class="h-3 w-3" />
                   <EyeOff v-else class="h-3 w-3" />
                 </Button>
               </div>
-              <Input v-model="element.product_price" type="number" placeholder="50" />
+              <Input
+                v-model="element.product_price"
+                type="number"
+                min="0"
+                step="any"
+                placeholder="50"
+                @keydown="(e: KeyboardEvent) => e.key === '-' && e.preventDefault()"
+                @input="onPriceInput($event, element)"
+              />
             </div>
           </div>
         </Card>

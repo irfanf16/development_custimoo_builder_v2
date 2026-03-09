@@ -49,6 +49,7 @@
 
   const emit = defineEmits<{
     (e: 'remove-product', products: CollectionProduct[]): void
+    (e: 'update:collection-products', products: CollectionProduct[]): void
     (e: 'logo-removed', index: number, logoId?: number): void
   }>()
 
@@ -236,6 +237,7 @@
         :sort="sort"
         :is-locker-collection="collection?.room_id !== null"
         @remove-product="handleRemoveProduct"
+        @update:products="emit('update:collection-products', $event)"
       />
     </div>
 

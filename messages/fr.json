@@ -490,6 +490,7 @@
   "msg_failed_to_upload_logo": "Échec du téléchargement du logo",
   "msg_failed_to_get_upload_url": "Échec de l'obtention de l'URL de téléchargement",
   "msg_upload_logo_before_collection": "Veuillez télécharger au moins un logo avant d'enregistrer la collection",
+  "msg_collection_name_required": "Le nom de la collection est requis",
   "msg_products_added_to_collection": "Produits ajoutés à la collection avec succès",
   "msg_failed_to_add_products_to_cart_from_locker": "Échec de l'ajout des produits au panier",
   "msg_locker_product_updated_success": "Produit du vestiaire mis à jour avec succès",

@@ -490,6 +490,7 @@
   "msg_failed_to_upload_logo": "Error al subir el logo",
   "msg_failed_to_get_upload_url": "Error al obtener la URL de subida",
   "msg_upload_logo_before_collection": "Sube al menos un logo antes de guardar la colección",
+  "msg_collection_name_required": "El nombre de la colección es obligatorio",
   "msg_products_added_to_collection": "Productos añadidos a la colección correctamente",
   "msg_failed_to_add_products_to_cart_from_locker": "Error al añadir productos al carrito",
   "msg_locker_product_updated_success": "Producto del vestuario actualizado correctamente",
