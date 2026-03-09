@@ -2,18 +2,20 @@
   <!-- <div class="p-4 space-y-6"> -->
   <div class="flex flex-col gap-4 sm:gap-6 w-full">
     <Tabs v-if="order.items && order.items.length > 0" v-model="activeTab">
-      <TabsList
-        class="grid w-1/2"
-        :style="{ gridTemplateColumns: `repeat(${order.items.length}, 1fr)` }"
-      >
-        <TabsTrigger
-          v-for="(_item, idx) in order.items"
-          :key="`tab-trigger-${idx}`"
-          :value="`factory-${idx}`"
+      <ScrollArea class="w-full" direction="horizontal">
+        <TabsList
+          class="grid w-max"
+          :style="{ gridTemplateColumns: `repeat(${order.items.length}, 1fr)` }"
         >
-          Factory {{ idx + 1 }}
-        </TabsTrigger>
-      </TabsList>
+          <TabsTrigger
+            v-for="(_item, idx) in order.items"
+            :key="`tab-trigger-${idx}`"
+            :value="`factory-${idx}`"
+          >
+            Factory {{ idx + 1 }}
+          </TabsTrigger>
+        </TabsList>
+      </ScrollArea>
       <template v-for="(item, idx) in order.items || []" :key="`item-${idx}`">
         <TabsContent :value="`factory-${idx}`" class="mt-4">
           <TimeLine
@@ -108,6 +110,7 @@
   import { useOrdersStore } from '@/stores/orders/orders.store'
   import { useTryCatchApi } from '@/composables/useTryCatchApi'
   import { formatDate } from '@/lib/utils'
+  import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
 
   const props = defineProps<{ order: Order }>()
   const order = computed(() => props.order)
