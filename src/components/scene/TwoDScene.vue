@@ -1767,6 +1767,11 @@
       const existing = otherSideTextObjects.value.get(key)
       if (existing) {
         existing.set({
+          fontFamily,
+          fontSize,
+          fill: item.color || '#000000',
+          stroke: item.outline_enabled ? item.outline_color : undefined,
+          strokeWidth: item.outline_enabled ? (item.outline_width ?? 0) : 0,
           left: stored.left,
           top: stored.top,
           angle: stored.rotation ?? 0,
