@@ -328,12 +328,9 @@ export const useProductsStore = defineStore('productsStore', () => {
         customization.ensureCustomization()
         saveCustomizationToLocalStorage()
       }
-      // Initialize product_custom_texts from product_texts if available
+      // Sync product_custom_texts with backend presets (initializes if empty, or migrates to new preset IDs when backend returns new ids after an edit)
       if (details.productDetails?.product_texts) {
-        customization.initializeProductTextsFromDetails(
-          productId,
-          details.productDetails.product_texts
-        )
+        customization.syncProductTextsWithPresets(productId, details.productDetails.product_texts)
       }
       customization.replaceHistoryWithCurrentState()
     } else {

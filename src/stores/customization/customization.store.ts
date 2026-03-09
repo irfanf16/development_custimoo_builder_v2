@@ -240,6 +240,66 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       saveToLocalStorage()
     }
   }
+  function syncProductTextsWithPresets(productId: number, productTexts: OutputProductText[]) {
+    if (!customization.value || !productTexts || productTexts.length === 0) return
+
+    const key = String(productId)
+    const existing = customization.value.product_custom_texts[key] ?? []
+
+    const result: OutputProductText[] = []
+    const usedExistingIndices = new Set<number>()
+
+    for (const preset of productTexts) {
+      const match = existing.find(
+        (e, idx) =>
+          !usedExistingIndices.has(idx) && e.type === preset.type && e.label === preset.label
+      )
+      if (match) {
+        const matchIndex = existing.indexOf(match)
+        usedExistingIndices.add(matchIndex)
+        result.push({
+          ...match,
+          id: preset.id,
+          product_id: preset.product_id,
+          items: match.items?.length
+            ? match.items.map(item => ({ ...item }))
+            : preset.items
+              ? [...preset.items]
+              : [],
+          following_products: preset.following_products ? [...preset.following_products] : [],
+          following_product_ids: preset.following_product_ids
+            ? [...preset.following_product_ids]
+            : []
+        })
+      } else {
+        result.push({
+          ...preset,
+          items: preset.items ? [...preset.items] : [],
+          following_products: preset.following_products ? [...preset.following_products] : [],
+          following_product_ids: preset.following_product_ids
+            ? [...preset.following_product_ids]
+            : []
+        })
+      }
+    }
+
+    for (let i = 0; i < existing.length; i++) {
+      if (usedExistingIndices.has(i)) continue
+      const e = existing[i]
+      if (!e) continue
+      if (e.manually_added || (e.id != null && e.id < 0)) {
+        result.push({
+          ...e,
+          items: e.items ? e.items.map(item => ({ ...item })) : [],
+          following_products: e.following_products ? [...e.following_products] : [],
+          following_product_ids: e.following_product_ids ? [...e.following_product_ids] : []
+        })
+      }
+    }
+
+    customization.value.product_custom_texts[key] = result
+    saveToLocalStorage()
+  }
 
   function clearRosterEntries() {
     if (!customization.value) return
@@ -1134,6 +1194,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     updateProductTextItem,
     clearRosterEntries,
     initializeProductTextsFromDetails,
+    syncProductTextsWithPresets,
     generateTemporaryTextId,
     setSelectedRosterPreviewIndex,
     updateProductTextValueById,

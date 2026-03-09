@@ -16,11 +16,15 @@ import { createEcommerceCartService, isEcommercePlatformSupported } from '@/serv
 import type { ProcessCartItemConfig } from '@/services/ecommerce/types'
 import { useCompanyStore } from '@/stores/company/company.store'
 import { useQueryParams } from '@/composables/useQueryParams'
+import { msg_product_added_to_cart } from '@/paraglide/messages'
+import { useProfileStore } from '../profile/profile.store'
 
 export const useCartStore = defineStore('cartStore', () => {
   // ===== DEPENDENCIES =====
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'cartStore' } })
   const companyStore = useCompanyStore()
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   // ===== STATE =====
   const cart = ref<Cart | null>(null)
@@ -212,10 +216,14 @@ export const useCartStore = defineStore('cartStore', () => {
     const response = await tryCatchApi(API.cart.storeProductToCart(payload), {
       operation: 'addProductToCart'
     })
+    console.log('Add to cart response:', response) // --- IGNORE ---
     if (response.success && response.content) {
       const cartResponse = response.content
       if (cartResponse.result) {
-        setSuccessMessage('Product added to cart successfully')
+        toast.success(msg_product_added_to_cart({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
 
         const company = companyStore.company
         if (company && isEcommercePlatformSupported(company.platform) && payload.factory_product) {
@@ -243,7 +251,7 @@ export const useCartStore = defineStore('cartStore', () => {
         setError(cartResponse.message || 'Failed to add product to cart')
       }
     } else {
-      setError('Failed to add product to cart')
+      setError(response.message || 'Failed to add product to cart')
     }
     isLoading.value = false
     return response.content

@@ -16,7 +16,6 @@
     msg_add_roster_entries_quantities,
     msg_cart_updated,
     msg_failed_to_update_cart,
-    msg_product_added_to_cart,
     msg_failed_to_add_to_cart
   } from '@/paraglide/messages'
   import { useUIStore } from '@/stores/ui/ui.store'
@@ -145,10 +144,6 @@
       await cartStore.addProductToCart({
         factory_product,
         product_assets
-      })
-      toast.success(msg_product_added_to_cart({}, { locale: locale.value }), {
-        position: 'top-right',
-        richColors: true
       })
     } catch (error) {
       toast.error(msg_failed_to_add_to_cart({}, { locale: locale.value }), {
