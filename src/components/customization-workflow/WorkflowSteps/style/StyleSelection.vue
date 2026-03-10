@@ -73,7 +73,8 @@
   async function toggleAddon(addonId: number, checked: boolean) {
     const pid = Number(productId.value)
     if (!pid || !customizationStore.customization) return
-    const prevIds = customizationStore.customization.addons_info?.[pid]?.simple_addons || []
+    const prevAddons = customizationStore.customization.addons_info?.[pid]?.addons || []
+    const prevIds = prevAddons.map(a => a.addon_id)
     const nextIds = checked
       ? prevIds.includes(addonId)
         ? prevIds
@@ -196,8 +197,8 @@
               !!(
                 productId &&
                 customizationStore.customization?.addons_info &&
-                customizationStore.customization.addons_info[productId]?.simple_addons?.includes(
-                  addon.addon_id
+                customizationStore.customization.addons_info[productId]?.addons?.some(
+                  infoAddon => infoAddon.addon_id === addon.addon_id
                 )
               )
             "

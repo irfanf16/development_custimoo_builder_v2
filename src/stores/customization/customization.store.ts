@@ -524,10 +524,27 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (!customization.value.addons_info)
       customization.value.addons_info =
         {} as import('@/services/products/types').APCustomizationAddonsInfo
+
+    // Derive grouped and ungrouped addons based on addon_group_id
+    const grouped_addons: Record<string, OutputAddon[]> = {}
+    const ungrouped_addons: OutputAddon[] = []
+
+    addons.forEach(addon => {
+      if (addon.addon_group_id != null) {
+        const groupKey = String(addon.addon_group_id)
+        if (!grouped_addons[groupKey]) {
+          grouped_addons[groupKey] = []
+        }
+        grouped_addons[groupKey].push(addon)
+      } else {
+        ungrouped_addons.push(addon)
+      }
+    })
+
     customization.value.addons_info[key] = {
-      grouped_addons: {},
-      ungrouped_addons: [],
-      simple_addons: addons.map(a => a.addon_id)
+      addons,
+      grouped_addons,
+      ungrouped_addons
     }
     saveToLocalStorage()
   }

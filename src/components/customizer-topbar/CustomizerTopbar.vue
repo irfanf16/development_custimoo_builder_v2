@@ -597,6 +597,10 @@
         pantone: group.pantone || ''
       }))
       const addonsInfo = customization.addons_info || {}
+      const productAddonsInfo = addonsInfo[productId] as
+        | import('@/services/products/types/customization').APCustomizationAddonsInfoEntry
+        | undefined
+      const selectedAddons = productAddonsInfo?.addons || []
       const groupedAddons =
         Object.keys(addonsInfo).length > 0
           ? Object.values(addonsInfo).reduce(
@@ -620,7 +624,7 @@
 
       const locker: SaveLockerProductPayload = {
         id: lockerRoomStore.editingLockerProductId,
-        addons: addonsInfo,
+        addons: selectedAddons,
         roster_url: false,
         room_id: lockerId,
         product_id: productId,

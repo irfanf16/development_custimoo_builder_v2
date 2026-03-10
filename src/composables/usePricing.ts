@@ -150,7 +150,10 @@ export const usePricing = () => {
     if (!productId || !activeProductDetails.value) return 0
 
     const preferredCode = companyStore.localization.currency.code
-    const addonIds = customizationStore.customization?.addons_info?.[productId]?.simple_addons || []
+    const addonIds =
+      customizationStore.customization?.addons_info?.[productId]?.addons?.map(
+        addon => addon.addon_id
+      ) || []
 
     let totalAddonPrice = 0
 

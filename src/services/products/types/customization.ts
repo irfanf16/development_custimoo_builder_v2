@@ -29,9 +29,9 @@ export type APCustomizationProductsRosters = Record<string, APCustomizationRoste
 export type APCustomizationRosterPreviewSelection = Record<string, number>
 
 export type APCustomizationAddonsInfoEntry = {
-  grouped_addons: Record<string, import('./addons').OutputAddon[]>
-  ungrouped_addons: import('./addons').OutputAddon[]
-  simple_addons: number[]
+  addons: import('./addons').OutputAddon[]
+  grouped_addons?: Record<string, import('./addons').OutputAddon[]>
+  ungrouped_addons?: import('./addons').OutputAddon[]
 }
 
 export type APCustomizationAddonsInfo = Record<string, APCustomizationAddonsInfoEntry>

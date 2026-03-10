@@ -194,12 +194,18 @@ export function useBuildFactoryProduct() {
     // Build factory_product payload with all required fields
     const selectedProduct = productsStore.activeProductDetails
 
-    const simpleAddonIds = Object.values(customization.addons_info || {}).flatMap(
-      (addonInfo: AddonInfo) => addonInfo?.simple_addons || []
+    // Collect full addon objects from customization (not just IDs)
+    const selectedAddons = Object.values(customization.addons_info || {}).flatMap(
+      (addonInfo: AddonInfo) => addonInfo?.addons || []
     )
-    const simpleAddonIdsSet = new Set(simpleAddonIds)
-    const addonsFromActive = (selectedProduct?.active_addons || []).filter(addon =>
-      simpleAddonIdsSet.has(addon.addon_id)
+
+    // Derive grouped and ungrouped addons (for backward-compatible payload fields)
+    const groupedAddonsFromInfo = Object.values(customization.addons_info || {}).flatMap(
+      (addonInfo: AddonInfo) => Object.values(addonInfo?.grouped_addons || {})
+    )
+    const grouped_addons = groupedAddonsFromInfo.flat()
+    const ungrouped_addons = Object.values(customization.addons_info || {}).flatMap(
+      (addonInfo: AddonInfo) => addonInfo?.ungrouped_addons || []
     )
 
     const factoryProduct: Record<string, unknown> = {
@@ -253,14 +259,10 @@ export function useBuildFactoryProduct() {
       fixed_logos: [], // Empty array as per example
       shuffle_color_number: customization.shuffle_color_number || 0,
 
-      // Addons (selected simple addons with full details from active_addons)
-      addons: addonsFromActive,
-      grouped_addons: Object.values(customization.addons_info || {}).flatMap(
-        (addonInfo: AddonInfo) => Object.values(addonInfo?.grouped_addons || {})
-      ),
-      ungrouped_addons: Object.values(customization.addons_info || {}).flatMap(
-        (addonInfo: AddonInfo) => addonInfo?.ungrouped_addons || []
-      ),
+      // Addons (full addon objects from customization store)
+      addons: selectedAddons,
+      grouped_addons,
+      ungrouped_addons,
       ecommerce_product_id: '',
       ecommerce_variant_id: '',
       ecommerce_modifier_id: '',

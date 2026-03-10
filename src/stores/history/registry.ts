@@ -42,7 +42,7 @@ import type {
   RosterRemoveEntryPayload,
   RosterAddEntryPayload
 } from './types'
-import type { OutputAddon, OutputCompanyAddon, OutputProductText } from '@/services/products/types'
+import type { OutputAddon, OutputProductText } from '@/services/products/types'
 
 type Handler<T> = {
   apply(ctx: HistoryContext, payload: T): void | Promise<void>
@@ -1043,23 +1043,39 @@ export const registry: Registry = {
       const details = ctx.productsStore.activeProductDetails
       const uniq = (arr: number[]) => Array.from(new Set(arr))
       const nextIds = uniq(payload.nextIds)
-      type MinimalAddon = { addon_id: number; title: string }
-      const companyAddonsRaw: MinimalAddon[] = (details?.company_addons || []).map(
-        (a: OutputCompanyAddon) => ({ addon_id: a.addon_id, title: a.addon_data?.title || '' })
-      )
-      const productAddonsRaw: MinimalAddon[] = (details?.product_addons || []).map(
-        (a: OutputAddon) => ({ addon_id: a.addon_id, title: a.title || '' })
-      )
-      const idToAddon = new Map<number, MinimalAddon>()
-      for (const a of companyAddonsRaw) idToAddon.set(a.addon_id, a)
-      for (const a of productAddonsRaw) if (!idToAddon.has(a.addon_id)) idToAddon.set(a.addon_id, a)
-      const allAddons: MinimalAddon[] = Array.from(idToAddon.values())
-      const selected = allAddons
-        .filter((a: MinimalAddon) => nextIds.includes(a.addon_id))
-        .map((a: MinimalAddon) => ({
+
+      // Build a map of addon_id -> full OutputAddon payload
+      const idToAddon = new Map<number, OutputAddon>()
+
+      // Normalize company_addons (OutputCompanyAddon) into OutputAddon shape
+      for (const a of details?.company_addons || []) {
+        const normalized: OutputAddon = {
+          addon_ecommerce_modifier_id: a.addon_ecommerce_modifier_id,
+          addon_ecommerce_product_id: a.addon_ecommerce_product_id,
+          addon_ecommerce_variant_id: a.addon_ecommerce_variant_id,
+          addon_group_id: null,
           addon_id: a.addon_id,
-          title: a.title
-        })) as unknown as OutputAddon[]
+          currencies: a.addon_data?.currencies || [],
+          customized_sku_info: null,
+          data_container_id: null,
+          description: a.addon_data?.description || '',
+          note: a.addon_data?.note ?? null,
+          published: true,
+          selected: true,
+          title: a.addon_data?.title || ''
+        }
+        idToAddon.set(normalized.addon_id, normalized)
+      }
+
+      // Merge in product_addons (already OutputAddon shape); prefer company_addons when duplicate
+      for (const a of (details?.product_addons || []) as OutputAddon[]) {
+        if (!idToAddon.has(a.addon_id)) {
+          idToAddon.set(a.addon_id, { ...a, selected: true, published: a.published ?? true })
+        }
+      }
+
+      const allAddons: OutputAddon[] = Array.from(idToAddon.values())
+      const selected = allAddons.filter(a => nextIds.includes(a.addon_id))
       customizationStore.setAddons(selected)
     },
     revert(ctx: HistoryContext, payload: AddonsSetPayload) {
@@ -1067,23 +1083,39 @@ export const registry: Registry = {
       const details = ctx.productsStore.activeProductDetails
       const uniq = (arr: number[]) => Array.from(new Set(arr))
       const prevIds = uniq(payload.prevIds)
-      type MinimalAddon = { addon_id: number; title: string }
-      const companyAddonsRaw: MinimalAddon[] = (details?.company_addons || []).map(
-        (a: OutputCompanyAddon) => ({ addon_id: a.addon_id, title: a.addon_data?.title || '' })
-      )
-      const productAddonsRaw: MinimalAddon[] = (details?.product_addons || []).map(
-        (a: OutputAddon) => ({ addon_id: a.addon_id, title: a.title || '' })
-      )
-      const idToAddon = new Map<number, MinimalAddon>()
-      for (const a of companyAddonsRaw) idToAddon.set(a.addon_id, a)
-      for (const a of productAddonsRaw) if (!idToAddon.has(a.addon_id)) idToAddon.set(a.addon_id, a)
-      const allAddons: MinimalAddon[] = Array.from(idToAddon.values())
-      const selected = allAddons
-        .filter((a: MinimalAddon) => prevIds.includes(a.addon_id))
-        .map((a: MinimalAddon) => ({
+
+      // Build a map of addon_id -> full OutputAddon payload
+      const idToAddon = new Map<number, OutputAddon>()
+
+      // Normalize company_addons (OutputCompanyAddon) into OutputAddon shape
+      for (const a of details?.company_addons || []) {
+        const normalized: OutputAddon = {
+          addon_ecommerce_modifier_id: a.addon_ecommerce_modifier_id,
+          addon_ecommerce_product_id: a.addon_ecommerce_product_id,
+          addon_ecommerce_variant_id: a.addon_ecommerce_variant_id,
+          addon_group_id: null,
           addon_id: a.addon_id,
-          title: a.title
-        })) as unknown as OutputAddon[]
+          currencies: a.addon_data?.currencies || [],
+          customized_sku_info: null,
+          data_container_id: null,
+          description: a.addon_data?.description || '',
+          note: a.addon_data?.note ?? null,
+          published: true,
+          selected: true,
+          title: a.addon_data?.title || ''
+        }
+        idToAddon.set(normalized.addon_id, normalized)
+      }
+
+      // Merge in product_addons (already OutputAddon shape); prefer company_addons when duplicate
+      for (const a of (details?.product_addons || []) as OutputAddon[]) {
+        if (!idToAddon.has(a.addon_id)) {
+          idToAddon.set(a.addon_id, { ...a, selected: true, published: a.published ?? true })
+        }
+      }
+
+      const allAddons: OutputAddon[] = Array.from(idToAddon.values())
+      const selected = allAddons.filter(a => prevIds.includes(a.addon_id))
       customizationStore.setAddons(selected)
     },
     describe(ctx: HistoryContext, p: AddonsSetPayload) {

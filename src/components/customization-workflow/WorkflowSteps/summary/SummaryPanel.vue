@@ -176,13 +176,7 @@
     const productId = customizationStore.activeProductId
     if (!productId) return []
     const addonsInfo = customizationStore.customization?.addons_info?.[productId]
-    if (!addonsInfo?.simple_addons) return []
-
-    // Get addon details from product details - addons property might not exist
-    const productAddons = activeProductDetails.value?.active_addons ?? []
-    return addonsInfo.simple_addons
-      .map((addonId: number) => productAddons.find(a => a.addon_id === addonId))
-      .filter(Boolean)
+    return addonsInfo?.addons || []
   })
 
   // Logos

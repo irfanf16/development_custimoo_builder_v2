@@ -365,6 +365,14 @@
             pantone: group.pantone || ''
           }))
           const addonsInfo = customization?.addons_info || {}
+
+        const productAddonsInfo = addonsInfo[productId] as
+          | import('@/services/products/types/customization').APCustomizationAddonsInfoEntry
+          | undefined
+        const selectedAddons = productAddonsInfo?.addons || []
+
+        // grouped_addons should be an object (empty object if no grouped addons)
+
           const groupedAddons =
             Object.keys(addonsInfo).length > 0
               ? Object.values(addonsInfo).reduce(
@@ -378,8 +386,10 @@
           const ungroupedAddons = Object.values(addonsInfo).flatMap(
             (addonInfo: any) => addonInfo?.ungrouped_addons || []
           )
-          locker = {
-            addons: addonsInfo,
+
+        // Build locker product payload (plain JSON values — no double encoding)
+        const locker: SaveLockerProductPayload = {
+          addons: selectedAddons,
             roster_url: false,
             room_id: selectedLockerId.value!,
             product_id: productId,
