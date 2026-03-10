@@ -559,7 +559,7 @@
   "msg_failed_to_convert_files_download": "Failed to convert files for download",
   "msg_files_downloading": "Files downloading...",
   "msg_failed_to_download_files": "Failed to download files",
-  "msg_provide_rejection_feedback": "Please provide feedback for the rejection",
+  "msg_provide_rejection_feedback": "Please submit feedback for the rejection for all samples that are rejected.",
   "msg_review_all_samples": "Please review all samples before submitting",
   "msg_passwords_do_not_match": "Passwords do not match",
   "msg_select_valid_country": "Please select a valid country",

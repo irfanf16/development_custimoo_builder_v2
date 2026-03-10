@@ -106,7 +106,8 @@ export function useThirdPartyApprovalInitialization() {
 
     const payload: SubmissionPayload = {
       order_item_id: orderItemId.value,
-      approval_details: approvalDetails
+      approval_details: approvalDetails,
+      auth_token: authToken.value
     }
 
     const response = await tryCatchApi(submitThirdPartyApprovalApi(payload), {

@@ -27,6 +27,7 @@ export interface ApprovalDetail {
 export interface SubmissionPayload {
   order_item_id: string | number
   approval_details: ApprovalDetail[]
+  auth_token: string
 }
 
 export interface GetSamplesResponse {

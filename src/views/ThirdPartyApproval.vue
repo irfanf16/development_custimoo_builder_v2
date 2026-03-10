@@ -158,6 +158,14 @@
       return
     }
 
+    const rejectedWithoutFeedback = sampleStatus.value.some(
+      (status, idx) => status === 'rejected' && !sampleFeedback.value[idx]?.trim()
+    )
+    if (rejectedWithoutFeedback) {
+      toast.error(msg_provide_rejection_feedback({}, { locale: locale.value }))
+      return
+    }
+
     isSubmitting.value = true
 
     const approvalDetails: ApprovalDetail[] = approvalInit.samples.value.map((sample, idx) => ({
