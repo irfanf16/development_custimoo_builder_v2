@@ -16,7 +16,12 @@
   import { useProductConfig } from './useProductConfig'
   import { PRODUCT_TYPE } from './useProductConfig'
   import LazyTwoDScene from '../LazyTwoDScene.vue'
-  import { products_product_details, products_product_type_customized } from '@/paraglide/messages'
+  import { toast } from 'vue-sonner'
+  import {
+    products_product_details,
+    products_product_type_customized,
+    msg_no_products_found
+  } from '@/paraglide/messages'
   import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
 
   interface Emits {
@@ -170,21 +175,42 @@
     isDetailsDialogOpen.value = true
   }
 
-  // Search and filtering
-  const filteredPreviews = computed(() => {
+  // 1. Filter the raw previews list based on the customized/personalized toggle
+  const availablePreviews = computed(() => {
     let items = previews.value
-
-    // If filter is shown, apply filter by product_type
     if (showCustomizerStockFilter.value) {
       const filter = customizerStockFilterModel.value
       if (filter !== 'all') {
         items = items.filter(p => p.productPreview.product_type === filter)
       }
     }
+    return items
+  })
 
+  // 2. Compute search matches based on the toggled list
+  const searchMatches = computed(() => {
     const query = productSearchModel.value.trim().toLowerCase()
-    if (!query) return items
-    return items.filter(p => p.productPreview.display_name.toLowerCase().includes(query))
+    if (!query) return null
+    return availablePreviews.value.filter(p =>
+      p.productPreview.display_name.toLowerCase().includes(query)
+    )
+  })
+
+  // 3. Status flag for the toast watcher
+  const isSearchNoResults = computed(() => {
+    return (
+      !!searchMatches.value &&
+      searchMatches.value.length === 0 &&
+      availablePreviews.value.length > 0
+    )
+  })
+
+  // 4. Final list to display in the UI (with fallback to all products)
+  const filteredPreviews = computed(() => {
+    if (!searchMatches.value || searchMatches.value.length === 0) {
+      return availablePreviews.value
+    }
+    return searchMatches.value
   })
 
   // Determine if both "customized" (bespoke) and "personalized" products exist in previews
@@ -202,6 +228,19 @@
     },
     { immediate: true }
   )
+
+  watch(isSearchNoResults, noResults => {
+    if (noResults) {
+      toast.error(msg_no_products_found({}, { locale: profileStore.currentLocale }), {
+        id: 'product-search-no-results',
+        position: 'top-right',
+        richColors: true,
+        duration: 3000
+      })
+    } else {
+      toast.dismiss('product-search-no-results')
+    }
+  })
 
   onUnmounted(() => {
     showCustomizerStockFilter.value = false

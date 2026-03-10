@@ -521,6 +521,7 @@
   "msg_invalid_order_product": "Invalid order product",
   "msg_failed_to_load_product_sharing": "Failed to load product data for sharing",
   "msg_product_data_not_found": "Product data not found",
+  "msg_no_products_found": "No products found",
   "msg_product_id_not_found": "Product ID not found",
   "msg_design_shared_success": "Design shared successfully!",
   "msg_failed_to_share_design": "Failed to share design",

@@ -479,6 +479,7 @@
   "msg_invalid_order_product": "Producto de pedido no válido",
   "msg_failed_to_load_product_sharing": "Error al cargar datos para compartir",
   "msg_product_data_not_found": "Datos del producto no encontrados",
+  "msg_no_products_found": "No se encontraron productos",
   "msg_product_id_not_found": "ID de producto no encontrado",
   "msg_design_shared_success": "¡Diseño compartido con éxito!",
   "msg_failed_to_share_design": "Error al compartir el diseño",

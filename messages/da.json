@@ -479,6 +479,7 @@
   "msg_invalid_order_product": "Ugyldigt ordreprodukt",
   "msg_failed_to_load_product_sharing": "Kunne ikke indlæse produktdata til deling",
   "msg_product_data_not_found": "Produktdata ikke fundet",
+  "msg_no_products_found": "Ingen produkter fundet",
   "msg_product_id_not_found": "Produkt-ID ikke fundet",
   "msg_design_shared_success": "Design delt!",
   "msg_failed_to_share_design": "Kunne ikke dele design",

@@ -479,6 +479,7 @@
   "msg_invalid_order_product": "Produit de commande invalide",
   "msg_failed_to_load_product_sharing": "Échec du chargement des données pour le partage",
   "msg_product_data_not_found": "Données produit introuvables",
+  "msg_no_products_found": "Aucun produit trouvé",
   "msg_product_id_not_found": "ID produit introuvable",
   "msg_design_shared_success": "Design partagé avec succès !",
   "msg_failed_to_share_design": "Échec du partage du design",
