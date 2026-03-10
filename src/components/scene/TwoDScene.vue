@@ -1143,7 +1143,7 @@
     const modelStart = modelRect.left - 1
     const modelEnd = modelRect.left + modelRect.width + 1
 
-    const destSide = (props.side === 'back' ? 'front' : 'back') as 'front' | 'back'
+    const destSide = props.side === 'back' ? 'front' : 'back'
 
     if (
       canvas.value.isTargetTransparent(design as unknown as FabricObject, checkPointX, checkPointY)
@@ -1767,6 +1767,7 @@
       const existing = otherSideTextObjects.value.get(key)
       if (existing) {
         existing.set({
+          text: entry.value,
           fontFamily,
           fontSize,
           fill: item.color || '#000000',
@@ -1834,7 +1835,6 @@
   watch(
     () => sceneStore.getOtherSideTexts(props.side as 'front' | 'back'),
     async () => {
-      console.log('check on all empty')
       if (isPlacementMode.value) return
       setTimeout(async () => {
         await renderOtherSideTextsFromStore()
