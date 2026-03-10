@@ -2,14 +2,6 @@
   import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
   import { Button } from '@/components/ui/button'
-  import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle
-  } from '@/components/ui/dialog'
-  import AddressForm from './AddressForm.vue'
   import { computed, onMounted } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import Card from '@/components/ui/card/Card.vue'
@@ -17,7 +9,6 @@
   import Badge from '@/components/ui/badge/Badge.vue'
   import { flexFlatCategoryIcons } from '@/icons/flex-flat-categories'
   import { m as messages } from '@/paraglide/messages'
-  import { useUIStore } from '@/stores/ui/ui.store'
   import type { Address } from '@/services/customers/types'
 
   const props = defineProps<{
@@ -47,17 +38,8 @@
     personal: messages.profile_personal({}, { locale: store.currentLocale }),
     defaultAddress: messages.profile_default_address({}, { locale: store.currentLocale }),
     setAsDefault: messages.profile_set_as_default({}, { locale: store.currentLocale }),
-    edit: messages.profile_edit({}, { locale: store.currentLocale }),
-    editAddress: messages.profile_edit_address({}, { locale: store.currentLocale }),
-    confirmDelete: messages.profile_confirm_delete({}, { locale: store.currentLocale }),
-    confirmDeleteMessage: messages.profile_confirm_delete_message(
-      {},
-      { locale: store.currentLocale }
-    ),
-    cancel: messages.profile_cancel({}, { locale: store.currentLocale }),
-    yesDelete: messages.profile_yes_delete({}, { locale: store.currentLocale })
+    edit: messages.profile_edit({}, { locale: store.currentLocale })
   }))
-  const uiStore = useUIStore()
 </script>
 <template>
   <div class="flex flex-col h-full px-4">
@@ -218,39 +200,6 @@
       </ScrollArea>
     </div>
 
-    <!-- Add/Edit Modal -->
-    <Dialog v-model:open="store.showAddModal">
-      <DialogContent
-        class="max-w-2xl"
-        :class="{
-          'fixed w-full max-w-full max-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] bottom-0 left-0 right-0 inset-x-0 -translate-x-0 translate-y-0 transform-none rounded-t-2xl rounded-b-none p-4 overflow-hidden flex flex-col grid-cols-none top-auto':
-            uiStore.isMobile
-        }"
-      >
-        <DialogHeader>
-          <DialogTitle>{{ store.editingAddress ? t.editAddress : t.addNewAddress }}</DialogTitle>
-        </DialogHeader>
-        <AddressForm
-          v-if="store.showAddModal"
-          :address="store.editingAddress"
-          @save="store.saveAddress"
-          @cancel="store.showAddModal = false"
-        />
-      </DialogContent>
-    </Dialog>
-
-    <!-- Delete Confirmation -->
-    <Dialog v-model:open="store.showDeleteConfirm">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{{ t.confirmDelete }}</DialogTitle>
-          <DialogDescription>{{ t.confirmDeleteMessage }}</DialogDescription>
-        </DialogHeader>
-        <div class="flex gap-2 justify-end">
-          <Button variant="outline" @click="store.showDeleteConfirm = false">{{ t.cancel }}</Button>
-          <Button variant="destructive" @click="store.deleteAddress">{{ t.yesDelete }}</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <!-- Add/Edit and Delete modals are in ProfileDialog so they work from Account tab too -->
   </div>
 </template>

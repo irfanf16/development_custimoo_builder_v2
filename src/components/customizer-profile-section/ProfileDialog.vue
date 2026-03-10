@@ -16,8 +16,16 @@
   import { Button } from '@/components/ui/button'
   import { ArrowLeft } from 'lucide-vue-next'
   import { m as messages } from '@/paraglide/messages'
-  import { DialogTitle, DialogDescription } from '@/components/ui/dialog'
+  import {
+    DialogTitle,
+    DialogDescription,
+    DialogHeader,
+    Dialog as DialogRoot,
+    DialogContent as DialogContentInner
+  } from '@/components/ui/dialog'
   import { useSignIn } from '@/composables/useSignIn'
+  import AddressForm from './address-section/AddressForm.vue'
+  import { m as profileMessages } from '@/paraglide/messages'
 
   const props = defineProps<{
     open: boolean
@@ -98,6 +106,24 @@
     emit('selectAddress', address)
     emit('update:open', false)
   }
+
+  const addressModalT = computed(() => ({
+    editAddress: profileMessages.profile_edit_address({}, { locale: profileStore.currentLocale }),
+    addNewAddress: profileMessages.profile_add_new_address(
+      {},
+      { locale: profileStore.currentLocale }
+    ),
+    confirmDelete: profileMessages.profile_confirm_delete(
+      {},
+      { locale: profileStore.currentLocale }
+    ),
+    confirmDeleteMessage: profileMessages.profile_confirm_delete_message(
+      {},
+      { locale: profileStore.currentLocale }
+    ),
+    cancel: profileMessages.profile_cancel({}, { locale: profileStore.currentLocale }),
+    yesDelete: profileMessages.profile_yes_delete({}, { locale: profileStore.currentLocale })
+  }))
 
   watch(
     () => props.open,
@@ -281,6 +307,47 @@
           </Transition>
         </div>
       </template>
+
+      <!-- Add/Edit Address Modal (shared so it works from Account tab without switching) -->
+      <DialogRoot v-model:open="profileStore.showAddModal">
+        <DialogContentInner
+          class="max-w-2xl"
+          :class="{
+            'fixed w-full max-w-full max-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] bottom-0 left-0 right-0 inset-x-0 -translate-x-0 translate-y-0 transform-none rounded-t-2xl rounded-b-none p-4 overflow-hidden flex flex-col grid-cols-none top-auto':
+              uiStore.isMobile
+          }"
+        >
+          <DialogHeader>
+            <DialogTitle>{{
+              profileStore.editingAddress ? addressModalT.editAddress : addressModalT.addNewAddress
+            }}</DialogTitle>
+          </DialogHeader>
+          <AddressForm
+            v-if="profileStore.showAddModal"
+            :address="profileStore.editingAddress"
+            @save="profileStore.saveAddress"
+            @cancel="profileStore.showAddModal = false"
+          />
+        </DialogContentInner>
+      </DialogRoot>
+
+      <!-- Delete Address Confirmation -->
+      <DialogRoot v-model:open="profileStore.showDeleteConfirm">
+        <DialogContentInner>
+          <DialogHeader>
+            <DialogTitle>{{ addressModalT.confirmDelete }}</DialogTitle>
+            <DialogDescription>{{ addressModalT.confirmDeleteMessage }}</DialogDescription>
+          </DialogHeader>
+          <div class="flex gap-2 justify-end">
+            <Button variant="outline" @click="profileStore.showDeleteConfirm = false">{{
+              addressModalT.cancel
+            }}</Button>
+            <Button variant="destructive" @click="profileStore.deleteAddress">{{
+              addressModalT.yesDelete
+            }}</Button>
+          </div>
+        </DialogContentInner>
+      </DialogRoot>
     </DialogContent>
   </Dialog>
 </template>

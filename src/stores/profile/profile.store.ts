@@ -220,11 +220,20 @@ export const useProfileStore = defineStore('profileStore', () => {
     return Boolean(address.default)
   }
 
+  /** Normalize default flag from backend (0/1 or is_default) to boolean so cart and UI work consistently */
+  function normalizeAddressDefault(a: Address): Address {
+    const raw = a as Address & { is_default?: number }
+    const isDefault = a.default === true || a.default === 1 || raw.is_default === 1
+    return { ...a, default: isDefault }
+  }
+
   async function fetchAddresses() {
     isLoadingAddresses.value = true
     try {
       const res = await API.customer.getAddresses()
-      if (res.success) addresses.value = res.result || []
+      if (res.success) {
+        addresses.value = (res.result || []).map(normalizeAddressDefault)
+      }
     } catch (e) {
       console.error('Fetch addresses error:', e)
     } finally {
@@ -247,7 +256,9 @@ export const useProfileStore = defineStore('profileStore', () => {
     }
   }
 
-  const defaultAddress = computed(() => addresses.value.find(address => address.default))
+  const defaultAddress = computed(() =>
+    addresses.value.find(address => address.default === 1 || address.default === true)
+  )
 
   async function saveAddress(payload: AddressPayload) {
     isLoadingAddresses.value = true

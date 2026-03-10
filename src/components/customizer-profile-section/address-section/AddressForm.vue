@@ -156,14 +156,15 @@
   const { handleSubmit: submitHandler, setValues, values, resetForm, validate } = form
 
   const onSubmit = submitHandler((values: AddressFormValues) => {
+    // default can be missing from values when the checkbox FormField is conditionally rendered
+    const isDefault = Boolean(values.default ?? profileStore.addressForm.default)
     const payload: AddressPayload = {
       ...values,
       country: Number(values.country),
-      default: Boolean(values.default)
+      default: isDefault
     }
     emit('save', payload)
   })
-
   const handleCancel = () => {
     resetForm({
       values: createFormValuesFromStore()
@@ -479,19 +480,24 @@
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField
-          v-if="!props.address || !props.address.default"
-          v-slot="{ field }"
-          name="default"
-          v-bind="fieldValidationTriggers"
-        >
-          <FormItem class="flex flex-row items-center gap-3 space-y-0">
+        <!-- Always mount FormField so "default" is in form values on submit; only show checkbox when not already default -->
+        <FormField v-slot="{ field }" name="default" v-bind="fieldValidationTriggers">
+          <FormItem
+            v-if="!props.address || !props.address.default"
+            class="flex flex-row items-center gap-3 space-y-0"
+          >
             <FormControl>
               <Checkbox
                 id="checkbox-default"
-                :checked="field.value"
+                :model-value="Boolean(field.value)"
                 :disabled="isSavingAddress"
-                @update:checked="field.onChange"
+                @update:model-value="
+                  (v: unknown) => {
+                    const checked = Boolean(v)
+                    field.onChange(checked)
+                    profileStore.addressForm.default = checked
+                  }
+                "
                 @blur="field.onBlur"
               />
             </FormControl>
@@ -499,6 +505,10 @@
               {{ t.setAsDefaultAddress }}
             </FormLabel>
             <FormMessage />
+          </FormItem>
+          <!-- When editing default address, keep field mounted (value already true from setValues) -->
+          <FormItem v-else class="hidden space-y-0">
+            <FormControl />
           </FormItem>
         </FormField>
 

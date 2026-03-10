@@ -64,7 +64,6 @@
 
   function handleEditDefaultAddress() {
     if (defaultAddress.value) {
-      profileStore.activeTab = 'address'
       profileStore.editingAddress = defaultAddress.value
       profileStore.showAddModal = true
     }
@@ -188,7 +187,8 @@
               {{ defaultAddress?.address1 ?? 'Danneskiold-Samsøes Allé 41' }}
             </div>
             <div class="text-sm text-muted-foreground">
-              {{ defaultAddress?.zip_code }},{{ defaultAddress?.city }}
+              {{ defaultAddress?.zip_code }}, {{ defaultAddress?.city
+              }}{{ defaultAddress?.state ? ', ' + defaultAddress.state : '' }}
             </div>
           </CardContent>
         </Card>

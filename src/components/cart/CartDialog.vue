@@ -268,22 +268,29 @@
     isOpen => {
       if (isOpen) {
         invalidQuantityIds.value = []
+
         // Only fetch if not already fetched on page load
-        // The watcher in useCart with immediate: true will map existing cart data
         if (!cartStore.hasFetchedOnPageLoad) {
           fetchCart()
         } else if (cartStore.cart && products.value.length === 0) {
           // If cart exists but products aren't mapped yet, force mapping
           fetchCart()
         }
+
         // Refresh addresses when cart opens
         profileStore.fetchAddresses()
-        // Set default address if not already selected
-        if (!selectedAddress.value && profileStore.defaultAddress) {
-          selectedAddress.value = profileStore.defaultAddress
-        }
       }
     }
+  )
+
+  watch(
+    () => profileStore.defaultAddress,
+    addr => {
+      if (addr) {
+        selectedAddress.value = addr
+      }
+    },
+    { immediate: true }
   )
 
   function openAddressDialog() {
