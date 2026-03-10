@@ -293,12 +293,11 @@
         }
       })
 
+      let locker: SaveLockerProductPayload
       const results = await uploadPresignedFiles(preparedFiles)
       if (results.every(r => r.success)) {
         const frontUrl = signedUrls.urls.find(item => item.file_side === 'front')!.original_url
         const backUrl = signedUrls.urls.find(item => item.file_side === 'back')!.original_url
-
-        let locker: SaveLockerProductPayload
 
         if (collectionProduct.value) {
           const plr = collectionProduct.value.product_locker_room
@@ -366,12 +365,12 @@
           }))
           const addonsInfo = customization?.addons_info || {}
 
-        const productAddonsInfo = addonsInfo[productId] as
-          | import('@/services/products/types/customization').APCustomizationAddonsInfoEntry
-          | undefined
-        const selectedAddons = productAddonsInfo?.addons || []
+          const productAddonsInfo = addonsInfo[productId] as
+            | import('@/services/products/types/customization').APCustomizationAddonsInfoEntry
+            | undefined
+          const selectedAddons = productAddonsInfo?.addons || []
 
-        // grouped_addons should be an object (empty object if no grouped addons)
+          // grouped_addons should be an object (empty object if no grouped addons)
 
           const groupedAddons =
             Object.keys(addonsInfo).length > 0
@@ -387,9 +386,9 @@
             (addonInfo: any) => addonInfo?.ungrouped_addons || []
           )
 
-        // Build locker product payload (plain JSON values — no double encoding)
-        const locker: SaveLockerProductPayload = {
-          addons: selectedAddons,
+          // Build locker product payload (plain JSON values — no double encoding)
+          locker = {
+            addons: selectedAddons,
             roster_url: false,
             room_id: selectedLockerId.value!,
             product_id: productId,
