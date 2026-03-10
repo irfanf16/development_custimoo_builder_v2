@@ -11,6 +11,9 @@ import { FABRIC_CONTROL_VISIBILITY } from './useFabricControls'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
 import { createTextAsPathFromFonts, type ProductsFonts } from './useTextAsPath'
+import { useSceneStore } from '@/stores/scene/scene.store'
+
+const sceneStore = useSceneStore()
 
 /**
  * Custom text structure (from customization store):
@@ -120,6 +123,8 @@ export type SyncTextsOptions = {
   heightScale: number
   /** Scale ratios for position/scale (canvas vs main canvas) */
   getScaleRatios: () => { widthRatio: number; heightRatio: number }
+  /** Side of the canvas */
+  side?: 'front' | 'back' | null
   /** Optional callback after sync */
   onAfterSync?: () => void
 }
@@ -558,6 +563,7 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
     calculateRotation,
     heightScale,
     getScaleRatios,
+    side,
     onAfterSync
   } = options
 
@@ -663,6 +669,14 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
 
   // Remove leftover unmatched objects from textObjects and from canvas
   available.forEach(entry => {
+    if (side) {
+      // also remove from other side store
+      sceneStore.removeOtherSideText(
+        side === 'front' ? 'back' : 'front',
+        entry.obj.custom_text_index!,
+        entry.obj.custom_text_item_index!
+      )
+    }
     textObjects.value.delete(entry.key)
     canvas.remove(entry.obj)
   })

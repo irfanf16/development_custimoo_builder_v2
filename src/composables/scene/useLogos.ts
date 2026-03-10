@@ -12,6 +12,9 @@ import { FABRIC_CONTROL_VISIBILITY } from './useFabricControls'
 import { useDebounceFn } from '@vueuse/core'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import type { CustomLogo } from '@/services/logos/types'
+import { useSceneStore } from '@/stores/scene/scene.store'
+
+const sceneStore = useSceneStore()
 
 /** Build a full signature for a logo (used for diffing) */
 export function getLogoSignature(logo: CustomLogo): string {
@@ -117,6 +120,8 @@ export type SyncLogosOptions = {
   mainPreview: boolean
   /** Converts px to measurement units; used when mainPreview is true */
   convertSize: (px: number) => number
+  /** Side of the canvas */
+  side?: 'front' | 'back' | null
 }
 
 /**
@@ -399,7 +404,8 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
     onAfterSync,
     suppressWatchRef,
     mainPreview,
-    convertSize
+    convertSize,
+    side = null
   } = options
 
   if (!canvas) return
@@ -503,6 +509,9 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
 
   // Remove leftover unmatched objects from canvas and from logoObjects
   available.forEach(entry => {
+    if (side) {
+      sceneStore.removeOtherSideLogo(side === 'front' ? 'back' : 'front', entry.idx)
+    }
     logoObjects.value.delete(entry.idx)
     canvas.remove(entry.obj as FabricObject)
   })

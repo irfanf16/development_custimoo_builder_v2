@@ -1834,6 +1834,7 @@
   watch(
     () => sceneStore.getOtherSideTexts(props.side as 'front' | 'back'),
     async () => {
+      console.log('check on all empty')
       if (isPlacementMode.value) return
       setTimeout(async () => {
         await renderOtherSideTextsFromStore()
@@ -1887,6 +1888,7 @@
         suppressWatchRef: suppressCustomLogosWatch,
         mainPreview: props.mainPreview,
         convertSize: convertSizeToMeasurement,
+        side: props.side as 'front' | 'back',
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()
@@ -1917,6 +1919,7 @@
         suppressWatchRef: suppressCustomLogosWatch,
         mainPreview: props.mainPreview,
         convertSize: convertSizeToMeasurement,
+        side: props.side as 'front' | 'back',
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()
@@ -1946,6 +1949,7 @@
         calculateRotation: calculateRotation2D,
         heightScale: heightScaleForText.value,
         getScaleRatios: calculateScaleRatios2D,
+        side: props.side as 'front' | 'back',
         onAfterSync: () => {
           if (canvas.value) {
             canvas.value.requestRenderAll()
