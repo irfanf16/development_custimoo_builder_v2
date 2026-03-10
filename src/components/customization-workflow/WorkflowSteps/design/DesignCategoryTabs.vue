@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { MoreHorizontal, Funnel, Check } from 'lucide-vue-next'
+  import { MoreHorizontal, Funnel, Check, ChevronDown } from 'lucide-vue-next'
   import { Button } from '@/components/ui/button'
   import {
     DropdownMenu,
@@ -56,8 +56,22 @@
     if (props.isExpanded || designCategories.value.length <= 3) {
       return []
     }
-    return designCategories.value
+    return designCategories.value.slice(2)
   })
+
+  // When selection is from the "More" dropdown, show it on the trigger so it's visible from outside
+  const selectedFromDropdown = computed(() => {
+    const id = isActive.value
+    if (id == null) return null
+    return dropdownCategories.value.find(c => c.id === id) ?? null
+  })
+
+  const moreButtonLabel = computed(() => {
+    const cat = selectedFromDropdown.value
+    return cat ? cat.category_name : moreLabel.value
+  })
+
+  const isMoreButtonSelected = computed(() => selectedFromDropdown.value != null)
 
   const handleCategoryChange = (categoryId: number | null) => {
     props.onSelect(categoryId ?? null)
@@ -91,11 +105,11 @@
       class="inline-flex items-center justify-start w-full h-auto gap-2"
     >
       <Button
-        class="rounded-lg"
+        class="rounded-lg transition-colors"
         :class="
           isActive === null
-            ? 'bg-primary text-primary-foreground hover:text-white'
-            : 'hover:bg-transparent hover:text-primary hover:border hover:border-primary'
+            ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-white'
+            : 'hover:bg-accent hover:text-accent-foreground hover:border hover:border-primary/50'
         "
         size="sm"
         @click="handleCategoryChange(null)"
@@ -105,11 +119,11 @@
       <Button
         v-for="category in visibleCategories"
         :key="category.id"
-        class="rounded-lg"
+        class="rounded-lg transition-colors"
         :class="
           isActive === category.id
-            ? 'bg-primary text-primary-foreground hover:text-white'
-            : 'hover:bg-transparent hover:text-primary hover:border hover:border-primary'
+            ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-white'
+            : 'hover:bg-accent hover:text-accent-foreground hover:border hover:border-primary/50'
         "
         size="sm"
         @click="handleCategoryChange(category.id)"
@@ -122,19 +136,32 @@
         <DropdownMenuTrigger as-child>
           <Button
             size="sm"
-            class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+            class="rounded-lg transition-colors"
+            :class="
+              isMoreButtonSelected
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-white'
+                : 'hover:bg-accent hover:text-accent-foreground hover:border hover:border-primary/50'
+            "
           >
-            <MoreHorizontal class="ml-1 size-4" />
-            {{ moreLabel }}
+            <MoreHorizontal v-if="!isMoreButtonSelected" class="mr-1 size-4" />
+            <ChevronDown v-else class="mr-1 size-4 opacity-90" aria-hidden="true" />
+            {{ moreButtonLabel }}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" :align-offset="-45" :position-strategy="'absolute'">
           <DropdownMenuItem
             v-for="category in dropdownCategories"
             :key="category.id"
-            :class="isActive === category.id ? 'bg-primary text-white' : ''"
+            class="cursor-pointer transition-colors rounded-md"
+            :class="
+              isActive === category.id
+                ? 'bg-primary text-primary-foreground focus:bg-primary focus:text-primary-foreground'
+                : 'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground'
+            "
             @click="handleCategoryChange(category.id)"
           >
+            <Check v-if="isActive === category.id" class="size-4 shrink-0" />
+            <span v-else class="w-4 shrink-0" aria-hidden="true" />
             {{ category.category_name }}
           </DropdownMenuItem>
         </DropdownMenuContent>
