@@ -381,6 +381,8 @@
             :disabled="!canAddLockerProductsToCart"
             class="disabled:opacity-25"
             variant="primary"
+            :loading="cartStore.isLoading"
+            custom-text-color="text-white"
             @click="handleAddLockerProductsToCart"
           >
             <ShoppingBasket class="w-4 h-4" /> {{ locker_add_to_cart({}, { locale }) }}

@@ -216,8 +216,10 @@
     <Button
       v-if="isLoggedIn && shouldShowAddToCartButton"
       variant="primary"
-      :size="uiStore.isMobile ? 'sm' : 'lg'"
       class="w-full"
+      :size="uiStore.isMobile ? 'sm' : 'lg'"
+      :loading="cartStore.isLoading"
+      custom-text-color="text-white"
       :disabled="
         totalRosterQuantity <= 0 ||
         (!canSkipMoq &&

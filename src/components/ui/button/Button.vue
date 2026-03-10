@@ -13,6 +13,7 @@
     class?: HTMLAttributes['class']
     loading?: boolean
     disabled?: boolean
+    customTextColor?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -35,12 +36,15 @@
     "
   >
     <!-- Slot directly -->
-    <slot />
+    <template v-if="!loading">
+      <slot />
+    </template>
 
     <!-- Overlay Spinner -->
     <Spinner
       v-if="loading"
-      class="absolute inset-0 m-auto text-primary animate-spin pointer-events-none"
+      :class="customTextColor ? customTextColor : 'text-primary'"
+      class="absolute inset-0 m-auto animate-spin pointer-events-none"
       :size="size === 'sm' ? 16 : size === 'lg' ? 24 : 20"
     />
   </Primitive>

@@ -973,6 +973,7 @@
                 variant="outline"
                 size="icon"
                 :aria-label="topbar_save_options({}, { locale: profileStore.currentLocale })"
+                :loading="cartStore.isLoading"
               >
                 <ChevronDown class="size-4" />
               </Button>
