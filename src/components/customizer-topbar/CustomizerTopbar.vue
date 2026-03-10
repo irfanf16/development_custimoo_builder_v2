@@ -942,7 +942,12 @@
         <!-- Save Button Group with DropdownMenu -->
         <template v-if="cartStore.isEditingCartProduct && isLoggedIn">
           <!-- Simple Update Button when editing cart product -->
-          <Button variant="outline" size="default" @click="handleUpdateCartProduct">
+          <Button
+            :loading="cartStore.isLoading"
+            variant="outline"
+            size="default"
+            @click="handleUpdateCartProduct"
+          >
             <Save class="size-4" />
             <span>Update</span>
           </Button>
