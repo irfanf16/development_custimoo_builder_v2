@@ -6,10 +6,14 @@
   import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { customizer_menu_label } from '@/paraglide/messages'
+  import { storeToRefs } from 'pinia'
+  import { useUIStore } from '@/stores/ui/ui.store'
 
   const { isActive, goTo, getNavText, menuItems } = useCustomizerMenu()
   const workflow = useWorkflowStore()
   const profileStore = useProfileStore()
+  const uiStore = useUIStore()
+  const { isMobile } = storeToRefs(uiStore)
   const menuLabel = computed(() =>
     customizer_menu_label({}, { locale: profileStore.currentLocale })
   )
@@ -29,11 +33,14 @@
 
 <template>
   <nav
-    class="fixed bottom-0 left-0 right-0 bg-background z-10 py-2 shadow-lg md:hidden"
+    class="fixed bottom-0 left-0 right-0 bg-background z-10 py-2 shadow-lg"
+    :class="{ hidden: !isMobile }"
     role="navigation"
     :aria-label="menuLabel"
   >
-    <div class="flex overflow-x-auto overflow-y-hidden gap-2 px-4 scrollbar-hide whitespace-nowrap">
+    <div
+      class="flex overflow-x-auto overflow-y-hidden gap-2 px-4 scrollbar-hide whitespace-nowrap justify-evenly"
+    >
       <CustomizerMenuItem
         v-for="item in menuItems"
         :key="item.step"

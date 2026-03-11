@@ -10,7 +10,9 @@
 <template>
   <li
     data-slot="breadcrumb-item"
-    :class="cn('inline-flex items-center gap-1.5 text-base md:text-xl', props.class)"
+    :class="
+      cn('inline-flex items-center gap-1.5 text-base text-lg md:text-md lg:text-lg', props.class)
+    "
   >
     <slot />
   </li>

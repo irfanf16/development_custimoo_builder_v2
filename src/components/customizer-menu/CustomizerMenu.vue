@@ -24,39 +24,39 @@
       <template #icon>
         <i-flex-line-categories
           v-if="item.step === 'product'"
-          class="size-[1.5rem] bg-transparent"
+          class="size-[1rem] md:size-[1rem] lg:size-[1.5rem] bg-transparent"
         />
         <i-flex-line-ai-edit-spark
           v-else-if="item.step === 'designs'"
-          class="size-[1.5rem] bg-transparent"
+          class="size-[1rem] md:size-[1rem] lg:size-[1.5rem] bg-transparent"
         />
         <i-flex-line-ai-sparkles
           v-else-if="item.step === 'styles'"
-          class="size-[1.5rem] bg-transparent"
+          class="size-[1rem] md:size-[1rem] lg:size-[1.5rem] bg-transparent"
         />
         <i-flex-line-landscape1
           v-else-if="item.step === 'logos'"
-          class="size-[1.5rem] bg-transparent"
+          class="size-[1rem] md:size-[1rem] lg:size-[1.5rem] bg-transparent"
         />
         <i-flex-line-paint-palette
           v-else-if="item.step === 'colors'"
-          class="size-[1.5rem] bg-transparent"
+          class="size-[1rem] md:size-[1rem] lg:size-[1.5rem] bg-transparent"
         />
         <i-flex-line-pattern
           v-else-if="item.step === 'patterns'"
-          class="size-[1.5rem] bg-transparent"
+          class="size-[1rem] md:size-[1rem] lg:size-[1.5rem] bg-transparent"
         />
         <i-flex-line-text-style
           v-else-if="item.step === 'texts'"
-          class="size-[1.5rem] bg-transparent"
+          class="size-[1rem] md:size-[1rem] lg:size-[1.5rem] bg-transparent"
         />
         <i-flex-line-table
           v-else-if="item.step === 'roster'"
-          class="size-[1.5rem] bg-transparent"
+          class="size-[1rem] md:size-[1rem] lg:size-[1.5rem] bg-transparent"
         />
         <i-flex-line-text-file
           v-else-if="item.step === 'summary'"
-          class="size-[1.5rem] bg-transparent"
+          class="size-[1rem] md:size-[1rem] lg:size-[1.5rem] bg-transparent"
         />
       </template>
     </CustomizerMenuItem>

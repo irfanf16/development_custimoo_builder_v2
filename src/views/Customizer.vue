@@ -92,7 +92,7 @@
           <WorkflowLayout class="z-30" />
         </div>
 
-        <div id="right-content" class="flex flex-col w-full justify-between items-end">
+        <div id="right-content" class="flex min-w-0 flex-col w-full justify-between items-end">
           <CustomizerTopbar class="z-20" />
           <div
             id="canvas-controls-container"

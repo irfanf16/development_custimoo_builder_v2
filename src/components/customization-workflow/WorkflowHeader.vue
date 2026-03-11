@@ -74,7 +74,7 @@
 
 <template>
   <div class="w-full flex flex-col gap-1">
-    <h1 v-if="productName" class="font-medium text-foreground truncate">
+    <h1 v-if="productName" class="font-medium md:text-sm text-foreground truncate">
       {{ productName }}
     </h1>
     <div

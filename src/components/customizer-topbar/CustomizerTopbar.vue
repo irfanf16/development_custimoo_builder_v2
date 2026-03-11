@@ -32,6 +32,7 @@
     topbar_cart,
     topbar_save_options,
     actions_reset_customization,
+    auth_sign_in,
     ui_aria_user_menu,
     msg_failed_share_pdf_aborted,
     msg_missing_back_image_pdf,
@@ -63,7 +64,8 @@
   import { useSignIn } from '@/composables/useSignIn'
   import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
   import { useAddToCartVisibility } from '@/composables/useAddToCartVisibility'
-  import { computed, ref, watch } from 'vue'
+  import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import LockerBrowser from '@/components/LockerBrowser.vue'
@@ -118,7 +120,37 @@
   const { shouldShowAddToCartButton } = useAddToCartVisibility()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
+  const { isMobile } = storeToRefs(uiStore)
   const locale = computed(() => profileStore.currentLocale || 'en')
+
+  // Overflow-based compact topbar: icon-only + tooltips when buttons would touch boundaries
+  const COMPACT_HYSTERESIS_PX = 50
+  const topbarContainerRef = ref<HTMLElement | null>(null)
+  const topbarContentRef = ref<HTMLElement | null>(null)
+  const isTopbarCompact = ref(false)
+  const lastOverflowWidth = ref(0)
+  let topbarResizeObserver: ResizeObserver | null = null
+
+  const showCompactTopbar = computed(() => !isMobile.value && isTopbarCompact.value)
+
+  function checkTopbarOverflow() {
+    const container = topbarContainerRef.value
+    const content = topbarContentRef.value
+    if (!container || !content || isMobile.value) return
+
+    const containerWidth = container.clientWidth
+    const contentWidth = content.scrollWidth
+
+    if (contentWidth > containerWidth) {
+      isTopbarCompact.value = true
+      lastOverflowWidth.value = containerWidth
+    } else if (
+      isTopbarCompact.value &&
+      containerWidth > lastOverflowWidth.value + COMPACT_HYSTERESIS_PX
+    ) {
+      isTopbarCompact.value = false
+    }
+  }
 
   // Reactive state
   const showProfileDialog = ref(false)
@@ -919,240 +951,407 @@
       })
     }
   }
+
+  onMounted(() => {
+    const container = topbarContainerRef.value
+    if (!container || typeof window === 'undefined' || !('ResizeObserver' in window)) return
+
+    topbarResizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => {
+        checkTopbarOverflow()
+      })
+    })
+    topbarResizeObserver.observe(container)
+    setTimeout(() => checkTopbarOverflow(), 0)
+  })
+
+  onBeforeUnmount(() => {
+    if (topbarResizeObserver && topbarContainerRef.value) {
+      topbarResizeObserver.disconnect()
+      topbarResizeObserver = null
+    }
+  })
 </script>
 
 <template>
-  <!-- Right aligned action group using ButtonGroup -->
-  <div class="flex items-center gap-2">
-    <ButtonGroup class="flex w-full justify-between md:w-auto md:justify-normal">
-      <!-- Reset Button -->
-      <ButtonGroup v-if="!uiStore.isMobile">
-        <Button variant="outline" size="default" @click="handleResetCustomization">
-          <RotateCcw class="size-4" />
-          {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}
-        </Button>
-      </ButtonGroup>
-      <ButtonGroup>
-        <!-- Fullscreen Button for mobile only -->
-        <ButtonGroup v-if="uiStore.isMobile">
-          <Button variant="outline" size="icon" @click="handleFullscreen">
-            <Fullscreen class="size-4" />
-          </Button>
-        </ButtonGroup>
-        <!-- Save Button Group with DropdownMenu -->
-        <template v-if="cartStore.isEditingCartProduct && isLoggedIn">
-          <!-- Simple Update Button when editing cart product -->
-          <Button
-            :loading="cartStore.isLoading"
-            variant="outline"
-            size="default"
-            @click="handleUpdateCartProduct"
-          >
-            <Save class="size-4" />
-            <span>Update</span>
-          </Button>
-        </template>
-        <template v-else-if="lockerRoomStore.isEditingLockerProduct && isLoggedIn">
-          <!-- Update and Cancel buttons when editing locker product -->
-          <ButtonGroup>
-            <Button variant="outline" size="default" @click="handleCancelLockerProductEdit">
-              <X class="size-4" />
-              <span>Cancel</span>
-            </Button>
-            <Button variant="outline" size="default" @click="handleUpdateLockerProduct">
-              <Save class="size-4" />
-              <span>Update</span>
-            </Button>
-          </ButtonGroup>
-        </template>
-        <DropdownMenu v-else-if="authStore.isAuthenticated">
-          <ButtonGroup>
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" size="default">
-                <Save class="size-4" />
-                <span>{{ topbar_save({}, { locale: profileStore.currentLocale }) }}</span>
+  <div ref="topbarContainerRef" class="w-full min-w-0">
+    <TooltipProvider>
+      <div class="flex justify-end items-center">
+        <div ref="topbarContentRef" class="inline-flex items-center gap-2 shrink-0">
+          <ButtonGroup class="flex w-full justify-between md:w-auto md:justify-normal">
+            <!-- Reset Button -->
+            <ButtonGroup v-if="!uiStore.isMobile">
+              <template v-if="showCompactTopbar">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button variant="outline" size="icon" @click="handleResetCustomization">
+                      <RotateCcw class="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </template>
+              <Button v-else variant="outline" size="default" @click="handleResetCustomization">
+                <RotateCcw class="size-4" />
+                {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuTrigger as-child>
+            </ButtonGroup>
+            <ButtonGroup>
+              <!-- Fullscreen Button for mobile only -->
+              <ButtonGroup v-if="uiStore.isMobile">
+                <Button variant="outline" size="icon" @click="handleFullscreen">
+                  <Fullscreen class="size-4" />
+                </Button>
+              </ButtonGroup>
+              <!-- Save Button Group with DropdownMenu -->
+              <template v-if="cartStore.isEditingCartProduct && isLoggedIn">
+                <template v-if="showCompactTopbar">
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <Button variant="outline" size="icon" @click="handleUpdateCartProduct" :loading="cartStore.isLoading">
+                        <Save class="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Update</p></TooltipContent>
+                  </Tooltip>
+                </template>
+                <Button v-else :loading="cartStore.isLoading" variant="outline" size="default" @click="handleUpdateCartProduct">
+                  <Save class="size-4" />
+                  <span>Update</span>
+                </Button>
+              </template>
+              <template v-else-if="lockerRoomStore.isEditingLockerProduct && isLoggedIn">
+                <template v-if="showCompactTopbar">
+                  <ButtonGroup>
+                    <Tooltip>
+                      <TooltipTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          @click="handleCancelLockerProductEdit"
+                        >
+                          <X class="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Cancel</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger as-child>
+                        <Button variant="outline" size="icon" @click="handleUpdateLockerProduct">
+                          <Save class="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Update</p></TooltipContent>
+                    </Tooltip>
+                  </ButtonGroup>
+                </template>
+                <ButtonGroup v-else>
+                  <Button variant="outline" size="default" @click="handleCancelLockerProductEdit">
+                    <X class="size-4" />
+                    <span>Cancel</span>
+                  </Button>
+                  <Button variant="outline" size="default" @click="handleUpdateLockerProduct">
+                    <Save class="size-4" />
+                    <span>Update</span>
+                  </Button>
+                </ButtonGroup>
+              </template>
+              <DropdownMenu v-else-if="authStore.isAuthenticated">
+                <ButtonGroup>
+                  <template v-if="showCompactTopbar">
+                    <DropdownMenuTrigger as-child>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        :title="topbar_save({}, { locale: profileStore.currentLocale })"
+                        :aria-label="topbar_save({}, { locale: profileStore.currentLocale })"
+                      >
+                        <Save class="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </template>
+                  <DropdownMenuTrigger v-else as-child>
+                    <Button variant="outline" size="default">
+                      <Save class="size-4" />
+                      <span>{{ topbar_save({}, { locale: profileStore.currentLocale }) }}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      :aria-label="topbar_save_options({}, { locale: profileStore.currentLocale })"
+                      :loading="cartStore.isLoading"
+                    >
+                      <ChevronDown class="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </ButtonGroup>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem @click="handleSaveAsDraft">
+                    <Save class="size-4 mr-2" />
+                    Save to Locker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-if="shouldShowAddToCartButton" @click="handleAddToCart">
+                    <ShoppingCart class="size-4 mr-2" />
+                    Add to Cart
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @click="handleSaveAndShare">
+                    <Save class="size-4 mr-2" />
+                    Save and Share
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @click="handleExportDesign">
+                    <Save class="size-4 mr-2" />
+                    Export Design
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </ButtonGroup>
+
+            <!-- Size Guide Button -->
+            <ButtonGroup v-if="!uiStore.isMobile && skuInformation?.image_url">
+              <template v-if="showCompactTopbar">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      as="a"
+                      target="_blank"
+                      :href="`${storageUrl}${skuInformation.image_url}`"
+                    >
+                      <Ruler class="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Size Guide</p></TooltipContent>
+                </Tooltip>
+              </template>
               <Button
+                v-else
                 variant="outline"
-                size="icon"
-                :aria-label="topbar_save_options({}, { locale: profileStore.currentLocale })"
-                :loading="cartStore.isLoading"
+                size="default"
+                as="a"
+                target="_blank"
+                :href="`${storageUrl}${skuInformation.image_url}`"
               >
-                <ChevronDown class="size-4" />
+                <Ruler class="size-4" />
+                <span>Size Guide</span>
               </Button>
-            </DropdownMenuTrigger>
+            </ButtonGroup>
+
+            <!-- Share Design Button -->
+            <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
+              <ShareUrlTooltip
+                :share-url="sharedUrl"
+                :open="showShareTooltip"
+                @update:open="showShareTooltip = $event"
+              >
+                <template v-if="showCompactTopbar">
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <Button variant="outline" size="icon" @click="handleShareDesign">
+                        <Share2 class="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Share Design</p></TooltipContent>
+                  </Tooltip>
+                </template>
+                <Button v-else variant="outline" size="default" @click="handleShareDesign">
+                  <Share2 class="size-4" />
+                  <span>Share Design</span>
+                </Button>
+              </ShareUrlTooltip>
+            </ButtonGroup>
+
+            <!-- Generate PDF Button -->
+            <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
+              <template v-if="showCompactTopbar">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button variant="outline" size="icon" @click="handleGeneratePDF">
+                      <File class="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Generate PDF</p></TooltipContent>
+                </Tooltip>
+              </template>
+              <Button v-else variant="outline" size="default" @click="handleGeneratePDF">
+                <File class="size-4" />
+                <span>Generate PDF</span>
+              </Button>
+            </ButtonGroup>
+
+            <!-- Locker Room Button -->
+            <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
+              <template v-if="showCompactTopbar">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button variant="outline" size="icon" @click="uiStore.openLockerBrowser()">
+                      <LayoutGrid class="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </template>
+              <Button v-else variant="outline" size="default" @click="uiStore.openLockerBrowser()">
+                <LayoutGrid class="size-4" />
+                <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
+              </Button>
+            </ButtonGroup>
+            <!-- Cart Button -->
+            <ButtonGroup
+              v-if="
+                !uiStore.isMobile &&
+                authStore.isAuthenticated &&
+                shouldShowAddToCartButton &&
+                !companyStore.isEcommercePlatform
+              "
+            >
+              <template v-if="showCompactTopbar">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button variant="outline" size="icon" class="relative" @click="handleCartClick">
+                      <ShoppingCart class="size-4" />
+                      <span
+                        v-if="cartStore.cartItemsCount > 0"
+                        class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+                      >
+                        {{ cartStore.cartItemsCount }}
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </template>
+              <Button
+                v-else
+                variant="outline"
+                size="default"
+                class="relative"
+                @click="handleCartClick"
+              >
+                <ShoppingCart class="size-4" />
+                <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
+                <span
+                  v-if="cartStore.cartItemsCount > 0"
+                  class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+                >
+                  {{ cartStore.cartItemsCount }}
+                </span>
+              </Button>
+            </ButtonGroup>
+
+            <!-- Sign In Button with DropdownMenu -->
+            <DropdownMenu>
+              <ButtonGroup>
+                <template v-if="showCompactTopbar">
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <SignInButton :compact="true" @open-profile="handleUserProfile" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {{
+                          isLoggedIn
+                            ? 'Profile'
+                            : auth_sign_in({}, { locale: profileStore.currentLocale })
+                        }}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </template>
+                <SignInButton v-else @open-profile="handleUserProfile" />
+                <DropdownMenuTrigger as-child>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    :aria-label="ui_aria_user_menu({}, { locale: profileStore.currentLocale })"
+                    class="rounded-l-md rounded-r-md"
+                  >
+                    <Menu class="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </ButtonGroup>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel v-if="isLoggedIn"
+                  >{{ user?.first_name }} {{ user?.last_name }}</DropdownMenuLabel
+                >
+                <DropdownMenuSeparator v-if="isLoggedIn" />
+
+                <!-- Mobile only -->
+                <DropdownMenuItem
+                  v-if="uiStore.isMobile && authStore.isAuthenticated"
+                  class="relative"
+                  @click="handleCartClick"
+                >
+                  <ShoppingCart class="size-4 mr-2" />
+                  <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
+                  <span
+                    v-if="cartStore.cartItemsCount > 0"
+                    class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+                  >
+                    {{ cartStore.cartItemsCount }}
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  v-if="uiStore.isMobile && authStore.isAuthenticated"
+                  @click="uiStore.openLockerBrowser()"
+                >
+                  <LayoutGrid class="size-4 mr-2" />
+                  <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  v-if="uiStore.isMobile && authStore.isAuthenticated"
+                  @click="handleGeneratePDF"
+                >
+                  <File class="size-4 mr-2" />
+                  <span>Generate PDF</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator v-if="uiStore.isMobile && authStore.isAuthenticated" />
+
+                <!-- Always visible -->
+                <DropdownMenuItem v-if="isLoggedIn" @click="handleUserProfile">
+                  <User class="size-4 mr-2" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem v-else @click="handleUserProfile">
+                  <Settings class="size-4 mr-2" />
+                  Preferences
+                </DropdownMenuItem>
+                <DropdownMenuItem v-if="isLoggedIn" @click="handleUserSettings">
+                  <Settings class="size-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator v-if="isLoggedIn" />
+                <DropdownMenuItem v-if="isLoggedIn" class="text-red-600" @click="handleSignOut">
+                  <LogOut class="size-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+                <DropdownMenuItem v-else @click="handleSignIn">
+                  <LogIn class="size-4 mr-2" />
+                  Sign In
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+              <ProfileDialog
+                :open="showProfileDialog"
+                :initial-tab="openProfileWithOrderId != null ? 'orders' : undefined"
+                :initial-order-id="openProfileWithOrderId ?? undefined"
+                @update:open="showProfileDialog = $event"
+              />
+              <SignInDialog @success="onLoginSuccess" />
+            </DropdownMenu>
           </ButtonGroup>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem @click="handleSaveAsDraft">
-              <Save class="size-4 mr-2" />
-              Save to Locker
-            </DropdownMenuItem>
-            <DropdownMenuItem v-if="shouldShowAddToCartButton" @click="handleAddToCart">
-              <ShoppingCart class="size-4 mr-2" />
-              Add to Cart
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="handleSaveAndShare">
-              <Save class="size-4 mr-2" />
-              Save and Share
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="handleExportDesign">
-              <Save class="size-4 mr-2" />
-              Export Design
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </ButtonGroup>
-
-      <!-- Size Guide Button -->
-      <ButtonGroup v-if="!uiStore.isMobile && skuInformation?.image_url">
-        <Button
-          variant="outline"
-          size="default"
-          as="a"
-          target="_blank"
-          :href="`${storageUrl}${skuInformation.image_url}`"
-        >
-          <Ruler class="size-4" />
-          <span>Size Guide</span>
-        </Button>
-      </ButtonGroup>
-
-      <!-- Share Design Button -->
-      <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <ShareUrlTooltip
-          :share-url="sharedUrl"
-          :open="showShareTooltip"
-          @update:open="showShareTooltip = $event"
-        >
-          <Button variant="outline" size="default" @click="handleShareDesign">
-            <Share2 class="size-4" />
-            <span>Share Design</span>
-          </Button>
-        </ShareUrlTooltip>
-      </ButtonGroup>
-
-      <!-- Generate PDF Button -->
-      <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <Button variant="outline" size="default" @click="handleGeneratePDF">
-          <File class="size-4" />
-          <span>Generate PDF</span>
-        </Button>
-      </ButtonGroup>
-
-      <!-- Locker Room Button -->
-      <ButtonGroup v-if="!uiStore.isMobile && authStore.isAuthenticated">
-        <Button variant="outline" size="default" @click="uiStore.openLockerBrowser()">
-          <LayoutGrid class="size-4" />
-          <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
-        </Button>
-      </ButtonGroup>
-      <!-- Cart Button -->
-      <ButtonGroup
-        v-if="
-          !uiStore.isMobile &&
-          authStore.isAuthenticated &&
-          shouldShowAddToCartButton &&
-          !companyStore.isEcommercePlatform
-        "
-      >
-        <Button variant="outline" size="default" class="relative" @click="handleCartClick">
-          <ShoppingCart class="size-4" />
-          <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
-          <span
-            v-if="cartStore.cartItemsCount > 0"
-            class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
-          >
-            {{ cartStore.cartItemsCount }}
-          </span>
-        </Button>
-      </ButtonGroup>
-
-      <!-- Sign In Button with DropdownMenu -->
-      <DropdownMenu>
-        <ButtonGroup>
-          <SignInButton @open-profile="handleUserProfile" />
-          <DropdownMenuTrigger as-child>
-            <Button
-              variant="outline"
-              size="icon"
-              :aria-label="ui_aria_user_menu({}, { locale: profileStore.currentLocale })"
-              class="rounded-l-md rounded-r-md"
-            >
-              <Menu class="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-        </ButtonGroup>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel v-if="isLoggedIn"
-            >{{ user?.first_name }} {{ user?.last_name }}</DropdownMenuLabel
-          >
-          <DropdownMenuSeparator v-if="isLoggedIn" />
-
-          <!-- Mobile only -->
-          <DropdownMenuItem
-            v-if="uiStore.isMobile && authStore.isAuthenticated"
-            class="relative"
-            @click="handleCartClick"
-          >
-            <ShoppingCart class="size-4 mr-2" />
-            <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
-            <span
-              v-if="cartStore.cartItemsCount > 0"
-              class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
-            >
-              {{ cartStore.cartItemsCount }}
-            </span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            v-if="uiStore.isMobile && authStore.isAuthenticated"
-            @click="uiStore.openLockerBrowser()"
-          >
-            <LayoutGrid class="size-4 mr-2" />
-            <span>{{ topbar_locker_room({}, { locale: profileStore.currentLocale }) }}</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            v-if="uiStore.isMobile && authStore.isAuthenticated"
-            @click="handleGeneratePDF"
-          >
-            <File class="size-4 mr-2" />
-            <span>Generate PDF</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator v-if="uiStore.isMobile && authStore.isAuthenticated" />
-
-          <!-- Always visible -->
-          <DropdownMenuItem v-if="isLoggedIn" @click="handleUserProfile">
-            <User class="size-4 mr-2" />
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem v-else @click="handleUserProfile">
-            <Settings class="size-4 mr-2" />
-            Preferences
-          </DropdownMenuItem>
-          <DropdownMenuItem v-if="isLoggedIn" @click="handleUserSettings">
-            <Settings class="size-4 mr-2" />
-            Settings
-          </DropdownMenuItem>
-          <DropdownMenuSeparator v-if="isLoggedIn" />
-          <DropdownMenuItem v-if="isLoggedIn" class="text-red-600" @click="handleSignOut">
-            <LogOut class="size-4 mr-2" />
-            Sign Out
-          </DropdownMenuItem>
-          <DropdownMenuItem v-else @click="handleSignIn">
-            <LogIn class="size-4 mr-2" />
-            Sign In
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-        <ProfileDialog
-          :open="showProfileDialog"
-          :initial-tab="openProfileWithOrderId != null ? 'orders' : undefined"
-          :initial-order-id="openProfileWithOrderId ?? undefined"
-          @update:open="showProfileDialog = $event"
-        />
-        <SignInDialog @success="onLoginSuccess" />
-      </DropdownMenu>
-    </ButtonGroup>
+        </div>
+      </div>
+    </TooltipProvider>
     <LockerBrowser
       :open="showLockerBrowser"
       :initial-locker-id="initialLockerIdToOpen"

@@ -34,7 +34,7 @@ export const useUIStore = defineStore('uiStore', () => {
   let fullscreenRestore: (() => void) | null = null
   let lastViewportScroll = 0
   // Configurable mobile breakpoint to determine layout behavior
-  const mobileBreakpoint = ref<number>(768)
+  const mobileBreakpoint = ref<number>(860)
 
   // ===== Theme Management =====
   // Get theme from profileStore (source of truth)

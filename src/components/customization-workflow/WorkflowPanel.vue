@@ -48,7 +48,11 @@
     if (uiStore.isMobile) {
       return 'h-full w-full'
     }
-    return ['h-full max-h-full', 'w-[29rem]', isExpanded.value ? 'z-20 max-w-none' : '']
+    return [
+      'h-full max-h-full',
+      'md:w-[20rem] lg:w-[29rem] ',
+      isExpanded.value ? 'z-20 max-w-none' : ''
+    ]
   })
 
   const cardClasses = computed(() => {
@@ -57,43 +61,20 @@
     }
     const baseClasses =
       'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col max-h-full! h-full! transition-width duration-200 md:py-3!'
-    return [baseClasses, isExpanded.value ? 'w-[75vw]' : 'w-[29rem]']
+    return [baseClasses, isExpanded.value ? 'w-[75vw]' : 'max-w-[29rem] w-full']
   })
 
-  // const scrollAreaMaxHeight = computed(() => {
-  //   // Since WorkflowFooterPricing is now always present in all customization steps,
-  //   // we always account for the footer height (~7rem)
-  //   if (uiStore.isMobile) {
-  //     if (props.hasFooterButtons) {
-  //       return 'calc(65vh - 19rem)'
-  //     }
-  //     return 'calc(65vh - 17rem)'
-  //   }
-  //   let sizeReduction = 4
-  //   if (
-  //     props.headerConfig?.designCategories?.categories?.length &&
-  //     props.headerConfig?.designCategories?.categories?.length > 0
-  //   ) {
-  //     sizeReduction += 4
-  //   }
-  //   if (showPricing) {
-  //     sizeReduction += 6
-  //   }
-  //   if (props.hasFooterButtons) {
-  //     sizeReduction += 2
-  //   }
-  //   // if (props.hasFooterButtons) {
-  //   //   if (
-  //   //     props.headerConfig?.designCategories?.categories?.length &&
-  //   //     props.headerConfig?.designCategories?.categories?.length > 0
-  //   //   ) {
-  //   //     return 'calc(60vh - 25rem)'
-  //   //   }
-  //   //   return 'calc(60vh - 12rem)'
-  //   // }
-  //   console.log(sizeReduction)
-  //   return `calc(60vh - ${sizeReduction}rem)`
-  // })
+  const scrollAreaMaxHeight = computed(() => {
+    // Since WorkflowFooterPricing is now always present in all customization steps,
+    // we always account for the footer height (~7rem)
+    if (uiStore.isMobile) {
+      if (props.hasFooterButtons) {
+        return 'calc(65vh - 19rem)'
+      }
+      return 'calc(65vh - 17rem)'
+    }
+    return '100%'
+  })
 
   const footerClasses = computed(() => {
     if (uiStore.isMobile) {
@@ -207,7 +188,10 @@
 
       <CardContent class="flex-1 min-h-0 p-0 md:p-0!">
         <ScrollArea class="h-full">
-          <div class="h-full">
+          <div
+            class="h-full transition-height duration-200"
+            :style="{ maxHeight: scrollAreaMaxHeight }"
+          >
             <!-- Content slot for different panel types -->
             <Transition name="panel-slide" mode="out-in" appear>
               <div ref="cardContentRef" :key="props.contentKey" class="h-full overflow-y-auto">
