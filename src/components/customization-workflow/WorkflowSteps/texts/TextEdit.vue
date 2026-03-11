@@ -154,6 +154,11 @@
   const isNumberEntry = computed(() => currentEntry.value?.type === 'number')
 
   /**
+   * When entry has multiple items we came from multipleItems list; don't edit font/text here (edit per-item stuff only).
+   */
+  const hasMultipleItems = computed(() => (currentEntry.value?.items?.length ?? 0) > 1)
+
+  /**
    * Slider value adapter for angle
    * The Slider component expects an array, but form.angle is a number
    * This computed property bridges the gap
@@ -234,8 +239,8 @@
 <template>
   <div class="flex flex-col gap-4 md:gap-6">
     <div class="space-y-0 flex flex-col gap-4">
-      <!-- Text Input Section -->
-      <div v-if="!isNumberEntry" class="space-y-2 px-4 md:px-6 pt-1">
+      <!-- Text / Number input: only when not from multipleItems (from here we don't change font and text) -->
+      <div v-if="!hasMultipleItems && !isNumberEntry" class="space-y-2 px-4 md:px-6 pt-1">
         <Input
           v-model="form.text"
           rows="3"
@@ -244,7 +249,7 @@
           @input="handleTextInput"
         />
       </div>
-      <div v-else class="space-y-2 px-4 md:px-6 pt-1">
+      <div v-else-if="!hasMultipleItems && isNumberEntry" class="space-y-2 px-4 md:px-6 pt-1">
         <div class="h-14">
           <Input
             v-model="form.number"
@@ -255,14 +260,14 @@
         </div>
       </div>
 
-      <!-- Font Selection Section -->
-      <div v-if="!isNumberEntry" class="space-y-2 px-4 md:px-6">
+      <!-- Font: only when not from multipleItems -->
+      <div v-if="!hasMultipleItems && !isNumberEntry" class="space-y-2 px-4 md:px-6">
         <Label class="text-sm font-medium text-foreground">{{
           texts_font_label({}, { locale })
         }}</Label>
         <FontSelector v-model="form.font" :options="fontOptions" />
       </div>
-      <div v-else class="space-y-2 px-4 md:px-6">
+      <div v-else-if="!hasMultipleItems && isNumberEntry" class="space-y-2 px-4 md:px-6">
         <Label class="text-sm font-medium text-foreground">{{
           texts_font_label({}, { locale })
         }}</Label>

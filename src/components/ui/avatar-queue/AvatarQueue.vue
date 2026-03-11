@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { onImageError } from '@/helpers/imageHelper'
   import { cn } from '@/lib/utils'
   import { computed } from 'vue'
 
@@ -42,6 +43,7 @@
             `rounded-full ring-2 bg-muted ring-background object-cover ${index !== 0 ? '-ml-3' : ''}`
           )
         "
+        @error="onImageError"
       />
     </template>
 

@@ -321,7 +321,9 @@
           class="metadata flex flex-col justify-center flex-1 min-w-0"
           @click.stop="emit('open-collection', collection)"
         >
-          <div class="flex flex-row items-center justify-between gap-2 w-full">
+          <div
+            class="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 w-full"
+          >
             <div class="min-w-0 flex-1">
               <div
                 class="mt-2 text-base font-medium"
@@ -330,7 +332,9 @@
               >
                 {{ collection.name }}
               </div>
-              <div class="text-sm text-muted-foreground flex gap-1 items-center flex-wrap">
+              <div
+                class="text-xs md:text-sm text-muted-foreground flex gap-[0.5] md:gap-1 items-center flex-wrap"
+              >
                 <span class="flex items-center gap-1">
                   <ShoppingBag class="size-3.5 inline-block" />
                   {{ collection.collection_products_count || 0 }}

@@ -2,7 +2,7 @@
   <div class="flex flex-col w-full items-start justify-between">
     <div class="flex items-center justify-between w-full">
       <div>
-        <div class="font-semibold text-foreground">#{{ order.order_no || 'N/A' }}</div>
+        <div class="font-semibold text-foreground">#{{ order.order_no || t.orderNoNa }}</div>
         <div class="text-sm text-muted-foreground">
           {{ order.customer_reference_no || '-' }}
         </div>
@@ -10,7 +10,7 @@
       <div class="flex items-center gap-2">
         <template v-if="isQuoteOrder && showQuoteButtons">
           <Button size="sm" variant="secondary" class="text-xs" @click="emit('acceptQuote', order)">
-            Accept Quote
+            {{ t.acceptQuote }}
           </Button>
           <Button
             size="sm"
@@ -18,7 +18,7 @@
             class="text-xs"
             @click="emit('rejectQuote', order)"
           >
-            Reject Quote
+            {{ t.rejectQuote }}
           </Button>
         </template>
         <Button
@@ -27,7 +27,7 @@
           class="hover:bg-transparent hover:text-red-600 hover:border hover:border-red-600"
           @click.stop="handleCancelOrder"
         >
-          Cancel
+          {{ t.cancel }}
         </Button>
 
         <Button
@@ -36,7 +36,7 @@
           class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
           @click.stop="handleDownloadPdf"
         >
-          PDF
+          {{ t.pdf }}
         </Button>
 
         <Button
@@ -45,7 +45,7 @@
           class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
           @click="emit('details', order)"
         >
-          Order Details
+          {{ t.orderDetails }}
         </Button>
         <Button
           v-if="showTimeline"
@@ -54,7 +54,7 @@
           class="text-xs border"
           @click.stop="openTimeline()"
         >
-          Order Timeline
+          {{ t.orderTimeline }}
         </Button>
       </div>
     </div>
@@ -63,18 +63,18 @@
     <div class="grid grid-cols-3 gap-4 text-xs text-gray-500 w-full items-start mt-2">
       <!-- Created At -->
       <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-muted-foreground">Created At</div>
+        <div class="font-medium text-muted-foreground">{{ t.createdAt }}</div>
         <div class="text-foreground">{{ formatDate(order.created_at) }}</div>
       </div>
 
       <!-- Statuses -->
       <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-muted-foreground">Order Status</div>
+        <div class="font-medium text-muted-foreground">{{ t.orderStatus }}</div>
         <div class="flex flex-wrap gap-2">
           <div
             v-for="(item, index) in order.items || []"
             :key="index"
-            class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium capitalize"
+            class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium capitalize text-center"
             :style="{
               backgroundColor: getStatusColor(item.status).bg,
               color: getStatusColor(item.status).text
@@ -82,8 +82,8 @@
           >
             {{
               item.status === 'order_approve'
-                ? 'Submitted for Factory Review'
-                : item.status?.replace(/_/g, ' ') || 'Unknown'
+                ? t.submittedForFactoryReview
+                : item.status?.replace(/_/g, ' ') || t.statusUnknown
             }}
           </div>
         </div>
@@ -91,7 +91,7 @@
 
       <!-- Total Quantity -->
       <div class="flex flex-col items-start gap-1">
-        <div class="font-medium text-muted-foreground">Total Quantity</div>
+        <div class="font-medium text-muted-foreground">{{ t.totalQuantity }}</div>
         <div class="text-foreground">{{ getTotalQuantity(order) }}</div>
       </div>
     </div>
@@ -105,8 +105,39 @@
   import { getStatusColor } from '@/helpers/orderStatuses'
   import Button from '@/components/ui/button/Button.vue'
   import { useOrdersStore } from '@/stores/orders/orders.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    orders_order_no_na,
+    orders_accept_quote,
+    orders_reject_quote,
+    orders_cancel,
+    orders_pdf,
+    orders_order_details,
+    orders_order_timeline,
+    orders_created_at,
+    orders_order_status,
+    orders_submitted_for_factory_review,
+    orders_status_unknown,
+    orders_total_quantity
+  } from '@/paraglide/messages'
 
   const props = defineProps<{ order: Order; clickableTitle?: boolean; showTimeline?: boolean }>()
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale)
+  const t = computed(() => ({
+    orderNoNa: orders_order_no_na({}, { locale: locale.value }),
+    acceptQuote: orders_accept_quote({}, { locale: locale.value }),
+    rejectQuote: orders_reject_quote({}, { locale: locale.value }),
+    cancel: orders_cancel({}, { locale: locale.value }),
+    pdf: orders_pdf({}, { locale: locale.value }),
+    orderDetails: orders_order_details({}, { locale: locale.value }),
+    orderTimeline: orders_order_timeline({}, { locale: locale.value }),
+    createdAt: orders_created_at({}, { locale: locale.value }),
+    orderStatus: orders_order_status({}, { locale: locale.value }),
+    submittedForFactoryReview: orders_submitted_for_factory_review({}, { locale: locale.value }),
+    statusUnknown: orders_status_unknown({}, { locale: locale.value }),
+    totalQuantity: orders_total_quantity({}, { locale: locale.value })
+  }))
   const emit = defineEmits<{
     (e: 'titleClick'): void
     (e: 'cancel', order: Order): void
