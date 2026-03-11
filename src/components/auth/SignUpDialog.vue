@@ -40,6 +40,7 @@
     auth_placeholder_email,
     auth_placeholder_company_name,
     auth_placeholder_select_country,
+    auth_placeholder_select_sales_rep,
     auth_placeholder_create_password,
     auth_placeholder_confirm_password,
     auth_create_account,
@@ -54,9 +55,12 @@
     profile_country,
     msg_select_valid_country,
     auth_agree_privacy_policy,
-    privacy_policy_title
+    privacy_policy_title,
+    sales_rep_label
   } from '@/paraglide/messages'
   import PrivacyPolicyDialog from './PrivacyPolicyDialog.vue'
+  import { type SalesReps } from '@/services/authentication/types'
+  import { hasCompanyPermission } from '@/helpers/permissionHelper'
 
   const uiStore = useUIStore()
   const isMobile = uiStore.isMobile
@@ -85,6 +89,7 @@
   const isOpen = ref(props.open)
   const countries = ref<{ id: number; name: string }[]>([])
   const isLoadingCountries = ref(false)
+  const salesReps = ref<SalesReps[]>([])
 
   // Validation schema
   const formSchema = z
@@ -110,12 +115,25 @@
         .string()
         .min(1, 'Password is required')
         .min(8, 'Password must be at least 8 characters'),
-      confirmPassword: z.string().min(1, 'Please confirm your password')
+      confirmPassword: z.string().min(1, 'Please confirm your password'),
+      salesRepId: z.string().optional()
     })
     .refine(data => data.password === data.confirmPassword, {
       message: 'Passwords do not match',
       path: ['confirmPassword']
     })
+    .refine(
+      data => {
+        if (salesReps.value.length > 0 && hasCompanyPermission('show_admin_salerep')) {
+          return !!data.salesRepId
+        }
+        return true
+      },
+      {
+        message: 'Please select a sales representative',
+        path: ['salesRepId']
+      }
+    )
 
   type FormValues = z.infer<typeof formSchema>
 
@@ -128,7 +146,8 @@
       company_name: '',
       countryId: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      salesRepId: ''
     }
   })
 
@@ -149,9 +168,22 @@
     }
   }
 
+  //Fetch sales reps
+  const fetchSalesReps = async () => {
+    try {
+      const res = await API.authentication.getSalesReps()
+      if (res) {
+        salesReps.value = res.data || []
+      }
+    } catch (error) {
+      console.error('Failed to fetch sales reps:', error)
+    }
+  }
+
   // Fetch countries on mount
   onMounted(() => {
     fetchCountries()
+    fetchSalesReps()
   })
 
   // Watch for prop changes
@@ -170,7 +202,8 @@
             company_name: '',
             countryId: '',
             password: '',
-            confirmPassword: ''
+            confirmPassword: '',
+            salesRepId: ''
           }
         })
         authStore.setError(null)
@@ -204,7 +237,8 @@
       password: values.password,
       password_confirmation: values.confirmPassword,
       company_name: values.company_name,
-      country: { id: selectedCountry.id, label: selectedCountry.name }
+      country: { id: selectedCountry.id, label: selectedCountry.name },
+      admin_salesrep_id: values.salesRepId ? Number(values.salesRepId) : undefined
     })
     if (result.success) {
       isOpen.value = false
@@ -216,7 +250,8 @@
           company_name: '',
           countryId: '',
           password: '',
-          confirmPassword: ''
+          confirmPassword: '',
+          salesRepId: ''
         }
       })
       emit('success')
@@ -289,6 +324,28 @@
               <FormMessage />
             </FormItem>
           </FormField>
+          <div v-show="salesReps.length > 0 && hasCompanyPermission('show_admin_salerep')">
+            <FormField v-slot="{ field }" name="salesRepId">
+              <FormItem>
+                <FormLabel>{{ sales_rep_label({}, { locale }) }}</FormLabel>
+                <Select :model-value="field.value" @update:model-value="field.onChange">
+                  <FormControl>
+                    <SelectTrigger id="salesRep" class="w-full" @blur="field.onBlur">
+                      <SelectValue
+                        :placeholder="auth_placeholder_select_sales_rep({}, { locale })"
+                      />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent class="max-h-60">
+                    <SelectItem v-for="rep in salesReps" :key="rep.id" :value="String(rep.id)">
+                      {{ rep.name }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+          </div>
           <FormTextField
             name="password"
             :label="auth_password_label({}, { locale })"

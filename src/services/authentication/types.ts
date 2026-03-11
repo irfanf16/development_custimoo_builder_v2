@@ -50,6 +50,7 @@ export type InputSignup = {
   password_confirmation: string
   company_name: string
   country: { id: number; label: string }
+  admin_salesrep_id?: number
 }
 
 export type OutputSignup =
@@ -65,3 +66,9 @@ export type OutputSignup =
       access_token: string
       errors?: undefined
     }
+
+export type SalesReps = {
+  id: number
+  email: string
+  name: string
+}

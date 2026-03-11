@@ -298,6 +298,7 @@
   "auth_placeholder_email": "Indtast din e-mail",
   "auth_placeholder_company_name": "Indtast dit firmanavn",
   "auth_placeholder_select_country": "Vælg dit land",
+  "auth_placeholder_select_sales_rep": "Vælg salgsrepræsentant",
   "auth_placeholder_password": "Indtast dit password",
   "auth_placeholder_create_password": "Opret et password",
   "auth_placeholder_confirm_password": "Bekræft dit password",
@@ -603,5 +604,6 @@
   "privacy_policy_s9_title": "9. Ændringer i denne politik",
   "privacy_policy_s9_content": "<p>Vi kan opdatere denne privatlivspolitik periodisk. Eventuelle ændringer vil blive offentliggjort med en opdateret ikrafttrædelsesdato. Fortsat brug af customizeren efter ændringer betragtes som accept af den opdaterede politik.</p>",
   "privacy_policy_s10_title": "10. Kontakt os",
-  "privacy_policy_s10_content": "<p>Hvis du har spørgsmål om denne privatlivspolitik, kan du kontakte os:</p><p>Email: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Adresse:<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 København<br>DANMARK</p>"
+  "privacy_policy_s10_content": "<p>Hvis du har spørgsmål om denne privatlivspolitik, kan du kontakte os:</p><p>Email: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Adresse:<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 København<br>DANMARK</p>",
+  "sales_rep_label": "Salgsrepræsentant"
 }

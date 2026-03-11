@@ -298,6 +298,7 @@
   "auth_placeholder_email": "Ingresa tu correo electrónico",
   "auth_placeholder_company_name": "Ingresa el nombre de tu empresa",
   "auth_placeholder_select_country": "Selecciona tu país",
+  "auth_placeholder_select_sales_rep": "Selecciona representante de ventas",
   "auth_placeholder_password": "Ingresa tu contraseña",
   "auth_placeholder_create_password": "Crea una contraseña",
   "auth_placeholder_confirm_password": "Confirma tu contraseña",
@@ -603,5 +604,6 @@
   "privacy_policy_s9_title": "9. Cambios en esta política",
   "privacy_policy_s9_content": "<p>Podemos actualizar esta Política de Privacidad periódicamente. Cualquier cambio se publicará con una fecha de vigencia actualizada. El uso continuo del personalizador después de dichos cambios constituye la aceptación de la política actualizada.</p>",
   "privacy_policy_s10_title": "10. Contáctenos",
-  "privacy_policy_s10_content": "<p>Si tiene preguntas sobre esta Política de Privacidad, puede contactarnos en:</p><p>Email: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Dirección:<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 Copenhague<br>DINAMARCA</p>"
+  "privacy_policy_s10_content": "<p>Si tiene preguntas sobre esta Política de Privacidad, puede contactarnos en:</p><p>Email: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Dirección:<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 Copenhague<br>DINAMARCA</p>",
+  "sales_rep_label": "Representante de ventas"
 }

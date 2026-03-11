@@ -303,6 +303,7 @@
   "auth_placeholder_email": "Enter your email",
   "auth_placeholder_company_name": "Enter your company name",
   "auth_placeholder_select_country": "Select your country",
+  "auth_placeholder_select_sales_rep": "Select sales representative",
   "auth_placeholder_password": "Enter your password",
   "auth_placeholder_create_password": "Create a password",
   "auth_placeholder_confirm_password": "Confirm your password",
@@ -609,5 +610,6 @@
   "privacy_policy_s9_title": "9. Changes to This Policy",
   "privacy_policy_s9_content": "<p>We may update this Privacy Policy periodically. Any changes will be posted with an updated effective date. Continued use of the customizer after changes constitutes acceptance of the updated policy.</p>",
   "privacy_policy_s10_title": "10. Contact Us",
-  "privacy_policy_s10_content": "<p>If you have questions about this Privacy Policy, please contact us at:</p><p>Email: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Address:<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 Copenhagen<br>DENMARK</p>"
+  "privacy_policy_s10_content": "<p>If you have questions about this Privacy Policy, please contact us at:</p><p>Email: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Address:<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 Copenhagen<br>DENMARK</p>",
+  "sales_rep_label": "Sales Representative"
 }

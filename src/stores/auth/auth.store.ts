@@ -5,7 +5,8 @@ import {
   type Customer,
   type OutputLogin,
   type InputSignup,
-  type OutputSignup
+  type OutputSignup,
+  type SalesReps
 } from '@/services/authentication/types'
 import { API } from '../../services'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore('authStore', () => {
   const encryptionKey = ref<CryptoKey | null>(null)
   const isHydrated = ref(false)
   const permissions = ref<Permissions>()
+  const salesReps = ref<SalesReps[]>([])
 
   const hasWindow = typeof window !== 'undefined'
   const hasCryptoSupport = hasWindow && !!window.crypto?.subtle
@@ -344,8 +346,7 @@ export const useAuthStore = defineStore('authStore', () => {
       // Admin impersonation: token from query params store (read by initQueryParams) or URL fallback
       const queryParamsStore = useQueryParamsStore()
       const tokenFromStore =
-        (queryParamsStore.getParam('token')) ??
-        (queryParamsStore.getParam('adminToken'))
+        queryParamsStore.getParam('token') ?? queryParamsStore.getParam('adminToken')
       const urlToken = getUrlParam('token') ?? getUrlParam('adminToken')
       const impersonationToken = tokenFromStore ?? urlToken
 
@@ -729,6 +730,14 @@ export const useAuthStore = defineStore('authStore', () => {
     return output
   }
 
+  async function getSalesReps(): Promise<APIResponse<SalesReps[]>> {
+    const output = await tryCatchApi(API.authentication.getSalesReps(), {
+      operation: 'getSalesReps'
+    })
+
+    return output
+  }
+
   // ===== RETURN =====
   return {
     // State
@@ -740,6 +749,7 @@ export const useAuthStore = defineStore('authStore', () => {
     isRefreshing,
     isHydrated,
     permissions,
+    salesReps,
     // Computed
     isAuthenticated,
     hasAdminToken,
@@ -768,6 +778,7 @@ export const useAuthStore = defineStore('authStore', () => {
     login,
     logout,
     register,
+    getSalesReps,
     // Permissions
     getPermissions
   }

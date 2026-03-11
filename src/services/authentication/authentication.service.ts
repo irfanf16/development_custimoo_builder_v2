@@ -1,6 +1,12 @@
 // the axios instance and types
 import http from '../api'
-import { type InputLogin, type OutputLogin, type InputSignup, type OutputSignup } from './types'
+import {
+  type InputLogin,
+  type OutputLogin,
+  type InputSignup,
+  type OutputSignup,
+  type SalesReps
+} from './types'
 
 async function postLogin(data: InputLogin) {
   return await http.post<OutputLogin>('customer/login', data)
@@ -21,8 +27,13 @@ async function refreshToken(refreshToken: string) {
   })
 }
 
+async function getSalesReps() {
+  return await http.get<SalesReps[]>('get-admin-salesrep')
+}
+
 export default {
   postLogin,
   postRegister,
-  refreshToken
+  refreshToken,
+  getSalesReps
 }
