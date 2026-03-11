@@ -47,16 +47,14 @@
   const subPanel = ref<SubPanel>('list')
   const showAllRecent = ref(false)
   const displayedRecentLogos = computed(() => {
-    if (!isLoggedIn.value) return []
     if (!logosStore.recentLogos) return []
     const reversed = [...logosStore.recentLogos]
     return showAllRecent.value ? reversed : reversed.slice(0, 8)
   })
   const shouldShowRecentSection = computed(
     () =>
-      isLoggedIn.value &&
-      (logosStore.isLoadingRecentLogos ||
-        (logosStore?.recentLogos && logosStore.recentLogos.length > 0))
+      logosStore.isLoadingRecentLogos ||
+      (logosStore?.recentLogos && logosStore.recentLogos.length > 0)
   )
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
 
