@@ -74,6 +74,18 @@
   const mounted = ref(false)
   const colorDblclickElRef = shallowRef<HTMLCanvasElement | null>(null)
 
+  // Guide lines (center crosshair + object snap lines)
+  const drawLines = ref(false)
+  const verticalLines = ref<{ x: number; y1: number; y2: number }[]>([])
+  const horizontalLines = ref<{ y: number; x1: number; x2: number }[]>([])
+  const guideLineVerticalRef = shallowRef<fabric.Line | null>(null)
+  const guideLineHorizontalRef = shallowRef<fabric.Line | null>(null)
+
+  const ALIGNING_LINE_OFFSET = 5
+  const ALIGNING_LINE_MARGIN = 4
+  const ALIGNING_LINE_WIDTH = 3
+  const ALIGNING_LINE_COLOR = 'rgb(110, 243, 204)'
+
   // Model type based on style preview structure
   type ModelData = {
     composition: 'multiply' | 'screen'
@@ -381,6 +393,95 @@
         // Text removal can be added here if needed
       })
 
+      // Guide lines: center crosshair + object snap lines
+      if (canvas.value) {
+        const c = canvas.value
+        const verticalLine = new fabric.Line(
+          [props.canvasWidth / 2, 0, props.canvasWidth / 2, props.canvasHeight],
+          {
+            stroke: '#6EF3CC',
+            strokeWidth: 4,
+            strokeDashArray: [5, 5],
+            selectable: false,
+            evented: false
+          }
+        )
+        const horizontalLine = new fabric.Line(
+          [0, props.canvasHeight / 2, props.canvasWidth, props.canvasHeight / 2],
+          {
+            stroke: '#6EF3CC',
+            strokeWidth: 4,
+            strokeDashArray: [5, 5],
+            selectable: false,
+            evented: false
+          }
+        )
+        guideLineVerticalRef.value = verticalLine
+        guideLineHorizontalRef.value = horizontalLine
+
+        const ctx =
+          (
+            c as unknown as { getSelectionContext?: () => CanvasRenderingContext2D }
+          ).getSelectionContext?.() ??
+          (c as unknown as { contextTop?: CanvasRenderingContext2D }).contextTop
+
+        c.on('object:moving', (e: { target?: FabricObject }) => {
+          const target = e.target
+          if (!target || !designObject.value) return
+          if (!('logo_index' in target) && !('custom_text_index' in target)) return
+          const center = designObject.value.getCenterPoint()
+          const relativeWidth = center.x
+          const relativeHeight = center.y
+          const customObj = getCustomObjectsLength(c)
+          if (
+            customObj.logoLength + customObj.textLength >= 1 &&
+            guideLineVerticalRef.value &&
+            guideLineHorizontalRef.value
+          ) {
+            addGuideLine(
+              e as { target: FabricObject },
+              c,
+              guideLineVerticalRef.value,
+              guideLineHorizontalRef.value,
+              relativeWidth,
+              relativeHeight
+            )
+            addGuideForMultipleObjects(c, target)
+          }
+        })
+
+        c.on('object:modified', () => {
+          const lineObjects = c
+            .getObjects()
+            .filter(o => (o as FabricObject).type === 'Line' || (o as FabricObject).type === 'line')
+          lineObjects.forEach(obj => c.remove(obj))
+          drawLines.value = false
+        })
+
+        c.on('mouse:up', () => {
+          verticalLines.value = []
+          horizontalLines.value = []
+        })
+
+        c.on('before:render', () => {
+          const topCtx = (c as unknown as { contextTop?: CanvasRenderingContext2D }).contextTop
+          if (topCtx)
+            (
+              c as unknown as { clearContext?: (ctx: CanvasRenderingContext2D) => void }
+            ).clearContext?.(topCtx)
+        })
+
+        c.on('after:render', () => {
+          const vpt = c.viewportTransform
+          if (ctx && vpt) {
+            verticalLines.value.forEach(coords => drawVerticalLine(coords, ctx, vpt))
+            horizontalLines.value.forEach(coords => drawHorizontalLine(coords, ctx, vpt))
+          }
+          verticalLines.value = []
+          horizontalLines.value = []
+        })
+      }
+
       // Ensure canvas is initialized before loading scene
       if (canvas.value) {
         await loadScene()
@@ -466,6 +567,298 @@
     modelObjects.value.forEach(model => {
       canvas.value?.bringObjectToFront(model as FabricObject)
     })
+  }
+
+  /**
+   * Count custom objects (logos + texts) on canvas for guide line logic.
+   */
+  function getCustomObjectsLength(canvasInstance: Canvas): {
+    logoLength: number
+    textLength: number
+  } {
+    let logoLength = 0
+    let textLength = 0
+    canvasInstance.getObjects().forEach((obj: FabricObject) => {
+      if ('logo_index' in obj) logoLength++
+      if ('custom_text_index' in obj) textLength++
+    })
+    return { logoLength, textLength }
+  }
+
+  /**
+   * Show center crosshair and update dash based on whether object is aligned to center.
+   */
+  function addGuideLine(
+    e: { target: FabricObject },
+    canvasInstance: Canvas,
+    verticalLine: fabric.Line,
+    horizontalLine: fabric.Line,
+    relativeWidth: number,
+    relativeHeight: number
+  ): void {
+    if (!drawLines.value) {
+      canvasInstance.add(verticalLine)
+      canvasInstance.add(horizontalLine)
+      drawLines.value = true
+    }
+
+    const coords = e.target.getCenterPoint()
+    const left = coords.x
+    const top = coords.y
+
+    if (
+      parseInt(String(left)) >= relativeWidth - 2 &&
+      parseInt(String(left)) <= relativeWidth + 2
+    ) {
+      verticalLine.set({
+        stroke: '#6EF3CC',
+        strokeWidth: 4,
+        strokeDashArray: []
+      })
+    } else {
+      verticalLine.set({
+        stroke: '#6EF3CC',
+        strokeWidth: 4,
+        strokeDashArray: [5, 5]
+      })
+    }
+
+    if (
+      parseInt(String(top)) >= relativeHeight - 2 &&
+      parseInt(String(top)) <= relativeHeight + 2
+    ) {
+      horizontalLine.set({
+        stroke: '#6EF3CC',
+        strokeWidth: 4,
+        strokeDashArray: []
+      })
+    } else {
+      horizontalLine.set({
+        stroke: '#6EF3CC',
+        strokeWidth: 4,
+        strokeDashArray: [5, 5]
+      })
+    }
+  }
+
+  function isInRange(value1: number, value2: number): boolean {
+    const v1 = Math.round(value1)
+    const v2 = Math.round(value2)
+    for (let i = v1 - ALIGNING_LINE_MARGIN, len = v1 + ALIGNING_LINE_MARGIN; i <= len; i++) {
+      if (i === v2) return true
+    }
+    return false
+  }
+
+  /**
+   * Snap selected object to other custom objects and collect snap lines for drawing.
+   */
+  function addGuideForMultipleObjects(canvasInstance: Canvas, selectedObject: FabricObject): void {
+    const vpt = canvasInstance.viewportTransform
+    if (!vpt) return
+
+    const canvasObjects = canvasInstance.getObjects()
+    const activeCenter = selectedObject.getCenterPoint()
+    const activeLeft = activeCenter.x
+    const activeTop = activeCenter.y
+    const activeRect = selectedObject.getBoundingRect()
+    const activeHeight = activeRect.height / vpt[3]
+    const activeWidth = activeRect.width / vpt[0]
+
+    let horizontalInTheRange = false
+    let verticalInTheRange = false
+
+    const newVerticalLines: { x: number; y1: number; y2: number }[] = []
+    const newHorizontalLines: { y: number; x1: number; x2: number }[] = []
+
+    for (let i = canvasObjects.length; i--; ) {
+      if (canvasObjects[i] === selectedObject) continue
+
+      const obj = canvasObjects[i] as FabricObject
+      if (!('logo_index' in obj) && !('custom_text_index' in obj)) continue
+
+      const objectCenter = obj.getCenterPoint()
+      const objectLeft = objectCenter.x
+      const objectTop = objectCenter.y
+      const objectRect = obj.getBoundingRect()
+      const objectHeight = objectRect.height / vpt[3]
+      const objectWidth = objectRect.width / vpt[0]
+
+      if (isInRange(objectLeft, activeLeft)) {
+        verticalInTheRange = true
+        newVerticalLines.push({
+          x: objectLeft,
+          y1:
+            objectTop < activeTop
+              ? objectTop - objectHeight / 2 - ALIGNING_LINE_OFFSET
+              : objectTop + objectHeight / 2 + ALIGNING_LINE_OFFSET,
+          y2:
+            activeTop > objectTop
+              ? activeTop + activeHeight / 2 + ALIGNING_LINE_OFFSET
+              : activeTop - activeHeight / 2 - ALIGNING_LINE_OFFSET
+        })
+        selectedObject.setPositionByOrigin(
+          new fabric.Point(objectLeft, activeTop),
+          'center',
+          'center'
+        )
+      }
+
+      if (isInRange(objectLeft - objectWidth / 2, activeLeft - activeWidth / 2)) {
+        verticalInTheRange = true
+        newVerticalLines.push({
+          x: objectLeft - objectWidth / 2 + 10,
+          y1:
+            objectTop < activeTop
+              ? objectTop - objectHeight / 2 - ALIGNING_LINE_OFFSET
+              : objectTop + objectHeight / 2 + ALIGNING_LINE_OFFSET,
+          y2:
+            activeTop > objectTop
+              ? activeTop + activeHeight / 2 + ALIGNING_LINE_OFFSET
+              : activeTop - activeHeight / 2 - ALIGNING_LINE_OFFSET
+        })
+        selectedObject.setPositionByOrigin(
+          new fabric.Point(objectLeft - objectWidth / 2 + activeWidth / 2, activeTop),
+          'center',
+          'center'
+        )
+      }
+
+      if (isInRange(objectLeft + objectWidth / 2, activeLeft + activeWidth / 2)) {
+        verticalInTheRange = true
+        newVerticalLines.push({
+          x: objectLeft + objectWidth / 2 - 11,
+          y1:
+            objectTop < activeTop
+              ? objectTop - objectHeight / 2 - ALIGNING_LINE_OFFSET
+              : objectTop + objectHeight / 2 + ALIGNING_LINE_OFFSET,
+          y2:
+            activeTop > objectTop
+              ? activeTop + activeHeight / 2 + ALIGNING_LINE_OFFSET
+              : activeTop - activeHeight / 2 - ALIGNING_LINE_OFFSET
+        })
+        selectedObject.setPositionByOrigin(
+          new fabric.Point(objectLeft + objectWidth / 2 - activeWidth / 2, activeTop),
+          'center',
+          'center'
+        )
+      }
+
+      if (isInRange(objectTop, activeTop)) {
+        horizontalInTheRange = true
+        newHorizontalLines.push({
+          y: objectTop,
+          x1:
+            objectLeft < activeLeft
+              ? objectLeft - objectWidth / 2 - ALIGNING_LINE_OFFSET
+              : objectLeft + objectWidth / 2 + ALIGNING_LINE_OFFSET,
+          x2:
+            activeLeft > objectLeft
+              ? activeLeft + activeWidth / 2 + ALIGNING_LINE_OFFSET
+              : activeLeft - activeWidth / 2 - ALIGNING_LINE_OFFSET
+        })
+        selectedObject.setPositionByOrigin(
+          new fabric.Point(activeLeft, objectTop),
+          'center',
+          'center'
+        )
+      }
+
+      if (isInRange(objectTop - objectHeight / 2, activeTop - activeHeight / 2)) {
+        horizontalInTheRange = true
+        newHorizontalLines.push({
+          y: objectTop - objectHeight / 2 + 10,
+          x1:
+            objectLeft < activeLeft
+              ? objectLeft - objectWidth / 2 - ALIGNING_LINE_OFFSET
+              : objectLeft + objectWidth / 2 + ALIGNING_LINE_OFFSET,
+          x2:
+            activeLeft > objectLeft
+              ? activeLeft + activeWidth / 2 + ALIGNING_LINE_OFFSET
+              : activeLeft - activeWidth / 2 - ALIGNING_LINE_OFFSET
+        })
+        selectedObject.setPositionByOrigin(
+          new fabric.Point(activeLeft, objectTop - objectHeight / 2 + activeHeight / 2),
+          'center',
+          'center'
+        )
+      }
+
+      if (isInRange(objectTop + objectHeight / 2, activeTop + activeHeight / 2)) {
+        horizontalInTheRange = true
+        newHorizontalLines.push({
+          y: objectTop + objectHeight / 2 - 11,
+          x1:
+            objectLeft < activeLeft
+              ? objectLeft - objectWidth / 2 - ALIGNING_LINE_OFFSET
+              : objectLeft + objectWidth / 2 + ALIGNING_LINE_OFFSET,
+          x2:
+            activeLeft > objectLeft
+              ? activeLeft + activeWidth / 2 + ALIGNING_LINE_OFFSET
+              : activeLeft - activeWidth / 2 - ALIGNING_LINE_OFFSET
+        })
+        selectedObject.setPositionByOrigin(
+          new fabric.Point(activeLeft, objectTop + objectHeight / 2 - activeHeight / 2),
+          'center',
+          'center'
+        )
+      }
+    }
+
+    verticalLines.value = verticalInTheRange ? newVerticalLines : []
+    horizontalLines.value = horizontalInTheRange ? newHorizontalLines : []
+  }
+
+  function drawLine(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    ctx: CanvasRenderingContext2D,
+    vpt: number[]
+  ): void {
+    const vptMat = vpt as [number, number, number, number, number, number]
+    const originXY = fabric.util.transformPoint(new fabric.Point(x1, y1), vptMat)
+    const dimensions = fabric.util.transformPoint(new fabric.Point(x2, y2), vptMat)
+    ctx.save()
+    ctx.lineWidth = ALIGNING_LINE_WIDTH
+    ctx.strokeStyle = ALIGNING_LINE_COLOR
+    ctx.setLineDash([5, 5])
+    ctx.beginPath()
+    ctx.moveTo(originXY.x, originXY.y)
+    ctx.lineTo(dimensions.x, dimensions.y)
+    ctx.stroke()
+    ctx.restore()
+  }
+
+  function drawVerticalLine(
+    coords: { x: number; y1: number; y2: number },
+    ctx: CanvasRenderingContext2D,
+    vpt: number[]
+  ): void {
+    drawLine(
+      coords.x + 0.5,
+      coords.y1 > coords.y2 ? coords.y2 : coords.y1,
+      coords.x + 0.5,
+      coords.y2 > coords.y1 ? coords.y2 : coords.y1,
+      ctx,
+      vpt
+    )
+  }
+
+  function drawHorizontalLine(
+    coords: { y: number; x1: number; x2: number },
+    ctx: CanvasRenderingContext2D,
+    vpt: number[]
+  ): void {
+    drawLine(
+      coords.x1 > coords.x2 ? coords.x2 : coords.x1,
+      coords.y + 0.5,
+      coords.x2 > coords.x1 ? coords.x2 : coords.x1,
+      coords.y + 0.5,
+      ctx,
+      vpt
+    )
   }
 
   /**
