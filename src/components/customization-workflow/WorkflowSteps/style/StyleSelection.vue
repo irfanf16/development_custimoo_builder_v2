@@ -47,6 +47,13 @@
     if (!productsStore.stylePreviews && productId.value) {
       productsStore.fetchStylePreviews(productId.value as number)
     }
+
+    visibleAddons.value.forEach(addon => {
+      if (addon?.preselected == true) {
+        addPreselectedAddons(addon.addon_id, true)
+      }
+    })
+
     // Ensure addons are loaded when product changes
     // if (productId.value) {
     //   productsStore.fetchProductAddons(productId.value as number)
@@ -73,6 +80,27 @@
   async function toggleAddon(addonId: number, checked: boolean) {
     const pid = Number(productId.value)
     if (!pid || !customizationStore.customization) return
+    console.log('visible addons', visibleAddons.value)
+    const addon = visibleAddons.value.find(a => a.addon_id === addonId)
+
+    // If addon is preselected, do not remove it
+    if (addon?.preselected) {
+      return
+    }
+
+    const prevAddons = customizationStore.customization.addons_info?.[pid]?.addons || []
+    const prevIds = prevAddons.map(a => a.addon_id)
+    const nextIds = checked
+      ? prevIds.includes(addonId)
+        ? prevIds
+        : [...prevIds, addonId]
+      : prevIds.filter(id => id !== addonId)
+    await historyStore.execute('addons.set', { productId: pid, prevIds, nextIds })
+  }
+
+  async function addPreselectedAddons(addonId: number, checked: boolean = true) {
+    const pid = Number(productId.value)
+    if (!pid || !customizationStore.customization) return
     const prevAddons = customizationStore.customization.addons_info?.[pid]?.addons || []
     const prevIds = prevAddons.map(a => a.addon_id)
     const nextIds = checked
@@ -91,14 +119,15 @@
       return details.company_addons.map(a => ({
         addon_id: a.addon_id,
         title: a.addon_data?.title || ''
-      })) as Array<{ addon_id: number; title: string; price: string }>
+      })) as Array<{ addon_id: number; title: string; price: string; preselected: boolean }>
     }
     if (details?.product_addons?.length) {
       return details.product_addons.map(a => ({
         addon_id: a.addon_id,
         title: a.title || '',
-        price: a.currencies[0]?.price.toString() || '0'
-      })) as Array<{ addon_id: number; title: string; price: string }>
+        price: a.currencies[0]?.price.toString() || '0',
+        preselected: a.selected
+      })) as Array<{ addon_id: number; title: string; price: string; preselected: boolean }>
     }
     return []
   })
@@ -195,11 +224,12 @@
             :id="`checkbox-addon-${addon.addon_id}`"
             :model-value="
               !!(
-                productId &&
-                customizationStore.customization?.addons_info &&
-                customizationStore.customization.addons_info[productId]?.addons?.some(
-                  infoAddon => infoAddon.addon_id === addon.addon_id
-                )
+                addon.preselected ||
+                (productId &&
+                  customizationStore.customization?.addons_info &&
+                  customizationStore.customization.addons_info[productId]?.addons?.some(
+                    infoAddon => infoAddon.addon_id === addon.addon_id
+                  ))
               )
             "
             @update:model-value="toggleAddon(addon.addon_id, $event === true)"

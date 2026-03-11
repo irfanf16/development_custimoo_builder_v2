@@ -529,17 +529,17 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const grouped_addons: Record<string, OutputAddon[]> = {}
     const ungrouped_addons: OutputAddon[] = []
 
-    addons.forEach(addon => {
-      if (addon.addon_group_id != null) {
-        const groupKey = String(addon.addon_group_id)
-        if (!grouped_addons[groupKey]) {
-          grouped_addons[groupKey] = []
-        }
-        grouped_addons[groupKey].push(addon)
-      } else {
-        ungrouped_addons.push(addon)
-      }
-    })
+    // addons.forEach(addon => {
+    //   if (addon.addon_group_id != null) {
+    //     const groupKey = String(addon.addon_group_id)
+    //     if (!grouped_addons[groupKey]) {
+    //       grouped_addons[groupKey] = []
+    //     }
+    //     grouped_addons[groupKey].push(addon)
+    //   } else {
+    //     // ungrouped_addons.push(addon)
+    //   }
+    // })
 
     customization.value.addons_info[key] = {
       addons,

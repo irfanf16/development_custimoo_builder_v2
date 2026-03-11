@@ -11,7 +11,8 @@ import type {
   APCustomizationLogosMap,
   OutputProductText,
   OutputProductTextItem,
-  ProductRosterDetail
+  ProductRosterDetail,
+  OutputAddon
 } from '@/services/products/types'
 import type { FactoryProduct } from '@/services/cart/types'
 import type { CustomLogo } from '@/services/logos/types'
@@ -478,6 +479,12 @@ function buildCustomizationFromCartProduct(
     }
   }
 
+  if (factoryProductRecord.hasOwnProperty('addons')) {
+    next.addons_info[next.product_id] = {
+      addons: factoryProductRecord.addons as OutputAddon[]
+    }
+  }
+
   return next
 }
 
@@ -655,7 +662,8 @@ export function useLoadCartProductIntoCustomizer() {
       // Load the base product/style/design via existing products flow
       let productId = cartBaseProductId
       const productResp = await productsStore.fetchActiveProductDetails(productId)
-
+      // console.log("product response",productResp);
+      // console.log("Factory Product",factoryProduct);
       if (!productResp?.success) {
         // If the cart payload uses a *base* product_id that isn't valid for GET product/{id},
         // try mapping it to the active product id via previews

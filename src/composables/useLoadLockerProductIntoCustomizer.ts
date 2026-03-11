@@ -10,7 +10,8 @@ import type {
   APCustomizationGroupColor,
   APCustomizationLogosMap,
   OutputProductText,
-  OutputProductTextItem
+  OutputProductTextItem,
+  OutputAddon
 } from '@/services/products/types'
 import type { LockerProduct } from '@/services/lockers/types'
 import type { ProductRosterDetail } from '@/services/products/types'
@@ -474,6 +475,12 @@ function buildCustomizationFromLocker(
       })
     if (customGroups.length > 0) {
       next.custom_svg_groups = customGroups
+    }
+  }
+
+  if (lockerRecord.hasOwnProperty('addons')) {
+    next.addons_info[next.product_id] = {
+      addons: lockerRecord.addons as OutputAddon[]
     }
   }
 
