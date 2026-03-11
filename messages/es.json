@@ -491,6 +491,7 @@
   "msg_failed_to_load_reorder_product": "Error al cargar el producto. Inténtalo de nuevo.",
   "msg_invalid_order_product": "Producto de pedido no válido",
   "msg_failed_to_load_product_sharing": "Error al cargar datos para compartir",
+  "msg_share_product_not_found_show_default": "Producto no encontrado. El enlace compartido puede ser inválido o haber expirado. Se muestra el producto predeterminado.",
   "msg_product_data_not_found": "Datos del producto no encontrados",
   "msg_no_products_found": "No se encontraron productos",
   "msg_product_id_not_found": "ID de producto no encontrado",

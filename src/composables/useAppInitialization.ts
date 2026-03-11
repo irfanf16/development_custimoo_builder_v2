@@ -325,13 +325,13 @@ export function useAppInitialization() {
   // ============================================================================
   // Phase 5: Load Share Product
   // ============================================================================
-  // Loads product from share URL using the dedicated composable
+  // Loads product from share URL using the dedicated composable. Returns true if loaded; false if missing/invalid (caller should fall back to default flow).
   const loadShareProduct = async (
     customizationStore: ReturnType<typeof useCustomizationStore>,
     _productsStore: ReturnType<typeof useProductsStore>
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     const shareUrl = appStore.shareUrl
-    if (!shareUrl) return
+    if (!shareUrl) return false
 
     const { useLoadShareProductIntoCustomizer } =
       await import('@/composables/useLoadShareProductIntoCustomizer')
@@ -341,7 +341,9 @@ export function useAppInitialization() {
     if (success) {
       customizationStore.saveToLocalStorage()
       wf.setActiveStep('designs')
+      return true
     }
+    return false
   }
 
   const loadReorderProduct = async (
@@ -386,10 +388,10 @@ export function useAppInitialization() {
     const { customizationStore, productsStore } = context.stores
     const { loadCartProductIntoCustomizer } = useLoadCartProductIntoCustomizer()
 
-    // Priority 1: Share URL product loading
+    // Priority 1: Share URL product loading (fall back to default flow if share is missing/invalid)
     if (appStore.shareUrl) {
-      await loadShareProduct(customizationStore, productsStore)
-      return
+      const shareLoaded = await loadShareProduct(customizationStore, productsStore)
+      if (shareLoaded) return
     }
     // Reload reorder data
     await loadReorderProduct(customizationStore)

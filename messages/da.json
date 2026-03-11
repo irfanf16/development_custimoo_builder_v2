@@ -491,6 +491,7 @@
   "msg_failed_to_load_reorder_product": "Kunne ikke indlæse produkt. Prøv igen.",
   "msg_invalid_order_product": "Ugyldigt ordreprodukt",
   "msg_failed_to_load_product_sharing": "Kunne ikke indlæse produktdata til deling",
+  "msg_share_product_not_found_show_default": "Produktet blev ikke fundet. Delt link er muligvis ugyldigt eller udløbet. Viser standardproduktet i stedet.",
   "msg_product_data_not_found": "Produktdata ikke fundet",
   "msg_no_products_found": "Ingen produkter fundet",
   "msg_product_id_not_found": "Produkt-ID ikke fundet",

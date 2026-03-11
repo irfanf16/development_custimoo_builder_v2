@@ -1,8 +1,11 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useProfileStore } from '@/stores/profile/profile.store'
+import { useAppStore } from '@/stores/app/app.store'
 import { API } from '@/services'
+import { msg_share_product_not_found_show_default } from '@/paraglide/messages'
 import type {
   ActiveProductCustomization,
   APCustomizationDefaultColor,
@@ -515,9 +518,17 @@ export function updatePresetTextsWithShareFlags(
 
 export function useLoadShareProductIntoCustomizer() {
   const isLoading = ref(false)
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
   const { tryCatchApi } = useTryCatchApi({
     defaultProperties: { composable: 'useLoadShareProductIntoCustomizer' }
   })
+
+  function showShareNotFoundToast() {
+    // Toast runs during app init before Toaster is mounted; store message for WidgetApp to show after mount
+    const message = msg_share_product_not_found_show_default({}, { locale: locale.value })
+    useAppStore().setPendingShareNotFoundToast(message)
+  }
 
   async function loadShareProductIntoCustomizer(
     shareUrl: string,
@@ -539,11 +550,13 @@ export function useLoadShareProductIntoCustomizer() {
         resp.success && resp.content ? resp.content.result : (fallbackShareProduct ?? null)
 
       if (!shareResult) {
+        showShareNotFoundToast()
         return false
       }
 
       const factoryProduct = resolveShareProduct(shareResult)
       if (!factoryProduct) {
+        showShareNotFoundToast()
         return false
       }
 
@@ -554,6 +567,7 @@ export function useLoadShareProductIntoCustomizer() {
       } = extractShareProductIds(factoryProduct as unknown as Record<string, unknown>)
 
       if (!shareBaseProductId) {
+        showShareNotFoundToast()
         return false
       }
 

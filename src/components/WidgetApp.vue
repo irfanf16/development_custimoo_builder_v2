@@ -1,7 +1,9 @@
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue'
+  import { nextTick, onMounted, ref } from 'vue'
+  import { toast } from 'vue-sonner'
   import { useBrandStyling } from '@/composables/useBrandStyling'
   import { useUIStore } from '@/stores/ui/ui.store'
+  import { useAppStore } from '@/stores/app/app.store'
   import { LayoutWrapper } from '@/layouts'
   import ConfirmDialog from '@/components/global/ConfirmDialog.vue'
   import { Toaster } from '@/components/ui/sonner'
@@ -51,6 +53,7 @@
   // })
 
   const uiStore = useUIStore()
+  const appStore = useAppStore()
 
   const widgetRootContainer = ref<HTMLElement>()
 
@@ -62,6 +65,16 @@
     if (widgetRootContainer.value) {
       uiStore.setWidgetRoot(widgetRootContainer.value)
       await applyBrandStyling(widgetRootContainer.value)
+    }
+
+    // Show any pending toast (e.g. share product not found) now that Toaster is mounted
+    await nextTick()
+    const pendingMessage =
+      (appStore.pendingShareNotFoundToastMessage as { value?: string | null })?.value ??
+      appStore.pendingShareNotFoundToastMessage
+    if (pendingMessage) {
+      toast.warning(pendingMessage)
+      appStore.clearPendingShareNotFoundToast()
     }
   })
 </script>

@@ -12,6 +12,8 @@ export const useAppStore = defineStore('appStore', () => {
   const error = ref<string | null>(null)
   const shareUrl = ref<string | null>(null)
   const isReorderFlow = ref(false)
+  /** Message to show as toast once app has mounted (e.g. share product not found during init). */
+  const pendingShareNotFoundToastMessage = ref<string | null>(null)
 
   function loadAppInfoFromGlobalVariable() {
     if (typeof window !== 'undefined') {
@@ -58,17 +60,28 @@ export const useAppStore = defineStore('appStore', () => {
     isReorderFlow.value = value
   }
 
+  function setPendingShareNotFoundToast(message: string) {
+    pendingShareNotFoundToastMessage.value = message
+  }
+
+  function clearPendingShareNotFoundToast() {
+    pendingShareNotFoundToastMessage.value = null
+  }
+
   return {
     appInfo,
     isLoading,
     error,
     shareUrl,
     isReorderFlow,
+    pendingShareNotFoundToastMessage,
     loadAppInfoFromGlobalVariable,
     setLoading,
     setError,
     setAppInfo,
     setShareUrl,
-    setReorderFlow
+    setReorderFlow,
+    setPendingShareNotFoundToast,
+    clearPendingShareNotFoundToast
   }
 })
