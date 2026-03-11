@@ -131,12 +131,12 @@ export function useCart() {
               }
             }
           }
-          if (totalLogoPrice > 0) {
-            logoTechnology = {
-              label: firstLabel || 'Logo technology',
-              price: totalLogoPrice
-            }
+          // if (totalLogoPrice > 0) {
+          logoTechnology = {
+            label: firstLabel || 'Logo technology',
+            price: totalLogoPrice
           }
+          // }
         }
 
         mappedProducts.push({
@@ -281,7 +281,7 @@ export function useCart() {
         type: 'addon'
       })
     }
-
+    console.log('logo tech', product)
     if (product.logo_technology) {
       rows.push({
         label: product.logo_technology.label,
