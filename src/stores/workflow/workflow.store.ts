@@ -79,6 +79,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const selectedCategoryId = ref<number | null>(null)
   const selectedSubCategoryId = ref<number | null>(null)
   const selectedDesignCategoryId = ref<number | null>(null)
+  /** Set when user selects a product and we navigate to designs before load completes. */
+  const pendingProductId = ref<number | null>(null)
 
   // ===== COMPUTED PROPERTIES =====
   const currentStep = computed<WorkflowRouteStep>(() => {
@@ -499,6 +501,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedDesignCategoryId.value = dCategoryId
   }
 
+  function setPendingProductId(id: number | null) {
+    pendingProductId.value = id
+  }
+
   // ===== NAVIGATION ACTIONS =====
   function handleCategorySelect(categoryId: number) {
     setSelectedCategoryForPreview(categoryId)
@@ -565,6 +571,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedCategoryId.value = null
     selectedSubCategoryId.value = null
     selectedDesignCategoryId.value = null
+    pendingProductId.value = null
     clearHeaderAndFooterConfig()
     activeLogoId.value = null
     activeLogoIndex.value = null
@@ -601,6 +608,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedCategoryId,
     selectedSubCategoryId,
     selectedDesignCategoryId,
+    pendingProductId,
+    setPendingProductId,
     activeCanvasSide,
     canvasZoom,
     // Computed

@@ -23,6 +23,7 @@
     msg_no_products_found
   } from '@/paraglide/messages'
   import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -47,6 +48,12 @@
   const { productSearchModel, showCustomizerStockFilter, customizerStockFilterModel } =
     useProductConfig()
   const previews = computed(() => productsStore.productPreviews || [])
+  /** Show spinner only when loading and we have no content (new category); keep showing grid when refetching same category. */
+  const showProductsLoading = computed(
+    () =>
+      productsStore.isLoading &&
+      (productsStore.productPreviews == null || productsStore.productPreviews.length === 0)
+  )
   const isDetailsDialogOpen = ref(false)
   const selectedProductIdToPreview = ref<number>(0)
   // Constants
@@ -142,28 +149,33 @@
       // Commit the selected category/subcategory at the moment the product is chosen
       workflowStore.commitSelectedCategory()
       workflowStore.commitSelectedSubCategory()
-      await productsStore.fetchActiveProductDetails(productId)
-
-      // After loading active details, ensure customization contains product, style and design ids
-      const styleId = productsStore.activeStyleDetails?.id
-      const designId = productsStore.activeDesignDetails?.id
-
-      if (styleId) {
-        // Persist chosen style in customization
-        customizationStore.setStyle(styleId)
-        await productsStore.fetchStylePreviews(productId)
-      }
-
-      if (designId && styleId) {
-        // Persist chosen design in customization
-        customizationStore.setDesign(productsStore.activeDesignDetails as OutputDesignDetails)
-        await productsStore.fetchDesignPreviewsByStyleId(styleId)
-      }
-
-      // Move step to Designs
+      // Navigate immediately; load details and previews in the background
+      workflowStore.setPendingProductId(productId)
       workflowStore.setActiveStep('designs')
-      // Reset all workflow sub-steps to their default values
       workflowStore.resetWorkflowSubSteps()
+
+      void (async () => {
+        try {
+          await productsStore.fetchActiveProductDetails(productId)
+          const styleId = productsStore.activeStyleDetails?.id
+          const designId = productsStore.activeDesignDetails?.id
+
+          if (styleId) {
+            customizationStore.setStyle(styleId)
+            await productsStore.fetchStylePreviews(productId)
+          }
+
+          if (designId && styleId) {
+            customizationStore.setDesign(productsStore.activeDesignDetails as OutputDesignDetails)
+            await productsStore.fetchDesignPreviewsByStyleId(styleId)
+          }
+        } catch (error) {
+          console.error('Error selecting product:', error)
+          // TODO: Add user-facing error notification
+        } finally {
+          workflowStore.setPendingProductId(null)
+        }
+      })()
     } catch (error) {
       console.error('Error selecting product:', error)
       // TODO: Add user-facing error notification
@@ -249,7 +261,11 @@
 </script>
 
 <template>
+  <div v-if="showProductsLoading" class="flex items-center justify-center min-h-[200px] w-full">
+    <Spinner class="size-8 text-primary" />
+  </div>
   <div
+    v-else
     :class="
       isExpanded
         ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'

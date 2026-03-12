@@ -16,8 +16,7 @@
   import { useCompanyStore } from '@/stores/company/company.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { usePricing } from '@/composables/usePricing'
-  // no emits
-  // no emits
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
@@ -29,6 +28,11 @@
     () => productsStore.activeProductDetails?.id || customizationStore.activeProductId
   )
   const previews = computed(() => (productsStore.stylePreviews as OutputStylePreviewFront[]) || [])
+  const showStylesLoading = computed(
+    () =>
+      productsStore.stylePreviews == null &&
+      (productsStore.isLoading || (productId.value != null && productId.value !== 0))
+  )
   const headerDescription = computed(() => {
     const p = productsStore.activeProductDetails
     const description = p?.sku?.description?.trim()
@@ -183,7 +187,10 @@
 
 <template>
   <!-- Content -->
-  <div class="flex flex-col md:gap-2 lg:gap-4 pr-4 md:mx-3">
+  <div v-if="showStylesLoading" class="flex items-center justify-center min-h-[200px] w-full">
+    <Spinner class="size-8 text-primary" />
+  </div>
+  <div v-else class="flex flex-col md:gap-2 lg:gap-4 pr-4 md:mx-3">
     <div class="flex flex-col gap-2">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div class="text-muted-foreground text-base leading-relaxed" v-html="headerDescription"></div>

@@ -72,6 +72,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     return Array.from(uniqueGroups.values())
   })
   const productPreviews = ref<ProductPreviewItem[] | null>(null)
+  /** Last category/subcategory we fetched product previews for; used to avoid clearing previews on same-category refetch (e.g. going back to product tab). */
+  const lastProductPreviewsCategoryId = ref<number | null>(null)
+  const lastProductPreviewsSubCategoryId = ref<number | undefined>(undefined)
   const stylePreviews = ref<OutputStylePreviewFront[] | null>(null)
   const designPreviews = ref<OutputDesignPreviewFront[] | null>(null)
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
@@ -249,6 +252,12 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchProductPreviews(categoryId: number | null, subcategoryId?: number) {
     setLoading(true)
     setError(null)
+    const isSameCategory =
+      lastProductPreviewsCategoryId.value === (categoryId ?? null) &&
+      lastProductPreviewsSubCategoryId.value === (subcategoryId ?? undefined)
+    if (!isSameCategory) {
+      productPreviews.value = null
+    }
     const { syncId } = useQueryParams()
 
     const resp = await tryCatchApi(
@@ -265,6 +274,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     )
     if (resp.success) {
       productPreviews.value = resp.content as unknown as ProductPreviewItem[]
+      lastProductPreviewsCategoryId.value = categoryId ?? null
+      lastProductPreviewsSubCategoryId.value = subcategoryId ?? undefined
     } else {
       setError('Error getting product previews')
     }
@@ -312,6 +323,8 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchActiveProductDetails(productId: number, hasSyncId: boolean = false) {
     setLoading(true)
     setError(null)
+    designPreviews.value = null
+    stylePreviews.value = null
     const result = await tryCatchApi(API.products.getActiveProductDetails(productId, hasSyncId), {
       operation: 'fetchActiveProductDetails',
       product_id: productId

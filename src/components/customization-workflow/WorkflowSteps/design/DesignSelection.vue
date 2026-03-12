@@ -12,6 +12,7 @@
   import { design_categories_default_label } from '@/paraglide/messages'
   import { Checkbox } from '@/components/ui/checkbox'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
@@ -36,14 +37,34 @@
   const previews = computed(() => productsStore.designPreviews || [])
   const designSelectionContainer = ref<HTMLElement | null>(null)
 
-  onMounted(async () => {
+  const showDesignsLoading = computed(
+    () =>
+      workflowStore.pendingProductId != null ||
+      ((productsStore.designPreviews == null || productsStore.designPreviews.length === 0) &&
+        productsStore.isLoading)
+  )
+
+  onMounted(() => {
     // Reset to "All Categories" when entering design selection
     workflowStore.setSelectedDesignCategory(null)
 
+    // Skip fetch when a product was just selected and background load is in progress
+    if (workflowStore.pendingProductId != null) {
+      nextTick(() => {
+        const activeDesignName = customizationStore.customization?.design_name
+        if (activeDesignName) {
+          setTimeout(() => {
+            emit('scroll-to-element', `design-${activeDesignName}`, 'auto')
+          }, 100)
+        }
+      })
+      return
+    }
+    // Fetch in background so we show spinner immediately instead of blocking
     if (!productsStore.designPreviews) {
       const styleId = productsStore.activeStyleDetails?.id
       if (styleId) {
-        await productsStore.fetchDesignPreviewsByStyleId(styleId)
+        void productsStore.fetchDesignPreviewsByStyleId(styleId)
       }
     }
     // Scroll to active design when component mounts
@@ -58,14 +79,14 @@
     })
   })
 
-  async function selectDesign(item: import('@/services/products/types').OutputDesignPreviewFront) {
+  function selectDesign(item: import('@/services/products/types').OutputDesignPreviewFront) {
     productsStore.applyDesignPreview(item)
     // Scroll to selected design with smooth animation
     setTimeout(() => {
       emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
     }, 100)
     const visibleSteps = menuItems.value.map(i => i.step)
-    await goTo(pickStepOrNextAvailable('styles', visibleSteps))
+    void goTo(pickStepOrNextAvailable('styles', visibleSteps))
   }
 
   const filteredPreviews = computed(() => {
@@ -109,6 +130,13 @@
 <template>
   <!-- Content -->
   <div
+    v-if="showDesignsLoading"
+    class="flex items-center justify-center min-h-[200px] w-full mb-4 md:mb-6"
+  >
+    <Spinner class="size-8 text-primary" />
+  </div>
+  <div
+    v-else
     ref="designSelectionContainer"
     class="mb-4 md:mb-6 gap-4"
     :class="
