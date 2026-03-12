@@ -6,7 +6,11 @@ import {
   type OutputLogin,
   type InputSignup,
   type OutputSignup,
-  type SalesReps
+  type SalesReps,
+  type InputForgotPassword,
+  type OutputForgotPassword,
+  type InputResetPassword,
+  type OutputResetPassword
 } from '@/services/authentication/types'
 import { API } from '../../services'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
@@ -738,6 +742,28 @@ export const useAuthStore = defineStore('authStore', () => {
     return output
   }
 
+  async function postForgotPassword(
+    input: InputForgotPassword
+  ): Promise<APIResponse<OutputForgotPassword>> {
+    setLoading(true)
+    const output = await tryCatchApi(API.authentication.postForgotPassword(input), {
+      operation: 'postForgotPassword'
+    })
+    setLoading(false)
+    return output
+  }
+
+  async function postResetPassword(
+    input: InputResetPassword
+  ): Promise<APIResponse<OutputResetPassword>> {
+    setLoading(true)
+    const output = await tryCatchApi(API.authentication.postResetPassword(input), {
+      operation: 'postResetPassword'
+    })
+    setLoading(false)
+    return output
+  }
+
   // ===== RETURN =====
   return {
     // State
@@ -779,6 +805,8 @@ export const useAuthStore = defineStore('authStore', () => {
     logout,
     register,
     getSalesReps,
+    postForgotPassword,
+    postResetPassword,
     // Permissions
     getPermissions
   }

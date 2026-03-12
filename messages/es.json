@@ -606,5 +606,13 @@
   "privacy_policy_s9_content": "<p>Podemos actualizar esta Política de Privacidad periódicamente. Cualquier cambio se publicará con una fecha de vigencia actualizada. El uso continuo del personalizador después de dichos cambios constituye la aceptación de la política actualizada.</p>",
   "privacy_policy_s10_title": "10. Contáctenos",
   "privacy_policy_s10_content": "<p>Si tiene preguntas sobre esta Política de Privacidad, puede contactarnos en:</p><p>Email: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Dirección:<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 Copenhague<br>DINAMARCA</p>",
-  "sales_rep_label": "Representante de ventas"
+  "sales_rep_label": "Representante de ventas",
+  "forgot_password_dialog_title": "Contraseña olvidada",
+  "forgot_password_dialog_description": "Ingresa tu dirección de correo electrónico y te enviaremos un enlace para restablecer tu contraseña.",
+  "auth_send_reset_link": "Enviar enlace de restablecimiento",
+  "msg_send_reset_link_success": "¡Enlace de restablecimiento enviado correctamente!",
+  "msg_send_reset_link_error": "Error al enviar el enlace de restablecimiento",
+  "msg_send_unable_to_reset_password_error": "No se puede restablecer la contraseña.",
+  "msg_forgot_password_question": "¿Olvidaste tu contraseña?",
+  "reset_password": "Restablecer contraseña"
 }

@@ -606,5 +606,13 @@
   "privacy_policy_s9_content": "<p>Vi kan opdatere denne privatlivspolitik periodisk. Eventuelle ændringer vil blive offentliggjort med en opdateret ikrafttrædelsesdato. Fortsat brug af customizeren efter ændringer betragtes som accept af den opdaterede politik.</p>",
   "privacy_policy_s10_title": "10. Kontakt os",
   "privacy_policy_s10_content": "<p>Hvis du har spørgsmål om denne privatlivspolitik, kan du kontakte os:</p><p>Email: <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Adresse:<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 København<br>DANMARK</p>",
-  "sales_rep_label": "Salgsrepræsentant"
+  "sales_rep_label": "Salgsrepræsentant",
+  "forgot_password_dialog_title": "Glemt adgangskode",
+  "forgot_password_dialog_description": "Indtast din e-mailadresse, og vi sender dig et link til at nulstille din adgangskode.",
+  "auth_send_reset_link": "Send nulstillingslink",
+  "msg_send_reset_link_success": "Nulstillingslink sendt!",
+  "msg_send_reset_link_error": "Kunne ikke sende nulstillingslink",
+  "msg_send_unable_to_reset_password_error": "Kan ikke nulstille adgangskoden.",
+  "msg_forgot_password_question": "Glemt din adgangskode?",
+  "reset_password": "Nulstil adgangskode"
 }

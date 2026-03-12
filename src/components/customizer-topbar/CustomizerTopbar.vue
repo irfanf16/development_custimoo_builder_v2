@@ -63,9 +63,11 @@
   import { CartDialog } from '@/components/cart'
   import { useSignIn } from '@/composables/useSignIn'
   import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
+  import ResetPasswordDialog from '@/components/auth/ResetPasswordDialog.vue'
   import { useAddToCartVisibility } from '@/composables/useAddToCartVisibility'
   import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+  import { useRoute } from 'vue-router'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import LockerBrowser from '@/components/LockerBrowser.vue'
@@ -115,8 +117,9 @@
   const { minimumActiveProductQuantityByDesignToCard, isQuantityByDesign } = usePricing()
   const { can } = usePermissions()
   const canSkipMoq = computed(() => can('skip-moq'))
-  const { openSignInDialog, handleLogout } = useSignIn()
+  const { openSignInDialog, handleLogout, setResetPasswordDialogOpen } = useSignIn()
   const { getPending, getPendingOrderId, clearPending } = usePendingPostLoginAction()
+  const route = useRoute()
   const { shouldShowAddToCartButton } = useAddToCartVisibility()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
@@ -164,6 +167,13 @@
   watch(openProfileWithOrderId, id => {
     if (id != null) {
       showProfileDialog.value = true
+    }
+  })
+
+  onMounted(() => {
+    const token = route.params.password_token || route.query.password_token
+    if (route.name === 'CustomizerResetPassword' && token) {
+      setResetPasswordDialogOpen(true)
     }
   })
 
@@ -1012,14 +1022,25 @@
                 <template v-if="showCompactTopbar">
                   <Tooltip>
                     <TooltipTrigger as-child>
-                      <Button variant="outline" size="icon" @click="handleUpdateCartProduct" :loading="cartStore.isLoading">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        :loading="cartStore.isLoading"
+                        @click="handleUpdateCartProduct"
+                      >
                         <Save class="size-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent><p>Update</p></TooltipContent>
                   </Tooltip>
                 </template>
-                <Button v-else :loading="cartStore.isLoading" variant="outline" size="default" @click="handleUpdateCartProduct">
+                <Button
+                  v-else
+                  :loading="cartStore.isLoading"
+                  variant="outline"
+                  size="default"
+                  @click="handleUpdateCartProduct"
+                >
                   <Save class="size-4" />
                   <span>Update</span>
                 </Button>
@@ -1347,6 +1368,7 @@
                 @update:open="showProfileDialog = $event"
               />
               <SignInDialog @success="onLoginSuccess" />
+              <ResetPasswordDialog />
             </DropdownMenu>
           </ButtonGroup>
         </div>

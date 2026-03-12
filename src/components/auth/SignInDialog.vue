@@ -20,10 +20,12 @@
     auth_register_now,
     auth_not_a_user,
     auth_password_label,
-    profile_email
+    profile_email,
+    msg_forgot_password_question
   } from '@/paraglide/messages'
   import { useSignIn } from '@/composables/useSignIn'
   import SignUpDialog from './SignUpDialog.vue'
+  import ForgotPasswordDialog from './ForgotPasswordDialog.vue'
 
   const emit = defineEmits<{
     (e: 'success'): void
@@ -32,14 +34,17 @@
   const {
     isSignInDialogOpen,
     isSignUpDialogOpen,
+    isForgotPasswordDialogOpen,
     credentials,
     isLoading,
     authError,
     currentLocale,
     setSignInDialogOpen,
+    setForgotPasswordDialogOpen,
     handleSignIn,
     handleCancel,
     handleOpenSignUp,
+    handleOpenForgotPassword,
     handleSignUpSuccess: handleSignUpSuccessBase
   } = useSignIn()
 
@@ -90,14 +95,26 @@
         <div v-if="authError" class="text-sm text-red-600">
           {{ authError }}
         </div>
-        <DialogFooter class="flex-col gap-2 sm:flex-row">
-          <Button type="button" variant="default" @click="handleCancel">
-            {{ auth_cancel({}, { locale: currentLocale }) }}
-          </Button>
-          <Button type="submit" :disabled="isLoading">
-            <span v-if="isLoading">{{ auth_signing_in({}, { locale: currentLocale }) }}</span>
-            <span v-else>{{ auth_sign_in({}, { locale: currentLocale }) }}</span>
-          </Button>
+        <DialogFooter class="flex sm:justify-between w-full gap-2 test-class">
+          <div class="flex items-center">
+            <Button
+              type="button"
+              variant="link"
+              class="p-0 h-auto font-semibold text-primary underline-offset-4 hover:underline"
+              @click="handleOpenForgotPassword"
+            >
+              {{ msg_forgot_password_question({}, { locale: currentLocale }) }}
+            </Button>
+          </div>
+          <div class="flex gap-1">
+            <Button type="button" variant="default" @click="handleCancel">
+              {{ auth_cancel({}, { locale: currentLocale }) }}
+            </Button>
+            <Button type="submit" :disabled="isLoading">
+              <span v-if="isLoading">{{ auth_signing_in({}, { locale: currentLocale }) }}</span>
+              <span v-else>{{ auth_sign_in({}, { locale: currentLocale }) }}</span>
+            </Button>
+          </div>
         </DialogFooter>
         <div class="text-center text-sm text-muted-foreground pt-2">
           {{ auth_not_a_user({}, { locale: currentLocale }) }}
@@ -116,6 +133,11 @@
   <SignUpDialog
     :open="isSignUpDialogOpen"
     @update:open="isSignUpDialogOpen = $event"
+    @success="handleSignUpSuccess"
+  />
+  <ForgotPasswordDialog
+    :open="isForgotPasswordDialogOpen"
+    @update:open="setForgotPasswordDialogOpen"
     @success="handleSignUpSuccess"
   />
 </template>

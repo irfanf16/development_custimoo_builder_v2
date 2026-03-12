@@ -606,5 +606,13 @@
   "privacy_policy_s9_content": "<p>Nous pouvons mettre à jour cette politique de confidentialité périodiquement. Toute modification sera publiée avec une date d'entrée en vigueur mise à jour. L'utilisation continue du customizer après ces modifications constitue une acceptation de la politique mise à jour.</p>",
   "privacy_policy_s10_title": "10. Contact",
   "privacy_policy_s10_content": "<p>Si vous avez des questions concernant cette politique de confidentialité, veuillez nous contacter :</p><p>Email : <a href=\"mailto:privacy@custimoo.com\">privacy@custimoo.com</a></p><p>Adresse :<br>Custimoo ApS<br>Danneskiold-Samsøes Allé 41<br>1434 Copenhague<br>DANEMARK</p>",
-  "sales_rep_label": "Représentant des ventes"
+  "sales_rep_label": "Représentant des ventes",
+  "forgot_password_dialog_title": "Mot de passe oublié",
+  "forgot_password_dialog_description": "Saisissez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+  "auth_send_reset_link": "Envoyer un lien de réinitialisation",
+  "msg_send_reset_link_success": "Lien de réinitialisation envoyé avec succès!",
+  "msg_send_reset_link_error": "Échec de l'envoi du lien de réinitialisation",
+  "msg_send_unable_to_reset_password_error": "Impossible de réinitialiser le mot de passe.",
+  "msg_forgot_password_question": "Mot de passe oublié?",
+  "reset_password": "Réinitialiser le mot de passe"
 }

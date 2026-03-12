@@ -23,6 +23,14 @@ export type Customer = {
   }
 }
 
+export type OutputForgotPassword = {
+  message: string
+}
+
+export type InputForgotPassword = {
+  email_address: string
+}
+
 export type OutputLogin =
   | {
       user: Customer
@@ -71,4 +79,15 @@ export type SalesReps = {
   id: number
   email: string
   name: string
+}
+export type InputResetPassword = {
+  email_address: string
+  password: string
+  confirm_password: string
+  token: string
+}
+
+export type OutputResetPassword = {
+  message: string
+  success?: boolean
 }

@@ -5,7 +5,11 @@ import {
   type OutputLogin,
   type InputSignup,
   type OutputSignup,
-  type SalesReps
+  type SalesReps,
+  type InputForgotPassword,
+  type OutputForgotPassword,
+  type InputResetPassword,
+  type OutputResetPassword
 } from './types'
 
 async function postLogin(data: InputLogin) {
@@ -31,9 +35,19 @@ async function getSalesReps() {
   return await http.get<SalesReps[]>('get-admin-salesrep')
 }
 
+async function postResetPassword(data: InputResetPassword) {
+  return await http.post<OutputResetPassword>('customer/reset-password', data)
+}
+
+async function postForgotPassword(data: InputForgotPassword) {
+  return await http.post<OutputForgotPassword>('customer/forgot-password', data)
+}
+
 export default {
   postLogin,
   postRegister,
   refreshToken,
-  getSalesReps
+  getSalesReps,
+  postForgotPassword,
+  postResetPassword
 }

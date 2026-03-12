@@ -21,6 +21,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/reset-password/:password_token?',
+    name: 'CustomizerResetPassword',
+    component: () => import('@/views/Customizer.vue'),
+    meta: {
+      layout: 'default',
+      title: 'Reset Password'
+    }
+  },
+  {
     path: '/order/:order_id/detail',
     name: 'OrderDetail',
     component: () => import('@/views/Customizer.vue'),

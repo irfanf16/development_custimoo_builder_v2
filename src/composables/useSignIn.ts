@@ -5,7 +5,9 @@ import { useProfileStore } from '@/stores/profile/profile.store'
 import {
   auth_error_email_not_exist,
   auth_error_invalid_password,
-  auth_error_login_failed
+  auth_error_login_failed,
+  msg_send_reset_link_success,
+  msg_send_unable_to_reset_password_error
 } from '@/paraglide/messages'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import { useCompanyStore } from '@/stores/company/company.store'
@@ -14,12 +16,15 @@ import { useSceneStore } from '@/stores/scene/scene.store'
 import { useLogosStore } from '@/stores/logos/logos.store'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import type { InputResetPassword } from '@/services/authentication/types'
 
 // ============================================================================
 // Shared Singleton State - Single source of truth for dialog visibility
 // ============================================================================
 const isSignInDialogOpen = ref(false)
 const isSignUpDialogOpen = ref(false)
+const isForgotPasswordDialogOpen = ref(false)
+const isResetPasswordDialogOpen = ref(false)
 
 // Shared credentials state
 const credentials = ref({
@@ -55,6 +60,8 @@ function resetCredentials(authStore: ReturnType<typeof useAuthStore>) {
 function closeAllDialogs() {
   isSignInDialogOpen.value = false
   isSignUpDialogOpen.value = false
+  isForgotPasswordDialogOpen.value = false
+  isResetPasswordDialogOpen.value = false
 }
 
 // ============================================================================
@@ -109,6 +116,20 @@ export function useSignIn() {
     }
   }
 
+  const setForgotPasswordDialogOpen = (open: boolean) => {
+    isForgotPasswordDialogOpen.value = open
+    if (open) {
+      resetCredentials(authStore)
+    }
+  }
+
+  const setResetPasswordDialogOpen = (open: boolean) => {
+    isResetPasswordDialogOpen.value = open
+    if (open) {
+      resetCredentials(authStore)
+    }
+  }
+
   // ============================================================================
   // Authentication Actions
   // ============================================================================
@@ -141,10 +162,54 @@ export function useSignIn() {
   const handleOpenSignUp = () => {
     isSignInDialogOpen.value = false
     isSignUpDialogOpen.value = true
+    isForgotPasswordDialogOpen.value = false
   }
 
   const handleSignUpSuccess = () => {
     isSignUpDialogOpen.value = false
+  }
+
+  const handleOpenSignIn = () => {
+    isSignInDialogOpen.value = true
+    isSignUpDialogOpen.value = false
+    isForgotPasswordDialogOpen.value = false
+  }
+
+  const handleOpenForgotPassword = () => {
+    isSignInDialogOpen.value = false
+    isForgotPasswordDialogOpen.value = true
+  }
+
+  const handleForgotPassword = async (): Promise<boolean> => {
+    authStore.setError(null)
+    const result = await authStore.postForgotPassword({
+      email_address: credentials.value.email
+    })
+    const locale = currentLocale.value
+
+    if (result.success) {
+      authStore.setError(msg_send_reset_link_success({}, { locale }))
+      return true
+    }
+
+    authStore.setError(msg_send_unable_to_reset_password_error({}, { locale }))
+    return false
+  }
+
+  const handleResetPassword = async (data: InputResetPassword): Promise<boolean> => {
+    authStore.setError(null)
+    const result = await authStore.postResetPassword(data)
+    const locale = currentLocale.value
+    if (result.content?.success) {
+      return true
+    }
+
+    authStore.setError(msg_send_unable_to_reset_password_error({}, { locale }))
+    return false
+  }
+
+  const clearAuthError = () => {
+    authStore.setError(null)
   }
 
   /**
@@ -240,6 +305,8 @@ export function useSignIn() {
     // State (shared singleton refs)
     isSignInDialogOpen,
     isSignUpDialogOpen,
+    isForgotPasswordDialogOpen,
+    isResetPasswordDialogOpen,
     credentials,
     isLoading,
     authError,
@@ -251,11 +318,18 @@ export function useSignIn() {
     openSignInDialog,
     closeSignInDialog,
     setSignInDialogOpen,
+    setForgotPasswordDialogOpen,
+    setResetPasswordDialogOpen,
     handleSignIn,
     handleCancel,
     handleOpenSignUp,
     handleSignUpSuccess,
     handleLogout,
-    checkAuthFromStorage
+    checkAuthFromStorage,
+    handleOpenSignIn,
+    handleOpenForgotPassword,
+    handleForgotPassword,
+    handleResetPassword,
+    clearAuthError
   }
 }
