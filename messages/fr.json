@@ -491,7 +491,7 @@
   "msg_failed_to_load_reorder_product": "Échec du chargement du produit. Veuillez réessayer.",
   "msg_invalid_order_product": "Produit de commande invalide",
   "msg_failed_to_load_product_sharing": "Échec du chargement des données pour le partage",
-  "msg_share_product_not_found_show_default": "Produit introuvable. Le lien partagé est peut-être invalide ou expiré. Affichage du produit par défaut.",
+  "msg_share_product_not_found_show_default": "Ce produit n'est plus disponible ou le lien n'est pas valide. Le produit par défaut a été chargé à la place.",
   "msg_product_data_not_found": "Données produit introuvables",
   "msg_no_products_found": "Aucun produit trouvé",
   "msg_product_id_not_found": "ID produit introuvable",

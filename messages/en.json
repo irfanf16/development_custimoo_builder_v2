@@ -533,7 +533,7 @@
   "msg_failed_to_load_reorder_product": "Failed to load reorder product. Please try again.",
   "msg_invalid_order_product": "Invalid order product",
   "msg_failed_to_load_product_sharing": "Failed to load product data for sharing",
-  "msg_share_product_not_found_show_default": "Product not found. The shared link may be invalid or expired. Showing the default product instead.",
+  "msg_share_product_not_found_show_default": "This product is no longer available or the link is invalid. The default product has been loaded instead.",
   "msg_product_data_not_found": "Product data not found",
   "msg_no_products_found": "No products found",
   "msg_product_id_not_found": "Product ID not found",
