@@ -36,6 +36,9 @@ export const useUIStore = defineStore('uiStore', () => {
   // Configurable mobile breakpoint to determine layout behavior
   const mobileBreakpoint = ref<number>(860)
 
+  // State (add with the others)
+  const showCartDialogTrigger = ref(0)
+
   // ===== Theme Management =====
   // Get theme from profileStore (source of truth)
   const profileStore = useProfileStore()
@@ -65,6 +68,10 @@ export const useUIStore = defineStore('uiStore', () => {
   const minWidgetHeight = computed(() => (isMobile.value ? 700 : 800))
 
   // Actions
+
+  function openCartDialog() {
+    showCartDialogTrigger.value++
+  }
 
   function setWidgetRoot(root: HTMLElement, skipInitialMeasure = false) {
     const previousRoot = widgetRoot.value
@@ -522,6 +529,9 @@ export const useUIStore = defineStore('uiStore', () => {
     handleSavedToLocker,
     openProfileWithOrderId,
     requestOpenProfileWithOrderId,
-    clearOpenProfileWithOrderId
+    clearOpenProfileWithOrderId,
+    //cart dialog
+    showCartDialogTrigger,
+    openCartDialog
   }
 })

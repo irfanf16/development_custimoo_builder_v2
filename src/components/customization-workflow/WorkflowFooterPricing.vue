@@ -109,6 +109,8 @@
       })
       console.error('Update cart error:', error)
     }
+    //Show cart dialog after updating product
+    uiStore.openCartDialog()
   }
 
   async function handleAddToCart() {

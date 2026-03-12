@@ -188,6 +188,14 @@
       }
     }
   )
+
+  //Cart dialog show/hide from uiStore
+  watch(
+    () => uiStore.showCartDialogTrigger,
+    () => {
+      showCartDialog.value = true
+    }
+  )
   const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
   const sharedUrl = ref<string | null>(null)
   const showShareTooltip = ref(false)
