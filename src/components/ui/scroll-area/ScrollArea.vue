@@ -42,16 +42,17 @@
   <ScrollAreaRoot
     data-slot="scroll-area"
     v-bind="delegatedProps"
-    :class="cn('relative', props.class)"
+    :class="cn('relative flex flex-col min-h-0', props.class)"
   >
     <ScrollAreaViewport
       data-slot="scroll-area-viewport"
       :class="
         cn(
-          'w-full h-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] overscroll-contain',
+          'w-full flex-1 min-h-0 rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] overscroll-contain touch-pan-y',
           viewportClass
         )
       "
+      style="-webkit-overflow-scrolling: touch"
     >
       <slot />
     </ScrollAreaViewport>
@@ -70,3 +71,15 @@
     <ScrollAreaCorner />
   </ScrollAreaRoot>
 </template>
+
+<!-- Ensure viewport is scrollable on mobile so Reka body scroll lock's checkOverflowScroll allows touch -->
+<style scoped>
+  [data-slot='scroll-area'] [data-reka-scroll-area-viewport] {
+    -webkit-overflow-scrolling: touch;
+  }
+  @media (max-width: 768px) {
+    [data-slot='scroll-area'] [data-reka-scroll-area-viewport] {
+      overflow-y: scroll !important;
+    }
+  }
+</style>

@@ -5,8 +5,14 @@
   import { Separator } from '@/components/ui/separator'
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import type { Collection, Locker, LockerProduct } from '@/services/lockers/types'
-  import { Copy, PlusIcon, ShoppingBasket, TrashIcon, X } from 'lucide-vue-next'
+  import { Copy, PlusIcon, ShoppingBasket, TrashIcon, X, MoreHorizontal } from 'lucide-vue-next'
   import { computed, ref } from 'vue'
+  import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+  } from '@/components/ui/dropdown-menu'
 
   import { confirmDialog } from '@/lib/confirm-dialog'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
@@ -400,7 +406,159 @@
       </div>
     </div>
     <template v-else-if="currentMode === 'detail' || isCreatingCollection">
-      <div class="flex pt-4 border-t w-full flex-col md:flex-row gap-2">
+      <!-- Mobile/tablet: Avatar queue + count, then Delete on left and Actions dropdown on right -->
+      <div v-if="uiStore.isMobile" class="flex flex-col gap-3 pt-4 border-t w-full">
+        <!-- Avatar queue + selected count (same as desktop when in product listing) -->
+        <span
+          v-if="(detailLockerCount > 0 || products.length > 0) && collectionCreationStep !== 2"
+          class="flex items-center"
+        >
+          <AvatarQueue
+            :images="detailLockerImagesPadded"
+            :max="3"
+            :class="'overflow-hidden mr-2'"
+            :avatar-class="'!rounded-[13px] border p-1 !ring-0 !bg-secondary !shadow-none '"
+          />
+          <span class="ml-1 text-sm"
+            >{{ detailLockerCount }} {{ locker_selected({}, { locale }) }}</span
+          >
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  variant="ghost"
+                  class="p-0 ml-1"
+                  :disabled="actionsDisabled"
+                  @click="
+                    () => {
+                      emit('unselect-all-detail')
+                      props.lockerProductsRef?.unSelectAllProducts()
+                    }
+                  "
+                >
+                  <X class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent align="center" side="bottom">
+                {{ locker_unselect_all_products({}, { locale }) }}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </span>
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center">
+            <Button
+              v-if="!isCreatingCollection"
+              variant="ghost"
+              class="text-destructive"
+              :disabled="deleteDisabled"
+              :loading="isDeletingProducts"
+              @click="handleDelete"
+            >
+              <TrashIcon class="size-4 text-destructive" /> {{ locker_delete({}, { locale }) }}
+            </Button>
+            <Button v-else variant="secondary" @click="handleCancel">
+              {{ locker_cancel({}, { locale }) }}
+            </Button>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button variant="outline" size="sm" class="shrink-0">
+                <MoreHorizontal class="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="w-56">
+              <template
+                v-if="
+                  isCreatingCollection &&
+                  collectionCreationStep === 1 &&
+                  currentTab === 'lockers' &&
+                  detailsTab === 'products'
+                "
+              >
+                <DropdownMenuItem
+                  :disabled="selectedProducts.length === 0"
+                  @click="emit('create-collection')"
+                >
+                  <PlusIcon class="size-4" />
+                  {{ isAddingProductsToCollection ? 'Add products' : 'Add to collection' }}
+                </DropdownMenuItem>
+              </template>
+              <template v-else-if="currentTab === 'collections' && isEditingCollectionName">
+                <DropdownMenuItem @click="emit('cancel-collection-edit')">
+                  {{ locker_cancel({}, { locale }) }}
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="emit('confirm-collection-edit')">Update</DropdownMenuItem>
+              </template>
+              <template v-else>
+                <DropdownMenuItem
+                  v-if="currentTab === 'collections' && collectionCreationStep === 2"
+                  @click="emit('save-collection')"
+                >
+                  {{ isEditingCollection ? 'Update' : locker_save({}, { locale }) }}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  v-if="
+                    !isCreatingCollection &&
+                    currentTab === 'lockers' &&
+                    !companyStore.isEcommercePlatform
+                  "
+                  :disabled="!canAddLockerProductsToCart || actionsDisabled"
+                  @click="handleAddLockerProductsToCart"
+                >
+                  <ShoppingBasket class="size-4" />
+                  {{ locker_add_to_cart({}, { locale }) }}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  v-if="
+                    !isCreatingCollection && currentTab === 'lockers' && detailsTab === 'products'
+                  "
+                  :disabled="(products.length !== 1 && products.length <= 0) || actionsDisabled"
+                  @click="showCopyDialog = true"
+                >
+                  <Copy class="size-4" />
+                  {{ locker_copy({}, { locale }) }}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  v-if="
+                    !isCreatingCollection && currentTab === 'lockers' && detailsTab === 'products'
+                  "
+                  :disabled="selectedProducts.length === 0 || actionsDisabled"
+                  @click="showAddToCollectionDialog = true"
+                >
+                  <PlusIcon class="size-4" />
+                  Add to collection
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  v-if="
+                    !isCreatingCollection && currentTab === 'lockers' && detailsTab === 'products'
+                  "
+                  :disabled="selectedProducts.length === 0 || actionsDisabled"
+                  @click="emit('create-collection')"
+                >
+                  <PlusIcon class="size-4" />
+                  Create new collection
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  v-if="
+                    currentTab === 'collections' &&
+                    collectionCreationStep === 2 &&
+                    !isCreatingCollection &&
+                    !currentCollection?.room_id
+                  "
+                  @click="emit('add-products-to-collection')"
+                >
+                  <PlusIcon class="size-4" />
+                  Add to Collection
+                </DropdownMenuItem>
+              </template>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <!-- Desktop: full layout -->
+      <div v-else class="flex pt-4 border-t w-full flex-col md:flex-row gap-2">
         <div
           class="flex items-center justify-between"
           :class="{
@@ -466,7 +624,7 @@
           </div>
         </div>
         <Separator
-          v-if="!uiStore.isMobile && !isCreatingCollection && currentTab === 'lockers'"
+          v-if="!isCreatingCollection && currentTab === 'lockers'"
           orientation="vertical"
           class="h-full mx-5"
         />
@@ -551,11 +709,7 @@
             <PlusIcon class="size-4" /> Add to Collection
           </Button>
           <template v-if="!isCreatingCollection">
-            <Separator
-              v-if="!uiStore.isMobile && currentTab === 'lockers'"
-              orientation="vertical"
-              class="h-full mx-5"
-            />
+            <Separator v-if="currentTab === 'lockers'" orientation="vertical" class="h-full mx-5" />
             <Button
               variant="ghost"
               class="text-destructive"

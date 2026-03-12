@@ -57,7 +57,7 @@
     time_ago_years_plural
   } from '@/paraglide/messages'
   import Spinner from './ui/spinner/Spinner.vue'
-  import { PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
+  import { onImageError, PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
@@ -531,16 +531,19 @@
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent
       variant="large"
-      class="w-full flex flex-col gap-0 p-0 pb-3 overflow-hidden h-fit"
+      class="w-full flex flex-col gap-0 p-0 pb-3 overflow-hidden h-fit max-md:max-h-[90dvh] max-md:min-h-0 max-md:flex max-md:flex-col"
     >
       <!-- HEADER -->
-      <DialogHeader class="p-4">
+      <DialogHeader class="shrink-0 p-4">
         <h2 class="text-lg font-semibold">{{ save_design_title({}, { locale }) }}</h2>
       </DialogHeader>
-      <div class="flex overflow-hidden p-4 max-h-[640px]">
-        <!-- LEFT: IMAGE-ONLY PREVIEW (no canvas) -->
+      <!-- Mobile: image max 30% height; fixed header + scrollable locker list + fixed buttons -->
+      <div
+        class="flex flex-col md:flex-row overflow-hidden p-4 flex-1 min-h-0 max-md:min-h-0 md:max-h-[640px]"
+      >
+        <!-- LEFT: IMAGE – on mobile max 30vh -->
         <div
-          class="w-[60%] p-6 flex items-center justify-center bg-accent relative h-full! rounded-[20px] max-h-[640px]"
+          class="w-full md:w-[60%] p-4 md:p-6 flex items-center justify-center bg-accent relative shrink-0 rounded-[20px] max-h-[30vh] md:max-h-[640px] md:h-full min-h-[120px]"
         >
           <template v-if="imagesLoading">
             <div class="flex items-center justify-center size-full">
@@ -548,9 +551,13 @@
             </div>
           </template>
           <template v-else-if="imagesReady">
-            <img :src="mainImageUrl" alt="Design preview" class="w-[80%] object-contain" />
+            <img
+              :src="mainImageUrl"
+              alt="Design preview"
+              class="w-[80%] max-h-[-webkit-fill-available] object-contain"
+            />
             <div
-              class="size-28 p-2 rounded-2xl backdrop-blur-sm absolute right-6 bottom-6 z-[100] cursor-pointer border border-accent-foreground bg-accent"
+              class="size-16 md:size-28 p-1.5 md:p-2 rounded-xl md:rounded-2xl backdrop-blur-sm absolute right-2 bottom-2 md:right-6 md:bottom-6 z-[100] cursor-pointer border border-accent-foreground bg-accent"
               @click="togglePreviewSide"
             >
               <img
@@ -562,9 +569,10 @@
           </template>
         </div>
 
-        <!-- RIGHT: LOCKER LIST -->
-        <div class="w-[40%] flex flex-col p-6 pb-0! gap-3">
-          <div class="flex flex-col gap-3">
+        <!-- RIGHT: fixed header (name + search row), scrollable locker list only, fixed buttons -->
+        <div class="w-full md:w-[40%] flex flex-col flex-1 min-h-0 p-4 md:p-6 gap-3">
+          <!-- FIXED: design name + choose locker + search/sort/create -->
+          <div class="flex flex-col gap-3 shrink-0">
             <div class="flex flex-col gap-1">
               <Input
                 v-model="productName"
@@ -592,11 +600,11 @@
                 {{ lockerSelectionError }}
               </p>
             </div>
-            <div class="flex items-center justify-between gap-1">
+            <div class="flex items-center gap-2 shrink-0 flex-wrap">
               <InputSearchGroup
                 v-model="search"
                 :placeholder="design_search_locker_placeholder({}, { locale })"
-                class="w-full h-9 bg-accent"
+                class="min-w-0 flex-1 h-9 bg-accent max-md:min-w-[120px]"
                 :disabled="isSubmitting"
                 @update:model-value="
                   (val: string | number) => {
@@ -607,7 +615,7 @@
 
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
-                  <Button variant="outline" class="flex items-center gap-2 h-9">
+                  <Button variant="outline" class="flex items-center gap-2 h-9 shrink-0">
                     <ArrowUpDown class="w-4 h-4" />
                     {{ locker_sort({}, { locale }) }}
                   </Button>
@@ -641,7 +649,7 @@
               </DropdownMenu>
 
               <Button
-                class="h-9 flex items-center gap-2"
+                class="h-9 flex items-center gap-2 shrink-0"
                 :disabled="isSubmitting"
                 @click="handleClick"
               >
@@ -650,68 +658,65 @@
             </div>
           </div>
 
-          <!-- LIST SECTION -->
-          <ScrollArea class="flex-1 px-6 py-4 overflow-y-auto p-3 border rounded-lg">
-            <!-- <div class="grid gap-4 h-full"> -->
-            <div
-              v-for="locker in filteredLockers"
-              :key="locker.id"
-              class="flex gap-4 rounded-lg cursor-pointer hover:bg-accent transition mb-4 p-1 last-of-type:mb-0"
-              :class="{
-                'bg-primary/20': selectedLockerId === locker.id,
-                'pointer-events-none': isSubmitting,
-                'cursor-not-allowed': isSubmitting
-              }"
-              @click="handleSelectLocker(locker)"
-            >
-              <!-- THUMBNAIL -->
+          <!-- SCROLLABLE: locker list only – uses our ScrollArea (mobile + desktop) -->
+          <ScrollArea class="flex-1 min-h-0 max-md:min-h-[200px] border rounded-lg overflow-hidden">
+            <div class="p-3 md:px-4 md:py-3 space-y-1">
               <div
-                class="w-20 h-20 grid gap-1 overflow-hidden rounded-md border bg-accent p-2"
-                :class="[
-                  locker.product_thumbnails.length === 1 && 'place-items-center',
-                  locker.product_thumbnails.length === 2 && 'grid-cols-2',
-                  locker.product_thumbnails.length === 3 && 'grid-cols-2 grid-rows-2',
-                  locker.product_thumbnails.length >= 4 && 'grid-cols-2 grid-rows-2'
-                ]"
+                v-for="locker in filteredLockers"
+                :key="locker.id"
+                class="flex gap-3 rounded-lg cursor-pointer hover:bg-accent transition p-2 md:p-2.5"
+                :class="{
+                  'bg-primary/20': selectedLockerId === locker.id,
+                  'pointer-events-none': isSubmitting,
+                  'cursor-not-allowed': isSubmitting
+                }"
+                @click="handleSelectLocker(locker)"
               >
-                <template v-if="locker.product_thumbnails.length">
+                <div
+                  class="w-14 h-14 md:w-20 md:h-20 shrink-0 grid gap-0.5 overflow-hidden rounded-md border bg-accent p-1 md:p-2"
+                  :class="[
+                    locker.product_thumbnails.length === 1 && 'place-items-center',
+                    locker.product_thumbnails.length === 2 && 'grid-cols-2',
+                    locker.product_thumbnails.length === 3 && 'grid-cols-2 grid-rows-2',
+                    locker.product_thumbnails.length >= 4 && 'grid-cols-2 grid-rows-2'
+                  ]"
+                >
+                  <template v-if="locker.product_thumbnails.length">
+                    <img
+                      v-for="(img, i) in locker.product_thumbnails.slice(0, 4)"
+                      :key="i"
+                      :src="baseStorageUrl + img"
+                      class="object-contain w-full h-full"
+                      @error="onImageError"
+                    />
+                  </template>
                   <img
-                    v-for="(img, i) in locker.product_thumbnails.slice(0, 4)"
-                    :key="i"
-                    :src="baseStorageUrl + img"
-                    class="object-contain w-full h-full"
+                    v-else
+                    :src="PLACEHOLDER_IMAGE"
+                    class="h-full overflow-hidden object-contain rounded-md mx-auto w-full"
                   />
-                </template>
-                <img
-                  v-else
-                  :src="PLACEHOLDER_IMAGE"
-                  class="h-full overflow-hidden object-contain rounded-md mx-auto w-full"
-                />
-              </div>
-
-              <!-- META -->
-              <div class="flex flex-col gap-1">
-                <div class="font-medium">{{ locker.room_name }}</div>
-
-                <div class="text-xs text-muted-foreground flex items-center gap-2">
-                  <span class="flex items-center gap-1">
-                    <SwatchBook class="size-3" />
-                    {{ locker.product_count }} {{ locker_designs_count({}, { locale }) }}
-                  </span>
-
-                  <span class="w-1 h-1 rounded-full bg-muted-foreground"></span>
-
-                  <span class="flex items-center gap-1">
-                    <Calendar class="size-3" />
-                    {{ localizedTimeAgo(locker.updated_at) }}
-                  </span>
+                </div>
+                <div class="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <div class="font-medium text-sm truncate">{{ locker.room_name }}</div>
+                  <div class="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                    <span class="flex items-center gap-1">
+                      <SwatchBook class="size-3 shrink-0" />
+                      {{ locker.product_count }} {{ locker_designs_count({}, { locale }) }}
+                    </span>
+                    <span class="w-1 h-1 rounded-full bg-muted-foreground shrink-0"></span>
+                    <span class="flex items-center gap-1">
+                      <Calendar class="size-3 shrink-0" />
+                      {{ localizedTimeAgo(locker.updated_at) }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-            <!-- </div> -->
           </ScrollArea>
+
+          <!-- FIXED: Cancel / Save -->
           <div
-            class="flex justify-end gap-3"
+            class="flex justify-end gap-3 shrink-0 pt-1"
             :class="{
               'pointer-events-none': isSubmitting
             }"

@@ -505,7 +505,8 @@
       </template>
 
       <!-- ================= SEARCH ================= -->
-      <template v-if="collectionCreationStep !== 2">
+      {{}}
+      <template v-if="!creatingCollection">
         <InputSearchGroup
           v-model="search"
           :placeholder="ui_search_placeholder({}, { locale })"

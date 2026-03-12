@@ -25,6 +25,7 @@
     msg_no_preview_images_to_download
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { onImageError } from '@/helpers/imageHelper'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
@@ -305,6 +306,7 @@
             baseStorageUrl + (showBack[prod.id] ? prod.product_back_url : prod.product_front_url)
           "
           class="h-full overflow-hidden object-contain rounded-md mx-auto w-full"
+          @error="onImageError"
         />
 
         <div

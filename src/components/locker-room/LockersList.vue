@@ -15,7 +15,7 @@
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import { Spinner } from '@/components/ui/spinner'
-  import { PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
+  import { onImageError, PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
   import { MoreVertical, Pencil, Calendar, SwatchBook } from 'lucide-vue-next'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import { useUIStore } from '@/stores/ui/ui.store'
@@ -242,6 +242,7 @@
               'md:col-span-2': locker.product_thumbnails.length === 3 && i === 2,
               'md:w-full': locker.product_thumbnails.length === 1
             }"
+            @error="onImageError"
           />
         </template>
         <template v-else>

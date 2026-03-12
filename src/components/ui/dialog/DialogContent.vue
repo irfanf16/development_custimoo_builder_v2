@@ -202,6 +202,10 @@
         return
       }
 
+      // Do not stop propagation so the event reaches the scrollable element and the
+      // browser can scroll it. Reka's body scroll lock (checkOverflowScroll) will
+      // not preventDefault when the target is inside an overflow scroll element.
+
       const style = window.getComputedStyle(scrollable)
       const allowsVertical =
         (style.overflowY === 'auto' || style.overflowY === 'scroll') &&

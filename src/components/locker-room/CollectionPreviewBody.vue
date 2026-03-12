@@ -3,14 +3,23 @@
   import type { WorkingLogoSlot } from './CollectionDetail.vue'
   import { computed, ref, watch, onMounted } from 'vue'
   import type { CustomLogo, LogoColor } from '@/services/logos/types'
-  import { X, Loader2 } from 'lucide-vue-next'
+  import { X, Loader2, Info } from 'lucide-vue-next'
   import LogosService from '@/services/logos/logos.service'
   import { toast } from 'vue-sonner'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useUIStore } from '@/stores/ui/ui.store'
+  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import {
     msg_colors_loaded_success,
     msg_failed_to_fetch_logo_colors,
-    msg_invalid_logo_url
+    msg_invalid_logo_url,
+    collection_logo_header,
+    collection_logo_page_header,
+    collection_logo_header_tooltip,
+    collection_logo_page_cover,
+    collection_logo_cover,
+    collection_logo_page_cover_tooltip,
+    locker_preview
   } from '@/paraglide/messages'
 
   const defaultSlots = (): WorkingLogoSlot[] => [
@@ -34,7 +43,9 @@
   }>()
 
   const profileStore = useProfileStore()
+  const uiStore = useUIStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
+  const isMobile = computed(() => uiStore.isMobile)
 
   const logos = ref<WorkingLogoSlot[]>(defaultSlots())
 
@@ -44,6 +55,8 @@
   const backgroundGradient = ref<string>(
     'linear-gradient(135deg, #6b73ff 0%, #000dff 50%, #ff6ec4 100%)'
   )
+  /** Raw CSS colors for solid display on mobile (no gradient) */
+  const backgroundColors = ref<string[]>(['#6b73ff', '#000dff', '#ff6ec4'])
   const isLoadingColors = ref(false)
 
   // Allow externally setting background colors (e.g., server-provided colors)
@@ -71,6 +84,7 @@
 
     if (cssColors.length === 0) return
 
+    backgroundColors.value = cssColors
     if (cssColors.length >= 3) {
       backgroundGradient.value = `linear-gradient(135deg, ${cssColors[0]} 0%, ${cssColors[1]} 50%, ${cssColors[2]} 100%)`
     } else if (cssColors.length === 2) {
@@ -102,6 +116,7 @@
     const activeLogos = source.filter(logo => logo.url && !logo.isDeleted)
     if (activeLogos.length === 0) {
       backgroundGradient.value = 'linear-gradient(135deg, #6b73ff 0%, #000dff 50%, #ff6ec4 100%)'
+      backgroundColors.value = ['#6b73ff', '#000dff', '#ff6ec4']
       return
     }
 
@@ -273,6 +288,7 @@
     } else {
       // No logos left, reset to default
       backgroundGradient.value = 'linear-gradient(135deg, #6b73ff 0%, #000dff 50%, #ff6ec4 100%)'
+      backgroundColors.value = ['#6b73ff', '#000dff', '#ff6ec4']
     }
   }
 
@@ -356,99 +372,181 @@
 </script>
 
 <template>
-  <div class="grid h-full grid-cols-12 gap-6">
-    <!-- LEFT -->
-    <div class="col-span-7 flex flex-col gap-6">
-      <!-- Logo Upload -->
-      <div class="rounded-xl border bg-background p-4">
-        <div class="mb-4 flex items-center justify-between">
-          <p
-            class="text-sm bg-secondary/60 rounded-2xl py-1 px-2 border border-secondary-forground text-black"
-          >
-            Preview
-          </p>
-        </div>
-
-        <div class="flex gap-3 justify-center items-center">
-          <div
-            v-for="(logo, index) in displayLogos"
-            :key="index"
-            class="rounded-lg border bg-muted relative"
-          >
-            <button
-              v-if="logo.url && !logo.isDeleted"
-              class="absolute top-2 right-2 z-10 rounded-full bg-background border p-1 hover:bg-destructive hover:text-destructive-foreground transition-colors"
-              @click.stop="handleRemoveLogo(index)"
-            >
-              <X class="w-3 h-3" />
-            </button>
-            <img
-              v-if="logo.url && !logo.isDeleted"
-              :src="logo.url"
-              class="w-[200px] h-[110px] object-contain rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-              alt="Collection logo"
-              @click="emit('upload-logo', index)"
-            />
-            <div
-              v-else
-              class="flex flex-col gap-3 w-[200px] h-[110px] justify-center items-center border border-dashed border-muted rounded-lg cursor-pointer hover:border-primary transition-colors"
-              @click="emit('upload-logo', index)"
-            >
-              <IFlexFlatUploadImagePlaceholder />
-              Upload logo {{ index + 1 }}
-            </div>
+  <TooltipProvider>
+    <div class="grid h-full gap-6" :class="isMobile ? 'grid-cols-1' : 'grid-cols-12'">
+      <!-- LEFT (desktop) / Logo section (mobile: Header above this) -->
+      <div :class="isMobile ? '' : 'col-span-7 flex flex-col gap-2'">
+        <!-- Mobile: Header with icon + text (no tooltip) -->
+        <div v-if="isMobile" class="flex flex-col gap-1 mb-1">
+          <span class="text-sm font-medium">{{ collection_logo_header({}, { locale }) }}</span>
+          <div class="flex items-center gap-2">
+            <Info class="w-4 h-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <p class="text-xs text-muted-foreground">
+              {{ collection_logo_header_tooltip({}, { locale }) }}
+            </p>
           </div>
         </div>
-      </div>
 
-      <!-- Products Preview -->
-      <div class="flex-1 rounded-xl border bg-background p-4">
-        <h3 class="mb-4 text-sm font-medium">Products inside collection</h3>
+        <!-- Desktop: Page Header above left box -->
+        <div v-if="!isMobile" class="flex items-center gap-2">
+          <span class="text-sm font-medium">{{ collection_logo_page_header({}, { locale }) }}</span>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <button
+                type="button"
+                class="inline-flex rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+                aria-label="Info"
+              >
+                <Info class="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" class="max-w-xs">
+              {{ collection_logo_header_tooltip({}, { locale }) }}
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
-        <div class="relative overflow-hidden h-full">
-          <div class="flex gap-4 overflow-x-auto pb-2">
-            <div
-              v-for="product in products.length
-                ? products
-                : (Array.from({ length: 5 }) as CollectionProduct[])"
-              :key="product.id ?? Math.random()"
-              class="min-w-[350px] rounded-lg border bg-muted p-2 opacity-80"
+        <!-- LEFT BOX: Logo Upload with Preview badge -->
+        <div class="rounded-xl border bg-background p-4 relative">
+          <div class="mb-4 flex items-center justify-between absolute top-4 left-4 right-4">
+            <p
+              class="text-sm bg-secondary/60 rounded-2xl py-1 px-2 border border-secondary-forground text-black"
             >
-              <div class="aspect-4/3 bg-muted rounded-md overflow-hidden w-full">
-                <img
-                  :src="baseStorageUrl + product.product_urls.front_url"
-                  class="w-full h-full object-contain"
-                />
+              {{ locker_preview({}, { locale }) }}
+            </p>
+          </div>
+
+          <div class="flex gap-3 justify-center items-center">
+            <div
+              v-for="(logo, index) in displayLogos"
+              :key="index"
+              class="rounded-lg border bg-muted relative"
+            >
+              <button
+                v-if="logo.url && !logo.isDeleted"
+                class="absolute top-2 right-2 z-10 rounded-full bg-background border p-1 hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                @click.stop="handleRemoveLogo(index)"
+              >
+                <X class="w-3 h-3" />
+              </button>
+              <img
+                v-if="logo.url && !logo.isDeleted"
+                :src="logo.url"
+                class="w-[200px] h-[110px] object-contain rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                alt="Collection logo"
+                @click="emit('upload-logo', index)"
+              />
+              <div
+                v-else
+                class="flex flex-col gap-3 w-[200px] h-[110px] justify-center items-center border border-dashed border-muted rounded-lg cursor-pointer hover:border-primary transition-colors"
+                @click="emit('upload-logo', index)"
+              >
+                <IFlexFlatUploadImagePlaceholder />
+                Upload logo {{ index + 1 }}
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Fade -->
-          <div
-            class="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background"
-          />
+        <!-- Products Preview (desktop only) -->
+        <div v-if="!isMobile" class="flex-1 rounded-xl border bg-background p-4">
+          <h3 class="mb-4 text-sm font-medium">Products inside collection</h3>
+
+          <div class="relative overflow-hidden h-full">
+            <div class="flex gap-4 overflow-x-auto pb-2">
+              <div
+                v-for="product in products.length
+                  ? products
+                  : (Array.from({ length: 5 }) as CollectionProduct[])"
+                :key="product.id ?? Math.random()"
+                class="min-w-[350px] rounded-lg border bg-muted p-2 opacity-80"
+              >
+                <div class="aspect-4/3 bg-muted rounded-md overflow-hidden w-full">
+                  <img
+                    :src="baseStorageUrl + product.product_urls.front_url"
+                    class="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background"
+            />
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- RIGHT -->
-    <div class="col-span-5">
-      <div class="h-full overflow-hidden rounded-xl border relative">
-        <div
-          class="h-full w-full transition-all duration-500"
-          :style="{ background: backgroundGradient }"
-        />
-        <!-- Loader overlay -->
-        <div
-          v-if="isLoadingColors"
-          class="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10"
-        >
-          <div class="flex flex-col items-center gap-2">
-            <Loader2 class="w-6 h-6 animate-spin text-primary" />
-            <p class="text-sm text-muted-foreground">Loading colors...</p>
+      <!-- RIGHT: Page cover (label above; Preview on box) -->
+      <div :class="isMobile ? '' : 'col-span-5'">
+        <!-- Desktop: Page cover label + tooltip above right box -->
+        <div v-if="!isMobile" class="mb-2 flex items-center gap-2">
+          <span class="text-sm font-medium">{{ collection_logo_page_cover({}, { locale }) }}</span>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <button
+                type="button"
+                class="inline-flex rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+                aria-label="Info"
+              >
+                <Info class="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left" class="max-w-xs">
+              {{ collection_logo_page_cover_tooltip({}, { locale }) }}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        <!-- Mobile: Cover with icon + text (no tooltip) -->
+        <div v-if="isMobile" class="flex flex-col gap-1 mb-1">
+          <span class="text-sm font-medium">{{ collection_logo_cover({}, { locale }) }}</span>
+          <div class="flex items-center gap-2">
+            <Info class="w-4 h-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <p class="text-xs text-muted-foreground">
+              {{ collection_logo_page_cover_tooltip({}, { locale }) }}
+            </p>
+          </div>
+        </div>
+
+        <!-- RIGHT BOX: with Preview badge -->
+        <div class="h-full min-h-[200px] overflow-hidden rounded-xl border bg-background relative">
+          <div class="mb-2 flex items-center justify-between absolute top-4 left-4 right-4 z-10">
+            <p
+              class="text-sm bg-secondary/60 rounded-2xl py-1 px-2 border border-secondary-forground text-black"
+            >
+              {{ locker_preview({}, { locale }) }}
+            </p>
+          </div>
+          <!-- Solid colors as diagonal bands (top-left to bottom-right), covering whole body -->
+          <div class="h-full min-h-[160px] overflow-hidden rounded-lg border relative">
+            <div
+              class="absolute inset-0 flex flex-col transition-all duration-500"
+              style="width: 200%; height: 200%; left: -50%; top: -50%; transform: rotate(-45deg)"
+            >
+              <div
+                v-for="(color, i) in backgroundColors"
+                :key="i"
+                class="flex-1 w-full shrink-0 transition-colors"
+                :style="{
+                  backgroundColor: color,
+                  minHeight: `${100 / Math.max(backgroundColors.length, 1)}%`
+                }"
+              />
+            </div>
+          </div>
+          <!-- Loader overlay -->
+          <div
+            v-if="isLoadingColors"
+            class="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10 rounded-lg"
+          >
+            <div class="flex flex-col items-center gap-2">
+              <Loader2 class="w-6 h-6 animate-spin text-primary" />
+              <p class="text-sm text-muted-foreground">Loading colors...</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </TooltipProvider>
 </template>

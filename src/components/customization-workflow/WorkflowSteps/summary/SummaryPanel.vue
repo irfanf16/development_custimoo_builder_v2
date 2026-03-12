@@ -325,7 +325,7 @@
                   :key="addon?.addon_id"
                   class="flex items-center gap-2 text-sm text-foreground"
                 >
-                  <Check class="size-4 text-primary" />
+                  <Check class="size-4 shrink-0 text-primary" />
                   <span>{{ addon?.title ?? '' }}</span>
                 </div>
               </div>

@@ -14,6 +14,7 @@
   import { X, Eye, EyeOff } from 'lucide-vue-next'
   import { Button } from '@/components/ui/button'
   import EmptyState from '@/components/shared/EmptyState.vue'
+  import { onImageError } from '@/helpers/imageHelper'
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
 
   const props = withDefaults(
@@ -118,7 +119,7 @@
     v-model="localProducts"
     item-key="id"
     tag="div"
-    class="grid grid-cols-1 md:grid-cols-4 gap-6"
+    class="grid grid-cols-2 md:grid-cols-4 gap-6"
     animation="250"
     ghost-class="drag-ghost"
     chosen-class="drag-chosen"
@@ -157,6 +158,7 @@
             <img
               :src="baseStorageUrl + element.product_urls.front_url"
               class="w-full h-full object-contain"
+              @error="onImageError"
             />
           </div>
 
