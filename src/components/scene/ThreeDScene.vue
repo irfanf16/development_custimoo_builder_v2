@@ -170,7 +170,8 @@
       'name_of_placement',
       'rotation',
       'scaleX',
-      'scaleY'
+      'scaleY',
+      'pinned'
     ] as const
     all.forEach((logo: CustomLogo, index: number) => {
       map.set(index, filterFields(logo, [...fields]) as CustomLogo)
@@ -915,6 +916,12 @@
       setupFabricControls({
         onRemoveLogo: (logoIndex: number, canvasInstance: Canvas) => {
           deleteLogoFromCanvas(logoIndex, canvasInstance, customLogoObjects)
+        },
+        getLogoIndexFromTarget: target => {
+          for (const [idx, obj] of customLogoObjects.value) {
+            if (obj === target) return idx
+          }
+          return undefined
         }
         // Text removal can be added here if needed
       })
@@ -1445,7 +1452,8 @@
       mr: false,
       mt: false,
       mtr: false,
-      deleteControl: true
+      deleteControl: true,
+      pinControl: true
     }
 
     try {

@@ -228,8 +228,9 @@ export async function addLogoToCanvas(options: AddLogoOptions): Promise<void> {
       centeredScaling: true,
       originX: 'center',
       originY: 'center',
-      lockMovementX: false,
-      lockMovementY: false,
+      lockMovementX: !!(logo.pinned ?? false),
+      lockMovementY: !!(logo.pinned ?? false),
+      pinned: !!(logo.pinned ?? false),
       lockRotation: false,
       lockScalingX: false,
       lockScalingY: false,
@@ -439,9 +440,13 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
     if (matchIndex >= 0) {
       const match = available.splice(matchIndex, 1)[0]
       if (match) {
+        const pinned = !!(logo?.pinned ?? false)
         match.obj.set({
           product_id: productId,
-          logo_index: idx
+          logo_index: idx,
+          pinned,
+          lockMovementX: pinned,
+          lockMovementY: pinned
         })
         nextMap.set(idx, match.obj as unknown as FabricImage)
         matchedIdx.add(idx)
@@ -457,6 +462,7 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
         const { widthRatio, heightRatio } = calculateScaleRatios()
         const position = await Promise.resolve(calculatePosition(logo))
         const angle = calculateRotation(logo.rotation)
+        const pinned = !!(logo?.pinned ?? false)
         match.obj.set({
           left: position.x,
           top: position.y,
@@ -464,7 +470,10 @@ export async function syncLogosOnCanvas(options: SyncLogosOptions): Promise<void
           signature: getLogoSignature(logo),
           signatureUrlSide: getLogoSignatureUrlSide(logo),
           product_id: productId,
-          logo_index: idx
+          logo_index: idx,
+          pinned,
+          lockMovementX: pinned,
+          lockMovementY: pinned
         })
 
         // Scale image based on aspect ratio

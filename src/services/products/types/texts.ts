@@ -21,6 +21,8 @@ export type OutputProductTextItem = {
   selected: boolean
   scaleX: number
   scaleY: number
+  /** When true, text cannot be moved on canvas (pin control). */
+  pinned?: boolean
 }
 
 export type OutputProductText = {

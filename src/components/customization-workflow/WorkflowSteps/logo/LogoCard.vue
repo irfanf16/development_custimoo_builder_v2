@@ -99,7 +99,7 @@
             v-if="isThisLogoColorsApplied"
             size="sm"
             variant="outline"
-            @click.stop="emit('shuffle-colors')"
+            @click.stop="customizationStore.shuffleDefaultColors('Shuffle extracted colors')"
           >
             {{ logos_shuffle_colors({}, { locale: profileStore.currentLocale }) }}
           </Button>

@@ -48,6 +48,7 @@
     logos_angle_label,
     logos_center_logo_button,
     logos_pin_logo_button,
+    logos_unpin_logo_button,
     logos_remove_background_title,
     logos_remove_background_simple_title,
     logos_remove_background_simple_description,
@@ -618,7 +619,11 @@
             </Button>
             <Button variant="outline" class="h-9" @click="pinLogo">
               <Pin class="size-4" />
-              {{ logos_pin_logo_button({}, { locale: profileStore.currentLocale }) }}
+              {{
+                customLogo?.pinned
+                  ? logos_unpin_logo_button({}, { locale: profileStore.currentLocale })
+                  : logos_pin_logo_button({}, { locale: profileStore.currentLocale })
+              }}
             </Button>
           </div>
         </AccordionContent>

@@ -73,6 +73,38 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const key = String(prodId)
     return customization.value?.product_custom_texts?.[key] ?? []
   })
+
+  const activeProductLogos = computed(() => {
+    const prodId = customization.value?.product_id
+    if (!prodId) return []
+    const key = String(prodId)
+    const arr = customization.value?.custom_logos?.[key]
+    return Array.isArray(arr) ? arr : []
+  })
+
+  /** True if there is at least one logo or one text item (selected) on the canvas. */
+  const hasAnyLogosOrTexts = computed(() => {
+    const logos = activeProductLogos.value
+    const texts = activeProductTexts.value
+    if (logos.length > 0) return true
+    const hasSelectedText = texts.some(
+      entry => entry?.items?.some(item => item?.selected === true) ?? false
+    )
+    return hasSelectedText
+  })
+
+  /** True if all logos and all selected text items are pinned. */
+  const allLogosAndTextsPinned = computed(() => {
+    const logos = activeProductLogos.value
+    const texts = activeProductTexts.value
+    if (logos.length === 0 && texts.length === 0) return false
+    const allLogosPinned = logos.every(logo => !!logo?.pinned)
+    const allTextsPinned = texts.every(entry =>
+      (entry?.items ?? []).every(item => !item?.selected || !!item?.pinned)
+    )
+    return allLogosPinned && allTextsPinned
+  })
+
   // holds arbitrary metadata returned when starting a reorder flow
   const reorderData = ref<Record<string, unknown> | null>(null)
 
@@ -761,7 +793,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       actualWidth: _logo.actualWidth,
       actualHeight: _logo.actualHeight,
       scaleX: _logo.scaleX,
-      scaleY: _logo.scaleY
+      scaleY: _logo.scaleY,
+      pinned: _logo.pinned ?? false
     } as CustomLogo
   }
 
@@ -788,6 +821,39 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     if (!arr || logoIndex < 0 || logoIndex >= arr.length) return
     arr.splice(logoIndex, 1)
     pushHistoryState('Removed logo')
+  }
+
+  /**
+   * Pin or unpin all logos and all selected text items for the current product.
+   */
+  function pinAllLogosAndTexts(pinned: boolean): void {
+    const prodId = customization.value?.product_id
+    if (!prodId) return
+    const key = String(prodId)
+
+    const logos = customization.value?.custom_logos?.[key]
+    if (Array.isArray(logos)) {
+      logos.forEach((_, idx) => {
+        updateCustomLogo({
+          custom_logo_index: idx,
+          productId: prodId,
+          data: { pinned }
+        })
+      })
+    }
+
+    const texts = customization.value?.product_custom_texts?.[key]
+    if (Array.isArray(texts)) {
+      texts.forEach((entry, entryIdx) => {
+        ;(entry?.items ?? []).forEach((item, itemIdx) => {
+          if (item?.selected) {
+            updateProductTextItem(prodId, entryIdx, itemIdx, { pinned }, { skipHistory: true })
+          }
+        })
+      })
+    }
+
+    pushHistoryState(pinned ? 'Pinned all' : 'Unpinned all')
   }
 
   /**
@@ -1171,6 +1237,8 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     activeCategoryId,
     activeSubCategoryId,
     activeProductTexts,
+    hasAnyLogosOrTexts,
+    allLogosAndTextsPinned,
     rosterEntries,
     selectedRosterPreviewIndex,
     reorderData,
@@ -1197,6 +1265,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     getMergedCustomizationLogo,
     updateCustomLogo,
     removeCustomLogo,
+    pinAllLogosAndTexts,
     replicateActiveProductLogosToMatchingPlacements,
     setReorderData,
     clearReorderData,

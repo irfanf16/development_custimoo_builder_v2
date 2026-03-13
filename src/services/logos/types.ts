@@ -21,6 +21,8 @@ export type CustomLogo = LogoPlacementBase & {
   placement?: string
   /** Selected logo technology (single object). Sent with custom_logos to cart/locker/share APIs. */
   logo_technology: OutputProductLogoTechnology | null
+  /** When true, logo cannot be moved on canvas (pin control). */
+  pinned?: boolean
 }
 
 /**

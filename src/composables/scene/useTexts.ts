@@ -388,6 +388,7 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
     })
     if (pathObject) {
       textObj = pathObject
+      const pinned = !!(item.pinned ?? false)
       textObj.set({
         left: position.x,
         top: position.y,
@@ -404,7 +405,10 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
         cornerSize: 30,
         centeredScaling: true,
         visible: item.selected,
-        flipX
+        flipX,
+        lockMovementX: pinned,
+        lockMovementY: pinned,
+        pinned
       })
       if (item.scaleX && item.scaleY) {
         textObj.set({ scaleX: item.scaleX * widthRatio, scaleY: item.scaleY * heightRatio })
@@ -422,6 +426,7 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
     scaleW: number,
     scaleH: number
   ): FabricObject {
+    const pinned = !!(it.pinned ?? false)
     const fabricText = new FabricText(entry.value, {
       left: position.x,
       top: position.y,
@@ -444,7 +449,10 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
       cornerSize: 30,
       centeredScaling: true,
       visible: it.selected,
-      flipX
+      flipX,
+      lockMovementX: pinned,
+      lockMovementY: pinned,
+      pinned
     })
     if (it.scaleX && it.scaleY) {
       fabricText.scaleX = it.scaleX * scaleW
@@ -619,6 +627,12 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
     if (matchIdx >= 0) {
       const match = available.splice(matchIdx, 1)[0]
       if (match) {
+        const pinned = !!(d.item?.pinned ?? false)
+        match.obj.set({
+          pinned,
+          lockMovementX: pinned,
+          lockMovementY: pinned
+        } as unknown as Record<string, unknown>)
         match.obj.custom_text_index = d.customTextIndex
         match.obj.custom_text_item_index = d.itemIndex
         match.obj.product_id = productId
@@ -639,6 +653,7 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
         const fontSize = heightScale * Number(d.item.height) || 16
 
         const fontFamily = d.entry.font_family?.trim() || d.item.font_family?.trim() || 'Ubuntu'
+        const pinned = !!(d.item?.pinned ?? false)
         obj.set({
           left: position.x,
           top: position.y,
@@ -648,7 +663,10 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
           fill: d.item.color || '#000000',
           stroke: d.item.outline_enabled ? d.item.outline_color : undefined,
           strokeWidth: d.item.outline_enabled ? (d.item.outline_width ?? 0) : 0,
-          visible: d.item.selected
+          visible: d.item.selected,
+          pinned,
+          lockMovementX: pinned,
+          lockMovementY: pinned
         } as unknown as Record<string, unknown>)
         if (d.item.scaleX && d.item.scaleY) {
           obj.scaleX = d.item.scaleX * widthRatio

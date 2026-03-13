@@ -10,7 +10,9 @@
     RotateCw,
     Rotate3D,
     Layers3,
-    Shuffle
+    Shuffle,
+    Pin,
+    PinOff
   } from 'lucide-vue-next'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   // import { useColorActions } from '@/composables/useColorActions'
@@ -28,6 +30,8 @@
     toolbar_redo,
     toolbar_undo_prefix,
     toolbar_redo_prefix,
+    toolbar_pin_all,
+    toolbar_unpin_all,
     color_shuffle_design_colors
   } from '@/paraglide/messages'
   import { computed } from 'vue'
@@ -110,6 +114,20 @@
       action: () => handleShuffleColors(),
       disabled: workflowStore.activeLogoId ? false : true // Enable if a logo is active, otherwise disable (for design colors)
     },
+    ...(customizationStore.hasAnyLogosOrTexts
+      ? [
+          {
+            id: 'pinAll',
+            icon: customizationStore.allLogosAndTextsPinned ? PinOff : Pin,
+            label: customizationStore.allLogosAndTextsPinned
+              ? toolbar_unpin_all({}, { locale: locale.value })
+              : toolbar_pin_all({}, { locale: locale.value }),
+            action: () =>
+              customizationStore.pinAllLogosAndTexts(!customizationStore.allLogosAndTextsPinned),
+            disabled: false
+          }
+        ]
+      : []),
     {
       id: 'undo',
       icon: Undo2,

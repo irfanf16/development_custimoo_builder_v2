@@ -203,7 +203,8 @@
       'height',
       'rotation',
       'scaleX',
-      'scaleY'
+      'scaleY',
+      'pinned'
     ] as const
     all.forEach((logo: CustomLogo, index: number) => {
       if (logo.side === props.side) {
@@ -389,6 +390,12 @@
       setupFabricControls({
         onRemoveLogo: (logoIndex: number, canvasInstance: Canvas) => {
           deleteLogoFromCanvas(logoIndex, canvasInstance, customLogoObjects)
+        },
+        getLogoIndexFromTarget: target => {
+          for (const [idx, obj] of customLogoObjects.value) {
+            if (obj === target) return idx
+          }
+          return undefined
         }
         // Text removal can be added here if needed
       })

@@ -19,7 +19,7 @@ import { useStorage } from './useStorage'
  * - br: true (bottom right - scale control with custom icon)
  * - deleteControl: custom control (always enabled when added via setupFabricControls, not part of standard visibility)
  */
-// Default custom visibility (same as old app)
+// Default custom visibility (same as old app) + pin control at bottom-left
 export const FABRIC_CONTROL_VISIBILITY = {
   tl: false,
   bl: false,
@@ -30,7 +30,8 @@ export const FABRIC_CONTROL_VISIBILITY = {
   mr: false,
   mt: false,
   mtr: false,
-  deleteControl: true
+  deleteControl: true,
+  pinControl: true
 }
 
 /**
@@ -41,6 +42,8 @@ export type SetupFabricControlsOptions = {
   onRemoveLogo?: (logoIndex: number, canvas: Canvas) => void
   /** Function to handle custom text removal by custom_text_index */
   onRemoveText?: (customTextIndex: number, customTextItemIndex: number, canvas: Canvas) => void
+  /** Fallback to resolve logo index from target when logo_index property is missing */
+  getLogoIndexFromTarget?: (target: FabricObject) => number | undefined
 }
 
 /**
@@ -51,7 +54,7 @@ export type SetupFabricControlsOptions = {
  * @param options - Options for handling control actions
  */
 export function setupFabricControls(options: SetupFabricControlsOptions = {}): void {
-  const { onRemoveLogo, onRemoveText } = options
+  const { onRemoveLogo, onRemoveText, getLogoIndexFromTarget } = options
   const { fromStorage } = useStorage()
 
   const scaleImg = new Image()
@@ -66,10 +69,34 @@ export function setupFabricControls(options: SetupFabricControlsOptions = {}): v
   deleteImg.crossOrigin = 'anonymous'
   deleteImg.src = fromStorage('delete.png')
 
-  let imagesLoaded = 0
-  const totalImages = 3
+  const pinImg = new Image()
+  pinImg.crossOrigin = 'anonymous'
+  pinImg.src = fromStorage('pin.svg')
+  const pinOffImg = new Image()
+  pinOffImg.crossOrigin = 'anonymous'
+  pinOffImg.src = fromStorage('unpin.svg')
+
+  let criticalImagesLoaded = 0
+  const criticalImagesTotal = 3
 
   const setupControls = () => {
+    // Register custom properties so Fabric preserves logo_index, product_id, etc. on objects
+    const FObj = FabricObjectClass as unknown as { customProperties?: string[] }
+    const customProps = [
+      'logo_index',
+      'product_id',
+      'pinned',
+      'custom_text_index',
+      'custom_text_item_index'
+    ]
+    if (FObj.customProperties) {
+      customProps.forEach(p => {
+        if (!FObj.customProperties!.includes(p)) FObj.customProperties!.push(p)
+      })
+    } else {
+      FObj.customProperties = [...customProps]
+    }
+
     const prototype = FabricObjectClass.prototype as unknown as {
       controls?: Record<string, Control>
     }
@@ -194,21 +221,126 @@ export function setupFabricControls(options: SetupFabricControlsOptions = {}): v
       render: renderIcon(deleteImg),
       withConnection: true
     })
-  }
 
-  const checkImagesLoaded = () => {
-    imagesLoaded++
-    if (imagesLoaded === totalImages) {
-      setupControls()
+    // Pin/unpin: show Pin when unpinned (click to pin), PinOff when pinned (click to unpin). Position: bottom-left.
+    const renderPinIcon = (
+      ctx: CanvasRenderingContext2D,
+      left: number,
+      top: number,
+      _styleOverride: unknown,
+      fabricObject: unknown
+    ) => {
+      const obj = fabricObject as { angle?: number; pinned?: boolean }
+      const pinned = !!obj.pinned
+      const img = pinned ? pinOffImg : pinImg
+      const size = 30
+      ctx.save()
+      ctx.translate(left, top)
+      const angle = typeof obj.angle === 'number' ? obj.angle : 0
+      ctx.rotate(util.degreesToRadians(angle))
+      if (img.complete && img.naturalWidth) {
+        ctx.drawImage(img, -size / 2, -size / 2, size, size)
+      }
+      ctx.restore()
     }
+
+    type TargetWithMeta = FabricObject & {
+      logo_index?: number
+      custom_text_index?: number
+      custom_text_item_index?: number
+      pinned?: boolean
+      canvas?: Canvas
+    }
+
+    const togglePin = (_eventData: unknown, transform: { target?: TargetWithMeta }) => {
+      const target = transform?.target
+      if (!target) return
+      const canvas = target.canvas
+      if (!canvas) return
+      const customizationStore = useCustomizationStore() as {
+        customization: { product_id?: number } | null
+        updateCustomLogo(params: {
+          custom_logo_index: number
+          data: Partial<{ pinned: boolean }>
+          productId?: number | null
+        }): void
+        updateProductTextItem(
+          productId: number,
+          entryIndex: number,
+          itemIndex: number,
+          payload: Partial<{ pinned: boolean }>
+        ): void
+        pushHistoryState(actionTitle: string): void
+      }
+      const productId = customizationStore.customization?.product_id
+      if (productId == null) return
+
+      const currentPinned = !!target.pinned
+      const newPinned = !currentPinned
+
+      if (
+        'custom_text_index' in target &&
+        target.custom_text_index !== undefined &&
+        'custom_text_item_index' in target &&
+        target.custom_text_item_index !== undefined
+      ) {
+        customizationStore.updateProductTextItem(
+          productId,
+          target.custom_text_index,
+          target.custom_text_item_index,
+          { pinned: newPinned }
+        )
+      } else {
+        const logoIndex =
+          'logo_index' in target && target.logo_index !== undefined
+            ? target.logo_index
+            : getLogoIndexFromTarget?.(target as FabricObject)
+        if (logoIndex !== undefined) {
+          customizationStore.updateCustomLogo({
+            custom_logo_index: logoIndex,
+            productId,
+            data: { pinned: newPinned }
+          })
+        } else {
+          return
+        }
+      }
+
+      target.set({
+        pinned: newPinned,
+        lockMovementX: newPinned,
+        lockMovementY: newPinned
+      })
+      customizationStore.pushHistoryState(newPinned ? 'Pinned' : 'Unpinned')
+      canvas.requestRenderAll()
+    }
+
+    prototype.controls.pinControl = new Control({
+      x: -0.5,
+      y: 0.5,
+      cursorStyle: 'pointer',
+      mouseUpHandler: togglePin,
+      actionName: 'pin',
+      render: renderPinIcon,
+      withConnection: true
+    })
   }
 
-  scaleImg.onload = checkImagesLoaded
-  scaleImg.onerror = checkImagesLoaded
-  rotationImg.onload = checkImagesLoaded
-  rotationImg.onerror = checkImagesLoaded
-  deleteImg.onload = checkImagesLoaded
-  deleteImg.onerror = checkImagesLoaded
+  const checkCriticalLoaded = () => {
+    criticalImagesLoaded++
+    if (criticalImagesLoaded === criticalImagesTotal) setupControls()
+  }
+
+  scaleImg.onload = checkCriticalLoaded
+  scaleImg.onerror = checkCriticalLoaded
+  rotationImg.onload = checkCriticalLoaded
+  rotationImg.onerror = checkCriticalLoaded
+  deleteImg.onload = checkCriticalLoaded
+  deleteImg.onerror = checkCriticalLoaded
+  pinImg.onload = () => {}
+  pinImg.onerror = () => {}
+  pinOffImg.onload = () => {}
+  pinOffImg.onerror = () => {}
 
   if (scaleImg.complete && rotationImg.complete && deleteImg.complete) {
     setupControls()

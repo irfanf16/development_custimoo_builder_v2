@@ -205,7 +205,19 @@ export function useLogoPosition(
   }
 
   function pinLogo() {
-    // TODO: Implement pin logo functionality (locks placement)
+    if (!logo.value || !productKey.value) return
+    const index = activeLogoIndex.value
+    if (index === -1) return
+    const arr = customizationStore.customization?.custom_logos?.[productKey.value]
+    if (!arr || !arr[index]) return
+    const current = arr[index]
+    const newPinned = !(current.pinned ?? false)
+    customizationStore.updateCustomLogo({
+      custom_logo_index: index,
+      productId: Number(productKey.value),
+      data: { pinned: newPinned }
+    })
+    customizationStore.pushHistoryState(newPinned ? 'Pinned' : 'Unpinned')
   }
 
   // ===== WATCHERS =====
