@@ -2,6 +2,10 @@ import type { Comment, CommentFormData, CommentResponse } from '@/services/order
 import { computed, nextTick, ref } from 'vue'
 import ordersService from '@/services/orders/orders.service'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
+import http from '@/services/api'
+
+const UPLOAD_URL = '/comments/upload-temp-file'
+const DELETE_URL = '/comments/delete-temp-file'
 
 export const useComments = () => {
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { composable: 'useComments' } })
@@ -60,6 +64,17 @@ export const useComments = () => {
     treeVersion.value += 1
   }
 
+  const uploadTempFile = async (file: File): Promise<{ path: string; url: string }> => {
+    const body = new FormData()
+    body.append('file', file)
+    const { data } = await http.post<{ result: { path: string; url: string } }>(UPLOAD_URL, body)
+    return { path: data.result.path, url: data.result.url }
+  }
+
+  const deleteTempFile = (path: string): void => {
+    http.delete(DELETE_URL, { data: { path } }).catch(() => {})
+  }
+
   const addComment = async (
     formData: CommentFormData,
     apiUrl: string,
@@ -81,10 +96,9 @@ export const useComments = () => {
       }
     }
 
+    // Files are already uploaded — send paths as JSON, not File objects
     if (formData.files && formData.files.length > 0) {
-      formData.files.forEach(file => {
-        form.append('files[]', file)
-      })
+      form.append('files', JSON.stringify(formData.files))
     }
 
     if (!formData.message?.trim() && (!formData.files || formData.files.length === 0)) {
@@ -119,11 +133,11 @@ export const useComments = () => {
       throw new Error(error.value)
     }
   }
+
   const updateComment = async (
     commentId: number,
     formData: CommentFormData,
     apiUrl: string,
-    editCommentData: Comment,
     order_item_id: number
   ): Promise<Comment> => {
     loading.value = true
@@ -132,17 +146,15 @@ export const useComments = () => {
     const form = new FormData()
     form.append('message', formData.message || '')
     form.append('order_item_id', order_item_id.toString())
-    if (formData.files && formData.files.length > 0) {
-      formData.files.forEach(file => {
-        const isAlreadyUploaded = editCommentData.files?.some(
-          (existingFile: { url: string; name: string }) =>
-            existingFile.url && existingFile.url.includes(file.name)
-        )
-        if (!isAlreadyUploaded) {
-          form.append('files[]', file)
-        }
-      })
+
+    // Files are already uploaded — send paths as JSON, not File objects
+    const newFiles = (formData.files ?? []).filter(
+      (f: { url: string; name: string; extension: string }) => f.url?.includes('/temp/')
+    )
+    if (newFiles.length > 0) {
+      form.append('files', JSON.stringify(newFiles))
     }
+
     if (formData.removed_files && formData.removed_files.length > 0) {
       formData.removed_files.forEach(file => {
         form.append('removed_files[]', file)
@@ -204,6 +216,8 @@ export const useComments = () => {
     commentTree,
     loading,
     error,
+    uploadTempFile,
+    deleteTempFile,
     addComment,
     updateComment,
     deleteComment,

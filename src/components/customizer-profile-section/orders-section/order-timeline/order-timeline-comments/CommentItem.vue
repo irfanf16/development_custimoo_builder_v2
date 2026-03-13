@@ -82,7 +82,7 @@
               <div class="w-16 h-12 bg-muted border border-border rounded overflow-hidden">
                 <img
                   v-if="isImageFile(file.extension)"
-                  :src="`${storageUrl}/${file.url}`"
+                  :src="`${storageUrl}${file.url}`"
                   :alt="file.name"
                   class="w-full h-full object-cover pointer-events-none"
                 />
@@ -108,6 +108,8 @@
         :edit-comment="comment"
         :loading="loading"
         :storage-url="storageUrl"
+        :upload-temp-file="uploadTempFile"
+        :delete-temp-file="deleteTempFile"
         @submit="handleEditSubmit"
         @cancel="cancelEdit"
       />
@@ -120,6 +122,8 @@
         :parent-comment="comment"
         :loading="loading"
         :storage-url="storageUrl"
+        :upload-temp-file="uploadTempFile"
+        :delete-temp-file="deleteTempFile"
         @submit="handleReplySubmit"
         @cancel="cancelReply"
       />
@@ -134,6 +138,8 @@
           :comment="child"
           :storage-url="storageUrl"
           :loading="loading"
+          :upload-temp-file="uploadTempFile"
+          :delete-temp-file="deleteTempFile"
           @edit-comment="
             (comment, data, editCommentData) => $emit('editComment', comment, data, editCommentData)
           "
@@ -148,7 +154,7 @@
 
 <script setup lang="ts">
   import { usePermissions } from '@/composables/usePermissions.ts'
-  import type { Comment, CommentFile, CommentFormData } from '@/services/orders/types'
+  import type { Comment, CommentFile, CommentFormData, User } from '@/services/orders/types'
   import { ArrowLeftIcon, FileIcon, PencilIcon, TrashIcon } from 'lucide-vue-next'
   import { inject, reactive, ref, watch } from 'vue'
   import CommentForm from './CommentForm.vue'
@@ -159,6 +165,8 @@
     storageUrl?: string
     loading?: boolean
     isResolving?: boolean
+    uploadTempFile: (file: File) => Promise<{ path: string; url: string }>
+    deleteTempFile: (path: string) => void
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -185,7 +193,7 @@
 
   const { canEditComment, canDeleteComment } = usePermissions()
 
-  const getUserInitials = (user: any): string => {
+  const getUserInitials = (user: User): string => {
     if (!user) return ''
     let name = user.name
     if (!name && user.first_name) {
@@ -194,9 +202,9 @@
     if (!name) return ''
     const nameArray = name.split(' ')
     const firstLetter = name.charAt(0)
-    let lastLetter = ''
+    let lastLetter: string | undefined = ''
     if (nameArray.length > 1) {
-      lastLetter = nameArray[nameArray.length - 1].charAt(0)
+      lastLetter = nameArray[nameArray.length - 1]?.charAt(0)
     }
     return (firstLetter + lastLetter).toUpperCase()
   }

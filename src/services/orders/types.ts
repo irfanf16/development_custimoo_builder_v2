@@ -276,7 +276,7 @@ export interface Comment {
 
 export interface CommentFormData {
   message?: string
-  files?: File[]
+  files?: { url: string; name: string; extension: string }[]
   parent_message_id?: number
   parent_message?: string
   removed_files?: string[]

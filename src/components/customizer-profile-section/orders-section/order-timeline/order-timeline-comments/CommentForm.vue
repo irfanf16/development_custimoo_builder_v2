@@ -96,23 +96,32 @@
       </div>
 
       <button
-        :disabled="!canSubmit || loading"
+        :disabled="!canSubmit || loading || hasUploadingFiles"
         class="inline-flex items-center gap-1 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         @click="handleSubmit"
       >
         <SendIcon class="w-4 h-4" />
-        <span v-if="loading">{{ mode === 'edit' ? 'Updating...' : 'Posting...' }}</span>
+        <span v-if="hasUploadingFiles">Uploading...</span>
+        <span v-else-if="loading">{{ mode === 'edit' ? 'Updating...' : 'Posting...' }}</span>
         <span v-else>{{ mode === 'edit' ? 'Update' : 'Post' }}</span>
       </button>
     </div>
 
     <!-- File previews -->
-    <div v-if="formData.files!.length" class="flex flex-wrap gap-2">
-      <div v-for="(file, index) in formData.files" :key="`file-${index}`" class="relative group">
+    <div v-if="stagedFiles.length" class="flex flex-wrap gap-2">
+      <div v-for="(file, index) in stagedFiles" :key="`file-${index}`" class="relative group">
         <div class="w-16 h-16 bg-muted border border-border rounded-lg overflow-hidden">
+          <!-- Uploading spinner overlay -->
+          <div
+            v-if="file.uploading"
+            class="absolute inset-0 bg-background/70 flex items-center justify-center z-10"
+          >
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          </div>
+
           <img
-            v-if="isImageFile(getFileExtension(file.name))"
-            :src="getFilePreview(file)"
+            v-if="isImageFile(file.extension)"
+            :src="file.previewUrl"
             :alt="file.name"
             class="w-full h-full object-cover"
           />
@@ -160,17 +169,33 @@
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
 
+  // Each staged file: { localId, name, extension, previewUrl, uploading, serverPath, isExisting }
+  // serverPath is null while uploading, then set to the path returned by the server
+  interface StagedFile {
+    localId: string
+    name: string
+    extension: string
+    previewUrl: string
+    uploading: boolean
+    serverPath: string | null
+    isExisting: boolean
+  }
+
   interface Props {
     mode?: 'add' | 'edit' | 'reply'
     parentComment?: Comment
     editComment?: Comment
     loading?: boolean
     storageUrl?: string
+    uploadTempFile: (file: File) => Promise<{ path: string; url: string }>
+    deleteTempFile: (path: string) => void
   }
 
   const props = withDefaults(defineProps<Props>(), {
     mode: 'add',
-    storageUrl: import.meta.env.VITE_FILE_URL || ''
+    storageUrl: import.meta.env.VITE_FILE_URL || '',
+    parentComment: undefined,
+    editComment: undefined
   })
 
   const emit = defineEmits<{
@@ -185,56 +210,46 @@
     parent_message: undefined
   })
 
+  const stagedFiles = ref<StagedFile[]>([])
   const inputAreaRef = ref<HTMLTextAreaElement | null>(null)
   const isDragging = ref(false)
   let dragCounter = 0
 
+  const hasUploadingFiles = computed(() => stagedFiles.value.some(f => f.uploading))
+
   watch(
     [() => props.mode, () => props.editComment, () => props.parentComment],
-    async () => {
+    () => {
       if (props.mode === 'edit' && props.editComment) {
         formData.value.message = props.editComment.message
 
-        if (props.editComment.files?.length) {
-          const filePromises = props.editComment.files.map(async (f: CommentFile) => {
-            try {
-              // fetch the blob from the file URL
-              const response = await fetch(`${props.storageUrl}/${f.url}`)
-              const blob = await response.blob()
-
-              // ensure file has correct name with extension
-              const fileName = f.extension ? `${f.name}.${f.extension}` : f.name
-
-              // create File object
-              return new File([blob], fileName, { type: blob.type })
-            } catch (err) {
-              console.error('Error loading file:', f.url, err)
-              return null
-            }
-          })
-
-          const files = (await Promise.all(filePromises)).filter(Boolean)
-          formData.value.files = files as File[]
-        } else {
-          formData.value.files = []
-        }
+        // Seed existing files directly — no blob fetching needed
+        stagedFiles.value = (props.editComment.files ?? []).map((f: CommentFile) => ({
+          localId: crypto.randomUUID(),
+          name: f.name,
+          extension: f.extension,
+          previewUrl: `${props.storageUrl}/${f.url}`,
+          uploading: false,
+          serverPath: f.url,
+          isExisting: true
+        }))
       } else if (props.mode === 'reply' && props.parentComment) {
         formData.value.message = ''
         formData.value.parent_message_id = props.parentComment.id
         formData.value.parent_message = props.parentComment.message
-        formData.value.files = []
+        stagedFiles.value = []
       } else {
         formData.value.message = ''
         formData.value.parent_message_id = undefined
         formData.value.parent_message = undefined
-        formData.value.files = []
+        stagedFiles.value = []
       }
     },
     { immediate: true }
   )
 
   const canSubmit = computed(() => {
-    return formData.value.message!.trim() || formData.value.files!.length > 0
+    return formData.value.message!.trim() || stagedFiles.value.length > 0
   })
 
   const getUserInitials = (name: string): string => {
@@ -247,11 +262,9 @@
 
   const isImageFile = (ext: string) => ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext)
 
-  const getFilePreview = (file: File) => URL.createObjectURL(file)
-
   const notAllowedTypes = ['php', 'exe', 'bat', 'sh']
 
-  const handleFileUpload = (event: Event | FileList | File[]) => {
+  const handleFileUpload = async (event: Event | FileList | File[]) => {
     let files: File[] = []
 
     if (event instanceof Event) {
@@ -262,32 +275,76 @@
     else if (Array.isArray(event)) files = event
 
     const valid = files.filter(f => !notAllowedTypes.includes(getFileExtension(f.name)))
-    formData.value.files!.push(...valid)
-  }
 
-  const removeFile = (i: number) => {
-    const file = formData.value.files![i]
+    for (const file of valid) {
+      const extension = getFileExtension(file.name)
+      const name = file.name.replace(/\.[^.]+$/, '')
+      const localId = crypto.randomUUID()
 
-    if (props.mode === 'edit') {
-      const originUrl = props.editComment?.files?.find(f => f.url?.includes(file?.name ?? ''))?.url
-      if (originUrl) {
-        // initialize removed_files if not already
-        if (!formData.value.removed_files) {
-          formData.value.removed_files = []
+      // Push placeholder immediately so the user sees feedback
+      stagedFiles.value.push({
+        localId,
+        name,
+        extension,
+        previewUrl: isImageFile(extension) ? URL.createObjectURL(file) : '',
+        uploading: true,
+        serverPath: null,
+        isExisting: false
+      })
+
+      try {
+        const result = await props.uploadTempFile(file)
+        const entry = stagedFiles.value.find(f => f.localId === localId)
+        if (entry) {
+          entry.serverPath = result.path
+          entry.previewUrl = isImageFile(extension) ? result.url : ''
+          entry.uploading = false
         }
-
-        formData.value.removed_files.push(originUrl)
+      } catch {
+        // Remove the failed placeholder
+        stagedFiles.value = stagedFiles.value.filter(f => f.localId !== localId)
       }
     }
+  }
 
-    formData.value.files!.splice(i, 1)
+  const removeFile = (index: number) => {
+    const sf = stagedFiles.value[index]
+    if (!sf) return
+    stagedFiles.value.splice(index, 1)
+
+    if (sf.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(sf.previewUrl)
+
+    // Delete from server if already uploaded
+    if (sf.serverPath) {
+      props.deleteTempFile(sf.serverPath)
+    }
   }
 
   const handleSubmit = () => {
-    if (!canSubmit.value) return
+    if (!canSubmit.value || hasUploadingFiles.value) return
+
+    // Build files array from staged — same shape the backend expects
+    const files = stagedFiles.value
+      .filter(sf => !sf.uploading && sf.serverPath)
+      .map(sf => ({ url: sf.serverPath!, name: sf.name, extension: sf.extension }))
+
+    // Files that existed before editing but were removed by the user
+    const removed_files =
+      props.mode === 'edit' && props.editComment?.files
+        ? props.editComment.files
+            .filter((f: CommentFile) => !stagedFiles.value.some(sf => sf.serverPath === f.url))
+            .map((f: CommentFile) => f.url)
+        : []
+
     emit(
       'submit',
-      { ...formData.value, message: formData.value.message!.trim() },
+      {
+        message: formData.value.message!.trim(),
+        files, // [{ url, name, extension }] — server paths only
+        removed_files,
+        parent_message_id: formData.value.parent_message_id,
+        parent_message: formData.value.parent_message
+      },
       props.editComment
     )
   }
@@ -299,6 +356,7 @@
       parent_message_id: undefined,
       parent_message: undefined
     }
+    stagedFiles.value = []
     emit('cancel')
   }
 

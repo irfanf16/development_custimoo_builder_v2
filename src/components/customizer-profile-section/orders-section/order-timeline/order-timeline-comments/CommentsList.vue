@@ -14,6 +14,8 @@
         mode="add"
         :loading="loading"
         :storage-url="storage_url"
+        :upload-temp-file="uploadTempFile"
+        :delete-temp-file="deleteTempFile"
         @submit="handleAddComment"
         @cancel="showAddForm = false"
       />
@@ -27,6 +29,8 @@
         :comment="comment"
         :storage-url="storage_url"
         :loading="loading"
+        :upload-temp-file="uploadTempFile"
+        :delete-temp-file="deleteTempFile"
         @edit-comment="handleEditComment"
         @delete-comment="handleDeleteComment"
         @reply-comment="handleReplyComment"
@@ -43,14 +47,26 @@
 
 <script setup lang="ts">
   import { useComments } from './useComments'
-  import { onMounted, provide, ref, watch } from 'vue'
+  import { onMounted, provide, ref, watch, computed } from 'vue'
   import { Button } from '@/components/ui/button'
   import { MessageCircleIcon } from 'lucide-vue-next'
   import CommentForm from './CommentForm.vue'
   import CommentItem from './CommentItem.vue'
+  import { toast } from 'vue-sonner'
+  import {
+    msg_comment_added,
+    msg_comment_updated,
+    msg_comment_deleted,
+    msg_reply_added,
+    msg_failed_to_add_comment,
+    msg_failed_to_update_comment,
+    msg_failed_to_delete_comment,
+    msg_failed_to_add_reply
+  } from '@/paraglide/messages'
 
   import type { Comment } from '@/services/orders/types'
   import type { CommentFormData } from '@/services/orders/types'
+  import { useProfileStore } from '@/stores/profile/profile.store'
   interface Props {
     apiUrl: string
     initialComments?: Comment[]
@@ -69,6 +85,8 @@
   const showAddForm = ref(false)
   const refreshKey = ref(0)
   const storage_url = import.meta.env.VITE_APP_STORAGE_URL
+  const profileStore = useProfileStore()
+  const locale = computed(() => profileStore.currentLocale || 'en')
 
   provide('refreshKey', refreshKey)
 
@@ -76,6 +94,8 @@
     // comments,
     commentTree,
     loading,
+    uploadTempFile,
+    deleteTempFile,
     addComment,
     updateComment,
     deleteComment,
@@ -104,21 +124,33 @@
       await addComment(data, props.apiUrl, props.order_item_id)
       showAddForm.value = false
       refreshKey.value += 1
+      toast.success(msg_comment_added({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     } catch (err) {
       console.error('Failed to add comment:', err)
+      toast.error(msg_failed_to_add_comment({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     }
   }
 
-  const handleEditComment = async (
-    comment: Comment,
-    data: CommentFormData,
-    editCommentData: Comment
-  ) => {
+  const handleEditComment = async (comment: Comment, data: CommentFormData) => {
     try {
-      await updateComment(comment.id, data, props.apiUrl, editCommentData, props.order_item_id)
+      await updateComment(comment.id, data, props.apiUrl, props.order_item_id)
       refreshKey.value += 1
+      toast.success(msg_comment_updated({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     } catch (err) {
       console.error('Failed to update comment:', err)
+      toast.error(msg_failed_to_update_comment({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     }
   }
 
@@ -126,8 +158,16 @@
     try {
       await deleteComment(comment.id)
       refreshKey.value += 1
+      toast.success(msg_comment_deleted({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     } catch (err) {
       console.error('Failed to delete comment:', err)
+      toast.error(msg_failed_to_delete_comment({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     }
   }
 
@@ -135,21 +175,22 @@
     try {
       if (!parentComment?.id || !data) return
 
-      const replyData: CommentFormData = {
-        message: data.message || '',
-        files: data.files || [],
-        parent_message_id: parentComment.id,
-        parent_message: parentComment.message || ''
-      }
+      // data already contains parent_message_id, parent_message and correct files
+      // from CommentForm — no need to reconstruct
+      if (!data.message?.trim() && (!data.files || data.files.length === 0)) return
 
-      if (!replyData?.message?.trim() && (!replyData.files || replyData.files.length === 0)) {
-        return
-      }
-
-      await addComment(replyData, props.apiUrl, props.order_item_id)
+      await addComment(data, props.apiUrl, props.order_item_id)
       refreshKey.value += 1
+      toast.success(msg_reply_added({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     } catch (err) {
       console.error('Failed to add reply:', err)
+      toast.error(msg_failed_to_add_reply({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
     }
   }
 </script>
