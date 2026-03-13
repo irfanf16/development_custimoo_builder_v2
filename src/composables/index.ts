@@ -3,6 +3,7 @@ export { useThirdPartyApprovalInitialization } from './useThirdPartyApprovalInit
 export { useColorActions } from './useColorActions'
 export { useBrandStyling } from './useBrandStyling'
 export { useCustomizerMenu } from './useCustomizerMenu'
+export { useElevateWidgetForOverlays } from './useElevateWidgetForOverlays'
 export { useParaglideLocale } from './useParaglideLocale'
 export { useWorkflow } from './useWorkflow'
 export { useProfileDialogState } from './useProfileDialogState'

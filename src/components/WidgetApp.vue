@@ -2,6 +2,7 @@
   import { nextTick, onMounted, ref } from 'vue'
   import { toast } from 'vue-sonner'
   import { useBrandStyling } from '@/composables/useBrandStyling'
+  import { useElevateWidgetForOverlays } from '@/composables/useElevateWidgetForOverlays'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useAppStore } from '@/stores/app/app.store'
   import { LayoutWrapper } from '@/layouts'
@@ -61,6 +62,8 @@
   const { applyBrandStyling } = useBrandStyling()
 
   // Update colors when component mounts
+  useElevateWidgetForOverlays()
+
   onMounted(async () => {
     if (widgetRootContainer.value) {
       uiStore.setWidgetRoot(widgetRootContainer.value)
