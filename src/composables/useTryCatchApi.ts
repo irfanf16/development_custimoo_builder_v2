@@ -145,7 +145,6 @@ export function useTryCatchApi(options: UseTryCatchApiOptions = {}) {
         return { success: true, content: data, status: 200, axiosError: null }
       }
     } catch (error) {
-      console.log('API call failed:', error)
       const _error = error instanceof Error ? error : new Error(String(error))
       const axiosError = _error as AxiosError<T>
       const responseData = axiosError.response?.data as Record<string, unknown> | undefined

@@ -133,7 +133,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       }
     )
     if (!resp.success) {
-      setError('Failed to update locker')
+      setError(resp.message || 'Failed to update locker')
       isLoading.value = false
       return
     }
