@@ -89,5 +89,6 @@ export type InputResetPassword = {
 
 export type OutputResetPassword = {
   message: string
-  success?: boolean
+  result: any[]
+  errors: any[]
 }

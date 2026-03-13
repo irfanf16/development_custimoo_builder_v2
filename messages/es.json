@@ -623,5 +623,6 @@
   "msg_send_reset_link_error": "Error al enviar el enlace de restablecimiento",
   "msg_send_unable_to_reset_password_error": "No se puede restablecer la contraseña.",
   "msg_forgot_password_question": "¿Olvidaste tu contraseña?",
-  "reset_password": "Restablecer contraseña"
+  "reset_password": "Restablecer contraseña",
+  "password_updated": "¡Contraseña actualizada exitosamente!"
 }

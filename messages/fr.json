@@ -623,5 +623,6 @@
   "msg_send_reset_link_error": "Échec de l'envoi du lien de réinitialisation",
   "msg_send_unable_to_reset_password_error": "Impossible de réinitialiser le mot de passe.",
   "msg_forgot_password_question": "Mot de passe oublié?",
-  "reset_password": "Réinitialiser le mot de passe"
+  "reset_password": "Réinitialiser le mot de passe",
+  "password_updated": "Mot de passe mis à jour avec succès!"
 }

@@ -200,7 +200,7 @@ export function useSignIn() {
     authStore.setError(null)
     const result = await authStore.postResetPassword(data)
     const locale = currentLocale.value
-    if (result.content?.success) {
+    if (result.success) {
       return true
     }
 

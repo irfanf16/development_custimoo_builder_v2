@@ -623,5 +623,6 @@
   "msg_send_reset_link_error": "Kunne ikke sende nulstillingslink",
   "msg_send_unable_to_reset_password_error": "Kan ikke nulstille adgangskoden.",
   "msg_forgot_password_question": "Glemt din adgangskode?",
-  "reset_password": "Nulstil adgangskode"
+  "reset_password": "Nulstil adgangskode",
+  "password_updated": "Adgangskoden blev opdateret!"
 }

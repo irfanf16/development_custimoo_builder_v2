@@ -21,7 +21,8 @@
     reset_password,
     profile_email,
     auth_confirm_password_label,
-    auth_placeholder_confirm_password
+    auth_placeholder_confirm_password,
+    password_updated
   } from '@/paraglide/messages'
 
   const {
@@ -67,7 +68,10 @@
     })
 
     if (success) {
-      toast.success('Password reset successfully')
+      toast.success(password_updated({}, { locale: currentLocale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
       setResetPasswordDialogOpen(false)
       resetForm()
       router.replace('/')

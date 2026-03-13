@@ -634,5 +634,6 @@
   "msg_send_reset_link_error": "Failed to send reset link",
   "msg_send_unable_to_reset_password_error": "Unable to reset password.",
   "msg_forgot_password_question": "Forgot your password?",
-  "reset_password": "Reset Password"
+  "reset_password": "Reset Password",
+  "password_updated": "Password updated successfully!"
 }
