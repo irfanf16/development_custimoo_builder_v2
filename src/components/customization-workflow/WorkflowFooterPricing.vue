@@ -60,56 +60,64 @@
 
   const locale = computed(() => profileStore.currentLocale || 'en')
   async function handleUpdateCartProduct() {
+    const rosterQty = totalRosterQuantity.value
+    const minDesignQty = minimumActiveProductQuantityByDesignToCard.value
+    const isByDesign = isQuantityByDesign.value
+
     if (!cartStore.editingCartItemId || !cartStore.editingFactoryProductId) {
       toast.error(msg_no_cart_product_selected({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
+      uiStore.openCartDialog()
       return
     }
+
+    if (rosterQty <= 0) {
+      toast.error(msg_add_roster_before_cart({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
+      const visibleSteps = menuItems.value.map(i => i.step)
+      if (visibleSteps.includes('roster')) {
+        await goTo('roster')
+        await ensureEditableRoster()
+      }
+      return
+    }
+
+    if (!canSkipMoq.value && isByDesign && rosterQty < minDesignQty) {
+      toast.error(`Please add at least ${minDesignQty} items to the roster before updating.`, {
+        position: 'top-right',
+        richColors: true
+      })
+      const visibleSteps = menuItems.value.map(i => i.step)
+      if (visibleSteps.includes('roster')) {
+        await goTo('roster')
+      }
+      return
+    }
+
+    const missingSizeIndex = rosterEntries.value.findIndex(
+      entry => (entry.quantity || 0) > 0 && !entry.size
+    )
+
+    if (missingSizeIndex !== -1) {
+      toast.error(msg_missing_roster_sizes({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
+
+      const visibleSteps = menuItems.value.map(i => i.step)
+      if (visibleSteps.includes('roster')) {
+        await goTo('roster')
+        await ensureEditableRoster()
+        setRosterPreviewIndex(missingSizeIndex)
+      }
+      return
+    }
+
     try {
-      const rosterQty = totalRosterQuantity.value
-      const minDesignQty = minimumActiveProductQuantityByDesignToCard.value
-      const isByDesign = isQuantityByDesign.value
-
-      if (rosterQty <= 0) {
-        toast.error(msg_add_roster_before_cart({}, { locale: locale.value }), {
-          position: 'top-right',
-          richColors: true
-        })
-        return
-      }
-
-      if (isByDesign && rosterQty < minDesignQty) {
-        toast.error(
-          `Please add at least ${minDesignQty} items to the roster before adding to cart.`,
-          {
-            position: 'top-right',
-            richColors: true
-          }
-        )
-        return
-      }
-
-      const missingSizeIndex = rosterEntries.value.findIndex(
-        entry => (entry.quantity || 0) > 0 && !entry.size
-      )
-
-      if (missingSizeIndex !== -1) {
-        toast.error(msg_missing_roster_sizes({}, { locale: locale.value }), {
-          position: 'top-right',
-          richColors: true
-        })
-
-        const visibleSteps = menuItems.value.map(i => i.step)
-        if (visibleSteps.includes('roster')) {
-          await goTo('roster')
-          await ensureEditableRoster()
-          setRosterPreviewIndex(missingSizeIndex)
-        }
-        return
-      }
-
       const { factory_product, product_assets } = await buildFactoryProductPayload()
       const result = await cartStore.updateCartItem(cartStore.editingCartItemId, {
         factory_product,
@@ -134,8 +142,11 @@
   }
 
   async function handleAddToCart() {
-    const totalQuantity = rosterEntries.value.reduce((sum, entry) => sum + (entry.quantity || 0), 0)
-    if (totalQuantity === 0) {
+    const totalQuantity = totalRosterQuantity.value
+    const minDesignQty = minimumActiveProductQuantityByDesignToCard.value
+    const isByDesign = isQuantityByDesign.value
+
+    if (totalQuantity <= 0) {
       toast.error(msg_add_roster_entries_quantities({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
@@ -148,8 +159,6 @@
       return
     }
 
-    const minDesignQty = minimumActiveProductQuantityByDesignToCard.value
-    const isByDesign = isQuantityByDesign.value
     if (!canSkipMoq.value && isByDesign && totalQuantity < minDesignQty) {
       toast.error(
         `Please add at least ${minDesignQty} items to the roster before adding to cart.`,
@@ -158,6 +167,10 @@
           richColors: true
         }
       )
+      const visibleSteps = menuItems.value.map(i => i.step)
+      if (visibleSteps.includes('roster')) {
+        await goTo('roster')
+      }
       return
     }
 
@@ -261,13 +274,7 @@
       :size="uiStore.isMobile ? 'sm' : 'lg'"
       :loading="cartStore.isLoading"
       custom-text-color="text-white"
-      :disabled="
-        totalRosterQuantity <= 0 ||
-        (!canSkipMoq &&
-          isQuantityByDesign &&
-          totalRosterQuantity < minimumActiveProductQuantityByDesignToCard) ||
-        !authStore.isAuthenticated
-      "
+      :disabled="cartStore.isLoading || !authStore.isAuthenticated"
       @click="handleButtonClick"
     >
       <ShoppingCart class="size-4" />
