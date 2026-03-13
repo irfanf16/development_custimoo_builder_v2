@@ -542,7 +542,8 @@
 
       // Get deleted logo IDs and prepare logo data
       const deletedLogoIds: number[] = []
-      const logoData: Array<{ name: string; path: string; id?: number }> = []
+      const logoData: Array<{ name: string; path: string; id?: number; is_recent_logo: boolean }> =
+        []
 
       const logosArray = Array.isArray(logos) ? logos : []
       logosArray.forEach((logo: any, index: number) => {
@@ -565,14 +566,22 @@
             logoPath = logo.url.startsWith('http') ? logo.url.replace(baseStorageUrl, '') : logo.url
           }
 
+          let isRecentLogo = true
+          if (logo.file) {
+            isRecentLogo = false
+          }
+
           if (logoPath) {
-            const logoEntry: { name: string; path: string; id?: number } = {
-              name: `logo-${index + 1}`,
-              path: logoPath
-            }
+            const logoEntry: { name: string; path: string; id?: number; is_recent_logo: boolean } =
+              {
+                name: `logo-${index + 1}`,
+                path: logoPath,
+                is_recent_logo: isRecentLogo
+              }
             // Include logo ID only when editing a collection and logo has ID
             if (isEditing && collectionId && logo.id) {
               logoEntry.id = logo.id
+              logoEntry.is_recent_logo = true
             }
             logoData.push(logoEntry)
           }
