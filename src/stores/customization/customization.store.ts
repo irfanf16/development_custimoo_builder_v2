@@ -383,6 +383,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
   // ===== PERSISTENCE =====
   function saveToLocalStorage(): void {
+    // console.log("setting to local storage",reorderData.value);
     setItem(CUSTOMIZATION_STORAGE_KEY, {
       history: history.value,
       historyIndex: historyIndex.value,
@@ -1064,6 +1065,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   }
 
   function setReorderData(data: Record<string, unknown>) {
+    console.log('setReorderData', data)
     reorderData.value = { ...data }
     pushHistoryState('Set reorder data')
   }

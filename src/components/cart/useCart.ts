@@ -281,8 +281,9 @@ export function useCart() {
         type: 'addon'
       })
     }
-    console.log('logo tech', product)
-    if (product.logo_technology) {
+
+    // console.log('logo tech', product)
+    if (product.logo_technology && product.logo_technology.label !== 'Logo technology') {
       rows.push({
         label: product.logo_technology.label,
         qty: 1,
