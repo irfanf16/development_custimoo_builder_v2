@@ -27,8 +27,8 @@
     color_shuffle_text_1,
     colors_separator_or,
     colors_choose_from_locker,
-    colors_choose_color,
     colors_extracted_from_logo,
+    colors_extracted_from_design,
     colors_use_original_colors,
     colors_copy,
     colors_paste,
@@ -305,6 +305,8 @@
     customizationStore.customization.default_colors = defaultColors.slice(0, 4)
     customizationStore.customization.shuffle_color_number = Math.floor(Math.random() * 24) + 1
     customizationStore.customization.group_colors = {}
+    workflowStore.setDefaultColorsSource('design')
+    workflowStore.setActiveLogoId(null)
     customizationStore.pushHistoryState('Shuffle design colors')
   }
 
@@ -320,7 +322,9 @@
       customizationStore.clearDefaultColors()
       customizationStore.pushHistoryState('Use original colors')
     }
+    workflowStore.setDefaultColorsSource(null)
     workflowStore.setActiveColorAccordionIndex(null)
+    editingDefaultColorIndex.value = null
   }
 
   // Shuffle is only relevant when product has SVG parts (colorable groups)
@@ -335,6 +339,7 @@
     has => {
       if (!has) {
         customizationStore.clearLogoColorsAndApplied()
+        workflowStore.setDefaultColorsSource(null)
         if (workflowStore.activeColorAccordionIndex === 0) {
           workflowStore.setActiveColorAccordionIndex(null)
         }
@@ -398,6 +403,15 @@
   }
 
   function openPaletteForSlot(slotIndex: number | null) {
+    // Toggle close when clicking the same element that opened the picker
+    if (
+      workflowStore.activeColorAccordionIndex === 0 &&
+      editingDefaultColorIndex.value === slotIndex
+    ) {
+      workflowStore.setActiveColorAccordionIndex(null)
+      editingDefaultColorIndex.value = null
+      return
+    }
     editingDefaultColorIndex.value = slotIndex
     workflowStore.setActiveColorAccordionIndex(0)
   }
@@ -421,8 +435,21 @@
       workflowStore.setActiveColorAccordionIndex(Number(value))
     } else {
       workflowStore.setActiveColorAccordionIndex(null)
+      editingDefaultColorIndex.value = null
     }
   }
+
+  // Label for extracted colors: from logo vs from design (shuffle)
+  const extractedSectionLabel = computed(() =>
+    workflowStore.defaultColorsSource === 'design'
+      ? colors_extracted_from_design({}, { locale: profileStore.currentLocale })
+      : colors_extracted_from_logo({}, { locale: profileStore.currentLocale })
+  )
+
+  // Choose Color accordion item only when user has opened it (clicked + or swatch)
+  const showChooseColorAccordion = computed(
+    () => appliedLogoColors.value.length > 0 && workflowStore.activeColorAccordionIndex === 0
+  )
 
   // Breadcrumb logic for color selection
   const headerConfig = computed(() => ({
@@ -475,17 +502,11 @@
       </div>
     </div>
 
-    <!-- Applied logo colors (Choose Color) – only when logo colors have been applied; after Lucky/Locker -->
+    <!-- Applied logo colors – only when logo colors have been applied; after Lucky/Locker -->
     <div v-if="appliedLogoColors.length > 0" class="px-4 md:px-6 flex flex-col gap-2">
-      <!-- When all 4 slots are filled, hide the "Choose Color" add UI (heading + plus); swatches stay for editing -->
-      <template v-if="canAddMore">
-        <h2 class="text-base font-semibold text-foreground">
-          {{ colors_choose_color({}, { locale: profileStore.currentLocale }) }}
-        </h2>
-        <p v-if="appliedLogoColors.length > 0" class="text-base font-semibold text-foreground">
-          {{ colors_extracted_from_logo({}, { locale: profileStore.currentLocale }) }}
-        </p>
-      </template>
+      <p class="text-base font-semibold text-foreground">
+        {{ extractedSectionLabel }}
+      </p>
       <div class="flex items-center gap-2 flex-wrap">
         <div class="flex items-center gap-2">
           <div
@@ -495,7 +516,8 @@
           >
             <button
               type="button"
-              class="rounded-full p-0 border-0 bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              class="rounded-full p-0 border-0 bg-transparent cursor-pointer !size-7.5"
+              :class="{ 'outline-none ring-2 ring-ring ': editingDefaultColorIndex === item.index }"
               aria-label="Change color"
               @click="openPaletteForSlot(item.index)"
             >
@@ -518,7 +540,7 @@
           <button
             v-if="canAddMore"
             type="button"
-            class="size-8 rounded-full border border-border bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground shrink-0"
+            class="!size-7.5 rounded-full border border-border bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground shrink-0"
             aria-label="Add color"
             @click="openPaletteForSlot(null)"
           >
@@ -526,53 +548,43 @@
           </button>
         </div>
         <Button
-          class="ml-auto bg-primary hover:bg-primary/90 text-white shrink-0"
+          variant="outline"
+          size="sm"
+          class="shrink-0"
           :disabled="!hasSvgParts || appliedLogoColors.length === 0"
           @click="shuffleExtractedColorsAmongSvgParts"
         >
           {{ logos_shuffle_colors({}, { locale: profileStore.currentLocale }) }}
         </Button>
+        <Button variant="outline" size="sm" class="shrink-0" @click="useOriginalColors">
+          {{ colors_use_original_colors({}, { locale: profileStore.currentLocale }) }}
+        </Button>
       </div>
-      <Button variant="outline" class="w-full shrink-0" @click="useOriginalColors">
-        {{ colors_use_original_colors({}, { locale: profileStore.currentLocale }) }}
-      </Button>
+      <!-- Headless palette: appears when user clicks + or a swatch; no header, same block as extracted colors -->
+      <div v-if="showChooseColorAccordion" class="pt-2">
+        <PaletteColorSelector
+          v-if="palettesForAddColor.length"
+          :palettes="palettesForAddColor"
+          :custom-palettes="getCustomLogosPalettes()"
+          :allow-custom-color="productsStore.activeProductDetails?.is_custom_color_allowed"
+          :has-svg-colors="
+            effectiveSvgGroupsInteractive[0]
+              ? !!getSvgGroupColors(effectiveSvgGroupsInteractive[0].id)
+              : false
+          "
+          :parsed-locker-rooms="parsedLockerRooms"
+          @color-select="addColorFromPicker"
+        />
+      </div>
     </div>
 
-    <!-- Color slots: add-color palette (index 0) + interactive SVG groups (index 1..n) -->
+    <!-- SVG group color slots -->
     <Accordion
       type="single"
       collapsible
       :model-value="accordionValue"
       @update:model-value="handleAccordionChange"
     >
-      <!-- Add/edit color from palette (opens when plus or swatch is clicked); only when applied logo colors exist -->
-      <AccordionItem v-if="appliedLogoColors.length > 0" value="0" class="px-4 md:px-6 max-w-full">
-        <AccordionTrigger
-          class="w-full overflow-hidden items-center no-underline hover:no-underline"
-        >
-          <div class="flex items-center gap-2 md:gap-3">
-            <Plus class="size-4 text-muted-foreground shrink-0" />
-            <span class="text-base font-semibold text-foreground">{{
-              colors_choose_color({}, { locale: profileStore.currentLocale })
-            }}</span>
-          </div>
-        </AccordionTrigger>
-        <AccordionContent>
-          <PaletteColorSelector
-            v-if="palettesForAddColor.length"
-            :palettes="palettesForAddColor"
-            :custom-palettes="getCustomLogosPalettes()"
-            :allow-custom-color="productsStore.activeProductDetails?.is_custom_color_allowed"
-            :has-svg-colors="
-              effectiveSvgGroupsInteractive[0]
-                ? !!getSvgGroupColors(effectiveSvgGroupsInteractive[0].id)
-                : false
-            "
-            :parsed-locker-rooms="parsedLockerRooms"
-            @color-select="addColorFromPicker"
-          />
-        </AccordionContent>
-      </AccordionItem>
       <AccordionItem
         v-for="(svgGroup, idx) in effectiveSvgGroupsInteractive"
         :key="svgGroup.id"

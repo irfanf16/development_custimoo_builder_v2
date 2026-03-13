@@ -402,7 +402,7 @@
             :key="item.factory_product_id"
             class="p-4"
             :class="{
-              'border-l-4 border-red-500 bg-red-50/50': invalidQuantityIds.includes(
+              'border-l-4 border-red-500 bg-secondary': invalidQuantityIds.includes(
                 item.factory_product_id
               )
             }"

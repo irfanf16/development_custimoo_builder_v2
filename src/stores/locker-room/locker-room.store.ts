@@ -476,6 +476,12 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     collections.value = collections.value.filter(collection => collection.id !== id)
   }
 
+  function setCollectionShareUrl(collectionId: number, shareUrl: string) {
+    collections.value = collections.value.map(c =>
+      c.id === collectionId ? { ...c, link: shareUrl, shared_url: shareUrl } : c
+    )
+  }
+
   // to get signed Image URL
   async function getSignedUrl(locker_id: number): Promise<SignedUrlResponse | undefined> {
     return (
@@ -564,6 +570,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     saveCollection,
     updateCollection,
     deleteCollection,
+    setCollectionShareUrl,
     //get s3 signed URL
     getSignedUrl,
     getCollectionLogoPresignedUrls

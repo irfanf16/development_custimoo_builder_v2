@@ -104,8 +104,22 @@ export function useLogoActions() {
       customizationStore.customization.shuffle_color_number = 1
       workflowStore.setGroupColorsBeforeLogoApply(customizationStore.customization.group_colors)
       customizationStore.customization.group_colors = {}
+      workflowStore.setDefaultColorsSource('logo')
       customizationStore.pushHistoryState('Applied logo colors')
     }
+  }
+
+  function useOriginalColorsAndProceed() {
+    const snapshot = workflowStore.getAndClearGroupColorsBeforeLogoApply()
+    if (customizationStore.customization) {
+      customizationStore.customization.group_colors = snapshot ? { ...snapshot } : {}
+      customizationStore.clearDefaultColors()
+      customizationStore.pushHistoryState('Use original colors')
+    }
+    workflowStore.setDefaultColorsSource(null)
+    workflowStore.setActiveLogoId(null)
+    workflowStore.setActiveColorAccordionIndex(null)
+    workflowStore.setActiveStep('colors')
   }
 
   function shuffleColors() {
@@ -161,6 +175,7 @@ export function useLogoActions() {
     removeBackground,
     applyLogoColors,
     shuffleColors,
+    useOriginalColorsAndProceed,
     recolorLogo,
     removeLogo,
     setActiveLogo

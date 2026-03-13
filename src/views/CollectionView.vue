@@ -2,7 +2,7 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { Button } from '@/components/ui/button'
-  import { ShoppingCart, User, Package, Home, Download } from 'lucide-vue-next'
+  import { ShoppingCart, User, Package, Home, Download, FileDown } from 'lucide-vue-next'
   import { useCompanyStore } from '@/stores/company/company.store'
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { useCartStore } from '@/stores/cart/cart.store'
@@ -20,6 +20,7 @@
   import { CartDialog } from '@/components/cart'
   import SaveDesignDialog from '@/components/SaveDesignDialog.vue'
   import { PLACEHOLDER_IMAGE } from '@/helpers/imageHelper'
+  import { downloadFromUrl } from '@/lib/utils'
   import { toast } from 'vue-sonner'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { msg_failed_to_add_to_cart } from '@/paraglide/messages'
@@ -31,8 +32,13 @@
   const cartStore = useCartStore()
   const uiStore = useUIStore()
   const { openSignInDialog } = useSignIn()
-  const { setPending, getPending, getPendingSaveToLockerProduct, clearPending } =
-    usePendingPostLoginAction()
+  const {
+    setPending,
+    getPending,
+    getPendingSaveToLockerProduct,
+    getPendingAddToCartProduct,
+    clearPending
+  } = usePendingPostLoginAction()
 
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
@@ -138,16 +144,20 @@
     return desc.replace(/<[^>]+>/g, '').trim()
   }
 
-  // Purchase: add locker product to cart
+  // Purchase: add locker product to cart (or save as pending if guest)
   async function handlePurchase(cp: CollectionProductWithLockerRoom) {
-    if (!isLoggedIn.value) return
+    if (!isLoggedIn.value) {
+      setPending('addToCart', cp)
+      openSignInDialog()
+      return
+    }
     const plr = cp.product_locker_room
     const roomId = plr.room_id
     const productId = plr.id
     try {
       await cartStore.addLockerProductsToCart({
         locker_products: { [roomId]: [productId] },
-        lockers: [roomId]
+        lockers: []
       })
       showCartDialog.value = true
     } catch (e) {
@@ -167,7 +177,7 @@
     }
   }
 
-  function onLoginSuccess() {
+  async function onLoginSuccess() {
     const pending = getPending()
     if (pending === 'saveToLocker') {
       const product = getPendingSaveToLockerProduct()
@@ -176,11 +186,43 @@
         clearPending()
         uiStore.openSaveDesignDialog()
       }
+      return
+    }
+    if (pending === 'addToCart') {
+      const product = getPendingAddToCartProduct()
+      if (product) {
+        const plr = product.product_locker_room
+        const roomId = plr.room_id
+        const productId = plr.id
+        try {
+          await cartStore.addLockerProductsToCart({
+            locker_products: { [roomId]: [productId] },
+            lockers: []
+          })
+          clearPending()
+          showCartDialog.value = true
+        } catch (e) {
+          console.error(e)
+          toast.error(msg_failed_to_add_to_cart({}, { locale: locale.value }))
+        }
+      }
     }
   }
 
   function onSaveDesignDialogClose(open: boolean) {
     if (!open) uiStore.setSaveDesignDialogCollectionProduct(null)
+  }
+
+  function downloadPdf() {
+    const c = collection.value
+    if (!c?.pdf_link) return
+    const path = c.pdf_link
+    const url =
+      path.startsWith('http://') || path.startsWith('https://')
+        ? path
+        : `${storageUrl.value.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
+    const filename = c.file_name ? `${c.file_name}.pdf` : `collection-${c.id}.pdf`
+    downloadFromUrl(url, filename)
   }
 
   function downloadImage(url: string, filename: string) {
@@ -204,8 +246,23 @@
         <Button variant="ghost" size="icon" aria-label="Home" @click="router.push('/')">
           <Home class="h-5 w-5" />
         </Button>
-        <div v-if="isLoggedIn" class="flex items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label="Cart" @click="showCartDialog = true">
+        <div v-if="collection?.pdf_link || isLoggedIn" class="flex items-center gap-2">
+          <Button
+            v-if="collection?.pdf_link"
+            variant="ghost"
+            size="icon"
+            aria-label="Download PDF"
+            @click="downloadPdf"
+          >
+            <FileDown class="h-5 w-5" />
+          </Button>
+          <Button
+            v-if="isLoggedIn"
+            variant="ghost"
+            size="icon"
+            aria-label="Cart"
+            @click="showCartDialog = true"
+          >
             <ShoppingCart class="h-5 w-5" />
           </Button>
           <Button
@@ -376,7 +433,7 @@
             </p>
           </div>
           <div class="mt-4 flex flex-wrap gap-2">
-            <Button v-if="isLoggedIn" class="flex-1" @click="handlePurchase(cp)"> Purchase </Button>
+            <Button class="flex-1" @click="handlePurchase(cp)"> Purchase </Button>
             <Button variant="outline" class="flex-1" @click="handleSaveToLocker(cp)">
               Save To Locker
             </Button>

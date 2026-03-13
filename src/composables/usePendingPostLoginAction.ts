@@ -13,6 +13,9 @@ const pendingAction = ref<PendingPostLoginAction>(null)
 /** When pending is 'saveToLocker', the collection product to save after login. */
 const pendingSaveToLockerProduct = ref<CollectionProductWithLockerRoom | null>(null)
 
+/** When pending is 'addToCart', the collection product to add to cart after login. */
+const pendingAddToCartProduct = ref<CollectionProductWithLockerRoom | null>(null)
+
 /** When pending is 'openOrderDetail', the order id to open in profile after login. */
 const pendingOrderId = ref<string | number | null>(null)
 
@@ -28,6 +31,10 @@ export function usePendingPostLoginAction() {
     pendingAction.value = action
     pendingSaveToLockerProduct.value =
       action === 'saveToLocker' && productOrOrderId && typeof productOrOrderId === 'object'
+        ? productOrOrderId
+        : null
+    pendingAddToCartProduct.value =
+      action === 'addToCart' && productOrOrderId && typeof productOrOrderId === 'object'
         ? productOrOrderId
         : null
     pendingOrderId.value =
@@ -46,6 +53,10 @@ export function usePendingPostLoginAction() {
     return pendingSaveToLockerProduct.value
   }
 
+  function getPendingAddToCartProduct(): CollectionProductWithLockerRoom | null {
+    return pendingAddToCartProduct.value
+  }
+
   function getPendingOrderId(): string | number | null {
     return pendingOrderId.value
   }
@@ -53,6 +64,7 @@ export function usePendingPostLoginAction() {
   function clearPending() {
     pendingAction.value = null
     pendingSaveToLockerProduct.value = null
+    pendingAddToCartProduct.value = null
     pendingOrderId.value = null
   }
 
@@ -60,6 +72,7 @@ export function usePendingPostLoginAction() {
     setPending,
     getPending,
     getPendingSaveToLockerProduct,
+    getPendingAddToCartProduct,
     getPendingOrderId,
     clearPending
   }

@@ -63,6 +63,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const activeColorGroupId = ref<string | number | null>(null)
   /** Snapshot of group_colors before applying logo colors (for "Use original colors"). */
   const groupColorsBeforeLogoApply = ref<Record<string, APCustomizationGroupColor> | null>(null)
+  /** Source of current default_colors: from logo apply or from "Shuffle design colors". */
+  const defaultColorsSource = ref<'logo' | 'design' | null>(null)
 
   // Canvas state
   const activeCanvasSide = ref<CanvasSide>('front')
@@ -394,6 +396,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
+  function setDefaultColorsSource(source: 'logo' | 'design' | null) {
+    defaultColorsSource.value = source
+  }
+
   function setActiveLogoIndex(logoIndex: number | null) {
     activeLogoIndex.value = logoIndex
     saveSubStepsToLocalStorage()
@@ -640,6 +646,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     openColorEditorFromCustomizer,
     setGroupColorsBeforeLogoApply,
     getAndClearGroupColorsBeforeLogoApply,
+    defaultColorsSource,
+    setDefaultColorsSource,
     setTextClipboard,
     resetWorkflowSubSteps,
     // Business Logic

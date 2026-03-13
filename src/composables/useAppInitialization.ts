@@ -351,13 +351,13 @@ export function useAppInitialization() {
   ): Promise<void> => {
     const reorderData = customizationStore?.reorderData
 
-    if (reorderData?.orderItemId && reorderData.factoryProductId) {
+    if (reorderData?.order_item_id && reorderData.factory_product_id) {
       const { useLoadReorderProductIntoCustomizer } =
         await import('@/composables/useLoadReorderProductIntoCustomizer')
       const { loadReorderProductIntoCustomizer } = useLoadReorderProductIntoCustomizer()
 
-      const orderItemId = Number(reorderData.orderItemId)
-      const factoryProductId = reorderData.factoryProductId as string
+      const orderItemId = Number(reorderData.order_item_id)
+      const factoryProductId = reorderData.factory_product_id as string
       const productId = customizationStore.activeProductId ?? 0
       if (!Number.isNaN(orderItemId) && factoryProductId && productId) {
         const success = await loadReorderProductIntoCustomizer({

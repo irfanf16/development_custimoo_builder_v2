@@ -4,6 +4,8 @@
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { storeToRefs } from 'pinia'
   import { computed, onMounted, ref } from 'vue'
+  import { API } from '@/services'
+  import { toast } from 'vue-sonner'
   import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
   import { Button } from '@/components/ui/button'
   import { ButtonGroup } from '@/components/ui/button-group'
@@ -41,6 +43,7 @@
     locker_auto_generated_tooltip,
     locker_delete_collection_confirm,
     locker_action_cannot_undo,
+    msg_failed_to_generate_share_url,
     time_ago_just_now,
     time_ago_seconds,
     time_ago_seconds_plural,
@@ -130,6 +133,30 @@
     if (typeof window === 'undefined') return link
     const base = window.location.origin
     return link.startsWith('/') ? `${base}${link}` : `${base}/${link}`
+  }
+
+  async function handleShareClick(collection: Collection, event?: Event) {
+    if (getCollectionShareUrl(collection)) return
+    event?.preventDefault()
+    event?.stopPropagation()
+    try {
+      const response = await API.lockers.shareCollection(collection.id)
+      const url = response.data?.result?.shared_url ?? null
+      if (url) {
+        lockerRoomStore.setCollectionShareUrl(collection.id, url)
+        shareTooltipOpen.value[collection.id] = true
+      } else {
+        toast.error(msg_failed_to_generate_share_url({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
+      }
+    } catch {
+      toast.error(msg_failed_to_generate_share_url({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
+    }
   }
 
   function handleDownloadPdf(collection: Collection, event?: Event) {
@@ -369,7 +396,12 @@
                 :open="shareTooltipOpen[collection.id] || false"
                 @update:open="shareTooltipOpen[collection.id] = $event"
               >
-                <Button variant="outline" size="sm" class="h-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-8"
+                  @click="handleShareClick(collection, $event)"
+                >
                   <Share2 class="w-3.5 h-3.5 mr-1" />
                   Share
                 </Button>

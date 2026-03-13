@@ -106,6 +106,7 @@
           if (!confirmed) {
             return
           }
+          customizationStore.clearReorderData()
           appStore.setReorderFlow(false)
         } else {
           // Same product, allow selection

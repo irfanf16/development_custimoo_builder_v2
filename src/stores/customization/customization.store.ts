@@ -1144,7 +1144,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
   function clearReorderData() {
     reorderData.value = null
-    pushHistoryState('Cleared reorder data')
   }
   // ===== RETURN =====
 

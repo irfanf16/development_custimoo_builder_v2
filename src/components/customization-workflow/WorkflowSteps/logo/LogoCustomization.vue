@@ -39,7 +39,8 @@
 
   // ===== COMPOSABLES =====
   const { customLogos } = useLogos()
-  const { applyLogoColors, shuffleColors, removeLogo, setActiveLogo } = useLogoActions()
+  const { applyLogoColors, shuffleColors, useOriginalColorsAndProceed, removeLogo, setActiveLogo } =
+    useLogoActions()
   const { isDragOver, fileInputRef, onClickUpload, onDragOver, onDragLeave, doUpload } =
     useLogoUpload()
 
@@ -159,7 +160,7 @@
             <input
               ref="fileInputRef"
               type="file"
-              accept="image/*"
+              accept="image/*,.pdf,.ai,.eps,.tiff"
               class="hidden"
               @change="handleFileChange"
             />
@@ -196,6 +197,7 @@
               @click="handleLogoClick"
               @apply-colors="applyLogoColors(logo)"
               @shuffle-colors="shuffleColors()"
+              @use-original-and-proceed="useOriginalColorsAndProceed()"
               @delete="removeLogo(logo)"
             />
 

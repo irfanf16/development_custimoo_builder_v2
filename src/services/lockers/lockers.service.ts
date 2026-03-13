@@ -146,6 +146,10 @@ async function shareProduct(locker_product_id: number, product_id: number) {
   })
 }
 
+async function shareCollection(collection_id: number) {
+  return await http.get<LockerResponse<{ shared_url: string }>>(`collection/${collection_id}/share`)
+}
+
 export default {
   getLockers,
   updateLocker,
@@ -171,6 +175,7 @@ export default {
   saveCollection,
   updateCollection,
   deleteCollection,
+  shareCollection,
   //get s3 signed url
   getSignedUrl,
   getCollectionLogoPresignedUrls

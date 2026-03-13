@@ -12,12 +12,15 @@
     logos_uploaded_logo_alt,
     logos_apply_colors,
     logos_shuffle_colors,
+    logos_use_original,
     logos_no_colors_detected
   } from '@/paraglide/messages'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
+  const workflowStore = useWorkflowStore()
 
   const props = defineProps<{
     logo: CustomLogo
@@ -44,11 +47,17 @@
     return defaultColors.some((color: { color?: string | null }) => color.color)
   })
 
+  // This logo's colors are currently applied (default_colors came from this logo)
+  const isThisLogoColorsApplied = computed(
+    () => hasDefaultColors.value && workflowStore.activeLogoId === String(props.logo.id)
+  )
+
   const emit = defineEmits<{
     (e: 'click', index: number): void
     (e: 'delete', logo: CustomLogo): void
     (e: 'apply-colors', logo: CustomLogo): void
     (e: 'shuffle-colors'): void
+    (e: 'use-original-and-proceed'): void
   }>()
 </script>
 <template>
@@ -71,7 +80,15 @@
         <ColorsPreview :colors="previewColors" />
         <div class="flex gap-2">
           <Button
-            v-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
+            v-if="isThisLogoColorsApplied"
+            size="sm"
+            variant="default"
+            @click.stop="emit('use-original-and-proceed')"
+          >
+            {{ logos_use_original({}, { locale: profileStore.currentLocale }) }}
+          </Button>
+          <Button
+            v-else-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
             size="sm"
             variant="default"
             @click.stop="emit('apply-colors', props.logo)"
@@ -79,7 +96,7 @@
             {{ logos_apply_colors({}, { locale: profileStore.currentLocale }) }}
           </Button>
           <Button
-            v-if="hasDefaultColors"
+            v-if="isThisLogoColorsApplied"
             size="sm"
             variant="outline"
             @click.stop="emit('shuffle-colors')"
