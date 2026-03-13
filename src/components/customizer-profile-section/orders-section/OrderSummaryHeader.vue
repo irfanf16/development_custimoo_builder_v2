@@ -24,7 +24,8 @@
         <Button
           v-if="order.items?.every(i => i.status === 'submitted_for_factory_review')"
           size="sm"
-          class="hover:bg-transparent hover:text-red-600 hover:border hover:border-red-600"
+          variant="outline"
+          class="bg-muted hover:bg-muted/80 hover:text-red-600 hover:border-red-600"
           @click.stop="handleCancelOrder"
         >
           {{ t.cancel }}
@@ -33,7 +34,8 @@
         <Button
           v-if="!order.additional_fields.is_manual_order"
           size="sm"
-          class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+          variant="outline"
+          class="bg-muted hover:bg-muted/80 hover:text-primary hover:border-primary"
           @click.stop="handleDownloadPdf"
         >
           {{ t.pdf }}
@@ -42,7 +44,8 @@
         <Button
           v-if="!showTimeline"
           size="sm"
-          class="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+          variant="outline"
+          class="bg-muted hover:bg-muted/80 hover:text-primary hover:border-primary"
           @click="emit('details', order)"
         >
           {{ t.orderDetails }}
@@ -50,8 +53,8 @@
         <Button
           v-if="showTimeline"
           size="sm"
-          variant="ghost"
-          class="text-xs border"
+          variant="outline"
+          class="bg-muted hover:bg-muted/80"
           @click.stop="openTimeline()"
         >
           {{ t.orderTimeline }}

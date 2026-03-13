@@ -2,7 +2,7 @@
   import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
   import { Button } from '@/components/ui/button'
-  import { computed, onMounted } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import Card from '@/components/ui/card/Card.vue'
   import CardContent from '@/components/ui/card/CardContent.vue'
@@ -20,9 +20,18 @@
   }>()
 
   const store = useProfileStore()
+  const settingDefaultId = ref<number | null>(null)
+
   onMounted(() => {
     store.fetchAddresses()
   })
+
+  async function handleSetDefault(address: Address) {
+    settingDefaultId.value = address.id
+    await store.setDefaultAddress(address)
+    settingDefaultId.value = null
+  }
+
   function openAddAddressModal() {
     store.editingAddress = null
     store.resetAddressForm() // we'll add this method in store
@@ -44,11 +53,14 @@
 <template>
   <div class="flex flex-col h-full px-4">
     <!-- Header -->
-    <div class="sticky top-0 z-10 pb-3 w-max">
+    <div class="sticky top-0 z-10 pt-4 pb-3 w-max">
       <div class="text-lg font-semibold">{{ t.addressBook }}</div>
     </div>
-    <!-- Spinner -->
-    <div v-if="store.isLoading" class="flex justify-center items-center flex-1">
+    <!-- Initial load spinner (no addresses yet) -->
+    <div
+      v-if="store.isLoadingAddresses && !store.addresses.length"
+      class="flex justify-center items-center flex-1"
+    >
       <Spinner class="text-primary size-6" />
     </div>
 
@@ -59,7 +71,7 @@
     >
       <!-- Icon -->
       <div class="flex items-center justify-center rounded-full p-6">
-        <component :is="flexFlatCategoryIcons.AddressIcon" class="w-12 h-12 text-primary" />
+        <component :is="flexFlatCategoryIcons.AddressIcon" class="size-20 text-primary" />
       </div>
 
       <!-- Message -->
@@ -115,14 +127,15 @@
 
                 <!-- Address Details -->
                 <div class="text-[14px] text-foreground leading-relaxed mb-4 space-y-0.5">
-                  <p v-if="address.address1">{{ address.address1 }}</p>
-                  <p v-if="address.address2">{{ address.address2 }}</p>
-                  <p>
-                    {{ address.zip_code }}&nbsp;
-                    {{ address.city }}
-                    <span v-if="address.state">, {{ address.state }}</span>
+                  <p v-if="address.address1 || address.address2">
+                    {{ [address.address1, address.address2].filter(v => v?.trim()).join(', ') }}
                   </p>
-                  <p v-if="address.country?.name">{{ address.country.name }}</p>
+                  <p v-if="address.zip_code || address.state">
+                    {{ [address.zip_code, address.state].filter(v => v?.trim()).join(', ') }}
+                  </p>
+                  <p v-if="address.city || address.country?.name">
+                    {{ [address.city, address.country?.name].filter(v => v?.trim()).join(', ') }}
+                  </p>
                 </div>
               </div>
 
@@ -139,16 +152,18 @@
 
                 <Button
                   v-if="!store.isDefault(address) && !props.showSelectButton"
-                  class="w-full text-xs bg-transparent h-8"
+                  class="w-full text-xs bg-muted hover:bg-muted/80 h-8 flex items-center gap-1.5"
                   variant="outline"
-                  @click="store.setDefaultAddress(address)"
+                  :disabled="settingDefaultId === address.id"
+                  @click="handleSetDefault(address)"
                 >
+                  <Spinner v-if="settingDefaultId === address.id" class="size-3 text-foreground" />
                   {{ t.setAsDefault }}
                 </Button>
 
                 <div v-if="!props.showSelectButton" class="flex gap-2">
                   <Button
-                    class="w-3/4 text-xs bg-transparent h-8"
+                    class="w-3/4 text-xs bg-muted hover:bg-muted/80 h-8"
                     variant="outline"
                     @click="
                       () => {
@@ -161,7 +176,7 @@
                   </Button>
 
                   <Button
-                    class="w-1/4 bg-transparent h-8"
+                    class="w-1/4 bg-muted hover:bg-muted/80 h-8"
                     size="icon"
                     variant="outline"
                     :disabled="store.isDefault(address)"
@@ -186,9 +201,9 @@
           >
             <CardContent class="flex flex-col items-center justify-center p-4">
               <!-- Increased icon size -->
-              <component :is="flexFlatCategoryIcons.AddressIcon" class="size-12 text-primary" />
+              <component :is="flexFlatCategoryIcons.AddressIcon" class="size-20 text-primary" />
               <Button
-                class="bg-transparent mt-4 h-8"
+                class="bg-muted hover:bg-muted/80 mt-4 h-8"
                 variant="outline"
                 @click.prevent="openAddAddressModal"
               >

@@ -1,9 +1,5 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
-  import Card from '@/components/ui/card/Card.vue'
-  import CardHeader from '@/components/ui/card/CardHeader.vue'
-  import CardTitle from '@/components/ui/card/CardTitle.vue'
-  import CardContent from '@/components/ui/card/CardContent.vue'
   import Input from '@/components/ui/input/Input.vue'
   import type { DashboardCounters } from '@/services/dashboard/types'
   import { useAuthStore } from '@/stores/auth/auth.store'
@@ -14,6 +10,7 @@
   import { computed, ref, onMounted } from 'vue'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useSignIn } from '@/composables/useSignIn'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
   defineProps<{ title?: string; counters: DashboardCounters }>()
 
   onMounted(() => {
@@ -29,8 +26,8 @@
   const uiStore = useUIStore()
   const defaultAddress = computed(() => profileStore.defaultAddress)
 
-  // Edit mode state for customer name
   const isEditingName = ref(false)
+  const isUpdatingName = ref(false)
   const firstName = ref('')
   const lastName = ref('')
 
@@ -55,30 +52,30 @@
   }))
 
   function handleSignOut() {
-    handleLogout({
-      clearAllStorage: true,
-      resetProfileStore: true
-    })
-    emit('sign-out') // let parent know to close dialog
+    handleLogout({ clearAllStorage: true, resetProfileStore: true })
+    emit('sign-out')
   }
 
   function handleEditDefaultAddress() {
     if (defaultAddress.value) {
       profileStore.editingAddress = defaultAddress.value
-      profileStore.showAddModal = true
+    } else {
+      profileStore.editingAddress = null
+      profileStore.resetAddressForm()
     }
+    profileStore.showAddModal = true
   }
 
   async function handleEditName() {
     if (isEditingName.value) {
-      // Update mode - save changes
+      isUpdatingName.value = true
       await profileStore.updateCustomerName({
         first_name: firstName.value,
         last_name: lastName.value
       })
+      isUpdatingName.value = false
       isEditingName.value = false
     } else {
-      // Edit mode - initialize form fields
       firstName.value = customer.value?.first_name || ''
       lastName.value = customer.value?.last_name || ''
       isEditingName.value = true
@@ -88,21 +85,23 @@
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    <div v-if="!uiStore.isMobile" class="sticky top-0 z-1 px-4 pb-3 max-w-max">
+    <div v-if="!uiStore.isMobile" class="sticky top-0 z-1 px-4 pt-4 pb-3 max-w-max">
       <div class="text-lg font-semibold">{{ title || t.account }}</div>
     </div>
     <ScrollArea class="flex-1 h-full overflow-y-auto">
-      <div class="flex-1 py-2 px-4 space-y-3">
-        <!-- Profile header with avatar and actions -->
-        <div class="flex items-center justify-between">
+      <div class="px-4 pb-4 space-y-3">
+        <!-- Profile header -->
+        <div class="flex items-center justify-between py-4">
           <div class="flex items-center gap-4">
+            <!-- Avatar -->
             <div
-              class="h-12 w-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold"
+              class="h-16 w-16 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-lg flex-shrink-0"
             >
               {{ customerInitials }}
             </div>
-            <div class="flex flex-col gap-2">
-              <div v-if="!isEditingName" class="font-medium">
+            <div class="flex flex-col gap-1">
+              <!-- Name: text-lg semibold -->
+              <div v-if="!isEditingName" class="text-lg font-semibold leading-none">
                 {{ (customer?.first_name || '') + ' ' + (customer?.last_name || '') }}
               </div>
               <div v-else class="flex gap-2">
@@ -127,95 +126,134 @@
                   class="w-32"
                 />
               </div>
-              <div class="text-sm text-muted-foreground">{{ customer?.email }}</div>
+              <!-- Email: text-sm medium muted -->
+              <div class="text-xs text-muted-foreground">{{ customer?.email }}</div>
             </div>
           </div>
+
+          <!-- Buttons: rounded-md, bg #F5F5F5, border -->
           <div class="flex items-center gap-2">
-            <Button size="sm" variant="outline" @click="handleEditName">
+            <Button
+              size="sm"
+              variant="outline"
+              class="rounded-md bg-muted hover:bg-muted/80 flex items-center gap-1.5"
+              :disabled="isUpdatingName"
+              @click="handleEditName"
+            >
+              <Spinner v-if="isUpdatingName" class="size-3" />
               {{ isEditingName ? t.update : t.edit }}
             </Button>
-            <Button size="sm" variant="destructive" @click="handleSignOut">{{ t.signOut }}</Button>
+            <Button
+              size="sm"
+              variant="outline"
+              class="rounded-md bg-muted hover:bg-muted/80"
+              @click="handleSignOut"
+            >
+              {{ t.signOut }}
+            </Button>
           </div>
         </div>
 
-        <!-- Counters -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
-            <div class="text-sm text-muted-foreground">{{ t.ordersCount }}</div>
-            <div class="text-2xl font-bold">{{ counters.orders_count }}</div>
-          </Card>
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
-            <div class="text-sm text-muted-foreground">{{ t.pendingApprovalCount }}</div>
-            <div class="text-2xl font-bold">{{ counters.pending_approval_count }}</div>
-          </Card>
-          <Card class="flex flex-col gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-4 transition-colors">
-            <div class="text-sm text-muted-foreground">{{ t.trackMyOrdersCount }}</div>
-            <div class="text-2xl font-bold">{{ counters.track_my_orders_count }}</div>
-          </Card>
+        <!-- Counter cards: p-6, gap-6 inside, text-3xl semibold count, rounded-xl -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="flex flex-col gap-1 p-6 rounded-xl border border-border bg-card shadow-sm">
+            <div class="text-sm font-normal text-muted-foreground">{{ t.ordersCount }}</div>
+            <div class="text-2xl font-bold text-card-foreground">{{ counters.orders_count }}</div>
+          </div>
+          <div class="flex flex-col gap-1 p-6 rounded-xl border border-border bg-card shadow-sm">
+            <div class="text-sm font-normal text-muted-foreground">
+              {{ t.pendingApprovalCount }}
+            </div>
+            <div class="text-2xl font-bold text-card-foreground">
+              {{ counters.pending_approval_count }}
+            </div>
+          </div>
+          <div class="flex flex-col gap-1 p-6 rounded-xl border border-border bg-card shadow-sm">
+            <div class="text-sm font-normal text-muted-foreground">{{ t.trackMyOrdersCount }}</div>
+            <div class="text-2xl font-bold text-card-foreground">
+              {{ counters.track_my_orders_count }}
+            </div>
+          </div>
         </div>
 
-        <!-- Name card with edit on right -->
-        <Card
-          class="flex flex-row items-center justify-between gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 transition-colors"
+        <!-- Name card: rounded-sm, p-4, bg primary-foreground, gap-3 row, gap-0.5 title/value -->
+        <div
+          class="flex flex-row items-center justify-between rounded-sm border border-border bg-primary-foreground p-4 gap-3"
         >
-          <!-- Left side: Name and customer name -->
-          <div class="flex flex-col">
-            <CardTitle class="text-[12px] text-muted-foreground font-normal">{{
-              t.name
-            }}</CardTitle>
-            <div class="text-sm">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-sm font-normal text-muted-foreground">{{ t.name }}</span>
+            <span class="text-sm font-medium text-card-foreground">
               {{
                 (defaultAddress?.first_name || 'John') + ' ' + (defaultAddress?.last_name || 'Doe')
               }}
-            </div>
+            </span>
           </div>
-
-          <!-- Right side: Edit button -->
-          <Button size="sm" variant="outline" class="self-center" @click="handleEditDefaultAddress"
-            ><i-flex-line-edit /> {{ t.edit }}</Button
+          <Button
+            size="sm"
+            variant="outline"
+            class="rounded-md bg-muted hover:bg-muted/80 flex-shrink-0"
+            @click="handleEditDefaultAddress"
           >
-        </Card>
-        <!-- Address card (hardcoded for now) -->
-        <Card class="flex flex-col gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 transition-colors">
-          <CardHeader class="px-0 md:px-0 py-0 md:py-0 gap-0">
-            <CardTitle class="text-[12px] text-muted-foreground font-normal">{{
-              t.address
-            }}</CardTitle>
-          </CardHeader>
-          <CardContent class="px-0 md:px-0 py-0 md:py-0">
-            <div class="text-sm">
-              {{ defaultAddress?.address1 ?? 'Danneskiold-Samsøes Allé 41' }}
-            </div>
-            <div class="text-sm text-muted-foreground">
-              {{ defaultAddress?.zip_code }}, {{ defaultAddress?.city
-              }}{{ defaultAddress?.state ? ', ' + defaultAddress.state : '' }}
-            </div>
-          </CardContent>
-        </Card>
+            <i-flex-line-edit class="size-3.5" />
+            {{ t.edit }}
+          </Button>
+        </div>
 
-        <!-- Home number card (hardcoded) -->
-        <Card class="flex flex-col gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 transition-colors">
-          <CardHeader class="px-0 md:px-0 py-0 md:py-0 gap-0">
-            <CardTitle class="text-[12px] text-muted-foreground font-normal">{{
-              t.homeNumber
-            }}</CardTitle>
-          </CardHeader>
-          <CardContent class="px-0 md:px-0 py-0 md:py-0">
-            <div class="text-sm">{{ defaultAddress?.phone_number ?? '+45 40 14 11 40' }}</div>
-          </CardContent>
-        </Card>
+        <!-- Address card: rounded-sm, p-4, bg primary-foreground, no edit button -->
+        <div
+          class="flex flex-col rounded-sm border border-border bg-primary-foreground p-4 gap-0.5"
+        >
+          <span class="text-sm font-normal text-muted-foreground">{{ t.address }}</span>
+          <!-- Line 1: street, floor/apt -->
+          <span
+            v-if="defaultAddress?.address1 || defaultAddress?.address2"
+            class="text-sm font-medium text-card-foreground"
+          >
+            {{
+              [defaultAddress?.address1, defaultAddress?.address2].filter(v => v?.trim()).join(', ')
+            }}
+          </span>
+          <!-- Line 2: postal code, region/state -->
+          <span
+            v-if="defaultAddress?.zip_code || defaultAddress?.state"
+            class="text-sm font-medium text-card-foreground"
+          >
+            {{
+              [defaultAddress?.zip_code, defaultAddress?.state].filter(v => v?.trim()).join(', ')
+            }}
+          </span>
+          <!-- Line 3: city, country -->
+          <span
+            v-if="defaultAddress?.city || defaultAddress?.country?.name"
+            class="text-sm font-medium text-card-foreground"
+          >
+            {{
+              [defaultAddress?.city, defaultAddress?.country?.name]
+                .filter(v => v?.trim())
+                .join(', ')
+            }}
+          </span>
+        </div>
 
-        <!-- Email card from customer -->
-        <Card class="flex flex-col gap-0 md:gap-0 px-2 md:px-4 py-2 md:py-4 transition-colors">
-          <CardHeader class="px-0 md:px-0 py-0 md:py-0 gap-0">
-            <CardTitle class="text-[12px] text-muted-foreground font-normal">{{
-              t.email
-            }}</CardTitle>
-          </CardHeader>
-          <CardContent class="px-0 md:px-0 py-0 md:py-0">
-            <div class="text-sm">{{ customer?.email || 'user@example.com' }}</div>
-          </CardContent>
-        </Card>
+        <!-- Phone number card -->
+        <div
+          class="flex flex-col rounded-sm border border-border bg-primary-foreground p-4 gap-0.5"
+        >
+          <span class="text-sm font-normal text-muted-foreground">{{ t.homeNumber }}</span>
+          <span class="text-sm font-medium text-card-foreground">
+            {{ defaultAddress?.phone_number ?? '+45 40 14 11 40' }}
+          </span>
+        </div>
+
+        <!-- Email card -->
+        <div
+          class="flex flex-col rounded-sm border border-border bg-primary-foreground p-4 gap-0.5"
+        >
+          <span class="text-sm font-normal text-muted-foreground">{{ t.email }}</span>
+          <span class="text-sm font-medium text-card-foreground">
+            {{ customer?.email || 'user@example.com' }}
+          </span>
+        </div>
       </div>
     </ScrollArea>
   </div>

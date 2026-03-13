@@ -19,7 +19,6 @@
   import { useUIStore } from '@/stores/ui/ui.store'
   import type { Address, AddressPayload } from '@/services/customers/types'
   import { m as messages } from '@/paraglide/messages'
-  import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
 
   const props = defineProps<{ address?: Address | null }>()
@@ -31,7 +30,7 @@
   const profileStore = useProfileStore()
   const uiStore = useUIStore()
   const isMobile = uiStore.isMobile
-  const isSavingAddress = computed(() => profileStore.isLoadingAddresses)
+  const isSavingAddress = computed(() => profileStore.isSavingAddress)
 
   const requiredMessage = (label: string) => `${label} is required`
   const emailMessage = (label: string) => `${label} must be a valid email address`
@@ -215,8 +214,8 @@
 </script>
 
 <template>
-  <div class="space-y-6 flex flex-col h-full overflow-hidden">
-    <Tabs v-model="profileStore.addressTabs" class="w-full">
+  <div :class="['flex flex-col gap-4', isMobile && 'flex-1 min-h-0']">
+    <Tabs v-model="profileStore.addressTabs" class="w-full flex-shrink-0">
       <TabsList class="flex w-full border-b border-border bg-muted rounded-lg overflow-hidden">
         <TabsTrigger
           value="personal"
@@ -235,53 +234,57 @@
       </TabsList>
     </Tabs>
 
-    <component :is="isMobile ? 'div' : ScrollArea" class="flex-1 h-full overflow-y-auto">
-      <form class="space-y-4 h-full" @submit.prevent="onSubmit">
-        <div class="grid gap-4 md:grid-cols-2">
-          <FormField v-slot="{ field }" name="first_name" v-bind="fieldValidationTriggers">
-            <FormItem>
-              <FormLabel>
-                {{ t.firstName }}
-                <span v-if="isPersonal" class="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  id="first_name"
-                  type="text"
-                  :disabled="isSavingAddress"
-                  autocomplete="given-name"
-                  :model-value="field.value"
-                  @update:model-value="field.onChange"
-                  @blur="field.onBlur"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
+    <form :class="['flex flex-col', isMobile && 'flex-1 min-h-0']" @submit.prevent="onSubmit">
+      <div :class="['overflow-y-auto', isMobile ? 'flex-1 min-h-0' : 'max-h-[55vh]']">
+        <div class="space-y-3 pr-1 pb-3">
+          <!-- Row 1: First name + Last name -->
+          <div class="grid gap-3 grid-cols-2">
+            <FormField v-slot="{ field }" name="first_name" v-bind="fieldValidationTriggers">
+              <FormItem>
+                <FormLabel>
+                  {{ t.firstName }}
+                  <span v-if="isPersonal" class="text-destructive">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    id="first_name"
+                    type="text"
+                    :disabled="isSavingAddress"
+                    autocomplete="given-name"
+                    class="bg-muted"
+                    :model-value="field.value"
+                    @update:model-value="field.onChange"
+                    @blur="field.onBlur"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
 
-          <FormField v-slot="{ field }" name="last_name" v-bind="fieldValidationTriggers">
-            <FormItem>
-              <FormLabel>
-                {{ t.lastName }}
-                <span v-if="isPersonal" class="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  id="last_name"
-                  type="text"
-                  :disabled="isSavingAddress"
-                  autocomplete="family-name"
-                  :model-value="field.value"
-                  @update:model-value="field.onChange"
-                  @blur="field.onBlur"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-        </div>
+            <FormField v-slot="{ field }" name="last_name" v-bind="fieldValidationTriggers">
+              <FormItem>
+                <FormLabel>
+                  {{ t.lastName }}
+                  <span v-if="isPersonal" class="text-destructive">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    id="last_name"
+                    type="text"
+                    :disabled="isSavingAddress"
+                    autocomplete="family-name"
+                    class="bg-muted"
+                    :model-value="field.value"
+                    @update:model-value="field.onChange"
+                    @blur="field.onBlur"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+          </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
+          <!-- Row 2: Email (full width) -->
           <FormField v-slot="{ field }" name="email" v-bind="fieldValidationTriggers">
             <FormItem>
               <FormLabel>{{ t.email }}</FormLabel>
@@ -291,6 +294,7 @@
                   type="email"
                   :disabled="isSavingAddress"
                   autocomplete="email"
+                  class="bg-muted"
                   :model-value="field.value"
                   placeholder="name@example.com"
                   @update:model-value="field.onChange"
@@ -301,6 +305,7 @@
             </FormItem>
           </FormField>
 
+          <!-- Row 3: Phone number (full width) -->
           <FormField v-slot="{ field }" name="phone_number" v-bind="fieldValidationTriggers">
             <FormItem>
               <FormLabel>
@@ -313,6 +318,7 @@
                   type="tel"
                   :disabled="isSavingAddress"
                   autocomplete="tel"
+                  class="bg-muted"
                   :model-value="field.value"
                   @update:model-value="field.onChange"
                   @blur="field.onBlur"
@@ -321,13 +327,135 @@
               <FormMessage />
             </FormItem>
           </FormField>
-        </div>
 
-        <TransitionGroup name="fade" tag="div">
+          <!-- Row 4: Address line 1 (full width) -->
+          <FormField v-slot="{ field }" name="address1" v-bind="fieldValidationTriggers">
+            <FormItem>
+              <FormLabel>
+                {{ t.addressLine1 }}
+                <span class="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  id="address1"
+                  type="text"
+                  :disabled="isSavingAddress"
+                  autocomplete="address-line1"
+                  class="bg-muted"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <!-- Row 5: Address line 2 (full width) -->
+          <FormField v-slot="{ field }" name="address2" v-bind="fieldValidationTriggers">
+            <FormItem>
+              <FormLabel>{{ t.addressLine2 }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="address2"
+                  type="text"
+                  :disabled="isSavingAddress"
+                  autocomplete="address-line2"
+                  class="bg-muted"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <!-- Row 6: City + Zip code -->
+          <div class="grid gap-3 grid-cols-3">
+            <div class="col-span-2">
+              <FormField v-slot="{ field }" name="city" v-bind="fieldValidationTriggers">
+                <FormItem>
+                  <FormLabel>
+                    {{ t.city }}
+                    <span class="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      id="city"
+                      type="text"
+                      :disabled="isSavingAddress"
+                      autocomplete="address-level2"
+                      class="bg-muted"
+                      :model-value="field.value"
+                      @update:model-value="field.onChange"
+                      @blur="field.onBlur"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+            </div>
+
+            <FormField v-slot="{ field }" name="zip_code" v-bind="fieldValidationTriggers">
+              <FormItem>
+                <FormLabel>
+                  {{ t.zipCode }}
+                  <span class="text-destructive">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    id="zip_code"
+                    type="text"
+                    inputmode="numeric"
+                    :disabled="isSavingAddress"
+                    autocomplete="postal-code"
+                    class="bg-muted"
+                    :model-value="field.value"
+                    @update:model-value="field.onChange"
+                    @blur="field.onBlur"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+          </div>
+
+          <!-- Row 7: Country (full width) -->
+          <FormField v-slot="{ field }" name="country" v-bind="fieldValidationTriggers">
+            <FormItem>
+              <FormLabel>
+                {{ t.country }}
+                <span class="text-destructive">*</span>
+              </FormLabel>
+              <Select
+                :model-value="field.value"
+                :disabled="isSavingAddress"
+                @update:model-value="field.onChange"
+              >
+                <FormControl>
+                  <SelectTrigger class="w-full bg-muted" @blur="field.onBlur">
+                    <SelectValue :placeholder="t.selectCountry" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent class="max-h-60">
+                  <SelectItem
+                    v-for="country in profileStore.countries"
+                    :key="country.id"
+                    :value="String(country.id)"
+                  >
+                    {{ country.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <!-- Row 8: Company name (full width, business only) -->
           <FormField
             v-if="isBusiness"
             v-slot="{ field }"
-            key="company"
             name="company_name"
             v-bind="fieldValidationTriggers"
           >
@@ -342,6 +470,7 @@
                   type="text"
                   :disabled="isSavingAddress"
                   autocomplete="organization"
+                  class="bg-muted"
                   :model-value="field.value"
                   @update:model-value="field.onChange"
                   @blur="field.onBlur"
@@ -350,60 +479,18 @@
               <FormMessage />
             </FormItem>
           </FormField>
-        </TransitionGroup>
 
-        <FormField v-slot="{ field }" name="address1" v-bind="fieldValidationTriggers">
-          <FormItem>
-            <FormLabel>
-              {{ t.addressLine1 }}
-              <span class="text-destructive">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input
-                id="address1"
-                type="text"
-                :disabled="isSavingAddress"
-                autocomplete="address-line1"
-                :model-value="field.value"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-
-        <FormField v-slot="{ field }" name="address2" v-bind="fieldValidationTriggers">
-          <FormItem>
-            <FormLabel>{{ t.addressLine2 }}</FormLabel>
-            <FormControl>
-              <Input
-                id="address2"
-                type="text"
-                :disabled="isSavingAddress"
-                autocomplete="address-line2"
-                :model-value="field.value"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <FormField v-slot="{ field }" name="city" v-bind="fieldValidationTriggers">
+          <!-- Row 9: State/Province (full width) -->
+          <FormField v-slot="{ field }" name="state" v-bind="fieldValidationTriggers">
             <FormItem>
-              <FormLabel>
-                {{ t.city }}
-                <span class="text-destructive">*</span>
-              </FormLabel>
+              <FormLabel>{{ t.state }}</FormLabel>
               <FormControl>
                 <Input
-                  id="city"
+                  id="state"
                   type="text"
                   :disabled="isSavingAddress"
-                  autocomplete="address-level2"
+                  autocomplete="address-level1"
+                  class="bg-muted"
                   :model-value="field.value"
                   @update:model-value="field.onChange"
                   @blur="field.onBlur"
@@ -412,120 +499,73 @@
               <FormMessage />
             </FormItem>
           </FormField>
-          <FormField v-slot="{ field }" name="zip_code" v-bind="fieldValidationTriggers">
-            <FormItem>
-              <FormLabel>
-                {{ t.zipCode }}
-                <span class="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  id="zip_code"
-                  type="text"
-                  inputmode="numeric"
-                  :disabled="isSavingAddress"
-                  autocomplete="postal-code"
-                  :model-value="field.value"
-                  @update:model-value="field.onChange"
-                  @blur="field.onBlur"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-        </div>
-        <FormField v-slot="{ field }" name="country" v-bind="fieldValidationTriggers">
-          <FormItem>
-            <FormLabel>
-              {{ t.country }}
-              <span class="text-destructive">*</span>
-            </FormLabel>
-            <Select
-              :model-value="field.value"
-              :disabled="isSavingAddress"
-              @update:model-value="field.onChange"
+
+          <!-- Row 10: Default address checkbox -->
+          <FormField v-slot="{ field }" name="default" v-bind="fieldValidationTriggers">
+            <FormItem
+              v-if="!props.address || !props.address.default"
+              class="flex flex-row items-start gap-3 space-y-0"
             >
               <FormControl>
-                <SelectTrigger class="w-full" @blur="field.onBlur">
-                  <SelectValue :placeholder="t.selectCountry" />
-                </SelectTrigger>
+                <Checkbox
+                  :model-value="Boolean(field.value)"
+                  :disabled="isSavingAddress"
+                  @update:model-value="
+                    (v: unknown) => {
+                      const checked = Boolean(v)
+                      field.onChange(checked)
+                      profileStore.addressForm.default = checked
+                    }
+                  "
+                  @blur="field.onBlur"
+                />
               </FormControl>
-              <SelectContent class="max-h-60">
-                <SelectItem
-                  v-for="country in profileStore.countries"
-                  :key="country.id"
-                  :value="String(country.id)"
-                >
-                  {{ country.name }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField v-slot="{ field }" name="state" v-bind="fieldValidationTriggers">
-          <FormItem>
-            <FormLabel>{{ t.state }}</FormLabel>
-            <FormControl>
-              <Input
-                id="state"
-                type="text"
-                :disabled="isSavingAddress"
-                autocomplete="address-level1"
-                :model-value="field.value"
-                @update:model-value="field.onChange"
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <!-- Always mount FormField so "default" is in form values on submit; only show checkbox when not already default -->
-        <FormField v-slot="{ field }" name="default" v-bind="fieldValidationTriggers">
-          <FormItem
-            v-if="!props.address || !props.address.default"
-            class="flex flex-row items-center gap-3 space-y-0"
-          >
-            <FormControl>
-              <Checkbox
-                id="checkbox-default"
-                :model-value="Boolean(field.value)"
-                :disabled="isSavingAddress"
-                @update:model-value="
-                  (v: unknown) => {
-                    const checked = Boolean(v)
-                    field.onChange(checked)
-                    profileStore.addressForm.default = checked
+              <div
+                class="flex flex-col gap-0.5 cursor-pointer select-none"
+                @click="
+                  () => {
+                    if (!isSavingAddress) {
+                      const newVal = !Boolean(field.value)
+                      field.onChange(newVal)
+                      profileStore.addressForm.default = newVal
+                    }
                   }
                 "
-                @blur="field.onBlur"
-              />
-            </FormControl>
-            <FormLabel for="checkbox-default" class="cursor-pointer">
-              {{ t.setAsDefaultAddress }}
-            </FormLabel>
-            <FormMessage />
-          </FormItem>
-          <!-- When editing default address, keep field mounted (value already true from setValues) -->
-          <FormItem v-else class="hidden space-y-0">
-            <FormControl />
-          </FormItem>
-        </FormField>
-
-        <div class="flex gap-2 justify-end">
-          <Button type="button" variant="outline" :disabled="isSavingAddress" @click="handleCancel">
-            {{ t.cancel }}
-          </Button>
-          <Button
-            type="submit"
-            class="bg-primary text-white hover:text-white flex items-center gap-2"
-            :disabled="isSavingAddress"
-          >
-            <Spinner v-if="isSavingAddress" class="text-white size-4" />
-            <span>{{ isSavingAddress ? t.saving : t.save }}</span>
-          </Button>
+              >
+                <FormLabel class="cursor-pointer font-medium leading-none pointer-events-none">
+                  {{ t.setAsDefaultAddress }}
+                </FormLabel>
+                <p class="text-xs text-muted-foreground">Use this as your default address</p>
+              </div>
+              <FormMessage />
+            </FormItem>
+            <!-- When editing default address, keep field mounted (value already true from setValues) -->
+            <FormItem v-else class="hidden space-y-0">
+              <FormControl />
+            </FormItem>
+          </FormField>
         </div>
-      </form>
-    </component>
+      </div>
+
+      <div class="flex gap-2 justify-end pt-3 flex-shrink-0 border-t border-border">
+        <Button
+          type="button"
+          variant="outline"
+          class="bg-muted hover:bg-muted/80 rounded-md"
+          :disabled="isSavingAddress"
+          @click="handleCancel"
+        >
+          {{ t.cancel }}
+        </Button>
+        <Button
+          type="submit"
+          class="bg-primary text-white hover:text-white flex items-center gap-2"
+          :disabled="isSavingAddress"
+        >
+          <Spinner v-if="isSavingAddress" class="text-white size-4" />
+          <span>{{ isSavingAddress ? t.saving : t.save }}</span>
+        </Button>
+      </div>
+    </form>
   </div>
 </template>

@@ -160,7 +160,7 @@
 <template>
   <div class="flex flex-col h-full">
     <!-- Header -->
-    <div class="sticky top-0 z-10 pb-3 w-max px-4 pt-1">
+    <div class="sticky top-0 z-10 pb-3 w-max px-4 pt-4">
       <WorkflowBreadcrumbs :breadcrumbs="breadcrumbs" />
     </div>
     <!-- Filter -->
@@ -172,7 +172,7 @@
         <Input
           v-model="store.ordersParams.search"
           :placeholder="t.searchOrders"
-          class="h-8 w-full pl-8 pr-8"
+          class="h-8 w-full pl-8 pr-8 bg-muted"
           data-orders-search-input="true"
           @focus="onSearchFocus"
           @blur="onSearchBlur"
@@ -192,7 +192,7 @@
             <Button
               size="sm"
               variant="outline"
-              class="px-2 h-8 shadow-none"
+              class="px-2 h-8 shadow-none bg-muted hover:bg-muted/80"
               :class="
                 store.ordersParams.filter ? 'bg-primary text-foreground border-primary' : 'border'
               "
@@ -268,7 +268,7 @@
             :class="[
               store.ordersView === 'list'
                 ? 'bg-primary text-primary-foreground rounded-l-[8px]'
-                : 'bg-transparent text-foreground'
+                : 'bg-muted text-foreground'
             ]"
             @click="store.setView('list')"
           >
@@ -283,7 +283,7 @@
             :class="[
               store.ordersView === 'expanded-list'
                 ? 'bg-primary text-primary-foreground rounded-r-[8px]'
-                : 'bg-transparent text-foreground'
+                : 'bg-muted text-foreground'
             ]"
             @click="store.setView('expanded-list')"
           >

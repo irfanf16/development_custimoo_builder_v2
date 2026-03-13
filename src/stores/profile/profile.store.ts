@@ -24,6 +24,7 @@ export const useProfileStore = defineStore('profileStore', () => {
   // ===== Addresses =====
   const addresses = ref<Address[]>([])
   const isLoadingAddresses = ref(false)
+  const isSavingAddress = ref(false)
   const showAddModal = ref(false)
   const editingAddress = ref<Address | null>(null)
   const showDeleteConfirm = ref(false)
@@ -242,17 +243,18 @@ export const useProfileStore = defineStore('profileStore', () => {
   }
 
   async function setDefaultAddress(address: Address) {
-    isLoadingAddresses.value = true
     try {
       const payload: Partial<AddressPayload> = {
         ...address,
         country: Number(address.country.id),
-        default: !!address.default
+        default: true
       }
       const res = await API.customer.setDefaultAddress(address.id, payload)
-      if (res.success) await fetchAddresses()
-    } finally {
-      isLoadingAddresses.value = false
+      if (res.success) {
+        addresses.value = addresses.value.map(a => ({ ...a, default: a.id === address.id }))
+      }
+    } catch (e) {
+      console.error('Failed to set default address:', e)
     }
   }
 
@@ -261,35 +263,80 @@ export const useProfileStore = defineStore('profileStore', () => {
   )
 
   async function saveAddress(payload: AddressPayload) {
-    isLoadingAddresses.value = true
+    isSavingAddress.value = true
     try {
+      const isEditing = !!editingAddress.value
+      const editingId = editingAddress.value?.id
+      const countryObj = countries.value.find(c => c.id === Number(payload.country))
+      const countryResolved = countryObj
+        ? { id: countryObj.id, name: countryObj.name }
+        : { id: Number(payload.country), name: '' }
+
       let res
-      if (editingAddress.value)
-        res = await API.customer.updateAddress(editingAddress.value.id, payload)
+      if (isEditing && editingId) res = await API.customer.updateAddress(editingId, payload)
       else res = await API.customer.createAddress(payload)
 
       if (res.success) {
+        // If marked as default, call the dedicated endpoint and await it
+        if (payload.default) {
+          const savedId = res.result?.[0]?.id ?? editingId
+          if (savedId) {
+            await API.customer.setDefaultAddress(savedId, {
+              ...payload,
+              country: Number(payload.country)
+            })
+          }
+        }
+
+        // Update local list directly — no refetch needed
+        const isDefault = Boolean(payload.default)
+        if (isEditing && editingId) {
+          addresses.value = addresses.value.map(a => {
+            if (a.id === editingId) {
+              return normalizeAddressDefault({
+                ...a,
+                ...payload,
+                id: Number(payload.id ?? a.id),
+                country: countryResolved,
+                default: isDefault
+              })
+            }
+            return isDefault ? { ...a, default: false } : a
+          })
+        } else {
+          const newAddress = normalizeAddressDefault({
+            ...(res.result?.[0] ?? {}),
+            ...payload,
+            id: Number(res.result?.[0]?.id ?? Date.now()),
+            country: countryResolved,
+            default: isDefault
+          })
+          if (isDefault) {
+            addresses.value = addresses.value.map(a => ({ ...a, default: false }))
+          }
+          addresses.value = [...addresses.value, newAddress]
+        }
+
         showAddModal.value = false
         editingAddress.value = null
-        await fetchAddresses()
       }
     } finally {
-      isLoadingAddresses.value = false
+      isSavingAddress.value = false
     }
   }
 
   async function deleteAddress() {
     if (!addressToDelete.value) return
-    isLoadingAddresses.value = true
+    const deletedId = addressToDelete.value.id
+    showDeleteConfirm.value = false
+    addressToDelete.value = null
     try {
-      const res = await API.customer.deleteAddress(addressToDelete.value.id)
+      const res = await API.customer.deleteAddress(deletedId)
       if (res.success) {
-        showDeleteConfirm.value = false
-        addressToDelete.value = null
-        await fetchAddresses()
+        addresses.value = addresses.value.filter(a => a.id !== deletedId)
       }
-    } finally {
-      isLoadingAddresses.value = false
+    } catch (e) {
+      console.error('Failed to delete address:', e)
     }
   }
 
@@ -333,8 +380,10 @@ export const useProfileStore = defineStore('profileStore', () => {
   function setAddressFromEdit(address: Address | null) {
     if (!address) {
       resetAddressForm()
+      addressTabs.value = 'personal'
       return
     }
+    addressTabs.value = address.company_name ? 'business' : 'personal'
     addressForm.value = {
       id: address.id,
       first_name: address.first_name,
@@ -443,6 +492,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     addresses,
     activeTab,
     isLoadingAddresses,
+    isSavingAddress,
     showAddModal,
     editingAddress,
     showDeleteConfirm,

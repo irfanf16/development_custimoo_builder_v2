@@ -55,7 +55,7 @@
 
 <template>
   <div class="flex flex-col h-full px-4">
-    <div class="sticky top-0 z-10 pb-3">
+    <div class="sticky top-0 z-10 pt-4 pb-3">
       <div class="text-lg font-semibold">{{ t.preferences }}</div>
     </div>
 
@@ -79,7 +79,7 @@
             value => profileStore.setPreferences({ display: value as DisplayMode })
           "
         >
-          <SelectTrigger class="w-[10rem]">
+          <SelectTrigger class="w-[10rem] bg-muted">
             <SelectValue :placeholder="t.selectDisplayMode" />
           </SelectTrigger>
           <SelectContent class="max-h-60">
@@ -98,7 +98,7 @@
             value => profileStore.setPreferences({ language: value as ParaglideLocale })
           "
         >
-          <SelectTrigger class="w-[10rem]">
+          <SelectTrigger class="w-[10rem] bg-muted">
             <SelectValue :placeholder="t.selectLanguage" />
           </SelectTrigger>
           <SelectContent class="max-h-60">

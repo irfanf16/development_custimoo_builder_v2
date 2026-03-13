@@ -171,58 +171,46 @@
 
       <!-- Desktop Layout -->
       <template v-if="!uiStore.isMobile">
-        <div class="flex flex-1 min-h-0 flex-row">
-          <Tabs
-            v-model="tab"
-            orientation="vertical"
-            class="flex flex-col w-[256px] border-r border-border bg-muted/40"
+        <Tabs v-model="tab" orientation="vertical" class="flex flex-row flex-1 min-h-0">
+          <TabsList
+            class="flex flex-col gap-2 px-2 py-2 bg-muted/40 border-r border-border h-full rounded-none w-[256px] items-stretch justify-start"
           >
-            <div class="flex flex-col h-full py-2">
-              <TabsList
-                class="flex flex-col gap-2 px-2 py-0 bg-transparent rounded-none border-0 items-stretch"
+            <template v-for="item in tabItems" :key="item.value">
+              <TabsTrigger
+                :value="item.value"
+                class="flex py-4 items-center justify-start gap-3 w-full rounded-[6px] transition-colors text-left"
+                :class="tab === item.value ? '!bg-primary/30' : 'bg-transparent text-foreground'"
               >
-                <template v-for="item in tabItems" :key="item.value">
-                  <TabsTrigger
-                    :value="item.value"
-                    class="flex py-4 items-center justify-start gap-3 w-full rounded-[6px] transition-colors text-left"
-                    :class="
-                      tab === item.value ? '!bg-primary/30' : 'bg-transparent text-foreground'
-                    "
-                  >
-                    <component :is="item.icon" class="size-6 text-primary" />
-                    {{ item.label }}
-                  </TabsTrigger>
-                </template>
-              </TabsList>
-            </div>
-          </Tabs>
+                <component :is="item.icon" class="size-6 text-primary" />
+                {{ item.label }}
+              </TabsTrigger>
+            </template>
+          </TabsList>
 
           <!-- Desktop Content -->
-          <div class="flex-1 relative py-2 min-h-0 overflow-hidden">
-            <Tabs v-model="tab" orientation="vertical" class="h-full min-h-0 overflow-hidden">
-              <TabsContent value="account" class="mt-0 h-full min-h-0">
-                <AccountTab
-                  title="Account"
-                  :counters="counters"
-                  @save="() => {}"
-                  @sign-out="handleSignOut"
-                />
-              </TabsContent>
-              <TabsContent value="orders" class="mt-0 h-full min-h-0">
-                <OrdersTab title="Orders" @reorder-success="emit('update:open', false)" />
-              </TabsContent>
-              <TabsContent value="address" class="mt-0 h-full min-h-0">
-                <AddressTab
-                  :show-select-button="showSelectAddressButton"
-                  @select-address="handleAddressSelect"
-                />
-              </TabsContent>
-              <TabsContent value="preferences" class="mt-0 h-full min-h-0 px-4">
-                <PreferencesTab />
-              </TabsContent>
-            </Tabs>
+          <div class="flex-1 relative pb-2 min-h-0 overflow-hidden">
+            <TabsContent value="account" class="mt-0 h-full min-h-0">
+              <AccountTab
+                title="Account"
+                :counters="counters"
+                @save="() => {}"
+                @sign-out="handleSignOut"
+              />
+            </TabsContent>
+            <TabsContent value="orders" class="mt-0 h-full min-h-0">
+              <OrdersTab title="Orders" @reorder-success="emit('update:open', false)" />
+            </TabsContent>
+            <TabsContent value="address" class="mt-0 h-full min-h-0">
+              <AddressTab
+                :show-select-button="showSelectAddressButton"
+                @select-address="handleAddressSelect"
+              />
+            </TabsContent>
+            <TabsContent value="preferences" class="mt-0 h-full min-h-0 px-4">
+              <PreferencesTab />
+            </TabsContent>
           </div>
-        </div>
+        </Tabs>
       </template>
 
       <!-- Mobile Layout -->
@@ -311,19 +299,18 @@
       <!-- Add/Edit Address Modal (shared so it works from Account tab without switching) -->
       <DialogRoot v-model:open="profileStore.showAddModal">
         <DialogContentInner
-          class="max-w-2xl"
+          class="max-w-3xl sm:max-w-3xl overflow-hidden"
           :class="{
             'fixed w-full max-w-full max-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] bottom-0 left-0 right-0 inset-x-0 -translate-x-0 translate-y-0 transform-none rounded-t-2xl rounded-b-none p-4 overflow-hidden flex flex-col grid-cols-none top-auto':
               uiStore.isMobile
           }"
         >
-          <DialogHeader>
+          <DialogHeader class="flex-shrink-0 pb-4 border-b border-border">
             <DialogTitle>{{
               profileStore.editingAddress ? addressModalT.editAddress : addressModalT.addNewAddress
             }}</DialogTitle>
           </DialogHeader>
           <AddressForm
-            v-if="profileStore.showAddModal"
             :address="profileStore.editingAddress"
             @save="profileStore.saveAddress"
             @cancel="profileStore.showAddModal = false"
