@@ -474,6 +474,7 @@
   "msg_no_cart_product_selected": "Intet kurvprodukt valgt",
   "msg_add_roster_before_cart": "Tilføj mindst én vare til holdlisten før du tilføjer til kurv.",
   "msg_add_roster_entries_quantities": "Tilføj holdlisteposter med antal før du tilføjer til kurv",
+  "msg_missing_roster_sizes": "Vælg venligst en størrelse for alle spillere på holdet.",
   "msg_fill_required_fields": "Udfyld alle obligatoriske felter",
   "msg_select_address": "Vælg en adresse",
   "msg_update_quantity_zero": "Nogle varer har antal 0. Opdater før betaling.",

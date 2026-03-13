@@ -474,6 +474,7 @@
   "msg_no_cart_product_selected": "Ningún producto del carrito seleccionado",
   "msg_add_roster_before_cart": "Añade al menos un elemento a la plantilla antes de añadir al carrito.",
   "msg_add_roster_entries_quantities": "Añade entradas con cantidades antes de añadir al carrito",
+  "msg_missing_roster_sizes": "Por favor, seleccione talla para todas las jugadoras del equipo.",
   "msg_fill_required_fields": "Completa todos los campos obligatorios",
   "msg_select_address": "Selecciona una dirección",
   "msg_update_quantity_zero": "Algunos artículos tienen cantidad 0. Actualiza antes de pagar.",

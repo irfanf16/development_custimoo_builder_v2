@@ -14,6 +14,7 @@
     msg_no_cart_product_selected,
     msg_add_roster_before_cart,
     msg_add_roster_entries_quantities,
+    msg_missing_roster_sizes,
     msg_cart_updated,
     msg_failed_to_update_cart,
     msg_failed_to_add_to_cart
@@ -45,7 +46,7 @@
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
   const { openSignInDialog } = useSignIn()
   const { setPending } = usePendingPostLoginAction()
-  const { rosterEntries, ensureEditableRoster } = useRoster()
+  const { rosterEntries, ensureEditableRoster, setRosterPreviewIndex } = useRoster()
   const { menuItems, goTo } = useCustomizerMenu()
   const { shouldShowAddToCartButton } = useAddToCartVisibility()
 
@@ -87,6 +88,25 @@
             richColors: true
           }
         )
+        return
+      }
+
+      const missingSizeIndex = rosterEntries.value.findIndex(
+        entry => (entry.quantity || 0) > 0 && !entry.size
+      )
+
+      if (missingSizeIndex !== -1) {
+        toast.error(msg_missing_roster_sizes({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
+
+        const visibleSteps = menuItems.value.map(i => i.step)
+        if (visibleSteps.includes('roster')) {
+          await goTo('roster')
+          await ensureEditableRoster()
+          setRosterPreviewIndex(missingSizeIndex)
+        }
         return
       }
 
@@ -138,6 +158,25 @@
           richColors: true
         }
       )
+      return
+    }
+
+    const missingSizeIndex = rosterEntries.value.findIndex(
+      entry => (entry.quantity || 0) > 0 && !entry.size
+    )
+
+    if (missingSizeIndex !== -1) {
+      toast.error(msg_missing_roster_sizes({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
+
+      const visibleSteps = menuItems.value.map(i => i.step)
+      if (visibleSteps.includes('roster')) {
+        await goTo('roster')
+        await ensureEditableRoster()
+        setRosterPreviewIndex(missingSizeIndex)
+      }
       return
     }
 

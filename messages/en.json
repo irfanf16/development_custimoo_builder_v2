@@ -479,6 +479,7 @@
   "msg_no_cart_product_selected": "No cart product selected for update",
   "msg_add_roster_before_cart": "Please add at least one item to the roster before adding to cart.",
   "msg_add_roster_entries_quantities": "Please add roster entries with quantities before adding to cart",
+  "msg_missing_roster_sizes": "Please select a size for all players in the roster.",
   "msg_fill_required_fields": "Please fill in all required fields",
   "msg_select_address": "Please select an address",
   "msg_update_quantity_zero": "Some items have quantity 0. Please update before checkout.",

@@ -52,7 +52,8 @@
     msg_company_id_not_found,
     msg_failed_to_generate_signed_urls,
     msg_failed_to_share_design,
-    msg_design_shared_success
+    msg_design_shared_success,
+    msg_missing_roster_sizes
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import SignInButton from '@/components/auth/SignInButton.vue'
@@ -113,7 +114,8 @@
   const { menuItems, goTo } = useCustomizerMenu()
   const { loadLockerProductIntoCustomizer } = useLoadLockerProductIntoCustomizer()
   const { buildFactoryProductPayload } = useBuildFactoryProduct()
-  const { rosterEntries, ensureEditableRoster, totalRosterQuantity } = useRoster()
+  const { rosterEntries, ensureEditableRoster, totalRosterQuantity, setRosterPreviewIndex } =
+    useRoster()
   const { minimumActiveProductQuantityByDesignToCard, isQuantityByDesign } = usePricing()
   const { can } = usePermissions()
   const canSkipMoq = computed(() => can('skip-moq'))
@@ -372,6 +374,25 @@
       return
     }
 
+    const missingSizeIndex = rosterEntries.value.findIndex(
+      entry => (entry.quantity || 0) > 0 && !entry.size
+    )
+
+    if (missingSizeIndex !== -1) {
+      toast.error(msg_missing_roster_sizes({}, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
+
+      const visibleSteps = menuItems.value.map(i => i.step)
+      if (visibleSteps.includes('roster')) {
+        await goTo('roster')
+        await ensureEditableRoster()
+        setRosterPreviewIndex(missingSizeIndex)
+      }
+      return
+    }
+
     const { factory_product, product_assets } = await buildFactoryProductPayload()
 
     const result = await cartStore.updateCartItem(cartStore.editingCartItemId, {
@@ -441,6 +462,25 @@
             richColors: true
           }
         )
+        return
+      }
+
+      const missingSizeIndex = rosterEntries.value.findIndex(
+        entry => (entry.quantity || 0) > 0 && !entry.size
+      )
+
+      if (missingSizeIndex !== -1) {
+        toast.error(msg_missing_roster_sizes({}, { locale: locale.value }), {
+          position: 'top-right',
+          richColors: true
+        })
+
+        const visibleSteps = menuItems.value.map(i => i.step)
+        if (visibleSteps.includes('roster')) {
+          await goTo('roster')
+          await ensureEditableRoster()
+          setRosterPreviewIndex(missingSizeIndex)
+        }
         return
       }
 

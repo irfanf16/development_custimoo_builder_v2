@@ -474,6 +474,7 @@
   "msg_no_cart_product_selected": "Aucun produit du panier sélectionné",
   "msg_add_roster_before_cart": "Veuillez ajouter au moins un élément à l'effectif avant d'ajouter au panier.",
   "msg_add_roster_entries_quantities": "Veuillez ajouter des entrées avec quantités avant d'ajouter au panier",
+  "msg_missing_roster_sizes": "Veuillez sélectionner une taille pour tous les joueurs de l'équipe.",
   "msg_fill_required_fields": "Veuillez remplir tous les champs obligatoires",
   "msg_select_address": "Veuillez sélectionner une adresse",
   "msg_update_quantity_zero": "Certains articles ont une quantité à 0. Veuillez corriger avant le paiement.",
