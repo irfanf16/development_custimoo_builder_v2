@@ -388,6 +388,57 @@ function cmykObjectToLabel(cmyk: { C: number; M: number; Y: number; K: number })
 }
 
 /**
+ * Parse CMYK string and convert to hex. Accepts:
+ * - cmyk(c, m, y, k) or cmyk(c,m,y,k)
+ * - four comma-separated values: "0, 0, 0, 0"
+ * Values are expected 0–100. Returns null if invalid.
+ */
+export function cmykStringToHex(cmykStr: string): string | null {
+  const raw = (cmykStr || '').trim()
+  let c1: string, c2: string, c3: string, c4: string
+  const withParens = /cmyk\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i.exec(
+    raw
+  )
+  const fourNumbers = /^\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*$/.exec(raw)
+  if (
+    withParens &&
+    withParens[1] != null &&
+    withParens[2] != null &&
+    withParens[3] != null &&
+    withParens[4] != null
+  ) {
+    c1 = withParens[1]
+    c2 = withParens[2]
+    c3 = withParens[3]
+    c4 = withParens[4]
+  } else if (
+    fourNumbers &&
+    fourNumbers[1] != null &&
+    fourNumbers[2] != null &&
+    fourNumbers[3] != null &&
+    fourNumbers[4] != null
+  ) {
+    c1 = fourNumbers[1]
+    c2 = fourNumbers[2]
+    c3 = fourNumbers[3]
+    c4 = fourNumbers[4]
+  } else {
+    return null
+  }
+  const c = Math.min(100, Math.max(0, parseFloat(c1))) / 100
+  const m = Math.min(100, Math.max(0, parseFloat(c2))) / 100
+  const y = Math.min(100, Math.max(0, parseFloat(c3))) / 100
+  const k = Math.min(100, Math.max(0, parseFloat(c4))) / 100
+  const R = Math.round(255 * (1 - c) * (1 - k))
+  const G = Math.round(255 * (1 - m) * (1 - k))
+  const B = Math.round(255 * (1 - y) * (1 - k))
+  const hex = [R, G, B]
+    .map(x => Math.min(255, Math.max(0, x)).toString(16).padStart(2, '0'))
+    .join('')
+  return '#' + hex
+}
+
+/**
  * Get selected product pantones from the store
  * @param productId - Optional product ID, uses active product if not provided
  * @param svgGroup - Optional SVG group name to filter colors
@@ -411,9 +462,9 @@ export function getSelectedProductPantones(
   // Check if we have svg_group specific colors
   if (svgGroup && product.svg_group_color_container?.[svgGroup]) {
     colors = product.svg_group_color_container[svgGroup].json_data || []
-  } else if (product.colors && product.colors.length > 0) {
-    // Use first color group's json_data
-    colors = product.colors[0]?.json_data || []
+  } else if (product.colors?.length) {
+    // Merge json_data from all color groups into one array
+    colors = product.colors.flatMap(c => c?.json_data ?? [])
   }
 
   colors.forEach(color => {
@@ -533,6 +584,8 @@ export function getClosestColor(
  * @param colorType - Color type setting key: 'color_type' or 'logo_color_type'
  * @returns Color type string: 'pantone-tcx', 'pantone-coated', 'product_color', or 'cmyk'
  */
+const DEFAULT_COLOR_TYPE = 'pantone-tcx' as const
+
 export function getColorType(
   svgGroup = '',
   productId: number | null = null,
@@ -545,43 +598,41 @@ export function getColorType(
     ? productsStore.getProductById(productId)
     : productsStore.activeProductDetails
 
-  // Check if product has svg_group specific color container
+  const isCustomColorAllowed = (product as unknown as { is_custom_color_allowed?: number })
+    ?.is_custom_color_allowed
+
+  // 1. Product has svg_group-specific color container → product_color
   if (svgGroup && product?.svg_group_color_container?.[svgGroup]) {
     return 'product_color'
   }
 
-  // Check if product doesn't allow custom colors
-  // Note: is_custom_color_allowed may not exist in all product types
-  const isCustomColorAllowed = (product as unknown as { is_custom_color_allowed?: number })
-    ?.is_custom_color_allowed
+  // 2. Product does not allow custom colors and this is color_type → product_color
   if (product && isCustomColorAllowed === 0 && colorType === 'color_type') {
     return 'product_color'
   }
 
-  // Get setting from company store
-  const setting = companyStore.settings?.settings?.[colorType]
-  if (!setting) {
-    return 'pantone-tcx' // Default
+  // 3. Product allows custom colors and color_type setting is 'product_color' → use logo_color_type
+  const setting = companyStore.settings?.settings?.[colorType] as string | undefined
+  if (
+    product &&
+    isCustomColorAllowed === 1 &&
+    colorType === 'color_type' &&
+    setting === 'product_color'
+  ) {
+    const logoColorType = companyStore.settings?.settings?.logo_color_type as string | undefined
+    return (logoColorType?.trim() ? logoColorType : DEFAULT_COLOR_TYPE) as
+      | 'pantone-tcx'
+      | 'pantone-coated'
+      | 'product_color'
+      | 'cmyk'
   }
 
-  // If product allows custom colors and color_type setting suggests product_color, use logo_color_type
-  // Note: The setting type only includes 'pantone_coated' | 'pantone_tcx', so we check differently
-  if (isCustomColorAllowed === 1 && colorType === 'color_type') {
-    // If we need to fall back to logo_color_type, use it
-    const logoColorType = companyStore.settings?.settings?.logo_color_type
-    if (logoColorType) {
-      return logoColorType === 'pantone_coated' ? 'pantone-coated' : 'pantone-tcx'
-    }
-  }
-
-  // Map setting values to return types
-  if (setting === 'pantone_coated') return 'pantone-coated'
-  if (setting === 'pantone_tcx') return 'pantone-tcx'
-  // Note: 'product_color' and 'cmyk' are not in the type but may be used in practice
-  if (setting === ('product_color' as string)) return 'product_color'
-  if (setting === ('cmyk' as string)) return 'cmyk'
-
-  return 'pantone-tcx' // Default fallback
+  // 4. Otherwise return the setting as-is (already has dash), or default if empty
+  return (setting?.trim() ? setting : DEFAULT_COLOR_TYPE) as
+    | 'pantone-tcx'
+    | 'pantone-coated'
+    | 'product_color'
+    | 'cmyk'
 }
 
 /**

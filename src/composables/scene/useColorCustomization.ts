@@ -13,6 +13,13 @@ import {
 import type { OutputSvgGroupColor } from '@/services/products/types'
 import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
 
+/** Container shape for SVG group colors (single object with json_data array). Used by getSvgGroupColors in multiple places. */
+export type SvgGroupColorsContainer = {
+  json_data?: Array<{ value?: string; name?: string; position?: string | number }>
+  name?: string
+  [key: string]: unknown
+}
+
 /**
  * Composable for color customization functionality
  * Shared between TwoDScene and ThreeDScene
@@ -34,18 +41,39 @@ export function useColorCustomization(
   const { applyCustomizationOverrides } = useDesignConfig()
 
   // ===== UTILITIES =====
+  /** Normalize json_data to an array for .some() and merging */
+  function jsonDataAsArray(value: unknown): Array<{ value?: string }> {
+    if (Array.isArray(value)) return value as Array<{ value?: string }>
+    if (value && typeof value === 'object') return [value as { value?: string }]
+    return []
+  }
+
   /**
-   * Get SVG group colors for a specific group (helper for checking available colors)
+   * Get SVG group colors for a specific group (helper for checking available colors).
+   * svg_group_color_container[svgGroup] is always a single object; product.colors may have multiple containers — those are merged into one with merged json_data array.
+   * Returns a single container object (or undefined); safe to use in multiple places.
    */
-  function getSvgGroupColors(svgGroup: string) {
+  function getSvgGroupColors(svgGroup: string): SvgGroupColorsContainer | undefined {
     const product = effectiveProductId.value
       ? productsStore.getProductById(effectiveProductId.value)
       : productsStore.activeProductDetails
-
-    if (product?.svg_group_color_container?.[svgGroup]) {
-      return product.svg_group_color_container[svgGroup]
+    const fromContainer = product?.svg_group_color_container?.[svgGroup]
+    if (fromContainer != null && !Array.isArray(fromContainer)) {
+      return fromContainer as SvgGroupColorsContainer
     }
-    return null
+
+    const colorsContainers = product?.colors
+    if (!colorsContainers?.length) return undefined
+    const first = colorsContainers[0] as SvgGroupColorsContainer
+    if (colorsContainers.length === 1) {
+      return { ...first, json_data: jsonDataAsArray(first?.json_data) }
+    }
+    const mergedJsonData = jsonDataAsArray(first?.json_data)
+    for (let i = 1; i < colorsContainers.length; i++) {
+      const container = colorsContainers[i] as SvgGroupColorsContainer
+      mergedJsonData.push(...jsonDataAsArray(container?.json_data))
+    }
+    return { ...first, json_data: mergedJsonData }
   }
 
   /**
@@ -241,16 +269,18 @@ export function useColorCustomization(
           const svgGroup = svgGroups.value[svgIndex]
           if (!svgGroup) return
 
+          /*
+          So for now due to shuffle color will use default colors, so we don't need to find closest color from product colors.
           const product = effectiveProductId.value
             ? productsStore.getProductById(effectiveProductId.value)
             : productsStore.activeProductDetails
 
           // Find closest color if product has svg_group_color_container
           if (product?.svg_group_color_container?.[svgGroup.id]?.json_data) {
-            const productPartColors =
-              product.svg_group_color_container[svgGroup.id]?.json_data || []
+            const productPartColors = product.svg_group_color_container[svgGroup.id]?.json_data || []
             useColorIndex = findClosestColorIndex(productPartColors, filteredDefaultColors)
           }
+          */
 
           const defaultColor = filteredDefaultColors[useColorIndex] as {
             color: string

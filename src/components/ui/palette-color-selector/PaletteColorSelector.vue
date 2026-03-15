@@ -3,11 +3,12 @@
   import { ColorGrid } from '@/components/ui/color-grid'
   import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
   import type { HTMLAttributes } from 'vue'
-  import { cn } from '@/lib/utils'
+  import { cn, cmykStringToHex } from '@/lib/utils'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
   import Autocomplete from '@/components/ui/autocomplete'
   import { pantonesTcx } from '@/lib/pantonesTcx'
   import { pantonesCoated } from '@/lib/pantonesCoated'
+  import { useCompanyStore } from '@/stores/company/company.store'
   import ScrollArea from '../scroll-area/ScrollArea.vue'
 
   type OutputColor = {
@@ -22,6 +23,8 @@
     colors: OutputColor[]
   }
 
+  type CustomColorType = 'pantone-tcx' | 'pantone-coated' | 'cmyk' | 'product_color'
+
   interface Props {
     class?: HTMLAttributes['class']
     palettes: Palette[]
@@ -31,6 +34,8 @@
     customPalettes?: Palette[]
     hasSvgColors?: boolean
     parsedLockerRooms?: any[]
+    /** Which company setting to use for the "Others" tab: color_type (default) or logo_color_type */
+    colorTypeKey?: 'color_type' | 'logo_color_type'
   }
 
   interface Emits {
@@ -44,9 +49,29 @@
     allowCustomColor: false,
     customPalettes: () => [],
     hasSvgColors: false,
-    parsedLockerRooms: () => []
+    parsedLockerRooms: () => [],
+    colorTypeKey: 'color_type'
   })
   const emit = defineEmits<Emits>()
+
+  const companyStore = useCompanyStore()
+  const effectiveCustomColorType = computed((): CustomColorType => {
+    const setting = (companyStore.settings?.settings?.[props.colorTypeKey] as string) || ''
+    if (setting === 'product_color') {
+      const logo = (companyStore.settings?.settings?.logo_color_type as string) || 'pantone-tcx'
+      return logo as CustomColorType
+    }
+    return (setting || 'pantone-tcx') as CustomColorType
+  })
+  const customColorTypeLabel = computed(() => {
+    const t = effectiveCustomColorType.value
+    if (t === 'pantone-coated') return 'Pantone (Coated)'
+    if (t === 'cmyk') return 'CMYK'
+    return 'Pantone (TCX)'
+  })
+  const customPantonePlaceholder = computed(() =>
+    effectiveCustomColorType.value === 'pantone-coated' ? 'XXX C' : 'XX-XXXX'
+  )
 
   // Initialize with the first palette's ID
   const currentPaletteId = ref<string>(
@@ -57,17 +82,23 @@
   const customPantone = ref('')
   const customColor = ref<string | null>(null)
   const pantoneMessage = ref('')
-  // Build pantone suggestion items from datasets
+  const cmykCustomInput = ref('')
+  const cmykMessage = ref('')
+
+  // Build pantone suggestion items based on company setting (TCX only, Coated only, or both)
   const pantoneItems = computed(() => {
+    const t = effectiveCustomColorType.value
     const tcx = (pantonesTcx || []).map(p => ({
       label: `${p.pantone} ${p.name || ''}`.trim(),
-      value: p.hex || p.hex || ''
+      value: p.hex || ''
     }))
     const coated = (pantonesCoated || []).map(p => ({
       label: `${p.pantone} ${p.name || ''}`.trim(),
-      value: p.hex || p.hex || ''
+      value: p.hex || ''
     }))
-    // prefer TCX first, then coated; remove empties
+    if (t === 'pantone-coated') return coated.filter(i => i.value)
+    if (t === 'pantone-tcx') return tcx.filter(i => i.value)
+    if (t === 'product_color') return coated.filter(i => i.value)
     return [...tcx, ...coated].filter(i => i.value)
   })
 
@@ -103,6 +134,17 @@
     pantoneMessage.value = ''
     emit('color-select', { name: item.label, value: item.value, position: 0 })
   }
+
+  function applyCmykInput() {
+    cmykMessage.value = ''
+    const hex = cmykStringToHex(cmykCustomInput.value)
+    if (hex) {
+      emit('color-select', { name: cmykCustomInput.value, value: hex, position: 0 })
+    } else if (cmykCustomInput.value.trim()) {
+      cmykMessage.value = 'Use format: 0, 0, 0, 0'
+    }
+  }
+
   // Watch for changes in locker rooms to set initial active room and folder
   watch(
     () => props.parsedLockerRooms,
@@ -271,13 +313,14 @@
 
       <TabsContent v-if="props.allowCustomColor" value="custom">
         <div class="space-y-3">
-          <div>
-            <label class="text-sm font-medium mb-2">Pantone (TCX)</label>
+          <!-- Pantone (TCX) or Pantone (Coated) based on company setting -->
+          <div v-if="effectiveCustomColorType !== 'cmyk'">
+            <label class="text-sm font-medium mb-2">{{ customColorTypeLabel }}</label>
             <div class="relative">
               <Autocomplete
                 v-model="customPantone"
                 :items="pantoneItems"
-                placeholder="XX-XXXX"
+                :placeholder="customPantonePlaceholder"
                 @select="selectSuggestionFromAuto"
               >
                 <template #option="{ item }">
@@ -299,6 +342,34 @@
             </div>
             <div v-if="pantoneMessage" class="text-destructive text-xs mt-1">
               {{ pantoneMessage }}
+            </div>
+          </div>
+          <!-- CMYK: 4 comma-separated values (C, M, Y, K) converted to hex -->
+          <div v-else>
+            <label class="text-sm font-medium mb-2">CMYK</label>
+            <div class="flex gap-2 items-center">
+              <input
+                v-model="cmykCustomInput"
+                type="text"
+                class="flex-1 min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="0, 0, 0, 0"
+                @keydown.enter="applyCmykInput"
+              />
+              <span
+                v-if="cmykStringToHex(cmykCustomInput)"
+                class="w-8 h-8 rounded border shrink-0"
+                :style="{ background: cmykStringToHex(cmykCustomInput) || 'transparent' }"
+              />
+              <button
+                type="button"
+                class="shrink-0 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+                @click="applyCmykInput"
+              >
+                Apply
+              </button>
+            </div>
+            <div v-if="cmykMessage" class="text-destructive text-xs mt-1">
+              {{ cmykMessage }}
             </div>
           </div>
         </div>
