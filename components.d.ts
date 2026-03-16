@@ -24,7 +24,6 @@ declare module 'vue' {
     IFlexLineListView: typeof import('~icons/flex-line/list-view')['default']
     IFlexLinePaintPalette: typeof import('~icons/flex-line/paint-palette')['default']
     IFlexLinePattern: typeof import('~icons/flex-line/pattern')['default']
-    IFlexLineReorder: typeof import('~icons/flex-line/reorder')['default']
     IFlexLineSave: typeof import('~icons/flex-line/save')['default']
     IFlexLineShare: typeof import('~icons/flex-line/share')['default']
     IFlexLineTable: typeof import('~icons/flex-line/table')['default']

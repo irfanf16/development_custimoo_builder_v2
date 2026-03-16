@@ -16,8 +16,8 @@
       default: undefined
     },
     svgParts: {
-      type: Array as PropType<string[]>,
-      default: () => []
+      type: Array as PropType<string[] | string>,
+      default: undefined
     },
     canvasWidth: { type: Number, default: 176 },
     canvasHeight: { type: Number, default: 176 },

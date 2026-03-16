@@ -5,12 +5,12 @@
 # =====================
 working_directory=$(pwd)
 parent_dir=$(basename "$(pwd)")
-env_file_name=.env
 
 build_directory_name="artifacts"
 domain="custimoo-builder-v2.test"
 move_to_nginx=true
 protocol="http"
+mode="staging"
 
 # =====================
 # HELP MESSAGE
@@ -21,7 +21,7 @@ function usage {
   echo "   -mtn  --movetonginx          If true then move builds to nginx path (/var/www) (default: $move_to_nginx)"
   echo "   -p,   --protocol             Set the protocol {http, https} (default: $protocol)"
   echo "   -d,   --domain               Set the domain name/virtual host (default: $domain)"
-  echo "   -u,   --apiurl               Set the build api url"
+  echo "   -m,   --mode                 Set the mode {staging, production} (default: $mode)"
   echo "   -h,   --help                 Display this help message"
   exit 1
 }
@@ -35,15 +35,12 @@ while [[ "$#" -gt 0 ]]; do
     -mtn|--movetonginx) move_to_nginx="$2"; shift ;;
     -p|--protocol) protocol="$2"; shift ;;
     -d|--domain) domain="$2"; shift ;;
-    -u|--apiurl) api_url="$2"; shift ;;
+    -m|--mode) mode="$2"; shift ;;
     -h|--help) usage ;;
     *) echo "Invalid option: $1" >&2; usage ;;
   esac
   shift
 done
-
-# Escape API URL if present
-api_url_escaped=$(echo "$api_url" | sed 's/\//\\\//g')
 
 # =====================
 # ENSURE NGINX IS INSTALLED
@@ -100,7 +97,7 @@ npm cache clean --force
 npm ci
 
 echo "*********** npm run build ***********"
-npm run build:staging
+npm run build:$mode
 
 mkdir -p "$build_directory_name/development"
 if [[ -d "dist" ]]; then
