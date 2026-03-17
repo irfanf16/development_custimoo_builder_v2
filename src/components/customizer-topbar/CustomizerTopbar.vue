@@ -594,6 +594,7 @@
     }
 
     try {
+      lockerRoomStore.isLoading = true
       const lockerId = lockerRoomStore.editingLockerId
       const signedUrls = await lockerRoomStore.getSignedUrl(lockerId)
       if (!signedUrls) {
@@ -756,6 +757,8 @@
         richColors: true
       })
       console.error('Update locker product error:', error)
+    } finally {
+      lockerRoomStore.isLoading = false
     }
   }
   async function onLoginSuccess() {
@@ -1099,6 +1102,7 @@
                     <Tooltip>
                       <TooltipTrigger as-child>
                         <Button
+                          v-show="!lockerRoomStore.isLoading"
                           variant="outline"
                           size="icon"
                           @click="handleCancelLockerProductEdit"
@@ -1110,7 +1114,12 @@
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger as-child>
-                        <Button variant="outline" size="icon" @click="handleUpdateLockerProduct">
+                        <Button
+                          :loading="lockerRoomStore.isLoading"
+                          variant="outline"
+                          size="icon"
+                          @click="handleUpdateLockerProduct"
+                        >
                           <Save class="size-4" />
                         </Button>
                       </TooltipTrigger>
@@ -1119,11 +1128,21 @@
                   </ButtonGroup>
                 </template>
                 <ButtonGroup v-else>
-                  <Button variant="outline" size="default" @click="handleCancelLockerProductEdit">
+                  <Button
+                    v-show="!lockerRoomStore.isLoading"
+                    variant="outline"
+                    size="default"
+                    @click="handleCancelLockerProductEdit"
+                  >
                     <X class="size-4" />
                     <span>Cancel</span>
                   </Button>
-                  <Button variant="outline" size="default" @click="handleUpdateLockerProduct">
+                  <Button
+                    variant="outline"
+                    :loading="lockerRoomStore.isLoading"
+                    size="default"
+                    @click="handleUpdateLockerProduct"
+                  >
                     <Save class="size-4" />
                     <span>Update</span>
                   </Button>
