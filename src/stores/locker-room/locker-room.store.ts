@@ -117,7 +117,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       isLoading.value = false
       return created
     } else {
-      setError('Failed to create locker')
+      setError(resp.message || 'Failed to create locker')
     }
     isLoading.value = false
     return null
