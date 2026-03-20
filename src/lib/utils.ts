@@ -607,7 +607,7 @@ export function getColorType(
   }
 
   // 2. Product does not allow custom colors and this is color_type → product_color
-  if (product && isCustomColorAllowed === 0 && colorType === 'color_type') {
+  if (product && !isCustomColorAllowed && colorType === 'color_type') {
     return 'product_color'
   }
 

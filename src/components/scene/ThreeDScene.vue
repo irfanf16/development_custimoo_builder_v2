@@ -1352,6 +1352,7 @@
    */
   async function addSafeZone(safeZoneUrl?: string): Promise<void> {
     if (!canvas.value || !safeZoneUrl) return
+    // Match old ThreeDScene.vue addSafeZone: no originX/Y on load; center, then flags, scale, snap to 0,0
     const clip = (await loadImageFromURLCommon(safeZoneUrl, 'svg', {
       hasControls: false,
       selectable: false,
@@ -1360,9 +1361,7 @@
       lockMovementY: true,
       absolutePositioned: true,
       inverted: true,
-      flipY: true,
-      originX: 'center',
-      originY: 'center'
+      flipY: true
     })) as Group
 
     if (canvas.value) {
@@ -1404,7 +1403,6 @@
         const groupId = obj.id.split('_')[0] || obj.id
         const groups = effectiveSvgGroupsInteractive.value ?? []
         const accordionIndex = groups.findIndex(g => g.id === groupId.toLowerCase())
-        console.log('designIndex', accordionIndex, groupId)
         workflowStore.openColorEditorFromCustomizer(groupId, accordionIndex)
         return
       }
@@ -1416,6 +1414,7 @@
    */
   function applyClipPath(target: FabricImage | FabricObject): void {
     if (safeZone.value) {
+      console.log(safeZone.value, 'safeZone.value yes here we go')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(target as any).clipPath = safeZone.value
     }
@@ -1548,7 +1547,6 @@
       }
     }
 
-    const productsFontsStore = useProductsFontsStore()
     await addTextToCanvas({
       entry,
       customTextIndex,
@@ -1573,8 +1571,7 @@
         y: number,
         fabricObject: FabricObject & { side?: string; type?: string }
       ) => { vector: { x: number; y: number; z?: number }; sideChanged: boolean },
-      convertSize: convertSizeToMeasurement,
-      ...(props.mainPreview ? { productsFonts: productsFontsStore.productsFonts } : {})
+      convertSize: convertSizeToMeasurement
     })
 
     const key = `${customTextIndex}_${itemIndex}`
@@ -1690,6 +1687,8 @@
     if (designData.safe_zone_url) {
       await addSafeZone(designData.safe_zone_url)
     }
+
+    await new Promise(resolve => setTimeout(resolve, 500))
 
     // Load logos and texts after scene is loaded
     await resetAndAddLogos()

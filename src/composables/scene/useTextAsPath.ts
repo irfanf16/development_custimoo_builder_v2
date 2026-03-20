@@ -3,15 +3,15 @@ import type { CreateTextAsPathParams } from './useTexts'
 
 const { groupSVGElements } = util
 
-/** OpenType font instance (from opentype.js). */
+/** OpenType font instance (from opentype.js Font). */
 export type OpentypeFont = {
   getPath: (
     text: string,
-    x?: number,
-    y?: number,
-    fontSize?: number,
+    x: number,
+    y: number,
+    fontSize: number,
     options?: { features?: { liga?: boolean; rlig?: boolean } }
-  ) => { toSVG: () => string }
+  ) => { toSVG: (decimalPlaces?: number) => string }
 }
 
 /** Map of font family name to font with opentype instance (e.g. products_fonts from store). */
@@ -26,7 +26,7 @@ export function createTextAsPathFromFonts(
   productsFonts: ProductsFonts
 ): (params: CreateTextAsPathParams) => Promise<FabricObject | null> {
   return async (params: CreateTextAsPathParams): Promise<FabricObject | null> => {
-    const { value, fontFamily, fontSize, fill = '#000000', stroke, strokeWidth = 0 } = params
+    const { value, fontFamily, fill = '#000000', stroke, strokeWidth = 0 } = params
     if (!value?.trim()) return null
 
     const keys = Object.keys(productsFonts)
@@ -40,10 +40,10 @@ export function createTextAsPathFromFonts(
     if (!font) return null
 
     try {
-      const path = font.getPath(value, 0, 0, fontSize, {
+      const path = font.getPath(value, 0, 0, 72, {
         features: { liga: true, rlig: true }
       })
-      const pathSvg = path.toSVG()
+      const pathSvg = path.toSVG(2)
       const textSvg =
         '<?xml version="1.0" encoding="utf-8"?>\n' +
         '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xml:space="preserve">\n' +

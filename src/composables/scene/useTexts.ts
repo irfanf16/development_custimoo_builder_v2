@@ -1,4 +1,4 @@
-import { type ShallowRef, type Ref, unref } from 'vue'
+import { type ShallowRef, type Ref } from 'vue'
 import {
   FabricText,
   Object as FabricObjectClass,
@@ -9,8 +9,9 @@ import {
 import { useDebounceFn } from '@vueuse/core'
 import { FABRIC_CONTROL_VISIBILITY } from './useFabricControls'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useProductsFontsStore } from '@/stores/products-fonts/products-fonts.store'
 import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
-import { createTextAsPathFromFonts, type ProductsFonts } from './useTextAsPath'
+import { createTextAsPathFromFonts } from './useTextAsPath'
 import { useSceneStore } from '@/stores/scene/scene.store'
 
 const sceneStore = useSceneStore()
@@ -33,7 +34,6 @@ export function getTextObjectKey(customTextIndex: number, itemIndex: number): st
 export type CreateTextAsPathParams = {
   value: string
   fontFamily: string
-  fontSize: number
   fill?: string
   stroke?: string
   strokeWidth?: number
@@ -79,8 +79,6 @@ export type AddTextOptions = {
   is_3d: boolean
   /** Whether to flip text horizontally (for 3D, same as logo) */
   flipX?: boolean
-  /** When mainPreview is true, pass opentype fonts to render text as path (exact bounds). Can be a ref. */
-  productsFonts?: ProductsFonts | Ref<ProductsFonts>
   /** Map 3D interaction back to 2D screen coords (required; pass no-op for 2D) */
   findPositionOn2D?: (
     x: number,
@@ -197,7 +195,6 @@ export type UpdateTextPositionOptions = {
     angle?: number
     scaleX?: number
     scaleY?: number
-    fontSize?: number
     width?: number
     height?: number
     custom_text_index?: number
@@ -226,7 +223,6 @@ export function updateTextPositionInStore(options: UpdateTextPositionOptions): v
   const {
     fabricText,
     getScaleRatios,
-    heightScale,
     calculateRotation,
     is_3d,
     findPositionOn2D,
@@ -281,8 +277,6 @@ export function updateTextPositionInStore(options: UpdateTextPositionOptions): v
 
   const angle = fabricText.angle ?? 0
   const rotation = calculateRotation(angle)
-  const fontSize = (fabricText as unknown as { fontSize?: number }).fontSize
-  const height = fontSize != null ? fontSize / heightScale : 0
   const scaleX = fabricText.scaleX ?? 1
   const scaleY = fabricText.scaleY ?? 1
 
@@ -291,7 +285,6 @@ export function updateTextPositionInStore(options: UpdateTextPositionOptions): v
     x_axis: String(left / widthRatio),
     y_axis: String(top / heightRatio),
     rotation: String(rotation),
-    height: String(height),
     scaleX: scaleX / widthRatio,
     scaleY: scaleY / heightRatio,
     actualWidth: fabricText.width ?? 0,
@@ -368,26 +361,27 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
 
   const position = calculatePosition(item)
   const rotation = calculateRotation(Number(item.rotation) || 0)
-  const fontSize = heightScale * Number(item.height) || 16
+  const fontSize = heightScale * Number(item.height)
   const fontFamily = entry.font_family?.trim() || 'Ubuntu'
 
-  const { flipX = false, productsFonts } = options
+  const { flipX = false } = options
+  const productsFontsStore = useProductsFontsStore()
+  const fonts = productsFontsStore.productsFonts
   const { widthRatio, heightRatio } = options.getScaleRatios()
-  const usePath = options.mainPreview && productsFonts
+  const usePath = options.mainPreview && fonts
   let textObj: FabricObject
   if (usePath) {
-    const fonts = unref(productsFonts)
     const createTextAsPathFn = createTextAsPathFromFonts(fonts)
     const pathObject = await createTextAsPathFn({
       value: entry.value,
       fontFamily,
-      fontSize,
       fill: item.color || '#000000',
       stroke: item.outline_enabled ? item.outline_color : undefined,
       strokeWidth: item.outline_enabled ? (item.outline_width ?? 0) : 0
     })
     if (pathObject) {
       textObj = pathObject
+      textObj.scaleToHeight(fontSize)
       const pinned = !!(item.pinned ?? false)
       textObj.set({
         left: position.x,
@@ -434,7 +428,6 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
       originX: 'center',
       originY: 'center',
       fontFamily,
-      fontSize,
       fill: it.color || '#000000',
       stroke: it.outline_enabled ? it.outline_color : undefined,
       strokeWidth: it.outline_enabled ? (it.outline_width ?? 0) : 0,
@@ -498,6 +491,11 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
   canvas.add(textObj)
 
   const key = getTextObjectKey(customTextIndex, itemIndex)
+
+  if (textObjects.value.has(key)) {
+    canvas.remove(textObjects.value.get(key) as FabricObject)
+    textObjects.value.delete(key)
+  }
   textObjects.value.set(key, textObj)
 
   // Initial store update (exact same pattern as logo) when mainPreview
@@ -569,7 +567,6 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
     addText,
     calculatePosition,
     calculateRotation,
-    heightScale,
     getScaleRatios,
     side,
     onAfterSync
@@ -650,7 +647,6 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
         const position = calculatePosition(d.item)
         const rotation = calculateRotation(Number(d.item.rotation) || 0)
         const angle = rotation < 0 ? 360 + rotation : rotation
-        const fontSize = heightScale * Number(d.item.height) || 16
 
         const fontFamily = d.entry.font_family?.trim() || d.item.font_family?.trim() || 'Ubuntu'
         const pinned = !!(d.item?.pinned ?? false)
@@ -658,7 +654,6 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
           left: position.x,
           top: position.y,
           angle,
-          fontSize,
           fontFamily,
           fill: d.item.color || '#000000',
           stroke: d.item.outline_enabled ? d.item.outline_color : undefined,

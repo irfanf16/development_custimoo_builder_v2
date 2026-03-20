@@ -135,6 +135,9 @@ export function useSceneCommon(
         | undefined
     } else {
       storeDesign = designDetails.production_design
+      safeZoneDesign = (designDetails as Record<string, unknown>).productionsafezone_design as
+        | { file_url?: string }
+        | undefined
     }
 
     const file_url = storeDesign.file_url

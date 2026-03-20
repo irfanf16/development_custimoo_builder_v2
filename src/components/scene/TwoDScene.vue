@@ -918,6 +918,7 @@
 
     canvas.value.requestRenderAll()
 
+    await Promise.resolve(setTimeout(() => {}, 500))
     // Load logos and texts after scene is loaded
     await resetAndAddLogos()
     if (!canvas.value) return

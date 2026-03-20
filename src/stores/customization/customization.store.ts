@@ -1052,7 +1052,21 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     } = {}
   ) {
     // if (customization.value) return
-    setCustomization(createDefaultCustomization(preservedIds))
+    const prev = customization.value
+    const next = createDefaultCustomization(preservedIds)
+    // fetchActiveProductDetails() may run ensureCustomization() (empty shell) + syncProductTextsWithPresets,
+    // then app init calls ensureCustomization({ productId, styleId, designId, ... }).
+    // Without this merge, the second call replaced the whole object and wiped product_custom_texts — broken texts on first load (fine after reload via restoreExistingCustomization).
+    const pid = preservedIds.productId
+    if (
+      prev?.product_custom_texts &&
+      pid != null &&
+      Object.keys(prev.product_custom_texts).length > 0 &&
+      Object.prototype.hasOwnProperty.call(prev.product_custom_texts, String(pid))
+    ) {
+      next.product_custom_texts = deepClone(prev.product_custom_texts)
+    }
+    setCustomization(next)
   }
 
   function resetCustomizationToCurrentProductDefaults() {
