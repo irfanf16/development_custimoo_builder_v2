@@ -1352,7 +1352,6 @@
    */
   async function addSafeZone(safeZoneUrl?: string): Promise<void> {
     if (!canvas.value || !safeZoneUrl) return
-    // Match old ThreeDScene.vue addSafeZone: no originX/Y on load; center, then flags, scale, snap to 0,0
     const clip = (await loadImageFromURLCommon(safeZoneUrl, 'svg', {
       hasControls: false,
       selectable: false,
@@ -1361,25 +1360,18 @@
       lockMovementY: true,
       absolutePositioned: true,
       inverted: true,
-      flipY: true
+      flipY: true,
+      originX: 'left',
+      originY: 'top'
     })) as Group
 
-    if (canvas.value) {
-      canvas.value.viewportCenterObject(clip)
-    }
-    clip.set({
-      hasControls: false,
-      selectable: false,
-      evented: false,
-      lockMovementX: true,
-      lockMovementY: true,
-      absolutePositioned: true,
-      inverted: true,
-      flipY: true
-    })
     clip.scaleToHeight(props.canvasResolution)
-    clip.set({ left: 0, top: 0 })
+    clip.set({
+      left: 0,
+      top: 0
+    })
     clip.setCoords()
+
     safeZone.value = clip
   }
 
@@ -1414,7 +1406,6 @@
    */
   function applyClipPath(target: FabricImage | FabricObject): void {
     if (safeZone.value) {
-      console.log(safeZone.value, 'safeZone.value yes here we go')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(target as any).clipPath = safeZone.value
     }
