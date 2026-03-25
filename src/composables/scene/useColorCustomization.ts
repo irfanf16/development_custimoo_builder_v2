@@ -316,11 +316,10 @@ export function useColorCustomization(
               productsStore.setSvgGroups(svgGroups.value, side, false)
             }
           }
-
-          useColorIndex++
-          if (useColorIndex >= filteredDefaultColors.length) {
-            useColorIndex = 0
-          }
+        }
+        useColorIndex++
+        if (useColorIndex >= filteredDefaultColors.length) {
+          useColorIndex = 0
         }
       }
     })
