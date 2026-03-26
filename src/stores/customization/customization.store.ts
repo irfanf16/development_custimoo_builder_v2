@@ -537,6 +537,16 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     pushHistoryState('Changed style')
   }
 
+  function setFixedLogoIndex(index: number) {
+    if (!customization.value) return
+    const next = Number(index)
+    if (!Number.isFinite(next) || next < 0) return
+    const prev = Number(customization.value.fixed_logo_index ?? 0)
+    if (prev === next) return
+    customization.value.fixed_logo_index = next
+    pushHistoryState('Changed fixed logo position')
+  }
+
   function setDesign(
     design:
       | OutputDesignDetails
@@ -1266,6 +1276,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     setSubCategory,
     setProduct,
     setStyle,
+    setFixedLogoIndex,
     setDesign,
     setAddons,
     setGroupColor,

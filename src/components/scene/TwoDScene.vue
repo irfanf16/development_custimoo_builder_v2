@@ -30,7 +30,10 @@
     deleteLogoFromCanvas,
     syncLogosOnCanvas,
     syncTextsOnCanvas,
-    FABRIC_CONTROL_VISIBILITY
+    FABRIC_CONTROL_VISIBILITY,
+    useFixedLogos,
+    create2DFixedLogoGeometry,
+    computeFixedLogosList
   } from '@/composables/scene'
   import type { CustomLogo } from '@/services/logos/types'
   import {
@@ -48,6 +51,7 @@
     OutputProductText,
     OutputProductTextItem
   } from '@/services/products/types'
+  import type { StyleLogoAsset, StyleLogoEntry } from '@/services/types/styles'
 
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
@@ -105,6 +109,8 @@
   interface Props {
     models?: ModelData[]
     design?: DesignData
+    /** Fixed style logos override (if provided). Falls back to active style logo[] list. */
+    logos?: StyleLogoEntry[]
     // Product ID - defaults to active product from store
     productId?: number | null
     // Canvas dimensions
@@ -136,6 +142,7 @@
   const props = withDefaults(defineProps<Props>(), {
     models: undefined,
     design: undefined,
+    logos: undefined,
     // Product ID - will default to active product from store via computed
     productId: undefined,
     // Canvas dimensions
@@ -213,6 +220,18 @@
     })
     return map
   })
+
+  // ===== FIXED LOGOS (STEP 1) — source + canvas helpers from useFixedLogos (same pattern as useLogos)
+  const fixedLogos = computed<StyleLogoAsset[]>(() =>
+    computeFixedLogosList({
+      logosProp: props.logos,
+      styleLogoGroups: productsStore.activeStyleDetails?.logo ?? null,
+      fixedLogoIndex: customizationStore.customization?.fixed_logo_index ?? null,
+      isFixedLogosAll: productsStore.activeStyleDetails?.is_fixed_logos_all ?? null,
+      side: props.side,
+      mode: '2d'
+    })
+  )
 
   // ===== CUSTOM TEXTS =====
   // Map: key = index in product_custom_texts, value = entry + items for this side only
@@ -313,6 +332,10 @@
         if (!canvas.value) return
 
         await addBoundary(newDesign.safe_zone_url, newDesign.boundary_url)
+        if (!canvas.value) return
+
+        // Design reload re-extracts svgGroups; re-attach fixed-logo custom groups afterward.
+        await resetAndAddFixedLogos()
         if (!canvas.value) return
 
         canvas.value.requestRenderAll()
@@ -919,6 +942,8 @@
     canvas.value.requestRenderAll()
 
     await Promise.resolve(setTimeout(() => {}, 500))
+    await resetAndAddFixedLogos()
+    if (!canvas.value) return
     // Load logos and texts after scene is loaded
     await resetAndAddLogos()
     if (!canvas.value) return
@@ -1032,6 +1057,21 @@
       heightRatio: props.canvasHeight / (props.mainCanvasHeight || 600)
     }
   }
+
+  const { resetAndAddFixedLogos: resetFixedLogos } = useFixedLogos({
+    canvas,
+    loadImageFromURL: loadImageFromURLCommon,
+    applyClipPath,
+    geometry: create2DFixedLogoGeometry(calculateScaleRatios2D),
+    svgGroups,
+    initialSvgGroups,
+    parts,
+    onSvgGroupsChanged: groups => {
+      if (props.mainPreview && (props.side === 'front' || props.side === 'back')) {
+        productsStore.setSvgGroups(groups, props.side, false)
+      }
+    }
+  })
 
   /**
    * Measurement helpers and dimension overlay for 2D canvas.
@@ -1961,6 +2001,24 @@
     }
   }
 
+  async function resetAndAddFixedLogos(): Promise<void> {
+    if (isPlacementMode.value) return
+    await resetFixedLogos(fixedLogos.value)
+    const defaultColors = customizationStore.customization?.default_colors || []
+    const hasDefaultColors =
+      defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
+    const groupColors = customizationStore.customization?.group_colors || {}
+    const hasGroupColors = Object.keys(groupColors).length > 0
+    if (
+      (hasDefaultColors || hasGroupColors) &&
+      (applyCustomizationOverrides.value || props.mainPreview)
+    ) {
+      await applyCustomization(0)
+    }
+    bringModelToFront()
+    canvas.value?.requestRenderAll()
+  }
+
   // ===== TEXT UTILITIES (sync from customTexts watch) =====
   const heightScaleForText = computed(() => props.canvasHeight / (props.mainCanvasHeight || 600))
 
@@ -2244,6 +2302,16 @@
     { deep: true }
   )
 
+  // Re-render fixed logos when style logos source changes.
+  watch(
+    fixedLogos,
+    async () => {
+      if (!mounted.value) return
+      await resetAndAddFixedLogos()
+    },
+    { deep: true }
+  )
+
   // Watch for changes in shuffle_color_number
   // When it changes, reapply default colors with new permutation
   watch(
@@ -2300,6 +2368,7 @@
     { deep: true }
   )
 
+  // to-do I need to discuss it with Ali tomorrow.
   // Re-sync logos when undo/redo restores state so canvas reflects restored rotation/position
   watch(
     () => customizationStore.historyIndex,

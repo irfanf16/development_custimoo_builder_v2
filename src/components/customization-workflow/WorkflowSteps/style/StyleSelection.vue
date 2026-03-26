@@ -5,11 +5,13 @@
   // Style previews use static icons (PNG) from style_icon_url, so no canvas is needed
   import { Checkbox } from '@/components/ui/checkbox'
   import { Label } from '@/components/ui/label'
+  import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
   import {
     styles_title,
     addons_title,
     styles_alt_icon,
-    styles_description_fallback
+    styles_description_fallback,
+    styles_choose_logo_position
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import type { OutputStylePreviewFront } from '@/services/products/types'
@@ -147,6 +149,41 @@
     return previews.value.filter((s: OutputStylePreviewFront) => s.name.toLowerCase().includes(q))
   })
 
+  const fixedLogoOptions = computed(() => productsStore.activeStyleDetails?.logo ?? [])
+  const showFixedLogoSelector = computed(
+    () =>
+      fixedLogoOptions.value.length > 0 &&
+      productsStore.activeStyleDetails?.is_fixed_logos_all === false
+  )
+  const selectedFixedLogoIndex = computed({
+    get: () => {
+      const current = Number(customizationStore.customization?.fixed_logo_index ?? 0)
+      if (current >= 0 && current < fixedLogoOptions.value.length) return String(current)
+      const defaultIdx = fixedLogoOptions.value.findIndex(
+        logo => Number(logo.is_default ?? 0) === 1
+      )
+      return String(defaultIdx >= 0 ? defaultIdx : 0)
+    },
+    set: value => {
+      const idx = Number(value)
+      if (!Number.isFinite(idx) || idx < 0 || idx >= fixedLogoOptions.value.length) return
+      customizationStore.setFixedLogoIndex(idx)
+    }
+  })
+
+  watch(
+    () => productsStore.activeStyleDetails?.id,
+    () => {
+      if (!showFixedLogoSelector.value) return
+      const current = Number(customizationStore.customization?.fixed_logo_index ?? 0)
+      if (current >= 0 && current < fixedLogoOptions.value.length) return
+      const defaultIdx = fixedLogoOptions.value.findIndex(
+        logo => Number(logo.is_default ?? 0) === 1
+      )
+      customizationStore.setFixedLogoIndex(defaultIdx >= 0 ? defaultIdx : 0)
+    }
+  )
+
   function getAddonCurrency(
     addonId: number
   ): { code: string; name: string; price: number; symbol: string } | null {
@@ -261,6 +298,23 @@
           </Label>
         </div>
       </div>
+    </div>
+    <div v-if="showFixedLogoSelector" class="flex flex-col gap-3 pt-3 lg:pt-6 pb-1 lg:pb-2">
+      <div class="text-lg font-semibold font-brand">
+        {{ styles_choose_logo_position({}, { locale: profileStore.currentLocale }) }}
+      </div>
+      <RadioGroup v-model="selectedFixedLogoIndex" class="space-y-3">
+        <div
+          v-for="(logo, index) in fixedLogoOptions"
+          :key="`${logo.id ?? index}-fixed-logo-option`"
+          class="flex items-center space-x-2"
+        >
+          <RadioGroupItem :id="`fixed-logo-position-${index}`" :value="String(index)" />
+          <Label :for="`fixed-logo-position-${index}`" class="cursor-pointer">
+            {{ logo.placement_title || `Position ${index + 1}` }}
+          </Label>
+        </div>
+      </RadioGroup>
     </div>
   </div>
 </template>
