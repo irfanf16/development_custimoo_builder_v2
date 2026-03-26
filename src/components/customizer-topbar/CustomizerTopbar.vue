@@ -687,6 +687,8 @@
         name: group.name || '',
         pantone: group.pantone || ''
       }))
+
+      const svgGroups = productsStore.svgGroups || []
       const addonsInfo = customization.addons_info || {}
       const productAddonsInfo = addonsInfo[productId] as
         | import('@/services/products/types/customization').APCustomizationAddonsInfoEntry
@@ -721,6 +723,13 @@
         product_id: productId,
         product_name: lockerProductName,
         svg_parts: svgParts,
+        svg_groups: svgGroups.map(group => ({
+          id: group.id,
+          name: group.name || '',
+          color: group.color || '',
+          count: group.count || 0,
+          pantone: group.pantone || null
+        })),
         style_id: customization.style_id || 0,
         design_id: customization.design_id || 0,
         custom_logos: customLogos,
@@ -947,13 +956,20 @@
       const randString = generateRandomString()
       const productDisplayName = productsStore.activeProductDetails?.display_name || 'Product'
       const encodedName = encodeURIComponent(productDisplayName).replace(/%20/g, '+')
-
+      const svgGroups = productsStore.svgGroups || []
       const shareDesignPayload: ShareDesignPayload = {
         addons: addonsInfo ?? [],
         roster_url: `${getShareBaseUrl()}/share/${encodedName}/${randString}`,
         product_id: productId,
         product_name: productDisplayName,
         svg_parts: typeof svgParts === 'string' ? JSON.parse(svgParts) : svgParts,
+        svg_groups: svgGroups.map(group => ({
+          id: group.id,
+          name: group.name || '',
+          color: group.color || '',
+          count: group.count || 0,
+          pantone: group.pantone || null
+        })),
         style_id: customization.style_id || 0,
         design_id: customization.design_id || 0,
         custom_logos: customLogos,

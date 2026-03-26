@@ -322,6 +322,7 @@
             product_id: plr.product_id,
             product_name: productName.value || plr.product_name || '',
             svg_parts: parsedSvgParts,
+            svg_groups: [],
             style_id: plr.style_id,
             design_id: plr.design_id,
             custom_logos: parseJson(plr.custom_logos, []),
@@ -358,6 +359,8 @@
           const rosterDetail = customization?.products_rosters[productKey] || []
           const defaultColors = customization?.default_colors || []
           const groupColors = customization?.group_colors || {}
+
+          const svgGroups = productsStore.svgGroups || []
           const svgcolors = productsStore.svgGroups.map(group => ({
             value: group.color || '',
             name: group.name || '',
@@ -394,6 +397,13 @@
             product_id: productId,
             product_name: productName.value || '',
             svg_parts: svgParts,
+            svg_groups: svgGroups.map(group => ({
+              id: group.id,
+              name: group.name || '',
+              color: group.color || '',
+              count: group.count || 0,
+              pantone: group.pantone || null
+            })),
             style_id: customizationStoreRef.activeStyleId.value || 0,
             design_id: customizationStore.activeDesignId || 0,
             custom_logos: customLogos,

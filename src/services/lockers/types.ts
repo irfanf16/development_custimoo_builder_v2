@@ -111,6 +111,7 @@ export interface SaveLockerProductPayload {
   product_id: number
   product_name: string
   svg_parts: LockerPayloadJsonValue
+  svg_groups: LockerPayloadJsonValue[]
   style_id: number
   design_id: number
   custom_logos: LockerPayloadJsonValue

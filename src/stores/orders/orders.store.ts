@@ -585,6 +585,7 @@ export const useOrdersStore = defineStore('ordersStore', () => {
         roster_url: `${getShareBaseUrl()}/share/${encodedName}/${randString}`,
         product_id: productId,
         product_name: productName,
+        svg_groups: (fullProduct.svg_groups as ShareDesignPayload['svg_groups']) || [],
         svg_parts: (fullProduct.svg_parts as ShareDesignPayload['svg_parts']) || [],
         style_id: Number(fullProduct.style_id || factoryProduct.style_id || 0),
         design_id: Number(fullProduct.design_id || factoryProduct.design_id || 0),
