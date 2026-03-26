@@ -40,6 +40,22 @@ export type {
   TextEntryWithItemsForSide,
   UpdateTextPositionOptions
 } from './useTexts'
+export {
+  useFixedLogos,
+  addFixedLogoToCanvas,
+  computeFixedLogosList,
+  getImageExtension,
+  create2DFixedLogoGeometry,
+  create3DFixedLogoGeometry
+} from './useFixedLogos'
+export type {
+  AddFixedLogoToCanvasOptions,
+  FixedLogoTransform,
+  FixedLogoGeometry,
+  FixedLogo3DGeometry,
+  LoadImageFromURLFn,
+  UseFixedLogosConfig
+} from './useFixedLogos'
 export { createTextAsPathFromFonts } from './useTextAsPath'
 export type { ProductsFonts, OpentypeFont } from './useTextAsPath'
 export { getDimensionDisplayStrings, useDimensionDisplayComputed } from './useDimensionDisplay'
