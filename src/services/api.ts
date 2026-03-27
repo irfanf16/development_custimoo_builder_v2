@@ -49,6 +49,10 @@ instance.interceptors.response.use(
     return response
   },
   async (error: AxiosError<{ message?: string }>) => {
+    if (error.config?.skipGlobalAuthErrorHandling) {
+      return Promise.reject(error)
+    }
+
     const authStore = useAuthStore()
 
     if (error.response) {

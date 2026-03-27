@@ -51,6 +51,10 @@ export const useAuthStore = defineStore('authStore', () => {
   let lastHydrationResult = false
   let storageListenerInterval: number | null = null
   let storageEventListener: ((event: StorageEvent) => void) | null = null
+  /** Avoid parallel token exchanges from the storage listener poll */
+  let listenerTokenExchangeInFlight: Promise<boolean> | null = null
+  /** Skip retrying exchange for the same failed token until it changes */
+  let listenerTokenExchangeFailedFor: string | null = null
 
   // ===== COMPUTED =====
   const isAuthenticated = computed(() => !!accessToken.value && !!customer.value)
@@ -308,6 +312,39 @@ export const useAuthStore = defineStore('authStore', () => {
     storage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
   }
 
+  /**
+   * Exchange a token for a full session via GET customer/from/token.
+   * On success calls initCustomerAndAccessToken (persist, cart, permissions; stops auth listener when used from listener).
+   */
+  async function exchangeTokenForSession(token: string, operation: string): Promise<boolean> {
+    const output = await tryCatchApi(
+      API.authentication.refreshToken(token, { skipGlobalAuthErrorHandling: true }),
+      {
+        operation
+      }
+    )
+    const raw = output.content as Record<string, unknown> | null
+    const data =
+      raw && typeof raw.result === 'object' ? (raw.result as Record<string, unknown>) : raw
+    const userFromApi = data && (data.user ?? data.customer)
+    const accessTokenFromApi =
+      data && typeof data.access_token === 'string' ? data.access_token : null
+    const refreshTokenFromApi =
+      data && typeof data.refresh_token === 'string' ? data.refresh_token : undefined
+    const accessTokenToUse = accessTokenFromApi ?? token
+
+    if (output.success && data && userFromApi && accessTokenToUse) {
+      const payload: OutputLogin = {
+        user: userFromApi as Customer,
+        access_token: accessTokenToUse,
+        ...(refreshTokenFromApi ? { refresh_token: refreshTokenFromApi } : {})
+      }
+      await initCustomerAndAccessToken(payload)
+      return true
+    }
+    return false
+  }
+
   async function loadFromLocalStorage(options?: { force?: boolean }): Promise<boolean> {
     if (!hasWindow) {
       return false
@@ -355,26 +392,9 @@ export const useAuthStore = defineStore('authStore', () => {
       const impersonationToken = tokenFromStore ?? urlToken
 
       if (impersonationToken) {
-        const output = await tryCatchApi(API.authentication.refreshToken(impersonationToken), {
-          operation: 'loginFromToken'
-        })
-        const raw = output.content as Record<string, unknown> | null
-        const data =
-          raw && typeof raw.result === 'object' ? (raw.result as Record<string, unknown>) : raw
-        const userFromApi = data && (data.user ?? data.customer)
-        const accessTokenFromApi =
-          data && typeof data.access_token === 'string' ? data.access_token : null
-        const refreshTokenFromApi =
-          data && typeof data.refresh_token === 'string' ? data.refresh_token : undefined
-        const accessTokenToUse = accessTokenFromApi ?? impersonationToken
+        const exchanged = await exchangeTokenForSession(impersonationToken, 'loginFromToken')
 
-        if (output.success && data && userFromApi && accessTokenToUse) {
-          const payload: OutputLogin = {
-            user: userFromApi as Customer,
-            access_token: accessTokenToUse,
-            ...(refreshTokenFromApi ? { refresh_token: refreshTokenFromApi } : {})
-          }
-          await initCustomerAndAccessToken(payload)
+        if (exchanged) {
           storage.setItemRaw(ADMIN_TOKEN_STORAGE_KEY, impersonationToken)
           await saveToLocalStorage()
           // Clear token from query params store (already removed from URL by initQueryParams when present)
@@ -510,13 +530,18 @@ export const useAuthStore = defineStore('authStore', () => {
       return
     }
 
+    listenerTokenExchangeFailedFor = null
+    listenerTokenExchangeInFlight = null
+
     console.log('[Auth] Starting localStorage listener for jwtToken and customer')
 
     const checkAndHydrate = async () => {
       const storedCustomer = storage.getItem<Customer>(CUSTOMER_STORAGE_KEY)
-      const storedAccessToken = storage.getItemRaw(ACCESS_TOKEN_STORAGE_KEY)
+      const storedAccessTokenRaw = storage.getItemRaw(ACCESS_TOKEN_STORAGE_KEY)
+      const tokenTrimmed = storedAccessTokenRaw?.trim() ?? ''
+      const tokenPresent = tokenTrimmed.length > 0
 
-      if (storedCustomer && storedAccessToken) {
+      if (storedCustomer && tokenPresent) {
         console.log('[Auth] Detected jwtToken and customer in localStorage, hydrating...')
 
         // Stop listening
@@ -539,6 +564,30 @@ export const useAuthStore = defineStore('authStore', () => {
             // Ignore permissions fetch errors
           }
         }
+        return
+      }
+
+      if (tokenPresent && !storedCustomer) {
+        if (listenerTokenExchangeFailedFor === tokenTrimmed) {
+          return
+        }
+        if (listenerTokenExchangeInFlight !== null) {
+          return
+        }
+
+        listenerTokenExchangeInFlight = (async (): Promise<boolean> => {
+          try {
+            const ok = await exchangeTokenForSession(tokenTrimmed, 'listenerTokenExchange')
+            if (!ok) {
+              listenerTokenExchangeFailedFor = tokenTrimmed
+            }
+            return ok
+          } finally {
+            listenerTokenExchangeInFlight = null
+          }
+        })()
+
+        void listenerTokenExchangeInFlight
       }
     }
 

@@ -1,3 +1,4 @@
+ 
 // the axios instance and types
 import http from '../api'
 import {
@@ -20,14 +21,15 @@ async function postRegister(data: InputSignup) {
   return await http.post<OutputSignup>('customer/signup', data)
 }
 
-async function refreshToken(refreshToken: string) {
+async function refreshToken(token: string, options?: { skipGlobalAuthErrorHandling?: boolean }) {
   return await http.get<OutputLogin>('customer/from/token', {
-    params: { token: refreshToken },
+    params: { token },
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
       Pragma: 'no-cache',
       Expires: '0'
-    }
+    },
+    ...(options?.skipGlobalAuthErrorHandling ? { skipGlobalAuthErrorHandling: true } : {})
   })
 }
 

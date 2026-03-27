@@ -167,7 +167,7 @@
               </p>
 
               <Button
-                class="w-full bg-teal-500 hover:bg-teal-600 text-white"
+                class="w-full bg-primary hover:bg-primary/80 text-white"
                 @click="handleUseInDesign(roster.roster_group)"
               >
                 {{ locker_use_in_design({}, { locale }) }}
