@@ -244,7 +244,6 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       const resp = await tryCatchApi(API.lockers.copyProducts(payload), {
         operation: 'copyProducts'
       })
-      console.log('Copy products response:', resp)
       if (!resp.success) {
         setError(resp.message || 'Copy failed')
         return false

@@ -24,6 +24,7 @@
   "roster_description": "Add players to create team kits.",
   "roster_drop_helper": "Upload the downloaded Excel roster template.",
   "roster_manual_create": "Create manually",
+  "roster_manual_continue_editing": "Continue editing",
   "roster_template_button": "Template",
   "roster_reset_action": "Reset list",
   "roster_reset_action_tooltip": "Clear all players from the roster",

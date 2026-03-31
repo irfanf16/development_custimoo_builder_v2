@@ -17,7 +17,8 @@
     logos_empty_click_to_upload,
     logos_empty_drag_drop,
     roster_drop_helper,
-    roster_manual_create
+    roster_manual_create,
+    roster_manual_continue_editing
   } from '@/paraglide/messages'
   import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
   import { useRosterConfig } from './useRosterConfig'
@@ -34,7 +35,7 @@
   const locale = computed(() => profileStore.currentLocale || 'en')
   const fileInputRef = ref<HTMLInputElement | null>(null)
   const uploadInputId = `roster-upload-${Math.random().toString(36).slice(2)}`
-  const { ensureEditableRoster } = useRoster()
+  const { ensureEditableRoster, hasEntries } = useRoster()
   const { footerConfig } = useRosterConfig()
   const {
     isDragging,
@@ -138,7 +139,11 @@
         {{ colors_choose_from_locker({}, { locale }) }}
       </Button>
       <Button variant="default" @click="handleManualCreate">
-        {{ roster_manual_create({}, { locale }) }}
+        {{
+          hasEntries
+            ? roster_manual_continue_editing({}, { locale })
+            : roster_manual_create({}, { locale })
+        }}
       </Button>
     </div>
   </div>

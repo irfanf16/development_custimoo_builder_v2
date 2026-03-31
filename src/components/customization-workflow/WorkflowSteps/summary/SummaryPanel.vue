@@ -1,13 +1,11 @@
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
-  import { useDebounceFn } from '@vueuse/core'
+  import { computed } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
-  import { useSceneStore } from '@/stores/scene/scene.store'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
@@ -37,96 +35,15 @@
   } from '@/paraglide/messages'
   import type { GradientColor, OutputProductText } from '@/services/products/types'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
-  import Spinner from '@/components/ui/spinner/Spinner.vue'
+  import TwoDScene from '@/components/scene/TwoDScene.vue'
   // Stores
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
   const workflowStore = useWorkflowStore()
-  const sceneStore = useSceneStore()
   const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const { effectiveLogos, effectiveSvgGroups } = useEffectiveSelectors()
   // Summary product preview: image from canvas instead of live TwoDScene
-
-  const summaryPreviewImage = ref('')
-  const summaryImageLoading = ref(true)
-
-  /** Wait for canvas to be ready and paint (e.g. after customization load or page refresh). */
-  function waitForCanvasPaint(ms = 200): Promise<void> {
-    return new Promise(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setTimeout(resolve, ms)
-        })
-      })
-    })
-  }
-
-  async function refreshSummaryPreviewImage(retryCount = 0): Promise<void> {
-    const maxRetries = 3
-    const retryDelays = [200, 400, 800]
-
-    summaryImageLoading.value = true
-    if (retryCount === 0) summaryPreviewImage.value = ''
-
-    await waitForCanvasPaint(retryCount === 0 ? 250 : (retryDelays[retryCount] ?? 400))
-
-    try {
-      const is3DProduct = activeProductDetails.value?.is_3d_product
-      const thumbOptions = { width: 256, height: 256 }
-      let dataUrl = ''
-
-      if (is3DProduct) {
-        const componentRef = sceneStore.threeDSceneRef
-        if (componentRef?.getImageFromCanvas) {
-          dataUrl = await componentRef.getImageFromCanvas('front', thumbOptions)
-        }
-      } else {
-        const frontRef = sceneStore.getTwoDSceneRef('front')
-        const getImage = frontRef?.getImageFromCanvas as
-          | ((opts?: { width?: number; height?: number }) => Promise<string>)
-          | undefined
-        if (getImage) {
-          dataUrl = await getImage(thumbOptions)
-        }
-      }
-
-      // Retry if scene ref was null (canvas not ready yet) or capture was effectively empty
-      const noCapture = !dataUrl
-      const emptyImage = dataUrl.startsWith('data:') && dataUrl.length < 500
-      const isEmpty = noCapture || emptyImage
-      if (isEmpty && retryCount < maxRetries) {
-        void refreshSummaryPreviewImage(retryCount + 1)
-        return
-      }
-      if (!isEmpty) summaryPreviewImage.value = dataUrl
-    } finally {
-      const willRetry = retryCount < maxRetries && !summaryPreviewImage.value
-      if (!willRetry) summaryImageLoading.value = false
-    }
-  }
-
-  onMounted(() => {
-    void refreshSummaryPreviewImage()
-  })
-
-  // Refresh preview when user navigates to summary tab (e.g. after switching tabs)
-  watch(
-    () => workflowStore.activeStep,
-    step => {
-      if (step === 'summary') void refreshSummaryPreviewImage()
-    }
-  )
-
-  // Refresh preview when customization changes while on summary (e.g. after editing product from locker or page load)
-  const debouncedRefreshPreview = useDebounceFn(() => {
-    if (workflowStore.activeStep === 'summary') void refreshSummaryPreviewImage()
-  }, 600)
-  watch(
-    () => customizationStore.customization,
-    () => debouncedRefreshPreview(),
-    { deep: true }
-  )
 
   const { activeProductDetails, activeStyleDetails } = storeToRefs(productsStore)
   const { activeProductTexts, rosterEntries } = storeToRefs(customizationStore)
@@ -255,14 +172,11 @@
       <div
         class="shrink-0 w-32 h-32 rounded-xl border bg-muted overflow-hidden flex items-center justify-center"
       >
-        <template v-if="summaryImageLoading">
-          <Spinner class="size-8 text-muted-foreground" />
-        </template>
-        <img
-          v-else-if="summaryPreviewImage"
-          :src="summaryPreviewImage"
-          :alt="productTitle"
-          class="w-full h-full object-contain rounded-xl"
+        <TwoDScene
+          :side="'front'"
+          :canvas-width="128"
+          :canvas-height="128"
+          canvas-class="rounded-xl"
         />
       </div>
       <div class="flex-1 flex flex-col gap-2">

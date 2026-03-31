@@ -195,6 +195,26 @@ export const usePricing = () => {
     return totalAddonPrice
   }
 
+  /** Per-logo technology surcharges (not multiplied by roster qty; matches cart breakdown). */
+  const getTotalLogoTechnologyPrice = () => {
+    const productId = customizationStore.customization?.product_id
+    if (productId == null) return 0
+    const key = String(productId)
+    const arr = customizationStore.customization?.custom_logos?.[key]
+    if (!Array.isArray(arr)) return 0
+    let sum = 0
+    for (const logo of arr) {
+      const tech =
+        logo && typeof logo === 'object' && 'logo_technology' in logo
+          ? (logo as { logo_technology?: { price?: number } | null }).logo_technology
+          : null
+      if (tech != null && typeof tech.price === 'number' && !Number.isNaN(tech.price)) {
+        sum += tech.price
+      }
+    }
+    return sum
+  }
+
   const activeProductPrice = computed(() => {
     const details = activeProductDetails.value
     if (!details) return null
@@ -212,8 +232,9 @@ export const usePricing = () => {
     const minimumQuantity = Number(totalRosterQuantity.value) || 1
 
     const totalAddonPrice = Number(getTotalAddonPrice()) || 0
+    const totalLogoTechPrice = Number(getTotalLogoTechnologyPrice()) || 0
 
-    const totalPrice = (basePrice + totalAddonPrice) * minimumQuantity
+    const totalPrice = (basePrice + totalAddonPrice) * minimumQuantity + totalLogoTechPrice
 
     const currencyCode = isCustomPrice
       ? details?.company_product?.skucurrency?.[0]?.code
@@ -237,6 +258,7 @@ export const usePricing = () => {
     showPricing,
     isQuantityByDesign,
     getMinimumProductQuantityByDesign,
-    getTotalAddonPrice
+    getTotalAddonPrice,
+    getTotalLogoTechnologyPrice
   }
 }

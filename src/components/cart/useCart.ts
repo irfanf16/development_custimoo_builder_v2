@@ -282,7 +282,6 @@ export function useCart() {
       })
     }
 
-    // console.log('logo tech', product)
     if (product.logo_technology && product.logo_technology.label !== 'Logo technology') {
       rows.push({
         label: product.logo_technology.label,
@@ -308,7 +307,6 @@ export function useCart() {
    * Validate cart for checkout: no item must have quantity 0
    */
   function validateCartForCheckout(): { valid: boolean; invalidFactoryProductIds: string[] } {
-    console.log(products.value)
     const invalidFactoryProductIds = products.value
       .filter(p => p.quantity === 0)
       .map(p => p.factory_product_id)

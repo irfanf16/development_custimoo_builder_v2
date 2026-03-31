@@ -274,7 +274,7 @@
     ) {
       return
     }
-    console.log('option', option)
+
     customizationStore.updateCustomLogo({
       custom_logo_index: index,
       data: {
@@ -651,7 +651,7 @@
         </AccordionTrigger>
         <AccordionContent class="space-y-4 px-4 md:px-6 py-5">
           <div class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
               <ContentRemoveIcons type="simple" />
             </div>
             <div class="flex flex-1 flex-col gap-2">
@@ -686,7 +686,7 @@
           </div>
 
           <div class="flex w-full items-start gap-4 rounded-2xl border p-4 text-left">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
               <ContentRemoveIcons type="smart" />
             </div>
             <div class="flex flex-1 flex-col gap-2">

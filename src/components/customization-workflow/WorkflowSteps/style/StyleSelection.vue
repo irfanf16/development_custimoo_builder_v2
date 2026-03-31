@@ -86,7 +86,6 @@
   async function toggleAddon(addonId: number, checked: boolean) {
     const pid = Number(productId.value)
     if (!pid || !customizationStore.customization) return
-    console.log('visible addons', visibleAddons.value)
     const addon = visibleAddons.value.find(a => a.addon_id === addonId)
 
     // If addon is preselected, do not remove it

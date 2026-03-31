@@ -31,6 +31,8 @@
     open: boolean
     initialTab?: 'account' | 'orders' | 'address' | 'preferences'
     initialOrderId?: string | number
+    /** When opening with initialOrderId: 'details' = OrderDetailsView; 'timeline' = order timeline (default). */
+    initialOrderPresentation?: 'details' | 'timeline'
     showSelectAddressButton?: boolean
   }>()
   const emit = defineEmits<{
@@ -138,14 +140,21 @@
           tab.value = props.initialTab
           profileStore.activeTab = props.initialTab
         }
-        // Reset mobile view to tab list when dialog opens
+        // Mobile: default to the tab list only for a generic "My profile" open. When a caller
+        // passes initialTab (checkout → orders, address picker, deep link), show that content
+        // immediately instead of an extra tap on the same tab name.
         if (uiStore.isMobile) {
-          showMobileTabList.value = true
+          showMobileTabList.value = !props.initialTab
         }
-        // Open order timeline when opened with initialOrderId (e.g. from /order/:id/detail)
+        // Open order when opened with initialOrderId (e.g. checkout → details, /order/:id → timeline)
         if (props.initialOrderId != null && (props.initialTab ?? tab.value) === 'orders') {
           nextTick(() => {
-            ordersStore.openOrderTimeline(props.initialOrderId!)
+            const presentation = props.initialOrderPresentation ?? 'timeline'
+            if (presentation === 'details') {
+              void ordersStore.openOrderDetailsById(props.initialOrderId!)
+            } else {
+              void ordersStore.openOrderTimeline(props.initialOrderId!)
+            }
             uiStore.clearOpenProfileWithOrderId()
           })
         }

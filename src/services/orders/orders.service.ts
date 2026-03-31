@@ -90,8 +90,63 @@ export interface PlaceOrderPayload {
   general_comments: string
 }
 
+/** Common API shapes for POST /orders — extend extraction if backend differs */
+export type PlaceOrderApiResponse = {
+  success?: boolean
+  message?: string
+  result?: Order | { id?: number | string; order_id?: number | string; order?: Order } | null
+  data?: Order | { id?: number | string; order_id?: number | string } | null
+  order_id?: number | string
+  id?: number | string
+}
+
+function coerceOrderId(value: unknown): number | string | null {
+  if (value == null || value === '') return null
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim() !== '') return value
+  return null
+}
+
+/** Parses placed order id from API JSON body */
+export function extractPlacedOrderId(data: unknown): number | string | null {
+  if (data == null || typeof data !== 'object') return null
+  const o = data as Record<string, unknown>
+
+  const top = coerceOrderId(o.id) ?? coerceOrderId(o.order_id)
+  if (top != null) return top
+
+  const result = o.result
+  if (result != null && typeof result === 'object' && !Array.isArray(result)) {
+    const r = result as Record<string, unknown>
+    const fromResult = coerceOrderId(r.id) ?? coerceOrderId(r.order_id)
+    if (fromResult != null) return fromResult
+    const nestedOrder = r.order
+    if (nestedOrder != null && typeof nestedOrder === 'object' && !Array.isArray(nestedOrder)) {
+      const n = nestedOrder as Record<string, unknown>
+      const nested = coerceOrderId(n.id)
+      if (nested != null) return nested
+    }
+  }
+
+  const d = o.data
+  if (d != null && typeof d === 'object' && !Array.isArray(d)) {
+    const dObj = d as Record<string, unknown>
+    const fromData = coerceOrderId(dObj.id) ?? coerceOrderId(dObj.order_id)
+    if (fromData != null) return fromData
+    const orderNested = dObj.order
+    if (orderNested != null && typeof orderNested === 'object' && !Array.isArray(orderNested)) {
+      const on = orderNested as Record<string, unknown>
+      const fromOrder = coerceOrderId(on.id) ?? coerceOrderId(on.order_id)
+      if (fromOrder != null) return fromOrder
+    }
+  }
+
+  return null
+}
+
 async function placeOrder(payload: PlaceOrderPayload) {
-  return http.post('/orders', payload)
+  const { data } = await http.post<PlaceOrderApiResponse>('/orders', payload)
+  return data
 }
 
 export type ReorderProductResponse = {

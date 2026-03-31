@@ -1324,7 +1324,7 @@
                       <ShoppingCart class="size-4" />
                       <span
                         v-if="cartStore.cartItemsCount > 0"
-                        class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+                        class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white"
                       >
                         {{ cartStore.cartItemsCount }}
                       </span>
@@ -1346,7 +1346,7 @@
                 <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
                 <span
                   v-if="cartStore.cartItemsCount > 0"
-                  class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+                  class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white"
                 >
                   {{ cartStore.cartItemsCount }}
                 </span>
@@ -1400,7 +1400,7 @@
                   <span>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</span>
                   <span
                     v-if="cartStore.cartItemsCount > 0"
-                    class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-xs font-semibold text-white"
+                    class="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white"
                   >
                     {{ cartStore.cartItemsCount }}
                   </span>

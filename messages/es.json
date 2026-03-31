@@ -24,6 +24,7 @@
   "roster_description": "Añade jugadores para crear kits de equipo.",
   "roster_drop_helper": "Sube la plantilla de Excel descargada.",
   "roster_manual_create": "Crear manualmente",
+  "roster_manual_continue_editing": "Continuar editando",
   "roster_template_button": "Plantilla",
   "roster_reset_action": "Reiniciar lista",
   "roster_reset_action_tooltip": "Borrar todos los jugadores de la plantilla",

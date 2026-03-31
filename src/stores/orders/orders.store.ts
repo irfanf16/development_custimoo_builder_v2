@@ -395,7 +395,6 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     factoryProduct: FactoryProduct,
     onSuccess?: () => void
   ): Promise<boolean> {
-    console.log('Starting reorderProduct with', { order, orderItem, factoryProduct })
     if (!order?.id || orderItem?.id == null || factoryProduct?.id == null) return false
 
     const orderId = Number(order.id)
@@ -488,6 +487,12 @@ export const useOrdersStore = defineStore('ordersStore', () => {
       { label: 'Order Timeline' }
     ]
     saveToLocalStorage()
+  }
+
+  /** Load full order from API and show OrderDetailsView (not timeline). */
+  async function openOrderDetailsById(orderId: number | string) {
+    activeOrderView.value = 'details'
+    await fetchOrderDetails(orderId)
   }
 
   function closeOrderDetails() {
@@ -718,6 +723,7 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     openOrderDetails,
     fetchOrderDetails,
     openOrderTimeline,
+    openOrderDetailsById,
     closeOrderDetails,
 
     // Persistence

@@ -24,6 +24,7 @@
   "roster_description": "Tilføj spillere for at skabe teamkits.",
   "roster_drop_helper": "Upload den downloadede Excel-skabelon.",
   "roster_manual_create": "Opret manuelt",
+  "roster_manual_continue_editing": "Fortsæt redigering",
   "roster_template_button": "Skabelon",
   "roster_reset_action": "Nulstil liste",
   "roster_reset_action_tooltip": "Ryd alle spillere fra rosteret",

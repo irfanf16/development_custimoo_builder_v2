@@ -28,6 +28,7 @@
   import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
   import type { APCustomizationRosterEntry } from '@/services/products/types'
   import { API } from '@/services'
+  import { extractPlacedOrderId } from '@/services/orders/orders.service'
   import { useOrdersStore } from '@/stores/orders/orders.store'
   import { Button } from '@/components/ui/button'
   import { DialogFooter } from '@/components/ui/dialog'
@@ -325,6 +326,10 @@
     return isValid
   }
 
+  function handleOrdersProfileDialogOpen(value: boolean) {
+    showOrdersProfileDialog.value = value
+  }
+
   async function handleConfirmOrder() {
     if (!validateForm()) {
       toast.error(msg_fill_required_fields({}, { locale: locale.value }), {
@@ -360,7 +365,8 @@
         general_comments: comments.value || ''
       }
 
-      await API.orders.placeOrder(payload)
+      const placeResponse = await API.orders.placeOrder(payload)
+      const newOrderId = extractPlacedOrderId(placeResponse)
 
       toast.success(msg_order_placed_success({}, { locale: locale.value }), {
         position: 'top-right',
@@ -373,11 +379,21 @@
       // Close cart dialog
       emit('update:open', false)
 
-      // Open ProfileDialog with orders tab
-      showOrdersProfileDialog.value = true
-
-      // Fetch orders to show the new order
       await ordersStore.fetchOrders()
+
+      // Open OrderDetailsView for the new order before showing profile (avoids listing-only if
+      // ProfileDialog nextTick races OrdersTab, and covers APIs that omit id in the response).
+      const idFromResponse = newOrderId
+      const idFromFreshList = ordersStore.orders[0]?.id
+      const orderIdToOpen = idFromResponse ?? idFromFreshList ?? null
+
+      if (orderIdToOpen != null) {
+        await ordersStore.openOrderDetailsById(orderIdToOpen)
+      } else {
+        ordersStore.closeOrderDetails()
+      }
+
+      showOrdersProfileDialog.value = true
     } catch (error) {
       console.error('Error placing order:', error)
       const errorMessage =
@@ -653,7 +669,7 @@
     <ProfileDialog
       :open="showOrdersProfileDialog"
       :initial-tab="'orders'"
-      @update:open="showOrdersProfileDialog = $event"
+      @update:open="handleOrdersProfileDialogOpen"
     />
 
     <!-- Remove Product Confirm Dialog -->

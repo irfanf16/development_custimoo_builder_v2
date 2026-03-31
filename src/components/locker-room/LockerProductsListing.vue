@@ -93,10 +93,11 @@
     }, 300)
   }
 
-  function handleRosterUpdated(payload: { id: number; totalQuantity: number }): void {
+  function handleRosterUpdated(/*payload: { id: number; totalQuantity: number }*/): void {
     // Optionally refresh the product list or update local state after a successful save.
     // For now, just log — replace with a store call or emit when the endpoint is live.
-    console.log('Roster saved for product', payload.id, 'total qty:', payload.totalQuantity)
+    // console.log('Roster saved for product', payload.id, 'total qty:', payload.totalQuantity)
+    return
   }
 
   // ─── Product grid helpers (unchanged from original) ───────────────────────────

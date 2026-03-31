@@ -14,7 +14,6 @@ const selectedDesigns = ref<number[]>([])
 export function useDesignConfig() {
   // ===== UTILITIES =====
   function onDesignSearchInput(val: string) {
-    console.log('onDesignSearchInput', val)
     designSearchModel.value = val
   }
 
@@ -64,7 +63,8 @@ export function useDesignConfig() {
             label: 'Add to locker',
             variant: 'primary',
             onClick: () => {
-              console.log('add to locker: ', selectedDesigns.value)
+              return
+              // console.log('add to locker: ', selectedDesigns.value)
             }
           }
         ]
