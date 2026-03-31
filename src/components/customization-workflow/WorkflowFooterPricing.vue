@@ -30,6 +30,7 @@
   import { usePermissions } from '@/composables/usePermissions'
   import { storeToRefs } from 'pinia'
   import { computed } from 'vue'
+  import { useCompanyStore } from '@/stores/company/company.store'
 
   const uiStore = useUIStore()
   const { can } = usePermissions()
@@ -54,6 +55,7 @@
   const canSkipMoq = computed(() => can('skip-moq'))
   const isEditingCartProduct = computed(() => cartStore.isEditingCartProduct)
 
+  const companyStore = useCompanyStore()
   defineProps<{
     isExpanded?: boolean
   }>()
@@ -235,7 +237,12 @@
         v-if="showPricing && !uiStore.isMobile"
         class="text-xs text-muted-foreground uppercase tracking-wide"
       >
-        {{ summary_mrsp({}, { locale: profileStore.currentLocale }) }}
+        <!-- {{ summary_mrsp({}, { locale: profileStore.currentLocale }) }} -->
+        {{
+          companyStore.settings?.settings?.msrp_label?.is_custom_msrp_label
+            ? companyStore.settings?.settings?.msrp_label?.msrp_label
+            : summary_mrsp({}, { locale: profileStore.currentLocale })
+        }}
       </p>
       <div v-if="showPricing" class="flex items-baseline gap-1 md:gap-2">
         <p v-if="uiStore.isMobile" class="text-xs text-muted-foreground uppercase tracking-wide">

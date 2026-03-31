@@ -75,7 +75,10 @@ export type OutputSettings = {
     color_type: 'pantone_coated' | 'pantone_tcx'
     currencies: {
       visible: boolean
-      currenncies: Array<'USD' | 'EUR' | 'GBP' | 'DKK' | 'SEK' | 'CAD'>
+      /** Backend field name (typo). Ordered list; first entry is treated as default display currency. */
+      currenncies?: Array<'USD' | 'EUR' | 'GBP' | 'DKK' | 'SEK' | 'CAD'>
+      /** Some API responses use the correct spelling instead of `currenncies`. */
+      currencies?: Array<'USD' | 'EUR' | 'GBP' | 'DKK' | 'SEK' | 'CAD'>
     }
     get_quote: {
       cart_with_quote: boolean

@@ -43,6 +43,31 @@ interface BackendLocalization {
   default_language: { name: string; short_code: string }
 }
 
+/** Resolve enabled currency codes from get-settings (handles API typo vs correct key). */
+function currencyCodesFromSettings(settings: OutputSettings | null | undefined): string[] {
+  const block = settings?.settings?.currencies
+  if (!block) return []
+  const list = block.currenncies ?? block.currencies
+  return Array.isArray(list) ? list.filter(c => typeof c === 'string' && c.length > 0) : []
+}
+
+/** Map ISO currency code to display config for company UI (addons, formatting fallbacks). */
+function currencyConfigFromCode(isoCode: string): CurrencyConfig {
+  const code = (isoCode || 'USD').toUpperCase()
+  const known: Record<string, Omit<CurrencyConfig, 'code'>> = {
+    USD: { symbol: '$', position: 'before', decimalPlaces: 2 },
+    EUR: { symbol: '€', position: 'before', decimalPlaces: 2 },
+    GBP: { symbol: '£', position: 'before', decimalPlaces: 2 },
+    DKK: { symbol: 'kr', position: 'after', decimalPlaces: 2 },
+    SEK: { symbol: 'kr', position: 'after', decimalPlaces: 2 },
+    CAD: { symbol: '$', position: 'before', decimalPlaces: 2 }
+  }
+  return {
+    code,
+    ...(known[code] ?? { symbol: code, position: 'before' as const, decimalPlaces: 2 })
+  }
+}
+
 // Helper to check if an object has localization data
 function hasLocalization(
   content: unknown
@@ -163,6 +188,16 @@ export const useCompanyStore = defineStore('companyStore', () => {
     localization.value = mappedLocalization
   }
 
+  /** Sync `localization.currency` from get-settings company currencies (first code = default display). */
+  function applyCurrencyFromSettings(settingsData: OutputSettings | null | undefined) {
+    const codes = currencyCodesFromSettings(settingsData)
+    if (!codes.length) return
+    localization.value = {
+      ...localization.value,
+      currency: currencyConfigFromCode(codes[0]!)
+    }
+  }
+
   function setLoading(loading: boolean) {
     isLoading.value = loading
   }
@@ -214,6 +249,7 @@ export const useCompanyStore = defineStore('companyStore', () => {
           defaultLanguage: 'en'
         }
       }
+      applyCurrencyFromSettings(output.content.result)
     } else {
       setError('Error getting settings')
       // If settings fetch fails, set default languages

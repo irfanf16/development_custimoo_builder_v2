@@ -189,7 +189,6 @@
   ): { code: string; name: string; price: number; symbol: string } | null {
     const preferredCode = companyStore.localization.currency.code
     const details = productsStore.activeProductDetails
-
     const raw = details?.company_product?.is_custom_addons
     const isCustomAddons = ['1', 1, true, 'true'].includes(raw as string | number | boolean)
     // Prefer company_addons

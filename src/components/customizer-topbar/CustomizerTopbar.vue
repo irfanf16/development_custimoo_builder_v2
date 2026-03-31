@@ -506,9 +506,9 @@
     showProfileDialog.value = true
   }
 
-  function handleUserSettings() {
-    // Handle user settings
-  }
+  // function handleUserSettings() {
+  //   // Handle user settings
+  // }
 
   function handleSignOut() {
     handleLogout()
@@ -1430,10 +1430,10 @@
                   <Settings class="size-4 mr-2" />
                   Preferences
                 </DropdownMenuItem>
-                <DropdownMenuItem v-if="isLoggedIn" @click="handleUserSettings">
+                <!-- <DropdownMenuItem v-if="isLoggedIn" @click="handleUserSettings">
                   <Settings class="size-4 mr-2" />
                   Settings
-                </DropdownMenuItem>
+                </DropdownMenuItem> -->
                 <DropdownMenuSeparator v-if="isLoggedIn" />
                 <DropdownMenuItem v-if="isLoggedIn" class="text-red-600" @click="handleSignOut">
                   <LogOut class="size-4 mr-2" />

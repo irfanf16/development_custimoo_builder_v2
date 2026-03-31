@@ -6,6 +6,16 @@ import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useProfileStore } from '@/stores/profile/profile.store'
 import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
+import type { OutputSettings } from '@/services/company/types'
+
+function firstSettingsCurrencyCode(
+  settings: OutputSettings['settings'] | null | undefined
+): string | undefined {
+  const c = settings?.currencies
+  if (!c) return undefined
+  const list = c.currenncies ?? c.currencies
+  return Array.isArray(list) && list.length ? list[0] : undefined
+}
 
 export const usePricing = () => {
   const companyStore = useCompanyStore()
@@ -30,7 +40,7 @@ export const usePricing = () => {
           style: 'currency',
           currency:
             product.sku?.skucurrency?.[0]?.code ||
-            companyStore.settings?.settings?.currencies?.currenncies?.[0] ||
+            firstSettingsCurrencyCode(companyStore.settings?.settings) ||
             'USD'
         }).format(productPrice)
       }
@@ -208,11 +218,8 @@ export const usePricing = () => {
     const currencyCode = isCustomPrice
       ? details?.company_product?.skucurrency?.[0]?.code
       : details?.sku?.skucurrency?.[0]?.code ||
-        (companyStore.settings?.settings?.currencies &&
-        Array.isArray(companyStore.settings.settings.currencies.currenncies) &&
-        companyStore.settings.settings.currencies.currenncies.length > 0
-          ? companyStore.settings.settings.currencies.currenncies[0]
-          : 'USD')
+        firstSettingsCurrencyCode(companyStore.settings?.settings) ||
+        'USD'
     return new Intl.NumberFormat(locale.value, {
       style: 'currency',
       currency: currencyCode
