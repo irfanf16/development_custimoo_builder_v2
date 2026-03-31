@@ -41,9 +41,9 @@ export function useColorCustomization(
   const { applyCustomizationOverrides } = useDesignConfig()
 
   // ===== UTILITIES =====
-  /** Normalize json_data to an array for .some() and merging */
+  /** Normalize json_data to an array for .some() and merging (always copy arrays — never return product.colors[i].json_data by reference or merge logic mutates the store). */
   function jsonDataAsArray(value: unknown): Array<{ value?: string }> {
-    if (Array.isArray(value)) return value as Array<{ value?: string }>
+    if (Array.isArray(value)) return value.slice() as Array<{ value?: string }>
     if (value && typeof value === 'object') return [value as { value?: string }]
     return []
   }

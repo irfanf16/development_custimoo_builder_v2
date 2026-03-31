@@ -45,8 +45,12 @@
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
   const workflowStore = useWorkflowStore()
-  const { effectiveSvgGroups, effectiveSvgGroupsInteractive, effectiveSvgGroupsCustom } =
-    useEffectiveSelectors()
+  const {
+    effectiveSvgGroups,
+    effectiveSvgGroupsInteractive,
+    effectiveSvgGroupsCustom,
+    effectiveProductId
+  } = useEffectiveSelectors()
   const history = useHistoryStore()
   const { clipboardColor, copyColor } = useColorClipboard()
   const lockerRoomStore = useLockerRoomStore()
@@ -123,7 +127,8 @@
     }))
   })
 
-  // (svg group container will be read directly by getSvgGroupColors)
+  // Per-group palette from API only. When absent, the template uses computedPalettes (one tab per color file).
+  // Merging all product.colors into one list duplicated swatches (~5×) and collapsed tabs to a single trigger.
   function getSvgGroupColors(svg_group: string): unknown | false {
     const container = productsStore.activeProductDetails?.svg_group_color_container as
       | Record<string, unknown>
@@ -150,7 +155,13 @@
       | unknown[]
       | undefined
     const name = (e['name'] ?? e['file_name'] ?? svg_group) as string
-    const id = typeof e['group_id'] ? (e['group_id'] as number) : 0
+    const rawGroupId = e['group_id']
+    const id =
+      typeof rawGroupId === 'number'
+        ? rawGroupId
+        : typeof rawGroupId === 'string' && rawGroupId !== ''
+          ? Number(rawGroupId) || 0
+          : 0
     return { id, name, colors: (paletteColors ?? []) as unknown as OutputColor[] }
   }
   // Map custom logos into palettes for PaletteColorSelector
@@ -451,6 +462,23 @@
     () => appliedLogoColors.value.length > 0 && workflowStore.activeColorAccordionIndex === 0
   )
 
+  // Design shuffle with a single SVG group only fills one default slot — hide the duplicate "extracted" strip + picker chrome.
+  const showAppliedExtractedColorsBlock = computed(() => {
+    if (appliedLogoColors.value.length === 0) return false
+    const oneGroup = (effectiveSvgGroupsInteractive.value?.length ?? 0) === 1
+    const oneSwatch = appliedLogoColors.value.length === 1
+    if (workflowStore.defaultColorsSource === 'design' && oneGroup && oneSwatch) return false
+    return true
+  })
+
+  watch(effectiveProductId, (id, prev) => {
+    if (prev == null || id === prev) return
+    selectedGradientIndex.value = {}
+    workflowStore.setDefaultColorsSource(null)
+    workflowStore.setActiveColorAccordionIndex(null)
+    editingDefaultColorIndex.value = null
+  })
+
   // Breadcrumb logic for color selection
   const headerConfig = computed(() => ({
     breadcrumbs: [{ label: nav_color({}, { locale: profileStore.currentLocale }) }]
@@ -503,7 +531,7 @@
     </div>
 
     <!-- Applied logo colors – only when logo colors have been applied; after Lucky/Locker -->
-    <div v-if="appliedLogoColors.length > 0" class="px-4 md:px-6 flex flex-col gap-2">
+    <div v-if="showAppliedExtractedColorsBlock" class="px-4 md:px-6 flex flex-col gap-2">
       <p class="text-base font-semibold text-foreground">
         {{ extractedSectionLabel }}
       </p>

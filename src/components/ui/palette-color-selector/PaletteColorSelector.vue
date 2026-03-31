@@ -73,10 +73,8 @@
     effectiveCustomColorType.value === 'pantone-coated' ? 'XXX C' : 'XX-XXXX'
   )
 
-  // Initialize with the first palette's ID
-  const currentPaletteId = ref<string>(
-    props.palettes.length > 0 ? String(props.palettes[0]?.id || '') : ''
-  )
+  // Tab values use stable keys (p-0, p-1, …) so duplicate palette.id from the API cannot collapse tabs.
+  const currentPaletteId = ref<string>('p-0')
   const activeRoomId = ref<string>('')
   const activeFolderName = ref<string>('')
   const customPantone = ref('')
@@ -102,27 +100,49 @@
     return [...tcx, ...coated].filter(i => i.value)
   })
 
-  // Update currentPaletteId if palettes change
+  function isMainPaletteTab(value: string): boolean {
+    return /^p-\d+$/.test(value) && Number(value.slice(2)) < props.palettes.length
+  }
+
+  function isCustomPaletteTab(value: string): boolean {
+    if (props.hasSvgColors) return false
+    const m = /^c-(\d+)$/.exec(value)
+    if (!m) return false
+    return Number(m[1]) < (props.customPalettes?.length ?? 0)
+  }
+
+  function isValidPaletteTab(value: string): boolean {
+    if (props.palettes.length === 0) return false
+    if (isMainPaletteTab(value)) return true
+    if (isCustomPaletteTab(value)) return true
+    if (!props.hasSvgColors) {
+      if (props.parsedLockerRooms?.length && value === 'locker-room') return true
+      if (props.allowCustomColor && value === 'custom') return true
+    }
+    return false
+  }
+
   watch(
-    () => props.palettes,
-    newPalettes => {
-      if (
-        newPalettes.length > 0 &&
-        !newPalettes.find(p => String(p?.id || '') === currentPaletteId.value)
-      ) {
-        currentPaletteId.value = String(newPalettes[0]?.id || '')
+    () =>
+      [
+        props.palettes.length,
+        props.hasSvgColors,
+        props.customPalettes?.length ?? 0,
+        props.parsedLockerRooms?.length ?? 0,
+        props.allowCustomColor
+      ] as const,
+    () => {
+      if (props.palettes.length === 0) return
+      if (props.hasSvgColors && !isMainPaletteTab(currentPaletteId.value)) {
+        currentPaletteId.value = 'p-0'
+        return
+      }
+      if (!isValidPaletteTab(currentPaletteId.value)) {
+        currentPaletteId.value = 'p-0'
       }
     },
     { immediate: true }
   )
-
-  // Get the currently active palette for lazy rendering
-  const activePalette = computed(() => {
-    return props.palettes.find(p => String(p.id) === currentPaletteId.value) || props.palettes[0]
-  })
-  const activeCustomPalette = computed(() => {
-    return props.customPalettes?.find(p => String(p.id) === currentPaletteId.value)
-  })
 
   function handleColorSelect(color: OutputColor) {
     emit('color-select', color)
@@ -174,18 +194,18 @@
       <ScrollArea class="w-full" direction="horizontal">
         <TabsList class="w-max flex flex-start gap-2 justify-start">
           <TabsTrigger
-            v-for="palette in palettes"
-            :key="palette.id"
-            :value="String(palette.id)"
+            v-for="(palette, pIdx) in palettes"
+            :key="`p-${pIdx}-${palette.name}`"
+            :value="`p-${pIdx}`"
             class="flex-1"
           >
             {{ palette.name }}
           </TabsTrigger>
           <template v-if="!hasSvgColors">
             <TabsTrigger
-              v-for="palette in props.customPalettes"
-              :key="palette.id"
-              :value="String(palette.id)"
+              v-for="(palette, cIdx) in props.customPalettes"
+              :key="`c-${cIdx}-${palette.id}`"
+              :value="`c-${cIdx}`"
               class="flex-1"
             >
               {{ palette.name }}
@@ -204,11 +224,10 @@
         </TabsList>
       </ScrollArea>
 
-      <!-- Only render the active tab content for better performance -->
-      <TabsContent v-if="activePalette" :value="String(activePalette.id)">
+      <TabsContent v-for="(palette, pIdx) in palettes" :key="`pc-${pIdx}`" :value="`p-${pIdx}`">
         <div class="relative">
           <ColorGrid
-            :colors="activePalette.colors"
+            :colors="palette.colors"
             :selected-color="selectedColor"
             :disabled="props.loading"
             class="transition-opacity"
@@ -222,23 +241,29 @@
           </div>
         </div>
       </TabsContent>
-      <TabsContent v-if="activeCustomPalette" :value="String(activeCustomPalette.id)">
-        <div class="relative">
-          <ColorGrid
-            :colors="activeCustomPalette.colors"
-            :selected-color="selectedColor"
-            :disabled="props.loading"
-            class="transition-opacity"
-            :class="{ 'opacity-50 pointer-events-none': props.loading }"
-            @color-select="handleColorSelect"
-          />
-          <div v-if="props.loading" class="absolute inset-0 flex items-center justify-center">
-            <div class="rounded-full bg-background/80 p-2 shadow-sm">
-              <Spinner class="size-5 text-primary" />
+      <template v-if="!hasSvgColors">
+        <TabsContent
+          v-for="(palette, cIdx) in props.customPalettes"
+          :key="`cc-${cIdx}`"
+          :value="`c-${cIdx}`"
+        >
+          <div class="relative">
+            <ColorGrid
+              :colors="palette.colors"
+              :selected-color="selectedColor"
+              :disabled="props.loading"
+              class="transition-opacity"
+              :class="{ 'opacity-50 pointer-events-none': props.loading }"
+              @color-select="handleColorSelect"
+            />
+            <div v-if="props.loading" class="absolute inset-0 flex items-center justify-center">
+              <div class="rounded-full bg-background/80 p-2 shadow-sm">
+                <Spinner class="size-5 text-primary" />
+              </div>
             </div>
           </div>
-        </div>
-      </TabsContent>
+        </TabsContent>
+      </template>
 
       <TabsContent v-if="!hasSvgColors" value="locker-room">
         <div v-if="props.parsedLockerRooms?.length" class="space-y-4">
@@ -311,7 +336,7 @@
         <div v-else class="text-sm text-muted-foreground">No locker room colors available</div>
       </TabsContent>
 
-      <TabsContent v-if="props.allowCustomColor" value="custom">
+      <TabsContent v-if="props.allowCustomColor && !props.hasSvgColors" value="custom">
         <div class="space-y-3">
           <!-- Pantone (TCX) or Pantone (Coated) based on company setting -->
           <div v-if="effectiveCustomColorType !== 'cmyk'">
