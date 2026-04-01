@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, watch } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   // Style previews use static icons (PNG) from style_icon_url, so no canvas is needed
@@ -78,9 +78,21 @@
     }
   )
 
+  /** Which style row is currently fetching (shows loader on that tile) */
+  const applyingStyleId = ref<number | null>(null)
+
   async function handleStyleSelection(styleId: number) {
-    await productsStore.fetchActiveStyleDetails(styleId)
-    // keep user on Styles; breadcrumbs will show updated style name
+    if (applyingStyleId.value != null) return
+    applyingStyleId.value = styleId
+    try {
+      await productsStore.fetchActiveStyleDetails(styleId)
+    } finally {
+      applyingStyleId.value = null
+    }
+  }
+
+  function isApplyingStyle(s: OutputStylePreviewFront) {
+    return applyingStyleId.value != null && applyingStyleId.value === s.id
   }
 
   async function toggleAddon(addonId: number, checked: boolean) {
@@ -147,6 +159,16 @@
     if (!q) return previews.value
     return previews.value.filter((s: OutputStylePreviewFront) => s.name.toLowerCase().includes(q))
   })
+
+  /** Active style from store (after fetch) or customization — drives sidebar highlight */
+  const selectedStyleId = computed(
+    () => productsStore.activeStyleDetails?.id ?? customizationStore.activeStyleId ?? null
+  )
+
+  function isStyleSelected(s: OutputStylePreviewFront) {
+    const active = selectedStyleId.value
+    return active != null && Number(s.id) === Number(active)
+  }
 
   const fixedLogoOptions = computed(() => productsStore.activeStyleDetails?.logo ?? [])
   const showFixedLogoSelector = computed(
@@ -236,19 +258,33 @@
       </div>
       <div class="grid grid-cols-2 gap-x-8 md:gap-x-16 gap-y-6 md:gap-y-8 px-4 md:px-6">
         <div v-for="s in filteredPreviews" :key="s.id" class="flex flex-col gap-3 items-start">
-          <div class="text-base font-semibold">{{ s.name }}</div>
-          <img
-            :src="
-              fromStorage(
-                (s as any).style_icon_url ||
-                  (productsStore.activeStyleDetails as any)?.style_icon_url ||
-                  ''
-              )
-            "
-            class="w-full aspect-square object-contain rounded-xl border border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/30 hover:border-border transition-colors"
-            :alt="styles_alt_icon({}, { locale: profileStore.currentLocale })"
-            @click="handleStyleSelection((s as OutputStylePreviewFront).id)"
-          />
+          <div class="text-base font-semibold" :class="isStyleSelected(s) ? 'text-primary' : ''">
+            {{ s.name }}
+          </div>
+          <div
+            class="relative w-full aspect-square"
+            :aria-busy="isApplyingStyle(s) ? 'true' : undefined"
+          >
+            <img
+              :src="fromStorage((s as OutputStylePreviewFront).style_icon_url || '')"
+              class="h-full w-full object-contain rounded-xl border bg-muted/20 transition-colors"
+              :class="[
+                isApplyingStyle(s) ? 'opacity-50' : 'cursor-pointer',
+                isStyleSelected(s)
+                  ? 'border-2 border-primary shadow-sm'
+                  : 'border border-border/50 hover:bg-muted/30 hover:border-border'
+              ]"
+              :alt="styles_alt_icon({}, { locale: profileStore.currentLocale })"
+              :aria-current="isStyleSelected(s) ? 'true' : undefined"
+              @click="handleStyleSelection((s as OutputStylePreviewFront).id)"
+            />
+            <div
+              v-if="isApplyingStyle(s)"
+              class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-background/50"
+            >
+              <Spinner class="size-8 text-primary" />
+            </div>
+          </div>
         </div>
       </div>
     </div>

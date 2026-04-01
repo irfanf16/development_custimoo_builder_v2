@@ -54,7 +54,7 @@
     />
     <LogoEdit
       v-else-if="currentSubStep === 'edit' && selectedLogoId"
-      :key="`logos-edit-${selectedLogoId}`"
+      :key="`logos-edit-${activeLogoIndex ?? selectedLogoId}`"
       :logo-id="selectedLogoId"
       :logo-index="activeLogoIndex"
       @back="handleBackToLogos"
