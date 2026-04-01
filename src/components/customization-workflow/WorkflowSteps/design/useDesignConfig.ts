@@ -7,7 +7,7 @@ import { design_search_placeholder, design_apply_overrides_label } from '@/parag
 // ===== SHARED STATE =====
 // These refs are shared across all component instances
 const designSearchModel = ref('')
-const applyCustomizationOverrides = ref(false)
+const applyCustomizationOverrides = ref(true)
 const designCategoriesConfig = ref<DesignCategoriesConfig | undefined>(undefined)
 const selectedDesigns = ref<number[]>([])
 
