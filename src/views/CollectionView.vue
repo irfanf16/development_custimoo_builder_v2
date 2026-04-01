@@ -131,6 +131,9 @@
     plr: CollectionProductWithLockerRoom['product_locker_room'],
     side: 'front' | 'back'
   ) {
+    if (plr[`${side}_image`]) {
+      return `${storageUrl.value}${plr[`${side}_image`]}`
+    }
     const folder = plr.locker_product_images_folder
     if (!folder) return PLACEHOLDER_IMAGE
     const base = folder.startsWith('http') ? folder : `${storageUrl.value}${folder}`

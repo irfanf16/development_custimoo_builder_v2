@@ -668,6 +668,8 @@ export interface CollectionProductLockerRoom {
   product_type: string
   is_private: number
   design: { id: number; back_design_id: number } | null
+  front_image: string | null
+  back_image: string | null
   product: CollectionProductLockerRoomProduct
   room: CollectionProductLockerRoomRoom
 }
