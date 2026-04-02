@@ -185,6 +185,7 @@
         >
           {{ content.reorder_message }}
         </div>
+
         <div
           v-if="
             activity_content?.activity_status === CustimooOrderFlowStatuses.ORDERSHIPPED &&
@@ -193,6 +194,34 @@
           "
           class="text-xs sm:text-sm text-muted-foreground mb-3"
         >
+          <div
+            v-if="order_item?.tracking_response?.latest_event && order_item?.tracking_no"
+            class="flex flex-col items-start bg-[#eee] p-[10px] rounded-[7px] pt-[7px] text-[#555] text-base"
+          >
+            <h1 class="mb-3 font-bold">Latest Shipping Status:</h1>
+            <div class="flex gap-5">
+              <!-- Left Column -->
+              <div>
+                <p class="mb-2 mt-0 text-[#555] text-xs">
+                  {{ formatDate(order_item.tracking_response?.latest_event?.date) }}
+                </p>
+                <p class="m-0 text-[#555] text-xs">
+                  {{ formatDate(order_item.tracking_response?.latest_event?.date, 'HH:mm') }}
+                </p>
+              </div>
+
+              <!-- Right Column -->
+              <div>
+                <p class="mb-2 mt-0 text-[#555] text-xs">
+                  {{ getStatusLabel(order_item?.tracking_response?.latest_event?.derived_status) }}
+                </p>
+                <p class="m-0 text-[#555] text-xs">
+                  {{ order_item.tracking_response?.latest_event?.city }} /
+                  {{ order_item.tracking_response?.latest_event?.country_name }}
+                </p>
+              </div>
+            </div>
+          </div>
           The shipping no is
           <strong class="font-semibold">
             <a
@@ -410,6 +439,19 @@
     const company = companyStore.company
     return company?.platform === 'shopify' || company?.platform === 'wordpress'
   })
+
+  const STATUS_MAP = {
+    PICKED_UP: 'Picked',
+    CLEARANCE_EVENT: 'Document Verification',
+    CUSTOMS_CLEARANCE: 'Customs Clearance',
+    EXCEPTIONS: 'Exceptions',
+    OUT_FOR_DELIVERY: 'Out for Delivery',
+    DELIVERED: 'Delivered'
+  }
+
+  function getStatusLabel(status: string | undefined) {
+    return STATUS_MAP[status as keyof typeof STATUS_MAP] || status
+  }
 
   function isSampleOmitted(content: import('@/services/orders/types').ContentGroup): boolean {
     if (!content.skip_customer_approval) return false

@@ -50,6 +50,8 @@
     colors_paste,
     texts_number_input_placeholder
   } from '@/paraglide/messages'
+  import { useProductsStore } from '@/stores/products/products.store'
+  import { storeToRefs } from 'pinia'
 
   // ===== COMPOSABLES =====
   const { form, currentEntry, currentItem, isUserInput, updateTextAndRoster } = useTextActions()
@@ -59,8 +61,9 @@
   const customizationStore = useCustomizationStore()
   const workflowStore = useWorkflowStore()
   const companyStore = useCompanyStore()
+  const productsStore = useProductsStore()
+  const { activeProductDetails } = storeToRefs(productsStore)
   const locale = computed(() => profileStore.currentLocale || 'en')
-
   // Debounced history push for dimension edits so we get one entry per editing session, not per keypress
   const debouncedPushDimensionHistory = useDebounceFn(() => {
     customizationStore.pushHistoryState('Changed text dimensions')
@@ -322,6 +325,7 @@
             <PaletteColorSelector
               :palettes="colorPalettes"
               :selected-color="form.fill"
+              :allow-custom-color="activeProductDetails?.is_custom_color_allowed"
               @color-select="color => (form.fill = color.value)"
             />
           </AccordionContent>
@@ -397,6 +401,7 @@
             <PaletteColorSelector
               :palettes="colorPalettes"
               :selected-color="form.outline"
+              :allow-custom-color="activeProductDetails?.is_custom_color_allowed"
               @color-select="color => (form.outline = color.value)"
             />
           </AccordionContent>

@@ -46,6 +46,7 @@ export interface Item {
   tracking_link?: string
   factory_id?: number
   factory_name?: string
+  tracking_response?: TrackingResponse
 }
 
 export interface StatusActivity {
@@ -159,6 +160,22 @@ export interface Order {
   }
 }
 
+export type TrackingResponse = {
+  status: string
+  carrier: string
+  success: boolean
+  history: TrackingEvent[]
+  latest_event: TrackingEvent
+}
+
+export type TrackingEvent = {
+  date?: string
+  city?: string
+  country_name?: string
+  derived_status?: string
+  event_description: string
+  exception_description: string
+}
 export interface Currency {
   code: string
   name: string

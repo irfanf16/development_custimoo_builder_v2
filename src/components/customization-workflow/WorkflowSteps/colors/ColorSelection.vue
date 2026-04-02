@@ -698,7 +698,7 @@
             :has-svg-colors="getSvgGroupColors(svgGroup.id) ? true : false"
             :parsed-locker-rooms="parsedLockerRooms"
             @color-select="
-              color =>
+              (color: OutputColor) =>
                 setGroupColor(
                   svgGroup.id,
                   color,
