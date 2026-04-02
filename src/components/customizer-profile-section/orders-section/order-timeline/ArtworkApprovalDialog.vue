@@ -18,7 +18,11 @@
           </div>
         </div>
       </DialogHeader>
-      <component :is="isMobile ? 'div' : ScrollArea" class="h-full overflow-y-auto">
+      <component
+        :is="isMobile ? 'div' : ScrollArea"
+        class="overflow-y-auto"
+        :class="{ 'h-full': !isMobile }"
+      >
         <div
           v-if="activityItems.length === 0"
           class="flex flex-col items-center justify-center py-12 px-4"

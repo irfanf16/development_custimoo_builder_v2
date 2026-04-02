@@ -88,7 +88,7 @@
     <div v-if="!uiStore.isMobile" class="sticky top-0 z-1 px-4 pt-4 pb-3 max-w-max">
       <div class="text-lg font-semibold">{{ title || t.account }}</div>
     </div>
-    <ScrollArea class="flex-1 h-full overflow-y-auto">
+    <ScrollArea class="flex-1 overflow-y-auto">
       <div class="px-4 pb-4 space-y-3">
         <!-- Profile header -->
         <div class="flex items-center justify-between py-4">

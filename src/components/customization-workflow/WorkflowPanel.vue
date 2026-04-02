@@ -194,7 +194,7 @@
           >
             <!-- Content slot for different panel types -->
             <Transition name="panel-slide" mode="out-in" appear>
-              <div ref="cardContentRef" :key="props.contentKey" class="h-full overflow-y-auto">
+              <div ref="cardContentRef" :key="props.contentKey" class="overflow-y-auto">
                 <slot :is-expanded="isExpanded" />
               </div>
             </Transition>

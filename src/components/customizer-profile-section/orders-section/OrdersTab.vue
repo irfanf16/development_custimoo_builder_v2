@@ -294,7 +294,7 @@
     </div>
     <!-- Orders List -->
     <div v-if="!store.activeOrder" class="flex-1 min-h-0">
-      <ScrollArea class="h-full overflow-y-auto">
+      <ScrollArea class="overflow-y-auto">
         <InfiniteScroll :class="'w-full h-full relative'" @load-more="loadMore">
           <div v-if="store.orders.length" class="absolute inset-0">
             <OrdersListItem
@@ -329,7 +329,7 @@
     <component
       :is="isMobile ? 'div' : ScrollArea"
       v-if="!isMobile && store.activeOrder"
-      class="flex-1 h-full overflow-y-auto"
+      :class="{ 'flex-1 h-full overflow-y-auto': !isMobile, 'flex-1 overflow-y-auto': isMobile }"
     >
       <OrderDetailsView
         v-if="store.activeOrderView === 'details'"

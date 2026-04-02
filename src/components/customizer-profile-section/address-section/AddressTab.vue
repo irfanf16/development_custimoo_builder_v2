@@ -93,7 +93,7 @@
 
     <!-- Address List -->
     <div class="flex-1 min-h-0">
-      <ScrollArea class="h-full overflow-y-auto">
+      <ScrollArea class="overflow-y-auto">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-4 pb-4">
           <!-- Address Card -->
           <Card
