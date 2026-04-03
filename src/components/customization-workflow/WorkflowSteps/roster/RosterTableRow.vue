@@ -168,7 +168,6 @@
 
   // Handle blur events to ensure value is saved immediately when user leaves the field
   function handleBlur(field: keyof APCustomizationRosterEntry, value: string | number) {
-    emit('select', props.index)
     // For quantity field, use vee-validate's handleBlur and validate
     if (field === 'quantity') {
       handleQuantityBlur()
@@ -206,6 +205,10 @@
 
   function handleKeydown(event: KeyboardEvent, column: RosterColumnKey) {
     emit('cell-keydown', { event, column, index: props.index })
+  }
+
+  function handleCellFocus() {
+    emit('select', props.index)
   }
 
   function removeRow() {
@@ -257,6 +260,7 @@
       :data-roster-cell="cellId('text')"
       class="h-10"
       :placeholder="roster_table_name({}, { locale })"
+      @focus="handleCellFocus"
       @update:model-value="value => updateField('text', value as string)"
       @blur="(event: FocusEvent) => handleBlur('text', (event.target as HTMLInputElement).value)"
       @keydown.capture="(event: KeyboardEvent) => handleKeydown(event, 'text')"
@@ -269,6 +273,7 @@
       class="h-10 text-center"
       inputmode="numeric"
       :placeholder="roster_table_number({}, { locale })"
+      @focus="handleCellFocus"
       @update:model-value="value => updateField('number', value as string)"
       @blur="(event: FocusEvent) => handleBlur('number', (event.target as HTMLInputElement).value)"
       @keydown.capture="(event: KeyboardEvent) => handleKeydown(event, 'number')"
@@ -281,6 +286,7 @@
       <SelectTrigger
         :data-roster-cell="cellId('size')"
         class="h-10 w-full justify-between"
+        @focus="handleCellFocus"
         @keydown.capture="(event: KeyboardEvent) => handleKeydown(event, 'size')"
       >
         <SelectValue :placeholder="roster_table_size({}, { locale })" />
@@ -306,6 +312,7 @@
         :placeholder="roster_table_quantity({}, { locale })"
         :aria-invalid="!!quantityError"
         :aria-describedby="quantityError ? `quantity-error-${props.index}` : undefined"
+        @focus="handleCellFocus"
         @update:model-value="value => updateField('quantity', Number(value))"
         @blur="
           (event: FocusEvent) =>

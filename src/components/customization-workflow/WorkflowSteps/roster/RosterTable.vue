@@ -66,6 +66,9 @@
     const delta = event.key === 'ArrowDown' ? 1 : -1
     const nextRow = index + delta
     if (nextRow < 0 || nextRow >= props.entries.length) return
+    if (props.enableRowSelect) {
+      selectedRowIndexModel.value = nextRow
+    }
     focusCell(nextRow, column)
   }
 
