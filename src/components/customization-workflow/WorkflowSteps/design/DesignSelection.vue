@@ -7,22 +7,21 @@
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useDesignConfig } from './useDesignConfig'
   import type { DesignCategoriesConfig } from '../../types'
+  import type { OutputDesignPreviewFront } from '@/services/products/types'
   import LazyTwoDScene from '../LazyTwoDScene.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { design_categories_default_label } from '@/paraglide/messages'
   import { Checkbox } from '@/components/ui/checkbox'
-  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
   const workflowStore = useWorkflowStore()
   const profileStore = useProfileStore()
-  const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
-  const { selectedDesignCategoryId } = storeToRefs(workflowStore)
+  const { selectedDesignCategoryId, pendingDesignId } = storeToRefs(workflowStore)
   const { designSearchModel, designCategoriesConfig, selectedDesigns, toggleDesignSelection } =
     useDesignConfig()
 
@@ -40,6 +39,7 @@
   const showDesignsLoading = computed(
     () =>
       workflowStore.pendingProductId != null ||
+      workflowStore.pendingProductPreviewPipeline ||
       ((productsStore.designPreviews == null || productsStore.designPreviews.length === 0) &&
         productsStore.isLoading)
   )
@@ -48,8 +48,8 @@
     // Reset to "All Categories" when entering design selection
     workflowStore.setSelectedDesignCategory(null)
 
-    // Skip fetch when a product was just selected and background load is in progress
-    if (workflowStore.pendingProductId != null) {
+    // Skip fetch when product details or preview pipeline is already loading previews
+    if (workflowStore.pendingProductId != null || workflowStore.pendingProductPreviewPipeline) {
       nextTick(() => {
         const activeDesignName = customizationStore.customization?.design_name
         if (activeDesignName) {
@@ -79,14 +79,43 @@
     })
   })
 
-  function selectDesign(item: import('@/services/products/types').OutputDesignPreviewFront) {
-    productsStore.applyDesignPreview(item)
-    // Scroll to selected design with smooth animation
+  function isApplyingDesign(designId: number) {
+    return pendingDesignId.value === designId
+  }
+
+  async function selectDesign(item: OutputDesignPreviewFront) {
+    if (pendingDesignId.value != null) {
+      return
+    }
+
+    const designId = item.id
+    const alreadyApplied =
+      customizationStore.customization?.design_id === designId &&
+      productsStore.activeDesignDetails?.id === designId
+
+    if (alreadyApplied) {
+      setTimeout(() => {
+        emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
+      }, 100)
+      return
+    }
+
+    workflowStore.setPendingDesignId(designId)
+    productsStore.suspendCustomizationAutoSync()
+    try {
+      productsStore.applyDesignPreview(item)
+      await productsStore.fetchDesignDetailsById(designId)
+    } catch (error) {
+      console.error('Error selecting design:', error)
+      return
+    } finally {
+      productsStore.resumeCustomizationAutoSync()
+      workflowStore.setPendingDesignId(null)
+    }
+
     setTimeout(() => {
       emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
     }, 100)
-    const visibleSteps = menuItems.value.map(i => i.step)
-    void goTo(pickStepOrNextAvailable('styles', visibleSteps))
   }
 
   const filteredPreviews = computed(() => {
@@ -162,14 +191,27 @@
       >
         {{ item.front_design.design_name }}
       </div>
-      <div>
-        <LazyTwoDScene
-          :design="item.front_design"
-          :svg-parts="item.svg_parts"
-          :canvas-width="isMobile ? 130 : 176"
-          :canvas-height="isMobile ? 130 : 176"
-          :canvas-class="'rounded-xl'"
-        />
+      <div class="px-2">
+        <div
+          class="relative inline-flex rounded-xl"
+          :aria-busy="isApplyingDesign(item.id) ? 'true' : undefined"
+        >
+          <div :class="isApplyingDesign(item.id) ? 'opacity-50' : ''" class="rounded-xl">
+            <LazyTwoDScene
+              :design="item.front_design"
+              :svg-parts="item.svg_parts"
+              :canvas-width="isMobile ? 130 : 176"
+              :canvas-height="isMobile ? 130 : 176"
+              :canvas-class="'rounded-xl'"
+            />
+          </div>
+          <div
+            v-if="isApplyingDesign(item.id)"
+            class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-background/50"
+          >
+            <Spinner class="size-8 text-primary" />
+          </div>
+        </div>
       </div>
       <Checkbox
         :id="`checkbox-design-${item.id}`"

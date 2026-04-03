@@ -44,6 +44,7 @@
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeProductId: selectedProductId } = storeToRefs(customizationStore)
+  const { pendingProductId, pendingProductPreviewPipeline } = storeToRefs(workflowStore)
   const appStore = useAppStore()
   const { productSearchModel, showCustomizerStockFilter, customizerStockFilterModel } =
     useProductConfig()
@@ -88,6 +89,10 @@
   watch([() => workflowStore.selectedCategoryId, () => workflowStore.selectedSubCategoryId], () => {
     loadPreviewsForCurrentCategory()
   })
+
+  function isApplyingProduct(productId: number) {
+    return pendingProductId.value === productId
+  }
 
   async function handleSelectProduct(productId: number) {
     try {
@@ -147,39 +152,49 @@
         }
       }
 
+      if (pendingProductId.value != null || pendingProductPreviewPipeline.value) {
+        return
+      }
+
       // Commit the selected category/subcategory at the moment the product is chosen
       workflowStore.commitSelectedCategory()
       workflowStore.commitSelectedSubCategory()
       // Navigate immediately; load details and previews in the background
       workflowStore.setPendingProductId(productId)
-      workflowStore.setActiveStep('designs')
-      workflowStore.resetWorkflowSubSteps()
 
       void (async () => {
         try {
           await productsStore.fetchActiveProductDetails(productId)
-          const styleId = productsStore.activeStyleDetails?.id
-          const designId = productsStore.activeDesignDetails?.id
+        } catch (error) {
+          console.error('Error selecting product:', error)
+          return
+        } finally {
+          workflowStore.setPendingProductId(null)
+        }
 
-          if (styleId) {
-            customizationStore.setStyle(styleId)
-            await productsStore.fetchStylePreviews(productId)
-          }
+        const styleId = productsStore.activeStyleDetails?.id
+        const designId = productsStore.activeDesignDetails?.id
+        if (!styleId) {
+          return
+        }
+
+        workflowStore.setPendingProductPreviewPipeline(true)
+        try {
+          customizationStore.setStyle(styleId)
+          await productsStore.fetchStylePreviews(productId)
 
           if (designId && styleId) {
             customizationStore.setDesign(productsStore.activeDesignDetails as OutputDesignDetails)
             await productsStore.fetchDesignPreviewsByStyleId(styleId)
           }
         } catch (error) {
-          console.error('Error selecting product:', error)
-          // TODO: Add user-facing error notification
+          console.error('Error loading style/design previews after product select:', error)
         } finally {
-          workflowStore.setPendingProductId(null)
+          workflowStore.setPendingProductPreviewPipeline(false)
         }
       })()
     } catch (error) {
       console.error('Error selecting product:', error)
-      // TODO: Add user-facing error notification
     }
   }
 
@@ -311,15 +326,31 @@
         </div>
       </div>
       <div class="px-2">
-        <LazyTwoDScene
-          :models="item.stylePreview.front_models"
-          :design="item.designPreview.front_design"
-          :svg-parts="item.designPreview.svg_parts"
-          :canvas-width="isMobile ? 130 : 176"
-          :canvas-height="isMobile ? 130 : 176"
-          :canvas-class="'rounded-xl'"
-          :product-id="item.productPreview.id"
-        />
+        <div
+          class="relative inline-flex rounded-xl"
+          :aria-busy="isApplyingProduct(item.productPreview.id) ? 'true' : undefined"
+        >
+          <div
+            :class="isApplyingProduct(item.productPreview.id) ? 'opacity-50' : ''"
+            class="rounded-xl"
+          >
+            <LazyTwoDScene
+              :models="item.stylePreview.front_models"
+              :design="item.designPreview.front_design"
+              :svg-parts="item.designPreview.svg_parts"
+              :canvas-width="isMobile ? 130 : 176"
+              :canvas-height="isMobile ? 130 : 176"
+              :canvas-class="'rounded-xl'"
+              :product-id="item.productPreview.id"
+            />
+          </div>
+          <div
+            v-if="isApplyingProduct(item.productPreview.id)"
+            class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-background/50"
+          >
+            <Spinner class="size-8 text-primary" />
+          </div>
+        </div>
 
         <!-- Hover actions -->
         <div

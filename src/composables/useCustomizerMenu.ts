@@ -142,15 +142,15 @@ export function useCustomizerMenu() {
       const styleId = productsStore.activeStyleDetails?.id
       const hasPreviews =
         Array.isArray(productsStore.designPreviews) && productsStore.designPreviews.length > 0
+      workflowStore.setActiveStep('designs')
       if (!hasPreviews && styleId) {
         await productsStore.fetchDesignPreviewsByStyleId(styleId)
       }
     } else if (nextStep === 'styles') {
       const pid = productsStore.activeProductDetails?.id
-      if (pid) {
-        if (!productsStore.stylePreviews) {
-          await productsStore.fetchStylePreviews(pid)
-        }
+      workflowStore.setActiveStep('styles')
+      if (pid && !productsStore.stylePreviews) {
+        await productsStore.fetchStylePreviews(pid)
       }
     } else if (nextStep === 'logos') {
       // Prefetch recent logos is done in useWorkflowEffects
@@ -164,7 +164,9 @@ export function useCustomizerMenu() {
     } else if (nextStep === 'roster') {
       // Roster substep management would go here if implemented
     }
-    workflowStore.setActiveStep(nextStep)
+    if (nextStep !== 'designs' && nextStep !== 'styles') {
+      workflowStore.setActiveStep(nextStep)
+    }
   }
 
   /** If desired step is visible, return it; else return first visible step after it in order, or first visible. */

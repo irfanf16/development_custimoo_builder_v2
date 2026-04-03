@@ -84,6 +84,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   /** Set when user selects a product and we navigate to designs before load completes. */
   const pendingProductId = ref<number | null>(null)
 
+  const pendingProductPreviewPipeline = ref(false)
+  /** Set while applying a design (fetch + sync) so UI can show loading and block double-select. */
+  const pendingDesignId = ref<number | null>(null)
+
   // ===== COMPUTED PROPERTIES =====
   const currentStep = computed<WorkflowRouteStep>(() => {
     const step = activeStep.value
@@ -477,6 +481,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     panelOpen.value = true
     selectedCategoryId.value = null
     selectedSubCategoryId.value = null
+    pendingDesignId.value = null
+    pendingProductPreviewPipeline.value = false
     saveSubStepsToLocalStorage()
   }
 
@@ -509,6 +515,14 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   function setPendingProductId(id: number | null) {
     pendingProductId.value = id
+  }
+
+  function setPendingDesignId(id: number | null) {
+    pendingDesignId.value = id
+  }
+
+  function setPendingProductPreviewPipeline(pending: boolean) {
+    pendingProductPreviewPipeline.value = pending
   }
 
   // ===== NAVIGATION ACTIONS =====
@@ -578,6 +592,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedSubCategoryId.value = null
     selectedDesignCategoryId.value = null
     pendingProductId.value = null
+    pendingDesignId.value = null
+    pendingProductPreviewPipeline.value = false
     clearHeaderAndFooterConfig()
     activeLogoId.value = null
     activeLogoIndex.value = null
@@ -616,6 +632,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedDesignCategoryId,
     pendingProductId,
     setPendingProductId,
+    pendingProductPreviewPipeline,
+    setPendingProductPreviewPipeline,
+    pendingDesignId,
+    setPendingDesignId,
     activeCanvasSide,
     canvasZoom,
     // Computed
