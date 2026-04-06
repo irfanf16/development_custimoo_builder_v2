@@ -1,8 +1,9 @@
 <script setup lang="ts">
   import { ref, computed, watch, onMounted } from 'vue'
+  import { Checkbox } from '@/components/ui/checkbox'
   import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
   import { ScrollArea } from '@/components/ui/scroll-area'
-  import { Pencil, Trash2, Users } from 'lucide-vue-next'
+  import { Loader2, Pencil, Trash2, Users } from 'lucide-vue-next'
   import { useCart } from './useCart'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import {
@@ -13,7 +14,12 @@
     msg_fill_required_fields,
     msg_select_address,
     msg_update_quantity_zero,
-    msg_order_placed_success
+    msg_order_placed_success,
+    cart_select_all_products,
+    cart_remove_selected,
+    cart_confirm_remove_single,
+    cart_confirm_remove_products,
+    cart_removing
   } from '@/paraglide/messages'
 
   import { useLoadCartProductIntoCustomizer } from '@/composables/useLoadCartProductIntoCustomizer'
@@ -58,11 +64,8 @@
   const orderReferenceError = ref<string>('')
   const isPlacingOrder = ref(false)
 
-  // Confirm dialog state for removing products
-  const showRemoveConfirmDialog = ref(false)
-  const productToRemove = ref<string | null>(null)
-
-  // Use the cart composable
+  // Use the cart composable (needed before bulk-selection computeds)
+  const cartStore = useCartStore()
   const {
     products,
     formatPrice,
@@ -77,27 +80,114 @@
     minimumCartQuantity
   } = useCart()
 
+  // Confirm dialog state for removing products (single id or multiple — same remove flow as one-by-one)
+  const showRemoveConfirmDialog = ref(false)
+  const pendingRemoveFactoryProductIds = ref<string[]>([])
+  const isRemovingCartProducts = ref(false)
+
+  /** Rows that can be selected / bulk-removed (excludes the row currently being edited in customizer). */
+  const selectableFactoryProductIds = computed(() => {
+    const editing = cartStore.editingFactoryProductId
+    return products.value
+      .filter(p => !editing || p.factory_product_id !== editing)
+      .map(p => p.factory_product_id)
+  })
+
+  const selectedFactoryProductIds = ref<string[]>([])
+
+  const selectAllCheckboxState = computed<boolean | 'indeterminate'>(() => {
+    const ids = selectableFactoryProductIds.value
+    if (ids.length === 0) return false
+    const selected = selectedFactoryProductIds.value.filter(id => ids.includes(id))
+    if (selected.length === 0) return false
+    if (selected.length === ids.length) return true
+    return 'indeterminate'
+  })
+
+  function toggleSelectAll() {
+    const ids = selectableFactoryProductIds.value
+    if (ids.length === 0) return
+    const allSelected = ids.every(id => selectedFactoryProductIds.value.includes(id))
+    selectedFactoryProductIds.value = allSelected ? [] : [...ids]
+  }
+
+  function toggleRowSelection(factoryProductId: string, checked: boolean) {
+    if (checked) {
+      if (!selectedFactoryProductIds.value.includes(factoryProductId)) {
+        selectedFactoryProductIds.value = [...selectedFactoryProductIds.value, factoryProductId]
+      }
+    } else {
+      selectedFactoryProductIds.value = selectedFactoryProductIds.value.filter(
+        id => id !== factoryProductId
+      )
+    }
+  }
+
+  function handleBulkRemoveClick() {
+    if (selectedFactoryProductIds.value.length === 0) return
+    pendingRemoveFactoryProductIds.value = [...selectedFactoryProductIds.value]
+    showRemoveConfirmDialog.value = true
+  }
+
+  watch(
+    () => products.value.map(p => p.factory_product_id),
+    idList => {
+      const allowed = new Set(idList)
+      selectedFactoryProductIds.value = selectedFactoryProductIds.value.filter(id =>
+        allowed.has(id)
+      )
+    }
+  )
+
   // Invalid quantity state (Task 2: quantity === 0 blocks checkout)
   const invalidQuantityIds = ref<string[]>([])
 
   // Handle remove product with confirmation
   function handleRemoveClick(factoryProductId: string) {
-    productToRemove.value = factoryProductId
+    pendingRemoveFactoryProductIds.value = [factoryProductId]
     showRemoveConfirmDialog.value = true
   }
 
   async function confirmRemoveProduct() {
-    if (!productToRemove.value) return
+    const ids = [...pendingRemoveFactoryProductIds.value]
+    if (ids.length === 0) return
 
-    await _removeProduct(productToRemove.value)
-    showRemoveConfirmDialog.value = false
-    productToRemove.value = null
+    isRemovingCartProducts.value = true
+    try {
+      for (const factoryProductId of ids) {
+        await _removeProduct(factoryProductId)
+      }
+
+      selectedFactoryProductIds.value = []
+      pendingRemoveFactoryProductIds.value = []
+      showRemoveConfirmDialog.value = false
+    } finally {
+      isRemovingCartProducts.value = false
+    }
   }
 
   function cancelRemoveProduct() {
+    if (isRemovingCartProducts.value) return
     showRemoveConfirmDialog.value = false
-    productToRemove.value = null
+    pendingRemoveFactoryProductIds.value = []
   }
+
+  /** Block closing (backdrop / Esc) while deletion is in progress */
+  function onRemoveConfirmDialogOpenChange(open: boolean) {
+    if (isRemovingCartProducts.value && !open) return
+    showRemoveConfirmDialog.value = open
+    if (!open) {
+      pendingRemoveFactoryProductIds.value = []
+    }
+  }
+
+  const removeConfirmMessage = computed(() => {
+    const n = pendingRemoveFactoryProductIds.value.length
+    if (n <= 1) {
+      return cart_confirm_remove_single({}, { locale: locale.value })
+    }
+    return cart_confirm_remove_products({ count: n }, { locale: locale.value })
+  })
 
   function pickStepOrNextAvailable(
     desired: CustomizerStep,
@@ -221,8 +311,6 @@
   const orderReference = ref<string>('')
   const comments = ref<string>('')
 
-  // Get cart store instance
-  const cartStore = useCartStore()
   const ordersStore = useOrdersStore()
 
   // Computed properties
@@ -411,6 +499,28 @@
         <DialogTitle class="text-lg font-semibold">Cart</DialogTitle>
       </DialogHeader>
       <ScrollArea class="flex-1 overflow-y-auto">
+        <!-- Bulk selection -->
+        <div
+          v-if="products.length"
+          class="flex flex-wrap items-center gap-3 px-4 py-2.5 border-b bg-muted/40"
+        >
+          <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <Checkbox
+              :model-value="selectAllCheckboxState"
+              :disabled="selectableFactoryProductIds.length === 0"
+              @update:model-value="toggleSelectAll"
+            />
+            <span>{{ cart_select_all_products({}, { locale: locale }) }}</span>
+          </label>
+          <button
+            v-if="selectedFactoryProductIds.length > 0"
+            type="button"
+            class="flex items-center gap-1.5 px-3 py-1.5 border border-destructive/60 text-destructive rounded-md text-sm transition-colors hover:bg-destructive/10"
+            @click="handleBulkRemoveClick"
+          >
+            {{ cart_remove_selected({}, { locale: locale }) }}
+          </button>
+        </div>
         <!-- Cart Items -->
         <div class="divide-y">
           <div
@@ -424,6 +534,14 @@
             }"
           >
             <div class="flex gap-4">
+              <div class="flex items-start pt-1 shrink-0">
+                <Checkbox
+                  :model-value="selectedFactoryProductIds.includes(item.factory_product_id)"
+                  :disabled="cartStore.editingFactoryProductId === item.factory_product_id"
+                  @update:model-value="v => toggleRowSelection(item.factory_product_id, v === true)"
+                  @click.stop
+                />
+              </div>
               <!-- Product Image -->
               <div class="w-20 h-20 md:w-24 md:h-24 rounded-lg shrink-0 overflow-hidden border">
                 <img
@@ -673,19 +791,32 @@
     />
 
     <!-- Remove Product Confirm Dialog -->
-    <Dialog v-model:open="showRemoveConfirmDialog">
+    <Dialog :open="showRemoveConfirmDialog" @update:open="onRemoveConfirmDialogOpenChange">
       <DialogContent class="sm:max-w-md z-[9999]">
         <DialogHeader>
           <DialogTitle>Remove Product</DialogTitle>
         </DialogHeader>
 
         <p class="text-sm text-muted-foreground mt-2">
-          Are you sure you want to remove this product from your cart?
+          {{ removeConfirmMessage }}
         </p>
 
         <DialogFooter class="mt-6 flex gap-2 justify-end">
-          <Button variant="outline" @click="cancelRemoveProduct"> Cancel </Button>
-          <Button variant="destructive" @click="confirmRemoveProduct"> Remove </Button>
+          <Button variant="outline" :disabled="isRemovingCartProducts" @click="cancelRemoveProduct">
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            :disabled="isRemovingCartProducts"
+            @click="confirmRemoveProduct"
+          >
+            <Loader2
+              v-if="isRemovingCartProducts"
+              class="mr-2 size-4 animate-spin"
+              aria-hidden="true"
+            />
+            {{ isRemovingCartProducts ? cart_removing({}, { locale: locale }) : 'Remove' }}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
