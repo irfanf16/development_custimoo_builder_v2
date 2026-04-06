@@ -292,9 +292,7 @@
   // Internal roster entries — only used in self-contained mode
   const internalEntries = ref<APCustomizationRosterEntry[]>([])
   /**
-   * Deep-copy snapshot of entries as loaded from the server.
-   * Reset restores internalEntries to this state — mirrors useRoster's resetRoster
-   * but scoped to this locker product only (not app-wide).
+   * Deep-copy snapshot of entries as loaded from the server (reserved for future use).
    */
   const originalEntries = ref<APCustomizationRosterEntry[]>([])
   const internalSizes = ref<RosterSize[]>([])
@@ -406,7 +404,7 @@
           information: entry.information ?? ''
         }))
         internalEntries.value = mapped
-        // Deep-copy snapshot — used by handleReset to discard unsaved edits
+        // Deep-copy snapshot of server-loaded roster
         originalEntries.value = mapped.map(e => ({ ...e }))
         // Existing roster → go straight to the table
         currentView.value = 'table'
@@ -766,12 +764,18 @@
   }
 
   /**
-   * Mirrors useRoster's resetRoster — removes all rows and replaces with a single
-   * blank default entry. Scoped to this locker product only (not app-wide like the workflow version).
+   * Clears the in-memory roster and returns to the import screen (drag-and-drop / click to upload),
+   * same as opening with no saved roster. Scoped to this locker product only.
    */
   function handleReset() {
-    internalEntries.value = [defaultEntry()]
+    currentView.value = 'import'
+    isManualEditView.value = false
+    internalEntries.value = []
+    internalImportSummary.value = null
+    internalImportError.value = null
     saveError.value = null
+    isDragging.value = false
+    selectedRowIndex.value = null
   }
 
   // ─── Save ─────────────────────────────────────────────────────────────────────
@@ -1104,7 +1108,7 @@
             <!--
               Reset List — mirrors useRosterConfig's actionButton with Info icon.
               Shown whenever on the edit table in self-contained mode.
-              Clears all personalised fields (name, number, quantity) to blank/zero.
+              Clears the roster and returns to the import (upload / create manually) screen.
             -->
             <div v-if="isSelfContained" class="flex justify-end">
               <Button
