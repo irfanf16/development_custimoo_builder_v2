@@ -103,6 +103,8 @@
     svgParts?: string[] | string
     // Color grouping - can be string (JSON) or object
     colorGrouping?: Record<string, string[]> | string | null
+    /** When true, apply customization colors when not main preview and overrides are off. */
+    applyCustomizationColors?: boolean
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -117,7 +119,8 @@
     models: undefined,
     imageData: undefined,
     svgParts: undefined,
-    colorGrouping: undefined
+    colorGrouping: undefined,
+    applyCustomizationColors: false
   })
 
   // Convert imageData to DesignData format for useSceneCommon
@@ -147,6 +150,9 @@
   // ===== STORES =====
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
+  const shouldApplyCustomizationColors = computed(
+    () => applyCustomizationOverrides.value || props.mainPreview || props.applyCustomizationColors
+  )
   const sceneStore = useSceneStore()
   const workflowStore = useWorkflowStore()
   const companyStore = useCompanyStore()
@@ -255,7 +261,8 @@
     productsStore,
     props.mainPreview,
     props.side,
-    colorGrouping as Ref<Record<string, string[]> | null>
+    colorGrouping as Ref<Record<string, string[]> | null>,
+    props.applyCustomizationColors
   )
 
   const componentInstance = getCurrentInstance()
@@ -1560,10 +1567,7 @@
       defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
     const groupColors = customizationStore.customization?.group_colors || {}
     const hasGroupColors = Object.keys(groupColors).length > 0
-    if (
-      (hasDefaultColors || hasGroupColors) &&
-      (applyCustomizationOverrides.value || props.mainPreview)
-    ) {
+    if ((hasDefaultColors || hasGroupColors) && shouldApplyCustomizationColors.value) {
       await applyCustomization(0)
     }
     canvas.value?.requestRenderAll()
@@ -2469,13 +2473,11 @@
         defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
       // Only apply if there are default colors set
       if (hasDefaultColors) {
-        // If applyCustomizationOverrides is enabled, apply to all canvases
-        // Otherwise, only apply to mainPreview
-        if (applyCustomizationOverrides.value || props.mainPreview) {
+        if (shouldApplyCustomizationColors.value) {
           changeDefaultColors(0)
         }
       } else if (Object.keys(customizationStore.customization?.group_colors || {}).length > 0) {
-        if (applyCustomizationOverrides.value || props.mainPreview) {
+        if (shouldApplyCustomizationColors.value) {
           resetToInitialColors(0)
         }
       }
@@ -2493,9 +2495,7 @@
         defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
       // Only apply if there are default colors set
       if (hasDefaultColors) {
-        // If applyCustomizationOverrides is enabled, apply to all canvases
-        // Otherwise, only apply to mainPreview
-        if (applyCustomizationOverrides.value || props.mainPreview) {
+        if (shouldApplyCustomizationColors.value) {
           await changeDefaultColors(0)
         }
       }
@@ -2508,9 +2508,7 @@
     () => {
       // Only apply if there are group colors set
       if (Object.keys(customizationStore.customization?.group_colors || {}).length > 0) {
-        // If applyCustomizationOverrides is enabled, apply to all canvases
-        // Otherwise, only apply to mainPreview
-        if (applyCustomizationOverrides.value || props.mainPreview) {
+        if (shouldApplyCustomizationColors.value) {
           changeGroupColors(0)
         }
       } else {
@@ -2518,8 +2516,7 @@
         const hasDefaultColors =
           defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
         if (!hasDefaultColors) {
-          // If group colors are undefined, reset to initial colors
-          if (applyCustomizationOverrides.value || props.mainPreview) {
+          if (shouldApplyCustomizationColors.value) {
             resetToInitialColors(0)
           }
         }
@@ -2533,8 +2530,11 @@
   watch(
     () => applyCustomizationOverrides.value,
     async () => {
-      // If not mainPreview and applyCustomizationOverrides is set to disabled, reset to initial colors
-      if (!applyCustomizationOverrides.value && !props.mainPreview) {
+      if (
+        !applyCustomizationOverrides.value &&
+        !props.mainPreview &&
+        !props.applyCustomizationColors
+      ) {
         await resetToInitialColors(0)
       } else {
         if (!props.mainPreview) {

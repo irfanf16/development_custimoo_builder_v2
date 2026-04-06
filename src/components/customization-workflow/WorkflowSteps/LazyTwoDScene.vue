@@ -22,7 +22,8 @@
     canvasWidth: { type: Number, default: 176 },
     canvasHeight: { type: Number, default: 176 },
     canvasClass: { type: String, default: 'rounded-xl' },
-    productId: { type: Number, default: undefined }
+    productId: { type: Number, default: undefined },
+    applyCustomizationColors: { type: Boolean, default: false }
   })
 
   const containerEl = ref<HTMLElement | null>(null)
@@ -67,6 +68,7 @@
       :canvas-height="canvasHeight"
       :canvas-class="canvasClass"
       :product-id="productId"
+      :apply-customization-colors="applyCustomizationColors"
     />
 
     <!-- Skeleton loader matching canvas dimensions -->

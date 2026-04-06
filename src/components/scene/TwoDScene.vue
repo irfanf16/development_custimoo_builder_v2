@@ -11,7 +11,16 @@
     type ComponentPublicInstance,
     shallowRef
   } from 'vue'
-  import { FabricImage, Canvas, Group, Rect, FabricText, type FabricObject } from 'fabric'
+  import {
+    FabricImage,
+    Canvas,
+    Group,
+    Rect,
+    FabricText,
+    Point,
+    type FabricObject,
+    type TMat2D
+  } from 'fabric'
   import * as fabric from 'fabric'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   import { useDesignConfig } from '@/components/customization-workflow/WorkflowSteps/design/useDesignConfig'
@@ -90,6 +99,13 @@
   const ALIGNING_LINE_WIDTH = 3
   const ALIGNING_LINE_COLOR = 'rgb(110, 243, 204)'
 
+  /** Fabric viewport baseline (Scene.vue `default_view_port`) — reset before every `zoomToPoint`. */
+  const defaultViewportTransform = shallowRef<number[] | null>(null)
+  /** Anchor for zoom/pan (Scene.vue `front_zoom_point` / `back_zoom_point`). */
+  const zoomPoint = ref<{ x: number; y: number }>({ x: 300, y: 300 })
+  const isDraggingPan = ref(false)
+  const lastCanvasPointer = ref<{ x: number; y: number } | null>(null)
+
   // Model type based on style preview structure
   type ModelData = {
     composition: 'multiply' | 'screen'
@@ -137,6 +153,13 @@
       height: number
       side: string
     }
+    /** When true, Fabric zoom/pan and workflow toolbar zoom apply to this canvas. */
+    enableZoom?: boolean
+    /**
+     * When true, apply customization colors even when not main preview and "apply to all canvases" is off.
+     * OR'd with global overrides and mainPreview in useColorCustomization.
+     */
+    applyCustomizationColors?: boolean
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -160,10 +183,20 @@
     // Color grouping - defaults to undefined (will be extracted from design if not provided)
     colorGrouping: undefined,
     placementSetting: undefined,
-    textPlacement: undefined
+    textPlacement: undefined,
+    enableZoom: false,
+    applyCustomizationColors: false
   })
 
   const isPlacementMode = computed(() => !!props.placementSetting || !!props.textPlacement)
+
+  /** Matches useColorCustomization: apply default/group colors when global overrides, main preview, or this prop is on. */
+  const shouldApplyCustomizationColors = computed(
+    () => applyCustomizationOverrides.value || props.mainPreview || props.applyCustomizationColors
+  )
+
+  /** True when this instance should handle zoom (wheel, pan, store sync). */
+  const zoomInteractionEnabled = computed(() => props.enableZoom)
 
   // get current instance at mounted
   const instance = getCurrentInstance()
@@ -278,7 +311,8 @@
     productsStore,
     props.mainPreview,
     props.side,
-    colorGrouping as Ref<Record<string, string[]> | null>
+    colorGrouping as Ref<Record<string, string[]> | null>,
+    props.applyCustomizationColors
   )
 
   // Extract customization functions from composable
@@ -318,6 +352,11 @@
 
       // Only reload if design actually changed
       if (newDesign && (!oldDesign || newDesign.file_url !== oldDesign.file_url)) {
+        // Zoom must be 1 before centering the new design on the canvas
+        if (zoomInteractionEnabled.value) {
+          resetCanvasZoomAfterDesignOrStyleChange()
+        }
+
         await addDesign(newDesign, {
           scaleMode: 'fit',
           canvasWidth: props.canvasWidth,
@@ -338,10 +377,26 @@
         await resetAndAddFixedLogos()
         if (!canvas.value) return
 
+        if (zoomInteractionEnabled.value) {
+          refreshDefaultViewportFromCanvas()
+          resetCanvasZoomAfterDesignOrStyleChange()
+        }
+
         canvas.value.requestRenderAll()
       }
     },
     { immediate: false }
+  )
+
+  // Reset zoom when the active style changes (new product/style selection)
+  watch(
+    () => productsStore.activeStyleDetails?.id,
+    (newId, oldId) => {
+      if (oldId === undefined || newId === undefined || newId === oldId) return
+      if (!canvas.value || !zoomInteractionEnabled.value) return
+      resetCanvasZoomAfterDesignOrStyleChange()
+      refreshDefaultViewportFromCanvas()
+    }
   )
 
   // Watch for changes in effectiveModels and reload models
@@ -398,6 +453,58 @@
 
       initCanvas(canvasEl.value, props.canvasWidth, props.canvasHeight)
       ensureDimText()
+
+      const c = canvas.value
+      if (c && zoomInteractionEnabled.value) {
+        defaultViewportTransform.value = JSON.parse(JSON.stringify(c.viewportTransform)) as number[]
+        zoomPoint.value = { x: props.canvasWidth / 2, y: props.canvasHeight / 2 }
+
+        c.on('mouse:wheel', opt => {
+          const e = opt.e as WheelEvent
+          const pointer = c.getPointer(e) as fabric.Point
+          zoomPoint.value = { x: pointer.x, y: pointer.y }
+          let zoom = c.getZoom() * 0.999 ** e.deltaY
+          if (zoom > 4) zoom = 4
+          if (zoom < 1) zoom = 1
+          workflowStore.setCanvasZoom(zoom)
+          e.preventDefault()
+          e.stopPropagation()
+        })
+
+        c.on('mouse:down', opt => {
+          if (opt.target != null) return
+          const p = c.getPointer(opt.e, false) as fabric.Point
+          lastCanvasPointer.value = { x: p.x, y: p.y }
+          zoomPoint.value = { x: p.x, y: p.y }
+          isDraggingPan.value = true
+        })
+
+        c.on('mouse:move', opt => {
+          if (!isDraggingPan.value || !lastCanvasPointer.value) return
+          const e = opt.e as MouseEvent
+          const pointer = c.getPointer(opt.e, false) as fabric.Point
+          const last = lastCanvasPointer.value
+          const movement = new fabric.Point(
+            Math.trunc((last.x - pointer.x) / -2),
+            Math.trunc((last.y - pointer.y) / -2)
+          )
+          lastCanvasPointer.value = { x: pointer.x, y: pointer.y }
+          const zp = zoomPoint.value
+          const scaleBy = -5 / c.getZoom()
+          zp.x += (movement.x * scaleBy) / c.getZoom()
+          zp.y += (movement.y * scaleBy) / c.getZoom()
+          applyZoomCanvas(workflowStore.canvasZoom)
+          e.preventDefault()
+          e.stopPropagation()
+        })
+
+        let zInit = workflowStore.canvasZoom
+        if (zInit > 4) zInit = 4
+        if (zInit < 1) zInit = 1
+        if (zInit !== workflowStore.canvasZoom) workflowStore.setCanvasZoom(zInit)
+        applyZoomCanvas(zInit)
+      }
+
       canvas.value?.on('selection:cleared', hideDimensions)
 
       // Double-click on design part → open color editor
@@ -489,6 +596,7 @@
         })
 
         c.on('mouse:up', () => {
+          isDraggingPan.value = false
           verticalLines.value = []
           horizontalLines.value = []
         })
@@ -957,6 +1065,11 @@
       await renderOtherSideTextsFromStore()
     }, 500)
 
+    if (zoomInteractionEnabled.value) {
+      refreshDefaultViewportFromCanvas()
+      resetCanvasZoomAfterDesignOrStyleChange()
+    }
+
     productsStore.setSceneLoadComplete(true)
   }
 
@@ -1188,81 +1301,172 @@
   }
 
   /**
+   * Apply zoom/pan like Scene.vue `zoomCanvas`: reset to default viewport, then `zoomToPoint`.
+   * Clamps zoom to [1, 4] to match the legacy builder.
+   */
+  function applyZoomCanvas(zoom: number): void {
+    if (!zoomInteractionEnabled.value) return
+    const c = canvas.value
+    if (!c || !defaultViewportTransform.value) return
+
+    let z = zoom
+    if (z > 4) z = 4
+    if (z < 1) z = 1
+
+    const pointer = zoomPoint.value
+    c.setViewportTransform(JSON.parse(JSON.stringify(defaultViewportTransform.value)) as TMat2D)
+    c.zoomToPoint(new Point(pointer.x, pointer.y), z)
+    c.requestRenderAll()
+
+    if (dimText.value) {
+      dimText.value.set({ scaleX: 1 / z, scaleY: 1 / z })
+    }
+  }
+
+  /** Re-capture baseline viewport after design centering (zoom applies from this matrix). */
+  function refreshDefaultViewportFromCanvas(): void {
+    const c = canvas.value
+    if (!c) return
+    defaultViewportTransform.value = JSON.parse(JSON.stringify(c.viewportTransform)) as TMat2D
+  }
+
+  /** Reset zoom/pan to defaults and sync workflow store (enableZoom canvases only). */
+  function resetCanvasZoomAfterDesignOrStyleChange(): void {
+    if (!zoomInteractionEnabled.value) return
+    if (!canvas.value || !defaultViewportTransform.value) return
+    zoomPoint.value = { x: props.canvasWidth / 2, y: props.canvasHeight / 2 }
+    workflowStore.setCanvasZoom(1)
+    applyZoomCanvas(1)
+  }
+
+  /**
+   * `isTargetTransparent` / clip sampling must run at zoom 1 like Scene.vue (applyClipPath, addToOtherSide, objectScaling).
+   */
+  function withZoomResetForHitTest<T>(fn: () => T): T {
+    const c = canvas.value
+    if (!c) return fn()
+    const zp = zoomPoint.value
+    const currentZoom = c.getZoom()
+    if (Math.abs(currentZoom - 1) > 1e-6 && zp?.x != null && zp?.y != null) {
+      c.zoomToPoint(new Point(zp.x, zp.y), 1)
+    }
+    try {
+      return fn()
+    } finally {
+      if (Math.abs(currentZoom - 1) > 1e-6 && zp?.x != null && zp?.y != null) {
+        c.zoomToPoint(new Point(zp.x, zp.y), currentZoom)
+      }
+    }
+  }
+
+  async function withZoomResetAsync<T>(fn: () => Promise<T>): Promise<T> {
+    const c = canvas.value
+    if (!c) return fn()
+    const zp = zoomPoint.value
+    const currentZoom = c.getZoom()
+    if (Math.abs(currentZoom - 1) > 1e-6 && zp?.x != null && zp?.y != null) {
+      c.zoomToPoint(new Point(zp.x, zp.y), 1)
+    }
+    try {
+      return await fn()
+    } finally {
+      if (Math.abs(currentZoom - 1) > 1e-6 && zp?.x != null && zp?.y != null) {
+        c.zoomToPoint(new Point(zp.x, zp.y), currentZoom)
+      }
+    }
+  }
+
+  watch(
+    () => workflowStore.canvasZoom,
+    z => {
+      if (!zoomInteractionEnabled.value) return
+      if (!canvas.value || !defaultViewportTransform.value) return
+      let clamped = z
+      if (clamped > 4) clamped = 4
+      if (clamped < 1) clamped = 1
+      if (clamped !== z) workflowStore.setCanvasZoom(clamped)
+      applyZoomCanvas(clamped)
+    }
+  )
+
+  /**
    * Legacy-like clamp to keep logo inside design bounds and non-transparent area.
    * Adapted from custimoo_builder/src/components/Scene.vue objectScaling/targetNonTransparent*.
    */
   function constrainLogoWithinDesign(target: FabricObject) {
-    if (!canvas.value || !designObject.value) return
-    const design = designObject.value
-    const modelRect = design.getBoundingRect()
-    const boundingRect = {
-      left: modelRect.left,
-      right: modelRect.left + modelRect.width,
-      top: modelRect.top,
-      bottom: modelRect.top + modelRect.height
-    }
-
-    const width = target.width ?? 0
-    const height = target.height ?? 0
-    const scaleX = target.scaleX ?? 1
-    const scaleY = target.scaleY ?? 1
-
-    if (target.left === undefined || target.top === undefined) return
-
-    // basic bounds
-    if (target.left >= boundingRect.right + (width * scaleX) / 4) {
-      target.left = boundingRect.right + (width * scaleX) / 4
-    } else if (target.left < boundingRect.left - (width * scaleX) / 4) {
-      target.left = boundingRect.left - (width * scaleX) / 4
-    }
-    if (target.top < boundingRect.top + (height * scaleY) / 3) {
-      target.top = boundingRect.top + (height * scaleY) / 3
-    } else if (target.top >= boundingRect.bottom - (height * scaleY) / 3) {
-      target.top = boundingRect.bottom - (height * scaleY) / 3
-    }
-
-    const centerPoint = target.getCenterPoint()
-    if (
-      canvas.value.isTargetTransparent(
-        design as unknown as FabricObject,
-        centerPoint.x,
-        centerPoint.y
-      )
-    ) {
-      const boundingDistance = {
-        left: Math.abs(boundingRect.left - centerPoint.x),
-        top: Math.abs(boundingRect.top - centerPoint.y),
-        right: Math.abs(boundingRect.right - centerPoint.x),
-        bottom: Math.abs(boundingRect.bottom - centerPoint.y)
-      } as Record<'left' | 'top' | 'right' | 'bottom', number>
-
-      let otherMoveTo: 'left' | 'right' | 'top' | 'bottom' = 'left'
-      Object.keys(boundingDistance).forEach(key => {
-        const k = key as 'left' | 'right' | 'top' | 'bottom'
-        if (boundingDistance[k] > boundingDistance[otherMoveTo]) {
-          otherMoveTo = k
-        }
-      })
-      let moveTo: 'left' | 'right' = 'left'
-      if (boundingDistance.right > boundingDistance.left) {
-        moveTo = 'right'
+    withZoomResetForHitTest(() => {
+      if (!canvas.value || !designObject.value) return
+      const design = designObject.value
+      const modelRect = design.getBoundingRect()
+      const boundingRect = {
+        left: modelRect.left,
+        right: modelRect.left + modelRect.width,
+        top: modelRect.top,
+        bottom: modelRect.top + modelRect.height
       }
 
-      const direction = targetNonTransparentVH(
-        canvas.value,
-        design as unknown as FabricObject,
-        target.left,
-        target.top,
-        width,
-        scaleX,
-        moveTo,
-        otherMoveTo
-      )
-      target.left = direction.left
-      target.top = direction.top
-    }
+      const width = target.width ?? 0
+      const height = target.height ?? 0
+      const scaleX = target.scaleX ?? 1
+      const scaleY = target.scaleY ?? 1
 
-    target.setCoords()
+      if (target.left === undefined || target.top === undefined) return
+
+      // basic bounds
+      if (target.left >= boundingRect.right + (width * scaleX) / 4) {
+        target.left = boundingRect.right + (width * scaleX) / 4
+      } else if (target.left < boundingRect.left - (width * scaleX) / 4) {
+        target.left = boundingRect.left - (width * scaleX) / 4
+      }
+      if (target.top < boundingRect.top + (height * scaleY) / 3) {
+        target.top = boundingRect.top + (height * scaleY) / 3
+      } else if (target.top >= boundingRect.bottom - (height * scaleY) / 3) {
+        target.top = boundingRect.bottom - (height * scaleY) / 3
+      }
+
+      const centerPoint = target.getCenterPoint()
+      if (
+        canvas.value.isTargetTransparent(
+          design as unknown as FabricObject,
+          centerPoint.x,
+          centerPoint.y
+        )
+      ) {
+        const boundingDistance = {
+          left: Math.abs(boundingRect.left - centerPoint.x),
+          top: Math.abs(boundingRect.top - centerPoint.y),
+          right: Math.abs(boundingRect.right - centerPoint.x),
+          bottom: Math.abs(boundingRect.bottom - centerPoint.y)
+        } as Record<'left' | 'top' | 'right' | 'bottom', number>
+
+        let otherMoveTo: 'left' | 'right' | 'top' | 'bottom' = 'left'
+        Object.keys(boundingDistance).forEach(key => {
+          const k = key as 'left' | 'right' | 'top' | 'bottom'
+          if (boundingDistance[k] > boundingDistance[otherMoveTo]) {
+            otherMoveTo = k
+          }
+        })
+        let moveTo: 'left' | 'right' = 'left'
+        if (boundingDistance.right > boundingDistance.left) {
+          moveTo = 'right'
+        }
+
+        const direction = targetNonTransparentVH(
+          canvas.value,
+          design as unknown as FabricObject,
+          target.left,
+          target.top,
+          width,
+          scaleX,
+          moveTo,
+          otherMoveTo
+        )
+        target.left = direction.left
+        target.top = direction.top
+      }
+
+      target.setCoords()
+    })
   }
 
   function targetNonTransparentVH(
@@ -1356,159 +1560,160 @@
   function addToOtherSide(target: FabricImage) {
     if (!canvas.value || !designObject.value) return
 
-    const design = designObject.value
-    const modelRect = design.getBoundingRect()
-    const boundingRect = {
-      left: modelRect.left,
-      right: modelRect.left + modelRect.width,
-      top: modelRect.top,
-      bottom: modelRect.top + modelRect.height
-    }
-
-    const width = (target.width ?? 0) * (target.scaleX ?? 1)
-    const height = (target.height ?? 0) * (target.scaleY ?? 1)
-    const centerPoint = target.getCenterPoint()
-
-    let boundingDistance: Record<BoundKey, number> = {
-      left: Math.abs(boundingRect.left - centerPoint.x),
-      top: Math.abs(boundingRect.top - centerPoint.y),
-      right: Math.abs(boundingRect.right - centerPoint.x),
-      bottom: Math.abs(boundingRect.bottom - centerPoint.y)
-    }
-
-    let actualNearTo: BoundKey = 'left'
-    Object.keys(boundingDistance).forEach(key => {
-      const k = key as BoundKey
-      if (boundingDistance[k] < boundingDistance[actualNearTo]) {
-        actualNearTo = k
+    withZoomResetForHitTest(() => {
+      const cv = canvas.value!
+      const design = designObject.value!
+      const modelRect = design.getBoundingRect()
+      const boundingRect = {
+        left: modelRect.left,
+        right: modelRect.left + modelRect.width,
+        top: modelRect.top,
+        bottom: modelRect.top + modelRect.height
       }
-    })
 
-    // Bias vertical to be less likely chosen unless nearer (legacy adds +100 to top/bottom)
-    boundingDistance = {
-      left: Math.abs(boundingRect.left - centerPoint.x),
-      top: Math.abs(boundingRect.top - centerPoint.y) + 100,
-      right: Math.abs(boundingRect.right - centerPoint.x),
-      bottom: Math.abs(boundingRect.bottom - centerPoint.y) + 100
-    }
+      const width = (target.width ?? 0) * (target.scaleX ?? 1)
+      const height = (target.height ?? 0) * (target.scaleY ?? 1)
+      const centerPoint = target.getCenterPoint()
 
-    let nearTo: BoundKey = 'left'
-    Object.keys(boundingDistance).forEach(key => {
-      const k = key as BoundKey
-      if (boundingDistance[k] < boundingDistance[nearTo]) {
-        nearTo = k
+      let boundingDistance: Record<BoundKey, number> = {
+        left: Math.abs(boundingRect.left - centerPoint.x),
+        top: Math.abs(boundingRect.top - centerPoint.y),
+        right: Math.abs(boundingRect.right - centerPoint.x),
+        bottom: Math.abs(boundingRect.bottom - centerPoint.y)
       }
-    })
-    let moreTowards: 'left' | 'right' = 'left'
-    if (boundingDistance.right < boundingDistance.left) {
-      moreTowards = 'right'
-    }
-    const isActualTop = actualNearTo === ('top' as BoundKey)
 
-    let checkPointX = (target.left ?? 0) + width / 2
-    if (nearTo === 'left') {
-      checkPointX = (target.left ?? 0) - width / 2
-    }
-
-    let checkPointY = centerPoint.y
-    if (isActualTop) {
-      checkPointY = (target.top ?? 0) - height / 3
-    }
-
-    let addLeft = target.left ?? 0
-    let addTop = target.top ?? 0
-    // Match old Scene.vue: model_start = left edge - 1, model_end = right edge + 1 (getBoundingRect gives top-left so left edge = left, right edge = left + width)
-    const modelStart = modelRect.left - 1
-    const modelEnd = modelRect.left + modelRect.width + 1
-
-    if (
-      canvas.value.isTargetTransparent(design as unknown as FabricObject, checkPointX, checkPointY)
-    ) {
-      if (isActualTop) {
-        const direction = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          centerPoint.x,
-          centerPoint.y - height,
-          0,
-          1,
-          'bottom'
-        )
-        addTop = direction.top - checkPointY
-        addLeft = props.canvasWidth - (target.left ?? 0)
-      } else if (moreTowards === 'left') {
-        const direction = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          checkPointX,
-          centerPoint.y,
-          0,
-          1,
-          'right'
-        )
-        const directionFromRight = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          modelEnd,
-          checkPointY,
-          0,
-          1,
-          'left'
-        )
-        const outside = direction.left - checkPointX
-        const modelSpaceLeft = directionFromRight.left + width / 2 - 3
-        addLeft = modelSpaceLeft - outside
-        addTop = target.top ?? 0
-      } else {
-        const direction = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          (target.left ?? 0) + width,
-          target.top ?? 0,
-          0,
-          1,
-          'left'
-        )
-        const directionFromRight = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          modelStart,
-          centerPoint.y,
-          0,
-          1,
-          'right'
-        )
-        const outside = checkPointX - direction.left
-        const modelSpaceRight = directionFromRight.left - width / 2 - 3
-        addLeft = modelSpaceRight + outside
-        addTop = target.top ?? 0
-      }
-      // store mirrored logo on the opposite side
-      const destSide = (
-        (target as unknown as { side?: string }).side === 'back' ? 'front' : 'back'
-      ) as 'front' | 'back'
-      const logoIndex = (target as unknown as { logo_index?: number }).logo_index ?? 0
-      const sourceLogo = customLogos.value.get(logoIndex)
-      sceneStore.addOtherSideLogo({
-        logo_index: (target as unknown as { logo_index?: number }).logo_index ?? 0,
-        url: sourceLogo?.url ? sourceLogo?.url + '?nocache=11' : '',
-        side: destSide,
-        left: addLeft,
-        top: addTop,
-        flipX: isActualTop,
-        flipY: isActualTop,
-        rotation: -(target.angle ?? 0),
-        scaleX: target.scaleX ?? 1,
-        scaleY: target.scaleY ?? 1
+      let actualNearTo: BoundKey = 'left'
+      Object.keys(boundingDistance).forEach(key => {
+        const k = key as BoundKey
+        if (boundingDistance[k] < boundingDistance[actualNearTo]) {
+          actualNearTo = k
+        }
       })
-    } else {
-      // remove mirrored logo if it falls outside valid region
-      const destSide = (
-        (target as unknown as { side?: string }).side === 'back' ? 'front' : 'back'
-      ) as 'front' | 'back'
-      const idx = (target as unknown as { logo_index?: number }).logo_index ?? 0
-      sceneStore.removeOtherSideLogo(destSide, idx)
-    }
+
+      // Bias vertical to be less likely chosen unless nearer (legacy adds +100 to top/bottom)
+      boundingDistance = {
+        left: Math.abs(boundingRect.left - centerPoint.x),
+        top: Math.abs(boundingRect.top - centerPoint.y) + 100,
+        right: Math.abs(boundingRect.right - centerPoint.x),
+        bottom: Math.abs(boundingRect.bottom - centerPoint.y) + 100
+      }
+
+      let nearTo: BoundKey = 'left'
+      Object.keys(boundingDistance).forEach(key => {
+        const k = key as BoundKey
+        if (boundingDistance[k] < boundingDistance[nearTo]) {
+          nearTo = k
+        }
+      })
+      let moreTowards: 'left' | 'right' = 'left'
+      if (boundingDistance.right < boundingDistance.left) {
+        moreTowards = 'right'
+      }
+      const isActualTop = actualNearTo === ('top' as BoundKey)
+
+      let checkPointX = (target.left ?? 0) + width / 2
+      if (nearTo === 'left') {
+        checkPointX = (target.left ?? 0) - width / 2
+      }
+
+      let checkPointY = centerPoint.y
+      if (isActualTop) {
+        checkPointY = (target.top ?? 0) - height / 3
+      }
+
+      let addLeft = target.left ?? 0
+      let addTop = target.top ?? 0
+      // Match old Scene.vue: model_start = left edge - 1, model_end = right edge + 1 (getBoundingRect gives top-left so left edge = left, right edge = left + width)
+      const modelStart = modelRect.left - 1
+      const modelEnd = modelRect.left + modelRect.width + 1
+
+      if (cv.isTargetTransparent(design as unknown as FabricObject, checkPointX, checkPointY)) {
+        if (isActualTop) {
+          const direction = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            centerPoint.x,
+            centerPoint.y - height,
+            0,
+            1,
+            'bottom'
+          )
+          addTop = direction.top - checkPointY
+          addLeft = props.canvasWidth - (target.left ?? 0)
+        } else if (moreTowards === 'left') {
+          const direction = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            checkPointX,
+            centerPoint.y,
+            0,
+            1,
+            'right'
+          )
+          const directionFromRight = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            modelEnd,
+            checkPointY,
+            0,
+            1,
+            'left'
+          )
+          const outside = direction.left - checkPointX
+          const modelSpaceLeft = directionFromRight.left + width / 2 - 3
+          addLeft = modelSpaceLeft - outside
+          addTop = target.top ?? 0
+        } else {
+          const direction = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            (target.left ?? 0) + width,
+            target.top ?? 0,
+            0,
+            1,
+            'left'
+          )
+          const directionFromRight = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            modelStart,
+            centerPoint.y,
+            0,
+            1,
+            'right'
+          )
+          const outside = checkPointX - direction.left
+          const modelSpaceRight = directionFromRight.left - width / 2 - 3
+          addLeft = modelSpaceRight + outside
+          addTop = target.top ?? 0
+        }
+        // store mirrored logo on the opposite side
+        const destSide = (
+          (target as unknown as { side?: string }).side === 'back' ? 'front' : 'back'
+        ) as 'front' | 'back'
+        const logoIndex = (target as unknown as { logo_index?: number }).logo_index ?? 0
+        const sourceLogo = customLogos.value.get(logoIndex)
+        sceneStore.addOtherSideLogo({
+          logo_index: (target as unknown as { logo_index?: number }).logo_index ?? 0,
+          url: sourceLogo?.url ? sourceLogo?.url + '?nocache=11' : '',
+          side: destSide,
+          left: addLeft,
+          top: addTop,
+          flipX: isActualTop,
+          flipY: isActualTop,
+          rotation: -(target.angle ?? 0),
+          scaleX: target.scaleX ?? 1,
+          scaleY: target.scaleY ?? 1
+        })
+      } else {
+        // remove mirrored logo if it falls outside valid region
+        const destSide = (
+          (target as unknown as { side?: string }).side === 'back' ? 'front' : 'back'
+        ) as 'front' | 'back'
+        const idx = (target as unknown as { logo_index?: number }).logo_index ?? 0
+        sceneStore.removeOtherSideLogo(destSide, idx)
+      }
+    })
   }
 
   /**
@@ -1522,145 +1727,146 @@
       .custom_text_item_index
     if (customTextIndex == null || itemIndex == null) return
 
-    const design = designObject.value
-    const modelRect = design.getBoundingRect()
-    const boundingRect = {
-      left: modelRect.left,
-      right: modelRect.left + modelRect.width,
-      top: modelRect.top,
-      bottom: modelRect.top + modelRect.height
-    }
-
-    const width = (target.width ?? 0) * (target.scaleX ?? 1)
-    const height = (target.height ?? 0) * (target.scaleY ?? 1)
-    const centerPoint = target.getCenterPoint()
-
-    let boundingDistance: Record<BoundKey, number> = {
-      left: Math.abs(boundingRect.left - centerPoint.x),
-      top: Math.abs(boundingRect.top - centerPoint.y),
-      right: Math.abs(boundingRect.right - centerPoint.x),
-      bottom: Math.abs(boundingRect.bottom - centerPoint.y)
-    }
-
-    let actualNearTo: BoundKey = 'left'
-    Object.keys(boundingDistance).forEach(key => {
-      const k = key as BoundKey
-      if (boundingDistance[k] < boundingDistance[actualNearTo]) {
-        actualNearTo = k
+    withZoomResetForHitTest(() => {
+      const cv = canvas.value!
+      const design = designObject.value!
+      const modelRect = design.getBoundingRect()
+      const boundingRect = {
+        left: modelRect.left,
+        right: modelRect.left + modelRect.width,
+        top: modelRect.top,
+        bottom: modelRect.top + modelRect.height
       }
-    })
 
-    boundingDistance = {
-      left: Math.abs(boundingRect.left - centerPoint.x),
-      top: Math.abs(boundingRect.top - centerPoint.y) + 100,
-      right: Math.abs(boundingRect.right - centerPoint.x),
-      bottom: Math.abs(boundingRect.bottom - centerPoint.y) + 100
-    }
+      const width = (target.width ?? 0) * (target.scaleX ?? 1)
+      const height = (target.height ?? 0) * (target.scaleY ?? 1)
+      const centerPoint = target.getCenterPoint()
 
-    let nearTo: BoundKey = 'left'
-    Object.keys(boundingDistance).forEach(key => {
-      const k = key as BoundKey
-      if (boundingDistance[k] < boundingDistance[nearTo]) {
-        nearTo = k
+      let boundingDistance: Record<BoundKey, number> = {
+        left: Math.abs(boundingRect.left - centerPoint.x),
+        top: Math.abs(boundingRect.top - centerPoint.y),
+        right: Math.abs(boundingRect.right - centerPoint.x),
+        bottom: Math.abs(boundingRect.bottom - centerPoint.y)
       }
-    })
-    const moreTowards: 'left' | 'right' =
-      boundingDistance.right < boundingDistance.left ? 'right' : 'left'
-    const isActualTop = actualNearTo === ('top' as BoundKey)
 
-    let checkPointX = (target.left ?? 0) + width / 2
-    if (nearTo === 'left') {
-      checkPointX = (target.left ?? 0) - width / 2
-    }
-
-    let checkPointY = centerPoint.y
-    if (isActualTop) {
-      checkPointY = (target.top ?? 0) - height / 3
-    }
-
-    let addLeft = target.left ?? 0
-    let addTop = target.top ?? 0
-    // Match old Scene.vue: model_start = left edge - 1, model_end = right edge + 1
-    const modelStart = modelRect.left - 1
-    const modelEnd = modelRect.left + modelRect.width + 1
-
-    const destSide = props.side === 'back' ? 'front' : 'back'
-
-    if (
-      canvas.value.isTargetTransparent(design as unknown as FabricObject, checkPointX, checkPointY)
-    ) {
-      if (isActualTop) {
-        const direction = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          centerPoint.x,
-          centerPoint.y - height,
-          0,
-          1,
-          'bottom'
-        )
-        addTop = direction.top - checkPointY
-        addLeft = props.canvasWidth - (target.left ?? 0)
-      } else if (moreTowards === 'left') {
-        const direction = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          checkPointX,
-          centerPoint.y,
-          0,
-          1,
-          'right'
-        )
-        const directionFromRight = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          modelEnd,
-          checkPointY,
-          0,
-          1,
-          'left'
-        )
-        const outside = direction.left - checkPointX
-        const modelSpaceLeft = directionFromRight.left + width / 2 - 3
-        addLeft = modelSpaceLeft - outside
-        addTop = target.top ?? 0
-      } else {
-        const direction = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          (target.left ?? 0) + width,
-          target.top ?? 0,
-          0,
-          1,
-          'left'
-        )
-        const directionFromRight = targetNonTransparent(
-          canvas.value,
-          design as unknown as FabricObject,
-          modelStart,
-          centerPoint.y,
-          0,
-          1,
-          'right'
-        )
-        const outside = checkPointX - direction.left
-        const modelSpaceRight = directionFromRight.left - width / 2 - 3
-        addLeft = modelSpaceRight + outside
-        addTop = target.top ?? 0
-      }
-      sceneStore.addOtherSideText({
-        customTextIndex,
-        itemIndex,
-        side: destSide,
-        left: addLeft,
-        top: addTop,
-        rotation: -(target.angle ?? 0),
-        scaleX: target.scaleX ?? 1,
-        scaleY: target.scaleY ?? 1
+      let actualNearTo: BoundKey = 'left'
+      Object.keys(boundingDistance).forEach(key => {
+        const k = key as BoundKey
+        if (boundingDistance[k] < boundingDistance[actualNearTo]) {
+          actualNearTo = k
+        }
       })
-    } else {
-      sceneStore.removeOtherSideText(destSide, customTextIndex, itemIndex)
-    }
+
+      boundingDistance = {
+        left: Math.abs(boundingRect.left - centerPoint.x),
+        top: Math.abs(boundingRect.top - centerPoint.y) + 100,
+        right: Math.abs(boundingRect.right - centerPoint.x),
+        bottom: Math.abs(boundingRect.bottom - centerPoint.y) + 100
+      }
+
+      let nearTo: BoundKey = 'left'
+      Object.keys(boundingDistance).forEach(key => {
+        const k = key as BoundKey
+        if (boundingDistance[k] < boundingDistance[nearTo]) {
+          nearTo = k
+        }
+      })
+      const moreTowards: 'left' | 'right' =
+        boundingDistance.right < boundingDistance.left ? 'right' : 'left'
+      const isActualTop = actualNearTo === ('top' as BoundKey)
+
+      let checkPointX = (target.left ?? 0) + width / 2
+      if (nearTo === 'left') {
+        checkPointX = (target.left ?? 0) - width / 2
+      }
+
+      let checkPointY = centerPoint.y
+      if (isActualTop) {
+        checkPointY = (target.top ?? 0) - height / 3
+      }
+
+      let addLeft = target.left ?? 0
+      let addTop = target.top ?? 0
+      // Match old Scene.vue: model_start = left edge - 1, model_end = right edge + 1
+      const modelStart = modelRect.left - 1
+      const modelEnd = modelRect.left + modelRect.width + 1
+
+      const destSide = props.side === 'back' ? 'front' : 'back'
+
+      if (cv.isTargetTransparent(design as unknown as FabricObject, checkPointX, checkPointY)) {
+        if (isActualTop) {
+          const direction = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            centerPoint.x,
+            centerPoint.y - height,
+            0,
+            1,
+            'bottom'
+          )
+          addTop = direction.top - checkPointY
+          addLeft = props.canvasWidth - (target.left ?? 0)
+        } else if (moreTowards === 'left') {
+          const direction = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            checkPointX,
+            centerPoint.y,
+            0,
+            1,
+            'right'
+          )
+          const directionFromRight = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            modelEnd,
+            checkPointY,
+            0,
+            1,
+            'left'
+          )
+          const outside = direction.left - checkPointX
+          const modelSpaceLeft = directionFromRight.left + width / 2 - 3
+          addLeft = modelSpaceLeft - outside
+          addTop = target.top ?? 0
+        } else {
+          const direction = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            (target.left ?? 0) + width,
+            target.top ?? 0,
+            0,
+            1,
+            'left'
+          )
+          const directionFromRight = targetNonTransparent(
+            cv,
+            design as unknown as FabricObject,
+            modelStart,
+            centerPoint.y,
+            0,
+            1,
+            'right'
+          )
+          const outside = checkPointX - direction.left
+          const modelSpaceRight = directionFromRight.left - width / 2 - 3
+          addLeft = modelSpaceRight + outside
+          addTop = target.top ?? 0
+        }
+        sceneStore.addOtherSideText({
+          customTextIndex,
+          itemIndex,
+          side: destSide,
+          left: addLeft,
+          top: addTop,
+          rotation: -(target.angle ?? 0),
+          scaleX: target.scaleX ?? 1,
+          scaleY: target.scaleY ?? 1
+        })
+      } else {
+        sceneStore.removeOtherSideText(destSide, customTextIndex, itemIndex)
+      }
+    })
   }
 
   const placementOverlay = computed(() => {
@@ -1796,48 +2002,50 @@
   async function buildClipGroup(target: FabricImage): Promise<Group | null> {
     if (!canvas.value) return null
 
-    // start with safe zone objects
-    const safeObjects = (safeZone.value?._objects as FabricObject[] | undefined) ?? []
-    const parts: FabricObject[] = []
-    for (const o of safeObjects) {
-      parts.push(await cloneFabricObject(o))
-    }
+    return await withZoomResetAsync(async () => {
+      // start with safe zone objects
+      const safeObjects = (safeZone.value?._objects as FabricObject[] | undefined) ?? []
+      const parts: FabricObject[] = []
+      for (const o of safeObjects) {
+        parts.push(await cloneFabricObject(o))
+      }
 
-    // handle boundaries with exclusion logic
-    const boundaryObjects = (boundary.value?._objects as FabricObject[] | undefined) ?? []
-    if (boundaryObjects.length) {
-      const checkPointX = target.left ?? 0
-      const checkPointY = target.top ?? 0
-      const clippedParts = await findClippedParts(
-        target,
-        boundaryObjects,
-        canvas.value,
-        checkPointX,
-        checkPointY
-      )
-      parts.push(...clippedParts)
-    }
+      // handle boundaries with exclusion logic
+      const boundaryObjects = (boundary.value?._objects as FabricObject[] | undefined) ?? []
+      if (boundaryObjects.length) {
+        const checkPointX = target.left ?? 0
+        const checkPointY = target.top ?? 0
+        const clippedParts = await findClippedParts(
+          target,
+          boundaryObjects,
+          canvas.value!,
+          checkPointX,
+          checkPointY
+        )
+        parts.push(...clippedParts)
+      }
 
-    if (!parts.length) return null
+      if (!parts.length) return null
 
-    const clip = new Group(parts, {
-      hasControls: false,
-      selectable: false,
-      evented: false,
-      originX: 'center',
-      originY: 'center',
-      lockMovementX: true,
-      lockMovementY: true,
-      absolutePositioned: true,
-      inverted: true,
-      scaleX: designObject.value?.scaleX ?? 1,
-      scaleY: designObject.value?.scaleY ?? 1,
-      left: props.canvasWidth / 2,
-      top: props.canvasHeight / 2
+      const clip = new Group(parts, {
+        hasControls: false,
+        selectable: false,
+        evented: false,
+        originX: 'center',
+        originY: 'center',
+        lockMovementX: true,
+        lockMovementY: true,
+        absolutePositioned: true,
+        inverted: true,
+        scaleX: designObject.value?.scaleX ?? 1,
+        scaleY: designObject.value?.scaleY ?? 1,
+        left: props.canvasWidth / 2,
+        top: props.canvasHeight / 2
+      })
+
+      canvas.value!.viewportCenterObject(clip)
+      return clip
     })
-
-    canvas.value.viewportCenterObject(clip)
-    return clip
   }
 
   async function applyClipPath(target: FabricImage | FabricObject): Promise<void> {
@@ -2009,10 +2217,7 @@
       defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
     const groupColors = customizationStore.customization?.group_colors || {}
     const hasGroupColors = Object.keys(groupColors).length > 0
-    if (
-      (hasDefaultColors || hasGroupColors) &&
-      (applyCustomizationOverrides.value || props.mainPreview)
-    ) {
+    if ((hasDefaultColors || hasGroupColors) && shouldApplyCustomizationColors.value) {
       await applyCustomization(0)
     }
     bringModelToFront()
@@ -2267,13 +2472,11 @@
         defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
       // Only apply if there are default colors set
       if (hasDefaultColors) {
-        // If applyCustomizationOverrides is enabled, apply to all canvases
-        // Otherwise, only apply to mainPreview
-        if (applyCustomizationOverrides.value || props.mainPreview) {
+        if (shouldApplyCustomizationColors.value) {
           changeDefaultColors(0)
         }
       } else if (Object.keys(customizationStore.customization?.group_colors || {}).length > 0) {
-        if (applyCustomizationOverrides.value || props.mainPreview) {
+        if (shouldApplyCustomizationColors.value) {
           resetToInitialColors(0)
         }
       }
@@ -2323,9 +2526,7 @@
         defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
       // Only apply if there are default colors set
       if (hasDefaultColors) {
-        // If applyCustomizationOverrides is enabled, apply to all canvases
-        // Otherwise, only apply to mainPreview
-        if (applyCustomizationOverrides.value || props.mainPreview) {
+        if (shouldApplyCustomizationColors.value) {
           await changeDefaultColors(0)
         }
       }
@@ -2437,9 +2638,7 @@
       if (isPlacementMode.value) return
       // Only apply if there are group colors set
       if (Object.keys(customizationStore.customization?.group_colors || {}).length > 0) {
-        // If applyCustomizationOverrides is enabled, apply to all canvases
-        // Otherwise, only apply to mainPreview
-        if (applyCustomizationOverrides.value || props.mainPreview) {
+        if (shouldApplyCustomizationColors.value) {
           changeGroupColors(0)
         }
       } else {
@@ -2447,8 +2646,7 @@
         const hasDefaultColors =
           defaultColors.filter((color: { color?: string | null }) => color.color).length > 0
         if (!hasDefaultColors) {
-          // If group colors are undefined, reset to initial colors
-          if (applyCustomizationOverrides.value || props.mainPreview) {
+          if (shouldApplyCustomizationColors.value) {
             resetToInitialColors(0)
           }
         }
@@ -2463,8 +2661,11 @@
     () => applyCustomizationOverrides.value,
     async () => {
       if (isPlacementMode.value) return
-      // If not mainPreview and applyCustomizationOverrides is set to disabled, reset to initial colors
-      if (!applyCustomizationOverrides.value && !props.mainPreview) {
+      if (
+        !applyCustomizationOverrides.value &&
+        !props.mainPreview &&
+        !props.applyCustomizationColors
+      ) {
         await resetToInitialColors(0)
       } else {
         if (!props.mainPreview) {

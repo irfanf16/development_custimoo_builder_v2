@@ -14,7 +14,12 @@
 <template>
   <div id="3d-or-2d-preview" ref="previewContainer" class="h-full">
     <ThreeDScene v-if="activeProductDetails?.is_3d_product" :main-preview="true" />
-    <TwoDScene v-else :side="workflowStore.activeCanvasSide" :main-preview="true" />
+    <TwoDScene
+      v-else
+      :side="workflowStore.activeCanvasSide"
+      :main-preview="true"
+      :enable-zoom="true"
+    />
   </div>
 
   <!-- If needed, we can add a light fade cross-fade here later -->

@@ -180,6 +180,7 @@
           :canvas-width="128"
           :canvas-height="128"
           canvas-class="rounded-xl"
+          :apply-customization-colors="true"
         />
       </div>
       <div class="flex-1 flex flex-col gap-2">

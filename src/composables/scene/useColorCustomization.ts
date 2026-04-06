@@ -34,7 +34,9 @@ export function useColorCustomization(
   productsStore: ReturnType<typeof useProductsStore>,
   mainPreview: boolean,
   side: CanvasSide,
-  colorGrouping?: Ref<Record<string, string[]> | null>
+  colorGrouping?: Ref<Record<string, string[]> | null>,
+  /** When true, apply colors even if not main preview and overrides checkbox is off (e.g. summary thumbnails). */
+  applyCustomizationColors = false
 ) {
   // ===== DEPENDENCIES =====
   const customizationStore = useCustomizationStore()
@@ -858,7 +860,9 @@ export function useColorCustomization(
    * @param renderTime - Optional render delay time
    */
   function applyCustomization(renderTime = 0): void {
-    if (!applyCustomizationOverrides.value && !mainPreview) return
+    const shouldApplyColors =
+      applyCustomizationOverrides.value || mainPreview || applyCustomizationColors
+    if (!shouldApplyColors) return
 
     const defaultColors = customizationStore.customization?.default_colors || []
     const hasDefaultColors =
@@ -869,25 +873,25 @@ export function useColorCustomization(
 
     // Apply default colors customization
     if (hasDefaultColors) {
-      if (applyCustomizationOverrides.value || mainPreview) {
+      if (shouldApplyColors) {
         changeDefaultColors(renderTime)
       }
     } else {
       // Reset to initial colors if default colors are cleared
-      if (applyCustomizationOverrides.value || mainPreview) {
+      if (shouldApplyColors) {
         resetToInitialColors(renderTime)
       }
     }
 
     // Apply group colors customization
     if (hasGroupColors) {
-      if (applyCustomizationOverrides.value || mainPreview) {
+      if (shouldApplyColors) {
         changeGroupColors(renderTime)
       }
     } else {
       // Reset to initial colors if group colors are cleared
       // Only reset if default colors are also not set (to avoid double reset)
-      if (!hasDefaultColors && (applyCustomizationOverrides.value || mainPreview)) {
+      if (!hasDefaultColors && shouldApplyColors) {
         resetToInitialColors(renderTime)
       }
     }
