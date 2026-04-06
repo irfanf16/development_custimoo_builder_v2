@@ -111,6 +111,15 @@
     return Number(m[1]) < (props.customPalettes?.length ?? 0)
   }
 
+  /** Tab label from API names like "hummel colors.csv", "team_sports.csv", or "dir/team_sports.csv". */
+  function formatPaletteTabLabel(raw: string): string {
+    if (!raw?.trim()) return 'Colors'
+    const base = raw.replace(/^.*[/\\]/, '')
+    const withoutExt = base.replace(/\.[a-z0-9]+$/i, '')
+    const label = withoutExt.replace(/_/g, ' ').trim()
+    return label || 'Colors'
+  }
+
   function isValidPaletteTab(value: string): boolean {
     if (props.palettes.length === 0) return false
     if (isMainPaletteTab(value)) return true
@@ -199,7 +208,7 @@
             :value="`p-${pIdx}`"
             class="flex-1"
           >
-            {{ palette.name }}
+            {{ formatPaletteTabLabel(palette.name) }}
           </TabsTrigger>
           <template v-if="!hasSvgColors">
             <TabsTrigger
@@ -208,7 +217,7 @@
               :value="`c-${cIdx}`"
               class="flex-1"
             >
-              {{ palette.name }}
+              {{ formatPaletteTabLabel(palette.name) }}
             </TabsTrigger>
           </template>
           <template v-if="!hasSvgColors && props.parsedLockerRooms?.length">
