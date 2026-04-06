@@ -253,16 +253,28 @@ export function useSvgGroups(
       productsStore.setSvgGroups(svgGroups.value, side, true)
     }
 
-    // Initialize parts array if not already set from props
-    // If parts were not provided as props, get them from active design (svgGroups)
-    if (parts.value.length === 0) {
-      // If mainPreview is enabled, try to get parts from store first
-      if (mainPreview && productsStore.svgGroups.length > 0) {
-        parts.value = productsStore.svgGroups.map(group => group.id)
-      } else {
-        // Fallback to local svgGroups (from active design)
-        parts.value = svgGroups.value.map(group => group.id)
+    // Always rebuild parts from this design's svgGroups so shuffle/default colors stay in sync
+    // after design switches (previously parts stuck when length > 0).
+    // Optional explicit svg_parts from props/store still seeds initial order via initializeParts + watch;
+    // after extract, permutation order follows extracted groups unless overridden below.
+    const fromPropOrStore = svgParts?.value ?? productsStore.activeDesignDetails?.svg_parts
+    if (fromPropOrStore) {
+      let ordered: string[] = []
+      if (typeof fromPropOrStore === 'string') {
+        try {
+          ordered = (JSON.parse(fromPropOrStore) as string[]) || []
+        } catch {
+          ordered = []
+        }
+      } else if (Array.isArray(fromPropOrStore)) {
+        ordered = [...fromPropOrStore]
       }
+      const ids = new Set(svgGroups.value.map(g => g.id))
+      const filtered = ordered.filter(id => ids.has(id))
+      const rest = svgGroups.value.map(g => g.id).filter(id => !filtered.includes(id))
+      parts.value = [...filtered, ...rest]
+    } else {
+      parts.value = svgGroups.value.map(group => group.id)
     }
   }
 

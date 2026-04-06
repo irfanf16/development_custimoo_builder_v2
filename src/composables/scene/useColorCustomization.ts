@@ -894,8 +894,6 @@ export function useColorCustomization(
 
     // TODO: Add more customization types here in the future
     // e.g., await applyPatterns(renderTime)
-    // e.g., await applyTexts(renderTime)
-    // e.g., await applyLogos(renderTime)
   }
 
   // ===== RETURN =====
