@@ -61,6 +61,29 @@ export type OutputStyleDetails = OutputStylePreviewFront & {
   logo: StyleLogoEntry[]
   logo_technologies: StyleLogoTechnology[]
   metalness: number | null
+  three_d_properties?: {
+    normalScaleX?: number | null
+    normalScaleY?: number | null
+    roughness?: number | null
+    metalness?: number | null
+    sheen?: number | null
+    sheenColor?: string | null
+    sheenRoughness?: number | null
+    reflectivity?: number | null
+    /** When true (or 1), tileX / tileY apply to loaded maps */
+    textureTiling?: boolean | number | null
+    insideMaterialColor?: string | null
+    tileX?: number | null
+    tileY?: number | null
+  } | null
+  _3d_inside_material_color: string | null
+  _3d_normal_scaleX: number | null
+  _3d_normal_scaleY: number | null
+  _3d_reflectivity: number | null
+  _3d_sheen: number | null
+  _3d_sheen_color: string | null
+  _3d_sheen_roughness: number | null
+  _3d_texture_tiling: number | null
   name: string
   product_id: number
   roughness: number | null

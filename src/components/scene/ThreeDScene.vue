@@ -15,6 +15,7 @@
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
   import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
   import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+  import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
   import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
   import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
   import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
@@ -67,6 +68,17 @@
     alpha_map_url?: string | null
     roughness?: number | null
     metalness?: number | null
+    normalScaleX?: number | null
+    normalScaleY?: number | null
+    sheen?: number | null
+    sheenColor?: string | null
+    sheenRoughness?: number | null
+    reflectivity?: number | null
+    /** When true (or 1), tileX / tileY are applied */
+    textureTiling?: boolean | number | null
+    insideMaterialColor?: string | null
+    tileX?: number | null
+    tileY?: number | null
   }
 
   // ===== PROPS =====
@@ -105,6 +117,10 @@
     colorGrouping?: Record<string, string[]> | string | null
     /** When true, apply customization colors when not main preview and overrides are off. */
     applyCustomizationColors?: boolean
+    // Normal map tiling: when false use repeat (1,1); when true use (tileX*scaleX, tileY*scaleY)
+    useScaling?: boolean
+    tileX?: number
+    tileY?: number
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -121,6 +137,9 @@
     svgParts: undefined,
     colorGrouping: undefined,
     applyCustomizationColors: false
+    useScaling: true, //default should be false with an unticked "Texture tiling" checkbox in the backend
+    tileX: 9,
+    tileY: 9
   })
 
   // Convert imageData to DesignData format for useSceneCommon
@@ -296,8 +315,18 @@
       metalness_map_url: styleDetails._3d_metalness_map?.file_url || null,
       ao_map_url: styleDetails._3d_ao_map?.file_url || null,
       alpha_map_url: styleDetails._3d_alpha_map?.file_url || null,
-      roughness: styleDetails.roughness ?? null,
-      metalness: styleDetails.metalness ?? null
+      roughness: styleDetails.three_d_properties?.roughness ?? null,
+      metalness: styleDetails.three_d_properties?.metalness ?? null,
+      insideMaterialColor: styleDetails.three_d_properties?.insideMaterialColor ?? null,
+      normalScaleX: styleDetails.three_d_properties?.normalScaleX ?? null,
+      normalScaleY: styleDetails.three_d_properties?.normalScaleY ?? null,
+      sheen: styleDetails.three_d_properties?.sheen ?? null,
+      sheenColor: styleDetails.three_d_properties?.sheenColor ?? null,
+      sheenRoughness: styleDetails.three_d_properties?.sheenRoughness ?? null,
+      reflectivity: styleDetails.three_d_properties?.reflectivity ?? null,
+      textureTiling: styleDetails.three_d_properties?.textureTiling ?? null,
+      tileX: styleDetails.three_d_properties?.tileX ?? null,
+      tileY: styleDetails.three_d_properties?.tileY ?? null
     }
   })
 
@@ -321,7 +350,16 @@
   const mounted = ref(false)
   const maxModelSizeValue = ref<number>(0)
   const originalCameraPosition = shallowRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0))
+  const originalTarget = shallowRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0))
+  const resetTransition = shallowRef<{
+    active: boolean
+    startTime: number
+    startPos: THREE.Vector3
+    startTarget: THREE.Vector3
+  } | null>(null)
+  const lastZoomDistance = ref<number | null>(null)
   const outerMaterial = shallowRef<THREE.MeshPhysicalMaterial | null>(null)
+  const resetScrollBlockHandler = ref<((e: WheelEvent) => void) | null>(null)
   const canvasRenderHandler = ref<(() => void) | null>(null)
   const composer = shallowRef<EffectComposer | null>(null)
   const renderPass = shallowRef<RenderPass | null>(null)
@@ -346,6 +384,11 @@
   const suppressCustomLogosWatch = ref(false)
   const suppressCustomTextsWatch = ref(false)
   const lastKnownObjectPos = ref<{ left: number; top: number } | null>(null)
+  const dracoLoader = shallowRef<DRACOLoader | null>(null)
+  const groundPlane = shallowRef<THREE.Mesh | null>(null)
+  // Anchor scale from applyAnchorDifferences (used for normalMap repeat when useScaling is true)
+  const anchorScaleX = ref(1)
+  const anchorScaleY = ref(1)
   const dimText = shallowRef<fabric.IText | null>(null)
   const dimensionTargetRef = shallowRef<FabricObject | FabricImage | null>(null)
   const colorDblclickElRef = shallowRef<HTMLCanvasElement | null>(null)
@@ -768,6 +811,10 @@
         top: 0x0
       })
       anchorGroup.setCoords()
+      const scaleX = anchorGroup.scaleX ?? 1
+      const scaleY = anchorGroup.scaleY ?? 1
+      anchorScaleX.value = scaleX
+      anchorScaleY.value = scaleY
 
       // Apply the anchor group's scale to the design (matching old codebase)
       design
@@ -808,10 +855,23 @@
           top: currentTop - (designAndCanvasHeightDiff - diffY)
         })
         .setCoords()
+
+      // Update normalMap repeat when useScaling is true (scaleX/scaleY from anchorGroup)
+      if (props.useScaling && outerMaterial.value?.normalMap) {
+        outerMaterial.value.normalMap.repeat.set(
+          (effectiveModels.value?.tileX ?? props.tileX) * scaleX,
+          (effectiveModels.value?.tileY ?? props.tileY) * scaleY
+        )
+      }
     }
   }
 
   function cleanup() {
+    if (rendererEl.value && resetScrollBlockHandler.value) {
+      rendererEl.value.removeEventListener('wheel', resetScrollBlockHandler.value, true)
+      resetScrollBlockHandler.value = null
+    }
+
     // Cancel animation
     if (animationId.value !== null) {
       cancelAnimationFrame(animationId.value)
@@ -845,6 +905,22 @@
     if (innerMaterial.value) {
       innerMaterial.value.dispose()
       innerMaterial.value = null
+    }
+
+    // Dispose ground plane
+    if (groundPlane.value) {
+      if (scene.value) {
+        scene.value.remove(groundPlane.value)
+      }
+      if (groundPlane.value.geometry) groundPlane.value.geometry.dispose()
+      if (groundPlane.value.material) {
+        if (Array.isArray(groundPlane.value.material)) {
+          groundPlane.value.material.forEach(m => m.dispose())
+        } else {
+          groundPlane.value.material.dispose()
+        }
+      }
+      groundPlane.value = null
     }
 
     // Dispose Three.js objects
@@ -890,6 +966,9 @@
       renderer.value = null
     }
 
+    // Clean up DRACOLoader (doesn't have dispose method, just clear reference)
+    dracoLoader.value = null
+
     mounted.value = false
   }
 
@@ -917,6 +996,10 @@
     })
     renderer.value.setSize(width, height)
     renderer.value.setPixelRatio(window.devicePixelRatio)
+    // Enable shadows
+    renderer.value.shadowMap.enabled = true
+    // Use VSM for softer shadows (Variance Shadow Maps produce naturally softer shadows)
+    renderer.value.shadowMap.type = THREE.VSMShadowMap
     rendererEl.value.appendChild(renderer.value.domElement)
 
     // Create controls
@@ -927,7 +1010,26 @@
       controls.value.maxPolarAngle = THREE.MathUtils.degToRad(120)
       controls.value.minPolarAngle = THREE.MathUtils.degToRad(30)
       controls.value.target.set(0, 0, 0)
+      // Zoom toward cursor so point under mouse stays fixed (no snap)
+      controls.value.zoomToCursor = true
       controls.value.update()
+
+      controls.value.addEventListener('end', () => {
+        const t = controls.value!.target
+        console.log('Pivot point:', t.x.toFixed(4), t.y.toFixed(4), t.z.toFixed(4))
+      })
+
+      // Prevent page scroll during reset animation (OrbitControls disabled = no preventDefault)
+      resetScrollBlockHandler.value = (e: WheelEvent) => {
+        if (resetTransition.value?.active) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }
+      rendererEl.value.addEventListener('wheel', resetScrollBlockHandler.value, {
+        passive: false,
+        capture: true
+      })
 
       if (!props.mainPreview) {
         controls.value.enableZoom = false
@@ -1009,6 +1111,10 @@
     // Setup environment
     setupEnvironment()
 
+    // Initialize DRACOLoader once for reuse
+    dracoLoader.value = new DRACOLoader()
+    dracoLoader.value.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/')
+
     // Load model and design
     loadScene()
 
@@ -1021,39 +1127,77 @@
 
   function setupLights() {
     if (!scene.value) return
+    const light_intensity = 1
+    const areaLight_rt = new THREE.RectAreaLight(0xffffff, 9 * light_intensity, 10, 10)
+    areaLight_rt.lookAt(0, 0, -90)
+    areaLight_rt.position.set(10, 0, 4)
+    scene.value.add(areaLight_rt)
 
-    const intensity = 0.68
-    const directionalLight1 = new THREE.RectAreaLight(0xffffff, 6 * intensity, 10, 10)
-    directionalLight1.lookAt(0, 0, -60)
-    directionalLight1.position.set(10, 0, 6)
-    scene.value.add(directionalLight1)
+    const areaLight_lt = new THREE.RectAreaLight(0xffffff, 9 * light_intensity, 10, 10)
+    areaLight_lt.lookAt(0, 0, -90)
+    areaLight_lt.position.set(-10, 0, 4)
+    scene.value.add(areaLight_lt)
 
-    const directionalLight2 = new THREE.RectAreaLight(0xffffff, 6 * intensity, 10, 10)
-    directionalLight2.lookAt(0, 0, -60)
-    directionalLight2.position.set(-10, 0, 6)
-    scene.value.add(directionalLight2)
+    const areaLight_bk = new THREE.RectAreaLight(0xffffff, 8 * light_intensity, 10, 10)
+    areaLight_bk.lookAt(0, 0, 180)
+    areaLight_bk.position.set(0, 0, -13.5)
+    scene.value.add(areaLight_bk)
 
-    const directionalLight3 = new THREE.RectAreaLight(0xffffff, 6 * intensity, 10, 10)
-    directionalLight3.lookAt(0, 0, 180)
-    directionalLight3.position.set(0, 0, -13.5)
-    scene.value.add(directionalLight3)
+    const areaLight_tbk = new THREE.RectAreaLight(0xffffff, 12 * light_intensity, 20, 20)
+    areaLight_tbk.lookAt(-45, 0, 180)
+    areaLight_tbk.position.set(0, 27, -11)
+    scene.value.add(areaLight_tbk)
 
-    const directionalLight4 = new THREE.RectAreaLight(0xffffff, 11 * intensity, 20, 20)
-    directionalLight4.lookAt(-45, 0, 180)
-    directionalLight4.position.set(0, 28.75, -21)
-    scene.value.add(directionalLight4)
+    // Lights for highlights on the back
+    const spotLight_lt_bk = new THREE.SpotLight(0xffffff, 14 * light_intensity, 0)
+    spotLight_lt_bk.position.set(4, -0.5, -5)
+    scene.value.add(spotLight_lt_bk)
 
-    const directionalLight5 = new THREE.RectAreaLight(0xffffff, 11 * intensity, 20, 20)
-    directionalLight5.lookAt(-45, 0, -180)
-    directionalLight5.position.set(0, 28.75, 21)
-    scene.value.add(directionalLight5)
+    const spotLight_rt_bk = new THREE.SpotLight(0xffffff, 14 * light_intensity, 0)
+    spotLight_rt_bk.position.set(-3.5, -1.5, -8)
+    scene.value.add(spotLight_rt_bk)
+
+    // Light for highlights on the shoulders
+    const spotLight_ft_top = new THREE.SpotLight(0xffffff, 3.5 * light_intensity, 0)
+    spotLight_ft_top.position.set(0, 2, 0.45)
+    scene.value.add(spotLight_ft_top)
+  }
+
+  function setupShadows(maxY: number) {
+    if (!scene.value) return
+    // Adds weak shadow-only light 0.5m above the top of the model, maxY = boundingBox.max.y
+    const topAreaLight = new THREE.DirectionalLight(0xffffff, 0.001)
+    topAreaLight.position.set(0, maxY + 0.5, 0)
+    topAreaLight.target.position.set(0, 0, 0)
+    topAreaLight.castShadow = true
+
+    topAreaLight.shadow.mapSize.width = 1024
+    topAreaLight.shadow.mapSize.height = 1024
+
+    // Smaller bounds = more pixels per unit = smoother gradients
+    topAreaLight.shadow.camera.near = 0.1
+    topAreaLight.shadow.camera.far = 2.5
+    topAreaLight.shadow.camera.left = -1.2
+    topAreaLight.shadow.camera.right = 1.2
+    topAreaLight.shadow.camera.top = 1.2
+    topAreaLight.shadow.camera.bottom = -1.2
+    // Adjust bias to reduce VSM artifacts
+    topAreaLight.shadow.bias = 0.0001
+    topAreaLight.shadow.normalBias = 0.02
+    // Set shadow intensity
+    topAreaLight.shadow.intensity = 0.15
+    // Set light softness
+    topAreaLight.shadow.radius = 35
+
+    scene.value.add(topAreaLight)
+    scene.value.add(topAreaLight.target) // Add target to scene for proper updates
   }
 
   function setupEnvironment() {
     if (!scene.value) return
 
     const hdrLoader = new HDRLoader()
-    const hdrPath = fromStorage('super_admin/files/product/env_map/Custom_studio_small.hdr')
+    const hdrPath = fromStorage('super_admin/files/product/env_map/studio007small1.hdr')
     hdrLoader.load(
       hdrPath,
       texture => {
@@ -1061,6 +1205,7 @@
         texture.mapping = THREE.EquirectangularReflectionMapping
         scene.value.environment = texture
         scene.value.background = null
+        scene.value.environmentIntensity = 1.5
       },
       undefined,
       error => {
@@ -1708,7 +1853,17 @@
         modelData.ao_map_url || null,
         modelData.alpha_map_url || null,
         modelData.roughness ?? null,
-        modelData.metalness ?? null
+        modelData.metalness ?? null,
+        modelData.normalScaleX ?? null,
+        modelData.normalScaleY ?? null,
+        modelData.sheen ?? null,
+        modelData.sheenColor ?? null,
+        modelData.sheenRoughness ?? null,
+        modelData.reflectivity ?? null,
+        modelData.textureTiling ?? null,
+        modelData.insideMaterialColor ?? null,
+        modelData.tileX ?? null,
+        modelData.tileY ?? null
       ),
       addDesign(designData, {
         scaleMode: 'resolution',
@@ -1837,7 +1992,17 @@
     aoMapUrl: string | null,
     alphaMapUrl: string | null,
     roughness: number | null,
-    metalness: number | null
+    metalness: number | null,
+    normalScaleX: number | null,
+    normalScaleY: number | null,
+    sheen: number | null,
+    sheenColor: string | null,
+    sheenRoughness: number | null,
+    reflectivity: number | null,
+    textureTiling: boolean | number | null,
+    insideMaterialColor: string | null,
+    tileX: number | null,
+    tileY: number | null
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!scene.value || !camera.value || !controls.value || !texture.value) {
@@ -1849,10 +2014,24 @@
       const manager = new THREE.LoadingManager()
       const gltfLoader = new GLTFLoader(manager)
       const textureLoader = new THREE.TextureLoader(manager)
+      // Use the shared DRACOLoader instance for compressed models
+      if (dracoLoader.value) {
+        gltfLoader.setDRACOLoader(dracoLoader.value)
+      }
 
       gltfLoader.load(
         fromStorage(modelUrl) || '',
         gltf => {
+          function applyTextureRepeatIfNeeded(tex: THREE.Texture) {
+            const tilingOn = textureTiling === true || textureTiling === 1
+            if (!tilingOn) return
+            const repX = tileX ?? props.tileX ?? 1
+            const repY = tileY ?? props.tileY ?? 1
+            tex.wrapS = THREE.RepeatWrapping
+            tex.wrapT = THREE.RepeatWrapping
+            tex.repeat.set(repX, repY)
+          }
+
           const object = gltf.scene.children[0]
           if (!(object instanceof THREE.Mesh)) {
             reject('The loaded model is not a mesh.')
@@ -1871,6 +2050,9 @@
             maxModelSizeValue.value = size.x
           }
 
+          // Setup shadows with light above the top of the model (bounding box max Y)
+          setupShadows(box.max.y)
+
           if (controls.value) {
             controls.value.minDistance = 1.07 * maxModelSizeValue.value
           }
@@ -1884,6 +2066,7 @@
             renderer.value || undefined
           )
           originalCameraPosition.value = camera.value!.position.clone()
+          originalTarget.value = controls.value!.target.clone()
 
           // Create front camera
           frontCamera.value = new THREE.OrthographicCamera(-3.6, 3.6, 3.6, -3.6, 1, 10)
@@ -1912,22 +2095,39 @@
           // Create front side material
           const outerMat = new THREE.MeshPhysicalMaterial({
             map: texture.value,
-            roughness: roughnessMapUrl && roughness !== null ? roughness : 1,
-            metalness: metalnessMapUrl && metalness !== null ? metalness : 0,
             aoMapIntensity: 0.75,
             transparent: alphaMapUrl ? true : false,
             side: THREE.FrontSide,
-            sheen: 2.2,
-            sheenColor: new THREE.Color(0xd1d1d1),
-            sheenRoughness: 0.8,
-            envMapIntensity: 1.5
+            envMapIntensity: 1.5,
+            ...(roughness != null && roughness !== 0 ? { roughness } : {}),
+            ...(metalness != null && metalness !== 0 ? { metalness } : {}),
+            ...(sheen != null ? { sheen } : {}),
+            ...(sheenColor != null ? { sheenColor: new THREE.Color(sheenColor) } : {}),
+            ...(sheenRoughness != null ? { sheenRoughness } : {}),
+            ...(reflectivity != null ? { reflectivity } : {}),
+            // ---EXPERIMENTAL---
+            clearcoat: 0, //gives a higher plastic-y feel 0-1 (0)
+            iridescence: 0, //isnt really used in fabric, perhaps velvet? 0-1 (0)
+            specularIntensity: 1 //strength of specular highlights 0-1 (1)
           })
+          // --- Vertex Shader Inflation, solves jagged edge gaps inside the object ---
+          const settings = { uInflation: 0.001 }
+          outerMat.onBeforeCompile = shader => {
+            shader.uniforms['uInflation'] = { value: settings.uInflation }
+            shader.vertexShader = `uniform float uInflation;\n${shader.vertexShader}`
+            shader.vertexShader = shader.vertexShader.replace(
+              '#include <begin_vertex>',
+              `vec3 transformed = vec3(position) + (normal * uInflation);`
+            )
+          }
           outerMat.needsUpdate = true
           outerMaterial.value = outerMat
 
           // Create back side material
           const innerMaterialInstance = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
+            color: insideMaterialColor
+              ? new THREE.Color(insideMaterialColor)
+              : new THREE.Color(0xffffff),
             side: THREE.BackSide
           })
           innerMaterial.value = innerMaterialInstance
@@ -1937,6 +2137,8 @@
           frontMeshInstance.position.copy(model.value.position)
           frontMeshInstance.rotation.copy(model.value.rotation)
           frontMeshInstance.scale.copy(model.value.scale)
+          frontMeshInstance.castShadow = true
+          frontMeshInstance.receiveShadow = false
           if (scene.value) {
             scene.value.add(frontMeshInstance)
           }
@@ -1947,6 +2149,8 @@
           backMeshInstance.position.copy(model.value.position)
           backMeshInstance.rotation.copy(model.value.rotation)
           backMeshInstance.scale.copy(model.value.scale)
+          backMeshInstance.castShadow = true
+          backMeshInstance.receiveShadow = false
           if (scene.value) {
             scene.value.add(backMeshInstance)
           }
@@ -1968,13 +2172,30 @@
           if (textureUrl) {
             const normalMap = textureLoader.load(fromStorage(textureUrl) || '')
             normalMap.flipY = false
+            normalMap.colorSpace = THREE.NoColorSpace
+            normalMap.wrapS = THREE.RepeatWrapping
+            normalMap.wrapT = THREE.RepeatWrapping
+            applyTextureRepeatIfNeeded(normalMap)
+            if (props.useScaling) {
+              normalMap.repeat.set(
+                (tileX ?? props.tileX) * anchorScaleX.value,
+                (tileY ?? props.tileY) * anchorScaleY.value
+              )
+            } else {
+              normalMap.repeat.set(1, 1)
+            }
             outerMat.normalMap = normalMap
+            if (normalScaleX != null || normalScaleY != null) {
+              outerMat.normalScale.set(normalScaleX ?? 1, normalScaleY ?? 1)
+            }
           }
 
           // Load roughness map
           if (roughnessMapUrl) {
             const roughnessMap = textureLoader.load(fromStorage(roughnessMapUrl) || '')
             roughnessMap.flipY = false
+            roughnessMap.colorSpace = THREE.NoColorSpace
+            applyTextureRepeatIfNeeded(roughnessMap)
             outerMat.roughnessMap = roughnessMap
           }
 
@@ -1983,6 +2204,7 @@
             const metalnessMap = textureLoader.load(fromStorage(metalnessMapUrl) || '')
             metalnessMap.flipY = false
             metalnessMap.anisotropy = 1
+            applyTextureRepeatIfNeeded(metalnessMap)
             outerMat.metalnessMap = metalnessMap
           }
 
@@ -2005,12 +2227,58 @@
           if (alphaMapUrl) {
             const alphaMap = textureLoader.load(fromStorage(alphaMapUrl) || '')
             alphaMap.flipY = false
+            applyTextureRepeatIfNeeded(alphaMap)
             outerMat.alphaMap = alphaMap
           }
 
           outerMat.needsUpdate = true
           if (innerMaterial.value) {
             innerMaterial.value.needsUpdate = true
+          }
+
+          // Create ground plane at the lowest point of the model
+          if (scene.value) {
+            // Remove existing ground plane if it exists
+            if (groundPlane.value) {
+              scene.value.remove(groundPlane.value)
+              if (groundPlane.value.geometry) groundPlane.value.geometry.dispose()
+              if (groundPlane.value.material) {
+                if (Array.isArray(groundPlane.value.material)) {
+                  groundPlane.value.material.forEach(m => m.dispose())
+                } else {
+                  groundPlane.value.material.dispose()
+                }
+              }
+              groundPlane.value = null
+            }
+
+            // Get the bounding box to find the lowest Y point //These values are used before and should be reused
+            const minY = boundingBox.min.y
+
+            // Create a 2x2 meter plane geometry
+            const planeGeometry = new THREE.PlaneGeometry(2, 2)
+
+            // Create a shadowcatching material for the plane
+            const planeMaterial = new THREE.ShadowMaterial({
+              opacity: 1
+            })
+
+            // Create the plane mesh
+            const plane = new THREE.Mesh(planeGeometry, planeMaterial)
+
+            // Position the plane 1cm below the lowest Y point, centered at origin
+            plane.position.set(0, minY - 0.001, 0)
+
+            // Rotate the plane to be horizontal (default is vertical)
+            plane.rotation.x = -Math.PI / 2
+
+            // Enable shadow receiving on the plane
+            plane.receiveShadow = true
+            plane.castShadow = false
+
+            // Add to scene
+            scene.value.add(plane)
+            groundPlane.value = plane
           }
 
           resolve()
@@ -2041,6 +2309,20 @@
     }
     if (model.value && scene.value) {
       scene.value.remove(model.value)
+    }
+
+    // Remove and dispose of ground plane
+    if (groundPlane.value && scene.value) {
+      scene.value.remove(groundPlane.value)
+      if (groundPlane.value.geometry) groundPlane.value.geometry.dispose()
+      if (groundPlane.value.material) {
+        if (Array.isArray(groundPlane.value.material)) {
+          groundPlane.value.material.forEach(m => m.dispose())
+        } else {
+          groundPlane.value.material.dispose()
+        }
+      }
+      groundPlane.value = null
     }
 
     if (outerMaterial.value) {
@@ -2110,9 +2392,9 @@
     const cam = activeCamera || camera.value
     if (!cam) return
 
-    renderer.value.toneMapping = THREE.NoToneMapping
-    // renderer.value.toneMappingExposure = 1.0
-    // renderer.value.outputColorSpace = THREE.SRGBColorSpace
+    renderer.value.toneMapping = THREE.NeutralToneMapping
+    renderer.value.toneMappingExposure = 0.65
+    renderer.value.outputColorSpace = THREE.LinearSRGBColorSpace
 
     if (!composer.value) {
       composer.value = new EffectComposer(renderer.value)
@@ -2177,11 +2459,10 @@
         | Record<string, { value: number }>
         | undefined
       if (uniforms && uniforms['brightness'] && uniforms['contrast'] && uniforms['saturation']) {
-        // Adjust brightness to make it lighter - increase from original -0.05
         // Positive values make it lighter, negative values make it darker
-        uniforms['brightness'].value = -0.12
-        uniforms['contrast'].value = 0
-        uniforms['saturation'].value = -0.08
+        uniforms['brightness'].value = -0.05
+        uniforms['contrast'].value = -0.38
+        uniforms['saturation'].value = -0.13
       }
       composer.value.addPass(brightnessContrastPass)
 
@@ -2201,11 +2482,78 @@
   // ===== ANIMATION =====
   const isAnimationRunning = ref(true)
 
+  /** Ease in-out cubic for smooth reset transition */
+  function easeInOutCubic(t: number): number {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+  }
+
+  /** Interpolate angle taking shortest path around circle */
+  function lerpAngle(a: number, b: number, t: number): number {
+    let delta = b - a
+    while (delta > Math.PI) delta -= 2 * Math.PI
+    while (delta < -Math.PI) delta += 2 * Math.PI
+    return a + delta * t
+  }
+
   function animate() {
     if (!renderer.value || !scene.value || !camera.value || !controls.value) return
 
     animationId.value = requestAnimationFrame(animate)
-    controls.value.update()
+    const ctrl = controls.value
+    const cam = camera.value
+
+    // Handle reset-to-default transition
+    const trans = resetTransition.value
+    if (trans?.active) {
+      const elapsed = (performance.now() - trans.startTime) / 1000
+      const t = Math.min(1, elapsed / 0.7)
+      const eased = easeInOutCubic(t)
+      ctrl.target.lerpVectors(trans.startTarget, originalTarget.value, eased)
+      // Path camera around model in spherical arc
+      const offsetStart = trans.startPos.clone().sub(trans.startTarget)
+      const offsetEnd = originalCameraPosition.value.clone().sub(originalTarget.value)
+      const sphStart = new THREE.Spherical().setFromVector3(offsetStart)
+      const sphEnd = new THREE.Spherical().setFromVector3(offsetEnd)
+      const sph = new THREE.Spherical()
+      sph.radius = sphStart.radius + (sphEnd.radius - sphStart.radius) * eased
+      sph.phi = sphStart.phi + (sphEnd.phi - sphStart.phi) * eased
+      sph.theta = lerpAngle(sphStart.theta, sphEnd.theta, eased)
+      cam.position.setFromSphericalCoords(sph.radius, sph.phi, sph.theta).add(ctrl.target)
+      cam.lookAt(ctrl.target)
+      if (t >= 1) {
+        // Use exact stored values to avoid floating point drift
+        cam.position.copy(originalCameraPosition.value)
+        ctrl.target.copy(originalTarget.value)
+        cam.lookAt(ctrl.target)
+        resetTransition.value = null
+        ctrl.enabled = true
+        ctrl.enablePan = true // Zoomed in at default
+        ctrl.update() // Sync OrbitControls internals
+      }
+      // Don't call ctrl.update() during transition - we're driving camera/target manually
+    } else {
+      ctrl.update()
+      const dist = cam.position.distanceTo(ctrl.target)
+      const triggerDist = ((ctrl.minDistance + ctrl.maxDistance) * 5) / 12
+      ctrl.enablePan = dist < triggerDist // Pan only when zoomed in
+      // Only trigger when crossing from zoomed-in
+      const prevDist = lastZoomDistance.value
+      const crossedThreshold =
+        prevDist !== null &&
+        prevDist < triggerDist &&
+        dist >= triggerDist &&
+        maxModelSizeValue.value > 0
+      lastZoomDistance.value = dist
+      if (crossedThreshold) {
+        resetTransition.value = {
+          active: true,
+          startTime: performance.now(),
+          startPos: cam.position.clone(),
+          startTarget: ctrl.target.clone()
+        }
+        ctrl.enabled = false
+      }
+    }
     if (texture.value) {
       texture.value.needsUpdate = true
     }
@@ -2355,7 +2703,17 @@
             newModel.ao_map_url || null,
             newModel.alpha_map_url || null,
             newModel.roughness ?? null,
-            newModel.metalness ?? null
+            newModel.metalness ?? null,
+            newModel.normalScaleX ?? null,
+            newModel.normalScaleY ?? null,
+            newModel.sheen ?? null,
+            newModel.sheenColor ?? null,
+            newModel.sheenRoughness ?? null,
+            newModel.reflectivity ?? null,
+            newModel.textureTiling ?? null,
+            newModel.insideMaterialColor ?? null,
+            newModel.tileX ?? null,
+            newModel.tileY ?? null
           )
 
           // Update texture
