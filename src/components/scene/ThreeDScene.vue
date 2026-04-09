@@ -136,7 +136,7 @@
     imageData: undefined,
     svgParts: undefined,
     colorGrouping: undefined,
-    applyCustomizationColors: false
+    applyCustomizationColors: false,
     useScaling: true, //default should be false with an unticked "Texture tiling" checkbox in the backend
     tileX: 9,
     tileY: 9
