@@ -68,7 +68,10 @@ export type UseFixedLogosConfig = {
 // ===== SOURCE LIST COMPUTATION =====
 
 /**
- * Resolve fixed-style logos from props or active style (default groups only, filtered by side).
+ * Resolve fixed-style logos from props or active style (filtered by side).
+ * - `is_fixed_logos_all === true`: every group.
+ * - `is_fixed_logos_all === false`: single group at `fixed_logo_index`.
+ * - otherwise: groups with `is_default` true/1.
  * Shared by 2D and 3D scenes.
  */
 export function computeFixedLogosList(params: {
@@ -85,19 +88,27 @@ export function computeFixedLogosList(params: {
   const source = Array.isArray(logosProp) ? logosProp : (styleLogoGroups ?? [])
 
   const sideLower = side?.toLowerCase()
+  const fixedIdx = Number(fixedLogoIndex ?? 0)
 
   return source.flatMap((group, index) => {
-    const useIndexSelection = isFixedLogosAll === false
-    const groupDefault = (group as { is_default?: boolean | 0 | 1 }).is_default
-    const isGroupDefault = useIndexSelection
-      ? index === Number(fixedLogoIndex ?? 0)
-      : groupDefault === true || groupDefault === 1
-    if (!isGroupDefault) return []
+    if (isFixedLogosAll === false) {
+      if (index !== fixedIdx) return []
+    } else if (isFixedLogosAll !== true) {
+      const d = group.is_default
+      if (d !== true && d !== 1) return []
+    }
+
     const nested = Array.isArray(group.logos) && group.logos.length > 0 ? group.logos : [group]
+    const groupSide = group.side?.toLowerCase()
     return nested.filter(logo => {
-      const logoSide = logo.side?.toLowerCase()
-      if (mode === '3d') return !sideLower || sideLower === '3d' || logoSide === sideLower
-      return !sideLower || logoSide === sideLower
+      const effectiveSide = logo.side?.toLowerCase() || groupSide || ''
+      if (mode === '3d') {
+        if (!sideLower || sideLower === '3d') return true
+        return !effectiveSide || effectiveSide === sideLower
+      }
+      if (!sideLower) return true
+      if (!effectiveSide) return false
+      return effectiveSide === sideLower
     })
   })
 }
