@@ -606,7 +606,7 @@
                   </div>
                   <div v-if="showPricing">
                     <p class="text-gray-500 text-xs">Price</p>
-                    <p class="font-medium">{{ formatPrice(item.price) }}</p>
+                    <p class="font-medium">{{ formatPrice(item.price, item.currency_symbol) }}</p>
                   </div> -->
                 </div>
 
@@ -654,9 +654,15 @@
                           {{ row.type === 'subtotal' ? '—' : row.qty }}
                         </td>
                         <td class="py-1.5 pr-2 text-right">
-                          {{ row.type === 'subtotal' ? '—' : formatPrice(row.unitPrice) }}
+                          {{
+                            row.type === 'subtotal'
+                              ? '—'
+                              : formatPrice(row.unitPrice, item.currency_symbol)
+                          }}
                         </td>
-                        <td class="py-1.5 pr-2 text-right">{{ formatPrice(row.total) }}</td>
+                        <td class="py-1.5 pr-2 text-right">
+                          {{ formatPrice(row.total, item.currency_symbol) }}
+                        </td>
                       </tr>
                     </tbody>
                   </table>

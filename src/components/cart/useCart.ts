@@ -17,6 +17,8 @@ export interface CartProduct {
   style: string
   addons: Array<{ id: number; title: string; price: number }>
   minimum_order_quantity: number
+  /** From API `product_price_object.currency_symbol` (e.g. €, $) */
+  currency_symbol: string
   // Additional fields for display
   front_image?: string
   back_image?: string
@@ -58,6 +60,12 @@ export function useCart() {
           product.quantity,
       0
     )
+  })
+
+  /** First line item’s symbol; used when `formatPrice` is called without a symbol (e.g. cart total). */
+  const cartCurrencySymbol = computed(() => {
+    const p = products.value[0]
+    return p?.currency_symbol && p.currency_symbol.trim().length > 0 ? p.currency_symbol : '$'
   })
 
   // ===== UTILITIES =====
@@ -139,6 +147,10 @@ export function useCart() {
           // }
         }
 
+        const rawSymbol = priceObj?.currency_symbol
+        const currencySymbol =
+          typeof rawSymbol === 'string' && rawSymbol.trim().length > 0 ? rawSymbol : '$'
+
         mappedProducts.push({
           cart_item_id: item.id,
           factory_product_id: String(fp?.id || ''),
@@ -147,6 +159,7 @@ export function useCart() {
           design_id: typeof fp?.design_id === 'number' ? fp?.design_id : String(fp?.design_id),
           quantity: Number(priceObj?.quantity || 0),
           price: Number(priceObj?.product_price || 0),
+          currency_symbol: currencySymbol,
           style: String(fp?.style_name || ''),
           addons: allAddons,
           front_image: fp?.front_image ? String(fp.front_image) : undefined,
@@ -237,8 +250,9 @@ export function useCart() {
     }
   }
 
-  const formatPrice = (price: number): string => {
-    return `$${price.toFixed(2)}`
+  const formatPrice = (price: number, currencySymbol?: string): string => {
+    const sym = currencySymbol ?? cartCurrencySymbol.value
+    return `${sym}${price.toFixed(2)}`
   }
 
   const formatAddons = (addons: Array<{ id: number; title: string }>): string => {
@@ -357,6 +371,7 @@ export function useCart() {
     // Computed
     totalItems,
     totalPrice,
+    cartCurrencySymbol,
 
     // Actions
     fetchCart,
