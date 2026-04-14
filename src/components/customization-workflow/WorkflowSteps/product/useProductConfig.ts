@@ -9,6 +9,7 @@ import { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProfileStore } from '@/stores/profile/profile.store'
+import { useCompanyStore } from '@/stores/company/company.store'
 import { buildProductBreadcrumbs } from '@/components/customization-workflow/breadcrumbs'
 import {
   products_search_placeholder,
@@ -36,7 +37,11 @@ export function useProductConfig() {
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
+  const companyStore = useCompanyStore()
   const hasCategories = computed(() => (productsStore.categories?.data?.length ?? 0) > 0)
+  const isAccordionMode = computed(
+    () => !!companyStore.settings?.settings?.enable_stepper_navigation
+  )
 
   // ===== COMPUTED =====
   const headerConfig = computed<HeaderConfiguration>(() => {
@@ -86,8 +91,13 @@ export function useProductConfig() {
         activeCategoryId: customizationStore.activeCategoryId,
         selectedSubCategoryId: workflowStore.selectedSubCategoryId,
         activeSubCategoryId: customizationStore.activeSubCategoryId,
-        onCategoryStep: () => workflowStore.setProductsSubStep('category'),
-        onSubCategoryStep: () => workflowStore.setProductsSubStep('subcategory'),
+        onCategoryStep: () => {
+          if (isAccordionMode.value) workflowStore.setSelectedCategoryForPreview(null)
+          workflowStore.setProductsSubStep('category')
+        },
+        onSubCategoryStep: isAccordionMode.value
+          ? () => workflowStore.setProductsSubStep('category')
+          : () => workflowStore.setProductsSubStep('subcategory'),
         locale: profileStore.currentLocale
       }),
       search: search.value ?? undefined,

@@ -112,6 +112,7 @@ export type OutputSettings = {
       state: string | null
       zip_code: string | null
     }
+    enable_stepper_navigation: boolean
   }
   ui_branding: UIBranding
 }

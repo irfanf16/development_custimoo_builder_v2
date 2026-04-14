@@ -1,6 +1,12 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useProductsStore } from '@/stores/products/products.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+  import { useCompanyStore } from '@/stores/company/company.store'
+  import Accordion from '@/components/ui/accordion/Accordion.vue'
+  import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
+  import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
+  import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
   import { PanelNavigationItem } from '@/components/ui/panel-navigation-item'
   import { getCategoryIcon } from './icon-utils'
 
@@ -10,37 +16,84 @@
 
   const props = defineProps<Props>()
   const productsStore = useProductsStore()
-  const categories = computed(() => productsStore.categories?.data)
+  const workflowStore = useWorkflowStore()
+  const companyStore = useCompanyStore()
+  const categories = computed(() => productsStore.categories?.data ?? [])
+
+  const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
 
   function handleSelectCategory(categoryId: number) {
-    // Do not commit category or preload products here; ProductSelection will handle fetching
     props.onSelectCategory?.(categoryId)
   }
-  const storage_url = (import.meta.env.VITE_APP_STORAGE_URL as string) || ''
+
+  function handleSelectSubcategory(parentCategoryId: number, subcategoryId: number) {
+    workflowStore.setSelectedCategoryForPreview(parentCategoryId)
+    workflowStore.handleSubcategorySelect(subcategoryId)
+  }
 </script>
 
 <template>
   <div class="flex flex-col">
-    <PanelNavigationItem
-      v-for="item in categories"
-      :id="item.id.toString()"
-      :key="item.id"
-      @click="() => handleSelectCategory(item.id)"
-    >
-      <template #content>
-        <div class="flex items-center gap-3">
-          <img v-if="item.image_url" :src="storage_url + item.image_url" class="size-6" />
-          <component
-            :is="getCategoryIcon(item.icon_name)"
-            v-else-if="item.icon_name"
-            class="size-6 text-primary icon-secondary-from-primary-50"
-          />
-          <span class="text-base font-semibold text-card-foreground whitespace-nowrap">{{
-            item.category_name
-          }}</span>
-        </div>
-      </template>
-    </PanelNavigationItem>
+    <template v-for="item in categories" :key="item.id">
+      <Accordion
+        v-if="companyStore.settings?.settings?.enable_stepper_navigation"
+        type="single"
+        collapsible
+        class="w-full"
+        :default-value="
+          workflowStore.selectedCategoryId === item.id ? `category-${item.id}` : undefined
+        "
+      >
+        <AccordionItem
+          :value="`category-${item.id}`"
+          class="border-0 border-b-0 first:border-t-0 last:border-b-0"
+        >
+          <AccordionTrigger
+            class="flex h-14 items-center px-4 py-0 hover:no-underline md:px-6 data-[state=open]:bg-muted/30"
+          >
+            <div class="flex flex-1 items-center gap-3 text-left">
+              <span class="text-base font-semibold text-card-foreground whitespace-nowrap">{{
+                item.category_name
+              }}</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent class="px-4 pb-3 pt-0 md:px-6">
+            <div class="flex flex-col gap-1 pl-1">
+              <button
+                v-for="sub in item.subcategories"
+                :id="sub.id.toString()"
+                :key="sub.id"
+                type="button"
+                class="flex h-12 w-full items-center rounded-md px-3 text-left text-sm font-semibold text-card-foreground whitespace-nowrap transition-colors hover:bg-muted/50"
+                @click="handleSelectSubcategory(item.id, sub.id)"
+              >
+                {{ sub.category_name }}
+              </button>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      <PanelNavigationItem
+        v-else
+        :id="item.id.toString()"
+        @click="() => handleSelectCategory(item.id)"
+      >
+        <template #content>
+          <div class="flex items-center gap-3">
+            <img v-if="item.image_url" :src="storage_url + item.image_url" class="size-6" />
+            <component
+              :is="getCategoryIcon(item.icon_name)"
+              v-else-if="item.icon_name"
+              class="size-6 text-primary icon-secondary-from-primary-50"
+            />
+            <span class="text-base font-semibold text-card-foreground whitespace-nowrap">{{
+              item.category_name
+            }}</span>
+          </div>
+        </template>
+      </PanelNavigationItem>
+    </template>
   </div>
 </template>
 
