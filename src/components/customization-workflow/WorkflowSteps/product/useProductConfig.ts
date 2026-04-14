@@ -40,7 +40,7 @@ export function useProductConfig() {
   const companyStore = useCompanyStore()
   const hasCategories = computed(() => (productsStore.categories?.data?.length ?? 0) > 0)
   const isAccordionMode = computed(
-    () => !!companyStore.settings?.settings?.enable_stepper_navigation
+    () => !!companyStore.settings?.ui_branding?.enable_stepper_navigation
   )
 
   // ===== COMPUTED =====

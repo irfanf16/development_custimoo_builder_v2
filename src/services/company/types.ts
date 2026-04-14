@@ -112,7 +112,6 @@ export type OutputSettings = {
       state: string | null
       zip_code: string | null
     }
-    enable_stepper_navigation: boolean
   }
   ui_branding: UIBranding
 }
@@ -128,4 +127,6 @@ export type UIBranding = {
   default_font_is_custom?: string
   theme: 'light' | 'dark'
   theme_color: string
+  enable_stepper_navigation: boolean
+  disable_category_navigation_logos: boolean
 }

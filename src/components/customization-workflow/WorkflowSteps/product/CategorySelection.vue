@@ -36,7 +36,7 @@
   <div class="flex flex-col">
     <template v-for="item in categories" :key="item.id">
       <Accordion
-        v-if="companyStore.settings?.settings?.enable_stepper_navigation"
+        v-if="companyStore.settings?.ui_branding?.enable_stepper_navigation"
         type="single"
         collapsible
         class="w-full"
@@ -52,6 +52,16 @@
             class="flex h-14 items-center px-4 py-0 hover:no-underline md:px-6 data-[state=open]:bg-muted/30"
           >
             <div class="flex flex-1 items-center gap-3 text-left">
+              <template
+                v-if="!companyStore.settings?.ui_branding?.disable_category_navigation_logos"
+              >
+                <img v-if="item.image_url" :src="storage_url + item.image_url" class="size-6" />
+                <component
+                  :is="getCategoryIcon(item.icon_name)"
+                  v-else-if="item.icon_name"
+                  class="size-6 text-primary icon-secondary-from-primary-50"
+                />
+              </template>
               <span class="text-base font-semibold text-card-foreground whitespace-nowrap">{{
                 item.category_name
               }}</span>
@@ -64,9 +74,19 @@
                 :id="sub.id.toString()"
                 :key="sub.id"
                 type="button"
-                class="flex h-12 w-full items-center rounded-md px-3 text-left text-sm font-semibold text-card-foreground whitespace-nowrap transition-colors hover:bg-muted/50"
+                class="flex h-12 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold text-card-foreground whitespace-nowrap transition-colors hover:bg-muted/50"
                 @click="handleSelectSubcategory(item.id, sub.id)"
               >
+                <template
+                  v-if="!companyStore.settings?.ui_branding?.disable_category_navigation_logos"
+                >
+                  <img v-if="sub.image_url" :src="storage_url + sub.image_url" class="size-5" />
+                  <component
+                    :is="getCategoryIcon(sub.icon_name)"
+                    v-else-if="sub.icon_name"
+                    class="size-5 text-primary icon-secondary-from-primary-50"
+                  />
+                </template>
                 {{ sub.category_name }}
               </button>
             </div>
@@ -81,12 +101,14 @@
       >
         <template #content>
           <div class="flex items-center gap-3">
-            <img v-if="item.image_url" :src="storage_url + item.image_url" class="size-6" />
-            <component
-              :is="getCategoryIcon(item.icon_name)"
-              v-else-if="item.icon_name"
-              class="size-6 text-primary icon-secondary-from-primary-50"
-            />
+            <template v-if="!companyStore.settings?.ui_branding?.disable_category_navigation_logos">
+              <img v-if="item.image_url" :src="storage_url + item.image_url" class="size-6" />
+              <component
+                :is="getCategoryIcon(item.icon_name)"
+                v-else-if="item.icon_name"
+                class="size-6 text-primary icon-secondary-from-primary-50"
+              />
+            </template>
             <span class="text-base font-semibold text-card-foreground whitespace-nowrap">{{
               item.category_name
             }}</span>
