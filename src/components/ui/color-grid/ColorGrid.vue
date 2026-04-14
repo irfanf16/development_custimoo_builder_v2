@@ -2,6 +2,7 @@
   import { computed } from 'vue'
   import type { HTMLAttributes } from 'vue'
   import { ColorSelector } from '../color-selector'
+  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../tooltip'
   import { cn } from '@/lib/utils'
 
   type OutputColor = {
@@ -73,14 +74,21 @@
 </script>
 
 <template>
-  <div :class="cn('grid gap-2 grid-cols-6 md:grid-cols-8', props.class)">
-    <ColorSelector
-      v-for="color in colors"
-      :key="color.value"
-      :color="color.value"
-      :disabled="props.disabled"
-      :selected="normalizedSelectedColor === normalizeColor(color.value)"
-      @click.stop="handleColorClick(color)"
-    />
-  </div>
+  <TooltipProvider>
+    <div :class="cn('grid gap-2 grid-cols-6 md:grid-cols-8', props.class)">
+      <Tooltip v-for="color in colors" :key="color.value">
+        <TooltipTrigger as-child>
+          <ColorSelector
+            :color="color.value"
+            :disabled="props.disabled"
+            :selected="normalizedSelectedColor === normalizeColor(color.value)"
+            @click.stop="handleColorClick(color)"
+          />
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <p>{{ color.name }}</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  </TooltipProvider>
 </template>
