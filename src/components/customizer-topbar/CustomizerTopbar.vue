@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { Button } from '@/components/ui/button'
   import { ButtonGroup } from '@/components/ui/button-group'
+  import { Switch } from '@/components/ui/switch'
   import {
     DropdownMenu,
     DropdownMenuContent,
@@ -24,7 +25,9 @@
     Ruler,
     X,
     File,
-    Share2
+    Share2,
+    Sun,
+    Moon
   } from 'lucide-vue-next'
   import {
     topbar_save,
@@ -53,7 +56,8 @@
     msg_failed_to_generate_signed_urls,
     msg_failed_to_share_design,
     msg_design_shared_success,
-    msg_missing_roster_sizes
+    msg_missing_roster_sizes,
+    theme_toggle_sr
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import SignInButton from '@/components/auth/SignInButton.vue'
@@ -1385,6 +1389,40 @@
                 </DropdownMenuTrigger>
               </ButtonGroup>
               <DropdownMenuContent align="end">
+                <template v-if="profileStore.canChangeDisplayMode">
+                  <DropdownMenuLabel class="px-2 py-2 font-normal">
+                    <div class="flex items-center gap-1 rounded-lg justify-center">
+                      <span class="text-sm font-medium">Theme:</span>
+                      <Sun
+                        class="size-4 shrink-0 transition-colors"
+                        :class="
+                          profileStore.effectiveTheme === 'light'
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                        "
+                        aria-hidden="true"
+                      />
+                      <Switch
+                        :model-value="profileStore.effectiveTheme === 'dark'"
+                        :aria-label="theme_toggle_sr({}, { locale: profileStore.currentLocale })"
+                        class="shrink-0"
+                        @update:model-value="
+                          (dark: boolean) => uiStore.setTheme(dark ? 'dark' : 'light')
+                        "
+                      />
+                      <Moon
+                        class="size-4 shrink-0 transition-colors"
+                        :class="
+                          profileStore.effectiveTheme === 'dark'
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                        "
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                </template>
                 <DropdownMenuLabel v-if="isLoggedIn"
                   >{{ user?.first_name }} {{ user?.last_name }}</DropdownMenuLabel
                 >

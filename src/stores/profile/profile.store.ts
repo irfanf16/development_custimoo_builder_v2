@@ -57,6 +57,13 @@ export const useProfileStore = defineStore('profileStore', () => {
     return Boolean(companyStore.settings?.ui_branding)
   })
 
+  /** Matches PreferencesTab: user may pick light/dark when no branding or when company allows switching */
+  const canChangeDisplayMode = computed(() => {
+    const branding = companyStore.settings?.ui_branding
+    if (!branding) return true
+    return Boolean(branding.allow_color_mode_switch)
+  })
+
   // Default display mode: use company default if available, otherwise 'light'
   function getDefaultDisplayMode(): DisplayMode {
     const companyTheme = companyStore.settings?.ui_branding?.theme
@@ -507,6 +514,7 @@ export const useProfileStore = defineStore('profileStore', () => {
     isInitialized,
     effectiveTheme,
     applyTheme,
+    canChangeDisplayMode,
 
     // Dashboard
     fetchDashboard,
