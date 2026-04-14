@@ -80,7 +80,14 @@ export function useBrandStyling() {
     }
 
     // Clear existing variables before applying new ones
-    const limitedVars = ['--primary', '--radius', '--font-sans', '--font-brand', '--accent']
+    const limitedVars = [
+      '--primary',
+      '--radius',
+      '--radius-active',
+      '--font-sans',
+      '--font-brand',
+      '--accent'
+    ]
     limitedVars.forEach(varName => target.style.removeProperty(varName))
 
     // Apply minimal variables from host theme
@@ -89,9 +96,12 @@ export function useBrandStyling() {
       primaryHsl.s
     )}% ${Math.round(primaryHsl.l)}%)`
     target.style.setProperty('--primary', primary)
+    const borderRadius = defaultUiBranding?.border_radius
     target.style.setProperty(
       '--radius',
-      defaultUiBranding?.border_radius.toString() + 'rem' || '0.625rem'
+      typeof borderRadius === 'number' && !Number.isNaN(borderRadius)
+        ? `${borderRadius}rem`
+        : '0.5rem'
     )
     const ring = `rgb(from var(--primary) r g b / 0.5)`
     target.style.setProperty('--ring', ring)
