@@ -36,7 +36,10 @@
   <div class="flex flex-col">
     <template v-for="item in categories" :key="item.id">
       <Accordion
-        v-if="companyStore.settings?.ui_branding?.enable_stepper_navigation"
+        v-if="
+          companyStore.settings?.ui_branding?.enable_stepper_navigation &&
+          item.subcategories?.length
+        "
         type="single"
         collapsible
         class="w-full"
@@ -93,6 +96,26 @@
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      <button
+        v-else-if="companyStore.settings?.ui_branding?.enable_stepper_navigation"
+        :id="item.id.toString()"
+        type="button"
+        class="flex h-14 w-full items-center gap-3 px-4 text-left transition-colors hover:bg-muted/50 md:px-6"
+        @click="handleSelectCategory(item.id)"
+      >
+        <template v-if="!companyStore.settings?.ui_branding?.disable_category_navigation_logos">
+          <img v-if="item.image_url" :src="storage_url + item.image_url" class="size-6" />
+          <component
+            :is="getCategoryIcon(item.icon_name)"
+            v-else-if="item.icon_name"
+            class="size-6 text-primary icon-secondary-from-primary-50"
+          />
+        </template>
+        <span class="text-base font-semibold text-card-foreground whitespace-nowrap">{{
+          item.category_name
+        }}</span>
+      </button>
 
       <PanelNavigationItem
         v-else
