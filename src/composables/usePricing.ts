@@ -2,11 +2,13 @@ import { useCompanyStore } from '@/stores/company/company.store'
 import type { OutputProductDetails } from '@/services/products/types'
 import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
+import { useCartStore } from '@/stores/cart/cart.store'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useProfileStore } from '@/stores/profile/profile.store'
 import { useRoster } from '@/components/customization-workflow/WorkflowSteps/roster/useRoster'
 import type { OutputSettings } from '@/services/company/types'
+import type { FactoryProduct } from '@/services/cart/types'
 
 function firstSettingsCurrencyCode(
   settings: OutputSettings['settings'] | null | undefined
@@ -22,6 +24,7 @@ export const usePricing = () => {
   const productsStore = useProductsStore()
   const profileStore = useProfileStore()
   const customizationStore = useCustomizationStore()
+  const cartStore = useCartStore()
   const { activeProductDetails } = storeToRefs(productsStore)
   const locale = computed(() => profileStore.currentLocale || 'en')
   const { totalRosterQuantity } = useRoster()
@@ -218,6 +221,44 @@ export const usePricing = () => {
   const activeProductPrice = computed(() => {
     const details = activeProductDetails.value
     if (!details) return null
+
+    /** When editing a cart line, use the same unit base as the cart API (`product_price_object`) so MSRP matches the cart (including collection-based pricing). */
+    let editingCartFactoryProduct: FactoryProduct | null = null
+    if (
+      cartStore.isEditingCartProduct &&
+      cartStore.editingCartItemId != null &&
+      cartStore.editingFactoryProductId != null &&
+      cartStore.cart?.items?.length
+    ) {
+      for (const item of cartStore.cart.items) {
+        if (item.id !== cartStore.editingCartItemId) continue
+        const fp = item.factory_products.find(
+          p => String(p.id) === String(cartStore.editingFactoryProductId)
+        )
+        if (fp) {
+          editingCartFactoryProduct = fp as FactoryProduct
+          break
+        }
+      }
+    }
+
+    const ppo = editingCartFactoryProduct?.product_price_object
+    if (ppo != null && !cartStore.preferSkuPriceWhileEditingCart) {
+      const basePrice = Number(ppo.product_price)
+      if (Number.isFinite(basePrice)) {
+        const minimumQuantity = Number(totalRosterQuantity.value) || 1
+        const totalAddonPrice = Number(getTotalAddonPrice()) || 0
+        const totalLogoTechPrice = Number(getTotalLogoTechnologyPrice()) || 0
+        const totalPrice = (basePrice + totalAddonPrice) * minimumQuantity + totalLogoTechPrice
+        const currencyCode =
+          ppo.currency_code || firstSettingsCurrencyCode(companyStore.settings?.settings) || 'USD'
+        return new Intl.NumberFormat(locale.value, {
+          style: 'currency',
+          currency: currencyCode
+        }).format(totalPrice)
+      }
+    }
+
     const raw = details?.company_product?.is_custom_prices
     const isCustomPrice = ['1', 1, true, 'true'].includes(raw as string | number | boolean)
 

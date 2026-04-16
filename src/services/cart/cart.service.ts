@@ -170,8 +170,16 @@ async function generateSignedUploadUrl(payload: GenerateSignedUploadUrlPayload) 
  */
 async function getCartProductDetails(
   cartItemId: number | string,
-  factoryProductId: number | string
+  factoryProductId: number | string,
+  options?: { collection_id?: number }
 ) {
+  const body: Record<string, unknown> = {
+    cart_item_id: cartItemId,
+    factory_product_id: factoryProductId
+  }
+  if (options?.collection_id != null) {
+    body.collection_id = options.collection_id
+  }
   return await http.post<{
     errors: unknown[]
     message: string
@@ -186,10 +194,7 @@ async function getCartProductDetails(
       cartId: number
       activityItems: unknown
     }
-  }>(`carts/cart-items/edit`, {
-    cart_item_id: cartItemId,
-    factory_product_id: factoryProductId
-  })
+  }>(`carts/cart-items/edit`, body)
 }
 
 /**

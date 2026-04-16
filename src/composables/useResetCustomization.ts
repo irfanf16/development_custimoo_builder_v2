@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useHistoryStore } from '@/stores/history/history.store'
+import { useCartStore } from '@/stores/cart/cart.store'
 
 // ============================================================================
 // Shared Singleton State - Single source of truth for reset dialog visibility
@@ -13,6 +14,7 @@ const isResetDialogOpen = ref(false)
 export function useResetCustomization() {
   const customizationStore = useCustomizationStore()
   const historyStore = useHistoryStore()
+  const cartStore = useCartStore()
 
   // ============================================================================
   // Dialog State Management
@@ -37,6 +39,9 @@ export function useResetCustomization() {
   const handleConfirmReset = () => {
     customizationStore.clearCustomization()
     historyStore.clear()
+    if (cartStore.isEditingCartProduct) {
+      cartStore.setPreferSkuPriceWhileEditingCart(true)
+    }
     isResetDialogOpen.value = false
   }
 

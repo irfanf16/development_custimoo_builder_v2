@@ -34,6 +34,11 @@ export const useCartStore = defineStore('cartStore', () => {
   // Track if we're editing a cart product
   const editingCartItemId = ref<number | null>(null)
   const editingFactoryProductId = ref<string | null>(null)
+  /**
+   * After "Reset" in the customizer, MSRP should show SKU/real product price instead of the cart line
+   * (e.g. collection) price until the user leaves edit mode.
+   */
+  const preferSkuPriceWhileEditingCart = ref(false)
 
   // Track if cart has been fetched on page load
   const hasFetchedOnPageLoad = ref(false)
@@ -446,6 +451,7 @@ export const useCartStore = defineStore('cartStore', () => {
     error.value = null
     editingCartItemId.value = null
     editingFactoryProductId.value = null
+    preferSkuPriceWhileEditingCart.value = false
     hasFetchedOnPageLoad.value = false
     clearLocalStorage()
   }
@@ -456,6 +462,7 @@ export const useCartStore = defineStore('cartStore', () => {
   function setEditingCartProduct(cartItemId: number, factoryProductId: string) {
     editingCartItemId.value = cartItemId
     editingFactoryProductId.value = factoryProductId
+    preferSkuPriceWhileEditingCart.value = false
   }
 
   /**
@@ -464,6 +471,11 @@ export const useCartStore = defineStore('cartStore', () => {
   function clearEditingCartProduct() {
     editingCartItemId.value = null
     editingFactoryProductId.value = null
+    preferSkuPriceWhileEditingCart.value = false
+  }
+
+  function setPreferSkuPriceWhileEditingCart(value: boolean) {
+    preferSkuPriceWhileEditingCart.value = value
   }
 
   /**
@@ -491,6 +503,7 @@ export const useCartStore = defineStore('cartStore', () => {
     error,
     editingCartItemId,
     editingFactoryProductId,
+    preferSkuPriceWhileEditingCart,
     isEditingCartProduct,
     cartItemsCount,
     hasFetchedOnPageLoad,
@@ -506,6 +519,7 @@ export const useCartStore = defineStore('cartStore', () => {
     clearCart,
     setEditingCartProduct,
     clearEditingCartProduct,
+    setPreferSkuPriceWhileEditingCart,
 
     // Persistence
     saveToLocalStorage,

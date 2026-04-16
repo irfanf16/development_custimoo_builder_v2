@@ -221,6 +221,9 @@
         customizationStore.initializeProductTextsFromDetails(details.id, details.product_texts)
       }
       history.clear()
+      if (cartStore.isEditingCartProduct) {
+        cartStore.setPreferSkuPriceWhileEditingCart(true)
+      }
     }
   }
 

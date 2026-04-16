@@ -596,13 +596,36 @@ export function useLoadCartProductIntoCustomizer() {
         }
       }
 
+      if (cart_item_id && !factoryProduct && cartStore.cart?.items) {
+        for (const item of cartStore.cart.items) {
+          if (item.id !== cart_item_id) continue
+          const found = item.factory_products.find(fp => String(fp.id) === String(factoryProductId))
+          if (found) {
+            factoryProduct = found
+            break
+          }
+        }
+      }
+
       // If we have cart_item_id, fetch the product details from API
       if (cart_item_id) {
+        const collectionIdForEdit = (() => {
+          const fp = factoryProduct ?? fallbackFactoryProduct
+          const raw =
+            fp && typeof fp === 'object' && 'collection_id' in fp
+              ? (fp as { collection_id?: unknown }).collection_id
+              : undefined
+          if (raw === undefined || raw === null || raw === '') return undefined
+          const n = Number(raw)
+          return Number.isFinite(n) ? n : undefined
+        })()
+
         // Type assertion needed because TypeScript doesn't infer the full type from default export
         const cartService = API.cart as unknown as {
           getCartProductDetails: (
             cartItemId: number | string,
-            factoryProductId: number | string
+            factoryProductId: number | string,
+            options?: { collection_id?: number }
           ) => Promise<
             import('axios').AxiosResponse<{
               errors: unknown[]
@@ -622,7 +645,11 @@ export function useLoadCartProductIntoCustomizer() {
           >
         }
         const resp = await tryCatchApi(
-          cartService.getCartProductDetails(cart_item_id, factoryProductId),
+          cartService.getCartProductDetails(
+            cart_item_id,
+            factoryProductId,
+            collectionIdForEdit != null ? { collection_id: collectionIdForEdit } : undefined
+          ),
           {
             operation: 'loadCartProductIntoCustomizer',
             cart_item_id: cart_item_id,

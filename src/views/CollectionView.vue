@@ -147,6 +147,34 @@
     return desc.replace(/<[^>]+>/g, '').trim()
   }
 
+  /** When unset, show prices (same intent as cart when merchants enable collection price + allow_price). */
+  const showProductPricing = computed(() => {
+    const v = companyStore.settings?.settings?.currencies?.visible
+    return v !== false
+  })
+
+  function formatCollectionProductPrice(cp: CollectionProductWithLockerRoom): string | null {
+    if (!cp.allow_price) return null
+    const raw = String(cp.product_price ?? '').trim()
+    if (!raw) return null
+    const num = parseFloat(raw.replace(/[^0-9.-]/g, ''))
+    if (!Number.isFinite(num)) return raw
+    const cur = companyStore.settings?.settings?.currencies
+    const list = cur?.currenncies ?? cur?.currencies
+    const code =
+      companyStore.localization?.currency?.code ||
+      (Array.isArray(list) && list.length ? list[0] : null) ||
+      'USD'
+    try {
+      return new Intl.NumberFormat(locale.value, {
+        style: 'currency',
+        currency: code
+      }).format(num)
+    } catch {
+      return raw
+    }
+  }
+
   // Purchase: add locker product to cart (or save as pending if guest)
   async function handlePurchase(cp: CollectionProductWithLockerRoom) {
     if (!isLoggedIn.value) {
@@ -160,7 +188,8 @@
     try {
       await cartStore.addLockerProductsToCart({
         locker_products: { [roomId]: [productId] },
-        lockers: []
+        lockers: [],
+        collection_id: collection.value?.id
       })
       showCartDialog.value = true
     } catch (e) {
@@ -200,7 +229,8 @@
         try {
           await cartStore.addLockerProductsToCart({
             locker_products: { [roomId]: [productId] },
-            lockers: []
+            lockers: [],
+            collection_id: collection.value?.id
           })
           clearPending()
           showCartDialog.value = true
@@ -433,6 +463,12 @@
             </h3>
             <p class="mt-1 text-sm text-muted-foreground line-clamp-3">
               {{ productDescription(cp.product_locker_room) || cp.description }}
+            </p>
+            <p
+              v-if="showProductPricing && formatCollectionProductPrice(cp)"
+              class="mt-2 text-lg font-semibold text-foreground"
+            >
+              {{ formatCollectionProductPrice(cp) }}
             </p>
           </div>
           <div class="mt-4 flex flex-wrap gap-2">

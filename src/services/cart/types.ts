@@ -28,6 +28,9 @@ export interface FactoryProduct extends CartProduct {
   style_name: string
   product_price_object: ProductPriceObject
   svg_url?: string
+  /** Persisted when added from a shared collection purchase */
+  collection_id?: number
+  product_locker_room_id?: number
   [key: string]: unknown
 }
 
@@ -146,6 +149,8 @@ export interface AddLockerProductsToCartPayload {
   /** Map of locker_id -> array of locker_product_ids */
   locker_products: Record<number, number[]>
   lockers: number[]
+  /** When purchasing from a shared collection, backend uses collection-based pricing */
+  collection_id?: number
 }
 
 export interface AddLockerProductsToCartResponse {
