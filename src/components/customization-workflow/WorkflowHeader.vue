@@ -6,15 +6,21 @@
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useProductsStore } from '@/stores/products/products.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store.ts'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { storeToRefs } from 'pinia'
-  import { Info, Maximize2, Minimize2 } from 'lucide-vue-next'
+  import { Info, Maximize2, Minimize2, Shuffle } from 'lucide-vue-next'
   import { computed, ref } from 'vue'
   import type { BreadcrumbItem, HeaderConfiguration } from './types'
   import WorkflowBreadcrumbs from './WorkflowBreadcrumbs.vue'
   import { DesignCategoryTabs } from './WorkflowSteps'
   import CustomizableStockFilter from './WorkflowSteps/product/CustomizableStockFilter.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import { ui_aria_more_information, ui_search_placeholder } from '@/paraglide/messages'
+  import {
+    ui_aria_more_information,
+    ui_search_placeholder,
+    color_shuffle_design_colors
+  } from '@/paraglide/messages'
 
   interface Props {
     isExpanded?: boolean
@@ -24,10 +30,15 @@
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
-  const { activeProductDetails } = storeToRefs(useProductsStore())
+  const productsStore = useProductsStore()
+  const customizationStore = useCustomizationStore()
+  const workflowStore = useWorkflowStore()
+  const { activeProductDetails } = storeToRefs(productsStore)
   const props = defineProps<Props>()
 
   const productName = computed(() => activeProductDetails.value?.display_name ?? null)
+
+  const hasSvgParts = computed(() => (productsStore.initialSvgGroups?.length ?? 0) > 0)
 
   const locale = computed(() => profileStore.currentLocale || 'en')
 
@@ -47,6 +58,10 @@
   const headerApplyOverrides = computed(() => props.config?.applyOverrides)
 
   const headerActionButton = computed(() => props.config?.actionButton)
+
+  const showShuffleButton = computed(
+    () => isExpanded.value && workflowStore.currentStep === 'designs' && hasSvgParts.value
+  )
 
   const toggleExpanded = () => {
     if (isExpandable.value) {
@@ -69,6 +84,41 @@
   const handleSearchInput = (val: string) => {
     searchModelValue.value = val
     props.config?.search?.onInput?.(val)
+  }
+
+  function shuffleAll() {
+    const initialGroups = productsStore.initialSvgGroups ?? []
+    if (initialGroups.length === 0 || !customizationStore.customization) return
+
+    const seen = new Set<string>()
+    const uniqueByColor = initialGroups.filter(g => {
+      const c = (g.color ?? '').trim().toLowerCase()
+      if (!c || seen.has(c)) return false
+      seen.add(c)
+      return true
+    })
+    const shuffled = [...uniqueByColor].sort(() => Math.random() - 0.5)
+    const picked = shuffled.slice(0, 4)
+
+    const defaultColors: Array<{
+      color: string | null
+      pantone: string | null
+      name: string | null
+    }> = picked.map(g => ({
+      color: g.color ?? null,
+      pantone: g.pantone ?? null,
+      name: g.name ?? null
+    }))
+    while (defaultColors.length < 4) {
+      defaultColors.push({ color: null, pantone: null, name: null })
+    }
+
+    customizationStore.customization.default_colors = defaultColors.slice(0, 4)
+    customizationStore.customization.shuffle_color_number = Math.floor(Math.random() * 24) + 1
+    customizationStore.customization.group_colors = {}
+    workflowStore.setDefaultColorsSource('design')
+    workflowStore.setActiveLogoId(null)
+    customizationStore.pushHistoryState('Shuffle design colors')
   }
 </script>
 
@@ -94,6 +144,17 @@
           headerApplyOverrides.label
         }}</Label>
       </div>
+      <Button
+        v-if="showShuffleButton"
+        variant="outline"
+        size="sm"
+        class="flex items-center gap-2"
+        :disabled="!hasSvgParts"
+        @click="shuffleAll"
+      >
+        <Shuffle class="size-4" />
+        {{ color_shuffle_design_colors({}, { locale: profileStore.currentLocale }) }}
+      </Button>
 
       <TooltipProvider v-if="headerActionButton">
         <Tooltip>
