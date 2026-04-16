@@ -11,6 +11,7 @@
     locker_product_description_label,
     locker_price_label
   } from '@/paraglide/messages'
+  import { usePricing } from '@/composables/usePricing'
   import { X, Eye, EyeOff } from 'lucide-vue-next'
   import { Button } from '@/components/ui/button'
   import EmptyState from '@/components/shared/EmptyState.vue'
@@ -98,6 +99,7 @@
   const isDragging = ref(false)
   const dropIndex = ref<number | null>(null)
   const profileStore = useProfileStore()
+  const { showPricing } = usePricing()
   const locale = computed(() => profileStore.currentLocale || 'en')
 
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
@@ -204,7 +206,7 @@
               />
             </div>
 
-            <div>
+            <div v-if="showPricing">
               <div class="flex items-center justify-between mb-1">
                 <label class="text-xs text-muted-foreground">{{
                   locker_price_label({}, { locale })
