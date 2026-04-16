@@ -8,6 +8,7 @@
   import AddressTab from './address-section/AddressTab.vue'
   import { ref, watch, computed, nextTick } from 'vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useAuthStore } from '@/stores/auth/auth.store'
   import { storeToRefs } from 'pinia'
   import Spinner from '../ui/spinner/Spinner.vue'
   import PreferencesTab from './preferences-section/PreferencesTab.vue'
@@ -42,8 +43,10 @@
 
   const { tab, tabItems } = useProfileDialogState()
   const profileStore = useProfileStore()
+  const authStore = useAuthStore()
   const ordersStore = useOrdersStore()
   const { counters } = storeToRefs(profileStore)
+  const { isAuthenticated: isLoggedIn } = storeToRefs(authStore)
   const { handleLogout } = useSignIn()
   const uiStore = useUIStore()
 
@@ -135,17 +138,20 @@
         if (!profileStore.isInitialized) {
           void profileStore.initializeLocale()
         }
-        // Set initial tab if provided
-        if (props.initialTab) {
-          tab.value = props.initialTab
-          profileStore.activeTab = props.initialTab
+
+        const defaultTab = props.initialTab ?? (props.initialOrderId != null ? 'orders' : 'account')
+        const targetTab = !isLoggedIn.value ? 'preferences' : defaultTab
+        if (targetTab) {
+          tab.value = targetTab
+          profileStore.activeTab = targetTab
         }
-        // Mobile: default to the tab list only for a generic "My profile" open. When a caller
-        // passes initialTab (checkout → orders, address picker, deep link), show that content
-        // immediately instead of an extra tap on the same tab name.
+
+        // Mobile: default to the tab list only for a generic "My profile" open.
+        // If only Preferences is visible while signed out, show the content directly.
         if (uiStore.isMobile) {
-          showMobileTabList.value = !props.initialTab
+          showMobileTabList.value = !props.initialTab && tabItems.value.length > 1
         }
+
         // Open order when opened with initialOrderId (e.g. checkout → details, /order/:id → timeline)
         if (props.initialOrderId != null && (props.initialTab ?? tab.value) === 'orders') {
           nextTick(() => {
@@ -162,6 +168,18 @@
     },
     { immediate: true }
   )
+
+  watch(isLoggedIn, loggedIn => {
+    if (!loggedIn || !props.open) return
+
+    const defaultTab = props.initialTab ?? (props.initialOrderId != null ? 'orders' : 'account')
+    tab.value = defaultTab
+    profileStore.activeTab = defaultTab
+
+    if (uiStore.isMobile) {
+      showMobileTabList.value = !props.initialTab && tabItems.value.length > 1
+    }
+  })
 </script>
 
 <template>
@@ -188,7 +206,7 @@
               <TabsTrigger
                 :value="item.value"
                 class="flex py-4 items-center justify-start gap-3 w-full rounded-[6px] transition-colors text-left"
-                :class="tab === item.value ? '!bg-primary/30' : 'bg-transparent text-foreground'"
+                :class="tab === item.value ? 'bg-primary/30!' : 'bg-transparent text-foreground'"
               >
                 <component :is="item.icon" class="size-6 text-primary" />
                 {{ item.label }}
@@ -233,9 +251,7 @@
               class="flex flex-col h-full absolute inset-0"
             >
               <!-- Mobile Header -->
-              <div
-                class="flex items-center justify-between p-4 border-b border-border flex-shrink-0"
-              >
+              <div class="flex items-center justify-between p-4 border-b border-border shrink-0">
                 <h2 class="text-base font-semibold">{{ myProfileLabel }}</h2>
               </div>
 
@@ -246,7 +262,7 @@
                     class="flex py-4 px-4 items-center justify-start gap-3 w-full rounded-[6px] transition-colors text-left"
                     :class="
                       tab === item.value
-                        ? '!bg-primary/30'
+                        ? 'bg-primary/30!'
                         : 'bg-transparent text-foreground hover:bg-muted/50'
                     "
                     @click="
@@ -265,9 +281,7 @@
             <!-- Mobile Content View -->
             <div v-else key="content" class="flex flex-col h-full absolute inset-0 min-h-0">
               <!-- Mobile Header with Back Button -->
-              <div
-                class="flex items-center justify-between p-4 border-b border-border flex-shrink-0"
-              >
+              <div class="flex items-center justify-between p-4 border-b border-border shrink-0">
                 <div class="flex items-center gap-3">
                   <Button variant="ghost" size="icon" class="size-9" @click="handleMobileBackClick">
                     <ArrowLeft class="size-4" />
@@ -310,11 +324,11 @@
         <DialogContentInner
           class="max-w-3xl sm:max-w-3xl overflow-hidden"
           :class="{
-            'fixed w-full max-w-full max-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] bottom-0 left-0 right-0 inset-x-0 -translate-x-0 translate-y-0 transform-none rounded-t-2xl rounded-b-none p-4 overflow-hidden flex flex-col grid-cols-none top-auto':
+            'fixed w-full max-w-full max-h-[calc(100dvh-5rem)] h-[calc(100dvh-5rem)] bottom-0 left-0 right-0 inset-x-0 translate-x-0 translate-y-0 transform-none rounded-t-2xl rounded-b-none p-4 overflow-hidden flex flex-col grid-cols-none top-auto':
               uiStore.isMobile
           }"
         >
-          <DialogHeader class="flex-shrink-0 pb-4 border-b border-border">
+          <DialogHeader class="shrink-0 pb-4 border-b border-border">
             <DialogTitle>{{
               profileStore.editingAddress ? addressModalT.editAddress : addressModalT.addNewAddress
             }}</DialogTitle>
