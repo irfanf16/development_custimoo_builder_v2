@@ -5,7 +5,7 @@ import { useCustomizationStore } from '@/stores/customization/customization.stor
 import { useProfileStore } from '@/stores/profile/profile.store'
 import { useAppStore } from '@/stores/app/app.store'
 import { API } from '@/services'
-import { msg_share_product_not_found_show_default } from '@/paraglide/messages'
+import { msg_product_unavailable } from '@/paraglide/messages'
 import type {
   ActiveProductCustomization,
   APCustomizationDefaultColor,
@@ -546,8 +546,14 @@ export function useLoadShareProductIntoCustomizer() {
 
   function showShareNotFoundToast() {
     // Toast runs during app init before Toaster is mounted; store message for WidgetApp to show after mount
-    const message = msg_share_product_not_found_show_default({}, { locale: locale.value })
+    const message = msg_product_unavailable({}, { locale: locale.value })
     useAppStore().setPendingShareNotFoundToast(message)
+  }
+
+  /** Use whenever share cannot be applied (missing product, 404, disabled, etc.) so init does not fall back silently. */
+  function failShareUnavailable(): false {
+    showShareNotFoundToast()
+    return false
   }
 
   async function loadShareProductIntoCustomizer(
@@ -570,14 +576,12 @@ export function useLoadShareProductIntoCustomizer() {
         resp.success && resp.content ? resp.content.result : (fallbackShareProduct ?? null)
 
       if (!shareResult) {
-        showShareNotFoundToast()
-        return false
+        return failShareUnavailable()
       }
 
       const factoryProduct = resolveShareProduct(shareResult)
       if (!factoryProduct) {
-        showShareNotFoundToast()
-        return false
+        return failShareUnavailable()
       }
 
       const {
@@ -587,8 +591,7 @@ export function useLoadShareProductIntoCustomizer() {
       } = extractShareProductIds(factoryProduct as unknown as Record<string, unknown>)
 
       if (!shareBaseProductId) {
-        showShareNotFoundToast()
-        return false
+        return failShareUnavailable()
       }
 
       // Load the base product/style/design via existing products flow
@@ -606,13 +609,13 @@ export function useLoadShareProductIntoCustomizer() {
             customizationStore
           )
 
-          if (!resolvedId) return false
+          if (!resolvedId) return failShareUnavailable()
           productId = resolvedId
 
           const retry = await productsStore.fetchActiveProductDetails(productId)
-          if (!retry?.success) return false
+          if (!retry?.success) return failShareUnavailable()
         } else {
-          return false
+          return failShareUnavailable()
         }
       }
 
@@ -623,7 +626,7 @@ export function useLoadShareProductIntoCustomizer() {
 
       if (styleId && productsStore.activeStyleDetails?.id !== styleId) {
         const activeStyleResp = await productsStore.fetchActiveStyleDetails(styleId)
-        if (!activeStyleResp?.success) return false
+        if (!activeStyleResp?.success) return failShareUnavailable()
       }
 
       if (designId && productsStore.activeDesignDetails?.id !== designId) {

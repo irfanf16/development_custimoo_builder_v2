@@ -439,11 +439,11 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     })
     if (resp.success && resp.content) {
       await fetchCollections()
-    } else {
-      setError('Failed to save collection')
-      isLoading.value = false
-      return null
+      return resp.content
     }
+    setError(resp.message ?? 'Failed to save collection')
+    isLoading.value = false
+    return null
   }
 
   async function updateCollection(collection_id: number, formData: FormData) {
@@ -455,7 +455,7 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       isLoading.value = false
       return resp.content
     } else {
-      setError('Failed to update collection')
+      setError(resp.message ?? 'Failed to update collection')
       isLoading.value = false
       return null
     }

@@ -23,7 +23,11 @@
   import { downloadFromUrl } from '@/lib/utils'
   import { toast } from 'vue-sonner'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import { msg_failed_to_add_to_cart } from '@/paraglide/messages'
+  import {
+    msg_failed_to_add_to_cart,
+    msg_locker_cart_single_unavailable,
+    msg_locker_cart_partial_added
+  } from '@/paraglide/messages'
 
   const route = useRoute()
   const router = useRouter()
@@ -186,12 +190,24 @@
     const roomId = plr.room_id
     const productId = plr.id
     try {
-      await cartStore.addLockerProductsToCart({
+      const r = await cartStore.addLockerProductsToCart({
         locker_products: { [roomId]: [productId] },
         lockers: [],
         collection_id: collection.value?.id
       })
-      showCartDialog.value = true
+      if (r.ok) {
+        if (r.outcome === 'partial') {
+          toast.warning(
+            msg_locker_cart_partial_added(
+              { skipped: String(r.skippedCount), added: String(r.addedCount) },
+              { locale: locale.value }
+            )
+          )
+        }
+        showCartDialog.value = true
+      } else {
+        toast.error(msg_locker_cart_single_unavailable({}, { locale: locale.value }))
+      }
     } catch (e) {
       console.error(e)
       toast.error(msg_failed_to_add_to_cart({}, { locale: locale.value }))
@@ -227,13 +243,25 @@
         const roomId = plr.room_id
         const productId = plr.id
         try {
-          await cartStore.addLockerProductsToCart({
+          const r = await cartStore.addLockerProductsToCart({
             locker_products: { [roomId]: [productId] },
             lockers: [],
             collection_id: collection.value?.id
           })
-          clearPending()
-          showCartDialog.value = true
+          if (r.ok) {
+            if (r.outcome === 'partial') {
+              toast.warning(
+                msg_locker_cart_partial_added(
+                  { skipped: String(r.skippedCount), added: String(r.addedCount) },
+                  { locale: locale.value }
+                )
+              )
+            }
+            clearPending()
+            showCartDialog.value = true
+          } else {
+            toast.error(msg_locker_cart_single_unavailable({}, { locale: locale.value }))
+          }
         } catch (e) {
           console.error(e)
           toast.error(msg_failed_to_add_to_cart({}, { locale: locale.value }))

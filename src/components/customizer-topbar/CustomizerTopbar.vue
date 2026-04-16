@@ -44,7 +44,7 @@
     msg_no_cart_product_selected,
     msg_add_roster_before_cart,
     msg_add_roster_entries_quantities,
-    msg_failed_to_load_locker_product,
+    msg_product_unavailable,
     msg_no_locker_product_selected,
     msg_failed_to_get_signed_urls,
     msg_failed_to_upload_images,
@@ -572,7 +572,7 @@
       payload.lockerId
     )
     if (!ok) {
-      toast.error(msg_failed_to_load_locker_product({}, { locale: locale.value }), {
+      toast.error(msg_product_unavailable({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })

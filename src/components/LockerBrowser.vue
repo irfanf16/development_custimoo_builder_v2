@@ -7,6 +7,7 @@
     Collection,
     CollectionProduct,
     Locker,
+    LockerCollectionMutationResponse,
     LockerProduct
   } from '@/services/lockers/types'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
@@ -23,7 +24,8 @@
   import {
     msg_upload_logo_before_collection,
     msg_collection_name_required,
-    msg_products_added_to_collection
+    msg_products_added_to_collection,
+    msg_collection_partial_add_unavailable
   } from '@/paraglide/messages'
 
   type SortOption = 'lastModified' | 'alphabetical' | 'createdDate'
@@ -56,6 +58,39 @@
   const lockerRoomStore = useLockerRoomStore()
   const profileStore = useProfileStore()
   const locale = computed(() => profileStore.currentLocale || 'en')
+
+  /** Full success toast, or a single combined message when some locker products were not salable. */
+  function toastCollectionAddOrMergeMaybePartial(
+    body: LockerCollectionMutationResponse | null | undefined,
+    fullSuccessMessage: string
+  ) {
+    const unavailable = body?.result?.unavailable_products
+    if (unavailable?.length) {
+      const names = unavailable
+        .map(u => (u.product_nickname || '').trim() || `#${u.product_locker_room_id}`)
+        .join(', ')
+      toast.success(msg_collection_partial_add_unavailable({ names }, { locale: locale.value }), {
+        position: 'top-right',
+        richColors: true
+      })
+    } else {
+      toast.success(fullSuccessMessage, { position: 'top-right', richColors: true })
+    }
+  }
+
+  function toastCollectionSavePartialOnly(
+    body: LockerCollectionMutationResponse | null | undefined
+  ) {
+    const unavailable = body?.result?.unavailable_products
+    if (!unavailable?.length) return
+    const names = unavailable
+      .map(u => (u.product_nickname || '').trim() || `#${u.product_locker_room_id}`)
+      .join(', ')
+    toast.success(msg_collection_partial_add_unavailable({ names }, { locale: locale.value }), {
+      position: 'top-right',
+      richColors: true
+    })
+  }
   const { lockers: storeLockers } = storeToRefs(lockerRoomStore)
   const currentMode = ref<'list' | 'detail'>('list')
 
@@ -602,8 +637,12 @@
 
       if (isEditing && collectionId) {
         formData.append('_method', 'PUT')
-        await lockerRoomStore.updateCollection(collectionId, formData)
+        const updated = await lockerRoomStore.updateCollection(collectionId, formData)
+        if (!updated) return
         await lockerRoomStore.fetchCollections()
+        if (productsData.length > 0) {
+          toastCollectionSavePartialOnly(updated)
+        }
         currentMode.value = 'list'
         currentCollection.value = null
         isCreatingCollection.value = false
@@ -612,7 +651,9 @@
         selectedProductsByLocker.value = {}
         selectedProducts.value = []
       } else {
-        await lockerRoomStore.saveCollection(formData)
+        const saved = await lockerRoomStore.saveCollection(formData)
+        if (!saved) return
+        toastCollectionSavePartialOnly(saved)
         // Clear selection when collection is created (footer and context)
         selectedLocker.value = []
         selectedProductsByLocker.value = {}
@@ -687,7 +728,9 @@
       formData.append('products[]', JSON.stringify(product))
     })
     formData.append('_method', 'PUT')
-    await lockerRoomStore.updateCollection(collection.id, formData)
+    const nameEditResult = await lockerRoomStore.updateCollection(collection.id, formData)
+    if (!nameEditResult) return
+    toastCollectionSavePartialOnly(nameEditResult)
     await lockerRoomStore.fetchCollectionProducts(collection.id)
     const updated = lockerRoomStore.collections.find(c => c.id === collection.id)
     if (updated) currentCollection.value = updated
@@ -775,7 +818,13 @@
       allProducts.forEach(product => {
         formData.append('products[]', JSON.stringify(product))
       })
-      await lockerRoomStore.updateCollection(collectionToUpdate.id, formData)
+      const mergeResult = await lockerRoomStore.updateCollection(collectionToUpdate.id, formData)
+      if (!mergeResult) return
+
+      toastCollectionAddOrMergeMaybePartial(
+        mergeResult,
+        msg_products_added_to_collection({}, { locale: locale.value })
+      )
 
       // Refresh target collection
       await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
@@ -934,14 +983,18 @@
         formData.append('products[]', JSON.stringify(product))
       })
 
-      await lockerRoomStore.updateCollection(collectionToUpdate.id, formData)
+      const addFromLockerResult = await lockerRoomStore.updateCollection(
+        collectionToUpdate.id,
+        formData
+      )
+      if (!addFromLockerResult) return
 
       // Refresh collection
       await lockerRoomStore.fetchCollectionProducts(targetCollection.id)
-      toast.success(msg_products_added_to_collection({}, { locale: locale.value }), {
-        position: 'top-right',
-        richColors: true
-      })
+      toastCollectionAddOrMergeMaybePartial(
+        addFromLockerResult,
+        msg_products_added_to_collection({}, { locale: locale.value })
+      )
 
       // Clear selection for current locker so listing and footer stay in sync
       if (currentLocker.value) {

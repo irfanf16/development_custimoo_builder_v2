@@ -578,6 +578,7 @@ export function useLoadCartProductIntoCustomizer() {
     isLoading.value = true
     productsStore.suspendCustomizationAutoSync()
     try {
+      cartStore.clearEditingCartProduct()
       // Find the cart item ID from cart
       let cart_item_id: number | null = cartItemId
       let factoryProduct: FactoryProduct | null = null
@@ -657,31 +658,25 @@ export function useLoadCartProductIntoCustomizer() {
           }
         )
 
-        const cartResult: unknown =
+        const hasApiResult =
           resp.success &&
           resp.content &&
           typeof resp.content === 'object' &&
           resp.content !== null &&
           'result' in resp.content &&
           resp.content.result
-            ? resp.content.result
-            : factoryProduct
-              ? { factoryProducts: [factoryProduct], factoryProductActiveIndex: 0 }
-              : null
 
-        if (cartResult) {
+        if (hasApiResult) {
+          const cartResult = resp.content.result as unknown
           const resolvedProduct = resolveCartProduct(cartResult, factoryProduct ?? undefined)
           if (resolvedProduct) {
             factoryProduct = resolvedProduct
-            // Set editing state
-            cartStore.setEditingCartProduct(cart_item_id, factoryProductId)
-          } else if (factoryProduct) {
-            // If resolution failed but we have the product from cart, use it and set editing state
-            cartStore.setEditingCartProduct(cart_item_id, factoryProductId)
+          } else {
+            factoryProduct = null
           }
-        } else if (factoryProduct) {
-          // If API call failed but we have the product from cart, use it and set editing state
-          cartStore.setEditingCartProduct(cart_item_id, factoryProductId)
+        } else {
+          // Do not use stale cart snapshot when API failed (e.g. 404) or returned empty
+          factoryProduct = null
         }
       }
 
@@ -806,6 +801,9 @@ export function useLoadCartProductIntoCustomizer() {
         }
       }
 
+      if (cart_item_id) {
+        cartStore.setEditingCartProduct(cart_item_id, factoryProductId)
+      }
       return true
     } finally {
       productsStore.resumeCustomizationAutoSync()

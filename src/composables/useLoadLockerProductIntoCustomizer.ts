@@ -726,6 +726,9 @@ export function useLoadLockerProductIntoCustomizer() {
         lockerRoomStore.setEditingLockerProduct(lockerProductId, lockerId, lockerProduct)
       }
 
+      if (lockerId && typeof lockerId === 'number' && lockerId > 0) {
+        lockerRoomStore.setEditingLockerProduct(lockerProductId, lockerId, lockerProduct)
+      }
       return true
     } finally {
       productsStore.resumeCustomizationAutoSync()

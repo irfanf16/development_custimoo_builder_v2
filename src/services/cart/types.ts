@@ -153,8 +153,22 @@ export interface AddLockerProductsToCartPayload {
   collection_id?: number
 }
 
+/** API `result` for POST carts/locker-products (structured since salability filtering). */
+export interface AddLockerProductsToCartResultBody {
+  items: unknown[]
+  skipped_count: number
+  added_count: number
+  total_requested: number
+  skipped_locker_product_ids: number[]
+  outcome: 'success' | 'partial' | 'all_failed'
+}
+
 export interface AddLockerProductsToCartResponse {
   errors: any[]
   message: string
-  result: Cart
+  result: AddLockerProductsToCartResultBody | Cart | unknown[]
 }
+
+export type AddLockerToCartOutcome =
+  | { ok: false; error?: string }
+  | { ok: true; outcome: 'success' | 'partial'; addedCount: number; skippedCount: number }

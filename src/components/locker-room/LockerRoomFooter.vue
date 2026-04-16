@@ -45,7 +45,10 @@
     locker_save,
     locker_delete,
     msg_added_items_to_cart,
-    msg_failed_to_add_products_to_cart
+    msg_failed_to_add_products_to_cart,
+    msg_locker_cart_single_unavailable,
+    msg_locker_cart_all_unavailable,
+    msg_locker_cart_partial_added
   } from '@/paraglide/messages'
 
   const profileStore = useProfileStore()
@@ -329,14 +332,44 @@
 
     isAddingToCart.value = true
     try {
-      await cartStore.addLockerProductsToCart(lockerCartPayload.value)
-      emit('clear-selection')
-      const total = listModeSelectedCount.value
-      toast.success(msg_added_items_to_cart({ count: total }, { locale: locale.value }), {
-        position: 'top-right',
-        richColors: true
-      })
-      emit('clear-selection')
+      const selectionTotal = listModeSelectedCount.value
+      const result = await cartStore.addLockerProductsToCart(lockerCartPayload.value)
+      if (result.ok) {
+        emit('clear-selection')
+        if (result.outcome === 'partial') {
+          toast.warning(
+            msg_locker_cart_partial_added(
+              {
+                skipped: String(result.skippedCount),
+                added: String(result.addedCount)
+              },
+              { locale: locale.value }
+            ),
+            {
+              position: 'top-right',
+              richColors: true
+            }
+          )
+        } else {
+          toast.success(
+            msg_added_items_to_cart({ count: String(result.addedCount) }, { locale: locale.value }),
+            {
+              position: 'top-right',
+              richColors: true
+            }
+          )
+        }
+      } else {
+        toast.error(
+          selectionTotal <= 1
+            ? msg_locker_cart_single_unavailable({}, { locale: locale.value })
+            : msg_locker_cart_all_unavailable({}, { locale: locale.value }),
+          {
+            position: 'top-right',
+            richColors: true
+          }
+        )
+      }
     } catch (error) {
       toast.error(msg_failed_to_add_products_to_cart({}, { locale: locale.value }), {
         position: 'top-right',

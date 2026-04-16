@@ -7,6 +7,7 @@ import type {
   Locker,
   LockerAssetsResponse,
   LockerDeletionResponse,
+  LockerCollectionMutationResponse,
   LockerFetchResponse,
   LockerProduct,
   LockerResponse,
@@ -118,11 +119,11 @@ async function deleteCollection(id: number) {
 }
 
 async function saveCollection(payload: FormData) {
-  return await http.post<LockerResponse<Collection>>(`collection`, payload)
+  return await http.post<LockerCollectionMutationResponse>(`collection`, payload)
 }
 
 async function updateCollection(collection_id: number, payload: FormData) {
-  return await http.post<LockerResponse<Collection>>(`collection/${collection_id}`, payload)
+  return await http.post<LockerCollectionMutationResponse>(`collection/${collection_id}`, payload)
 }
 
 async function getCollectionLogoPresignedUrls(

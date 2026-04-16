@@ -9,7 +9,7 @@
   import {
     cart_note_placeholder,
     minimum_order_quantity,
-    msg_failed_to_load_cart_product,
+    msg_product_unavailable,
     msg_address_selected,
     msg_fill_required_fields,
     msg_select_address,
@@ -220,7 +220,7 @@
 
     const ok = await loadCartProductIntoCustomizer(factoryProductId)
     if (!ok) {
-      toast.error(msg_failed_to_load_cart_product({}, { locale: locale.value }), {
+      toast.error(msg_product_unavailable({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })
@@ -240,7 +240,7 @@
     // Load the cart product into customizer
     const ok = await loadCartProductIntoCustomizer(factoryProductId)
     if (!ok) {
-      toast.error(msg_failed_to_load_cart_product({}, { locale: locale.value }), {
+      toast.error(msg_product_unavailable({}, { locale: locale.value }), {
         position: 'top-right',
         richColors: true
       })

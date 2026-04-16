@@ -7,7 +7,9 @@ import type {
   UpdateCartItemPayload,
   GenerateSignedUploadUrlPayload,
   GenerateSignedUploadUrlResponse,
-  AddLockerProductsToCartPayload
+  AddLockerProductsToCartPayload,
+  AddLockerToCartOutcome,
+  AddLockerProductsToCartResultBody
 } from '@/services/cart/types'
 import { useLocalStorage } from '@/composables/useLocalStorage'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
@@ -263,28 +265,66 @@ export const useCartStore = defineStore('cartStore', () => {
   }
 
   /**
-   * Add locker products to cart (locker-only or product-level selection)
+   * Add locker products to cart (locker-only or product-level selection).
+   * Unpublished / unavailable catalog products are skipped server-side; see outcome + counts.
    */
-  async function addLockerProductsToCart(payload: AddLockerProductsToCartPayload) {
+  async function addLockerProductsToCart(
+    payload: AddLockerProductsToCartPayload
+  ): Promise<AddLockerToCartOutcome> {
     isLoading.value = true
     error.value = null
     const response = await tryCatchApi(API.cart.addLockerProductsToCart(payload), {
       operation: 'addLockerProductsToCart'
     })
-    if (response.success && response.content) {
-      const cartResponse = response.content
-      if (cartResponse.errors.length === 0) {
-        setSuccessMessage('Products added to cart successfully')
-        await fetchCart(true)
-        return cartResponse
-      } else {
-        setError(cartResponse.message || 'Failed to add products to cart')
+
+    function parseResultBody(
+      raw: unknown
+    ): { addedCount: number; skippedCount: number; outcome: 'success' | 'partial' } | null {
+      if (
+        raw &&
+        typeof raw === 'object' &&
+        'items' in raw &&
+        Array.isArray((raw as AddLockerProductsToCartResultBody).items)
+      ) {
+        const r = raw as AddLockerProductsToCartResultBody
+        const addedCount = typeof r.added_count === 'number' ? r.added_count : r.items.length
+        const skippedCount = typeof r.skipped_count === 'number' ? r.skipped_count : 0
+        const outcome = r.outcome === 'partial' ? 'partial' : 'success'
+        return { addedCount, skippedCount, outcome }
       }
+      if (Array.isArray(raw)) {
+        return { addedCount: raw.length, skippedCount: 0, outcome: 'success' }
+      }
+      return null
+    }
+
+    if (response.success && response.content) {
+      const cartResponse = response.content as {
+        errors?: unknown[]
+        message?: string
+        result: unknown
+      }
+      const errs = cartResponse.errors ?? []
+      if (Array.isArray(errs) && errs.length === 0) {
+        const parsed = parseResultBody(cartResponse.result)
+        if (parsed) {
+          // No toast here: callers (e.g. LockerRoomFooter) show success / partial with correct copy
+          await fetchCart(true)
+          isLoading.value = false
+          return {
+            ok: true,
+            outcome: parsed.outcome,
+            addedCount: parsed.addedCount,
+            skippedCount: parsed.skippedCount
+          }
+        }
+      }
+      error.value = cartResponse.message || 'Failed to add products to cart'
     } else {
-      setError('Failed to add products to cart')
+      error.value = response.message || 'Failed to add products to cart'
     }
     isLoading.value = false
-    return response.content
+    return { ok: false, error: error.value || undefined }
   }
 
   /**

@@ -230,7 +230,8 @@
     const formData = new FormData()
     formData.append('name', editName.value)
     formData.append('_method', 'PUT')
-    await lockerRoomStore.updateCollection(collection.id, formData)
+    const ok = await lockerRoomStore.updateCollection(collection.id, formData)
+    if (!ok) return
 
     editingIndex.value = null
     editName.value = ''

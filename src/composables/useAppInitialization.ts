@@ -16,6 +16,9 @@ import router from '../router'
 import { useCartStore } from '@/stores/cart/cart.store'
 import { useQueryParams } from '@/composables/useQueryParams'
 import { useLoadCartProductIntoCustomizer } from './useLoadCartProductIntoCustomizer'
+import { useQueryParamsStore } from '@/stores/queryParams/queryParams.store'
+import { toast } from 'vue-sonner'
+import { msg_product_unavailable } from '@/paraglide/messages'
 
 // ============================================================================
 // Global State Management
@@ -427,12 +430,27 @@ export function useAppInitialization() {
 
     if (hasSyncId.value) {
       if (updateCart.value && updateItem.value) {
-        await loadCartProductIntoCustomizer(String(updateItem.value), Number(updateCart.value))
-        const { isRosterParam } = useQueryParams()
-        if (isRosterParam.value) {
-          wf.setActiveStep('roster')
+        const cartLoaded = await loadCartProductIntoCustomizer(
+          String(updateItem.value),
+          Number(updateCart.value)
+        )
+        if (cartLoaded) {
+          const { isRosterParam } = useQueryParams()
+          if (isRosterParam.value) {
+            wf.setActiveStep('roster')
+          }
+          return
         }
-        return
+        const queryParamsStore = useQueryParamsStore()
+        queryParamsStore.clearParam('update_cart')
+        queryParamsStore.clearParam('update_item')
+        const profileStore = useProfileStore()
+        const locale = profileStore.currentLocale || 'en'
+        toast.error(msg_product_unavailable({}, { locale }), {
+          position: 'top-right',
+          richColors: true
+        })
+        useCartStore().clearEditingCartProduct()
       }
       await createEcommerceCustomization(customizationStore, productsStore, categoryInfo)
       return

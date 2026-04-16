@@ -551,6 +551,18 @@ export interface Collection {
   collection_products_count: number
 }
 
+export interface CollectionUnavailableProduct {
+  product_locker_room_id: number
+  product_nickname: string
+}
+
+/** Create/update collection API `result` includes optional skipped products metadata. */
+export type CollectionMutationResult = Collection & {
+  unavailable_products?: CollectionUnavailableProduct[]
+}
+
+export type LockerCollectionMutationResponse = LockerResponse<CollectionMutationResult>
+
 export interface CollectionThumbnail {
   front_url: string
   back_url: string
