@@ -573,6 +573,7 @@
         position: 'top-right',
         richColors: true
       })
+      void lockerRoomStore.fetchLockerProductsCore(payload.lockerId)
       return
     }
 

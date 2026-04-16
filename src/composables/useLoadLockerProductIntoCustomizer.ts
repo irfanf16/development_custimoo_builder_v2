@@ -13,7 +13,7 @@ import type {
   OutputProductTextItem,
   OutputAddon
 } from '@/services/products/types'
-import type { LockerProduct } from '@/services/lockers/types'
+import type { LockerProduct, LockerResponse } from '@/services/lockers/types'
 import type { ProductRosterDetail } from '@/services/products/types'
 import type { CustomLogo } from '@/services/logos/types'
 import type {
@@ -561,6 +561,8 @@ export function useLoadLockerProductIntoCustomizer() {
     isLoading.value = true
     productsStore.suspendCustomizationAutoSync()
     try {
+      lockerRoomStore.clearEditingLockerProduct()
+
       // Pass locker_id to the API route if provided
       const resp = await tryCatchApi(
         lockersService.getLockerProductDetails(lockerProductId, lockerId),
@@ -570,25 +572,23 @@ export function useLoadLockerProductIntoCustomizer() {
         }
       )
 
-      const lockerResult: unknown =
-        resp.success && resp.content?.result
-          ? resp.content.result
-          : fallbackLockerProduct
-            ? { factoryProducts: [fallbackLockerProduct], factoryProductActiveIndex: 0 }
-            : null
+      if (!resp.success || resp.content == null) {
+        return false
+      }
 
-      if (!lockerResult) {
+      const lockerPayload = resp.content as LockerResponse<unknown>
+      if (lockerPayload.success === false) {
+        return false
+      }
+
+      const lockerResult: unknown = lockerPayload.result
+      if (lockerResult == null) {
         return false
       }
 
       const lockerProduct = resolveLockerProduct(lockerResult, fallbackLockerProduct)
       if (!lockerProduct) {
         return false
-      }
-
-      // Set editing state using lockerId from the payload (current open locker)
-      if (lockerId && typeof lockerId === 'number' && lockerId > 0) {
-        lockerRoomStore.setEditingLockerProduct(lockerProductId, lockerId, lockerProduct)
       }
 
       const {
@@ -702,6 +702,10 @@ export function useLoadLockerProductIntoCustomizer() {
             product_texts: updatedPresetTexts
           })
         }
+      }
+
+      if (lockerId && typeof lockerId === 'number' && lockerId > 0) {
+        lockerRoomStore.setEditingLockerProduct(lockerProductId, lockerId, lockerProduct)
       }
 
       return true
