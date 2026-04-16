@@ -25,6 +25,7 @@
     ShoppingBag,
     InfoIcon,
     Share2,
+    Loader2,
     FileDown,
     MoreVertical,
     Trash2
@@ -87,6 +88,25 @@
   const { isLoading, collections } = storeToRefs(lockerRoomStore)
   const locale = computed(() => profileStore.currentLocale || 'en')
   const shareTooltipOpen = ref<Record<number, boolean>>({})
+  /** Same-tick URL from last share response so the tooltip can open with `!!shareUrl` before the list re-renders. */
+  const pendingShareUrl = ref<Record<number, string>>({})
+  const shareLoadingById = ref<Record<number, boolean>>({})
+
+  function setShareLoading(collectionId: number, loading: boolean) {
+    const next = { ...shareLoadingById.value }
+    if (loading) next[collectionId] = true
+    else delete next[collectionId]
+    shareLoadingById.value = next
+  }
+
+  function setShareTooltipOpen(collectionId: number, open: boolean) {
+    shareTooltipOpen.value = { ...shareTooltipOpen.value, [collectionId]: open }
+    if (!open) {
+      const next = { ...pendingShareUrl.value }
+      delete next[collectionId]
+      pendingShareUrl.value = next
+    }
+  }
 
   onMounted(() => {
     if (!collections.value?.length) {
@@ -139,10 +159,14 @@
     if (getCollectionShareUrl(collection)) return
     event?.preventDefault()
     event?.stopPropagation()
+    if (shareLoadingById.value[collection.id]) return
+
+    setShareLoading(collection.id, true)
     try {
-      const response = await API.lockers.shareCollection(collection.id)
-      const url = response.data?.result?.shared_url ?? null
+      const res = await API.lockers.shareCollection(collection.id)
+      const url = res.data?.result?.shared_url?.trim()
       if (url) {
+        pendingShareUrl.value = { ...pendingShareUrl.value, [collection.id]: url }
         lockerRoomStore.setCollectionShareUrl(collection.id, url)
         shareTooltipOpen.value[collection.id] = true
       } else {
@@ -156,6 +180,8 @@
         position: 'top-right',
         richColors: true
       })
+    } finally {
+      setShareLoading(collection.id, false)
     }
   }
 
@@ -393,17 +419,22 @@
             </div>
             <div class="flex items-center gap-1 shrink-0" @click.stop>
               <ShareUrlTooltip
-                :share-url="getCollectionShareUrl(collection)"
+                :share-url="pendingShareUrl[collection.id] ?? getCollectionShareUrl(collection)"
                 :open="shareTooltipOpen[collection.id] || false"
-                @update:open="shareTooltipOpen[collection.id] = $event"
+                @update:open="setShareTooltipOpen(collection.id, $event)"
               >
                 <Button
                   variant="outline"
                   size="sm"
                   class="h-8"
+                  :disabled="!!shareLoadingById[collection.id]"
                   @click="handleShareClick(collection, $event)"
                 >
-                  <Share2 class="w-3.5 h-3.5 mr-1" />
+                  <Loader2
+                    v-if="shareLoadingById[collection.id]"
+                    class="w-3.5 h-3.5 mr-1 animate-spin"
+                  />
+                  <Share2 v-else class="w-3.5 h-3.5 mr-1" />
                   Share
                 </Button>
               </ShareUrlTooltip>
