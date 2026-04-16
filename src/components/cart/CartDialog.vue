@@ -40,6 +40,15 @@
   import { DialogFooter } from '@/components/ui/dialog'
   import { usePricing } from '@/composables/usePricing'
   import { usePermissions } from '@/composables/usePermissions'
+  import { useRoute, useRouter } from 'vue-router'
+
+  /** Routes that mount Customizer.vue — cart "edit" actions only update stores; navigate here so the editor UI exists. */
+  const CUSTOMIZER_ROUTE_NAMES = new Set([
+    'Customizer',
+    'CustomizerResetPassword',
+    'OrderDetail',
+    'LoginAsAdmin'
+  ])
 
   const props = defineProps<{ open: boolean }>()
   const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -55,6 +64,14 @@
   const { showPricing } = usePricing()
   const { can } = usePermissions()
   const canSkipMoq = computed(() => can('skip-moq'))
+
+  const route = useRoute()
+  const router = useRouter()
+
+  async function navigateToCustomizerIfNeeded() {
+    if (CUSTOMIZER_ROUTE_NAMES.has(String(route.name))) return
+    await router.push({ name: 'Customizer' })
+  }
 
   // Address selection state
   const showProfileDialog = ref(false)
@@ -227,6 +244,8 @@
       return
     }
 
+    await navigateToCustomizerIfNeeded()
+
     workflowStore.resetWorkflowSubSteps()
     const visibleSteps = menuItems.value.map(i => i.step)
     const nextStep = pickStepOrNextAvailable(desiredStep, visibleSteps)
@@ -293,6 +312,8 @@
     if (rosterEntries.length > 0) {
       await replaceRoster(rosterEntries)
     }
+
+    await navigateToCustomizerIfNeeded()
 
     // Navigate to roster step and open edit mode
     workflowStore.resetWorkflowSubSteps()
