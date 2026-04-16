@@ -30,7 +30,7 @@ type ExtendedTextItem = OutputProductTextItem & {
  */
 export type TextItemPlacement = Omit<
   OutputProductTextItem,
-  'height' | 'x_axis' | 'y_axis' | 'rotation'
+  'height' | 'width' | 'x_axis' | 'y_axis' | 'rotation'
 > & {
   // Unique identifier: negative number to avoid conflicts with product IDs
   // Format: -(textId * 10000 + itemIndex)

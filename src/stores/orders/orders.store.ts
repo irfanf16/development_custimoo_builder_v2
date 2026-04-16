@@ -209,6 +209,7 @@ export const useOrdersStore = defineStore('ordersStore', () => {
   const isCancelling = ref(false)
   const loadingCart = ref<Record<string, boolean>>({})
   const loadingShare = ref<Record<string, boolean>>({})
+  const loadingReorder = ref<Record<string, boolean>>({})
 
   // Dependencies for order actions
   const cartStore = useCartStore()
@@ -404,23 +405,26 @@ export const useOrdersStore = defineStore('ordersStore', () => {
 
     if (!orderId || !orderItemId || !factoryProductId || !productId) return false
 
-    customizationStore.setReorderData({
-      order_item_id: orderItemId,
-      factory_product_id: String(factoryProductId),
-      order_number: order.order_no ?? undefined,
-      factory_id: orderItem?.factory_id ?? undefined,
-      factory_name: orderItem?.factory_name ?? undefined
-    })
+    const reorderKey = `${orderItemId}-${factoryProductId}`
+    loadingReorder.value[reorderKey] = true
+    try {
+      customizationStore.setReorderData({
+        order_item_id: orderItemId,
+        factory_product_id: String(factoryProductId),
+        order_number: order.order_no ?? undefined,
+        factory_id: orderItem?.factory_id ?? undefined,
+        factory_name: orderItem?.factory_name ?? undefined
+      })
 
-    const success = await loadReorderProductIntoCustomizer({
-      orderItemId,
-      factoryProductId
-    })
+      const success = await loadReorderProductIntoCustomizer({
+        orderItemId,
+        factoryProductId
+      })
 
-    if (success) {
-      if (onSuccess) onSuccess()
-      return true
-    } else {
+      if (success) {
+        if (onSuccess) onSuccess()
+        return true
+      }
       const locale = useProfileStore().currentLocale || 'en'
       toast.error(msg_failed_to_load_reorder_product({}, { locale }), {
         position: 'top-right',
@@ -428,6 +432,8 @@ export const useOrdersStore = defineStore('ordersStore', () => {
       })
       customizationStore.clearReorderData()
       return false
+    } finally {
+      loadingReorder.value[reorderKey] = false
     }
   }
 
@@ -706,6 +712,7 @@ export const useOrdersStore = defineStore('ordersStore', () => {
     isCancelling,
     loadingCart,
     loadingShare,
+    loadingReorder,
 
     // Actions
     fetchOrders,

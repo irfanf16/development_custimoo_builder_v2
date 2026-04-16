@@ -11,7 +11,7 @@
     orders_action_reorder
   } from '@/paraglide/messages'
   import Button from '@/components/ui/button/Button.vue'
-  import { RefreshCw, Copy } from 'lucide-vue-next'
+  import { Loader2, RefreshCw, Copy } from 'lucide-vue-next'
   import { useOrderProductActions } from './order-timeline/useOrderTimeline'
 
   const props = defineProps<{
@@ -134,10 +134,19 @@
               size="sm"
               class="hover:bg-transparent rounded-full p-1.5 hover:text-primary hover:border hover:border-primary disabled:cursor-not-allowed"
               :title="orders_action_reorder({}, { locale })"
-              :disabled="!product.can_reorder || Boolean(order.order_no) === false"
-              @click.once.stop="handleReorder(item, product)"
+              :disabled="
+                !product.can_reorder ||
+                Boolean(order.order_no) === false ||
+                store.loadingReorder[`${item.id}-${product.id}`]
+              "
+              @click.stop="handleReorder(item, product)"
             >
-              <RefreshCw class="size-4" />
+              <Loader2
+                v-if="store.loadingReorder[`${item.id}-${product.id}`]"
+                class="size-4 animate-spin"
+                aria-hidden="true"
+              />
+              <RefreshCw v-else class="size-4" />
             </Button>
           </div>
         </div>

@@ -60,6 +60,17 @@ function asSafeNumber(value: unknown, fallback = 0): number {
   return fallback
 }
 
+function pickFirstString(record: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    if (!Object.prototype.hasOwnProperty.call(record, key)) continue
+    const v = record[key]
+    if (v == null) continue
+    const s = asSafeString(v)
+    if (s !== '') return s
+  }
+  return ''
+}
+
 function normalizeNumberArray(value: unknown): number[] {
   if (!Array.isArray(value)) return []
   return value.map(n => Number(n)).filter(n => !Number.isNaN(n))
@@ -154,17 +165,22 @@ function normalizeTexts(value: unknown, productId: number): OutputProductText[] 
     const itemsRaw = raw.items
     const items: OutputProductTextItem[] = Array.isArray(itemsRaw)
       ? itemsRaw
-          .map(it => {
+          .map((it): OutputProductTextItem | null => {
             if (!isRecord(it)) return null
-            // Locker payload sometimes uses numbers; product types are strings for positioning.
             const height = asSafeString(it.height)
+            const placementWidth = pickFirstString(it, 'width', 'Width') || height
+            const originalWidthStored = pickFirstString(it, 'originalWidth', 'original_width')
+            const originalHeightStored = pickFirstString(it, 'originalHeight', 'original_height')
             const x_axis = asSafeString(it.x_axis)
             const y_axis = asSafeString(it.y_axis)
             const rotation = asSafeString(it.rotation)
 
-            return {
+            const item: OutputProductTextItem = {
               label: asSafeString(it.label),
               height,
+              width: placementWidth,
+              originalWidth: originalWidthStored || placementWidth || height,
+              originalHeight: originalHeightStored || height,
               x_axis,
               y_axis,
               rotation,
@@ -182,10 +198,12 @@ function normalizeTexts(value: unknown, productId: number): OutputProductText[] 
               outline_color_pantone: asSafeString(it.outline_color_pantone),
               selected: Boolean(it.selected),
               scaleX: asSafeNumber(it.scaleX, 1),
-              scaleY: asSafeNumber(it.scaleY, 1)
-            } satisfies OutputProductTextItem
+              scaleY: asSafeNumber(it.scaleY, 1),
+              pinned: Boolean(it.pinned)
+            }
+            return item
           })
-          .filter((x): x is OutputProductTextItem => x != null)
+          .filter((x): x is OutputProductTextItem => x !== null)
       : []
 
     let id = asSafeNumber(raw.id, 0)

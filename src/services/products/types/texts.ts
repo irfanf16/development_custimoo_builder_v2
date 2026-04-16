@@ -3,6 +3,12 @@
 export type OutputProductTextItem = {
   label: string
   height: string
+  /** Placement width string (optional; defaults to height in UI when missing) */
+  width?: string
+  /** Sizing panel width (user units); persisted from canvas / orders / share */
+  originalWidth?: string | number
+  /** Sizing panel height (user units); persisted from canvas / orders / share */
+  originalHeight?: string | number
   x_axis: string
   y_axis: string
   rotation: string
