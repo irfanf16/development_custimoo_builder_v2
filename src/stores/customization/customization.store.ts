@@ -922,28 +922,30 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
 
         for (let i = 0; i < activeForPlacement.length; i++) {
           const logo = activeForPlacement[i]!
-          const urlPayload = {
+          const logoSyncPayload = {
             url: logo.url,
             transparent_logo_url: logo.transparent_logo_url,
             smart_transparent_logo_url: logo.smart_transparent_logo_url,
-            original_logo_url: logo.original_logo_url
+            original_logo_url: logo.original_logo_url,
+            ...(Array.isArray(logo.logo_colors) && logo.logo_colors.length > 0
+              ? { logo_colors: logo.logo_colors }
+              : {})
           }
           if (i < targetIndices.length) {
             const idx = targetIndices[i]!
             const existingLogo = arr[idx]!
-            const logoWithNewUrl = { ...existingLogo, ...urlPayload } as CustomLogo
+            const logoWithSyncedFields = { ...existingLogo, ...logoSyncPayload } as CustomLogo
             const placementAsLogo = existingLogo as unknown as OutputProductLogosSetting
-            arr[idx] = getMergedCustomizationLogo(logoWithNewUrl, placementAsLogo)
+            arr[idx] = getMergedCustomizationLogo(logoWithSyncedFields, placementAsLogo)
             changed = true
           } else {
             const logoFromPlacement = {
               ...(placement as unknown as CustomLogo),
-              ...urlPayload
+              ...logoSyncPayload
             } as CustomLogo
             const newLogo = getMergedCustomizationLogo(logoFromPlacement, placement)
             newLogo.product_id = product.id
             arr.push(newLogo)
-            appendLogoColors(newLogo.logo_colors)
             changed = true
           }
         }

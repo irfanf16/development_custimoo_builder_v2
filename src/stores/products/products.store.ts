@@ -352,6 +352,10 @@ export const useProductsStore = defineStore('productsStore', () => {
       setActiveProductDetailsState(details.productDetails)
       setActiveStyleDetailsState(details.styleDetails)
       setActiveDesignDetailsState(details.designDetails)
+      const prevProductId = customization.customization?.product_id
+      if (prevProductId && prevProductId !== productId) {
+        customization.replicateActiveProductLogosToMatchingPlacements()
+      }
       customization.setProduct(productId)
       customization.setStyle(details.styleDetails.id)
       customization.setDesign(details.designDetails)

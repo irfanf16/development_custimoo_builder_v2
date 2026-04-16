@@ -160,6 +160,10 @@
         })
       }
 
+      const prevProductId = customizationStore.customization?.product_id
+      if (prevProductId && prevProductId !== productId) {
+        customizationStore.replicateActiveProductLogosToMatchingPlacements()
+      }
       customizationStore.setProduct(productId)
       productsStore.setActiveProductDetailsState(productDetails)
 
