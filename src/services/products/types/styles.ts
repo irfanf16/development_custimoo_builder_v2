@@ -84,6 +84,7 @@ export type OutputStyleDetails = OutputStylePreviewFront & {
   _3d_sheen_color: string | null
   _3d_sheen_roughness: number | null
   _3d_texture_tiling: number | null
+
   name: string
   product_id: number
   roughness: number | null

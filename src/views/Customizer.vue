@@ -78,7 +78,7 @@
           </div>
         </div>
         <MobileActionBar />
-        <WorkflowLayout class="z-30" />
+        <WorkflowLayout />
         <CustomizerMenuMobile />
       </div>
     </template>

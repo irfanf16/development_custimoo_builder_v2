@@ -21,6 +21,7 @@
   import { useColorClipboard } from '@/composables/useColorClipboard'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { useAuthStore } from '@/stores/auth/auth.store'
+  import { stripCsvExtension } from '@/lib/utils'
   import {
     color_shuffle_design_colors,
     color_shuffle_heading_1,
@@ -106,7 +107,7 @@
         }))
 
         return {
-          folder_name: parsed.folder_name || parsed.folderName || 'Folder',
+          folder_name: stripCsvExtension(parsed.folder_name || parsed.folderName || 'Folder'),
           colors
         }
       })
@@ -122,7 +123,7 @@
   const computedPalettes = computed<Palette[] | undefined>(() => {
     return productsStore.activeProductDetails?.colors.map(colorGroup => ({
       id: colorGroup.id,
-      name: colorGroup.file_name,
+      name: stripCsvExtension(colorGroup.file_name),
       colors: colorGroup.json_data
     }))
   })
@@ -535,8 +536,11 @@
       <p class="text-base font-semibold text-foreground">
         {{ extractedSectionLabel }}
       </p>
-      <div class="flex items-center gap-2 flex-wrap">
-        <div class="flex items-center gap-2">
+      <div
+        class="flex w-full min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2"
+      >
+        <!-- Swatches stay left; never centered as a group on narrow viewports -->
+        <div class="flex flex-wrap items-center gap-2 self-start">
           <div
             v-for="item in appliedLogoColors"
             :key="item.index"
@@ -575,18 +579,28 @@
             <Plus class="size-4" />
           </button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          class="shrink-0"
-          :disabled="!hasSvgParts || appliedLogoColors.length === 0"
-          @click="shuffleExtractedColorsAmongSvgParts"
+        <!-- Mobile: full-width row under swatches, two equal columns; sm+: inline end, same as desktop -->
+        <div
+          class="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-2"
         >
-          {{ logos_shuffle_colors({}, { locale: profileStore.currentLocale }) }}
-        </Button>
-        <Button variant="outline" size="sm" class="shrink-0" @click="useOriginalColors">
-          {{ colors_use_original_colors({}, { locale: profileStore.currentLocale }) }}
-        </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            class="min-h-9 w-full justify-center sm:w-auto"
+            :disabled="!hasSvgParts || appliedLogoColors.length === 0"
+            @click="shuffleExtractedColorsAmongSvgParts"
+          >
+            {{ logos_shuffle_colors({}, { locale: profileStore.currentLocale }) }}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            class="min-h-9 w-full justify-center sm:w-auto"
+            @click="useOriginalColors"
+          >
+            {{ colors_use_original_colors({}, { locale: profileStore.currentLocale }) }}
+          </Button>
+        </div>
       </div>
       <!-- Headless palette: appears when user clicks + or a swatch; no header, same block as extracted colors -->
       <div v-if="showChooseColorAccordion" class="pt-2">

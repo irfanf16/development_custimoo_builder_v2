@@ -2,6 +2,7 @@
   import type { Locker, LockerProduct } from '@/services/lockers/types'
   import type { ProductRosterDetail } from '@/services/products/types'
   import { computed, ref, type ComputedRef } from 'vue'
+  import { stripCsvExtension } from '@/lib/utils'
   import LockerAssetsListing from './LockerAssetsListing.vue'
   import LockerColoursListing from './LockerColoursListing.vue'
   import LockerProductsListing from './LockerProductsListing.vue'
@@ -35,7 +36,7 @@
   const rosters_groups: ComputedRef<RosterProps[]> = computed(() =>
     props.locker.product.map(prod => ({
       roster_group: prod.product_roster_detail ?? undefined,
-      group_name: prod.product_name
+      group_name: stripCsvExtension(prod.product_name || '')
     }))
   )
   defineExpose({ lockerProductsRef })

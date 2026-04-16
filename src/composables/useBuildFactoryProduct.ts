@@ -22,7 +22,7 @@ export function useBuildFactoryProduct() {
   const authStore = useAuthStore()
   const { getItemRaw } = useLocalStorage()
 
-  async function buildFactoryProductPayload(): Promise<{
+  async function buildFactoryProductPayload(showLoader: boolean = true): Promise<{
     factory_product: Record<string, unknown>
     product_assets?: File[]
   }> {
@@ -94,17 +94,20 @@ export function useBuildFactoryProduct() {
 
     // Upload all files in a single request if any files are available
     if (filesToUpload.length > 0) {
-      const signedUrlResponse = await cartStore.generateSignedUploadUrl({
-        files: filesToUpload.map(file => ({
-          name: file.name,
-          type: file.type,
-          size: file.size
-        })),
-        companyId: companyId,
-        factoryId: factoryId,
-        type: 'cart',
-        customer: authStore.customer?.id
-      } as unknown as Parameters<typeof cartStore.generateSignedUploadUrl>[0])
+      const signedUrlResponse = await cartStore.generateSignedUploadUrl(
+        {
+          files: filesToUpload.map(file => ({
+            name: file.name,
+            type: file.type,
+            size: file.size
+          })),
+          companyId: companyId,
+          factoryId: factoryId,
+          type: 'cart',
+          customer: authStore.customer?.id
+        } as unknown as Parameters<typeof cartStore.generateSignedUploadUrl>[0],
+        showLoader
+      )
 
       if (
         !signedUrlResponse ||

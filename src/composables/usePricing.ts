@@ -19,6 +19,7 @@ function firstSettingsCurrencyCode(
   return Array.isArray(list) && list.length ? list[0] : undefined
 }
 
+
 export const usePricing = () => {
   const companyStore = useCompanyStore()
   const productsStore = useProductsStore()

@@ -23,6 +23,7 @@ export type CustomLogo = LogoPlacementBase & {
   logo_technology: OutputProductLogoTechnology | null
   /** When true, logo cannot be moved on canvas (pin control). */
   pinned?: boolean
+  is_locked?: boolean | number
 }
 
 /**

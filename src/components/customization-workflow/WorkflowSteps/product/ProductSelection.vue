@@ -277,7 +277,10 @@
 </script>
 
 <template>
-  <div v-if="showProductsLoading" class="flex items-center justify-center min-h-[200px] w-full">
+  <div
+    v-if="showProductsLoading"
+    class="flex min-h-[min(240px,45vh)] w-full items-center justify-center"
+  >
     <Spinner class="size-8 text-primary" />
   </div>
   <div
@@ -352,9 +355,9 @@
           </div>
         </div>
 
-        <!-- Hover actions -->
+        <!-- Same layout as before; only opacity/pointer-events fixed so button is tappable on touch (no hover) -->
         <div
-          class="absolute -bottom-[-1rem] left-1/2 -translate-x-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity"
+          class="absolute -bottom-[-1rem] left-1/2 -translate-x-1/2 opacity-100 pointer-events-auto transition-opacity"
         >
           <Button
             variant="default"

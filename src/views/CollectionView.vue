@@ -490,7 +490,7 @@
               {{ cp.product_nickname || cp.product_locker_room.product_name }}
             </h3>
             <p class="mt-1 text-sm text-muted-foreground line-clamp-3">
-              {{ productDescription(cp.product_locker_room) || cp.description }}
+              {{ cp.product_note || productDescription(cp.product_locker_room) }}
             </p>
             <p
               v-if="showProductPricing && formatCollectionProductPrice(cp)"

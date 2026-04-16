@@ -289,7 +289,7 @@
         return
       }
 
-      const { factory_product } = await buildFactoryProductPayload()
+      const { factory_product } = await buildFactoryProductPayload(false)
       const resolvedFrontImage = normalizeImageValue(factory_product.front_image)
       const resolvedBackImage = normalizeImageValue(factory_product.back_image)
 
@@ -856,15 +856,18 @@
       const frontFile = base64ToFile(frontImage, 'front.png')
       const backFile = base64ToFile(backImage, 'back.png')
 
-      const signedUrlResponse = await cartStore.generateSignedUploadUrl({
-        files: [
-          { name: frontFile.name, type: frontFile.type, size: frontFile.size },
-          { name: backFile.name, type: backFile.type, size: backFile.size }
-        ],
-        companyId: companyId,
-        factoryId: factoryId,
-        type: 'share_product' as const
-      } as unknown as Parameters<typeof cartStore.generateSignedUploadUrl>[0])
+      const signedUrlResponse = await cartStore.generateSignedUploadUrl(
+        {
+          files: [
+            { name: frontFile.name, type: frontFile.type, size: frontFile.size },
+            { name: backFile.name, type: backFile.type, size: backFile.size }
+          ],
+          companyId: companyId,
+          factoryId: factoryId,
+          type: 'share_product' as const
+        } as unknown as Parameters<typeof cartStore.generateSignedUploadUrl>[0],
+        false
+      )
 
       if (
         !signedUrlResponse ||

@@ -232,7 +232,7 @@
   }
 
   const handleFileClick = (file: CommentFile) => {
-    const url = `${props.storageUrl}/${file.url}`
+    const url = `${props.storageUrl}${file.url}`
     window.open(url, '_blank')
   }
 

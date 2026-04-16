@@ -203,7 +203,8 @@
       'rotation',
       'scaleX',
       'scaleY',
-      'pinned'
+      'pinned',
+      'is_locked'
     ] as const
     all.forEach((logo: CustomLogo, index: number) => {
       map.set(index, filterFields(logo, [...fields]) as CustomLogo)
@@ -327,6 +328,7 @@
       textureTiling: styleDetails.three_d_properties?.textureTiling ?? null,
       tileX: styleDetails.three_d_properties?.tileX ?? null,
       tileY: styleDetails.three_d_properties?.tileY ?? null
+
     }
   })
 
@@ -1538,6 +1540,7 @@
    */
   async function addSafeZone(safeZoneUrl?: string): Promise<void> {
     if (!canvas.value || !safeZoneUrl) return
+    // Match old ThreeDScene.vue addSafeZone: no originX/Y on load; center, then flags, scale, snap to 0,0
     const clip = (await loadImageFromURLCommon(safeZoneUrl, 'svg', {
       hasControls: false,
       selectable: false,
@@ -1546,9 +1549,7 @@
       lockMovementY: true,
       absolutePositioned: true,
       inverted: true,
-      flipY: true,
-      originX: 'left',
-      originY: 'top'
+      flipY: true
     })) as Group
 
     clip.scaleToHeight(props.canvasResolution)
@@ -1592,6 +1593,7 @@
    */
   function applyClipPath(target: FabricImage | FabricObject): void {
     if (safeZone.value) {
+      console.log(safeZone.value, 'safeZone.value yes here we go')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(target as any).clipPath = safeZone.value
     }
@@ -1648,7 +1650,7 @@
         applyClipPath: (img: FabricImage) => applyClipPath(img),
         renderCanvas,
         controlVisibility,
-        canvasSelection: true,
+        canvasSelection: logo?.is_locked !== 1,
         flipX: true,
         findPositionOn2D,
         suppressWatchRef: suppressCustomLogosWatch,
@@ -2032,6 +2034,7 @@
             tex.repeat.set(repX, repY)
           }
 
+
           const object = gltf.scene.children[0]
           if (!(object instanceof THREE.Mesh)) {
             reject('The loaded model is not a mesh.')
@@ -2109,6 +2112,7 @@
             clearcoat: 0, //gives a higher plastic-y feel 0-1 (0)
             iridescence: 0, //isnt really used in fabric, perhaps velvet? 0-1 (0)
             specularIntensity: 1 //strength of specular highlights 0-1 (1)
+
           })
           // --- Vertex Shader Inflation, solves jagged edge gaps inside the object ---
           const settings = { uInflation: 0.001 }
@@ -2184,6 +2188,7 @@
             } else {
               normalMap.repeat.set(1, 1)
             }
+            applyTextureRepeatIfNeeded(normalMap)
             outerMat.normalMap = normalMap
             if (normalScaleX != null || normalScaleY != null) {
               outerMat.normalScale.set(normalScaleX ?? 1, normalScaleY ?? 1)
@@ -2218,6 +2223,7 @@
                 }
                 const aoMap = textureLoader.load(fromStorage(aoMapUrl) || '')
                 aoMap.flipY = false
+                applyTextureRepeatIfNeeded(aoMap)
                 outerMat.aoMap = aoMap
               }
             })

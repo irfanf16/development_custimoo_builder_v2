@@ -60,6 +60,7 @@
   } from '@/paraglide/messages'
   import { usePricing } from '@/composables/usePricing'
   import { useCompanyStore } from '@/stores/company/company.store'
+  import { stripCsvExtension } from '@/lib/utils'
   interface Props {
     logoId: string
     logoIndex: number | null
@@ -123,7 +124,7 @@
     return (
       productsStore.activeProductDetails?.namecolors.map(colorGroup => ({
         id: colorGroup.id,
-        name: colorGroup.file_name,
+        name: stripCsvExtension(colorGroup.file_name),
         colors: colorGroup.json_data
       })) || []
     )

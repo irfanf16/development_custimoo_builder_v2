@@ -244,7 +244,8 @@
       'rotation',
       'scaleX',
       'scaleY',
-      'pinned'
+      'pinned',
+      'is_locked'
     ] as const
     all.forEach((logo: CustomLogo, index: number) => {
       if (logo.side === props.side) {
@@ -2139,7 +2140,7 @@
         calculateScaleRatios: calculateScaleRatios2D,
         applyClipPath,
         renderCanvas,
-        canvasSelection: true,
+        canvasSelection: logo?.is_locked !== 1,
         flipX: false,
         suppressWatchRef: suppressCustomLogosWatch,
         convertSize: convertSizeToMeasurement

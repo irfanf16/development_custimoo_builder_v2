@@ -11,6 +11,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import { getSelectedProductPantones, getClosestColor, getColorType } from '@/lib/utils'
+  import { stripCsvExtension } from '@/lib/utils'
   import { locker_use_in_design, locker_no_colours } from '@/paraglide/messages'
 
   type ColourProps = {
@@ -45,7 +46,7 @@
         })
         return {
           colour_group,
-          group_name: folder.folder_name
+          group_name: stripCsvExtension(folder.folder_name || '')
         }
       }) ?? []
     )

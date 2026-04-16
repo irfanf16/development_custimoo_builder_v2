@@ -460,9 +460,10 @@ export const useCartStore = defineStore('cartStore', () => {
    * Generate signed upload URLs for cart assets
    */
   async function generateSignedUploadUrl(
-    payload: GenerateSignedUploadUrlPayload
+    payload: GenerateSignedUploadUrlPayload,
+    showLoader: boolean = true
   ): Promise<GenerateSignedUploadUrlResponse | null> {
-    isLoading.value = true
+    isLoading.value = showLoader
     error.value = null
     const response = await tryCatchApi(API.cart.generateSignedUploadUrl(payload), {
       operation: 'generateSignedUploadUrl',

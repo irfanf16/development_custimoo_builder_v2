@@ -3,6 +3,7 @@ import { useProductsStore } from '@/stores/products/products.store'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useEffectiveSelectors } from '@/stores/selectors/effective.store'
 import type { OutputColor } from '@/services/products/types'
+import { stripCsvExtension } from '@/lib/utils'
 
 export type Palette = {
   id: number
@@ -20,7 +21,7 @@ export function useColorActions() {
   const palettes = computed<Palette[] | undefined>(() => {
     return productsStore.activeProductDetails?.namecolors?.map(colorGroup => ({
       id: colorGroup.id,
-      name: colorGroup.file_name,
+      name: stripCsvExtension(colorGroup.file_name),
       colors: colorGroup.json_data
     }))
   })

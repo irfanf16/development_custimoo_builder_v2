@@ -511,16 +511,17 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const next = productId
     if (prev === next) return
     customization.value.product_id = next
+
     // Palette / shuffle state is tied to the previous product's SVG parts; carrying it over
     // reapplies wrong colors after switch and makes each group's picker fall back oddly.
-    // customization.value.default_colors = [
-    //   { color: null, pantone: null, name: null },
-    //   { color: null, pantone: null, name: null },
-    //   { color: null, pantone: null, name: null },
-    //   { color: null, pantone: null, name: null }
-    // ]
-    // customization.value.group_colors = {}
-    // customization.value.shuffle_color_number = 0
+    customization.value.default_colors = [
+      { color: null, pantone: null, name: null },
+      { color: null, pantone: null, name: null },
+      { color: null, pantone: null, name: null },
+      { color: null, pantone: null, name: null }
+    ]
+    customization.value.group_colors = {}
+    customization.value.shuffle_color_number = 0
     // Reset history to a fresh single state for the new product
     history.value = [{ state: deepClone(customization.value), actionTitle: 'Initial' }]
     historyIndex.value = 0

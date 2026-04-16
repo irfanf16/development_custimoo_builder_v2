@@ -75,33 +75,40 @@
       </div>
       <div
         v-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
-        class="flex flex-row justify-between w-full items-center gap-2"
+        class="flex w-full min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2"
       >
-        <ColorsPreview :colors="previewColors" />
-        <div class="flex gap-2">
+        <!-- Swatches stay left on all breakpoints (no centering on narrow screens) -->
+        <ColorsPreview class="shrink-0 self-start" :colors="previewColors" />
+        <!-- Mobile: full-width row under swatches, 2 equal columns when both actions exist; sm+: same row, right-aligned like desktop -->
+        <div
+          v-if="isThisLogoColorsApplied"
+          class="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-2"
+        >
           <Button
-            v-if="isThisLogoColorsApplied"
             size="sm"
             variant="default"
+            class="min-h-9 w-full justify-center text-center"
             @click.stop="emit('use-original-and-proceed')"
           >
             {{ logos_use_original({}, { locale: profileStore.currentLocale }) }}
           </Button>
           <Button
-            v-else-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
-            size="sm"
-            variant="default"
-            @click.stop="emit('apply-colors', props.logo)"
-          >
-            {{ logos_apply_colors({}, { locale: profileStore.currentLocale }) }}
-          </Button>
-          <Button
-            v-if="isThisLogoColorsApplied"
             size="sm"
             variant="outline"
+            class="min-h-9 w-full justify-center text-center"
             @click.stop="customizationStore.shuffleDefaultColors('Shuffle extracted colors')"
           >
             {{ logos_shuffle_colors({}, { locale: profileStore.currentLocale }) }}
+          </Button>
+        </div>
+        <div v-else class="flex w-full min-w-0 justify-end">
+          <Button
+            size="sm"
+            variant="default"
+            class="min-h-9 w-full max-w-full justify-center sm:w-auto"
+            @click.stop="emit('apply-colors', props.logo)"
+          >
+            {{ logos_apply_colors({}, { locale: profileStore.currentLocale }) }}
           </Button>
         </div>
       </div>

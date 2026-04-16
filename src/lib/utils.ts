@@ -23,6 +23,12 @@ export function generateRandomString() {
   return result
 }
 
+export function stripCsvExtension(name: string): string {
+  const value = (name || '').trim()
+  if (!value) return value
+  return value.replace(/\.csv$/i, '')
+}
+
 /**
  * Download a file from a URL. Opens in same tab and triggers download when possible.
  * @param url - Full URL of the file to download

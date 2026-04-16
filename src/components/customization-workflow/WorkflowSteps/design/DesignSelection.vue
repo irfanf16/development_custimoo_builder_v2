@@ -160,7 +160,7 @@
   <!-- Content -->
   <div
     v-if="showDesignsLoading"
-    class="flex items-center justify-center min-h-[200px] w-full mb-4 md:mb-6"
+    class="mb-4 flex min-h-[min(240px,45vh)] w-full items-center justify-center md:mb-6"
   >
     <Spinner class="size-8 text-primary" />
   </div>

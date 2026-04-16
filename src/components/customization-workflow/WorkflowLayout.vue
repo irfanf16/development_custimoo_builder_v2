@@ -70,10 +70,15 @@
     }
   }
 
-  // Computed container classes based on mobile/desktop
+  // Mobile: when the sheet is open it must stack above the topbar (z-40); otherwise topbar stays on top.
   const containerClasses = computed(() => {
     if (uiStore.isMobile) {
-      return 'fixed bottom-25 h-fit max-h-[65vh] w-[calc(100%-2rem)]'
+      const zSheet = workflowStore.isPanelOpen ? 'z-50' : 'z-30'
+      return [
+        'fixed bottom-25 h-fit max-h-[65vh] w-[calc(100%-2rem)]',
+        'flex flex-col min-h-0 overflow-hidden',
+        zSheet
+      ].join(' ')
     }
     return 'max-h-[100%]'
   })
