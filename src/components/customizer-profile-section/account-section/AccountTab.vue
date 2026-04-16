@@ -34,7 +34,7 @@
   const t = computed(() => ({
     account: messages.profile_account({}, { locale: profileStore.currentLocale }),
     edit: messages.profile_edit({}, { locale: profileStore.currentLocale }),
-    update: 'Update',
+    update: messages.profile_update({}, { locale: profileStore.currentLocale }),
     signOut: messages.profile_sign_out({}, { locale: profileStore.currentLocale }),
     ordersCount: messages.profile_orders_count({}, { locale: profileStore.currentLocale }),
     pendingApprovalCount: messages.profile_pending_approval_count(
