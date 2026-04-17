@@ -388,6 +388,8 @@
   const lastKnownObjectPos = ref<{ left: number; top: number } | null>(null)
   const dracoLoader = shallowRef<DRACOLoader | null>(null)
   const groundPlane = shallowRef<THREE.Mesh | null>(null)
+  /** Shadow-only directional light from setupShadows; disposed before each new model load */
+  const topShadowLight = shallowRef<THREE.DirectionalLight | null>(null)
   // Anchor scale from applyAnchorDifferences (used for normalMap repeat when useScaling is true)
   const anchorScaleX = ref(1)
   const anchorScaleY = ref(1)
@@ -925,6 +927,8 @@
       groundPlane.value = null
     }
 
+    disposeTopShadowLight()
+
     // Dispose Three.js objects
     if (scene.value) {
       scene.value.traverse(obj => {
@@ -1165,8 +1169,20 @@
     scene.value.add(spotLight_ft_top)
   }
 
+  function disposeTopShadowLight() {
+    const light = topShadowLight.value
+    if (!light) return
+    if (scene.value) {
+      scene.value.remove(light.target)
+      scene.value.remove(light)
+    }
+    light.dispose()
+    topShadowLight.value = null
+  }
+
   function setupShadows(maxY: number) {
     if (!scene.value) return
+    disposeTopShadowLight()
     // Adds weak shadow-only light 0.5m above the top of the model, maxY = boundingBox.max.y
     const topAreaLight = new THREE.DirectionalLight(0xffffff, 0.001)
     topAreaLight.position.set(0, maxY + 0.5, 0)
@@ -1193,6 +1209,7 @@
 
     scene.value.add(topAreaLight)
     scene.value.add(topAreaLight.target) // Add target to scene for proper updates
+    topShadowLight.value = topAreaLight
   }
 
   function setupEnvironment() {
@@ -2307,6 +2324,8 @@
       canvasRenderHandler.value = null
     }
 
+    disposeTopShadowLight()
+
     if (frontMesh.value && scene.value) {
       scene.value.remove(frontMesh.value)
     }
@@ -2440,17 +2459,18 @@
 
           void main() {
             vec4 color = texture2D(tDiffuse, vUv);
+            if(color.a > 0.5) {
+             
+              color.rgb += brightness;
 
-            color.rgb += brightness;
+              if (contrast > 0.0) {
+                color.rgb = (color.rgb - 0.5) / (1.0 - contrast) + 0.5;
+              } else {
+                color.rgb = (color.rgb - 0.5) * (1.0 + contrast) + 0.5;
+              }
 
-            if (contrast > 0.0) {
-              color.rgb = (color.rgb - 0.5) / (1.0 - contrast) + 0.5;
-            } else {
-              color.rgb = (color.rgb - 0.5) * (1.0 + contrast) + 0.5;
+              color.rgb = applySaturation(color.rgb, saturation);
             }
-
-            color.rgb = applySaturation(color.rgb, saturation);
-
             gl_FragColor = color;
           }
         `
