@@ -57,9 +57,10 @@ export function useEffectiveSelectors() {
 
           return {
             id: svgGroup.id,
-            name: customized.name ?? '',
+            name: (customized.name && customized.name.trim()) || svgGroup.name || '',
             color: customized.color ?? svgGroup.color,
-            pantone: '',
+            pantone:
+              (customized as unknown as { pantone?: string }).pantone || svgGroup.pantone || '',
             count: svgGroup.count ?? 0,
             gradient_colors: mergedGradientColors,
             ...(isCustom ? { is_custom: true } : {})
@@ -68,9 +69,10 @@ export function useEffectiveSelectors() {
         // Regular color override
         return {
           id: svgGroup.id,
-          name: customized.name ?? '',
-          color: customized.color ?? '',
-          pantone: '',
+          name: (customized.name && customized.name.trim()) || svgGroup.name || '',
+          color: customized.color ?? svgGroup.color ?? '',
+          pantone:
+            (customized as unknown as { pantone?: string }).pantone || svgGroup.pantone || '',
           count: svgGroup.count ?? 0,
           ...(isCustom ? { is_custom: true } : {})
         }

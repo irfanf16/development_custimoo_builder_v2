@@ -141,6 +141,25 @@ export function useColorCustomization(
       }
     }
 
+    // If color is present but both pantone and name are missing,
+    // enrich metadata by resolving to the nearest known product color.
+    if (finalColor.color && (!finalColor.pantone || !finalColor.name)) {
+      const selectProductPantonesList = getSelectedProductPantones(
+        effectiveProductId.value,
+        svgGroup
+      )
+      const closestColor = getClosestColor(
+        finalColor.color,
+        selectProductPantonesList,
+        getColorType(svgGroup, effectiveProductId.value)
+      )
+      return {
+        color: closestColor.hex,
+        pantone: closestColor.pantone,
+        name: closestColor.name
+      }
+    }
+
     return finalColor
   }
 
