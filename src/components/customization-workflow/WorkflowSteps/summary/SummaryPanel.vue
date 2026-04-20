@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
@@ -16,7 +16,8 @@
   // import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
   import { Check, Pencil } from 'lucide-vue-next'
   import {
-    // summary_read_more,
+    summary_read_more,
+    summary_show_less,
     summary_selected_option,
     summary_addons,
     summary_no_addons,
@@ -64,14 +65,19 @@
     )
   })
 
-  const productDescription = computed(() => {
+  const productDescriptionFull = computed(() => {
     const description = activeProductDetails.value?.sku?.description
     if (!description?.trim()) return ''
-    // Truncate to ~100 characters
-    if (description.length > 100) {
-      return description.substring(0, 100) + '...'
-    }
     return description
+  })
+
+  const isDescriptionLong = computed(() => productDescriptionFull.value.length > 100)
+  const isDescriptionExpanded = ref(false)
+
+  const productDescription = computed(() => {
+    if (!productDescriptionFull.value) return ''
+    if (!isDescriptionLong.value || isDescriptionExpanded.value) return productDescriptionFull.value
+    return productDescriptionFull.value.substring(0, 100) + '...'
   })
 
   // Style section
@@ -185,19 +191,20 @@
       </div>
       <div class="flex-1 flex flex-col gap-2">
         <h3 class="text-lg font-semibold text-foreground">{{ productTitle }}</h3>
-        <p
-          v-if="productDescription"
-          class="text-sm text-muted-foreground"
-          v-html="productDescription"
-        ></p>
-        <!-- <Button
-          variant="ghost"
-          size="sm"
-          class="self-start -ml-4"
-          @click="showProductDetails = true"
-        >
-          {{ summary_read_more({}, { locale }) }}
-        </Button> -->
+        <div v-if="productDescription">
+          <p class="text-sm text-muted-foreground" v-html="productDescription"></p>
+          <button
+            v-if="isDescriptionLong"
+            class="text-sm font-medium text-primary hover:underline mt-1"
+            @click="isDescriptionExpanded = !isDescriptionExpanded"
+          >
+            {{
+              isDescriptionExpanded
+                ? summary_show_less({}, { locale })
+                : summary_read_more({}, { locale })
+            }}
+          </button>
+        </div>
       </div>
     </div>
 

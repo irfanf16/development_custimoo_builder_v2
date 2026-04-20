@@ -253,7 +253,7 @@
         </p>
         <p class="text-sm text-muted-foreground">
           {{ summary_for({}, { locale: profileStore.currentLocale }) }}
-          {{ totalRosterQuantity }}
+          <span class="font-bold">{{ totalRosterQuantity }}</span>
           {{ summary_pcs({}, { locale: profileStore.currentLocale }) }}
         </p>
       </div>

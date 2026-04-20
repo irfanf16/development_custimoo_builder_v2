@@ -10,6 +10,7 @@
   "summary_description": "Ver todos los cambios de tu producto",
   "summary_tooltip": "Revisa todos los detalles de personalización antes de añadir al carrito",
   "summary_read_more": "Leer más",
+  "summary_show_less": "Ver menos",
   "summary_selected_option": "Opción seleccionada",
   "summary_addons": "Complementos",
   "summary_no_addons": "No hay complementos seleccionados",

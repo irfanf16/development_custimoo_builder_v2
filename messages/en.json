@@ -10,6 +10,7 @@
   "summary_description": "See all your product changes",
   "summary_tooltip": "Review all customization details before adding to your cart",
   "summary_read_more": "Read more",
+  "summary_show_less": "Show less",
   "summary_selected_option": "Selected option",
   "summary_addons": "Addons",
   "summary_no_addons": "No addons selected",
