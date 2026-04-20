@@ -328,13 +328,20 @@
       textureTiling: styleDetails.three_d_properties?.textureTiling ?? null,
       tileX: styleDetails.three_d_properties?.tileX ?? null,
       tileY: styleDetails.three_d_properties?.tileY ?? null
-
     }
   })
 
   // ===== STATE =====
   const rendererEl = ref<HTMLDivElement | null>(null)
   const canvasEl = ref<HTMLCanvasElement | null>(null)
+
+  // Actual renderer DOM rect size (kept in sync via ResizeObserver). Used only for UV
+  // positioning so findPositionOn3D stays correct when the on-screen view is smaller
+  // than containerWidth/containerHeight. The fabric texture canvas is NOT resized and
+  // continues to use canvasResolution.
+  const rendererRectWidth = ref<number>(props.containerWidth)
+  const rendererRectHeight = ref<number>(props.containerHeight)
+  const rendererResizeObserver = shallowRef<ResizeObserver | null>(null)
 
   // Three.js objects - use shallowRef to avoid Vue reactivity issues with Three.js read-only properties
   const scene = shallowRef<THREE.Scene | null>(null)
@@ -407,6 +414,20 @@
 
     await initThreeJS()
     addGetPointerToFabricPrototype()
+
+    // Track the renderer DOM rect so UV positioning follows the actual on-screen size.
+    // The fabric texture canvas is intentionally left at canvasResolution.
+    if (rendererEl.value && typeof ResizeObserver !== 'undefined') {
+      const updateRect = () => {
+        const rect = rendererEl.value?.getBoundingClientRect()
+        if (!rect) return
+        if (rect.width > 0) rendererRectWidth.value = rect.width
+        if (rect.height > 0) rendererRectHeight.value = rect.height
+      }
+      updateRect()
+      rendererResizeObserver.value = new ResizeObserver(updateRect)
+      rendererResizeObserver.value.observe(rendererEl.value)
+    }
   })
 
   onBeforeUnmount(() => {
@@ -414,6 +435,10 @@
     if (el) {
       el.removeEventListener('dblclick', handleDesignPartDblclick)
       colorDblclickElRef.value = null
+    }
+    if (rendererResizeObserver.value) {
+      rendererResizeObserver.value.disconnect()
+      rendererResizeObserver.value = null
     }
     removeGetPointerFromFabricPrototype()
     cleanup()
@@ -1235,19 +1260,31 @@
 
   // ===== LOGO UTILITIES =====
   /**
-   * Calculate canvas width ratio for 3D scene
-   * Used for scaling logos from 2D coordinates to 3D canvas
+   * Canvas scale ratios — prop-based. Used for sizing logos/texts on the fixed-resolution
+   * fabric texture so their on-texture size does not change when the 3D view is resized
+   * (the fabric canvas must not be resized).
    */
   const canvasWidthRatio = computed(() => {
     return props.containerWidth / 600 // twoDCanvasWidth default is 600
   })
 
-  /**
-   * Calculate canvas height ratio for 3D scene
-   * Used for scaling logos from 2D coordinates to 3D canvas
-   */
   const canvasHeightRatio = computed(() => {
     return props.containerHeight / 600 // twoDCanvasHeight default is 600
+  })
+
+  /**
+   * View ratios — follow the actual renderer DOM rect. Used when converting stored 2D
+   * coordinates into the renderer's pixel space for findPositionOn3D / findPositionOn2D.
+   * Without this, small views would break UV normalization because getMousePosition
+   * divides by rect.width/rect.height while the input was still computed against the
+   * (larger) containerWidth/containerHeight.
+   */
+  const viewWidthRatio = computed(() => {
+    return (rendererRectWidth.value || props.containerWidth) / 600
+  })
+
+  const viewHeightRatio = computed(() => {
+    return (rendererRectHeight.value || props.containerHeight) / 600
   })
 
   // Calculate rotation (opposite angle for 3D)
@@ -1273,8 +1310,8 @@
     if (has3d) {
       return { x: data.x_axis_3d!, y: data.y_axis_3d! }
     }
-    const threeDXPosition = canvasWidthRatio.value * Number(data.x_axis)
-    const threeDYPosition = canvasHeightRatio.value * Number(data.y_axis)
+    const threeDXPosition = viewWidthRatio.value * Number(data.x_axis)
+    const threeDYPosition = viewHeightRatio.value * Number(data.y_axis)
     const side = (data.side ??
       (data as OutputProductTextItem).placement?.toLowerCase() ??
       'front') as 'front' | 'back'
@@ -1304,6 +1341,8 @@
     geometry: create3DFixedLogoGeometry({
       getCanvasWidthRatio: () => canvasWidthRatio.value,
       getCanvasHeightRatio: () => canvasHeightRatio.value,
+      getViewWidthRatio: () => viewWidthRatio.value,
+      getViewHeightRatio: () => viewHeightRatio.value,
       findPositionOn3D,
       oppositeAngle
     }),
@@ -1405,8 +1444,12 @@
         sideChanged = true
       }
 
-      vector.x = Math.round(((vector.x + 1) * props.containerWidth) / 2)
-      vector.y = Math.round(((-vector.y + 1) * props.containerHeight) / 2)
+      // Use the actual renderer rect here (matches the rect used by getMousePosition)
+      // so coordinates stay consistent when the 3D view is smaller than containerWidth.
+      const rectW = rendererRectWidth.value || props.containerWidth
+      const rectH = rendererRectHeight.value || props.containerHeight
+      vector.x = Math.round(((vector.x + 1) * rectW) / 2)
+      vector.y = Math.round(((-vector.y + 1) * rectH) / 2)
       vector.z = 0
 
       let divideBy = fabricObject.type === 'logo' ? 1 : 3
@@ -2051,7 +2094,6 @@
             tex.repeat.set(repX, repY)
           }
 
-
           const object = gltf.scene.children[0]
           if (!(object instanceof THREE.Mesh)) {
             reject('The loaded model is not a mesh.')
@@ -2129,7 +2171,6 @@
             clearcoat: 0, //gives a higher plastic-y feel 0-1 (0)
             iridescence: 0, //isnt really used in fabric, perhaps velvet? 0-1 (0)
             specularIntensity: 1 //strength of specular highlights 0-1 (1)
-
           })
           // --- Vertex Shader Inflation, solves jagged edge gaps inside the object ---
           const settings = { uInflation: 0.001 }

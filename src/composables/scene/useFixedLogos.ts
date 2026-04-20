@@ -208,21 +208,40 @@ export function create2DFixedLogoGeometry(
 
 /**
  * 3D geometry: UV mapping via findPositionOn3D + oppositeAngle; raster load uses flipX.
+ *
+ * Two ratio pairs are accepted:
+ *   - getCanvasWidthRatio/getCanvasHeightRatio: prop-based (containerWidth/600). Used for
+ *     sizing on the fixed-resolution fabric texture so logos keep a consistent size when
+ *     the on-screen 3D view is resized.
+ *   - getViewWidthRatio/getViewHeightRatio: tracks the actual renderer DOM rect. Used when
+ *     converting 2D coords for findPositionOn3D so UV normalization stays correct in small
+ *     views. Falls back to the canvas ratios when not provided.
  */
 export function create3DFixedLogoGeometry(options: {
   getCanvasWidthRatio: () => number
   getCanvasHeightRatio: () => number
+  getViewWidthRatio?: () => number
+  getViewHeightRatio?: () => number
   findPositionOn3D: (x: number, y: number, side: 'front' | 'back') => { x: number; y: number }
   oppositeAngle: (angle: number) => number
 }): FixedLogo3DGeometry {
-  const { getCanvasWidthRatio, getCanvasHeightRatio, findPositionOn3D, oppositeAngle } = options
+  const {
+    getCanvasWidthRatio,
+    getCanvasHeightRatio,
+    getViewWidthRatio,
+    getViewHeightRatio,
+    findPositionOn3D,
+    oppositeAngle
+  } = options
+  const viewWidthRatio = () => (getViewWidthRatio ? getViewWidthRatio() : getCanvasWidthRatio())
+  const viewHeightRatio = () => (getViewHeightRatio ? getViewHeightRatio() : getCanvasHeightRatio())
   return {
     calculateTargetHeight: logo => Number(logo.height ?? 0) / (getCanvasHeightRatio() || 1),
     calculateTransform: logo => {
       const side: 'front' | 'back' = logo.side?.toLowerCase() === 'back' ? 'back' : 'front'
       const fabricPoint = findPositionOn3D(
-        getCanvasWidthRatio() * Number(logo.x_axis ?? 0),
-        getCanvasHeightRatio() * Number(logo.y_axis ?? 0),
+        viewWidthRatio() * Number(logo.x_axis ?? 0),
+        viewHeightRatio() * Number(logo.y_axis ?? 0),
         side
       )
       const rotation = Number(logo.rotation ?? 0)
