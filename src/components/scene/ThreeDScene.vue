@@ -1073,6 +1073,7 @@
 
       // Setup custom Fabric controls (scale/rotate/delete icons)
       setupFabricControls({
+        controlSize: 50,
         onRemoveLogo: (logoIndex: number, canvasInstance: Canvas) => {
           deleteLogoFromCanvas(logoIndex, canvasInstance, customLogoObjects)
         },

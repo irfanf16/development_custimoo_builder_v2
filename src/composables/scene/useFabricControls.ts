@@ -44,6 +44,8 @@ export type SetupFabricControlsOptions = {
   onRemoveText?: (customTextIndex: number, customTextItemIndex: number, canvas: Canvas) => void
   /** Fallback to resolve logo index from target when logo_index property is missing */
   getLogoIndexFromTarget?: (target: FabricObject) => number | undefined
+  /** Size in pixels for all control icons (rotate, scale, delete, pin). Defaults to 30. */
+  controlSize?: number
 }
 
 /**
@@ -54,7 +56,7 @@ export type SetupFabricControlsOptions = {
  * @param options - Options for handling control actions
  */
 export function setupFabricControls(options: SetupFabricControlsOptions = {}): void {
-  const { onRemoveLogo, onRemoveText, getLogoIndexFromTarget } = options
+  const { onRemoveLogo, onRemoveText, getLogoIndexFromTarget, controlSize = 30 } = options
   const { fromStorage } = useStorage()
 
   const scaleImg = new Image()
@@ -114,7 +116,7 @@ export function setupFabricControls(options: SetupFabricControlsOptions = {}): v
         fabricObject: unknown
       ) => {
         const obj = fabricObject as { angle?: number }
-        const size = 30
+        const size = controlSize
         ctx.save()
         ctx.translate(left, top)
         const angle = typeof obj.angle === 'number' ? obj.angle : 0
@@ -233,7 +235,7 @@ export function setupFabricControls(options: SetupFabricControlsOptions = {}): v
       const obj = fabricObject as { angle?: number; pinned?: boolean }
       const pinned = !!obj.pinned
       const img = pinned ? pinOffImg : pinImg
-      const size = 30
+      const size = controlSize
       ctx.save()
       ctx.translate(left, top)
       const angle = typeof obj.angle === 'number' ? obj.angle : 0
