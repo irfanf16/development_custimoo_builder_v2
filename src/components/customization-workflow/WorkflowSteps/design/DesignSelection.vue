@@ -39,7 +39,6 @@
   const showDesignsLoading = computed(
     () =>
       workflowStore.pendingProductId != null ||
-      workflowStore.pendingProductPreviewPipeline ||
       ((productsStore.designPreviews == null || productsStore.designPreviews.length === 0) &&
         productsStore.isLoading)
   )
@@ -49,7 +48,7 @@
     workflowStore.setSelectedDesignCategory(null)
 
     // Skip fetch when product details or preview pipeline is already loading previews
-    if (workflowStore.pendingProductId != null || workflowStore.pendingProductPreviewPipeline) {
+    if (workflowStore.pendingProductId != null) {
       nextTick(() => {
         const activeDesignName = customizationStore.customization?.design_name
         if (activeDesignName) {
@@ -84,9 +83,9 @@
   }
 
   async function selectDesign(item: OutputDesignPreviewFront) {
-    if (pendingDesignId.value != null) {
-      return
-    }
+    // if (pendingDesignId.value != null) {
+    //   return
+    // }
 
     const designId = item.id
     const alreadyApplied =
@@ -110,7 +109,12 @@
       return
     } finally {
       productsStore.resumeCustomizationAutoSync()
-      workflowStore.setPendingDesignId(null)
+      // Only clear if this design is still the pending one.
+      // If the user clicked another design while this was loading, that
+      // design now owns pendingDesignId — don't steal its spinner.
+      if (workflowStore.pendingDesignId === designId) {
+        workflowStore.setPendingDesignId(null)
+      }
     }
 
     setTimeout(() => {

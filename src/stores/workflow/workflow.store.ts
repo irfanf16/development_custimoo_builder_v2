@@ -96,7 +96,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   /** Set when user selects a product and we navigate to designs before load completes. */
   const pendingProductId = ref<number | null>(null)
 
-  const pendingProductPreviewPipeline = ref(false)
   /** Set while applying a design (fetch + sync) so UI can show loading and block double-select. */
   const pendingDesignId = ref<number | null>(null)
 
@@ -559,7 +558,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedCategoryId.value = null
     selectedSubCategoryId.value = null
     pendingDesignId.value = null
-    pendingProductPreviewPipeline.value = false
     saveSubStepsToLocalStorage()
   }
 
@@ -596,10 +594,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   function setPendingDesignId(id: number | null) {
     pendingDesignId.value = id
-  }
-
-  function setPendingProductPreviewPipeline(pending: boolean) {
-    pendingProductPreviewPipeline.value = pending
   }
 
   // ===== NAVIGATION ACTIONS =====
@@ -670,7 +664,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedDesignCategoryId.value = null
     pendingProductId.value = null
     pendingDesignId.value = null
-    pendingProductPreviewPipeline.value = false
     clearHeaderAndFooterConfig()
     activeLogoId.value = null
     logoApplySourceIndex.value = null
@@ -712,8 +705,6 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     selectedDesignCategoryId,
     pendingProductId,
     setPendingProductId,
-    pendingProductPreviewPipeline,
-    setPendingProductPreviewPipeline,
     pendingDesignId,
     setPendingDesignId,
     activeCanvasSide,

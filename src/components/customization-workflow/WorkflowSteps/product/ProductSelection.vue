@@ -44,7 +44,7 @@
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeProductId: selectedProductId } = storeToRefs(customizationStore)
-  const { pendingProductId, pendingProductPreviewPipeline } = storeToRefs(workflowStore)
+  const { pendingProductId } = storeToRefs(workflowStore)
   const appStore = useAppStore()
   const { productSearchModel, showCustomizerStockFilter, customizerStockFilterModel } =
     useProductConfig()
@@ -152,9 +152,10 @@
         }
       }
 
-      if (pendingProductId.value != null || pendingProductPreviewPipeline.value) {
-        return
-      }
+      //commneted this because we have added deduplication to the api requests
+      // if (pendingProductId.value != null) {
+      //   return
+      // }
 
       // Commit the selected category/subcategory at the moment the product is chosen
       workflowStore.commitSelectedCategory()
@@ -169,7 +170,9 @@
           console.error('Error selecting product:', error)
           return
         } finally {
-          workflowStore.setPendingProductId(null)
+          if (workflowStore.pendingProductId === productId) {
+            workflowStore.setPendingProductId(null)
+          }
         }
 
         const styleId = productsStore.activeStyleDetails?.id
@@ -178,7 +181,6 @@
           return
         }
 
-        workflowStore.setPendingProductPreviewPipeline(true)
         try {
           customizationStore.setStyle(styleId)
           await productsStore.fetchStylePreviews(productId)
@@ -189,8 +191,6 @@
           }
         } catch (error) {
           console.error('Error loading style/design previews after product select:', error)
-        } finally {
-          workflowStore.setPendingProductPreviewPipeline(false)
         }
       })()
     } catch (error) {
