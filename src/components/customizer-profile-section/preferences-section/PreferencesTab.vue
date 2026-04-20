@@ -34,7 +34,13 @@
     english: messages.profile_language_english({}, { locale: profileStore.currentLocale }),
     french: messages.profile_language_french({}, { locale: profileStore.currentLocale }),
     danish: messages.profile_language_danish({}, { locale: profileStore.currentLocale }),
-    spanish: messages.profile_language_spanish({}, { locale: profileStore.currentLocale })
+    spanish: messages.profile_language_spanish({}, { locale: profileStore.currentLocale }),
+    german: messages.profile_language_german({}, { locale: profileStore.currentLocale }),
+    italian: messages.profile_language_italian({}, { locale: profileStore.currentLocale }),
+    dutch: messages.profile_language_dutch({}, { locale: profileStore.currentLocale }),
+    norwegian: messages.profile_language_norwegian({}, { locale: profileStore.currentLocale }),
+    polish: messages.profile_language_polish({}, { locale: profileStore.currentLocale }),
+    swedish: messages.profile_language_swedish({}, { locale: profileStore.currentLocale })
   }))
 
   function getLanguageName(locale: ParaglideLocale) {
@@ -47,6 +53,18 @@
         return t.value.danish
       case 'es':
         return t.value.spanish
+      case 'de':
+        return t.value.german
+      case 'it':
+        return t.value.italian
+      case 'nl':
+        return t.value.dutch
+      case 'no':
+        return t.value.norwegian
+      case 'pl':
+        return t.value.polish
+      case 'sv':
+        return t.value.swedish
       default:
         return locale
     }

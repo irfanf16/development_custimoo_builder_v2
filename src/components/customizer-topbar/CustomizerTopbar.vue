@@ -8,6 +8,9 @@
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
     DropdownMenuTrigger
   } from '@/components/ui/dropdown-menu'
   import {
@@ -27,7 +30,9 @@
     File,
     Share2,
     Sun,
-    Moon
+    Globe,
+    Moon,
+    Check
   } from 'lucide-vue-next'
   import {
     topbar_save,
@@ -84,7 +89,7 @@
   import { useAppStore } from '@/stores/app/app.store'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import type { CustomizerStep } from '@/stores/workflow/workflow.store.types'
-  import { useLoadLockerProductIntoCustomizer } from '@/composables/useLoadLockerProductIntoCustomizer.ts'
+  import { useLoadLockerProductIntoCustomizer } from '@/composables/useLoadLockerProductIntoCustomizer'
   import { useCartStore } from '@/stores/cart/cart.store'
   import { useBuildFactoryProduct } from '@/composables/useBuildFactoryProduct'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
@@ -101,6 +106,8 @@
   import { useLogosStore } from '@/stores/logos/logos.store'
   import { usePricing } from '@/composables/usePricing'
   import { usePermissions } from '@/composables/usePermissions'
+  import { m as messages } from '@/paraglide/messages'
+  import type { ParaglideLocale } from '@/services/preferences/types'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
@@ -131,6 +138,51 @@
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
   const { isMobile } = storeToRefs(uiStore)
   const locale = computed(() => profileStore.currentLocale || 'en')
+
+  const languageMenu = computed(() => ({
+    label: messages.profile_language({}, { locale: profileStore.currentLocale }),
+    english: messages.profile_language_english({}, { locale: profileStore.currentLocale }),
+    french: messages.profile_language_french({}, { locale: profileStore.currentLocale }),
+    danish: messages.profile_language_danish({}, { locale: profileStore.currentLocale }),
+    spanish: messages.profile_language_spanish({}, { locale: profileStore.currentLocale }),
+    german: messages.profile_language_german({}, { locale: profileStore.currentLocale }),
+    italian: messages.profile_language_italian({}, { locale: profileStore.currentLocale }),
+    dutch: messages.profile_language_dutch({}, { locale: profileStore.currentLocale }),
+    norwegian: messages.profile_language_norwegian({}, { locale: profileStore.currentLocale }),
+    polish: messages.profile_language_polish({}, { locale: profileStore.currentLocale }),
+    swedish: messages.profile_language_swedish({}, { locale: profileStore.currentLocale })
+  }))
+
+  function languageDisplayName(locale: ParaglideLocale): string {
+    switch (locale) {
+      case 'en':
+        return languageMenu.value.english
+      case 'fr':
+        return languageMenu.value.french
+      case 'da':
+        return languageMenu.value.danish
+      case 'es':
+        return languageMenu.value.spanish
+      case 'de':
+        return languageMenu.value.german
+      case 'it':
+        return languageMenu.value.italian
+      case 'nl':
+        return languageMenu.value.dutch
+      case 'no':
+        return languageMenu.value.norwegian
+      case 'pl':
+        return languageMenu.value.polish
+      case 'sv':
+        return languageMenu.value.swedish
+      default:
+        return locale
+    }
+  }
+
+  const currentLanguageLabel = computed(() =>
+    languageDisplayName(profileStore.preferences.language as ParaglideLocale)
+  )
 
   // Overflow-based compact topbar: icon-only + tooltips when buttons would touch boundaries
   const COMPACT_HYSTERESIS_PX = 50
@@ -1475,6 +1527,31 @@
                   <Settings class="size-4 mr-2" />
                   Preferences
                 </DropdownMenuItem>
+
+                <DropdownMenuSub v-if="profileStore.availableLocales.length">
+                  <DropdownMenuSubTrigger class="gap-2">
+                    <Globe class="text-muted-foreground mr-2 size-4 shrink-0" aria-hidden="true" />
+                    <span class="min-w-0 text-left">{{ languageMenu.label }}</span>
+                    <span class="text-muted-foreground shrink-0 text-xs">{{
+                      currentLanguageLabel
+                    }}</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent class="max-h-60 overflow-y-auto" align="start">
+                    <DropdownMenuItem
+                      v-for="loc in profileStore.availableLocales"
+                      :key="loc"
+                      class="relative pr-8"
+                      @click="profileStore.setPreferences({ language: loc })"
+                    >
+                      <span class="flex-1">{{ languageDisplayName(loc) }}</span>
+                      <Check
+                        v-if="profileStore.preferences.language === loc"
+                        class="absolute right-2 size-4"
+                      />
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
                 <!-- <DropdownMenuItem v-if="isLoggedIn" @click="handleUserSettings">
                   <Settings class="size-4 mr-2" />
                   Settings
