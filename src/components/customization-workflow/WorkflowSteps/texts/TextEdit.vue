@@ -420,8 +420,8 @@
             </div>
           </AccordionTrigger>
           <AccordionContent class="px-4 md:px-6 pb-4 space-y-4">
-            <!-- Placement Selector -->
-            <div class="space-y-2">
+            <!-- Placement Selector — hidden for 3D products (no front/back sides) -->
+            <div v-if="!activeProductDetails?.is_3d_product" class="space-y-2">
               <Label class="text-sm font-medium text-foreground">{{
                 texts_placement_label({}, { locale })
               }}</Label>

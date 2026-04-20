@@ -1053,18 +1053,20 @@
     await Promise.resolve(setTimeout(() => {}, 500))
     await resetAndAddFixedLogos()
     if (!canvas.value) return
-    // Load logos and texts after scene is loaded
-    await resetAndAddLogos()
-    if (!canvas.value) return
-    await resetAndAddTexts()
-    if (!canvas.value) return
+    if (props.mainPreview) {
+      // Load logos and texts after scene is loaded
+      await resetAndAddLogos()
+      if (!canvas.value) return
+      await resetAndAddTexts()
+      if (!canvas.value) return
 
-    // Render mirrored logos and texts coming from the opposite side (stored in sceneStore)
-    await renderOtherSideLogosFromStore()
-    if (!canvas.value) return
-    setTimeout(async () => {
-      await renderOtherSideTextsFromStore()
-    }, 500)
+      // Render mirrored logos and texts coming from the opposite side (stored in sceneStore)
+      await renderOtherSideLogosFromStore()
+      if (!canvas.value) return
+      setTimeout(async () => {
+        await renderOtherSideTextsFromStore()
+      }, 500)
+    }
 
     if (zoomInteractionEnabled.value) {
       refreshDefaultViewportFromCanvas()
@@ -2185,6 +2187,7 @@
    * Clears existing logos and adds all logos from custom_logos
    */
   async function resetAndAddLogos(): Promise<void> {
+    if (!props.mainPreview) return
     if (isPlacementMode.value) return
     if (!canvas.value) return
 
@@ -2296,6 +2299,7 @@
    * Clears existing text objects and adds all texts from customTexts (filtered by side and selected)
    */
   async function resetAndAddTexts(): Promise<void> {
+    if (!props.mainPreview) return
     if (isPlacementMode.value) return
     if (!canvas.value) return
 
@@ -2539,6 +2543,7 @@
   watch(
     customLogos,
     async (newLogos = new Map<number, CustomLogo>()) => {
+      if (!props.mainPreview) return
       if (suppressCustomLogosWatch.value) {
         suppressCustomLogosWatch.value = false
         return
@@ -2575,6 +2580,7 @@
   watch(
     () => customizationStore.historyIndex,
     async () => {
+      if (!props.mainPreview) return
       if (isPlacementMode.value) return
       if (!mounted.value) return
       await syncLogosOnCanvas({
@@ -2605,6 +2611,7 @@
   watch(
     customTexts,
     async newTexts => {
+      if (!props.mainPreview) return
       if (suppressCustomTextsWatch.value) {
         suppressCustomTextsWatch.value = false
         return

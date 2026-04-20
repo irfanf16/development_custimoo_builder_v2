@@ -534,8 +534,11 @@
               </SelectContent>
             </Select>
           </div>
-
-          <div class="space-y-1 text-left">
+          <!-- Side Selector — hidden for 3D products (no front/back sides) -->
+          <div
+            v-if="!productsStore.activeProductDetails?.is_3d_product"
+            class="space-y-1 text-left"
+          >
             <Label for="logo-side" class="text-xs font-medium text-muted-foreground">
               {{ logos_side_label({}, { locale: profileStore.currentLocale }) }}
             </Label>
