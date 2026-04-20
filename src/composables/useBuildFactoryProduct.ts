@@ -22,19 +22,7 @@ export function useBuildFactoryProduct() {
   const authStore = useAuthStore()
   const { getItemRaw } = useLocalStorage()
 
-  async function buildFactoryProductPayload(showLoader: boolean = true): Promise<{
-    factory_product: Record<string, unknown>
-    product_assets?: File[]
-  }> {
-    const customization = customizationStore.customization
-    if (!customization) {
-      throw new Error('No customization data available')
-    }
-
-    const productId = customization.product_id
-    const productKey = String(productId)
-
-    // Get images from canvas - following SaveDesignDialog pattern
+  async function captureDesignImages(): Promise<{ frontImage: string; backImage: string }> {
     let frontImage = ''
     let backImage = ''
 
@@ -68,6 +56,24 @@ export function useBuildFactoryProduct() {
       frontImage = await getImage('front')
       backImage = await getImage('back')
     }
+
+    return { frontImage, backImage }
+  }
+
+  async function buildFactoryProductPayload(showLoader: boolean = true): Promise<{
+    factory_product: Record<string, unknown>
+    product_assets?: File[]
+  }> {
+    const customization = customizationStore.customization
+    if (!customization) {
+      throw new Error('No customization data available')
+    }
+
+    const productId = customization.product_id
+    const productKey = String(productId)
+
+    // Get images from canvas
+    const { frontImage, backImage } = await captureDesignImages()
 
     // Get company_id from localStorage
     const companyIdRaw = getItemRaw('__customizer_company_id__')
@@ -335,6 +341,7 @@ export function useBuildFactoryProduct() {
   }
 
   return {
-    buildFactoryProductPayload
+    buildFactoryProductPayload,
+    captureDesignImages
   }
 }

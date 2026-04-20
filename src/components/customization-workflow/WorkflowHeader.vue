@@ -155,7 +155,6 @@
         <Shuffle class="size-4" />
         {{ color_shuffle_design_colors({}, { locale: profileStore.currentLocale }) }}
       </Button>
-
       <TooltipProvider v-if="headerActionButton">
         <Tooltip>
           <TooltipTrigger as-child>

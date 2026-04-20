@@ -60,6 +60,8 @@
     msg_company_id_not_found,
     msg_failed_to_generate_signed_urls,
     msg_failed_to_share_design,
+    msg_failed_to_generate_share_url,
+    msg_failed_to_share_product,
     msg_design_shared_success,
     msg_missing_roster_sizes,
     theme_toggle_sr
@@ -96,6 +98,7 @@
   import { useSceneStore } from '@/stores/scene/scene.store'
   import { base64ToFile, generateRandomString, uploadPresignedFiles } from '@/lib/utils'
   import type { SaveLockerProductPayload } from '@/services/lockers/types'
+  import lockersService from '@/services/lockers/lockers.service'
   import type { ShareDesignPayload } from '@/services/products/types/base-product'
   import type { ComponentPublicInstance } from 'vue'
   import { toast } from 'vue-sonner'
@@ -124,7 +127,7 @@
   const companyStore = useCompanyStore()
   const { menuItems, goTo } = useCustomizerMenu()
   const { loadLockerProductIntoCustomizer } = useLoadLockerProductIntoCustomizer()
-  const { buildFactoryProductPayload } = useBuildFactoryProduct()
+  const { buildFactoryProductPayload, captureDesignImages } = useBuildFactoryProduct()
   const { rosterEntries, ensureEditableRoster, totalRosterQuantity, setRosterPreviewIndex } =
     useRoster()
   const { minimumActiveProductQuantityByDesignToCard, isQuantityByDesign } = usePricing()
@@ -257,6 +260,16 @@
   const storageUrl = import.meta.env.VITE_APP_STORAGE_URL
   const sharedUrl = ref<string | null>(null)
   const showShareTooltip = ref(false)
+  /** Drives the chevron loader; only true while the share API call is in-flight after a successful save. */
+  const saveAndShareInProgress = ref(false)
+  /** True while the save dialog is open for a Save & Share flow; cleared on saved-to-locker or cancel. */
+  const saveAndShareDialogOpen = ref(false)
+
+  watch(showSaveDesignDialog, open => {
+    if (!open && saveAndShareDialogOpen.value) {
+      saveAndShareDialogOpen.value = false
+    }
+  })
 
   const skuInformation = computed(() => productsStore?.activeProductDetails?.sku)
 
@@ -555,12 +568,115 @@
   }
 
   function handleSaveAndShare() {
-    // Handle save and share
+    if (cartStore.isEditingCartProduct) {
+      void handleUpdateCartProduct()
+      return
+    }
+    saveAndShareDialogOpen.value = true
+    uiStore.openSaveDesignDialog(null, { shareAfterSave: true })
   }
 
-  function handleExportDesign() {
-    // Handle export design
+  async function onSaveDesignDialogSavedToLocker(
+    payload: number | { lockerId: number; lockerProductId?: number; productId?: number }
+  ) {
+    const wantShare = uiStore.saveDesignDialogShareAfterSave
+    saveAndShareDialogOpen.value = false
+    const lockerProductId = typeof payload === 'object' ? payload.lockerProductId : undefined
+    const productId = typeof payload === 'object' ? payload.productId : undefined
+
+    if (!wantShare) {
+      uiStore.handleSavedToLocker(payload, { openLockerBrowser: true })
+      return
+    }
+
+    saveAndShareInProgress.value = true
+    const toastId = 'save-and-share'
+    toast.loading('Generating share link…', { id: toastId, position: 'top-right' })
+
+    try {
+      if (lockerProductId != null && productId != null) {
+        try {
+          const response = await lockersService.shareProduct(lockerProductId, productId)
+          const shareUrl = response.data?.result?.url ?? null
+          if (shareUrl) {
+            sharedUrl.value = shareUrl
+            showShareTooltip.value = true
+            toast.success(msg_design_shared_success({}, { locale: locale.value }), {
+              id: toastId,
+              position: 'top-right',
+              richColors: true,
+              duration: 3000
+            })
+          } else {
+            toast.error(msg_failed_to_generate_share_url({}, { locale: locale.value }), {
+              id: toastId,
+              position: 'top-right',
+              richColors: true
+            })
+          }
+        } catch (error) {
+          console.error('Save and share error:', error)
+          toast.error(msg_failed_to_share_product({}, { locale: locale.value }), {
+            id: toastId,
+            position: 'top-right',
+            richColors: true
+          })
+        }
+      } else {
+        toast.error(msg_failed_to_generate_share_url({}, { locale: locale.value }), {
+          id: toastId,
+          position: 'top-right',
+          richColors: true
+        })
+      }
+      uiStore.handleSavedToLocker(payload, { openLockerBrowser: false })
+    } finally {
+      saveAndShareInProgress.value = false
+    }
   }
+
+  async function handleExportDesign() {
+    const toastId = 'export-design'
+    toast.loading('Exporting design…', { id: toastId, position: 'top-right' })
+
+    try {
+      const { frontImage, backImage } = await captureDesignImages()
+
+      if (!frontImage && !backImage) {
+        toast.error('No canvas images available to export.', {
+          id: toastId,
+          position: 'top-right',
+          richColors: true
+        })
+        return
+      }
+
+      const triggerDownload = (filename: string, dataUrl: string) => {
+        const a = document.createElement('a')
+        a.href = dataUrl
+        a.download = filename
+        a.click()
+      }
+
+      if (frontImage) triggerDownload('design-front.png', frontImage)
+      if (backImage) triggerDownload('design-back.png', backImage)
+
+      toast.success('Design exported successfully.', {
+        id: toastId,
+        position: 'top-right',
+        richColors: true,
+        duration: 3000
+      })
+    } catch (error) {
+      console.error('Export design error:', error)
+      toast.error('Failed to export design.', {
+        id: toastId,
+        position: 'top-right',
+        richColors: true
+      })
+    }
+  }
+
   function handleUserProfile() {
     showProfileDialog.value = true
   }
@@ -1585,9 +1701,7 @@
       :initial-tab="initialLockerTabToOpen"
       @update:open="
         evt => {
-          if (evt) {
-            uiStore.openLockerBrowser(initialLockerIdToOpen)
-          } else {
+          if (!evt) {
             uiStore.closeLockerBrowser()
             initialLockerTabToOpen = null
           }
@@ -1599,8 +1713,12 @@
     />
     <SaveDesignDialog
       :open="showSaveDesignDialog"
-      @update:open="evt => (evt ? uiStore.openSaveDesignDialog() : uiStore.closeSaveDesignDialog())"
-      @saved-to-locker="uiStore.handleSavedToLocker"
+      @saved-to-locker="onSaveDesignDialogSavedToLocker"
+      @update:open="
+        evt => {
+          if (!evt) uiStore.closeSaveDesignDialog()
+        }
+      "
     />
     <CartDialog v-if="isLoggedIn" :open="showCartDialog" @update:open="showCartDialog = $event" />
   </div>

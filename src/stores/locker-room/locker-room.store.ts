@@ -276,11 +276,46 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
     }
   }
 
+  function extractLockerProductIdFromSaveApiResult(result: unknown): number | undefined {
+    if (result == null || typeof result !== 'object') return undefined
+    const r = result as Record<string, unknown>
+    // POST /locker-products returns product_locker_id at the top level
+    if (typeof r.product_locker_id === 'number') return r.product_locker_id
+    return undefined
+  }
+
+  function resolveLockerProductIdAfterFetch(
+    locker_id: number,
+    payload: SaveLockerProductPayload,
+    front_image: string
+  ): number | undefined {
+    const list = lockers.value.find(l => l.id === locker_id)?.product ?? []
+    if (!list.length) return undefined
+
+    const stripQuery = (u: string) => u.split('?')[0] ?? u
+    const normalizedFront = stripQuery(front_image || '')
+    if (normalizedFront) {
+      const byImage = list.find(p => {
+        const u = stripQuery(p.product_front_url || '')
+        return u === normalizedFront
+      })
+      if (byImage) return byImage.id
+    }
+
+    const name = (payload.product_name || '').trim()
+    if (name) {
+      const byName = list.filter(p => (p.name || '').trim() === name)
+      if (byName.length === 1) return byName[0]!.id
+    }
+
+    return undefined
+  }
+
   async function saveDesignToLocker(
     payload: SaveLockerProductPayload,
     locker_id: number,
-    front_image: string
-  ): Promise<boolean> {
+    front_image: string = ''
+  ): Promise<{ success: false } | { success: true; lockerProductId?: number; productId: number }> {
     const resp = await tryCatchApi(API.lockers.saveDesign(payload), {
       operation: 'saveDesignToLocker'
     })
@@ -297,8 +332,10 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       } else {
         setError('Failed to save design')
       }
-      return false
+      return { success: false }
     }
+    let lockerProductId = extractLockerProductIdFromSaveApiResult(resp.content)
+
     lockers.value = lockers.value.map(locker => {
       if (locker.id !== locker_id) return locker
       const thumbnails = locker.product_thumbnails ?? []
@@ -323,7 +360,12 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
         product_thumbnails: l.product.map(p => p.product_front_url).slice(0, 4)
       }
     })
-    return true
+
+    if (lockerProductId == null) {
+      lockerProductId = resolveLockerProductIdAfterFetch(locker_id, payload, front_image)
+    }
+
+    return { success: true, lockerProductId, productId: payload.product_id }
   }
 
   async function updateLockerProduct(

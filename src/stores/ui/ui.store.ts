@@ -30,6 +30,8 @@ export const useUIStore = defineStore('uiStore', () => {
   const saveDesignDialogCollectionProduct = ref<
     import('@/services/lockers/types').CollectionProductWithLockerRoom | null
   >(null)
+  /** When true, after save from SaveDesignDialog run locker share/product (CustomizerTopbar). */
+  const saveDesignDialogShareAfterSave = ref(false)
   let resizeObserver: ResizeObserver | null = null
   let fullscreenRestore: (() => void) | null = null
   let lastViewportScroll = 0
@@ -439,8 +441,10 @@ export const useUIStore = defineStore('uiStore', () => {
       product: import('@/services/orders/types').FactoryProduct
       item: import('@/services/orders/types').Item
       order: import('@/services/orders/types').Order
-    } | null
+    } | null,
+    { shareAfterSave = false }: { shareAfterSave?: boolean } = {}
   ) {
+    saveDesignDialogShareAfterSave.value = shareAfterSave
     if (orderProductDataParams) {
       orderProductData.value = orderProductDataParams
     }
@@ -451,6 +455,7 @@ export const useUIStore = defineStore('uiStore', () => {
     showSaveDesignDialog.value = false
     orderProductData.value = null
     saveDesignDialogCollectionProduct.value = null
+    saveDesignDialogShareAfterSave.value = false
   }
 
   function setSaveDesignDialogCollectionProduct(
@@ -471,9 +476,15 @@ export const useUIStore = defineStore('uiStore', () => {
     initialLockerIdToOpen.value = null
   }
 
-  function handleSavedToLocker(lockerId: number) {
+  function handleSavedToLocker(
+    payload: number | { lockerId: number; lockerProductId?: number; productId?: number },
+    options?: { openLockerBrowser?: boolean }
+  ) {
+    const lockerId = typeof payload === 'number' ? payload : payload.lockerId
     closeSaveDesignDialog()
-    openLockerBrowser(lockerId)
+    if (options?.openLockerBrowser !== false) {
+      openLockerBrowser(lockerId)
+    }
   }
 
   function requestOpenProfileWithOrderId(orderId: string | number) {
@@ -521,6 +532,7 @@ export const useUIStore = defineStore('uiStore', () => {
     initialLockerIdToOpen,
     orderProductData,
     saveDesignDialogCollectionProduct,
+    saveDesignDialogShareAfterSave,
     setSaveDesignDialogCollectionProduct,
     openSaveDesignDialog,
     closeSaveDesignDialog,

@@ -426,15 +426,15 @@
           }
         }
 
-        const success = await lockerStore.saveDesignToLocker(
-          locker,
-          selectedLockerId.value!,
-          locker.front_image
-        )
-        if (success) {
+        const saveResult = await lockerStore.saveDesignToLocker(locker, selectedLockerId.value!)
+        if (saveResult.success) {
           isSubmitting.value = false
+          emit('saved-to-locker', {
+            lockerId: selectedLockerId.value!,
+            lockerProductId: saveResult.lockerProductId,
+            productId: saveResult.productId
+          })
           emit('update:open', false)
-          emit('saved-to-locker', selectedLockerId.value!)
         } else {
           isSubmitting.value = false
         }
