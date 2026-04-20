@@ -14,12 +14,12 @@ export function useLogoConfig() {
   const headerConfig = computed<HeaderConfiguration>(() => {
     const breadcrumbs = buildLogoBreadcrumbs({
       logosSubStep: workflowStore.logosSubStep,
-      hasActiveLogo: !!workflowStore.activeLogoId,
+      hasActiveLogo: !!workflowStore.logoEditorLogoId,
       onBackToList: () => workflowStore.setLogosSubStep('list'),
       locale: profileStore.currentLocale
     })
 
-    if (workflowStore.logosSubStep === 'edit' && workflowStore.activeLogoId) {
+    if (workflowStore.logosSubStep === 'edit' && workflowStore.logoEditorLogoId) {
       return {
         breadcrumbs,
         helpText: {

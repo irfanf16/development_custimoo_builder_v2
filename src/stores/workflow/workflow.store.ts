@@ -55,8 +55,20 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const rosterSubStep = ref<RosterSubStep>('list')
   const patternsSubStep = ref<PatternsSubStep>('list')
   const activePatternGroupName = ref<string | null>(null)
+  /** Logo whose palette was applied to the design ("Apply colors"). */
   const activeLogoId = ref<string | null>(null)
+  /**
+   * Index in `customization.custom_logos[productKey]` for the row whose palette was applied.
+   * Required when multiple placements share the same customer `logo.id` (replicated logo).
+   */
+  const logoApplySourceIndex = ref<number | null>(null)
+  /** Logo currently open in the editor (list / summary / canvas); must not imply Apply. */
+  const logoEditorLogoId = ref<string | null>(null)
   const activeLogoIndex = ref<number | null>(null)
+  /**
+   * Runtime only (not persisted): after list swatch click, LogoEdit opens this swatch in Logos Color.
+   */
+  const pendingOpenLogosColorSwatchIndex = ref<number | null>(null)
   const textClipboard = ref<{ style: unknown } | null>(null)
   const activeColorAccordionIndex = ref<number | null>(null)
   /** Active SVG group ID for color selection (set when opening color editor from canvas part double-click). */
@@ -167,7 +179,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     if (step === 'logos') {
       return buildLogoBreadcrumbs({
         logosSubStep: logosSubStep.value,
-        hasActiveLogo: !!activeLogoId.value,
+        hasActiveLogo: !!logoEditorLogoId.value,
         onBackToList: () => {
           setLogosSubStep('list')
         },
@@ -244,6 +256,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setItemRaw('workflow.patternsSubStep', patternsSubStep.value || '')
     setItemRaw('workflow.activePatternGroupName', activePatternGroupName.value || '')
     setItemRaw('workflow.activeLogoId', activeLogoId.value || '')
+    setItemRaw('workflow.logoApplySourceIndex', String(logoApplySourceIndex.value ?? ''))
+    setItemRaw('workflow.logoEditorLogoId', logoEditorLogoId.value || '')
     setItemRaw('workflow.activeLogoIndex', String(activeLogoIndex.value ?? ''))
     setItemRaw('workflow.activeColorAccordionIndex', String(activeColorAccordionIndex.value ?? ''))
     // Note: textClipboard is not persisted - it's runtime-only
@@ -282,6 +296,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       const patterns = getItemRaw('workflow.patternsSubStep') as 'list' | 'edit' | null
       const patternGroupName = getItemRaw('workflow.activePatternGroupName')
       const logoId = getItemRaw('workflow.activeLogoId')
+      const logoApplyIdxRaw = getItemRaw('workflow.logoApplySourceIndex')
+      const logoEditorId = getItemRaw('workflow.logoEditorLogoId')
       const logoIndex = getItemRaw('workflow.activeLogoIndex')
       const colorAccordionIndex = getItemRaw('workflow.activeColorAccordionIndex')
       if (logos) logosSubStep.value = logos
@@ -305,6 +321,16 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       if (patterns) patternsSubStep.value = patterns
       if (patternGroupName) activePatternGroupName.value = patternGroupName
       if (logoId) activeLogoId.value = logoId
+      if (logoApplyIdxRaw !== undefined && logoApplyIdxRaw !== null && logoApplyIdxRaw !== '') {
+        const n = Number(logoApplyIdxRaw)
+        if (!Number.isNaN(n)) logoApplySourceIndex.value = n
+      }
+      if (logoEditorId) {
+        logoEditorLogoId.value = logoEditorId
+      } else if (logos === 'edit' && logoId) {
+        // Legacy: activeLogoId used to double as the open-editor selection
+        logoEditorLogoId.value = logoId
+      }
       if (logoIndex) activeLogoIndex.value = Number(logoIndex)
       if (colorAccordionIndex) activeColorAccordionIndex.value = Number(colorAccordionIndex)
       // Note: textClipboard is not loaded from localStorage - it's runtime-only
@@ -319,6 +345,11 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   function setLogosSubStep(step: LogosSubStep) {
     logosSubStep.value = step
+    if (step === 'list') {
+      pendingOpenLogosColorSwatchIndex.value = null
+      logoEditorLogoId.value = null
+      activeLogoIndex.value = null
+    }
     saveSubStepsToLocalStorage()
   }
 
@@ -397,6 +428,31 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
 
   function setActiveLogoId(logoId: string | null) {
     activeLogoId.value = logoId
+    if (logoId === null) {
+      logoApplySourceIndex.value = null
+    }
+    saveSubStepsToLocalStorage()
+  }
+
+  /** Sets which custom_logos row had its palette applied (with matching customer logo id). */
+  function setAppliedLogoColorsSource(logoId: string, customLogosArrayIndex: number) {
+    activeLogoId.value = logoId
+    logoApplySourceIndex.value = customLogosArrayIndex
+    saveSubStepsToLocalStorage()
+  }
+
+  /** After removing custom_logos[i], shift the stored apply index if needed. */
+  function adjustLogoApplySourceIndexAfterRemoval(removedIndex: number) {
+    const cur = logoApplySourceIndex.value
+    if (cur === null || removedIndex > cur) return
+    if (removedIndex < cur) {
+      logoApplySourceIndex.value = cur - 1
+      saveSubStepsToLocalStorage()
+    }
+  }
+
+  function setLogoEditorLogoId(logoId: string | null) {
+    logoEditorLogoId.value = logoId
     saveSubStepsToLocalStorage()
   }
 
@@ -409,6 +465,24 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
+  /** List: user clicked a detected color — open logo edit with Logos Color accordion for that swatch. */
+  function openLogoEditorWithLogosColor(logoId: string, logoIndex: number, swatchIndex: number) {
+    pendingOpenLogosColorSwatchIndex.value = swatchIndex
+    logoEditorLogoId.value = logoId
+    activeLogoIndex.value = logoIndex
+    setLogosSubStep('edit')
+  }
+
+  function consumePendingOpenLogosColorSwatchIndex(): number | null {
+    const v = pendingOpenLogosColorSwatchIndex.value
+    pendingOpenLogosColorSwatchIndex.value = null
+    return v
+  }
+
+  function clearPendingOpenLogosColorSwatchIndex() {
+    pendingOpenLogosColorSwatchIndex.value = null
+  }
+
   /**
    * FROM CUSTOMIZER - Open logo editor (e.g. when user selects a logo on canvas).
    * @param logoId - Logo ID (optional, use index if not available)
@@ -416,9 +490,9 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
    */
   function openLogoEditorFromCustomizer(logoIndex?: number, logoId?: number) {
     setActiveStep('logos')
+    logoEditorLogoId.value = logoId != null ? String(logoId) : null
+    setActiveLogoIndex(logoIndex ?? null)
     setLogosSubStep('edit')
-    setActiveLogoIndex(logoIndex!)
-    setActiveLogoId(String(logoId!))
   }
 
   function setActiveColorAccordionIndex(index: number | null) {
@@ -469,7 +543,10 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     patternsSubStep.value = 'list'
     activePatternGroupName.value = null
     activeLogoId.value = null
+    logoApplySourceIndex.value = null
+    logoEditorLogoId.value = null
     activeLogoIndex.value = null
+    pendingOpenLogosColorSwatchIndex.value = null
     activeColorAccordionIndex.value = null
     activeColorGroupId.value = null
     textClipboard.value = null
@@ -596,6 +673,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     pendingProductPreviewPipeline.value = false
     clearHeaderAndFooterConfig()
     activeLogoId.value = null
+    logoApplySourceIndex.value = null
     activeLogoIndex.value = null
     activeColorAccordionIndex.value = null
     activeColorGroupId.value = null
@@ -624,6 +702,8 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     patternsSubStep,
     activePatternGroupName,
     activeLogoId,
+    logoApplySourceIndex,
+    logoEditorLogoId,
     activeLogoIndex,
     activeColorAccordionIndex,
     activeColorGroupId,
@@ -660,7 +740,13 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     setRosterSubStep,
     setActivePatternSubStep,
     setActiveLogoId,
+    setAppliedLogoColorsSource,
+    adjustLogoApplySourceIndexAfterRemoval,
+    setLogoEditorLogoId,
     setActiveLogoIndex,
+    openLogoEditorWithLogosColor,
+    consumePendingOpenLogosColorSwatchIndex,
+    clearPendingOpenLogosColorSwatchIndex,
     openLogoEditorFromCustomizer,
     setActiveColorAccordionIndex,
     openColorEditorFromCustomizer,

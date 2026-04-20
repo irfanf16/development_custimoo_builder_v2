@@ -61,9 +61,10 @@ export function useLogoActions() {
     return apiUpdatedLogo
   }
 
-  function applyLogoColors(logo: CustomLogo) {
+  function applyLogoColors(logo: CustomLogo, customLogosArrayIndex: number) {
     const palette = logo.logo_colors as number[][] | undefined
     if (!palette?.length) return
+    if (customLogosArrayIndex < 0) return
 
     const hexColors = palette.map(c => rgbArrayToHex(c))
     const productId = customizationStore.activeProductId
@@ -95,18 +96,70 @@ export function useLogoActions() {
     while (defaultColors.length < 4) {
       defaultColors.push({ color: null, pantone: null, name: null })
     }
-    workflowStore.setActiveLogoId(String(logo.id))
+    workflowStore.setAppliedLogoColorsSource(String(logo.id), customLogosArrayIndex)
 
     if (customizationStore.customization) {
       // Push current state (with design colors) so undo can restore it
       customizationStore.pushHistoryState('Design colors')
       customizationStore.customization.default_colors = defaultColors.slice(0, 4)
       customizationStore.customization.shuffle_color_number = 1
-      workflowStore.setGroupColorsBeforeLogoApply(customizationStore.customization.group_colors)
+      workflowStore.setGroupColorsBeforeLogoApply(
+        customizationStore.customization.group_colors ?? {}
+      )
       customizationStore.customization.group_colors = {}
       workflowStore.setDefaultColorsSource('logo')
       customizationStore.pushHistoryState('Applied logo colors')
     }
+  }
+
+  /**
+   * Rebuilds `default_colors` from the logo's current `logo_colors` (hex + pantone mapping),
+   * without clearing `group_colors` or pushing history. Used before shuffle when the user
+   * edited extracted colors in the logo editor so the design uses the latest swatches.
+   */
+  function syncDefaultColorsFromLogoPalette(logo: CustomLogo): boolean {
+    const palette = logo.logo_colors || []
+    if (!palette.length) return false
+
+    const hexColors: string[] = []
+    for (const entry of palette) {
+      if (Array.isArray(entry)) {
+        hexColors.push(rgbArrayToHex(entry))
+      } else if (entry.hex?.trim()) {
+        const h = entry.hex.trim()
+        hexColors.push(h.startsWith('#') ? h : `#${h}`)
+      }
+    }
+    if (hexColors.length === 0) return false
+
+    const productId = customizationStore.activeProductId
+    const defaultColorsWithPantone = hexColors.map(hex => {
+      const svgGroup = effectiveSvgGroups.value?.[0]?.id || ''
+      const selectProductPantonesList = getSelectedProductPantones(productId, svgGroup)
+      const closestColor = getClosestColor(
+        hex,
+        selectProductPantonesList,
+        getColorType(svgGroup, productId)
+      )
+      return {
+        color: hex,
+        pantone: closestColor.pantone || null,
+        name: closestColor.name || null
+      } as { color: string | null; pantone: string | null; name: string | null }
+    })
+
+    const defaultColors: Array<{
+      color: string | null
+      pantone: string | null
+      name: string | null
+    }> = [...defaultColorsWithPantone]
+    while (defaultColors.length < 4) {
+      defaultColors.push({ color: null, pantone: null, name: null })
+    }
+
+    if (!customizationStore.customization) return false
+    customizationStore.customization.default_colors = defaultColors.slice(0, 4)
+    return true
   }
 
   function useOriginalColorsAndProceed() {
@@ -118,12 +171,28 @@ export function useLogoActions() {
     }
     workflowStore.setDefaultColorsSource(null)
     workflowStore.setActiveLogoId(null)
+    workflowStore.setLogosSubStep('list')
+    logosStore.setActiveLogo(null)
     workflowStore.setActiveColorAccordionIndex(null)
     workflowStore.setActiveStep('colors')
   }
 
   function shuffleColors() {
     customizationStore.shuffleDefaultColors('Shuffled colors')
+  }
+
+  /** Shuffle design colors from extracted logo slots; refreshes from `logo` when that logo is active. */
+  function shuffleExtractedColorsForActiveLogo(logo: CustomLogo, listIndex?: number): void {
+    const hasAppliedSlots = (customizationStore.customization?.default_colors || []).some(
+      (c: { color?: string | null }) => c.color
+    )
+    const pinned = workflowStore.logoApplySourceIndex
+    const idMatches = workflowStore.activeLogoId === String(logo.id)
+    const indexMatches = pinned === null || (listIndex !== undefined && pinned === listIndex)
+    if (hasAppliedSlots && idMatches && indexMatches) {
+      syncDefaultColorsFromLogoPalette(logo)
+    }
+    customizationStore.shuffleDefaultColors('Shuffle extracted colors')
   }
 
   async function recolorLogo(logo: CustomLogo, color: OutputColor) {
@@ -161,9 +230,22 @@ export function useLogoActions() {
 
     const index = customLogos.value.findIndex(l => l.id === logo.id)
     if (index !== -1) {
+      const appliedId = workflowStore.activeLogoId
+      const pinned = workflowStore.logoApplySourceIndex
+      const clearsApplied =
+        appliedId != null &&
+        String(logo.id) === String(appliedId) &&
+        (pinned === index ||
+          (pinned === null &&
+            index === customLogos.value.findIndex(l => String(l.id) === String(appliedId))))
+
       void historyStore.execute('logo.remove', { key, index })
-      workflowStore.setActiveLogoId(null)
+      workflowStore.adjustLogoApplySourceIndexAfterRemoval(index)
+      workflowStore.setLogoEditorLogoId(null)
       workflowStore.setActiveLogoIndex(null)
+      if (clearsApplied) {
+        workflowStore.setActiveLogoId(null)
+      }
     }
   }
 
@@ -174,6 +256,8 @@ export function useLogoActions() {
   return {
     removeBackground,
     applyLogoColors,
+    syncDefaultColorsFromLogoPalette,
+    shuffleExtractedColorsForActiveLogo,
     shuffleColors,
     useOriginalColorsAndProceed,
     recolorLogo,

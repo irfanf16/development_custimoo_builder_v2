@@ -33,21 +33,14 @@
 
   /**
    * Normalize color to hex format for comparison
-   * Handles hex (with/without #), rgb(), and rgba() formats
+   * Handles #RGB, #RRGGBB, #RRGGBBAA, bare hex, rgb()/rgba()
    */
   function normalizeColor(color: string | undefined): string {
     if (!color) return ''
 
     const trimmed = color.trim()
 
-    // If it's already hex format (with or without #)
-    if (/^#?[0-9A-Fa-f]{6}$/.test(trimmed)) {
-      const hex = trimmed.startsWith('#') ? trimmed : `#${trimmed}`
-      return hex.toLowerCase()
-    }
-
-    // If it's RGB or RGBA format
-    const rgbMatch = trimmed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+    const rgbMatch = trimmed.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i)
     if (rgbMatch) {
       const r = parseInt(rgbMatch[1] || '0', 10)
       const g = parseInt(rgbMatch[2] || '0', 10)
@@ -61,7 +54,19 @@
       return `#${toHex(r)}${toHex(g)}${toHex(b)}`
     }
 
-    // Return as-is if format is not recognized
+    let hex = trimmed.startsWith('#') ? trimmed.slice(1) : trimmed
+    if (/^[0-9A-Fa-f]{3}$/i.test(hex)) {
+      hex = hex
+        .split('')
+        .map(c => c + c)
+        .join('')
+    } else if (/^[0-9A-Fa-f]{8}$/i.test(hex)) {
+      hex = hex.slice(0, 6)
+    }
+    if (/^[0-9A-Fa-f]{6}$/i.test(hex)) {
+      return `#${hex.toLowerCase()}`
+    }
+
     return trimmed.toLowerCase()
   }
 

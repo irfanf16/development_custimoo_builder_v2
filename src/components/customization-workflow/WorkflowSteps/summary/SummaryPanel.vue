@@ -119,7 +119,7 @@
   function handleLogoClick(logoId: string) {
     const logos = effectiveLogos.value ?? []
     const idx = logos.findIndex(l => String(l.id) === logoId)
-    workflowStore.setActiveLogoId(logoId)
+    workflowStore.setLogoEditorLogoId(logoId)
     if (idx >= 0) workflowStore.setActiveLogoIndex(idx)
     workflowStore.setLogosSubStep('edit')
     void goTo(pickStepOrNextAvailable('logos', visibleSteps.value))

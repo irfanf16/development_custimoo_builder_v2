@@ -10,20 +10,19 @@
   // Use workflow store state
   const {
     logosSubStep: currentSubStep,
-    activeLogoId: selectedLogoId,
+    logoEditorLogoId: selectedLogoId,
     activeLogoIndex
   } = storeToRefs(workflowStore)
 
   function handleSelectLogo(logoId: string, logoIndex: number) {
-    workflowStore.setActiveLogoId(logoId)
+    workflowStore.setLogoEditorLogoId(logoId)
     workflowStore.setActiveLogoIndex(logoIndex)
     workflowStore.setLogosSubStep('edit')
   }
 
   function handleBackToLogos() {
+    workflowStore.clearPendingOpenLogosColorSwatchIndex()
     workflowStore.setLogosSubStep('list')
-    workflowStore.setActiveLogoId(null)
-    workflowStore.setActiveLogoIndex(null)
   }
 
   function handleGoToPlacement() {

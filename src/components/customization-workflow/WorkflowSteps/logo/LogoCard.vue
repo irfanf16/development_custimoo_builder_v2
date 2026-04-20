@@ -22,23 +22,30 @@
   const profileStore = useProfileStore()
   const workflowStore = useWorkflowStore()
 
-  const props = defineProps<{
-    logo: CustomLogo
-    index: number
-  }>()
+  const props = withDefaults(
+    defineProps<{
+      logo: CustomLogo
+      index: number
+      /** Enable clicking detected colors (e.g. open Logos Color panel in editor). */
+      interactiveLogoColors?: boolean
+      /** Highlight a swatch (e.g. matches open Logos Color panel selection). */
+      highlightedLogoColorIndex?: number | null
+    }>(),
+    {
+      interactiveLogoColors: false,
+      highlightedLogoColorIndex: null
+    }
+  )
 
   const previewColors = computed(() => {
     const colors = props.logo.logo_colors || []
-    return colors
-      .map((c: LogoColor) => {
-        if (Array.isArray(c)) {
-          // RGB array from backend
-          return `rgb(${c.join(',')})`
-        }
-        // Hex/pantone object from backend
-        return c.hex || ''
-      })
-      .filter(Boolean)
+    // Preserve indices for interactive swatch clicks (do not filter entries out).
+    return colors.map((c: LogoColor) => {
+      if (Array.isArray(c)) {
+        return `rgb(${c.join(',')})`
+      }
+      return c.hex || 'rgba(0,0,0,0.12)'
+    })
   })
 
   // Check if default colors exist (have at least one color set)
@@ -47,17 +54,34 @@
     return defaultColors.some((color: { color?: string | null }) => color.color)
   })
 
-  // This logo's colors are currently applied (default_colors came from this logo)
-  const isThisLogoColorsApplied = computed(
-    () => hasDefaultColors.value && workflowStore.activeLogoId === String(props.logo.id)
-  )
+  const customLogosForProduct = computed((): CustomLogo[] => {
+    const pid = customizationStore.customization?.product_id
+    const map = customizationStore.customization?.custom_logos
+    if (pid == null || !map) return []
+    return (map as Record<string, CustomLogo[]>)[String(pid)] ?? []
+  })
+
+  /** Which list row had "Apply colors" used (multiple placements can share the same customer logo id). */
+  const isThisLogoColorsApplied = computed(() => {
+    if (!hasDefaultColors.value) return false
+    const appliedId = workflowStore.activeLogoId
+    if (appliedId == null || appliedId === '') return false
+    if (String(props.logo.id) !== String(appliedId)) return false
+    const pinned = workflowStore.logoApplySourceIndex
+    if (pinned != null) {
+      return pinned === props.index
+    }
+    const firstIdx = customLogosForProduct.value.findIndex(l => String(l.id) === String(appliedId))
+    return firstIdx === props.index
+  })
 
   const emit = defineEmits<{
     (e: 'click', index: number): void
     (e: 'delete', logo: CustomLogo): void
     (e: 'apply-colors', logo: CustomLogo): void
-    (e: 'shuffle-colors'): void
+    (e: 'shuffle-colors', logo: CustomLogo): void
     (e: 'use-original-and-proceed'): void
+    (e: 'logo-color-click', index: number): void
   }>()
 </script>
 <template>
@@ -77,9 +101,15 @@
         v-if="props.logo.logo_colors && props.logo.logo_colors.length > 0"
         class="flex w-full min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2"
       >
-        <!-- Swatches stay left on all breakpoints (no centering on narrow screens) -->
-        <ColorsPreview class="shrink-0 self-start" :colors="previewColors" />
-        <!-- Mobile: full-width row under swatches, 2 equal columns when both actions exist; sm+: same row, right-aligned like desktop -->
+        <!-- Swatches stay left on all breakpoints (main layout); interactive swatches from feature branch -->
+        <ColorsPreview
+          class="shrink-0 self-start"
+          :colors="previewColors"
+          :interactive="props.interactiveLogoColors"
+          :selected-swatch-index="props.highlightedLogoColorIndex"
+          @swatch-click="idx => emit('logo-color-click', idx)"
+        />
+        <!-- Applied: two actions; not applied: single Apply (parent handles shuffle via store) -->
         <div
           v-if="isThisLogoColorsApplied"
           class="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-2"
@@ -96,7 +126,7 @@
             size="sm"
             variant="outline"
             class="min-h-9 w-full justify-center text-center"
-            @click.stop="customizationStore.shuffleDefaultColors('Shuffle extracted colors')"
+            @click.stop="emit('shuffle-colors', props.logo)"
           >
             {{ logos_shuffle_colors({}, { locale: profileStore.currentLocale }) }}
           </Button>

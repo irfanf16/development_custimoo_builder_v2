@@ -60,12 +60,34 @@
     }
   }
 
-  function handlePlacementSelection(_placement: OutputProductLogosSetting) {
-    if (logosStore.activeLogo) {
-      addActiveLogoToCustomization(logosStore.activeLogo, _placement)
+  async function handlePlacementSelection(_placement: OutputProductLogosSetting) {
+    if (!logosStore.activeLogo) {
+      workflowStore.setLogosSubStep('list')
+      return
     }
-    // Persist placement selection if needed; for now, just return to Logos list
-    workflowStore.setLogosSubStep('list')
+    const ok = await addActiveLogoToCustomization(logosStore.activeLogo, _placement)
+    if (!ok) {
+      workflowStore.setLogosSubStep('list')
+      return
+    }
+    const pid = customizationStore.customization?.product_id
+    if (!pid) {
+      workflowStore.setLogosSubStep('list')
+      return
+    }
+    const key = String(pid)
+    const arr = customizationStore.customization?.custom_logos?.[key]
+    const logoIndex = arr && arr.length > 0 ? arr.length - 1 : -1
+    const stored = logoIndex >= 0 ? arr?.[logoIndex] : undefined
+    if (!stored || logoIndex < 0) {
+      workflowStore.setLogosSubStep('list')
+      return
+    }
+    logosStore.setActiveLogo(stored)
+    workflowStore.setActiveLogoId(String(stored.id))
+    workflowStore.setLogoEditorLogoId(String(stored.id))
+    workflowStore.setActiveLogoIndex(logoIndex)
+    workflowStore.setLogosSubStep('edit')
   }
 
   const headerConfig = computed(() => ({
@@ -76,14 +98,15 @@
   }))
   void headerConfig.value
 
-  function addActiveLogoToCustomization(_logo: CustomLogo, _placement: OutputProductLogosSetting) {
+  async function addActiveLogoToCustomization(
+    _logo: CustomLogo,
+    _placement: OutputProductLogosSetting
+  ): Promise<boolean> {
     const merged = customizationStore.getMergedCustomizationLogo(_logo, _placement)
     const res = customizationStore.addLogoToCustomizationFromSource(merged)
-    // Set default placement
-
-    if (res) {
-      historyStore.execute('logo.add', res)
-    }
+    if (!res) return false
+    await historyStore.execute('logo.add', res)
+    return true
   }
 </script>
 

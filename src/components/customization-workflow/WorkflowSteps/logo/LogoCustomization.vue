@@ -8,6 +8,7 @@
   import { useLogoActions } from './useLogoActions'
   import { useLogos } from './useLogos'
   import { useLogoUpload } from './useLogoUpload'
+  import { useLogoAddAnotherUpload } from './useLogoAddAnotherUpload'
   import {
     logos_empty_drag_drop,
     logos_empty_click_to_upload,
@@ -28,6 +29,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { Trash } from 'lucide-vue-next'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import LogoCard from './LogoCard.vue'
@@ -35,12 +37,18 @@
   const logosStore = useLogosStore()
   const authStore = useAuthStore()
   const lockerRoomStore = useLockerRoomStore()
+  const workflowStore = useWorkflowStore()
   const isLoggedIn = computed(() => authStore.isAuthenticated)
 
   // ===== COMPOSABLES =====
   const { customLogos } = useLogos()
-  const { applyLogoColors, shuffleColors, useOriginalColorsAndProceed, removeLogo, setActiveLogo } =
-    useLogoActions()
+  const {
+    applyLogoColors,
+    shuffleExtractedColorsForActiveLogo,
+    useOriginalColorsAndProceed,
+    removeLogo,
+    setActiveLogo
+  } = useLogoActions()
   const { isDragOver, fileInputRef, onClickUpload, onDragOver, onDragLeave, doUpload } =
     useLogoUpload()
 
@@ -74,8 +82,11 @@
   // ===== ACTIONS =====
   function handleLogoAfterUpload(logo: CustomLogo) {
     setActiveLogo(logo)
+    workflowStore.setLogoEditorLogoId(String(logo.id))
     emit('go-to-placement')
   }
+
+  const { handleFileChange } = useLogoAddAnotherUpload(doUpload, handleLogoAfterUpload)
 
   async function handleDrop(e: DragEvent) {
     e.preventDefault()
@@ -87,18 +98,6 @@
         handleLogoAfterUpload(uploaded)
       }
     }
-  }
-
-  async function handleFileChange(e: Event) {
-    const input = e.target as HTMLInputElement
-    const file = input.files?.[0]
-    if (file) {
-      const uploaded = await doUpload(file)
-      if (uploaded) {
-        handleLogoAfterUpload(uploaded)
-      }
-    }
-    if (input) input.value = ''
   }
 
   function goToControls() {
@@ -118,6 +117,10 @@
     const logo = customLogos.value[index]
     if (!logo) return
     emit('select-logo', logo.id.toString(), index)
+  }
+
+  function openLogosColorFromList(logo: CustomLogo, logoIndex: number, swatchIndex: number) {
+    workflowStore.openLogoEditorWithLogosColor(String(logo.id), logoIndex, swatchIndex)
   }
 
   // Breadcrumbs only
@@ -196,11 +199,13 @@
               :key="`${logo.id}-${index}`"
               :logo="logo"
               :index="index"
+              :interactive-logo-colors="(logo.logo_colors?.length ?? 0) > 0"
               @click="handleLogoClick"
-              @apply-colors="applyLogoColors(logo)"
-              @shuffle-colors="shuffleColors()"
+              @apply-colors="applyLogoColors(logo, index)"
+              @shuffle-colors="lg => shuffleExtractedColorsForActiveLogo(lg, index)"
               @use-original-and-proceed="useOriginalColorsAndProceed()"
               @delete="removeLogo(logo)"
+              @logo-color-click="swatchIdx => openLogosColorFromList(logo, index, swatchIdx)"
             />
 
             <div v-if="!logosStore.isLoadingUploadLogo" class="flex flex-col gap-3">

@@ -23,6 +23,19 @@
     colors: OutputColor[]
   }
 
+  /** Matches `parsedLockerRooms` from ColorSelection / locker integration. */
+  type ParsedLockerRoomFolder = {
+    folder_name: string
+    colors?: OutputColor[]
+  }
+
+  type ParsedLockerRoom = {
+    id: number
+    room_name?: string
+    name?: string
+    folders: ParsedLockerRoomFolder[]
+  }
+
   type CustomColorType = 'pantone-tcx' | 'pantone-coated' | 'cmyk' | 'product_color'
 
   interface Props {
@@ -33,7 +46,7 @@
     allowCustomColor?: boolean
     customPalettes?: Palette[]
     hasSvgColors?: boolean
-    parsedLockerRooms?: any[]
+    parsedLockerRooms?: ParsedLockerRoom[]
     /** Which company setting to use for the "Others" tab: color_type (default) or logo_color_type */
     colorTypeKey?: 'color_type' | 'logo_color_type'
   }
@@ -121,7 +134,6 @@
   }
 
   function isValidPaletteTab(value: string): boolean {
-    if (props.palettes.length === 0) return false
     if (isMainPaletteTab(value)) return true
     if (isCustomPaletteTab(value)) return true
     if (!props.hasSvgColors) {
@@ -129,6 +141,14 @@
       if (props.allowCustomColor && value === 'custom') return true
     }
     return false
+  }
+
+  function pickDefaultPaletteTab(): string {
+    if (props.palettes.length > 0) return 'p-0'
+    if ((props.customPalettes?.length ?? 0) > 0) return 'c-0'
+    if (props.parsedLockerRooms?.length && !props.hasSvgColors) return 'locker-room'
+    if (props.allowCustomColor && !props.hasSvgColors) return 'custom'
+    return 'p-0'
   }
 
   watch(
@@ -141,13 +161,23 @@
         props.allowCustomColor
       ] as const,
     () => {
-      if (props.palettes.length === 0) return
-      if (props.hasSvgColors && !isMainPaletteTab(currentPaletteId.value)) {
+      const hasAnyTab =
+        props.palettes.length > 0 ||
+        (props.customPalettes?.length ?? 0) > 0 ||
+        (!props.hasSvgColors && Boolean(props.parsedLockerRooms?.length)) ||
+        (props.allowCustomColor && !props.hasSvgColors)
+      if (!hasAnyTab) return
+
+      if (
+        props.hasSvgColors &&
+        props.palettes.length > 0 &&
+        !isMainPaletteTab(currentPaletteId.value)
+      ) {
         currentPaletteId.value = 'p-0'
         return
       }
       if (!isValidPaletteTab(currentPaletteId.value)) {
-        currentPaletteId.value = 'p-0'
+        currentPaletteId.value = pickDefaultPaletteTab()
       }
     },
     { immediate: true }
@@ -155,6 +185,15 @@
 
   function handleColorSelect(color: OutputColor) {
     emit('color-select', color)
+  }
+
+  function lockerFolderHasSelectableColors(colors: unknown): boolean {
+    if (!Array.isArray(colors)) return false
+    return colors.some(item => {
+      if (typeof item !== 'object' || item === null) return false
+      const v = (item as { value?: string }).value
+      return typeof v === 'string' && Boolean(v)
+    })
   }
 
   function selectSuggestionFromAuto(item: { label: string; value: string }) {
@@ -178,9 +217,10 @@
   watch(
     () => props.parsedLockerRooms,
     rooms => {
-      if (rooms?.length) {
-        activeRoomId.value = String(rooms[0].id)
-        activeFolderName.value = rooms[0].folders?.[0]?.folder_name || ''
+      const firstRoom = rooms?.[0]
+      if (firstRoom) {
+        activeRoomId.value = String(firstRoom.id)
+        activeFolderName.value = firstRoom.folders?.[0]?.folder_name || ''
       }
     },
     { immediate: true }
@@ -188,8 +228,9 @@
   // Watch for changes in activeRoomId to update activeFolderName
   watch(activeRoomId, newRoomId => {
     const room = props.parsedLockerRooms?.find(r => String(r.id) === newRoomId)
-    if (room?.folders?.length) {
-      activeFolderName.value = room.folders[0].folder_name
+    const firstFolder = room?.folders?.[0]
+    if (firstFolder) {
+      activeFolderName.value = firstFolder.folder_name
     } else {
       activeFolderName.value = ''
     }
@@ -197,7 +238,16 @@
 </script>
 
 <template>
-  <div v-if="palettes.length > 0" :class="cn('space-y-3', props.class)" class="space-y-3">
+  <div
+    v-if="
+      palettes.length > 0 ||
+      (customPalettes?.length ?? 0) > 0 ||
+      (!hasSvgColors && Boolean(parsedLockerRooms?.length)) ||
+      (allowCustomColor && !hasSvgColors)
+    "
+    :class="cn('space-y-3', props.class)"
+    class="space-y-3"
+  >
     <!-- Tabs for palettes -->
     <Tabs v-model="currentPaletteId">
       <ScrollArea class="w-full" direction="horizontal">
@@ -318,8 +368,8 @@
                   >
                     <div class="relative">
                       <ColorGrid
-                        v-if="folder.colors && folder.colors.some((c: any) => c.value)"
-                        :colors="folder.colors"
+                        v-if="lockerFolderHasSelectableColors(folder.colors)"
+                        :colors="folder.colors ?? []"
                         :selected-color="selectedColor"
                         :disabled="props.loading"
                         class="transition-opacity"

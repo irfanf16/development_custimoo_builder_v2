@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed, watch, onMounted, ref } from 'vue'
+  import { storeToRefs } from 'pinia'
   import type { AcceptableValue } from 'reka-ui'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
   import { useProductsStore } from '@/stores/products/products.store'
@@ -10,6 +11,7 @@
   import AccordionTrigger from '@/components/ui/accordion/AccordionTrigger.vue'
   import AccordionContent from '@/components/ui/accordion/AccordionContent.vue'
   import { PaletteColorSelector } from '@/components/ui/palette-color-selector'
+  import { ColorsPreview } from '@/components/ui/colors-preview'
   import ContentRemoveIcons from './ContentRemoveIcons.vue'
   import {
     Select,
@@ -37,7 +39,16 @@
   import { LocateFixed, Pin } from 'lucide-vue-next'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
+  import { useAuthStore } from '@/stores/auth/auth.store'
+  import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
+  import { useLogoUpload } from './useLogoUpload'
+  import { useLogoAddAnotherUpload } from './useLogoAddAnotherUpload'
+  import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import {
+    logos_logos_color,
+    logos_add_logo,
+    colors_separator_or,
+    colors_choose_from_locker,
     logos_position_section_title,
     logos_placement_label,
     logos_select_placement_placeholder,
@@ -56,11 +67,15 @@
     logos_remove_background_smart_description,
     logos_applying,
     logos_apply,
-    logos_recolor_logo
+    logos_recolor_logo,
+    nav_color
   } from '@/paraglide/messages'
   import { usePricing } from '@/composables/usePricing'
   import { useCompanyStore } from '@/stores/company/company.store'
   import { stripCsvExtension } from '@/lib/utils'
+  import { hexToRgbObject } from '@/lib/utils'
+  import type { LogoColor } from '@/services/types'
+
   interface Props {
     logoId: string
     logoIndex: number | null
@@ -76,10 +91,23 @@
   const customizationStore = useCustomizationStore()
   const { showPricing } = usePricing()
   const companyStore = useCompanyStore()
+  const lockerRoomStore = useLockerRoomStore()
+  const { lockerRoomsWithColors } = storeToRefs(lockerRoomStore)
+  const authStore = useAuthStore()
+  const isLoggedIn = computed(() => authStore.isAuthenticated)
+  const { fileInputRef, onClickUpload, doUpload } = useLogoUpload()
   // ===== COMPOSABLES =====
   const { productKey, customLogos, getLogoById, getActiveLogoIndex } = useLogos()
-  const { removeBackground, applyLogoColors, recolorLogo, removeLogo, setActiveLogo } =
-    useLogoActions()
+  const {
+    removeBackground,
+    applyLogoColors,
+    syncDefaultColorsFromLogoPalette,
+    shuffleExtractedColorsForActiveLogo,
+    useOriginalColorsAndProceed,
+    recolorLogo,
+    removeLogo,
+    setActiveLogo
+  } = useLogoActions()
   const {
     positionForm,
     currentWidth,
@@ -116,10 +144,15 @@
   })
 
   const colorSwatches = computed(() =>
-    (customLogo.value?.logo_colors || []).map(color => rgbArrayToHex(color as number[]))
+    (customLogo.value?.logo_colors || []).map((color: LogoColor) => {
+      if (Array.isArray(color)) return rgbArrayToHex(color)
+      const h = color.hex?.trim()
+      if (!h) return ''
+      return h.startsWith('#') ? h : `#${h}`
+    })
   )
 
-  // Get palettes from products store
+  // Get palettes from products store (logo recolor / fallback)
   const palettes = computed<Palette[]>(() => {
     return (
       productsStore.activeProductDetails?.namecolors.map(colorGroup => ({
@@ -129,6 +162,244 @@
       })) || []
     )
   })
+
+  /** Same source as Colors tab `computedPalettes` (product `colors` files). */
+  const computedPalettesForColorsTab = computed<Palette[]>(() => {
+    return (
+      productsStore.activeProductDetails?.colors.map(colorGroup => ({
+        id: colorGroup.id,
+        name: colorGroup.file_name,
+        colors: colorGroup.json_data
+      })) || []
+    )
+  })
+
+  const palettesForLogosColorPanel = computed<Palette[]>(() => {
+    const fromColorsTab = computedPalettesForColorsTab.value
+    if (fromColorsTab.length > 0) return fromColorsTab
+    return palettes.value
+  })
+
+  const customLogosPalettesForLogosColorPanel = computed(() => getCustomLogosPalettes())
+
+  type RoomWithFolders = { id: number; room_name?: string; folders?: unknown[] }
+  type ParsedFolder = { folder_name?: string; folderName?: string; color?: string | unknown[] }
+  type RawColor = { name?: string; value?: string; hex?: string }
+
+  const parsedLockerRooms = computed(() => {
+    const raw = lockerRoomsWithColors?.value || []
+    return raw.map((room: RoomWithFolders) => {
+      const foldersRaw = room.folders || []
+      const folders = foldersRaw.map((f: unknown) => {
+        let parsed: ParsedFolder
+        if (typeof f === 'string') {
+          try {
+            parsed = JSON.parse(f) as ParsedFolder
+          } catch {
+            parsed = { folder_name: String(f), color: '[]' }
+          }
+        } else if (typeof f === 'object' && f !== null) {
+          parsed = f as ParsedFolder
+        } else {
+          parsed = { folder_name: String(f), color: '[]' }
+        }
+
+        let colorsArr: RawColor[] = []
+        if (parsed && parsed.color !== undefined) {
+          if (typeof parsed.color === 'string') {
+            try {
+              colorsArr = JSON.parse(parsed.color) as RawColor[]
+            } catch {
+              colorsArr = []
+            }
+          } else if (Array.isArray(parsed.color)) {
+            colorsArr = parsed.color as RawColor[]
+          }
+        }
+
+        const colors: OutputColor[] = colorsArr.map((c: RawColor, idx: number) => ({
+          position: idx,
+          name: c.name || '',
+          value: c.value || c.hex || ''
+        }))
+
+        return {
+          folder_name: parsed.folder_name || parsed.folderName || 'Folder',
+          colors
+        }
+      })
+
+      return {
+        id: room.id,
+        room_name: room.room_name || `Room ${room.id}`,
+        folders
+      }
+    })
+  })
+
+  function getCustomeLogosForPalette(): CustomLogo[] {
+    const logos =
+      customizationStore.customization?.custom_logos[productsStore.activeProductDetails?.id || '']
+    if (logos && Array.isArray(logos)) {
+      return logos as CustomLogo[]
+    }
+    return []
+  }
+
+  function getCustomLogosPalettes(): Palette[] {
+    const customLogosFrom = getCustomeLogosForPalette()
+    if (!customLogosFrom.length) return []
+
+    const logosByPlacement = customLogosFrom.reduce<Record<string, CustomLogo[]>>((acc, logo) => {
+      const groupName = logo.name_of_placement || 'Custom'
+      if (!acc[groupName]) acc[groupName] = []
+      acc[groupName].push(logo)
+      return acc
+    }, {})
+
+    return Object.entries(logosByPlacement).map(([placementName, logos]) => {
+      const colors: OutputColor[] = logos.flatMap(logo =>
+        (logo.logo_colors ?? []).map((color: LogoColor, index: number) => {
+          if (Array.isArray(color)) {
+            const r = color[0] ?? 0
+            const g = color[1] ?? 0
+            const b = color[2] ?? 0
+            return {
+              name: logo.name_of_placement || `Logo Color ${index + 1}`,
+              value: `rgb(${r}, ${g}, ${b})`,
+              position: index
+            } as OutputColor
+          }
+          return {
+            name: color.name ?? logo.name_of_placement ?? `Logo Color ${index + 1}`,
+            value: color.hex ?? '',
+            position: index
+          } as OutputColor
+        })
+      )
+
+      return {
+        id: logos[0]?.id ?? 0,
+        name: `${placementName} Logo`,
+        colors
+      }
+    })
+  }
+
+  const logoDetectedPreviewStrings = computed(() =>
+    (customLogo.value?.logo_colors || []).map((c: LogoColor) => {
+      if (Array.isArray(c)) return `rgb(${c.join(',')})`
+      return c.hex || 'rgba(0,0,0,0.12)'
+    })
+  )
+
+  const accordionOpen = ref<string[]>([])
+  /** Once per `logoId`, expand default control sections (upload → placement → edit). */
+  const accordionDefaultsSeededForLogoId = ref<string | null>(null)
+  const selectedLogoColorIndex = ref<number | null>(null)
+
+  const logosColorPaletteSelectedHex = computed(() => {
+    const i = selectedLogoColorIndex.value
+    if (i === null || i < 0) return undefined
+    const s = colorSwatches.value[i]
+    return s && s.length > 0 ? s : undefined
+  })
+
+  /** Parse palette hex/rgb strings into [r,g,b] (handles #RGB, #RRGGBB, #RRGGBBAA, bare hex). */
+  function outputColorValueToRgb(value: string): number[] | null {
+    const v = (value || '').trim()
+    if (!v) return null
+
+    const m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(v)
+    if (m) {
+      return [Number(m[1]), Number(m[2]), Number(m[3])]
+    }
+
+    let hex = v.startsWith('#') ? v.slice(1) : v
+    if (/^[0-9A-Fa-f]{3}$/.test(hex)) {
+      hex = hex
+        .split('')
+        .map(c => c + c)
+        .join('')
+    } else if (/^[0-9A-Fa-f]{8}$/.test(hex)) {
+      hex = hex.slice(0, 6)
+    }
+    if (/^[0-9A-Fa-f]{6}$/.test(hex)) {
+      const r = parseInt(hex.slice(0, 2), 16)
+      const g = parseInt(hex.slice(2, 4), 16)
+      const b = parseInt(hex.slice(4, 6), 16)
+      if ([r, g, b].some(n => Number.isNaN(n))) return null
+      return [r, g, b]
+    }
+
+    const o = hexToRgbObject(v.startsWith('#') ? v : `#${v}`)
+    return o ? [o.red, o.green, o.blue] : null
+  }
+
+  function resolveCustomLogoRowIndex(): number {
+    if (!customLogo.value) return -1
+    if (props.logoIndex != null && props.logoIndex >= 0) return props.logoIndex
+    return getActiveLogoIndex(customLogo.value.id)
+  }
+
+  function handleOpenLogosColorFromCard(index: number) {
+    selectedLogoColorIndex.value = index
+    if (!accordionOpen.value.includes('logos-color')) {
+      accordionOpen.value = [...accordionOpen.value, 'logos-color']
+    }
+  }
+
+  function handleLogosColorSwatchInPanel(index: number) {
+    selectedLogoColorIndex.value = index
+  }
+
+  function handleLogosColorPaletteSelect(color: OutputColor) {
+    if (!customLogo.value || !productKey.value) return
+    if (selectedLogoColorIndex.value === null) {
+      const n = customLogo.value.logo_colors?.length ?? 0
+      if (n > 0) selectedLogoColorIndex.value = 0
+    }
+    if (selectedLogoColorIndex.value === null) return
+
+    const logoIndex = resolveCustomLogoRowIndex()
+    if (logoIndex === -1) return
+    const rgb = outputColorValueToRgb(color.value)
+    if (!rgb) return
+
+    const prev = customLogo.value.logo_colors || []
+    const i = selectedLogoColorIndex.value
+    if (i < 0 || i >= prev.length) return
+
+    const nextColors = [...prev]
+    nextColors[i] = rgb
+
+    const nextLogo = {
+      ...customLogo.value,
+      logo_colors: nextColors as CustomLogo['logo_colors']
+    }
+
+    customizationStore.updateCustomLogo({
+      custom_logo_index: logoIndex,
+      data: { logo_colors: nextColors as CustomLogo['logo_colors'] },
+      productId: Number(productKey.value)
+    })
+
+    const hasAppliedSlots = (customizationStore.customization?.default_colors || []).some(
+      (c: { color?: string | null }) => c.color
+    )
+    const pinned = workflowStore.logoApplySourceIndex
+    const idMatches = workflowStore.activeLogoId === String(customLogo.value.id)
+    const indexMatches = pinned === null || pinned === logoIndex
+    if (hasAppliedSlots && idMatches && indexMatches) {
+      syncDefaultColorsFromLogoPalette(nextLogo)
+    }
+
+    customizationStore.pushHistoryState('Logo color')
+
+    if (logosStore.activeLogo?.id === customLogo.value.id) {
+      logosStore.setActiveLogo(nextLogo)
+    }
+  }
 
   // Side options for the select
   const sideOptions = computed(() => [
@@ -198,8 +469,6 @@
   // ===== ACTIONS =====
   async function handleBackToLogos() {
     workflowStore.setLogosSubStep('list')
-    workflowStore.setActiveLogoId(null)
-    workflowStore.setActiveLogoIndex(null)
     logosStore.setActiveLogo(null)
   }
 
@@ -223,7 +492,6 @@
       )
       if (logo) {
         setActiveLogo(logo)
-        workflowStore.setActiveLogoId(logo.id.toString())
       }
     } catch (error) {
       console.error('Error removing background:', error)
@@ -234,7 +502,20 @@
 
   function handleApplyColours() {
     if (!customLogo.value) return
-    applyLogoColors(customLogo.value)
+    const idx =
+      props.logoIndex != null && props.logoIndex >= 0
+        ? props.logoIndex
+        : getActiveLogoIndex(customLogo.value.id)
+    if (idx < 0) return
+    applyLogoColors(customLogo.value, idx)
+  }
+
+  function handleShuffleExtractedColors(logo: CustomLogo) {
+    const idx =
+      props.logoIndex != null && props.logoIndex >= 0
+        ? props.logoIndex
+        : getActiveLogoIndex(logo.id)
+    shuffleExtractedColorsForActiveLogo(logo, idx >= 0 ? idx : undefined)
   }
 
   async function handleRecolorLogo(color: OutputColor) {
@@ -385,6 +666,22 @@
     }
   }
 
+  function mergeDefaultAccordionSections(logo: CustomLogo) {
+    const keys: string[] = ['position', 'remove-background', 'recolor']
+    if ((logo.logo_colors?.length ?? 0) > 0) keys.unshift('logos-color')
+    accordionOpen.value = [...new Set([...accordionOpen.value, ...keys])]
+  }
+
+  watch(
+    () => props.logoId,
+    (id, prev) => {
+      accordionDefaultsSeededForLogoId.value = null
+      if (prev != null && id !== prev) {
+        accordionOpen.value = []
+      }
+    }
+  )
+
   // Watch for logo changes and sync form
   watch(
     customLogo,
@@ -396,11 +693,47 @@
           logo_technology?: OutputProductLogoTechnology | null
         }
         selectedLogoTechnology.value = logoWithTech.logo_technology || null
+
+        if (String(logo.id) === props.logoId) {
+          const pending = workflowStore.consumePendingOpenLogosColorSwatchIndex()
+          if (pending !== null) {
+            const nColors = logo.logo_colors?.length ?? 0
+            if (pending >= 0 && pending < nColors) {
+              selectedLogoColorIndex.value = pending
+              if (!accordionOpen.value.includes('logos-color')) {
+                accordionOpen.value = [...accordionOpen.value, 'logos-color']
+              }
+            }
+          }
+
+          if (accordionDefaultsSeededForLogoId.value !== props.logoId) {
+            accordionDefaultsSeededForLogoId.value = props.logoId
+            mergeDefaultAccordionSections(logo)
+          }
+        }
+
+        const n = logo.logo_colors?.length ?? 0
+        const sel = selectedLogoColorIndex.value
+        if (sel !== null && (n === 0 || sel >= n)) {
+          selectedLogoColorIndex.value = n > 0 ? 0 : null
+        }
       } else {
         selectedLogoTechnology.value = null
+        selectedLogoColorIndex.value = null
       }
     },
     { immediate: true }
+  )
+
+  // Opening "Logos Color" without clicking a swatch left no slot targeted; default to first.
+  watch(
+    () => accordionOpen.value.includes('logos-color'),
+    isOpen => {
+      if (!isOpen) return
+      if (selectedLogoColorIndex.value !== null) return
+      const n = customLogo.value?.logo_colors?.length ?? 0
+      if (n > 0) selectedLogoColorIndex.value = 0
+    }
   )
 
   // Also watch explicit logo index changes (in case index is passed via workflow store)
@@ -423,6 +756,14 @@
   onMounted(() => {
     setupAngleWatcher()
   })
+
+  function handleLogoAfterUpload(logo: CustomLogo) {
+    setActiveLogo(logo)
+    workflowStore.setLogoEditorLogoId(String(logo.id))
+    workflowStore.setLogosSubStep('placement')
+  }
+
+  const { handleFileChange } = useLogoAddAnotherUpload(doUpload, handleLogoAfterUpload)
 </script>
 
 <template>
@@ -432,12 +773,71 @@
         v-if="customLogo"
         :logo="customLogo"
         :index="props.logoIndex ?? -1"
+        :interactive-logo-colors="(customLogo.logo_colors?.length ?? 0) > 0"
+        :highlighted-logo-color-index="selectedLogoColorIndex"
         @apply-colors="handleApplyColours"
         @delete="handleDeleteLogo"
+        @logo-color-click="handleOpenLogosColorFromCard"
+        @shuffle-colors="handleShuffleExtractedColors"
+        @use-original-and-proceed="useOriginalColorsAndProceed"
       />
     </div>
 
-    <Accordion type="multiple" class="space-y-4">
+    <Accordion v-model="accordionOpen" type="multiple" class="space-y-4">
+      <AccordionItem v-if="colorSwatches.length > 0" value="logos-color" class="overflow-hidden">
+        <AccordionTrigger class="mx-4 md:mx-6 py-4">
+          <div
+            class="flex w-full flex-col gap-1 text-left md:flex-row md:items-center md:justify-between md:gap-3"
+          >
+            <span class="text-base font-semibold">{{
+              logos_logos_color({}, { locale: profileStore.currentLocale })
+            }}</span>
+          </div>
+          <template #icon>
+            <svg
+              class="ml-2 h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
+          </template>
+        </AccordionTrigger>
+        <AccordionContent class="space-y-6 px-4 md:px-6 py-5">
+          <div class="space-y-2 text-left">
+            <!-- <Label class="text-xs font-medium text-muted-foreground">
+              {{ colors_extracted_from_logo({}, { locale: profileStore.currentLocale }) }}
+            </Label> -->
+            <ColorsPreview
+              :colors="logoDetectedPreviewStrings"
+              interactive
+              :selected-swatch-index="selectedLogoColorIndex"
+              @swatch-click="handleLogosColorSwatchInPanel"
+            />
+          </div>
+          <div class="space-y-2 border-t border-border pt-4 text-left">
+            <Label class="text-xs font-medium text-muted-foreground">
+              {{ nav_color({}, { locale: profileStore.currentLocale }) }}
+            </Label>
+            <PaletteColorSelector
+              v-if="
+                palettesForLogosColorPanel.length || customLogosPalettesForLogosColorPanel.length
+              "
+              :palettes="palettesForLogosColorPanel"
+              :custom-palettes="customLogosPalettesForLogosColorPanel"
+              :selected-color="logosColorPaletteSelectedHex"
+              :allow-custom-color="productsStore.activeProductDetails?.is_custom_color_allowed"
+              :has-svg-colors="false"
+              :parsed-locker-rooms="parsedLockerRooms"
+              color-type-key="logo_color_type"
+              @color-select="handleLogosColorPaletteSelect"
+            />
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+
       <AccordionItem
         v-if="logoTechnologies.length > 0"
         value="technologies"
@@ -632,6 +1032,7 @@
           </div>
         </AccordionContent>
       </AccordionItem>
+
       <AccordionItem value="remove-background" class="overflow-hidden">
         <AccordionTrigger class="mx-4 md:mx-6 py-4">
           <div
@@ -757,5 +1158,38 @@
         </AccordionContent>
       </AccordionItem>
     </Accordion>
+
+    <div
+      v-if="!logosStore.isLoadingUploadLogo"
+      class="flex flex-col gap-3 mx-4 md:mx-6 pt-4 border-t border-border"
+    >
+      <Button variant="default" class="rounded-lg w-full mb-2" @click="onClickUpload">
+        {{ logos_add_logo({}, { locale: profileStore.currentLocale }) }}
+      </Button>
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept="image/*"
+        class="hidden"
+        @change="handleFileChange"
+      />
+      <template v-if="isLoggedIn">
+        <div class="flex items-center justify-center text-xs text-muted-foreground gap-2">
+          <div class="flex-1 h-px bg-border" />
+          <span class="px-3 text-foreground font-medium">{{
+            colors_separator_or({}, { locale: profileStore.currentLocale })
+          }}</span>
+          <div class="flex-1 h-px bg-border" />
+        </div>
+        <Button
+          class="w-full bg-card"
+          variant="secondary"
+          @click="lockerRoomStore.setOpenLockerWithIntent('assets')"
+        >
+          {{ colors_choose_from_locker({}, { locale: profileStore.currentLocale }) }}
+        </Button>
+      </template>
+    </div>
+    <LogoUploadingSkeleton v-else class="mx-4 md:mx-6" />
   </div>
 </template>

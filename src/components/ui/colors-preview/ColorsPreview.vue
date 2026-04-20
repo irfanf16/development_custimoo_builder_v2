@@ -10,13 +10,22 @@
       class?: HTMLAttributes['class']
       colors: string[]
       maxColors?: number
+      /** When true, swatches are clickable and show selection ring. */
+      interactive?: boolean
+      selectedSwatchIndex?: number | null
     }>(),
     {
       size: 'default',
       class: undefined,
-      maxColors: 4
+      maxColors: 4,
+      interactive: false,
+      selectedSwatchIndex: null
     }
   )
+
+  const emit = defineEmits<{
+    (e: 'swatch-click', index: number): void
+  }>()
 </script>
 
 <template>
@@ -27,7 +36,9 @@
       :color="color"
       :size="props.size"
       :class="[idx > 0 ? '-ml-5' : '']"
-      :disabled="true"
+      :disabled="!props.interactive"
+      :selected="props.interactive && props.selectedSwatchIndex === idx"
+      @click.stop="props.interactive && emit('swatch-click', idx)"
     />
   </div>
 </template>
