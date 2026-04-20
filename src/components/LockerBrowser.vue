@@ -11,7 +11,7 @@
     LockerProduct
   } from '@/services/lockers/types'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
-  import { ref, watch, computed, provide } from 'vue'
+  import { ref, watch, computed, provide, unref } from 'vue'
   import { storeToRefs } from 'pinia'
   import LockerRoomFooter from './locker-room/LockerRoomFooter.vue'
   import LockerRoomHeader from './locker-room/LockerRoomHeader.vue'
@@ -413,7 +413,9 @@
       const isEditing = !!currentCollection.value
       const collectionId = currentCollection.value?.id
 
-      // Get logos from preview body ref or use existing collection data
+      // Get logos: prefer CollectionDetail.workingLogos (still populated when Preview tab is unmounted).
+      // Save previously read only previewBodyRef; that ref is null on the Products tab because
+      // CollectionPreviewBody is not rendered, so new collections incorrectly failed logo validation.
       let logos: Array<{
         file: File | null
         url: string | null
@@ -422,19 +424,27 @@
         isDeleted?: boolean
       }> = []
 
-      if (previewBodyRef) {
-        // Access logos from computed ref if preview body exists (use any to satisfy TS)
-        const logosComputed = (previewBodyRef as any)?.logos
+      const workingFromDetail = collectionDetailRef?.workingLogos
+        ? unref(collectionDetailRef.workingLogos)
+        : null
+      if (Array.isArray(workingFromDetail)) {
+        logos = workingFromDetail as typeof logos
+      } else if (previewBodyRef) {
+        const logosComputed = (previewBodyRef as { logos?: unknown })?.logos
         if (logosComputed) {
-          if (typeof logosComputed === 'object' && 'value' in logosComputed) {
+          if (
+            typeof logosComputed === 'object' &&
+            logosComputed !== null &&
+            'value' in logosComputed
+          ) {
             const computedValue = (logosComputed as { value: unknown }).value
             logos = Array.isArray(computedValue) ? (computedValue as typeof logos) : []
           } else if (Array.isArray(logosComputed)) {
             logos = logosComputed as typeof logos
           }
         }
-      } else if (isEditing && currentCollection.value?.logos) {
-        // If preview body doesn't exist and we're editing, use existing collection logos
+      }
+      if (!logos.length && isEditing && currentCollection.value?.logos) {
         logos = currentCollection.value.logos.map(logo => ({
           file: null,
           url: logo.path.startsWith('http') ? logo.path : baseStorageUrl + logo.path,

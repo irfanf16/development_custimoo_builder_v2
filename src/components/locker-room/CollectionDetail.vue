@@ -224,7 +224,7 @@
     emit('logo-removed', index, logoId)
   }
 
-  defineExpose({ collectionProductListingRef, previewBodyRef })
+  defineExpose({ collectionProductListingRef, previewBodyRef, workingLogos })
 </script>
 
 <template>
