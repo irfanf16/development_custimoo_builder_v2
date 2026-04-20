@@ -265,6 +265,8 @@
   "texts_color_custom": "Personalizado",
   "texts_placement_generic_label": "Ubicación {index}",
   "texts_fixed_text_label": "Texto fijo",
+  "texts_pin_text_button": "Fijar texto",
+  "texts_unpin_text_button": "Desfijar texto",
   "toolbar_rotate_ccw": "Rotar sentido antihorario",
   "toolbar_rotate_cw": "Rotar sentido horario",
   "toolbar_zoom_in": "Acercar",

@@ -270,6 +270,8 @@
   "texts_color_custom": "Custom",
   "texts_placement_generic_label": "Placement {index}",
   "texts_fixed_text_label": "Fixed text",
+  "texts_pin_text_button": "Pin text",
+  "texts_unpin_text_button": "Unpin text",
   "toolbar_rotate_ccw": "Rotate CCW",
   "toolbar_rotate_cw": "Rotate CW",
   "toolbar_zoom_in": "Zoom in",

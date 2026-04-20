@@ -30,6 +30,7 @@
   import { useCompanyStore } from '@/stores/company/company.store'
   import { useColorClipboard } from '@/composables/useColorClipboard'
   import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
+  import { Pin } from 'lucide-vue-next'
   import {
     texts_text_input_placeholder,
     texts_font_label,
@@ -46,6 +47,8 @@
     texts_unit_px,
     texts_side_front,
     texts_side_back,
+    texts_pin_text_button,
+    texts_unpin_text_button,
     colors_copy,
     colors_paste,
     texts_number_input_placeholder
@@ -54,7 +57,8 @@
   import { storeToRefs } from 'pinia'
 
   // ===== COMPOSABLES =====
-  const { form, currentEntry, currentItem, isUserInput, updateTextAndRoster } = useTextActions()
+  const { form, currentEntry, currentItem, isUserInput, updateTextAndRoster, productId } =
+    useTextActions()
   const { fontOptions, colorPalettes } = useTexts()
   const { clipboardColor, copyColor } = useColorClipboard()
   const profileStore = useProfileStore()
@@ -236,6 +240,37 @@
     form.text = target.value
     updateTextAndRoster()
     isUserInput.value = false
+  }
+
+  /**
+   * Toggle pinned on the active text item — same data path as canvas pin control
+   * (useFabricControls togglePin → updateProductTextItem + pushHistoryState).
+   */
+  function pinText() {
+    const pid = productId.value
+    const textId = workflowStore.activeTextId
+    if (pid == null || textId == null) return
+    const key = String(pid)
+    const texts = customizationStore.customization?.product_custom_texts?.[key]
+    if (!texts) return
+    const entryIndex = texts.findIndex(e => e.id === textId)
+    if (entryIndex === -1) return
+    const entry = texts[entryIndex]
+    if (!entry?.items?.length) return
+    const itemIndex = entry.active_item_index ?? 0
+    const item = entry.items[itemIndex]
+    if (!item) return
+    const newPinned = !(item.pinned ?? false)
+    customizationStore.updateProductTextItem(
+      pid,
+      entryIndex,
+      itemIndex,
+      { pinned: newPinned },
+      {
+        skipHistory: true
+      }
+    )
+    customizationStore.pushHistoryState(newPinned ? 'Pinned' : 'Unpinned')
   }
 </script>
 
@@ -500,6 +535,17 @@
                 Pin text
               </Button>
             </div> -->
+
+            <div class="grid grid-cols-1 gap-3">
+              <Button variant="outline" class="h-9" @click="pinText">
+                <Pin class="size-4" />
+                {{
+                  currentItem?.pinned
+                    ? texts_unpin_text_button({}, { locale })
+                    : texts_pin_text_button({}, { locale })
+                }}
+              </Button>
+            </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

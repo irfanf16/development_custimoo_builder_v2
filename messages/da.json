@@ -265,6 +265,8 @@
   "texts_color_custom": "Tilpasset",
   "texts_placement_generic_label": "Placering {index}",
   "texts_fixed_text_label": "Fast tekst",
+  "texts_pin_text_button": "Fastgør tekst",
+  "texts_unpin_text_button": "Løs tekst",
   "toolbar_rotate_ccw": "Rotér mod uret",
   "toolbar_rotate_cw": "Rotér med uret",
   "toolbar_zoom_in": "Zoom ind",
