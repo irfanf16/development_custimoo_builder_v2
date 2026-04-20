@@ -141,8 +141,8 @@ export function useTryCatchApi(options: UseTryCatchApiOptions = {}) {
   ): Promise<APIResponse<T>> {
     try {
       const { status, data } = await promise
-      if (status === 200 || status === 201) {
-        return { success: true, content: data, status: 200, axiosError: null }
+      if (status === 200 || status === 201 || status === 204) {
+        return { success: true, content: data, status, axiosError: null }
       }
     } catch (error) {
       const _error = error instanceof Error ? error : new Error(String(error))

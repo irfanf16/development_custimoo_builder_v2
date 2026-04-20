@@ -13,8 +13,13 @@ export function useStorage() {
    * @returns Full storage URL
    */
   function fromStorage(path: string): string {
+    if (!path?.trim()) return ''
+    const trimmed = path.trim()
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed
+    }
     const base = storageBase.endsWith('/') ? storageBase : storageBase + '/'
-    const clean = path?.startsWith('/') ? path.slice(1) : path
+    const clean = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed
     return base + clean
   }
 

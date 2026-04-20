@@ -20,6 +20,8 @@ export type OutputDesignPreviewBase = {
   design_name: string
   design_show: number
   is_active: number
+  /** Set when the design was uploaded by the customer (custom design). */
+  customer_id?: number | null
 }
 export type OutputDesignPreviewFront = OutputDesignPreviewBase & {
   front_design: OutputDesignAsset

@@ -21,6 +21,12 @@ import type {
 import type { FactoryProduct } from '@/services/cart/types'
 
 import { API } from '../../services'
+import {
+  normalizePresignedCustomDesignResponse,
+  normalizeDesignPreviewsPayload,
+  parseCustomDesignUploadResponseId
+} from '@/services/products/products.service'
+import { extractSvgPartIdsFromSvgText } from '@/lib/extractSvgPartIds'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
 import { useCustomizationStore } from '../customization/customization.store'
@@ -47,6 +53,8 @@ export const useProductsStore = defineStore('productsStore', () => {
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'productsStore' } })
 
   // ===== INTERNAL FLAGS =====
+  /** Prevents stale `fetchDesignPreviewsByStyleId` responses from overwriting newer data (e.g. after custom upload). */
+  let fetchDesignPreviewsGeneration = 0
   let customizationAutoSyncSuspendCount = 0
   const isCustomizationAutoSyncSuspended = () => customizationAutoSyncSuspendCount > 0
 
@@ -149,6 +157,26 @@ export const useProductsStore = defineStore('productsStore', () => {
 
   function setActiveDesignDetailsState(payload: OutputDesignDetails | null) {
     activeDesignDetails.value = payload
+  }
+
+  /**
+   * `active_design_name` for GET product/style/:id — must match the selected row in the new style,
+   * including customer uploads. Customization.design_name can lag (e.g. still "Basic") while
+   * activeDesignDetails or designPreviews hold the real name.
+   */
+  function activeDesignNameParamForStyleRequest(designId: number): string | undefined {
+    if (designId > 0) {
+      const full = activeDesignDetails.value
+      if (full && Number(full.id) === Number(designId) && full.design_name?.trim()) {
+        return full.design_name.trim()
+      }
+      const preview = designPreviews.value?.find(d => Number(d.id) === Number(designId))
+      if (preview?.design_name?.trim()) {
+        return preview.design_name.trim()
+      }
+    }
+    const n = customization.customization?.design_name?.trim()
+    return n || undefined
   }
 
   // Addons setters to avoid direct mutations from components
@@ -325,8 +353,13 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchActiveStyleDetails(styleId: number) {
     setLoading(true)
     setError(null)
+    const designIdToKeep = Number(customization.customization?.design_id) || 0
+
     const resp = await tryCatchApi<ActiveStyleDetails>(
-      API.products.getActiveStyleDetails(styleId, customization.customization?.design_name),
+      API.products.getActiveStyleDetails(
+        styleId,
+        activeDesignNameParamForStyleRequest(designIdToKeep)
+      ),
       {
         operation: 'fetchActiveStyleDetails',
         style_id: styleId
@@ -334,10 +367,32 @@ export const useProductsStore = defineStore('productsStore', () => {
     )
     if (resp.success) {
       const payload = resp.content
+
       setActiveStyleDetailsState(payload.styleDetails)
-      setActiveDesignDetailsState(payload.designDetails)
-      customization.setStyle(styleId)
-      customization.setDesign(payload.designDetails)
+
+      // Apply new style to customization only after design details are resolved. Updating
+      // style_id before activeDesignDetails matches would let the auto-sync watch run with a
+      // mismatched triple and overwrite the design (default for the new style).
+      if (designIdToKeep > 0) {
+        const detailsResp = await fetchDesignDetailsById(designIdToKeep)
+        if (detailsResp.success && activeDesignDetails.value) {
+          customization.setStyle(styleId)
+          if (
+            customization.customization &&
+            activeDesignDetails.value.id !== customization.customization.design_id
+          ) {
+            customization.setDesign(activeDesignDetails.value)
+          }
+        } else {
+          setActiveDesignDetailsState(payload.designDetails)
+          customization.setStyle(styleId)
+          customization.setDesign(payload.designDetails)
+        }
+      } else {
+        setActiveDesignDetailsState(payload.designDetails)
+        customization.setStyle(styleId)
+        customization.setDesign(payload.designDetails)
+      }
     } else {
       setError('Error getting active style details')
     }
@@ -386,17 +441,23 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   async function fetchDesignPreviewsByStyleId(styleId: number) {
+    const gen = ++fetchDesignPreviewsGeneration
     setLoading(true)
     setError(null)
-    const resp = await tryCatchApi<(OutputDesignPreviewFront & OutputDesignPreviewBack)[]>(
-      API.products.getDesignPreviewsByStyleId(styleId),
-      {
-        operation: 'fetchDesignPreviewsByStyleId',
-        style_id: styleId
-      }
-    )
+    const resp = await tryCatchApi<unknown>(API.products.getDesignPreviewsByStyleId(styleId), {
+      operation: 'fetchDesignPreviewsByStyleId',
+      style_id: styleId
+    })
+    if (gen !== fetchDesignPreviewsGeneration) {
+      return resp
+    }
     if (resp.success) {
-      designPreviews.value = resp.content
+      const list = normalizeDesignPreviewsPayload(resp.content)
+      if (list != null) {
+        designPreviews.value = list
+      } else {
+        setError('Error getting design previews')
+      }
     } else {
       setError('Error getting design previews')
     }
@@ -428,18 +489,16 @@ export const useProductsStore = defineStore('productsStore', () => {
       productDetailsPromise,
       designPreviewsByStyleIdPromise
     ])
-    if (
-      responseProductDetails.success &&
-      responseProductDetails.content &&
-      responseDesignPreviewsByStyleId.success &&
-      responseDesignPreviewsByStyleId.content
-    ) {
+    const designList = responseDesignPreviewsByStyleId.success
+      ? normalizeDesignPreviewsPayload(responseDesignPreviewsByStyleId.content)
+      : null
+    if (responseProductDetails.success && responseProductDetails.content && designList != null) {
       const productResponse = responseProductDetails.content
       const payload = {
         productDetails: productResponse.productDetails,
         styleDetails: productResponse.styleDetails,
         defaultDesignDetails: productResponse.designDetails,
-        designPreviews: responseDesignPreviewsByStyleId.content
+        designPreviews: designList
       }
       setLoading(false)
       return payload
@@ -474,6 +533,208 @@ export const useProductsStore = defineStore('productsStore', () => {
       customization.setDesign(designPreview)
       saveCustomizationToLocalStorage()
     }
+  }
+
+  async function uploadCustomDesignAndRefresh(
+    file: File
+  ): Promise<APIResponse<OutputDesignDetails | null>> {
+    const styleId = customization.activeStyleId
+    const productId = customization.activeProductId
+    if (!styleId || !productId) {
+      setError('Missing product or style')
+      return { success: false, content: null, status: 400, axiosError: null, message: undefined }
+    }
+
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (
+      ext !== 'svg' &&
+      file.type !== 'image/svg+xml' &&
+      !file.name.toLowerCase().endsWith('.svg')
+    ) {
+      setError('Only SVG files are supported')
+      return { success: false, content: null, status: 400, axiosError: null, message: undefined }
+    }
+
+    setLoading(true)
+    setError(null)
+
+    let svgText: string
+    try {
+      svgText = await file.text()
+    } catch {
+      setError('Could not read file')
+      setLoading(false)
+      return { success: false, content: null, status: 400, axiosError: null, message: undefined }
+    }
+
+    let svgParts: string[]
+    try {
+      svgParts = await extractSvgPartIdsFromSvgText(svgText)
+    } catch {
+      setError('Could not parse SVG for color parts')
+      setLoading(false)
+      return { success: false, content: null, status: 400, axiosError: null, message: undefined }
+    }
+
+    if (svgParts.length === 0) {
+      setError('No customizable SVG parts found (expected groups with ids and fills)')
+      setLoading(false)
+      return { success: false, content: null, status: 400, axiosError: null, message: undefined }
+    }
+
+    const baseName = file.name.replace(/\.[^/.]+$/i, '') || 'design'
+
+    const presignedPayload = {
+      name: baseName,
+      extension: 'svg',
+      content_type: 'image/svg',
+      expiration_minutes: '60'
+    }
+
+    const presignedResp = await tryCatchApi<unknown>(
+      API.products.getCustomDesignPresignedUploadUrl(presignedPayload),
+      {
+        operation: 'getCustomDesignPresignedUploadUrl',
+        style_id: styleId,
+        product_id: productId
+      }
+    )
+
+    if (!presignedResp.success || presignedResp.content == null) {
+      setError(presignedResp.message ?? 'Could not get upload URL')
+      setLoading(false)
+      return {
+        success: false,
+        content: null,
+        status: presignedResp.status,
+        axiosError: null
+      }
+    }
+
+    const normalized = normalizePresignedCustomDesignResponse(presignedResp.content)
+    if (!normalized?.uploadUrl) {
+      setError('Invalid presigned URL response')
+      setLoading(false)
+      return { success: false, content: null, status: 400, axiosError: null, message: undefined }
+    }
+
+    if (!normalized.fileUrl?.trim()) {
+      setError('Presigned response missing path or file_url')
+      setLoading(false)
+      return { success: false, content: null, status: 400, axiosError: null, message: undefined }
+    }
+
+    const putContentType = normalized.contentType?.trim() || presignedPayload.content_type
+
+    try {
+      const putRes = await API.products.putCustomDesignFileToPresignedUrl(
+        normalized.uploadUrl,
+        file,
+        putContentType
+      )
+      if (putRes.status !== 200 && putRes.status !== 204) {
+        throw new Error('bad status')
+      }
+    } catch {
+      setError('Upload to storage failed')
+      setLoading(false)
+      return { success: false, content: null, status: 500, axiosError: null, message: undefined }
+    }
+
+    const registerDesignName = normalized.designName?.trim() || baseName
+
+    const registerResp = await tryCatchApi<unknown>(
+      API.products.registerCustomDesign({
+        product_id: productId,
+        product_style_id: styleId,
+        svg_parts: svgParts,
+        design_name: registerDesignName,
+        file_url: normalized.fileUrl.trim(),
+        productionsafezone_design_id:
+          activeDesignDetails.value?.productionsafezone_design_id ?? null
+      }),
+      {
+        operation: 'registerCustomDesign',
+        style_id: styleId,
+        product_id: productId
+      }
+    )
+
+    if (!registerResp.success) {
+      setError(registerResp.message ?? 'Register custom design failed')
+      setLoading(false)
+      return {
+        success: false,
+        content: null,
+        status: registerResp.status,
+        axiosError: null
+      }
+    }
+
+    const newId = parseCustomDesignUploadResponseId(registerResp.content)
+    if (newId == null) {
+      setError('Invalid upload response')
+      setLoading(false)
+      return { success: false, content: null, status: 400, axiosError: null, message: undefined }
+    }
+    const refresh = await fetchDesignPreviewsByStyleId(styleId)
+    if (!refresh.success) {
+      setLoading(false)
+      return { success: false, content: null, status: refresh.status, axiosError: null }
+    }
+    const preview = designPreviews.value?.find(d => d.id === newId)
+    if (preview) {
+      applyDesignPreview(preview)
+    } else {
+      const detailsResp = await fetchDesignDetailsById(newId)
+      if (detailsResp.success && detailsResp.content) {
+        customization.setDesign(detailsResp.content)
+        saveCustomizationToLocalStorage()
+      }
+    }
+    setLoading(false)
+    return {
+      success: true,
+      content: activeDesignDetails.value,
+      status: 200,
+      axiosError: null
+    }
+  }
+
+  async function deleteCustomDesign(designId: number): Promise<APIResponse<null>> {
+    const styleId = customization.activeStyleId
+    if (!styleId) {
+      setError('Missing style')
+      return { success: false, content: null, status: 400, axiosError: null, message: undefined }
+    }
+    setLoading(true)
+    setError(null)
+    const resp = await tryCatchApi<unknown>(API.products.deleteCustomDesign(designId), {
+      operation: 'deleteCustomDesign',
+      design_id: designId
+    })
+    if (!resp.success) {
+      setError(resp.message ?? 'Delete failed')
+      setLoading(false)
+      return { success: false, content: null, status: resp.status, axiosError: null }
+    }
+    const refresh = await fetchDesignPreviewsByStyleId(styleId)
+    if (!refresh.success) {
+      setLoading(false)
+      return { success: false, content: null, status: refresh.status, axiosError: null }
+    }
+    const wasActive = customization.customization?.design_id === designId
+    if (wasActive) {
+      const first = designPreviews.value?.[0]
+      if (first) {
+        applyDesignPreview(first)
+      } else {
+        await fetchActiveStyleDetails(styleId)
+      }
+    } else {
+      setLoading(false)
+    }
+    return { success: true, content: null, status: 200, axiosError: null }
   }
 
   async function fetchDesignDetailsById(designId: number) {
@@ -621,6 +882,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     reset,
     setActiveStep,
     applyDesignPreview,
+    uploadCustomDesignAndRefresh,
+    deleteCustomDesign,
     resetToDefaultsSnapshot,
     // API Functions
     fetchCustomizedCategories,

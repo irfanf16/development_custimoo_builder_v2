@@ -112,9 +112,9 @@ export function useEffectiveSelectors() {
 
   const effectiveLogos = computed<CustomLogo[]>(() => {
     if (!effectiveProductId.value) return []
-    const effectiveLogos =
-      customizationStore.customization?.custom_logos[effectiveProductId.value.toString()] || []
-    return effectiveLogos
+    const key = effectiveProductId.value.toString()
+    const map = customizationStore.customization?.custom_logos
+    return map?.[key] ?? []
   })
 
   const groupsVersion = computed<string>(() => {

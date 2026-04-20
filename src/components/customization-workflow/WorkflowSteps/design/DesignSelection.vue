@@ -10,11 +10,22 @@
   import type { OutputDesignPreviewFront } from '@/services/products/types'
   import LazyTwoDScene from '../LazyTwoDScene.vue'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import { design_categories_default_label } from '@/paraglide/messages'
+  import {
+    design_categories_default_label,
+    design_custom_list_placeholder,
+    design_section_my_designs,
+    design_section_catalog,
+    design_delete_custom_confirm_title,
+    design_delete_custom_confirm_description,
+    msg_design_removed_success,
+    msg_no_designs_match_filters
+  } from '@/paraglide/messages'
   import { Checkbox } from '@/components/ui/checkbox'
   import { SkeletonBox } from '@/components/skeleton'
   import axios from 'axios'
-
+  import { FileImage, X } from 'lucide-vue-next'
+  import { confirmDialog } from '@/lib/confirm-dialog'
+  import { toast } from 'vue-sonner'
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
@@ -22,19 +33,87 @@
   const profileStore = useProfileStore()
 
   const { isMobile } = storeToRefs(uiStore)
-  const { activeDesignName: selectedDesignName } = storeToRefs(customizationStore)
-  const { selectedDesignCategoryId, pendingDesignId } = storeToRefs(workflowStore)
+  const { activeDesignId } = storeToRefs(customizationStore)
+  const { selectedDesignCategoryId } = storeToRefs(workflowStore)
   const { designSearchModel, designCategoriesConfig, selectedDesigns, toggleDesignSelection } =
     useDesignConfig()
+
+  function designDisplayName(item: OutputDesignPreviewFront) {
+    return item.front_design?.design_name ?? item.design_name
+  }
+
+  function matchesDesignSearch(item: OutputDesignPreviewFront, q: string) {
+    if (!q) return true
+    return designDisplayName(item).toLowerCase().includes(q)
+  }
+
+  function matchesDesignCategory(
+    item: OutputDesignPreviewFront,
+    categoryId: number | null
+  ): boolean {
+    if (categoryId === null) return true
+    const pivots = item.front_design?.design_categories_pivot ?? []
+    return pivots.some(p => p.design_category_id === categoryId)
+  }
+
+  const catalogFilteredPreviews = computed(() => {
+    let list = previews.value.filter(p => !p.customer_id)
+    if (selectedDesignCategoryId.value !== null) {
+      list = list.filter(d => matchesDesignCategory(d, selectedDesignCategoryId.value))
+    }
+    const q = designSearchModel.value.trim().toLowerCase()
+    if (q) {
+      list = list.filter(d => matchesDesignSearch(d, q))
+    }
+    return list
+  })
+
+  const myDesignsFilteredPreviews = computed(() => {
+    let list = previews.value.filter(p => !!p.customer_id)
+    const q = designSearchModel.value.trim().toLowerCase()
+    if (q) {
+      list = list.filter(d => matchesDesignSearch(d, q))
+    }
+    return list
+  })
+
+  async function handleDeleteCustomDesign(item: OutputDesignPreviewFront, ev: MouseEvent) {
+    ev.stopPropagation()
+    const ok = await confirmDialog({
+      title: design_delete_custom_confirm_title({}, { locale: profileStore.currentLocale }),
+      description: design_delete_custom_confirm_description(
+        {},
+        {
+          locale: profileStore.currentLocale
+        }
+      ),
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    })
+    if (!ok) return
+    const result = await productsStore.deleteCustomDesign(item.id)
+    if (result.success) {
+      toast.success(msg_design_removed_success({}, { locale: profileStore.currentLocale }))
+      selectedDesigns.value = selectedDesigns.value.filter(id => id !== item.id)
+    } else {
+      toast.error(result.message ?? productsStore.error ?? 'Delete failed')
+    }
+  }
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
   }
 
-  defineProps<{
+  const props = defineProps<{
     isExpanded?: boolean
   }>()
   const emit = defineEmits<Emits>()
+
+  const designGridClass = computed(() =>
+    props.isExpanded
+      ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))] gap-4'
+      : 'flex flex-wrap gap-2'
+  )
   const previews = computed(() => productsStore.designPreviews || [])
   const designSelectionContainer = ref<HTMLElement | null>(null)
   const DESIGN_SKELETON_PLACEHOLDER_COUNT = 4
@@ -53,10 +132,10 @@
     // Skip fetch when product details or preview pipeline is already loading previews
     if (workflowStore.pendingProductId != null) {
       nextTick(() => {
-        const activeDesignName = customizationStore.customization?.design_name
-        if (activeDesignName) {
+        const activeDesignId = customizationStore.customization?.design_id
+        if (activeDesignId) {
           setTimeout(() => {
-            emit('scroll-to-element', `design-${activeDesignName}`, 'auto')
+            emit('scroll-to-element', `design-${activeDesignId}`, 'auto')
           }, 100)
         }
       })
@@ -71,21 +150,16 @@
     }
     // Scroll to active design when component mounts
     nextTick(() => {
-      const activeDesignName = customizationStore.customization?.design_name
-      if (activeDesignName) {
-        // Small delay to ensure WorkflowPanel is fully mounted
+      const activeDesignId = customizationStore.customization?.design_id
+      if (activeDesignId) {
         setTimeout(() => {
-          emit('scroll-to-element', `design-${activeDesignName}`, 'auto')
+          emit('scroll-to-element', `design-${activeDesignId}`, 'auto')
         }, 100)
       }
     })
   })
 
   async function selectDesign(item: OutputDesignPreviewFront) {
-    // if (pendingDesignId.value != null) {
-    //   return
-    // }
-
     const designId = item.id
     const alreadyApplied =
       customizationStore.customization?.design_id === designId &&
@@ -93,7 +167,7 @@
 
     if (alreadyApplied) {
       setTimeout(() => {
-        emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
+        emit('scroll-to-element', `design-${designId}`, 'smooth')
       }, 100)
       return
     }
@@ -114,38 +188,15 @@
       return
     } finally {
       productsStore.resumeCustomizationAutoSync()
-      // Only clear if this design is still the pending one.
-      // If the user clicked another design while this was loading, that
-      // design now owns pendingDesignId — don't steal its spinner.
       if (workflowStore.pendingDesignId === designId) {
         workflowStore.setPendingDesignId(null)
       }
     }
 
     setTimeout(() => {
-      emit('scroll-to-element', `design-${item.design_name}`, 'smooth')
+      emit('scroll-to-element', `design-${designId}`, 'smooth')
     }, 100)
   }
-
-  const filteredPreviews = computed(() => {
-    let filtered = previews.value
-
-    // Filter by design category
-    if (selectedDesignCategoryId.value !== null) {
-      filtered = filtered.filter(design => {
-        const categories = design.front_design.design_categories_pivot || []
-        return categories.some(pivot => pivot.design_category_id === selectedDesignCategoryId.value)
-      })
-    }
-
-    // Filter by search query
-    const q = designSearchModel.value
-    if (q) {
-      filtered = filtered.filter(d => d.front_design.design_name.toLowerCase().includes(q))
-    }
-
-    return filtered
-  })
 
   designCategoriesConfig.value = computed<DesignCategoriesConfig | undefined>(() => {
     return {
@@ -159,8 +210,9 @@
   // header/footer config moved to config.ts
 
   // Hint to TS that these are used via the template
-  void filteredPreviews.value
-  void selectedDesignName.value
+  void catalogFilteredPreviews.value
+  void myDesignsFilteredPreviews.value
+  void activeDesignId.value
   void designSelectionContainer.value
   void selectDesign
 </script>
@@ -196,36 +248,99 @@
       </div>
     </div>
   </div>
-  <div
-    v-else
-    ref="designSelectionContainer"
-    class="mb-4 md:mb-6 gap-4"
-    :class="
-      isExpanded
-        ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'
-        : 'flex flex-wrap gap-2'
-    "
-  >
-    <div
-      v-for="item in filteredPreviews"
-      :id="`design-${item.design_name}`"
-      :key="item.id"
-      class="group relative flex flex-col items-center flex-1 gap-4 md:gap-6 p-2 md:p-2"
-      :class="[
-        'relative rounded-sm transition-colors cursor-pointer',
-        'hover:border-border hover:bg-primary/10 hover:outline-ring',
-        selectedDesignName === item.design_name ? 'bg-primary/20' : ''
-      ]"
-      @click="selectDesign(item)"
-    >
-      <div
-        class="text-base font-medium text-left w-full text-foreground truncate max-w-[160px] overflow-ellipsis leading-none"
-      >
-        {{ item.front_design.design_name }}
+  <div v-else ref="designSelectionContainer" class="mb-4 md:mb-6 flex flex-col gap-6">
+    <div v-if="myDesignsFilteredPreviews.length" class="flex flex-col gap-2">
+      <div class="text-sm font-semibold text-muted-foreground">
+        {{ design_section_my_designs({}, { locale: profileStore.currentLocale }) }}
       </div>
-      <div class="px-2">
-        <div class="relative inline-flex rounded-xl">
-          <div class="rounded-xl">
+      <div :class="designGridClass">
+        <div
+          v-for="item in myDesignsFilteredPreviews"
+          :id="`design-${item.id}`"
+          :key="'my-' + item.id"
+          class="group relative flex flex-col items-center flex-1 gap-4 md:gap-6 p-2 md:p-2"
+          :class="[
+            'relative rounded-sm transition-colors cursor-pointer',
+            'hover:border-border hover:bg-primary/10 hover:outline-ring',
+            Number(activeDesignId) === Number(item.id) ? 'bg-primary/20' : ''
+          ]"
+          @click="selectDesign(item)"
+        >
+          <button
+            type="button"
+            class="absolute top-1 right-1 z-10 rounded-full bg-background/90 p-1 shadow-sm border border-border hover:bg-destructive/10 hover:text-destructive"
+            aria-label="Delete custom design"
+            @click="handleDeleteCustomDesign(item, $event)"
+          >
+            <X class="size-4" />
+          </button>
+          <div
+            class="text-base font-medium text-left w-full text-foreground truncate max-w-[160px] overflow-ellipsis leading-none pr-6"
+          >
+            {{ designDisplayName(item) }}
+          </div>
+          <div>
+            <div
+              v-if="item.customer_id"
+              class="flex items-center justify-center rounded-xl border border-dashed border-muted-foreground/35 bg-muted/40 text-muted-foreground shrink-0"
+              :style="{
+                width: (isMobile ? 130 : 176) + 'px',
+                height: (isMobile ? 130 : 176) + 'px'
+              }"
+            >
+              <div class="flex flex-col items-center gap-1.5 px-2 text-center">
+                <FileImage class="size-9 opacity-80" aria-hidden="true" />
+                <span class="text-[11px] font-medium leading-tight">{{
+                  design_custom_list_placeholder({}, { locale: profileStore.currentLocale })
+                }}</span>
+              </div>
+            </div>
+            <LazyTwoDScene
+              v-else-if="item.front_design"
+              :design="item.front_design"
+              :svg-parts="item.svg_parts"
+              :canvas-width="isMobile ? 130 : 176"
+              :canvas-height="isMobile ? 130 : 176"
+              :canvas-class="'rounded-xl'"
+            />
+          </div>
+          <Checkbox
+            :id="`checkbox-design-${item.id}`"
+            :class="'absolute bottom-2 right-2 size-6'"
+            :model-value="!!selectedDesigns.find(id => id === item.id)"
+            @click.stop
+            @update:model-value="toggleDesignSelection(item.id)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div v-if="catalogFilteredPreviews.length" class="flex flex-col gap-2">
+      <div
+        v-if="myDesignsFilteredPreviews.length"
+        class="text-sm font-semibold text-muted-foreground"
+      >
+        {{ design_section_catalog({}, { locale: profileStore.currentLocale }) }}
+      </div>
+      <div :class="designGridClass">
+        <div
+          v-for="item in catalogFilteredPreviews"
+          :id="`design-${item.id}`"
+          :key="item.id"
+          class="group relative flex flex-col items-center flex-1 gap-4 md:gap-6 p-2 md:p-2"
+          :class="[
+            'relative rounded-sm transition-colors cursor-pointer',
+            'hover:border-border hover:bg-primary/10 hover:outline-ring',
+            Number(activeDesignId) === Number(item.id) ? 'bg-primary/20' : ''
+          ]"
+          @click="selectDesign(item)"
+        >
+          <div
+            class="text-base font-medium text-left w-full text-foreground truncate max-w-[160px] overflow-ellipsis leading-none"
+          >
+            {{ designDisplayName(item) }}
+          </div>
+          <div>
             <LazyTwoDScene
               :design="item.front_design"
               :svg-parts="item.svg_parts"
@@ -234,15 +349,22 @@
               :canvas-class="'rounded-xl'"
             />
           </div>
+          <Checkbox
+            :id="`checkbox-design-catalog-${item.id}`"
+            :class="'absolute bottom-2 right-2 size-6'"
+            :model-value="!!selectedDesigns.find(id => id === item.id)"
+            @click.stop
+            @update:model-value="toggleDesignSelection(item.id)"
+          />
         </div>
       </div>
-      <Checkbox
-        :id="`checkbox-design-${item.id}`"
-        :class="'absolute bottom-2 right-2 size-6'"
-        :model-value="!!selectedDesigns.find(id => id === item.id)"
-        @click.stop
-        @update:model-value="toggleDesignSelection(item.id)"
-      />
+    </div>
+
+    <div
+      v-if="!myDesignsFilteredPreviews.length && !catalogFilteredPreviews.length"
+      class="text-sm text-muted-foreground"
+    >
+      {{ msg_no_designs_match_filters({}, { locale: profileStore.currentLocale }) }}
     </div>
   </div>
 </template>

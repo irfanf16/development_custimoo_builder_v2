@@ -1007,6 +1007,8 @@
   async function loadScene(): Promise<void> {
     if (!canvas.value) return
 
+    // Only the main product canvas drives this flag; secondary canvases (e.g. Summary thumbnail)
+    // must not clear it or other steps lose colors/logos in the menu and panels.
     if (props.mainPreview) {
       productsStore.setSceneLoadComplete(false)
       productsStore.setMainPreviewLoadComplete(false)

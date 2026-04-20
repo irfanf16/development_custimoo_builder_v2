@@ -32,7 +32,9 @@
     Sun,
     Globe,
     Moon,
-    Check
+    Check,
+    Upload,
+    Download
   } from 'lucide-vue-next'
   import {
     topbar_save,
@@ -64,7 +66,12 @@
     msg_failed_to_share_product,
     msg_design_shared_success,
     msg_missing_roster_sizes,
-    theme_toggle_sr
+    theme_toggle_sr,
+    topbar_download_design_svg,
+    topbar_upload_custom_design,
+    msg_custom_design_uploaded_success,
+    msg_production_svg_unavailable,
+    msg_design_svg_download_failed
   } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import SignInButton from '@/components/auth/SignInButton.vue'
@@ -77,7 +84,7 @@
   import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
   import ResetPasswordDialog from '@/components/auth/ResetPasswordDialog.vue'
   import { useAddToCartVisibility } from '@/composables/useAddToCartVisibility'
-  import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+  import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
   import { useRoute } from 'vue-router'
   import { useUIStore } from '@/stores/ui/ui.store'
@@ -111,6 +118,8 @@
   import { usePermissions } from '@/composables/usePermissions'
   import { m as messages } from '@/paraglide/messages'
   import type { ParaglideLocale } from '@/services/preferences/types'
+  import { useStorage } from '@/composables/scene/useStorage'
+  import { buildDesignFileStoragePath } from '@/lib/designFileUrl'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
@@ -139,6 +148,7 @@
   const { shouldShowAddToCartButton } = useAddToCartVisibility()
 
   const { isAuthenticated: isLoggedIn, customer: user } = storeToRefs(authStore)
+  const canUploadCustomDesign = computed(() => isLoggedIn.value && can('upload-custom-design'))
   const { isMobile } = storeToRefs(uiStore)
   const locale = computed(() => profileStore.currentLocale || 'en')
 
@@ -271,7 +281,86 @@
     }
   })
 
+  const customDesignFileInputRef = ref<HTMLInputElement | null>(null)
+
+  const { fromStorage } = useStorage()
+
   const skuInformation = computed(() => productsStore?.activeProductDetails?.sku)
+
+  const is3dProductForDesignFile = computed(
+    () => !!productsStore.activeProductDetails?.is_3d_product
+  )
+
+  /** Same path rules as useSceneCommon (no double `.svg.svg`). */
+  const productionSvgDownloadUrl = computed(() => {
+    const pd = productsStore.activeDesignDetails?.production_design
+    if (!pd?.file_url?.trim()) return ''
+    const relativePath = buildDesignFileStoragePath(pd.file_url, pd.file_extension)
+    return fromStorage(relativePath)
+  })
+
+  const canDownloadProductionSvg = computed(
+    () => is3dProductForDesignFile.value && !!productionSvgDownloadUrl.value
+  )
+
+  const productionSvgDownloadFilename = computed(() => {
+    const pd = productsStore.activeDesignDetails?.production_design
+    const raw =
+      pd?.file_name || pd?.design_name || customizationStore.customization?.design_name || 'design'
+    const base = String(raw).replace(/[\\/]+/g, '_')
+    return base.toLowerCase().endsWith('.svg') ? base : `${base}.svg`
+  })
+
+  async function handleDownloadProductionSvg() {
+    const url = productionSvgDownloadUrl.value
+    if (!url) {
+      toast.error(msg_production_svg_unavailable({}, { locale: locale.value }))
+      return
+    }
+    try {
+      const res = await fetch(url, { mode: 'cors' })
+      if (!res.ok) throw new Error('bad status')
+      // Preserve exact bytes; set SVG MIME so saved file matches what Fabric expects
+      const buf = await res.arrayBuffer()
+      const blob = new Blob([buf], { type: 'image/svg+xml' })
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = productionSvgDownloadFilename.value
+      a.rel = 'noopener'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(objectUrl)
+    } catch {
+      try {
+        const a = document.createElement('a')
+        a.href = url
+        a.target = '_blank'
+        a.rel = 'noopener noreferrer'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      } catch {
+        toast.error(msg_design_svg_download_failed({}, { locale: locale.value }))
+      }
+    }
+  }
+
+  async function onCustomDesignFileSelected(ev: Event) {
+    const input = ev.target as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+    const result = await productsStore.uploadCustomDesignAndRefresh(file)
+    if (result.success) {
+      toast.success(msg_custom_design_uploaded_success({}, { locale: locale.value }))
+      await nextTick()
+      void goTo('designs')
+    } else {
+      toast.error(result.message ?? productsStore.error ?? 'Upload failed')
+    }
+  }
 
   // Methods
   async function handleResetCustomization() {
@@ -1424,6 +1513,79 @@
                 <Ruler class="size-4" />
                 <span>Size Guide</span>
               </Button>
+            </ButtonGroup>
+
+            <!-- 3D product: production SVG download + custom design upload -->
+            <ButtonGroup
+              v-if="!uiStore.isMobile && is3dProductForDesignFile && canUploadCustomDesign"
+            >
+              <input
+                ref="customDesignFileInputRef"
+                type="file"
+                accept=".svg,image/svg+xml"
+                class="sr-only"
+                @change="onCustomDesignFileSelected"
+              />
+              <template v-if="showCompactTopbar">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      :disabled="!canDownloadProductionSvg"
+                      @click="handleDownloadProductionSvg"
+                    >
+                      <Download class="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {{ topbar_download_design_svg({}, { locale: profileStore.currentLocale }) }}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      :loading="productsStore.isLoading"
+                      @click="customDesignFileInputRef?.click()"
+                    >
+                      <Upload class="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {{ topbar_upload_custom_design({}, { locale: profileStore.currentLocale }) }}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </template>
+              <template v-else>
+                <Button
+                  variant="outline"
+                  size="default"
+                  :disabled="!canDownloadProductionSvg"
+                  @click="handleDownloadProductionSvg"
+                >
+                  <Download class="size-4" />
+                  <span>{{
+                    topbar_download_design_svg({}, { locale: profileStore.currentLocale })
+                  }}</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="default"
+                  :loading="productsStore.isLoading"
+                  @click="customDesignFileInputRef?.click()"
+                >
+                  <Upload class="size-4" />
+                  <span>{{
+                    topbar_upload_custom_design({}, { locale: profileStore.currentLocale })
+                  }}</span>
+                </Button>
+              </template>
             </ButtonGroup>
 
             <!-- Share Design Button -->

@@ -14,6 +14,7 @@ import { useSvgGroups } from './useSvgGroups'
 import type { useColorCustomization } from './useColorCustomization'
 import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
 import { patchCanvas2DWillReadFrequently, setCanvas2DWillReadFrequently } from '@/lib/canvas'
+import { buildDesignFileStoragePath } from '@/lib/designFileUrl'
 
 // Polyfill: ensure requestRenderAll exists (fallback to renderAll)
 const canvasProto = Canvas.prototype as Canvas & {
@@ -113,12 +114,12 @@ export function useSceneCommon(
     if (!designDetails) return undefined
 
     // Get design based on side - handle different types (OutputDesignAsset vs production_design)
-    let storeDesign: { file_url: string; file_extension?: string }
+    let storeDesign: { file_url: string; file_extension?: string } | null | undefined
     let safeZoneDesign: { file_url?: string } | undefined
     let boundaryDesign: { file_url?: string } | undefined
 
     if (sideValue === 'front') {
-      storeDesign = designDetails.front_design
+      storeDesign = designDetails.front_design ?? null
       safeZoneDesign = (designDetails as Record<string, unknown>).frontsafezone_design as
         | { file_url?: string }
         | undefined
@@ -126,7 +127,7 @@ export function useSceneCommon(
         | { file_url?: string }
         | undefined
     } else if (sideValue === 'back') {
-      storeDesign = designDetails.back_design
+      storeDesign = designDetails.back_design ?? null
       safeZoneDesign = (designDetails as Record<string, unknown>).backsafezone_design as
         | { file_url?: string }
         | undefined
@@ -135,9 +136,18 @@ export function useSceneCommon(
         | undefined
     } else {
       storeDesign = designDetails.production_design
+        ? {
+            file_url: designDetails.production_design.file_url,
+            file_extension: designDetails.production_design.file_extension
+          }
+        : null
       safeZoneDesign = (designDetails as Record<string, unknown>).productionsafezone_design as
         | { file_url?: string }
         | undefined
+    }
+
+    if (!storeDesign?.file_url) {
+      return undefined
     }
 
     const file_url = storeDesign.file_url
@@ -259,8 +269,7 @@ export function useSceneCommon(
       onLoaded
     } = options
 
-    // Build design URL
-    const designUrl = designData.file_url + '.' + designData.file_extension
+    const designUrl = buildDesignFileStoragePath(designData.file_url, designData.file_extension)
 
     // Load image (SVG or raster) with flipY option if specified
     const designObj = await loadImageFromURL(

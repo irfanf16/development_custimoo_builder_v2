@@ -89,7 +89,8 @@
   const applyingStyleId = ref<number | null>(null)
 
   async function handleStyleSelection(styleId: number) {
-    // if (applyingStyleId.value != null) return
+    if (Number(styleId) === Number(selectedStyleId.value)) return
+    if (applyingStyleId.value != null) return
     applyingStyleId.value = styleId
     try {
       await productsStore.fetchActiveStyleDetails(styleId)
