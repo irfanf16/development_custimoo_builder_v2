@@ -463,6 +463,12 @@
     () => appliedLogoColors.value.length > 0 && workflowStore.activeColorAccordionIndex === 0
   )
 
+  /** Hex (or rgb) for the slot being edited — drives palette swatch highlight to match extracted swatch */
+  const selectedColorForExtractedPalette = computed(() => {
+    const idx = editingDefaultColorIndex.value
+    if (idx === null) return undefined
+    return customizationStore.customization?.default_colors?.[idx]?.color ?? undefined
+  })
   // Design shuffle with a single SVG group only fills one default slot — hide the duplicate "extracted" strip + picker chrome.
   const showAppliedExtractedColorsBlock = computed(() => {
     if (appliedLogoColors.value.length === 0) return false
@@ -608,6 +614,7 @@
           v-if="palettesForAddColor.length"
           :palettes="palettesForAddColor"
           :custom-palettes="getCustomLogosPalettes()"
+          :selected-color="selectedColorForExtractedPalette"
           :allow-custom-color="productsStore.activeProductDetails?.is_custom_color_allowed"
           :has-svg-colors="
             effectiveSvgGroupsInteractive[0]
