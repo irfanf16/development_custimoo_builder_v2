@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
+  import { storeToRefs } from 'pinia'
   import { useProductsStore } from '@/stores/products/products.store.ts'
   import { useCustomizationStore } from '@/stores/customization/customization.store'
   // Style previews use static icons (PNG) from style_icon_url, so no canvas is needed
@@ -18,7 +19,12 @@
   import { useCompanyStore } from '@/stores/company/company.store'
   import { useHistoryStore } from '@/stores/history/history.store'
   import { usePricing } from '@/composables/usePricing'
+  import { useUIStore } from '@/stores/ui/ui.store'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
+  import { SkeletonBox } from '@/components/skeleton'
+
+  const uiStore = useUIStore()
+  const { isMobile } = storeToRefs(uiStore)
   const productsStore = useProductsStore()
   const customizationStore = useCustomizationStore()
   const profileStore = useProfileStore()
@@ -26,6 +32,7 @@
   const historyStore = useHistoryStore()
 
   const { showPricing } = usePricing()
+  const STYLE_SKELETON_PLACEHOLDER_COUNT = 4
   const productId = computed(
     () => productsStore.activeProductDetails?.id || customizationStore.activeProductId
   )
@@ -246,8 +253,35 @@
 
 <template>
   <!-- Content -->
-  <div v-if="showStylesLoading" class="flex items-center justify-center min-h-[200px] w-full">
-    <Spinner class="size-8 text-primary" />
+  <div
+    v-if="showStylesLoading"
+    class="flex flex-col md:gap-2 lg:gap-4 pr-4 md:mx-3"
+    aria-busy="true"
+    aria-label="Loading styles"
+  >
+    <div class="flex flex-col gap-3 pt-3 lg:pt-6 pb-1 lg:pb-2">
+      <div
+        class="grid grid-cols-2 gap-x-8 md:gap-x-16 gap-y-6 md:gap-y-8 px-4 md:px-6 w-full min-h-[200px]"
+      >
+        <div
+          v-for="n in STYLE_SKELETON_PLACEHOLDER_COUNT"
+          :key="`style-skeleton-${n}`"
+          class="pointer-events-none flex flex-col gap-3 items-start"
+        >
+          <div class="flex w-full min-w-0 flex-col self-stretch">
+            <SkeletonBox :width="isMobile ? 100 : 140" :height="16" radius="sm" />
+          </div>
+          <div class="flex flex-col items-start gap-3 w-full">
+            <SkeletonBox
+              class="shrink-0"
+              :width="isMobile ? 130 : 176"
+              :height="isMobile ? 130 : 176"
+              radius="xl"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <div v-else class="flex flex-col md:gap-2 lg:gap-4 px-4 md:mx-3">
     <div class="flex flex-col gap-2">

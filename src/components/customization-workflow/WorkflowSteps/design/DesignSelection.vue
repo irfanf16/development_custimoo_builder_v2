@@ -12,7 +12,9 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { design_categories_default_label } from '@/paraglide/messages'
   import { Checkbox } from '@/components/ui/checkbox'
-  import Spinner from '@/components/ui/spinner/Spinner.vue'
+  import { SkeletonBox } from '@/components/skeleton'
+  import axios from 'axios'
+
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
@@ -35,6 +37,7 @@
   const emit = defineEmits<Emits>()
   const previews = computed(() => productsStore.designPreviews || [])
   const designSelectionContainer = ref<HTMLElement | null>(null)
+  const DESIGN_SKELETON_PLACEHOLDER_COUNT = 4
 
   const showDesignsLoading = computed(
     () =>
@@ -78,10 +81,6 @@
     })
   })
 
-  function isApplyingDesign(designId: number) {
-    return pendingDesignId.value === designId
-  }
-
   async function selectDesign(item: OutputDesignPreviewFront) {
     // if (pendingDesignId.value != null) {
     //   return
@@ -101,10 +100,16 @@
 
     workflowStore.setPendingDesignId(designId)
     productsStore.suspendCustomizationAutoSync()
+    productsStore.setMainPreviewLoadComplete(false)
     try {
       productsStore.applyDesignPreview(item)
-      await productsStore.fetchDesignDetailsById(designId)
+      const result = await productsStore.fetchDesignDetailsById(designId)
+      if (axios.isCancel(result.axiosError)) {
+        return
+      }
+      productsStore.setMainPreviewLoadComplete(true)
     } catch (error) {
+      productsStore.setMainPreviewLoadComplete(true)
       console.error('Error selecting design:', error)
       return
     } finally {
@@ -164,9 +169,32 @@
   <!-- Content -->
   <div
     v-if="showDesignsLoading"
-    class="mb-4 flex min-h-[min(240px,45vh)] w-full items-center justify-center md:mb-6"
+    :class="
+      isExpanded
+        ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'
+        : 'flex flex-wrap gap-2'
+    "
+    class="mb-4 md:mb-6 w-full min-h-[200px]"
+    aria-busy="true"
+    aria-label="Loading designs"
   >
-    <Spinner class="size-8 text-primary" />
+    <div
+      v-for="n in DESIGN_SKELETON_PLACEHOLDER_COUNT"
+      :key="`design-skeleton-${n}`"
+      class="pointer-events-none relative flex flex-1 flex-col items-center gap-2 rounded-sm p-2 md:gap-3 md:p-2"
+    >
+      <div class="flex w-full min-w-0 flex-col self-stretch items-center">
+        <SkeletonBox :width="isMobile ? 130 : 176" :height="16" radius="sm" />
+      </div>
+      <div class="flex flex-col items-center gap-3 px-2">
+        <SkeletonBox
+          class="shrink-0"
+          :width="isMobile ? 130 : 176"
+          :height="isMobile ? 130 : 176"
+          radius="xl"
+        />
+      </div>
+    </div>
   </div>
   <div
     v-else
@@ -196,11 +224,8 @@
         {{ item.front_design.design_name }}
       </div>
       <div class="px-2">
-        <div
-          class="relative inline-flex rounded-xl"
-          :aria-busy="isApplyingDesign(item.id) ? 'true' : undefined"
-        >
-          <div :class="isApplyingDesign(item.id) ? 'opacity-50' : ''" class="rounded-xl">
+        <div class="relative inline-flex rounded-xl">
+          <div class="rounded-xl">
             <LazyTwoDScene
               :design="item.front_design"
               :svg-parts="item.svg_parts"
@@ -208,12 +233,6 @@
               :canvas-height="isMobile ? 130 : 176"
               :canvas-class="'rounded-xl'"
             />
-          </div>
-          <div
-            v-if="isApplyingDesign(item.id)"
-            class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-background/50"
-          >
-            <Spinner class="size-8 text-primary" />
           </div>
         </div>
       </div>

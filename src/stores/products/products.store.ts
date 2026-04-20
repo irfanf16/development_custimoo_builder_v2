@@ -106,6 +106,16 @@ export const useProductsStore = defineStore('productsStore', () => {
     sceneLoadComplete.value = complete
   }
 
+  /**
+   * Main preview loading flag used by `ProductPreview.vue`.
+   * This must not be affected by thumbnail scenes rendered in selection grids.
+   */
+  const mainPreviewLoadComplete = ref(false)
+
+  function setMainPreviewLoadComplete(complete: boolean): void {
+    mainPreviewLoadComplete.value = complete
+  }
+
   // ===== COMPUTED =====
   // Product type flags from categories response
   const isCustomized = computed(() => categories.value?.customized ?? false)
@@ -588,6 +598,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     error,
     sceneLoadComplete,
     setSceneLoadComplete,
+    mainPreviewLoadComplete,
+    setMainPreviewLoadComplete,
     // Computed
     isCustomized,
     isPersonalized,

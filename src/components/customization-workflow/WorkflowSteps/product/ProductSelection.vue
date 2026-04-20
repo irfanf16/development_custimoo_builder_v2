@@ -23,7 +23,8 @@
     msg_no_products_found
   } from '@/paraglide/messages'
   import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
-  import Spinner from '@/components/ui/spinner/Spinner.vue'
+  import { SkeletonBox } from '@/components/skeleton'
+  import axios from 'axios'
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
@@ -59,6 +60,7 @@
   const selectedProductIdToPreview = ref<number>(0)
   // Constants
   const SCROLL_DELAY_MS = 100
+  const PRODUCT_SKELETON_PLACEHOLDER_COUNT = 4
 
   async function loadPreviewsForCurrentCategory(isColdStart: boolean = false) {
     // isColdStart is true when the component is mounted without a selected subcategory.
@@ -89,10 +91,6 @@
   watch([() => workflowStore.selectedCategoryId, () => workflowStore.selectedSubCategoryId], () => {
     loadPreviewsForCurrentCategory()
   })
-
-  function isApplyingProduct(productId: number) {
-    return pendingProductId.value === productId
-  }
 
   async function handleSelectProduct(productId: number) {
     try {
@@ -164,10 +162,16 @@
       workflowStore.setPendingProductId(productId)
 
       void (async () => {
+        productsStore.setMainPreviewLoadComplete(false)
         try {
-          await productsStore.fetchActiveProductDetails(productId)
+          const result = await productsStore.fetchActiveProductDetails(productId)
+
+          if (axios.isCancel(result.axiosError)) {
+            return
+          }
         } catch (error) {
           console.error('Error selecting product:', error)
+          productsStore.setMainPreviewLoadComplete(true)
           return
         } finally {
           if (workflowStore.pendingProductId === productId) {
@@ -178,6 +182,7 @@
         const styleId = productsStore.activeStyleDetails?.id
         const designId = productsStore.activeDesignDetails?.id
         if (!styleId) {
+          productsStore.setMainPreviewLoadComplete(true)
           return
         }
 
@@ -191,6 +196,8 @@
           }
         } catch (error) {
           console.error('Error loading style/design previews after product select:', error)
+        } finally {
+          productsStore.setMainPreviewLoadComplete(true)
         }
       })()
     } catch (error) {
@@ -279,9 +286,33 @@
 <template>
   <div
     v-if="showProductsLoading"
-    class="flex min-h-[min(240px,45vh)] w-full items-center justify-center"
+    :class="
+      isExpanded
+        ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'
+        : 'flex flex-wrap gap-2'
+    "
+    class="w-full min-h-[200px]"
+    aria-busy="true"
+    aria-label="Loading products"
   >
-    <Spinner class="size-8 text-primary" />
+    <div
+      v-for="n in PRODUCT_SKELETON_PLACEHOLDER_COUNT"
+      :key="`product-skeleton-${n}`"
+      class="pointer-events-none relative flex flex-1 flex-col items-center gap-2 rounded-sm p-2 md:gap-3 md:p-2"
+    >
+      <div class="flex w-full min-w-0 flex-col self-stretch items-center">
+        <SkeletonBox :width="isMobile ? 130 : 176" :height="16" radius="sm" />
+      </div>
+      <div class="flex flex-col items-center gap-3 px-2">
+        <SkeletonBox
+          class="shrink-0"
+          :width="isMobile ? 130 : 176"
+          :height="isMobile ? 130 : 176"
+          radius="xl"
+        />
+        <SkeletonBox :width="120" :height="32" radius="md" />
+      </div>
+    </div>
   </div>
   <div
     v-else
@@ -329,14 +360,8 @@
         </div>
       </div>
       <div class="px-2">
-        <div
-          class="relative inline-flex rounded-xl"
-          :aria-busy="isApplyingProduct(item.productPreview.id) ? 'true' : undefined"
-        >
-          <div
-            :class="isApplyingProduct(item.productPreview.id) ? 'opacity-50' : ''"
-            class="rounded-xl"
-          >
+        <div class="relative inline-flex rounded-xl">
+          <div class="rounded-xl">
             <LazyTwoDScene
               :models="item.stylePreview.front_models"
               :design="item.designPreview.front_design"
@@ -346,12 +371,6 @@
               :canvas-class="'rounded-xl'"
               :product-id="item.productPreview.id"
             />
-          </div>
-          <div
-            v-if="isApplyingProduct(item.productPreview.id)"
-            class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-background/50"
-          >
-            <Spinner class="size-8 text-primary" />
           </div>
         </div>
 

@@ -1888,7 +1888,10 @@
       return
     }
 
-    productsStore.setSceneLoadComplete(false)
+    if (props.mainPreview) {
+      productsStore.setSceneLoadComplete(false)
+      productsStore.setMainPreviewLoadComplete(false)
+    }
 
     // Remove existing model, design, logos, and texts before adding new ones
     removeModel()
@@ -1959,7 +1962,10 @@
     await resetAndAddLogos()
     await resetAndAddTexts()
 
-    productsStore.setSceneLoadComplete(true)
+    if (props.mainPreview) {
+      productsStore.setSceneLoadComplete(true)
+      productsStore.setMainPreviewLoadComplete(true)
+    }
     mounted.value = true
   }
 
