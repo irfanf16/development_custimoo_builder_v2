@@ -25,7 +25,6 @@
   import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
   import { SkeletonBox } from '@/components/skeleton'
   import axios from 'axios'
-  import Spinner from '@/components/ui/spinner/Spinner.vue'
   import { productGridPreviewCanvasPixels } from '@/lib/productGridPreviewPixels'
 
   interface Emits {
@@ -53,9 +52,7 @@
   const previews = computed(() => productsStore.productPreviews || [])
 
   /** Desktop mid-width widget (see uiStore.desktopPreviewCompact): two columns so tiles fit the narrow panel. */
-  const compactDesktopTwoCol = computed(
-    () => !uiStore.isMobile && uiStore.desktopPreviewCompact
-  )
+  const compactDesktopTwoCol = computed(() => !uiStore.isMobile && uiStore.desktopPreviewCompact)
 
   const productGridLayoutClass = computed(() => {
     if (compactDesktopTwoCol.value) {

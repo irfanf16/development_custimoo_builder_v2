@@ -117,15 +117,11 @@
   )
   const previews = computed(() => productsStore.designPreviews || [])
 
-  /** Matches uiStore.desktopPreviewCompact (widget width–based, stable vs preview-slot measurement). */
-  const compactDesktopTwoCol = computed(
-    () => !uiStore.isMobile && uiStore.desktopPreviewCompact
-  )
+  /** Matches uiStore.desktopPreviewCompact (widget width-based, stable vs preview-slot measurement). */
+  const compactDesktopTwoCol = computed(() => !uiStore.isMobile && uiStore.desktopPreviewCompact)
 
   /** Narrow rail: 2-col grid. Expanded (even on compact desktop) uses responsive multi-column grid. */
-  const compactDesktopTwoColOnly = computed(
-    () => compactDesktopTwoCol.value && !props.isExpanded
-  )
+  const compactDesktopTwoColOnly = computed(() => compactDesktopTwoCol.value && !props.isExpanded)
 
   const designGridLayoutClass = computed(() => {
     if (props.isExpanded) {
@@ -274,7 +270,12 @@
       </div>
     </div>
   </div>
-  <div v-else ref="designSelectionContainer" class="mb-4 md:mb-6 flex flex-col gap-6" :class="designGridLayoutClass">
+  <div
+    v-else
+    ref="designSelectionContainer"
+    class="mb-4 md:mb-6 flex flex-col gap-6"
+    :class="designGridLayoutClass"
+  >
     <div v-if="myDesignsFilteredPreviews.length" class="flex flex-col gap-2">
       <div class="text-sm font-semibold text-muted-foreground">
         {{ design_section_my_designs({}, { locale: profileStore.currentLocale }) }}

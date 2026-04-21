@@ -41,6 +41,9 @@
   const profileStore = useProfileStore()
   const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const { initializeEffects } = useWorkflow()
+  const customizationStore = useCustomizationStore()
+  const { customization } = storeToRefs(customizationStore)
+
   // When active step is not in visible tabs (e.g. product changed and logos tab hidden), redirect to a visible step.
   // Only redirect once scene load is complete (extractSvgGroups has run) so we don't kick user off color tab on refresh.
   watch(
@@ -108,9 +111,7 @@
   const sheetDragOffset = ref(0)
   let sheetTouchStartY = 0
 
-  const closePanelAriaLabel = computed(() =>
-    ui_close({}, { locale: profileStore.currentLocale })
-  )
+  const closePanelAriaLabel = computed(() => ui_close({}, { locale: profileStore.currentLocale }))
 
   const mobileSheetInnerStyle = computed(() =>
     sheetDragOffset.value > 0 ? { transform: `translateY(${sheetDragOffset.value}px)` } : {}
@@ -214,6 +215,8 @@
   import { usePatternsConfig } from './WorkflowSteps/patterns/usePatternsConfig'
   import { useRosterConfig } from './WorkflowSteps/roster/useRosterConfig'
   import { useSummaryConfig } from './WorkflowSteps/summary/useSummaryConfig'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { storeToRefs } from 'pinia'
   // Repeat for other steps as available ...
 
   // Instantiate step configs
@@ -301,10 +304,7 @@
         leave-from-class="translate-y-0 opacity-100"
         leave-to-class="translate-y-4 opacity-0"
       >
-        <div
-          v-show="workflowStore.isPanelOpen"
-          class="w-full opacity-100"
-        >
+        <div v-show="workflowStore.isPanelOpen" class="w-full opacity-100">
           <div
             class="overflow-hidden rounded-t-2xl border border-border bg-background opacity-100 shadow-lg"
             :style="mobileSheetInnerStyle"
@@ -437,10 +437,7 @@
         v-else-if="workflowStore.currentStep === 'patterns'"
         :is-expanded="isExpanded"
       />
-      <TextsEntry
-        v-else-if="workflowStore.currentStep === 'texts'"
-        :is-expanded="isExpanded"
-      />
+      <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" :is-expanded="isExpanded" />
       <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" :is-expanded="isExpanded" />
       <SummaryPanel v-else-if="workflowStore.currentStep === 'summary'" :is-expanded="isExpanded" />
     </WorkflowPanel>
