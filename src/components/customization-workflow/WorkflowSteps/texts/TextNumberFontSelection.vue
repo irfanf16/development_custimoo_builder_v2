@@ -80,7 +80,7 @@
   })
 
   const isSyncingForm = ref(false)
-  const initializedEntries = new Set<number>()
+  const initializedEntries = new Set<number | string>()
 
   function getItemKey(item: OutputProductTextItem, fallbackIndex: number) {
     const extended = item as ManagedTextItem

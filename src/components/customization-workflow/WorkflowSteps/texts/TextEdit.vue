@@ -55,6 +55,7 @@
   } from '@/paraglide/messages'
   import { useProductsStore } from '@/stores/products/products.store'
   import { storeToRefs } from 'pinia'
+  import { resolveFontToOptionValue } from '@/lib/fontKey'
 
   // ===== COMPOSABLES =====
   const { form, currentEntry, currentItem, isUserInput, updateTextAndRoster, productId } =
@@ -82,7 +83,7 @@
     const key = String(productId)
     const texts = customizationStore.customization?.product_custom_texts?.[key]
     if (!texts) return
-    const entryIndex = texts.findIndex((e: { id: number }) => e.id === textId)
+    const entryIndex = texts.findIndex(e => String(e.id) === String(textId))
     if (entryIndex === -1) return
     const entry = texts[entryIndex]
     if (!entry?.items) return
@@ -210,6 +211,13 @@
     options => {
       if (!form.font && options.length) {
         form.font = options[0]?.value || ''
+        return
+      }
+      if (form.font && options.length) {
+        const resolved = resolveFontToOptionValue(form.font, options)
+        if (resolved && resolved !== form.font) {
+          form.font = resolved
+        }
       }
     },
     { immediate: true }

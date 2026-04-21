@@ -363,6 +363,7 @@
         <div class="relative inline-flex rounded-xl">
           <div class="rounded-xl">
             <LazyTwoDScene
+              :id="item.designPreview.id"
               :models="item.stylePreview.front_models"
               :design="item.designPreview.front_design"
               :svg-parts="item.designPreview.svg_parts"
@@ -370,6 +371,7 @@
               :canvas-height="isMobile ? 130 : 176"
               :canvas-class="'rounded-xl'"
               :product-id="item.productPreview.id"
+              :preview-custom-texts="productsStore.getPreviewCustomTextsForDesign(item.designPreview)"
             />
           </div>
         </div>

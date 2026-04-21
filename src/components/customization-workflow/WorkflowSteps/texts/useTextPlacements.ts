@@ -89,7 +89,7 @@ export function useTextPlacements() {
    */
   function createPlacementFromItem(
     item: OutputProductTextItem,
-    textId: number,
+    textId: number | string,
     itemIndex: number
   ): TextItemPlacement {
     const extendedItem = item as ExtendedTextItem
@@ -98,7 +98,7 @@ export function useTextPlacements() {
 
     // Generate unique negative ID to avoid conflicts with product IDs
     // Formula ensures uniqueness: each text/item combination gets a unique ID
-    const uniqueId = -(textId * 10000 + itemIndex)
+    const uniqueId = -(Number(textId) * 10000 + itemIndex)
 
     // Normalize placement side to lowercase for consistency
     const side: string = item.placement === 'Front' ? 'front' : 'back'
@@ -106,7 +106,7 @@ export function useTextPlacements() {
     return {
       ...item,
       id: uniqueId,
-      text_id: textId,
+      text_id: Number(textId),
       item_index: itemIndex,
       // UI display helpers
       name_of_placement: item.label || '',

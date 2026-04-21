@@ -135,11 +135,11 @@ function cloneRosterEntry(entry: APCustomizationRosterEntry): APCustomizationRos
 function findTextEntryById(
   ctx: HistoryContext,
   key: string,
-  textId: number
+  textId: number | string
 ): { array: OutputProductText[]; index: number } | null {
   const array = getTextArray(ctx, key)
   if (!array) return null
-  const index = array.findIndex(entry => entry.id === textId)
+  const index = array.findIndex(entry => String(entry.id) === String(textId))
   if (index === -1) return null
   return { array, index }
 }
@@ -192,7 +192,7 @@ function formatTextValue(value: string | null | undefined, fallback = 'text'): s
 function describeTextById(
   ctx: HistoryContext,
   key: string,
-  textId: number,
+  textId: number | string,
   fallback?: string
 ): string {
   const result = findTextEntryById(ctx, key, textId)
@@ -370,7 +370,7 @@ export const registry: Registry = {
       ctx.customizationStore.saveToLocalStorage()
 
       const workflowStore = ctx.workflowStore
-      const removedWasActive = workflowStore.activeTextId === removed.id
+      const removedWasActive = String(workflowStore.activeTextId) === String(removed.id)
 
       if (removedWasActive) {
         workflowStore.setActiveTextId(null)

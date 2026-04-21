@@ -223,7 +223,6 @@ export const useCartStore = defineStore('cartStore', () => {
     const response = await tryCatchApi(API.cart.storeProductToCart(payload), {
       operation: 'addProductToCart'
     })
-    console.log('Add to cart response:', response) // --- IGNORE ---
     if (response.success && response.content) {
       const cartResponse = response.content
       if (cartResponse.result) {

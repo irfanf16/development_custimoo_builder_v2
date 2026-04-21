@@ -16,7 +16,9 @@ export function useTextsConfig() {
   const headerConfig: Ref<HeaderConfiguration> = computed(() => {
     const activeText =
       workflowStore.activeTextId != null
-        ? customizationStore.activeProductTexts.find(text => text.id === workflowStore.activeTextId)
+        ? customizationStore.activeProductTexts.find(
+            text => String(text.id) === String(workflowStore.activeTextId)
+          )
         : null
 
     // Only show item label in breadcrumb when on 'single' (editing one item). On 'multipleitems' we show only Texts > Entry.

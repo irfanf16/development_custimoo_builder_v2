@@ -10,8 +10,10 @@ import type {
   OutputProductTextItem,
   APCustomizationRosterEntry
 } from '@/services/products/types'
+import { resolveFontToOptionValue } from '@/lib/fontKey'
 import { clone, toNumber } from './useTextUtils'
 import { selectedPlacementId } from './useTextPlacements'
+import { useTexts } from './useTexts'
 
 // Extended type for text items that may have additional properties
 type ExtendedTextItem = OutputProductTextItem & {
@@ -28,6 +30,7 @@ export function useTextActions() {
   const customizationStore = useCustomizationStore()
   const productsStore = useProductsStore()
   const historyStore = useHistoryStore()
+  const { fontOptions } = useTexts()
 
   // ===== STATE =====
   // Use toRef to create a properly typed ref from the store
@@ -75,9 +78,11 @@ export function useTextActions() {
   )
 
   const currentEntry = computed<OutputProductText | null>(() => {
-    const textId: number | null = activeTextId.value
+    const textId = activeTextId.value
     if (textId == null) return null
-    return textEntries.value.find(entry => entry.id === textId) ?? null
+    // Use string coercion to handle both numeric IDs and UUID string IDs
+    const textIdStr = String(textId)
+    return textEntries.value.find(entry => String(entry.id) === textIdStr) ?? null
   })
 
   const currentItem = computed<OutputProductTextItem | null>(() => {
@@ -130,7 +135,7 @@ export function useTextActions() {
    * Uses triggerRef to ensure Vue reactivity detects the change
    */
   function updateEntryInStoreOptimized(attribute: 'angle' | 'height' | 'outline_width') {
-    const textId: number | null = activeTextId.value
+    const textId: number | string | null = activeTextId.value
     const prodId: number | null = productId.value
     const entry = currentEntry.value
 
@@ -141,7 +146,7 @@ export function useTextActions() {
     const texts = customizationStore.customization.product_custom_texts[key]
     if (!texts) return
 
-    const entryIndex = texts.findIndex(e => e.id === textId)
+    const entryIndex = texts.findIndex(e => String(e.id) === String(textId))
     if (entryIndex === -1) return
 
     const targetEntry = texts[entryIndex]
@@ -197,10 +202,9 @@ export function useTextActions() {
   }
 
   function updateEntryInStore() {
-    const textId: number | null = activeTextId.value
+    const textId: number | string | null = activeTextId.value
     const prodId: number | null = productId.value
     const entry = currentEntry.value
-
     if (!entry || prodId == null || textId == null) return
     if (!customizationStore.customization) return
 
@@ -208,7 +212,7 @@ export function useTextActions() {
     const texts = customizationStore.customization.product_custom_texts[key]
     if (!texts) return
 
-    const entryIndex = texts.findIndex(e => e.id === textId)
+    const entryIndex = texts.findIndex(e => String(e.id) === String(textId))
     if (entryIndex === -1) return
 
     // Set flag to prevent syncFormWithEntry from overwriting form values
@@ -233,7 +237,7 @@ export function useTextActions() {
    * Save individual attribute changes to history registry
    */
   async function saveAttributeToHistory(attribute: string) {
-    const textId: number | null = activeTextId.value
+    const textId: number | string | null = activeTextId.value
     const prodId: number | null = productId.value
 
     if (prodId == null || textId == null) return
@@ -243,7 +247,7 @@ export function useTextActions() {
     const texts = customizationStore.customization?.product_custom_texts[key]
     if (!texts) return
 
-    const entryIndex = texts.findIndex(e => e.id === textId)
+    const entryIndex = texts.findIndex(e => String(e.id) === String(textId))
     if (entryIndex === -1) return
 
     const currentEntryState = texts[entryIndex]
@@ -441,7 +445,10 @@ export function useTextActions() {
       } else {
         form.text = entry.value || ''
       }
-      form.font = entry.font_family || ''
+      {
+        const raw = entry.font_family || ''
+        form.font = resolveFontToOptionValue(raw, fontOptions.value) ?? raw
+      }
       form.fill = item.color || '#000000'
       form.outline = item.outline_color || '#ffffff'
       form.outline_enabled = item.outline_enabled || false
@@ -487,7 +494,8 @@ export function useTextActions() {
   }
   // from text fields
   function updateTextAndRoster() {
-    const isPlayerNameEntry = currentEntry.value?.manually_added !== true
+    const isPlayerNameEntry =
+      currentEntry.value?.manually_added !== true && !currentEntry.value?.design_id
     if (isPlayerNameEntry) {
       ensureRosterRowExists()
       const rosterEntries = customizationStore.rosterEntries
@@ -561,7 +569,8 @@ export function useTextActions() {
       const prodId = productId.value
       if (!prodId) return
 
-      const isPlayerNameEntry = currentEntry.value?.manually_added !== true
+      const isPlayerNameEntry =
+        currentEntry.value?.manually_added !== true && !currentEntry.value?.design_id
       if (isPlayerNameEntry) {
         const roster = customizationStore.rosterEntries
         if (!roster || roster.length === 0) {
@@ -615,7 +624,7 @@ export function useTextActions() {
   watch(
     () => form.angle,
     () => {
-      const textId: number | null = activeTextId.value
+      const textId: number | string | null = activeTextId.value
       if (!currentEntry.value || textId == null) return
 
       // Capture previous state before updating (only if not already captured for this attribute)
@@ -635,7 +644,7 @@ export function useTextActions() {
   watch(
     () => form.height,
     () => {
-      const textId: number | null = activeTextId.value
+      const textId: number | string | null = activeTextId.value
       if (!currentEntry.value || textId == null) return
 
       // Capture previous state before updating (only if not already captured for this attribute)
@@ -659,7 +668,7 @@ export function useTextActions() {
   function capturePreviousStateIfNeeded() {
     if (previousState.value) return // Already captured
 
-    const textId: number | null = activeTextId.value
+    const textId: number | string | null = activeTextId.value
     const prodId: number | null = productId.value
     if (prodId == null || textId == null) return
 
@@ -667,7 +676,7 @@ export function useTextActions() {
     const texts = customizationStore.customization?.product_custom_texts[key]
     if (!texts) return
 
-    const entryIndex = texts.findIndex(e => e.id === textId)
+    const entryIndex = texts.findIndex(e => String(e.id) === String(textId))
     if (entryIndex === -1) return
 
     const entry = texts[entryIndex]
@@ -697,7 +706,7 @@ export function useTextActions() {
   watch(
     () => form.font,
     () => {
-      const textId: number | null = activeTextId.value
+      const textId: number | string | null = activeTextId.value
       if (!currentEntry.value || textId == null) return
 
       // Capture previous state before updating
@@ -710,7 +719,7 @@ export function useTextActions() {
   watch(
     () => form.fill,
     () => {
-      const textId: number | null = activeTextId.value
+      const textId: number | string | null = activeTextId.value
       if (!currentEntry.value || textId == null) return
 
       // Capture previous state before updating
@@ -723,7 +732,7 @@ export function useTextActions() {
   watch(
     () => form.outline,
     () => {
-      const textId: number | null = activeTextId.value
+      const textId: number | string | null = activeTextId.value
       if (!currentEntry.value || textId == null) return
 
       // Capture previous state before updating
@@ -738,7 +747,7 @@ export function useTextActions() {
   watch(
     () => form.outline_width,
     () => {
-      const textId: number | null = activeTextId.value
+      const textId: number | string | null = activeTextId.value
       if (!currentEntry.value || textId == null) return
 
       // Capture previous state before updating (only if not already captured for this attribute)
@@ -758,7 +767,7 @@ export function useTextActions() {
   watch(
     () => form.width,
     () => {
-      const textId: number | null = activeTextId.value
+      const textId: number | string | null = activeTextId.value
       if (!currentEntry.value || textId == null) return
 
       // Capture previous state before updating
@@ -771,7 +780,7 @@ export function useTextActions() {
   watch(
     () => form.placement,
     () => {
-      const textId: number | null = activeTextId.value
+      const textId: number | string | null = activeTextId.value
       if (!currentEntry.value || textId == null) return
 
       // Capture previous state before updating
@@ -782,7 +791,7 @@ export function useTextActions() {
         const key = String(prodId)
         const texts = customizationStore.customization.product_custom_texts[key]
         if (texts) {
-          const entryIndex = texts.findIndex(e => e.id === textId)
+          const entryIndex = texts.findIndex(e => String(e.id) === String(textId))
           if (entryIndex !== -1) {
             const targetEntry = texts[entryIndex]
             if (!targetEntry) return // Early return if targetEntry is undefined
@@ -804,7 +813,7 @@ export function useTextActions() {
 
   // Watch selectedPlacementId changes
   watch(selectedPlacementId, () => {
-    const textId: number | null = activeTextId.value
+    const textId: number | string | null = activeTextId.value
     if (!currentEntry.value || textId == null) return
     updateEntryInStore()
     // Placement changes are handled by the placement watcher above

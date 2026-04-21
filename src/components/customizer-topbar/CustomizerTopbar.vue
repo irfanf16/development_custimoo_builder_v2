@@ -120,6 +120,7 @@
   import type { ParaglideLocale } from '@/services/preferences/types'
   import { useStorage } from '@/composables/scene/useStorage'
   import { buildDesignFileStoragePath } from '@/lib/designFileUrl'
+  import { pickDesignCustomTextRaw } from '@/lib/normalizeDesignCustomText'
 
   const uiStore = useUIStore()
   const profileStore = useProfileStore()
@@ -373,6 +374,16 @@
       const details = productsStore.activeProductDetails
       if (details?.product_texts?.length) {
         customizationStore.initializeProductTextsFromDetails(details.id, details.product_texts)
+      }
+      const designDetails = productsStore.activeDesignDetails
+      const productId = customizationStore.activeProductId ?? details?.id ?? null
+      if (productId && designDetails) {
+        customizationStore.syncProductTextsWithDesign(
+          productId,
+          pickDesignCustomTextRaw(designDetails)
+        )
+        // Restore original design text positions in the per-design map
+        productsStore.resetDesignCustomTexts(productId, designDetails.id)
       }
       history.clear()
       if (cartStore.isEditingCartProduct) {
@@ -943,7 +954,10 @@
           ? JSON.parse(rawSvgParts)
           : []
       const customLogos = customization.custom_logos[productKey] || []
-      const productCustomTexts = customization.product_custom_texts[productKey] || []
+      const activeDesignId = productsStore.activeDesignDetails?.id ?? null
+      const productCustomTexts = (customization.product_custom_texts[productKey] || []).filter(
+        t => !t.design_id || t.design_id === activeDesignId
+      )
       const rosterDetail = customization.products_rosters[productKey] || []
       const defaultColors = customization.default_colors || []
       const groupColors = customization.group_colors || {}
@@ -1015,7 +1029,6 @@
         category_id: customizationStore.activeCategoryId ?? undefined,
         sub_category_id: customizationStore.activeSubCategoryId ?? null
       }
-
       const success = await lockerRoomStore.updateLockerProduct(locker, lockerId)
 
       if (success) {
@@ -1196,7 +1209,10 @@
       const productKey = String(productId)
       const svgParts = productsStore.activeDesignDetails?.svg_parts || []
       const customLogos = customization.custom_logos[productKey] || []
-      const productCustomTexts = customization.product_custom_texts[productKey] || []
+      const activeDesignId = productsStore.activeDesignDetails?.id ?? null
+      const productCustomTexts = (customization.product_custom_texts[productKey] || []).filter(
+        t => !t.design_id || t.design_id === activeDesignId
+      )
       const rosterDetail = customization.products_rosters[productKey] || []
       const defaultColors = customization.default_colors || []
       const groupColors = customization.group_colors || {}

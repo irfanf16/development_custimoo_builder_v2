@@ -1,3 +1,4 @@
+import { resolveFontToProductsFontKey } from '@/lib/fontKey'
 import { loadSVGFromString, util, type FabricObject } from 'fabric'
 import type { CreateTextAsPathParams } from './useTexts'
 
@@ -31,6 +32,10 @@ export function createTextAsPathFromFonts(
 
     const keys = Object.keys(productsFonts)
     let font = productsFonts[fontFamily]?.opentype_font
+    if (!font) {
+      const k = resolveFontToProductsFontKey(fontFamily, productsFonts)
+      if (k) font = productsFonts[k]?.opentype_font
+    }
     if (!font && keys.length > 0) {
       const firstKey = keys[0]
       if (firstKey !== undefined) {

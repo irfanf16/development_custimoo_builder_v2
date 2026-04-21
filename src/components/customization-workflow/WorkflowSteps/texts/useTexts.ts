@@ -36,7 +36,7 @@ export function useTexts() {
     }
 
     const result: OutputProductText[] = []
-    const usedCustomIds = new Set<number>()
+    const usedCustomIds = new Set<number | string>()
 
     // Step 1: Process preset texts and match with customizations
     // If a preset has been customized, use the custom version; otherwise use preset

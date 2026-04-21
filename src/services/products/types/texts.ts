@@ -32,8 +32,9 @@ export type OutputProductTextItem = {
 }
 
 export type OutputProductText = {
-  id: number
+  id: number | string
   product_id: number
+  design_id?: number | null
   type: 'name' | 'number' | 'team_name'
   label: string
   placeholder?: string | null

@@ -49,7 +49,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const logosSubStep = ref<LogosSubStep>('list')
   const productsSubStep = ref<ProductsSubStep>('category')
   const textsSubStep = ref<TextsSubStep>('list')
-  const activeTextId = ref<number | null>(null)
+  const activeTextId = ref<number | string | null>(null)
   const activeTextItemIndex = ref<number | null>(null)
   const pendingTextTemplateId = ref<number | null>(null)
   const rosterSubStep = ref<RosterSubStep>('list')
@@ -197,7 +197,9 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     if (step === 'texts') {
       const activeText =
         activeTextId.value != null
-          ? customization.activeProductTexts.find(text => text.id === activeTextId.value)
+          ? customization.activeProductTexts.find(
+              text => String(text.id) === String(activeTextId.value)
+            )
           : null
 
       const hasMultipleItems = (activeText?.items?.length ?? 0) > 1
@@ -302,7 +304,14 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       if (logos) logosSubStep.value = logos
       if (products) productsSubStep.value = products
       if (textsMigrated) textsSubStep.value = textsMigrated
-      if (textId) activeTextId.value = Number(textId)
+      if (textId) {
+        // Preserve string UUIDs as-is; only coerce to number for legacy numeric IDs
+        const numericId = Number(textId)
+        activeTextId.value =
+          Number.isFinite(numericId) && !textId.includes('-') && !/[a-f]/i.test(textId)
+            ? numericId
+            : textId
+      }
       // Legacy: migrate from index to ID if needed
       else if (textIndexLegacy) {
         const index = Number(textIndexLegacy)
@@ -367,7 +376,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     saveSubStepsToLocalStorage()
   }
 
-  function setActiveTextId(textId: number | null) {
+  function setActiveTextId(textId: number | string | null) {
     activeTextId.value = textId
     saveSubStepsToLocalStorage()
   }
@@ -396,12 +405,12 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
    * @param textId - Text ID (required for identification)
    * @param itemIndex - Item index in text.items array
    */
-  function openTextEditorFromCustomizer(textId: number, itemIndex: number) {
+  function openTextEditorFromCustomizer(textId: number | string, itemIndex: number) {
     const prodId = customization.activeProductId
     if (prodId != null && customization.customization?.product_custom_texts) {
       const key = String(prodId)
       const texts = customization.customization.product_custom_texts[key]
-      const entry = texts?.find((e: { id: number }) => e.id === textId)
+      const entry = texts?.find(e => String(e.id) === String(textId))
       if (entry) entry.active_item_index = itemIndex
     }
     setActiveStep('texts')

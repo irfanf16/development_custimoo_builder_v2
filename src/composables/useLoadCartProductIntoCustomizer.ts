@@ -702,8 +702,6 @@ export function useLoadCartProductIntoCustomizer() {
       // Load the base product/style/design via existing products flow
       let productId = cartBaseProductId
       const productResp = await productsStore.fetchActiveProductDetails(productId)
-      // console.log("product response",productResp);
-      // console.log("Factory Product",factoryProduct);
       if (!productResp?.success) {
         // If the cart payload uses a *base* product_id that isn't valid for GET product/{id},
         // try mapping it to the active product id via previews

@@ -129,7 +129,8 @@
     // Preset texts have positive IDs and manually_added = false/undefined
     // Manually added texts have negative IDs OR manually_added = true
     const isManuallyAdded =
-      existingEntry?.manually_added === true || (existingEntry?.id != null && existingEntry.id < 0)
+      existingEntry?.manually_added === true ||
+      (existingEntry?.id != null && Number(existingEntry.id) < 0)
 
     if (existingEntry?.id && isManuallyAdded) {
       // Update existing manually-added entry with new placement coordinates

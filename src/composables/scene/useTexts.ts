@@ -10,7 +10,9 @@ import { useDebounceFn } from '@vueuse/core'
 import { FABRIC_CONTROL_VISIBILITY } from './useFabricControls'
 import { useCustomizationStore } from '@/stores/customization/customization.store'
 import { useProductsFontsStore } from '@/stores/products-fonts/products-fonts.store'
+import { useProductsStore } from '@/stores/products/products.store'
 import type { OutputProductText, OutputProductTextItem } from '@/services/products/types'
+import { resolveFontToProductsFontKey } from '@/lib/fontKey'
 import { createTextAsPathFromFonts } from './useTextAsPath'
 import { useSceneStore } from '@/stores/scene/scene.store'
 
@@ -176,7 +178,9 @@ export function getTextSignatureValuePlacement(
  * Whether a text item should be shown on canvas (legacy: visible = item.selected).
  */
 export function isTextItemVisible(item: OutputProductTextItem): boolean {
-  return !!item.selected
+  const s = item.selected as unknown
+  if (s === false || s === 0 || s === '0') return false
+  return true
 }
 
 function isTextEntryEmpty(entry: OutputProductText | null | undefined): boolean {
@@ -304,6 +308,19 @@ export function updateTextPositionInStore(options: UpdateTextPositionOptions): v
   customizationStore.updateProductTextItem(productId, customTextIndex, itemIndex, data, {
     skipHistory: true
   })
+
+  // Also persist into per-design map so design text positions survive design switches and page reload
+  const productsStore = useProductsStore()
+  const activeDesignId = productsStore.activeDesignDetails?.id
+  if (activeDesignId != null) {
+    productsStore.updateDesignCustomTextItem(
+      productId,
+      activeDesignId,
+      customTextIndex,
+      itemIndex,
+      data
+    )
+  }
 }
 
 const debouncedTextStoreUpdate = useDebounceFn(
@@ -331,6 +348,19 @@ const debouncedTextStoreUpdate = useDebounceFn(
       payload.data,
       { skipHistory: true }
     )
+
+    // Also persist into per-design map
+    const productsStore = useProductsStore()
+    const activeDesignId = productsStore.activeDesignDetails?.id
+    if (activeDesignId != null) {
+      productsStore.updateDesignCustomTextItem(
+        payload.productId,
+        activeDesignId,
+        payload.customTextIndex,
+        payload.itemIndex,
+        payload.data
+      )
+    }
   },
   500
 )
@@ -362,11 +392,12 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
   const position = calculatePosition(item)
   const rotation = calculateRotation(Number(item.rotation) || 0)
   const fontSize = heightScale * Number(item.height)
-  const fontFamily = entry.font_family?.trim() || 'Ubuntu'
-
   const { flipX = false } = options
   const productsFontsStore = useProductsFontsStore()
   const fonts = productsFontsStore.productsFonts
+  const rawFamily = entry.font_family?.trim() || item.font_family?.trim() || 'Ubuntu'
+  const fontFamily =
+    resolveFontToProductsFontKey(rawFamily, fonts as Record<string, unknown>) ?? rawFamily
   const { widthRatio, heightRatio } = options.getScaleRatios()
   const usePath = options.mainPreview && fonts
   let textObj: FabricObject
@@ -441,7 +472,7 @@ export async function addTextToCanvas(options: AddTextOptions): Promise<void> {
       padding: 15,
       cornerSize: 30,
       centeredScaling: true,
-      visible: it.selected,
+      visible: isTextItemVisible(it),
       flipX,
       lockMovementX: pinned,
       lockMovementY: pinned,
@@ -616,6 +647,8 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
 
   const nextMap = new Map<string, FabricObject>()
   const matchedKeys = new Set<string>()
+  const productsFontsStore = useProductsFontsStore()
+  const fontsMap = productsFontsStore.productsFonts as Record<string, unknown>
 
   for (const d of desired) {
     const key = getTextObjectKey(d.customTextIndex, d.itemIndex)
@@ -648,7 +681,8 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
         const rotation = calculateRotation(Number(d.item.rotation) || 0)
         const angle = rotation < 0 ? 360 + rotation : rotation
 
-        const fontFamily = d.entry.font_family?.trim() || d.item.font_family?.trim() || 'Ubuntu'
+        const rawFam = d.entry.font_family?.trim() || d.item.font_family?.trim() || 'Ubuntu'
+        const fontFamily = resolveFontToProductsFontKey(rawFam, fontsMap) ?? rawFam
         const pinned = !!(d.item?.pinned ?? false)
         obj.set({
           left: position.x,
@@ -658,7 +692,7 @@ export async function syncTextsOnCanvas(options: SyncTextsOptions): Promise<void
           fill: d.item.color || '#000000',
           stroke: d.item.outline_enabled ? d.item.outline_color : undefined,
           strokeWidth: d.item.outline_enabled ? (d.item.outline_width ?? 0) : 0,
-          visible: d.item.selected,
+          visible: isTextItemVisible(d.item),
           pinned,
           lockMovementX: pinned,
           lockMovementY: pinned

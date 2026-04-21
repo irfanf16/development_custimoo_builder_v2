@@ -61,7 +61,7 @@
     OutputProductTextItem
   } from '@/services/products/types'
   import type { StyleLogoAsset, StyleLogoEntry } from '@/services/types/styles'
-
+  import { resolveFontToProductsFontKey } from '@/lib/fontKey'
   const customizationStore = useCustomizationStore()
   const { applyCustomizationOverrides } = useDesignConfig()
   const sceneStore = useSceneStore()
@@ -123,6 +123,7 @@
   }
 
   interface Props {
+    id?: number
     models?: ModelData[]
     design?: DesignData
     /** Fixed style logos override (if provided). Falls back to active style logo[] list. */
@@ -160,9 +161,12 @@
      * OR'd with global overrides and mainPreview in useColorCustomization.
      */
     applyCustomizationColors?: boolean
+    /** Per-row design preview texts (isolated from product_custom_texts) */
+    previewCustomTexts?: OutputProductText[] | null
   }
 
   const props = withDefaults(defineProps<Props>(), {
+    id: undefined,
     models: undefined,
     design: undefined,
     logos: undefined,
@@ -185,7 +189,8 @@
     placementSetting: undefined,
     textPlacement: undefined,
     enableZoom: false,
-    applyCustomizationColors: false
+    applyCustomizationColors: false,
+    previewCustomTexts: undefined
   })
 
   const isPlacementMode = computed(() => !!props.placementSetting || !!props.textPlacement)
@@ -280,8 +285,18 @@
   >(() => {
     const productId = effectiveProductId.value
     if (!productId || !customizationStore.customization) return new Map()
+
+    const preview = props.previewCustomTexts
+    const usePreview = Array.isArray(preview) && preview.length > 0
     const key = String(productId)
-    const all = customizationStore.customization.product_custom_texts?.[key] || []
+    const fromStore = customizationStore.customization?.product_custom_texts?.[key] ?? []
+    // Merge preview into store: append only preview entries not already present by id
+    const storeIds = new Set(fromStore.map((t: OutputProductText) => t.id))
+    const merged: OutputProductText[] = usePreview
+      ? [...fromStore, ...preview.filter((p: OutputProductText) => !storeIds.has(p.id))]
+      : [...fromStore]
+    // Only keep entries matching the active design; entries with no design_id always pass
+    const all = merged.filter((t: OutputProductText) => !t.design_id || t.design_id === props.id)
     const map = new Map<
       number,
       {
@@ -2421,7 +2436,14 @@
       if (!entry || !item) continue
 
       const fontSize = heightScale * Number(item.height) || 16
-      const fontFamily = entry.font_family?.trim() || 'Ubuntu'
+      const productsFontsStore = useProductsFontsStore()
+      const rawFamily = entry.font_family?.trim() || 'Ubuntu'
+      const fontFamily =
+        resolveFontToProductsFontKey(
+          rawFamily,
+          productsFontsStore.productsFonts as Record<string, unknown>
+        ) ?? rawFamily
+      console.log('fontFamily', fontFamily)
       const textObj = new FabricText(entry.value, {
         left: stored.left,
         top: stored.top,

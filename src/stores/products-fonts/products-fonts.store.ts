@@ -74,7 +74,7 @@ export const useProductsFontsStore = defineStore('productsFonts', () => {
         if (fontsMap.value[key]?.opentype_font) continue
 
         const url = `${base}/${font.path.replace(/^\//, '')}?nocache=11`
-        const fontPromise = loadFont(url).then(fontObj => {
+        const fontPromise = loadFont(url).then(async fontObj => {
           if (fontObj) {
             const fullUrl = `${base}/${font.path.replace(/^\//, '')}`
             fontsMap.value = {
@@ -83,6 +83,28 @@ export const useProductsFontsStore = defineStore('productsFonts', () => {
                 url: fullUrl,
                 opentype_font: fontObj as ProductsFonts[string]['opentype_font']
               }
+            }
+
+            // Inject @font-face CSS so the 2D canvas (Fabric FabricText) can use
+            // the font via ctx.font. Same approach as FontSelector.vue but runs
+            // at store init time — before any canvas renders — so there's no FOUT.
+            if (!document.head.querySelector(`style[data-font-key="${key}"]`)) {
+              const style = document.createElement('style')
+              style.setAttribute('data-font-key', key)
+              style.textContent = `@font-face { font-family: '${key}'; src: url('${fullUrl}') format('truetype'); font-display: swap; }`
+              document.head.appendChild(style)
+            }
+
+            // Wait for the browser to actually download the font file.
+            // Registering @font-face only tells the browser where to get the font —
+            // the download starts lazily on first use. Without this await, the 2D
+            // canvas draws text before the download completes and bakes in the
+            // fallback font. Size (16px) is arbitrary — document.fonts.load() uses
+            // family+weight+style for cache lookup, not size.
+            try {
+              await document.fonts.load(`16px "${key}"`)
+            } catch {
+              // non-fatal — canvas will fall back to system font if load fails
             }
           }
         })

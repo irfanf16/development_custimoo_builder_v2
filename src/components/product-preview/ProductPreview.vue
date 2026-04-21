@@ -6,7 +6,7 @@
   import { Spinner } from '@/components/ui/spinner'
   import ThreeDScene from '@/components/scene/ThreeDScene.vue'
   const productsStore = useProductsStore()
-  const { activeProductDetails } = storeToRefs(productsStore)
+  const { activeProductDetails, activeDesignCustomTexts } = storeToRefs(productsStore)
   const workflowStore = useWorkflowStore()
 </script>
 
@@ -17,13 +17,14 @@
     class="relative h-full w-full"
     :aria-busy="!productsStore.mainPreviewLoadComplete"
   >
-    <ThreeDScene v-if="activeProductDetails?.is_3d_product" class="h-full" :main-preview="true" />
+    <ThreeDScene v-if="activeProductDetails?.is_3d_product" class="h-full" :main-preview="true" :preview-custom-texts="activeDesignCustomTexts"/>
     <TwoDScene
       v-else
       :side="workflowStore.activeCanvasSide"
       :main-preview="true"
       :enable-zoom="true"
     />
+
 
     <Transition name="preview-scene-loading">
       <div

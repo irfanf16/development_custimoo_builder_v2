@@ -1,5 +1,8 @@
+import type { OutputProductText } from './texts'
+
 export type OutputDesignAsset = {
   color_group: string | null
+  custom_text: OutputProductText[] | null
   design_categories_pivot: {
     design_category_id: number
     design_file_id: number
@@ -22,6 +25,7 @@ export type OutputDesignPreviewBase = {
   is_active: number
   /** Set when the design was uploaded by the customer (custom design). */
   customer_id?: number | null
+  custom_text: OutputProductText[] | null
 }
 export type OutputDesignPreviewFront = OutputDesignPreviewBase & {
   front_design: OutputDesignAsset
@@ -48,6 +52,7 @@ export type OutputDesignDetails = OutputDesignPreviewFront &
     backsafezone_design_id?: number
     backboundary_design_id?: number
     production_design: {
+      custom_text: OutputProductText[] | null
       design_position: string
       file_base_url?: string
       file_extension?: string

@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed } from 'vue'
+import { useLocalStorage } from '@/composables/useLocalStorage'
+import type { OutputProductTextItem } from '@/services/products/types'
 import type {
   OutputProductCategories,
   GetProductCategoriesParams,
@@ -13,6 +15,7 @@ import type {
   OutputSvgGroupColor,
   OutputDesignPreviewFront,
   OutputDesignPreviewBack,
+  OutputProductText,
   GeneratePdfPayload,
   GeneratePdfResponse,
   ActiveProductDetails,
@@ -33,6 +36,10 @@ import { useCustomizationStore } from '../customization/customization.store'
 import type { CanvasSide } from '../workflow/workflow.store.types'
 import { useQueryParams } from '@/composables/useQueryParams'
 import type { LockerResponse } from '@/services/lockers/types'
+import {
+  pickDesignCustomTextRaw,
+  resolveDesignPreviewCustomTexts
+} from '@/lib/normalizeDesignCustomText'
 
 /** Matches API `getProductsByShareUrl` response shape */
 type ProductsByShareUrlData = {
@@ -51,6 +58,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   // ===== DEPENDENCIES =====
   const customization = useCustomizationStore()
   const { tryCatchApi } = useTryCatchApi({ defaultProperties: { store: 'productsStore' } })
+  const { getItem, setItem } = useLocalStorage()
 
   // ===== INTERNAL FLAGS =====
   /** Prevents stale `fetchDesignPreviewsByStyleId` responses from overwriting newer data (e.g. after custom upload). */
@@ -67,6 +75,28 @@ export const useProductsStore = defineStore('productsStore', () => {
   }
 
   // ===== STATE =====
+  const DESIGN_TEXTS_KEY = 'design_custom_texts'
+
+  /**
+   * Per-design editable custom text state, keyed by `${productId}_${designId}`.
+   * Loaded from localStorage on init; saved on every change.
+   */
+  const designCustomTextById = ref<Record<string, OutputProductText[]>>(
+    getItem<Record<string, OutputProductText[]>>(DESIGN_TEXTS_KEY) ?? {}
+  )
+
+  function saveDesignTextsToStorage(): void {
+    setItem(DESIGN_TEXTS_KEY, designCustomTextById.value)
+  }
+
+  function designTextKey(
+    productId: number | null | undefined,
+    designId: number | null | undefined
+  ): string | null {
+    if (!productId || !designId) return null
+    return `${productId}_${designId}`
+  }
+
   const categories = ref<OutputProductCategories | null>(null)
   const activeProductDetails = ref<OutputProductDetails | null>(null)
   const activeStyleDetails = ref<OutputStyleDetails | null>(null)
@@ -106,6 +136,29 @@ export const useProductsStore = defineStore('productsStore', () => {
   const recentLogos = ref<OutputRecentLogo[] | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+
+  /**
+   * Active design's custom texts with user edits applied.
+   * Returns saved edits from designCustomTextById, or freshly normalized design text as fallback.
+   */
+  const activeDesignCustomTexts = computed<OutputProductText[]>(() => {
+    const pid = customization.activeProductId
+    const did = activeDesignDetails.value?.id ?? null
+    const key = designTextKey(pid, did)
+    if (!key) return []
+    const saved = designCustomTextById.value[key]
+    if (saved) return saved
+    return resolveDesignPreviewCustomTexts(activeDesignDetails.value)
+  })
+
+  /** Stable preview text arrays per design id for design previews. */
+  const previewTextsByDesignId = computed(() => {
+    const m = new Map<number, OutputProductText[]>()
+    for (const preview of designPreviews.value ?? []) {
+      m.set(preview.id, resolveDesignPreviewCustomTexts(preview))
+    }
+    return m
+  })
 
   /** Set true when scene has finished loading the design and extractSvgGroups has run (menu tabs e.g. Colors are then reliable). */
   const sceneLoadComplete = ref(false)
@@ -159,6 +212,7 @@ export const useProductsStore = defineStore('productsStore', () => {
     activeDesignDetails.value = payload
   }
 
+
   /**
    * `active_design_name` for GET product/style/:id — must match the selected row in the new style,
    * including customer uploads. Customization.design_name can lag (e.g. still "Basic") while
@@ -177,6 +231,70 @@ export const useProductsStore = defineStore('productsStore', () => {
     }
     const n = customization.customization?.design_name?.trim()
     return n || undefined
+  }
+
+  function getPreviewCustomTextsForDesign(
+    design:
+      | OutputDesignPreviewFront
+      | OutputDesignPreviewBack
+      | OutputDesignDetails
+      | null
+      | undefined
+  ): OutputProductText[] {
+    if (!design) return []
+    const id = (design as { id?: number }).id
+    if (id != null) {
+      const cached = previewTextsByDesignId.value.get(id)
+      if (cached) return cached
+    }
+    return resolveDesignPreviewCustomTexts(design)
+  }
+
+  /**
+   * Persist a single text item edit into the per-design map.
+   * Called from useTexts when the user moves/scales/rotates a design text on canvas.
+   */
+  function updateDesignCustomTextItem(
+    productId: number,
+    designId: number,
+    entryIndex: number,
+    itemIndex: number,
+    payload: Partial<OutputProductTextItem> & Record<string, unknown>
+  ): void {
+    const key = designTextKey(productId, designId)
+    if (!key) return
+    const current: OutputProductText[] =
+      designCustomTextById.value[key] ?? resolveDesignPreviewCustomTexts(activeDesignDetails.value)
+    const entry = current[entryIndex]
+    if (!entry?.items?.[itemIndex]) return
+    const updated = current.map((e, ei) =>
+      ei === entryIndex
+        ? {
+            ...e,
+            items: e.items.map((it, ii) => (ii === itemIndex ? { ...it, ...payload } : it))
+          }
+        : e
+    )
+    designCustomTextById.value = { ...designCustomTextById.value, [key]: updated }
+    saveDesignTextsToStorage()
+  }
+
+  /**
+   * Reset the active design's custom texts to original design positions.
+   * Clears user edits from the per-design map and re-populates from raw design text.
+   */
+  function resetDesignCustomTexts(productId: number, designId: number): void {
+    const key = designTextKey(productId, designId)
+    if (!key) return
+    const fresh = resolveDesignPreviewCustomTexts(activeDesignDetails.value)
+    const next = { ...designCustomTextById.value }
+    if (fresh.length > 0) {
+      next[key] = fresh
+    } else {
+      delete next[key]
+    }
+    designCustomTextById.value = next
+    saveDesignTextsToStorage()
   }
 
   // Addons setters to avoid direct mutations from components
@@ -369,7 +487,6 @@ export const useProductsStore = defineStore('productsStore', () => {
       const payload = resp.content
 
       setActiveStyleDetailsState(payload.styleDetails)
-
       // Apply new style to customization only after design details are resolved. Updating
       // style_id before activeDesignDetails matches would let the auto-sync watch run with a
       // mismatched triple and overwrite the design (default for the new style).
@@ -387,11 +504,25 @@ export const useProductsStore = defineStore('productsStore', () => {
           setActiveDesignDetailsState(payload.designDetails)
           customization.setStyle(styleId)
           customization.setDesign(payload.designDetails)
+          const pid = customization.activeProductId ?? payload.styleDetails.product_id ?? null
+          if (pid != null) {
+            customization.syncProductTextsWithDesign(
+              pid,
+              pickDesignCustomTextRaw(payload.designDetails)
+            )
+          }
         }
       } else {
         setActiveDesignDetailsState(payload.designDetails)
         customization.setStyle(styleId)
         customization.setDesign(payload.designDetails)
+        const pid = customization.activeProductId ?? payload.styleDetails.product_id ?? null
+        if (pid != null) {
+          customization.syncProductTextsWithDesign(
+            pid,
+            pickDesignCustomTextRaw(payload.designDetails)
+          )
+        }
       }
     } else {
       setError('Error getting active style details')
@@ -432,6 +563,10 @@ export const useProductsStore = defineStore('productsStore', () => {
       if (details.productDetails?.product_texts) {
         customization.syncProductTextsWithPresets(productId, details.productDetails.product_texts)
       }
+      customization.syncProductTextsWithDesign(
+        productId,
+        pickDesignCustomTextRaw(details.designDetails)
+      )
       customization.replaceHistoryWithCurrentState()
     } else {
       setError('Error getting active product details')
@@ -531,6 +666,10 @@ export const useProductsStore = defineStore('productsStore', () => {
   function applyDesignPreview(designPreview: OutputDesignPreviewFront) {
     if (customization.customization) {
       customization.setDesign(designPreview)
+      const pid = customization.activeProductId
+      if (pid != null) {
+        customization.syncProductTextsWithDesign(pid, pickDesignCustomTextRaw(designPreview))
+      }
       saveCustomizationToLocalStorage()
     }
   }
@@ -749,6 +888,10 @@ export const useProductsStore = defineStore('productsStore', () => {
     )
     if (resp.success) {
       activeDesignDetails.value = resp.content
+      const pid = customization.activeProductId
+      if (pid != null) {
+        customization.syncProductTextsWithDesign(pid, pickDesignCustomTextRaw(resp.content))
+      }
     } else {
       setError('Error getting design details')
     }
@@ -854,6 +997,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     productPreviews,
     stylePreviews,
     designPreviews,
+    previewTextsByDesignId,
+    activeDesignCustomTexts,
     recentLogos,
     isLoading,
     error,
@@ -875,6 +1020,9 @@ export const useProductsStore = defineStore('productsStore', () => {
     setActiveProductDetailsState,
     setActiveStyleDetailsState,
     setActiveDesignDetailsState,
+    getPreviewCustomTextsForDesign,
+    updateDesignCustomTextItem,
+    resetDesignCustomTexts,
     // Business Logic
     setSvgGroups,
     saveCustomizationToLocalStorage,

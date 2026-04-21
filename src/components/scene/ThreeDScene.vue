@@ -121,6 +121,8 @@
     useScaling?: boolean
     tileX?: number
     tileY?: number
+    /** Optional design preview custom texts (bypass customization store). */
+    previewCustomTexts?: OutputProductText[] | null
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -139,7 +141,8 @@
     applyCustomizationColors: false,
     useScaling: true, //default should be false with an unticked "Texture tiling" checkbox in the backend
     tileX: 9,
-    tileY: 9
+    tileY: 9,
+    previewCustomTexts: undefined
   })
 
   // Convert imageData to DesignData format for useSceneCommon
@@ -238,7 +241,19 @@
     const productId = effectiveProductId.value
     if (!productId || !customizationStore.customization) return new Map()
     const key = String(productId)
-    const all = customizationStore.customization.product_custom_texts?.[key] || []
+    const preview = props.previewCustomTexts
+    const usePreview = Array.isArray(preview) && preview.length > 0
+    const fromStore = customizationStore.customization.product_custom_texts?.[key] ?? []
+    // Merge preview into store: append only preview entries not already present by id
+    const storeIds = new Set(fromStore.map((t: OutputProductText) => t.id))
+    const activeDesignId = productsStore.activeDesignDetails?.id ?? null
+    const merged: OutputProductText[] = usePreview
+      ? [...fromStore, ...preview.filter((p: OutputProductText) => !storeIds.has(p.id))]
+      : [...fromStore]
+    // Only keep entries matching the active design; entries with no design_id always pass
+    const all = merged.filter(
+      (t: OutputProductText) => !t.design_id || t.design_id === activeDesignId
+    )
     const map = new Map<
       number,
       {
@@ -1961,13 +1976,20 @@
 
     // Load logos and texts after scene is loaded
     await resetAndAddLogos()
-    await resetAndAddTexts()
 
     if (props.mainPreview) {
       productsStore.setSceneLoadComplete(true)
       productsStore.setMainPreviewLoadComplete(true)
     }
+    // Set mounted = true BEFORE resetAndAddTexts so the customTexts watcher doesn't
+    // exit early (it guards on !mounted.value). Without this, texts that arrive via
+    // the store while loadScene is still running are silently dropped: the watcher
+    // fires, sees mounted=false, returns early, and never fires again once mounted
+    // is eventually set — leaving the 3D scene blank until a page refresh.
+
     mounted.value = true
+
+    await resetAndAddTexts()
   }
 
   /**
@@ -2738,6 +2760,11 @@
 
             // Design reload re-extracts svgGroups; re-attach fixed-logo custom groups afterward.
             await resetAndAddFixedLogos()
+            // Re-sync user-placed logos and custom texts so they appear on the new design.
+            // Without these calls, switching product/design leaves the 3D scene blank even
+            // though the 2D scene (which has no sceneLoadPromise gate) shows them correctly.
+            await resetAndAddLogos()
+            await resetAndAddTexts()
           } catch (error) {
             console.error('Failed to reload design:', error)
           }
@@ -2794,11 +2821,40 @@
           if (texture.value) {
             texture.value.needsUpdate = true
           }
+
+          // Re-sync logos and texts now that the model mesh is in the scene.
+          // Earlier calls (effectiveDesign watcher, effectiveProductId watcher) run while
+          // this addModel() is still in flight — so findPositionOn3D() has no mesh to
+          // raycast against and returns (0, 0). Texts land in the top-left corner of the
+          // canvas where the design SVG is transparent, making them invisible due to
+          // globalCompositeOperation: 'source-atop'. Calling here guarantees the model
+          // geometry is present, so raycasting returns the correct UV position.
+          await resetAndAddLogos()
+          await resetAndAddTexts()
         }
         sceneLoadPromise.value = work()
         await sceneLoadPromise.value
         sceneLoadPromise.value = null
       }
+    },
+    { immediate: false }
+  )
+
+  // Watch for product switches and re-sync texts + logos even when the design file URL
+  // hasn't changed. Without this, switching from Product B back to Product A keeps the
+  // same design URL so the effectiveDesign watcher skips work() — leaving texts blank
+  // until the user manually switches designs back and forth.
+  watch(
+    effectiveProductId,
+    async (newId, oldId) => {
+      if (!newId || !mounted.value || newId === oldId) return
+      // Wait for any in-flight scene/design/model loading to settle first.
+      await new Promise(resolve => setTimeout(resolve, 300))
+      if (sceneLoadPromise.value) {
+        await sceneLoadPromise.value
+      }
+      await resetAndAddLogos()
+      await resetAndAddTexts()
     },
     { immediate: false }
   )
@@ -2997,7 +3053,6 @@
       class="w-full h-full"
       :style="`max-width: ${containerWidth}px; max-height: ${containerHeight}px;`"
     />
-
     <!-- Hidden Fabric.js Canvas -->
     <canvas ref="canvasEl" class="hidden" />
   </div>

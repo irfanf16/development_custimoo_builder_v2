@@ -240,6 +240,7 @@
                     class="flex justify-center px-2"
                   >
                     <LazyTwoDScene
+                      :id="design.id"
                       :design="design.front_design"
                       :models="productPreviewDetails?.styleDetails?.front_models"
                       :svg-parts="design.svg_parts"
@@ -248,6 +249,7 @@
                       :canvas-height="CANVAS_DIMENSION"
                       :lazy="false"
                       canvas-class="h-full w-full"
+                      :preview-custom-texts="productsStore.getPreviewCustomTextsForDesign(design)"
                     />
                   </CarouselItem>
                 </CarouselContent>

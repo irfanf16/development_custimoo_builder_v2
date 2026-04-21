@@ -18,6 +18,7 @@ import { API } from '@/services'
 import { useProductsStore } from '../products/products.store'
 import type { CustomLogo, LogoColor } from '@/services/logos/types'
 import { useLocalStorage } from '@/composables/useLocalStorage'
+import { normalizeDesignCustomText } from '@/lib/normalizeDesignCustomText'
 
 const HISTORY_MAX_SIZE = 10
 const CUSTOMIZATION_STORAGE_KEY = 'activeProductCustomization'
@@ -240,8 +241,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     // Find the lowest (most negative) temporary ID in use
     let minId = 0
     for (const text of texts) {
-      if (text.id < 0 && text.id < minId) {
-        minId = text.id
+      const numId = Number(text.id)
+      if (numId < 0 && numId < minId) {
+        minId = numId
       }
     }
 
@@ -319,7 +321,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       if (usedExistingIndices.has(i)) continue
       const e = existing[i]
       if (!e) continue
-      if (e.manually_added || (e.id != null && e.id < 0)) {
+      if (e.manually_added || (e.id != null && Number(e.id) < 0)) {
         result.push({
           ...e,
           items: e.items ? e.items.map(item => ({ ...item })) : [],
@@ -330,6 +332,54 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     }
 
     customization.value.product_custom_texts[key] = result
+    saveToLocalStorage()
+  }
+
+  /**
+   * Merge design-driven text rows into the existing product_custom_texts.
+   * - Product preset texts (name, number — no design_id) are always preserved.
+   * - Design-specific texts (UUID id, design_id set) are appended if not already present by id.
+   * - On re-sync for the same design, existing UUID entries are updated in-place so their
+   *   user-edited values (value, font, color, etc.) are not overwritten.
+   * - Manually-added texts are always kept.
+   */
+  function syncProductTextsWithDesign(productId: number, designTextsRaw: unknown) {
+    if (!customization.value) return
+    const normalized = normalizeDesignCustomText(designTextsRaw, {
+      productId,
+      allocateTempId: generateTemporaryTextId
+    })
+    const key = String(productId)
+    const existing = customization.value.product_custom_texts[key] ?? []
+
+    if (normalized.length === 0) {
+      // Nothing from design — keep everything as-is (no wipe)
+      saveToLocalStorage()
+      return
+    }
+
+    // Build a set of existing IDs for deduplication
+    const existingIds = new Set(existing.map(e => String(e.id)))
+
+    // Append only design texts not already present by id
+    const newDesignEntries = normalized
+      .filter(t => !existingIds.has(String(t.id)))
+      .map(t => ({
+        ...t,
+        items: t.items.map(item => ({ ...item })),
+        following_products: [...(t.following_products ?? [])],
+        following_product_ids: [...(t.following_product_ids ?? [])]
+      }))
+
+    customization.value.product_custom_texts[key] = [
+      ...existing.map(e => ({
+        ...e,
+        items: e.items ? e.items.map(item => ({ ...item })) : [],
+        following_products: e.following_products ? [...e.following_products] : [],
+        following_product_ids: e.following_product_ids ? [...e.following_product_ids] : []
+      })),
+      ...newDesignEntries
+    ]
     saveToLocalStorage()
   }
 
@@ -1143,7 +1193,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   }
 
   function updateProductTextValueById(
-    textId: number,
+    textId: number | string,
     value: string,
     options?: { persist?: boolean }
   ): boolean {
@@ -1152,7 +1202,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     const key = String(prodId)
     const texts = customization.value.product_custom_texts[key]
     if (!texts) return false
-    const entryIndex = texts.findIndex(text => text.id === textId)
+    const entryIndex = texts.findIndex(text => String(text.id) === String(textId))
     if (entryIndex === -1) return false
     const targetEntry = texts[entryIndex]
     if (!targetEntry) return false
@@ -1168,7 +1218,6 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
   }
 
   function setReorderData(data: Record<string, unknown>) {
-    console.log('setReorderData', data)
     reorderData.value = { ...data }
     pushHistoryState('Set reorder data')
   }
@@ -1320,6 +1369,7 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
     clearRosterEntries,
     initializeProductTextsFromDetails,
     syncProductTextsWithPresets,
+    syncProductTextsWithDesign,
     generateTemporaryTextId,
     setSelectedRosterPreviewIndex,
     updateProductTextValueById,

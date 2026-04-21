@@ -182,8 +182,12 @@ export function useBuildFactoryProduct() {
     // Get custom logos
     const customLogos = customization.custom_logos[productKey] || []
 
-    // Get product custom texts
-    const productCustomTexts = customization.product_custom_texts[productKey] || []
+    // Get product custom texts — include entries with no design_id (always present)
+    // and entries whose design_id matches the active design
+    const activeDesignId = productsStore.activeDesignDetails?.id ?? null
+    const productCustomTexts = (customization.product_custom_texts[productKey] || []).filter(
+      t => !t.design_id || t.design_id === activeDesignId
+    )
 
     // Get roster detail
     const rosterDetail = customization.products_rosters[productKey] || []
