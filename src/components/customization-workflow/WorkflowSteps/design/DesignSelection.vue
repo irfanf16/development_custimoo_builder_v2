@@ -110,11 +110,11 @@
   }>()
   const emit = defineEmits<Emits>()
 
-  const designGridClass = computed(() =>
-    props.isExpanded
-      ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))] gap-4'
-      : 'flex flex-wrap gap-2'
-  )
+//  const designGridClass = computed(() =>
+//    props.isExpanded
+//      ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))] gap-4'
+//      : 'flex flex-wrap gap-2'
+//  )
   const previews = computed(() => productsStore.designPreviews || [])
 
   /** Matches uiStore.desktopPreviewCompact (widget width-based, stable vs preview-slot measurement). */
@@ -127,10 +127,7 @@
     if (props.isExpanded) {
       return 'grid min-w-0 gap-2 auto-rows-min [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))] md:[grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'
     }
-    if (compactDesktopTwoCol.value) {
-      return 'grid min-w-0 grid-cols-2 gap-2 auto-rows-min'
-    }
-    return 'flex flex-wrap gap-2'
+    return 'grid min-w-0 grid-cols-1 sm:grid-cols-2 gap-2 auto-rows-min'
   })
 
   const designPreviewCanvasSize = computed(() => {
@@ -275,19 +272,18 @@
   <div
     v-else
     ref="designSelectionContainer"
-    class="mb-4 md:mb-6 flex flex-col gap-6"
-    :class="designGridLayoutClass"
+    class="mb-4 md:mb-6 flex flex-col gap-4"
   >
     <div v-if="myDesignsFilteredPreviews.length" class="flex flex-col gap-2">
       <div class="text-sm font-semibold text-muted-foreground">
         {{ design_section_my_designs({}, { locale: profileStore.currentLocale }) }}
       </div>
-      <div :class="designGridClass">
+      <div :class="designGridLayoutClass">
         <div
           v-for="item in myDesignsFilteredPreviews"
           :id="`design-${item.id}`"
           :key="'my-' + item.id"
-          class="group relative flex flex-col items-center flex-1 gap-4 md:gap-6 p-2 md:p-2"
+          class="group relative flex flex-col items-center gap-4 md:gap-6 p-2"
           :class="[
             'relative rounded-sm transition-colors cursor-pointer',
             'hover:border-border hover:bg-primary/10 hover:outline-ring',
@@ -356,12 +352,12 @@
       >
         {{ design_section_catalog({}, { locale: profileStore.currentLocale }) }}
       </div>
-      <div :class="designGridClass">
+      <div :class="designGridLayoutClass">
         <div
           v-for="item in catalogFilteredPreviews"
           :id="`design-${item.id}`"
           :key="item.id"
-          class="group relative flex flex-col items-center flex-1 gap-4 md:gap-6 p-2 md:p-2"
+          class="group relative flex flex-col items-center gap-4 md:gap-6 p-2"
           :class="[
             'relative rounded-sm transition-colors cursor-pointer',
             'hover:border-border hover:bg-primary/10 hover:outline-ring',
