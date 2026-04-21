@@ -133,6 +133,12 @@
     // Canvas dimensions
     canvasWidth?: number
     canvasHeight?: number
+    /**
+     * Fabric buffer size (`<canvas width/height>`). When unset, matches `canvasWidth`/`canvasHeight`.
+     * Main preview: pass fixed 600 so layout-driven `canvasWidth` changes do not clear the bitmap on resize.
+     */
+    canvasBitmapWidth?: number
+    canvasBitmapHeight?: number
     mainCanvasWidth?: number
     mainCanvasHeight?: number
     mainPreview?: boolean
@@ -196,13 +202,19 @@
     enableZoom: false,
     previewCustomTexts: undefined,
     lockDisplayToCanvasPixels: false,
-    applyCustomizationColors: false
+    applyCustomizationColors: false,
+    canvasBitmapWidth: undefined,
+    canvasBitmapHeight: undefined
   })
 
   const isPlacementMode = computed(() => !!props.placementSetting || !!props.textPlacement)
 
+  /** Fabric / geometry resolution (HTML canvas intrinsic size). */
+  const fabricCanvasWidth = computed(() => props.canvasBitmapWidth ?? props.canvasWidth)
+  const fabricCanvasHeight = computed(() => props.canvasBitmapHeight ?? props.canvasHeight)
+
   /**
-   * Display size (CSS); internal bitmap stays canvasWidth×canvasHeight.
+   * Display size (CSS). When `canvasBitmap*` is set, CSS still follows `canvasWidth`/`canvasHeight`.
    * Main preview uses only parent % — avoid dvh here (breaks flex min-h-0 chain and caused #main-content scroll).
    */
   const canvasDisplaySizeStyle = computed((): Record<string, string> => {
@@ -403,8 +415,8 @@
 
         await addDesign(newDesign, {
           scaleMode: 'fit',
-          canvasWidth: props.canvasWidth,
-          canvasHeight: props.canvasHeight,
+          canvasWidth: fabricCanvasWidth.value,
+          canvasHeight: fabricCanvasHeight.value,
           padding: 10,
           centerInViewport: true,
           svgGroupsComposable,
@@ -495,13 +507,13 @@
         return
       }
 
-      initCanvas(canvasEl.value, props.canvasWidth, props.canvasHeight)
+      initCanvas(canvasEl.value, fabricCanvasWidth.value, fabricCanvasHeight.value)
       ensureDimText()
 
       const c = canvas.value
       if (c && zoomInteractionEnabled.value) {
         defaultViewportTransform.value = JSON.parse(JSON.stringify(c.viewportTransform)) as number[]
-        zoomPoint.value = { x: props.canvasWidth / 2, y: props.canvasHeight / 2 }
+        zoomPoint.value = { x: fabricCanvasWidth.value / 2, y: fabricCanvasHeight.value / 2 }
 
         c.on('mouse:wheel', opt => {
           const e = opt.e as WheelEvent
@@ -578,7 +590,7 @@
       if (canvas.value) {
         const c = canvas.value
         const verticalLine = new fabric.Line(
-          [props.canvasWidth / 2, 0, props.canvasWidth / 2, props.canvasHeight],
+          [fabricCanvasWidth.value / 2, 0, fabricCanvasWidth.value / 2, fabricCanvasHeight.value],
           {
             stroke: '#6EF3CC',
             strokeWidth: 4,
@@ -588,7 +600,7 @@
           }
         )
         const horizontalLine = new fabric.Line(
-          [0, props.canvasHeight / 2, props.canvasWidth, props.canvasHeight / 2],
+          [0, fabricCanvasHeight.value / 2, fabricCanvasWidth.value, fabricCanvasHeight.value / 2],
           {
             stroke: '#6EF3CC',
             strokeWidth: 4,
@@ -719,9 +731,9 @@
     const padding = 10
     if (img.width && img.height) {
       if (img.width > img.height) {
-        img.scaleToWidth(props.canvasWidth - padding)
+        img.scaleToWidth(fabricCanvasWidth.value - padding)
       } else {
-        img.scaleToHeight(props.canvasHeight - padding)
+        img.scaleToHeight(fabricCanvasHeight.value - padding)
       }
     }
 
@@ -1061,8 +1073,8 @@
     if (effectiveDesign.value) {
       await addDesign(effectiveDesign.value, {
         scaleMode: 'fit',
-        canvasWidth: props.canvasWidth,
-        canvasHeight: props.canvasHeight,
+        canvasWidth: fabricCanvasWidth.value,
+        canvasHeight: fabricCanvasHeight.value,
         padding: 10,
         centerInViewport: true,
         svgGroupsComposable,
@@ -1220,8 +1232,8 @@
 
   function calculateScaleRatios2D() {
     return {
-      widthRatio: props.canvasWidth / (props.mainCanvasWidth || 600),
-      heightRatio: props.canvasHeight / (props.mainCanvasHeight || 600)
+      widthRatio: fabricCanvasWidth.value / (props.mainCanvasWidth || 600),
+      heightRatio: fabricCanvasHeight.value / (props.mainCanvasHeight || 600)
     }
   }
 
@@ -1388,7 +1400,7 @@
   function resetCanvasZoomAfterDesignOrStyleChange(): void {
     if (!zoomInteractionEnabled.value) return
     if (!canvas.value || !defaultViewportTransform.value) return
-    zoomPoint.value = { x: props.canvasWidth / 2, y: props.canvasHeight / 2 }
+    zoomPoint.value = { x: fabricCanvasWidth.value / 2, y: fabricCanvasHeight.value / 2 }
     workflowStore.setCanvasZoom(1)
     applyZoomCanvas(1)
   }
@@ -1693,7 +1705,7 @@
             'bottom'
           )
           addTop = direction.top - checkPointY
-          addLeft = props.canvasWidth - (target.left ?? 0)
+          addLeft = fabricCanvasWidth.value - (target.left ?? 0)
         } else if (moreTowards === 'left') {
           const direction = targetNonTransparent(
             cv,
@@ -1859,7 +1871,7 @@
             'bottom'
           )
           addTop = direction.top - checkPointY
-          addLeft = props.canvasWidth - (target.left ?? 0)
+          addLeft = fabricCanvasWidth.value - (target.left ?? 0)
         } else if (moreTowards === 'left') {
           const direction = targetNonTransparent(
             cv,
@@ -2039,7 +2051,7 @@
 
     if (!foundExcluded && maxCall) {
       // ensure at least one excluded piece; shift point and retry
-      const nextX = checkPointX < props.canvasWidth / 2 ? checkPointX + 1 : checkPointX - 1
+      const nextX = checkPointX < fabricCanvasWidth.value / 2 ? checkPointX + 1 : checkPointX - 1
       return await findClippedParts(
         logoOrText,
         boundaries,
@@ -2093,8 +2105,8 @@
         inverted: true,
         scaleX: designObject.value?.scaleX ?? 1,
         scaleY: designObject.value?.scaleY ?? 1,
-        left: props.canvasWidth / 2,
-        top: props.canvasHeight / 2
+        left: fabricCanvasWidth.value / 2,
+        top: fabricCanvasHeight.value / 2
       })
 
       canvas.value!.viewportCenterObject(clip)
@@ -2126,10 +2138,10 @@
     })) as Group
 
     // Scale to canvas and center
-    clip.scaleToHeight(props.canvasHeight)
+    clip.scaleToHeight(fabricCanvasHeight.value)
     clip.set({
-      left: props.canvasWidth / 2,
-      top: props.canvasHeight / 2
+      left: fabricCanvasWidth.value / 2,
+      top: fabricCanvasHeight.value / 2
     })
     clip.setCoords()
     if (canvas.value) {
@@ -2280,7 +2292,9 @@
   }
 
   // ===== TEXT UTILITIES (sync from customTexts watch) =====
-  const heightScaleForText = computed(() => props.canvasHeight / (props.mainCanvasHeight || 600))
+  const heightScaleForText = computed(
+    () => fabricCanvasHeight.value / (props.mainCanvasHeight || 600)
+  )
 
   async function addText(
     entry: OutputProductText,
@@ -2761,8 +2775,8 @@
       ref="canvasEl"
       class="custimoo-two-canvas aspect-square! h-auto! w-auto!"
       :class="canvasClass"
-      :width="canvasWidth"
-      :height="canvasHeight"
+      :width="fabricCanvasWidth"
+      :height="fabricCanvasHeight"
       :style="canvasDisplaySizeStyle"
     />
   </div>

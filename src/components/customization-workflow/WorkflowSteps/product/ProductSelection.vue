@@ -67,6 +67,8 @@
   const productPreviewCanvasSize = computed(() =>
     productGridPreviewCanvasPixels(isMobile.value, compactDesktopTwoCol.value)
   )
+  /** Max tile edge for this breakpoint — stable Fabric buffer while CSS tile is 120/130/176. */
+  const productGridBitmapPx = computed(() => (isMobile.value ? 130 : 176))
   /** Show spinner only when loading and we have no content (new category); keep showing grid when refetching same category. */
   const showProductsLoading = computed(
     () =>
@@ -380,6 +382,8 @@
               :svg-parts="item.designPreview.svg_parts"
               :canvas-width="productPreviewCanvasSize"
               :canvas-height="productPreviewCanvasSize"
+              :canvas-bitmap-width="productGridBitmapPx"
+              :canvas-bitmap-height="productGridBitmapPx"
               :canvas-class="'rounded-xl'"
               :product-id="item.productPreview.id"
               :preview-custom-texts="

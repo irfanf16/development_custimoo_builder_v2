@@ -1,9 +1,14 @@
 import { ref, watch, type Ref } from 'vue'
 import { useDebounceFn, useResizeObserver } from '@vueuse/core'
 
-const MAIN_MAX = 600
+/** Main preview Fabric/layout cap (px). */
+export const CUSTOMIZER_MAIN_CANVAS_MAX_PX = 600
+/** Desktop flip chip Fabric buffer edge (px); display size may shrink via resize. */
+export const CUSTOMIZER_FLIP_CANVAS_BITMAP_PX = 156
+
+const MAIN_MAX = CUSTOMIZER_MAIN_CANVAS_MAX_PX
 /** Secondary bitmap edge (px). */
-const FLIP_MAX = 156
+const FLIP_MAX = CUSTOMIZER_FLIP_CANVAS_BITMAP_PX
 /**
  * Reserve horizontal space for the right column: RightToolbar (w-12 + padding) + gap-9 + flip
  * chip chrome (~4.5rem box + borders). Underestimating caused main+gap+toolbar to overflow the

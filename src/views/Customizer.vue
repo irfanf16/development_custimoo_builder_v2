@@ -17,7 +17,10 @@
   import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
   import { useSignIn } from '@/composables/useSignIn'
   import { computed, onMounted, provide, ref } from 'vue'
-  import { useCustomizerCanvasPairSizes } from '@/composables/useCustomizerCanvasPairSizes'
+  import {
+    useCustomizerCanvasPairSizes,
+    CUSTOMIZER_FLIP_CANVAS_BITMAP_PX
+  } from '@/composables/useCustomizerCanvasPairSizes'
   import { CUSTOMIZER_MAIN_CANVAS_PX } from '@/lib/customizerCanvasInjectKeys'
 
   const uiStore = useUIStore()
@@ -135,6 +138,8 @@
                   :main-preview="true"
                   :canvas-width="flipCanvasForChild"
                   :canvas-height="flipCanvasForChild"
+                  :canvas-bitmap-width="CUSTOMIZER_FLIP_CANVAS_BITMAP_PX"
+                  :canvas-bitmap-height="CUSTOMIZER_FLIP_CANVAS_BITMAP_PX"
                   lock-display-to-canvas-pixels
                   canvas-class="cursor-pointer rounded-lg object-contain transition-opacity duration-300"
                 />

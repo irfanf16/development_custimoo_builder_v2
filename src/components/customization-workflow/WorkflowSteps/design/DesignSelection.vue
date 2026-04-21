@@ -138,6 +138,8 @@
     if (compactDesktopTwoColOnly.value) return 120
     return 176
   })
+  /** Stable Fabric resolution for grid tiles (max desktop edge 176 ≥ compact 120). */
+  const designGridBitmapPx = computed(() => (isMobile.value ? 130 : 176))
   const designSelectionContainer = ref<HTMLElement | null>(null)
   const DESIGN_SKELETON_PLACEHOLDER_COUNT = 4
 
@@ -311,8 +313,8 @@
               v-if="item.customer_id"
               class="flex items-center justify-center rounded-xl border border-dashed border-muted-foreground/35 bg-muted/40 text-muted-foreground shrink-0"
               :style="{
-                width: (isMobile ? 130 : 176) + 'px',
-                height: (isMobile ? 130 : 176) + 'px'
+                width: designPreviewCanvasSize + 'px',
+                height: designPreviewCanvasSize + 'px'
               }"
             >
               <div class="flex flex-col items-center gap-1.5 px-2 text-center">
@@ -327,8 +329,10 @@
               :id="item.id"
               :design="item.front_design"
               :svg-parts="item.svg_parts"
-              :canvas-width="isMobile ? 130 : 176"
-              :canvas-height="isMobile ? 130 : 176"
+              :canvas-width="designPreviewCanvasSize"
+              :canvas-height="designPreviewCanvasSize"
+              :canvas-bitmap-width="designGridBitmapPx"
+              :canvas-bitmap-height="designGridBitmapPx"
               :canvas-class="'rounded-xl'"
               :product-id="customizationStore.activeProductId ?? undefined"
               :preview-custom-texts="previewTextsByDesignId.get(item.id) ?? []"
@@ -377,6 +381,8 @@
               :svg-parts="item.svg_parts"
               :canvas-width="designPreviewCanvasSize"
               :canvas-height="designPreviewCanvasSize"
+              :canvas-bitmap-width="designGridBitmapPx"
+              :canvas-bitmap-height="designGridBitmapPx"
               :canvas-class="'rounded-xl'"
               :product-id="customizationStore.activeProductId ?? undefined"
               :preview-custom-texts="previewTextsByDesignId.get(item.id) ?? []"

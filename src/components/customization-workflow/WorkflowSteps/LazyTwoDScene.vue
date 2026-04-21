@@ -6,6 +6,9 @@
 
   defineProps({
     id: { type: Number, default: undefined },
+    /** Fabric buffer when set; avoids clearing bitmap when `canvasWidth`/`canvasHeight` change (e.g. compact rail). */
+    canvasBitmapWidth: { type: Number, default: undefined },
+    canvasBitmapHeight: { type: Number, default: undefined },
     models: {
       type: Array as PropType<
         Array<{ composition: 'multiply' | 'screen'; file_url: string; thumb_sm_url: string }>
@@ -32,7 +35,11 @@
   })
 
   const containerEl = ref<HTMLElement | null>(null)
-  const isVisible = ref(false)
+  /**
+   * Once the tile has intersected, keep `TwoDScene` mounted. Toggling `v-if` on brief IO false
+   * during compact↔main layout changes caused full remounts and empty previews.
+   */
+  const keepSceneMounted = ref(false)
   let io: IntersectionObserver | null = null
 
   onMounted(() => {
@@ -40,14 +47,13 @@
       io = new IntersectionObserver(
         entries => {
           const entry = entries[0]
-          const nowVisible = !!entry?.isIntersecting
-          isVisible.value = nowVisible
+          if (entry?.isIntersecting) keepSceneMounted.value = true
         },
-        { root: null, rootMargin: '100px 0px', threshold: 0.01 }
+        { root: null, rootMargin: '200px', threshold: 0.01 }
       )
       io.observe(containerEl.value)
     } else {
-      isVisible.value = true
+      keepSceneMounted.value = true
     }
   })
 
@@ -64,20 +70,22 @@
     :style="{ width: `${canvasWidth / 16}rem`, height: `${canvasHeight / 16}rem` }"
   >
     <TwoDScene
-      v-if="isVisible"
+      v-if="keepSceneMounted"
       :id="id"
       :models="models"
       :design="design"
       :svg-parts="svgParts"
       :canvas-width="canvasWidth"
       :canvas-height="canvasHeight"
+      :canvas-bitmap-width="canvasBitmapWidth"
+      :canvas-bitmap-height="canvasBitmapHeight"
       :canvas-class="canvasClass"
       :product-id="productId"
       :apply-customization-colors="applyCustomizationColors"
       :preview-custom-texts="previewCustomTexts"
     />
 
-    <div v-if="!isVisible" class="absolute inset-0 rounded-xl overflow-hidden bg-muted/50">
+    <div v-if="!keepSceneMounted" class="absolute inset-0 rounded-xl overflow-hidden bg-muted/50">
       <div class="absolute inset-0 flex items-center justify-center p-4">
         <div
           class="relative bg-muted/60 rounded-lg"

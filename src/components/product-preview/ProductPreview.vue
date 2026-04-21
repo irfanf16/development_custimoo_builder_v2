@@ -20,8 +20,11 @@
     computed(() => 600)
   )
 
+  /** Max layout / CSS size for 3D shell (matches `useCustomizerCanvasPairSizes` MAIN_MAX). */
+  const MAIN_PREVIEW_BITMAP_PX = 600
+
   /** 3D column tracks the same row sizing as 2D, capped for layout. */
-  const mainThreeDContainerSize = computed(() => Math.min(600, mainTwoDCanvasPx.value))
+  const mainThreeDContainerSize = computed(() => Math.min(MAIN_PREVIEW_BITMAP_PX, mainTwoDCanvasPx.value))
 
   const is3dProduct = computed(() => !!activeProductDetails.value?.is_3d_product)
 </script>
@@ -61,6 +64,8 @@
       :enable-zoom="true"
       :canvas-width="mainTwoDCanvasPx"
       :canvas-height="mainTwoDCanvasPx"
+      :canvas-bitmap-width="MAIN_PREVIEW_BITMAP_PX"
+      :canvas-bitmap-height="MAIN_PREVIEW_BITMAP_PX"
       lock-display-to-canvas-pixels
     />
 

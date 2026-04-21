@@ -1174,8 +1174,10 @@
 
   function syncRendererToContainerProps(): void {
     if (!renderer.value || !camera.value) return
-    const w = props.containerWidth
-    const h = props.containerHeight
+    const w = Math.round(props.containerWidth)
+    const h = Math.round(props.containerHeight)
+    // During flex/resize, dimensions can briefly be 0 — avoid WebGL setSize(0) blanking the view.
+    if (w < 32 || h < 32) return
     renderer.value.setSize(w, h)
     renderer.value.setPixelRatio(window.devicePixelRatio)
     if (camera.value instanceof THREE.PerspectiveCamera) {
