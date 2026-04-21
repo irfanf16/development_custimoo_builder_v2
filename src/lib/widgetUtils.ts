@@ -13,15 +13,48 @@ export const WIDGET_ELEMENT_SELECTOR = 'v-customizer'
 export const WIDGET_CONTAINER_ID = 'v-customizer-container'
 
 /**
+ * Theme classes on the host / shadow root (not generic `light`/`dark`, which collide with host CSS).
+ */
+export const WIDGET_THEME_CLASS_LIGHT = 'custimoo-theme-light'
+export const WIDGET_THEME_CLASS_DARK = 'custimoo-theme-dark'
+
+const WIDGET_THEME_CLASSES_LEGACY = ['light', 'dark'] as const
+
+export function stripWidgetThemeClasses(el: HTMLElement) {
+  el.classList.remove(
+    WIDGET_THEME_CLASS_LIGHT,
+    WIDGET_THEME_CLASS_DARK,
+    ...WIDGET_THEME_CLASSES_LEGACY
+  )
+}
+
+/**
  * Apply widget color scheme to a container element
  */
 // applyWidgetColors is deprecated in favor of useBrandStyling.applyBrandStyling
+
+declare global {
+  interface Window {
+    /** Set in bootstrap for Shadow DOM; document query APIs do not pierce shadow roots. */
+    __CUSTOMIZER_CONTAINER__?: HTMLElement
+  }
+}
+
+/**
+ * Widget root div used for branding CSS variables and app mount target.
+ * Prefer `window.__CUSTOMIZER_CONTAINER__` when the app runs inside a shadow root.
+ */
+export function resolveWidgetBrandingRoot(): HTMLElement | null {
+  if (typeof window === 'undefined') return null
+  if (window.__CUSTOMIZER_CONTAINER__) return window.__CUSTOMIZER_CONTAINER__
+  return document.querySelector(`#${WIDGET_CONTAINER_ID}`)
+}
 
 /**
  * Get widget container element
  */
 export function getWidgetContainer(): HTMLElement | null {
-  return document.querySelector(`#${WIDGET_CONTAINER_ID}`)
+  return resolveWidgetBrandingRoot()
 }
 
 /**

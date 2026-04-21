@@ -19,21 +19,30 @@
   )
 
   async function handleGoTo(step: string) {
-    // Toggle panel if tapping current step again
-    if (isActive(step as CustomizerStep)) {
-      workflow.togglePanel()
+    const s = step as CustomizerStep
+    // Tap active tab: step through sheet snap (full → peek → close) or open if closed
+    if (isActive(s)) {
+      if (!workflow.isPanelOpen) {
+        workflow.setPanelOpen(true)
+        return
+      }
+      if (workflow.mobileSheetSnap === 'full') {
+        workflow.setMobileSheetSnap('peek')
+      } else {
+        workflow.setPanelOpen(false)
+      }
       return
     }
 
-    // Normal navigation
-    await goTo(step as CustomizerStep)
+    await goTo(s)
     workflow.setPanelOpen(true)
+    workflow.setMobileSheetSnap('full')
   }
 </script>
 
 <template>
   <nav
-    class="fixed bottom-0 left-0 right-0 bg-background z-10 py-2 shadow-lg"
+    class="fixed bottom-0 left-0 right-0 bg-background z-widget-chrome py-2 shadow-lg"
     :class="{ hidden: !isMobile }"
     role="navigation"
     :aria-label="menuLabel"

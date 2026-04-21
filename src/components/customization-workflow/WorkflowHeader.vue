@@ -51,6 +51,12 @@
   // Use props.isExpanded with fallback for internal state
   const isExpanded = computed(() => props.isExpanded ?? false)
 
+  /** Full label next to switch: mobile (no hover), wide desktop, or expanded compact panel. */
+  const showApplyOverridesFullLabel = computed(
+    () =>
+      uiStore.isMobile || !uiStore.desktopPreviewCompact || isExpanded.value
+  )
+
   const isExpandable = computed(() => props.config?.isExpandable)
   // Get breadcrumbs from current step component
   const currentBreadcrumbs = computed<BreadcrumbItem[]>(() => props.config?.breadcrumbs ?? [])
@@ -135,14 +141,32 @@
         <WorkflowBreadcrumbs :breadcrumbs="currentBreadcrumbs" />
       </div>
 
-      <div v-if="headerApplyOverrides !== undefined" class="flex items-center gap-3">
-        <Switch
-          :model-value="applyOverridesModelValue"
-          @update:model-value="val => handleApplyOverridesInput(!!val)"
-        />
-        <Label class="text-sm font-normal text-muted-foreground">{{
-          headerApplyOverrides.label
-        }}</Label>
+      <div v-if="headerApplyOverrides !== undefined" class="flex shrink-0 items-center gap-3">
+        <template v-if="showApplyOverridesFullLabel">
+          <Switch
+            :model-value="applyOverridesModelValue"
+            @update:model-value="val => handleApplyOverridesInput(!!val)"
+          />
+          <Label class="text-sm font-normal text-muted-foreground">{{
+            headerApplyOverrides.label
+          }}</Label>
+        </template>
+        <TooltipProvider v-else>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <span class="inline-flex">
+                <Switch
+                  :model-value="applyOverridesModelValue"
+                  :aria-label="headerApplyOverrides.label"
+                  @update:model-value="val => handleApplyOverridesInput(!!val)"
+                />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" class="max-w-xs text-left">
+              <p class="text-sm">{{ headerApplyOverrides.label }}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       <Button
         v-if="showShuffleButton"

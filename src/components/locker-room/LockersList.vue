@@ -271,7 +271,7 @@
             </DropdownMenuTrigger>
 
             <!-- FIX: this must be inside group hover zone -->
-            <DropdownMenuContent class="w-40 z-[9999]">
+            <DropdownMenuContent class="w-40 z-widget-dialog">
               <DropdownMenuItem class="cursor-pointer" @click="handleLockerDelete(locker.id)">
                 {{ locker_delete({}, { locale }) }}
               </DropdownMenuItem>

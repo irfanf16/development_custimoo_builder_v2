@@ -1,0 +1,105 @@
+/**
+ * Desktop compact workflow (< uiStore threshold): slightly smaller type under
+ * `#workflow-panel-container[data-workflow-compact-typography]`.
+ * Uses !important so utilities stay predictable vs Tailwind layer order.
+ */
+
+[data-workflow-compact-typography] :where(.text-xs) {
+  font-size: 0.6875rem !important;
+  line-height: 0.875rem !important;
+}
+
+[data-workflow-compact-typography] :where(.text-sm) {
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+}
+
+[data-workflow-compact-typography] :where(.text-base) {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+[data-workflow-compact-typography] :where(.text-lg) {
+  font-size: 1rem !important;
+  line-height: 1.375rem !important;
+}
+
+[data-workflow-compact-typography] :where(.text-xl) {
+  font-size: 1.125rem !important;
+  line-height: 1.5rem !important;
+}
+
+[data-workflow-compact-typography] :where(.text-2xl) {
+  font-size: 1.25rem !important;
+  line-height: 1.625rem !important;
+}
+
+[data-workflow-compact-typography] :where(.text-3xl) {
+  font-size: 1.5rem !important;
+  line-height: 2rem !important;
+}
+
+@media (min-width: 768px) {
+  [data-workflow-compact-typography] :where(.md\:text-xs) {
+    font-size: 0.6875rem !important;
+    line-height: 0.875rem !important;
+  }
+
+  [data-workflow-compact-typography] :where(.md\:text-sm) {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+
+  [data-workflow-compact-typography] :where(.md\:text-base) {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  [data-workflow-compact-typography] :where(.md\:text-lg) {
+    font-size: 1rem !important;
+    line-height: 1.375rem !important;
+  }
+
+  [data-workflow-compact-typography] :where(.md\:text-xl) {
+    font-size: 1.125rem !important;
+    line-height: 1.5rem !important;
+  }
+
+  [data-workflow-compact-typography] :where(.md\:text-2xl) {
+    font-size: 1.25rem !important;
+    line-height: 1.625rem !important;
+  }
+
+  [data-workflow-compact-typography] :where(.md\:text-3xl) {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+}
+
+/* Color swatches (ColorSelector): slightly smaller than default/sm/xs inside compact workflow */
+[data-workflow-compact-typography] [data-color-selector][data-size='default'] {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  min-width: 2.5rem !important;
+  min-height: 2.5rem !important;
+  max-width: 2.5rem !important;
+  max-height: 2.5rem !important;
+}
+
+[data-workflow-compact-typography] [data-color-selector][data-size='sm'] {
+  width: 1.625rem !important;
+  height: 1.625rem !important;
+  min-width: 1.625rem !important;
+  min-height: 1.625rem !important;
+  max-width: 1.625rem !important;
+  max-height: 1.625rem !important;
+}
+
+[data-workflow-compact-typography] [data-color-selector][data-size='xs'] {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  min-width: 0.875rem !important;
+  min-height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+}

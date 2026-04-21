@@ -7,7 +7,12 @@ import type { UserPreferences, ParaglideLocale, DisplayMode } from '@/services/p
 import { useCompanyStore } from '../company/company.store'
 import { useAuthStore } from '../auth/auth.store'
 import { useLocalStorage } from '@/composables/useLocalStorage'
-import { WIDGET_CONTAINER_ID } from '@/lib/widgetUtils'
+import {
+  WIDGET_CONTAINER_ID,
+  WIDGET_THEME_CLASS_DARK,
+  WIDGET_THEME_CLASS_LIGHT,
+  stripWidgetThemeClasses
+} from '@/lib/widgetUtils'
 import { setLocale } from '@/paraglide/runtime'
 
 export const useProfileStore = defineStore('profileStore', () => {
@@ -96,16 +101,11 @@ export const useProfileStore = defineStore('profileStore', () => {
     }
 
     const applyThemeClass = (el: HTMLElement) => {
-      if (theme === 'dark') {
-        el.classList.remove('light')
-        el.classList.add('dark')
-      } else {
-        el.classList.remove('dark')
-        el.classList.add('light')
-      }
+      stripWidgetThemeClasses(el)
+      el.classList.add(theme === 'dark' ? WIDGET_THEME_CLASS_DARK : WIDGET_THEME_CLASS_LIGHT)
     }
 
-    // Apply to widget root container (for .dark CSS selector)
+    // Apply to widget root container (for Tailwind `dark:` and theme tokens)
     applyThemeClass(widgetRoot)
 
     // Ensure the top-level widget shell (mount container) stays in sync for utility classes
@@ -114,19 +114,12 @@ export const useProfileStore = defineStore('profileStore', () => {
       applyThemeClass(shellContainer as HTMLElement)
     }
 
-    // Also apply to shadow host if available (for :host.dark CSS selector)
-    // This ensures both CSS selectors work: .dark and :host.dark
+    // Shadow host: `:host.custimoo-theme-dark` etc. in widget CSS
     const rootNode = widgetRoot.getRootNode()
     if (rootNode instanceof ShadowRoot) {
       const host = rootNode.host as HTMLElement
       if (host) {
-        if (theme === 'dark') {
-          host.classList.remove('light')
-          host.classList.add('dark')
-        } else {
-          host.classList.remove('dark')
-          host.classList.add('light')
-        }
+        applyThemeClass(host)
       }
     }
   }

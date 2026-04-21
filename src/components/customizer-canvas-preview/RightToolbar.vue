@@ -146,10 +146,9 @@
 </script>
 
 <template>
-  <!-- Glass toolbar wrapper -->
   <TooltipProvider>
     <div
-      class="w-12 p-1 bg-background/20 rounded-full outline outline-border backdrop-blur-sm flex flex-col gap-1 ml-auto"
+      class="flex w-12 shrink-0 flex-col gap-1 rounded-full bg-background/20 p-1 outline outline-border backdrop-blur-sm"
     >
       <template v-for="t in tools" :key="t.id">
         <Tooltip
@@ -160,7 +159,7 @@
             <Button
               variant="default"
               size="icon"
-              class="rounded-full size-10 p-0 bg-card outline outline-border border-0 shadow-none"
+              class="rounded-full size-10 border-0 bg-card p-0 shadow-none outline outline-border"
               :aria-label="t.label"
               :disabled="
                 t.id === 'undo'

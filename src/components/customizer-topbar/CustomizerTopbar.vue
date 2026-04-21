@@ -227,6 +227,42 @@
     }
   }
 
+  /** Defer until layout/fonts so scrollWidth matches what the user sees (fixes compact mode on reload). */
+  function scheduleTopbarOverflowCheck() {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        checkTopbarOverflow()
+      })
+    })
+  }
+
+  function detachTopbarResizeObserver() {
+    if (topbarResizeObserver) {
+      try {
+        topbarResizeObserver.disconnect()
+      } catch {
+        /* ignore */
+      }
+      topbarResizeObserver = null
+    }
+  }
+
+  function attachTopbarResizeObserver() {
+    if (typeof window === 'undefined' || !('ResizeObserver' in window)) return
+    const container = topbarContainerRef.value
+    if (!container || isMobile.value) return
+
+    detachTopbarResizeObserver()
+    topbarResizeObserver = new ResizeObserver(() => {
+      scheduleTopbarOverflowCheck()
+    })
+    topbarResizeObserver.observe(container)
+    const content = topbarContentRef.value
+    if (content) {
+      topbarResizeObserver.observe(content)
+    }
+  }
+
   // Reactive state
   const showProfileDialog = ref(false)
   const showCartDialog = ref(false)
@@ -239,13 +275,6 @@
   watch(openProfileWithOrderId, id => {
     if (id != null) {
       showProfileDialog.value = true
-    }
-  })
-
-  onMounted(() => {
-    const token = route.params.password_token || route.query.password_token
-    if (route.name === 'CustomizerResetPassword' && token) {
-      setResetPasswordDialogOpen(true)
     }
   })
 
@@ -1314,22 +1343,40 @@
   }
 
   onMounted(() => {
-    const container = topbarContainerRef.value
-    if (!container || typeof window === 'undefined' || !('ResizeObserver' in window)) return
+    const token = route.params.password_token || route.query.password_token
+    if (route.name === 'CustomizerResetPassword' && token) {
+      setResetPasswordDialogOpen(true)
+    }
 
-    topbarResizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(() => {
-        checkTopbarOverflow()
+    void nextTick(() => {
+      attachTopbarResizeObserver()
+      scheduleTopbarOverflowCheck()
+      void nextTick(() => {
+        scheduleTopbarOverflowCheck()
       })
     })
-    topbarResizeObserver.observe(container)
-    setTimeout(() => checkTopbarOverflow(), 0)
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('load', scheduleTopbarOverflowCheck, { once: true })
+    }
+  })
+
+  watch(isMobile, () => {
+    if (isMobile.value) {
+      detachTopbarResizeObserver()
+      isTopbarCompact.value = false
+      return
+    }
+    void nextTick(() => {
+      attachTopbarResizeObserver()
+      scheduleTopbarOverflowCheck()
+    })
   })
 
   onBeforeUnmount(() => {
-    if (topbarResizeObserver && topbarContainerRef.value) {
-      topbarResizeObserver.disconnect()
-      topbarResizeObserver = null
+    detachTopbarResizeObserver()
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('load', scheduleTopbarOverflowCheck)
     }
   })
 </script>
@@ -1687,7 +1734,7 @@
                       </span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent side="bottom" :side-offset="6">
                     <p>{{ topbar_cart({}, { locale: profileStore.currentLocale }) }}</p>
                   </TooltipContent>
                 </Tooltip>

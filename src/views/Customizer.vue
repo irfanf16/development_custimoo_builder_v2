@@ -16,10 +16,22 @@
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { usePendingPostLoginAction } from '@/composables/usePendingPostLoginAction'
   import { useSignIn } from '@/composables/useSignIn'
-  import { onMounted } from 'vue'
+  import { computed, onMounted, provide, ref } from 'vue'
+  import { useCustomizerCanvasPairSizes } from '@/composables/useCustomizerCanvasPairSizes'
+  import { CUSTOMIZER_MAIN_CANVAS_PX } from '@/lib/customizerCanvasInjectKeys'
 
   const uiStore = useUIStore()
   const { isMobile } = storeToRefs(uiStore)
+
+  const canvasControlsRef = ref<HTMLElement | null>(null)
+  const { mainCanvasPx, flipCanvasPx } = useCustomizerCanvasPairSizes(canvasControlsRef)
+
+  const mainCanvasForChild = computed(() => (isMobile.value ? 600 : mainCanvasPx.value))
+  const flipCanvasForChild = computed(() =>
+    isMobile.value ? 156 : flipCanvasPx.value
+  )
+
+  provide(CUSTOMIZER_MAIN_CANVAS_PX, mainCanvasForChild)
   const workflowStore = useWorkflowStore()
   const productsStore = useProductsStore()
   const { activeProductDetails } = storeToRefs(productsStore)
@@ -56,12 +68,12 @@
     <!-- Mobile layout -->
     <template v-if="isMobile">
       <div id="main-content" class="mobile-layout flex flex-col gap-2 w-full h-full">
-        <CustomizerTopbar class="z-40" />
+        <CustomizerTopbar class="z-widget-chrome" />
         <div class="flex flex-col">
           <ProductPreview />
           <div
             v-if="!activeProductDetails?.is_3d_product"
-            class="w-fit h-fit mt-[-3.5rem] p-0.5 rounded-2xl backdrop-blur-sm bg-white/20 cursor-pointer self-end z-10"
+            class="z-widget-workflow-ornament isolate mt-[-3.5rem] w-fit cursor-pointer self-end rounded-2xl bg-white/20 p-0.5 backdrop-blur-sm"
             @click="handleClick"
           >
             <div class="bg-card border border-border rounded-[14px] overflow-hidden">
@@ -78,50 +90,54 @@
           </div>
         </div>
         <MobileActionBar />
-        <WorkflowLayout />
+        <WorkflowLayout class="z-widget-workflow" />
         <CustomizerMenuMobile />
       </div>
     </template>
     <!-- Desktop layout -->
     <template v-else>
-      <div id="main-content" class="flex flex-row justify-between w-full max-h-full">
-        <div id="nav-content" class="flex flex-row gap-4 max-h-full">
-          <div id="menu-items-container" class="flex-col z-10">
+      <div
+        id="main-content"
+        class="flex max-h-full min-h-0 w-full min-w-0 flex-row justify-between overflow-hidden"
+      >
+        <div id="nav-content" class="flex max-h-full min-h-0 shrink-0 flex-row gap-4">
+          <div id="menu-items-container" class="z-widget-workflow flex-col">
             <CustomizerMenu />
           </div>
-          <WorkflowLayout class="z-30" />
+          <WorkflowLayout />
         </div>
 
-        <div id="right-content" class="flex min-w-0 flex-col w-full justify-between items-end">
-          <CustomizerTopbar class="z-20" />
+        <div
+          id="right-content"
+          class="flex min-h-0 w-full min-w-0 flex-1 flex-col self-stretch overflow-hidden"
+        >
+          <CustomizerTopbar class="z-widget-chrome w-full shrink-0" />
           <div
             id="canvas-controls-container"
-            class="flex flex-row w-full h-full justify-center 2xl:justify-start items-center gap-6 p-[64px]"
+            ref="canvasControlsRef"
+            class="flex min-h-0 w-full min-w-0 flex-1 flex-row items-start justify-center gap-4 overflow-hidden px-4 py-3 sm:gap-6 sm:px-6 sm:py-4 md:px-8 md:py-5 lg:px-10 lg:py-6 xl:px-12 2xl:justify-start 2xl:px-14 2xl:py-8"
           >
             <ProductPreview />
 
             <div
               id="canvas-controls-container-inner"
-              class="flex flex-col gap-9 items-center justify-between"
+              class="flex min-h-0 w-fit shrink-0 flex-col items-end justify-between gap-9 self-start"
             >
               <RightToolbar />
 
               <div
                 v-if="!activeProductDetails?.is_3d_product"
-                class="w-fit h-fit p-1 rounded-2xl backdrop-blur-sm bg-white/20 cursor-pointer"
+                class="w-fit h-fit p-1 rounded-2xl bg-card/95 border border-border/60 cursor-pointer isolate"
                 @click="handleClick"
               >
-                <div class="bg-card border border-border rounded-[14px] p-3 relative">
-                  <div class="w-[9.75rem] h-[9.75rem] flex items-center justify-center">
-                    <TwoDScene
-                      :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
-                      :main-preview="true"
-                      :canvas-width="600"
-                      :canvas-height="600"
-                      canvas-class="w-full h-full object-contain rounded-lg transition-opacity duration-300"
-                    />
-                  </div>
-                </div>
+                <TwoDScene
+                  :side="workflowStore.activeCanvasSide === 'front' ? 'back' : 'front'"
+                  :main-preview="true"
+                  :canvas-width="flipCanvasForChild"
+                  :canvas-height="flipCanvasForChild"
+                  lock-display-to-canvas-pixels
+                  canvas-class="cursor-pointer rounded-lg object-contain transition-opacity duration-300"
+                />
               </div>
             </div>
           </div>

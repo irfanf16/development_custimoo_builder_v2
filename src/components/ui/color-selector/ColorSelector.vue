@@ -76,6 +76,8 @@
   <Primitive
     :as="as"
     :as-child="asChild"
+    data-color-selector
+    :data-size="size"
     :class="
       cn(colorSelectorVariants({ size }), props.class, { 'ring-2 ring-primary': props.selected })
     "

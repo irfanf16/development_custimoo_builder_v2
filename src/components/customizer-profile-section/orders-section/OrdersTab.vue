@@ -21,14 +21,12 @@
   import OrderTimeline from '@/components/customizer-profile-section/orders-section/order-timeline/OrderTimeline.vue'
   import { useOrdersStore } from '@/stores/orders/orders.store'
   import { ScrollArea } from '@/components/ui/scroll-area'
+  import { useScrollAreaFill } from '@/composables/useScrollAreaFill'
   import { useProfileStore } from '@/stores/profile/profile.store'
-  import { useUIStore } from '@/stores/ui/ui.store'
   import { m as messages } from '@/paraglide/messages'
 
   const store = useOrdersStore()
   const profileStore = useProfileStore()
-  const uiStore = useUIStore()
-  const isMobile = uiStore.isMobile
   const emit = defineEmits<{ (e: 'reorder-success'): void }>()
 
   const SEARCH_INPUT_SELECTOR = 'input[data-orders-search-input="true"]'
@@ -155,19 +153,27 @@
     // Open details without extra API call
     store.openOrderDetails(order)
   }
+
+  const ordersShellRef = ref<HTMLElement | null>(null)
+  const ordersChromeMeasureRef = ref<HTMLElement | null>(null)
+  const { scrollAreaStyle: ordersScrollAreaStyle } = useScrollAreaFill({
+    shellRef: ordersShellRef,
+    headerRef: ordersChromeMeasureRef
+  })
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <!-- Header -->
-    <div class="sticky top-0 z-10 pb-3 w-max px-4 pt-4">
-      <WorkflowBreadcrumbs :breadcrumbs="breadcrumbs" />
-    </div>
-    <!-- Filter -->
-    <div
-      v-if="!store.activeOrder"
-      class="flex items-center justify-between gap-2 border-b pb-2 px-4"
-    >
+  <div ref="ordersShellRef" class="flex min-h-0 h-full flex-col overflow-hidden">
+    <div ref="ordersChromeMeasureRef" class="shrink-0">
+      <!-- Header -->
+      <div class="sticky top-0 z-10 w-max px-4 pb-3 pt-4">
+        <WorkflowBreadcrumbs :breadcrumbs="breadcrumbs" />
+      </div>
+      <!-- Filter -->
+      <div
+        v-if="!store.activeOrder"
+        class="flex items-center justify-between gap-2 border-b px-4 pb-2"
+      >
       <div class="relative w-full">
         <Input
           v-model="store.ordersParams.search"
@@ -185,7 +191,7 @@
         >
           <X class="size-4" />
         </button>
-      </div>
+        </div>
       <div class="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
@@ -292,9 +298,13 @@
         </div>
       </div>
     </div>
+    </div>
     <!-- Orders List -->
-    <div v-if="!store.activeOrder" class="flex-1 min-h-0">
-      <ScrollArea class="overflow-y-auto h-full">
+    <ScrollArea
+      v-if="!store.activeOrder"
+      :style="ordersScrollAreaStyle"
+      class="min-h-0 w-full min-w-0"
+    >
         <InfiniteScroll :class="'w-full h-full relative'" @load-more="loadMore">
           <div v-if="store.orders.length" class="absolute inset-0">
             <OrdersListItem
@@ -324,12 +334,11 @@
             <span class="ml-2 text-sm">{{ t.loadingMoreOrders }}</span>
           </div>
         </InfiniteScroll>
-      </ScrollArea>
-    </div>
-    <component
-      :is="isMobile ? 'div' : ScrollArea"
-      v-if="!isMobile && store.activeOrder"
-      :class="{ 'flex-1 h-full overflow-y-auto': !isMobile, 'flex-1 overflow-y-auto': isMobile }"
+    </ScrollArea>
+    <ScrollArea
+      v-else
+      :style="ordersScrollAreaStyle"
+      class="min-h-0 w-full min-w-0"
     >
       <OrderDetailsView
         v-if="store.activeOrderView === 'details'"
@@ -338,15 +347,6 @@
         @reorder-success="emit('reorder-success')"
       />
       <OrderTimeline v-else :order="store.activeOrder" />
-    </component>
-    <div v-else-if="store.activeOrder" class="flex-1 h-full overflow-y-auto">
-      <OrderDetailsView
-        v-if="store.activeOrderView === 'details'"
-        :order="store.activeOrder"
-        @back="store.closeOrderDetails"
-        @reorder-success="emit('reorder-success')"
-      />
-      <OrderTimeline v-else :order="store.activeOrder" />
-    </div>
+    </ScrollArea>
   </div>
 </template>

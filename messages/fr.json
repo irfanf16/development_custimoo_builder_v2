@@ -87,6 +87,8 @@
   "theme_light": "Clair",
   "theme_dark": "Sombre",
   "ui_close": "Fermer",
+  "app_initializing": "Initialisation de l'application…",
+  "app_initializing_retry": "Réessayer",
   "breadcrumb_more": "Plus",
   "auth_sign_in": "Se connecter",
   "auth_signing_in": "Connexion en cours...",

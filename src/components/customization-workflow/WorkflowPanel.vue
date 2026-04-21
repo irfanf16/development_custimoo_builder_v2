@@ -1,7 +1,8 @@
 <script setup lang="ts">
   import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue'
-  import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
+  import { Card, CardHeader, CardFooter } from '@/components/ui/card'
   import { ScrollArea } from '@/components/ui/scroll-area'
+  import { useScrollAreaFill } from '@/composables/useScrollAreaFill'
   import { useUIStore } from '@/stores/ui/ui.store'
   import type { HeaderConfiguration } from './types'
   // import { usePricing } from '@/composables/usePricing'
@@ -10,7 +11,6 @@
     headerConfig?: HeaderConfiguration
     isExpanded?: boolean
     contentKey?: string | number
-    hasFooterButtons?: boolean
   }
 
   interface Emits {
@@ -20,8 +20,7 @@
   const props = withDefaults(defineProps<Props>(), {
     headerConfig: undefined,
     isExpanded: false,
-    contentKey: undefined,
-    hasFooterButtons: false
+    contentKey: undefined
   })
 
   const emit = defineEmits<Emits>()
@@ -32,48 +31,72 @@
   const isExpanded = computed(() => !uiStore.isMobile && props.isExpanded)
 
   const cardContentRef = ref<HTMLElement | null>(null)
+  const panelShellRef = ref<HTMLElement | null>(null)
+  const panelHeaderMeasureRef = ref<HTMLElement | null>(null)
+  const panelFooterMeasureRef = ref<HTMLElement | null>(null)
 
-  // Collapse panel when switching to a different content key (panel) - only for desktop
-  watch(
-    () => props.contentKey,
-    () => {
-      if (!uiStore.isMobile) {
-        emit('update:isExpanded', false)
-      }
-    }
-  )
+  const { scrollAreaStyle } = useScrollAreaFill({
+    shellRef: panelShellRef,
+    headerRef: panelHeaderMeasureRef,
+    footerRef: panelFooterMeasureRef
+  })
+
+  function getScrollContainer(): HTMLElement | null {
+    const inner = cardContentRef.value
+    if (!inner) return null
+    const viewport = inner.closest<HTMLElement>('[data-reka-scroll-area-viewport]')
+    return viewport ?? inner
+  }
+
+  const desktopPreviewCompact = computed(() => uiStore.desktopPreviewCompact)
 
   // Computed classes for responsive styling
   const containerClasses = computed(() => {
     if (uiStore.isMobile) {
       return 'h-full w-full'
     }
-    return [
-      'h-full max-h-full',
-      'md:w-[20rem] lg:w-[29rem] ',
-      isExpanded.value ? 'z-20 max-w-none' : ''
-    ]
+    const compact = desktopPreviewCompact.value
+    if (compact) {
+      // Fixed widths (min = max): avoids `w-full` + `shrink` collapsing the panel when content is short.
+      if (isExpanded.value) {
+        // Same flex footprint as collapsed; wide surface comes from the Card (`w-[75vw]`) so we overlay
+        // ProductPreview like non-compact expanded — do not widen this shell or the row pushes the canvas.
+        return [
+          'h-full max-h-full shrink-0 z-widget-workflow-expanded max-w-none min-w-0 overflow-visible',
+          'w-[14rem] min-w-[14rem] max-w-[14rem]',
+          'md:w-[18rem] md:min-w-[18rem] md:max-w-[18rem]',
+          'lg:w-[21rem] lg:min-w-[21rem] lg:max-w-[21rem]'
+        ].join(' ')
+      }
+      return [
+        'h-full max-h-full',
+        'w-[14rem] min-w-[14rem] max-w-[14rem] shrink-0',
+        'md:w-[18rem] md:min-w-[18rem] md:max-w-[18rem]',
+        'lg:w-[21rem] lg:min-w-[21rem] lg:max-w-[21rem]'
+      ].join(' ')
+    }
+    const parts = ['h-full max-h-full min-w-0', 'md:w-[20rem] lg:w-[29rem]']
+    if (isExpanded.value) {
+      parts.push('z-widget-workflow-expanded max-w-none')
+    }
+    return parts.join(' ')
   })
 
   const cardClasses = computed(() => {
     if (uiStore.isMobile) {
-      return 'justify-start gap-0 overflow-hidden flex flex-col max-h-full'
+      return 'justify-start gap-0 overflow-hidden flex flex-col h-full max-h-full min-h-0 rounded-t-none rounded-b-2xl bg-background text-card-foreground opacity-100'
     }
     const baseClasses =
-      'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col max-h-full! h-full! transition-width duration-200 md:py-3!'
-    return [baseClasses, isExpanded.value ? 'w-[75vw]' : 'max-w-[29rem] w-full']
-  })
-
-  const scrollAreaMaxHeight = computed(() => {
-    // Since WorkflowFooterPricing is now always present in all customization steps,
-    // we always account for the footer height (~7rem)
-    if (uiStore.isMobile) {
-      if (props.hasFooterButtons) {
-        return 'calc(65vh - 19rem)'
-      }
-      return 'calc(65vh - 17rem)'
-    }
-    return '100%'
+      'rounded-2xl justify-start gap-0 md:gap-0 overflow-hidden flex flex-col max-h-full! h-full! min-h-0 min-w-0 transition-width duration-200 md:py-3!'
+    const compact = desktopPreviewCompact.value
+    const widthRule = isExpanded.value
+      ? compact
+        ? 'w-[75vw] min-w-0'
+        : 'w-[75vw]'
+      : compact
+        ? 'w-full max-w-full'
+        : 'max-w-[29rem] w-full'
+    return [baseClasses, widthRule]
   })
 
   const footerClasses = computed(() => {
@@ -94,7 +117,8 @@
     nextTick(() => {
       if (!cardContentRef.value) return
 
-      const container = cardContentRef.value
+      const container = getScrollContainer()
+      if (!container) return
       const targetElement = container.querySelector(`#${elementId}`)
 
       if (!targetElement) return
@@ -144,27 +168,42 @@
    * Prevents scroll events from bubbling up to parent containers
    */
   function handleScroll(event: Event) {
-    if (cardContentRef.value && event.target === cardContentRef.value) {
+    const el = getScrollContainer()
+    if (el && event.target === el) {
       event.stopPropagation()
     }
   }
 
-  onMounted(() => {
-    // Add scroll event listener to prevent bubbling
+  let scrollCleanup: (() => void) | undefined
+
+  function attachScrollListener() {
+    scrollCleanup?.()
+    scrollCleanup = undefined
     nextTick(() => {
-      if (cardContentRef.value) {
-        cardContentRef.value.addEventListener('scroll', handleScroll, {
-          passive: true
-        })
+      const el = getScrollContainer()
+      if (el) {
+        el.addEventListener('scroll', handleScroll, { passive: true })
+        scrollCleanup = () => el.removeEventListener('scroll', handleScroll)
       }
     })
+  }
+
+  watch(
+    () => props.contentKey,
+    () => {
+      if (!uiStore.isMobile) {
+        emit('update:isExpanded', false)
+      }
+      attachScrollListener()
+    }
+  )
+
+  onMounted(() => {
+    attachScrollListener()
   })
 
   onUnmounted(() => {
-    // Clean up event listener
-    if (cardContentRef.value) {
-      cardContentRef.value.removeEventListener('scroll', handleScroll)
-    }
+    scrollCleanup?.()
   })
 
   // Expose scroll function to parent components
@@ -177,39 +216,40 @@
 <template>
   <div :class="containerClasses">
     <Card :class="cardClasses">
-      <!-- Header slot - panels can provide their own header content -->
-      <template v-if="$slots.header">
-        <CardHeader
-          class="pb-2 pt-0 px-2 md:pb-2 md:px-2 flex flex-row items-center justify-between gap-2"
-        >
-          <slot name="header" :is-expanded="isExpanded" />
-        </CardHeader>
-      </template>
+      <div
+        ref="panelShellRef"
+        class="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden"
+      >
+        <template v-if="$slots.header">
+          <div ref="panelHeaderMeasureRef" class="shrink-0">
+            <CardHeader
+              class="pb-2 pt-0 px-2 md:pb-2 md:px-2 flex flex-row items-center justify-between gap-2"
+            >
+              <slot name="header" :is-expanded="isExpanded" />
+            </CardHeader>
+          </div>
+        </template>
 
-      <CardContent class="flex-1 min-h-0 p-0 md:p-0!">
-        <ScrollArea class="h-full">
-          <div
-            class="h-full transition-height duration-200"
-            :style="{ maxHeight: scrollAreaMaxHeight }"
-          >
-            <!-- Content slot for different panel types -->
+        <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+          <ScrollArea :style="scrollAreaStyle" class="min-h-0 min-w-0 flex-1">
             <Transition name="panel-slide" mode="out-in" appear>
-              <div ref="cardContentRef" :key="props.contentKey" class="overflow-y-auto">
+              <div ref="cardContentRef" :key="props.contentKey" class="min-h-0 w-full">
                 <slot :is-expanded="isExpanded" />
               </div>
             </Transition>
-          </div>
-        </ScrollArea>
-      </CardContent>
+          </ScrollArea>
+        </div>
 
-      <!-- Footer actions -->
-      <Transition name="fade" mode="out-in" appear>
         <template v-if="$slots.footer">
-          <CardFooter :class="footerClasses">
-            <slot name="footer" :is-expanded="isExpanded" />
-          </CardFooter>
+          <div ref="panelFooterMeasureRef" class="mt-auto shrink-0">
+            <Transition name="fade" mode="out-in" appear>
+              <CardFooter :class="footerClasses">
+                <slot name="footer" :is-expanded="isExpanded" />
+              </CardFooter>
+            </Transition>
+          </div>
         </template>
-      </Transition>
+      </div>
     </Card>
   </div>
 </template>

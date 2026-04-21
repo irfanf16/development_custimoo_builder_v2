@@ -17,7 +17,7 @@
 
 <template>
   <Sonner
-    class="toaster group"
+    class="toaster group z-widget-toast"
     :toast-options="{
       classes: {
         toast:

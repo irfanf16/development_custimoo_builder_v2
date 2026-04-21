@@ -11,7 +11,8 @@ import type {
   CanvasSide,
   CustomizerStep,
   WorkflowRouteStep,
-  NavigationItem
+  NavigationItem,
+  MobileSheetSnap
 } from './workflow.store.types'
 import type { APCustomizationGroupColor } from '@/services/products/types'
 import type {
@@ -82,8 +83,11 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   const activeCanvasSide = ref<CanvasSide>('front')
   const canvasZoom = ref<number>(1)
 
-  // Mobile panel state
-  const panelOpen = ref<boolean>(true)
+  // Mobile panel state (closed by default; opened from bottom nav)
+  const panelOpen = ref<boolean>(false)
+
+  /** Mobile bottom sheet snap height step. */
+  const mobileSheetSnap = ref<MobileSheetSnap>('full')
 
   // Header configuration state (with refs for two-way binding)
   const currentHeaderConfig = ref<HeaderConfigWithRefs | null>(null)
@@ -342,6 +346,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
       if (logoIndex) activeLogoIndex.value = Number(logoIndex)
       if (colorAccordionIndex) activeColorAccordionIndex.value = Number(colorAccordionIndex)
       // Note: textClipboard is not loaded from localStorage - it's runtime-only
+
     } catch (_) {}
   }
 
@@ -563,7 +568,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     pendingTextTemplateId.value = null
     activeCanvasSide.value = 'front'
     canvasZoom.value = 1
-    panelOpen.value = true
+    panelOpen.value = false
     selectedCategoryId.value = null
     selectedSubCategoryId.value = null
     pendingDesignId.value = null
@@ -648,9 +653,16 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
   // ===== MOBILE PANEL ACTIONS =====
   function setPanelOpen(open: boolean) {
     panelOpen.value = open
+    if (open) {
+      mobileSheetSnap.value = 'full'
+    }
   }
   function togglePanel() {
-    panelOpen.value = !panelOpen.value
+    const next = !panelOpen.value
+    panelOpen.value = next
+    if (next) {
+      mobileSheetSnap.value = 'full'
+    }
   }
 
   // ===== HEADER CONFIG ACTIONS =====
@@ -685,8 +697,14 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     pendingTextTemplateId.value = null
     activeCanvasSide.value = 'front'
     canvasZoom.value = 1
-    panelOpen.value = true
+    panelOpen.value = false
+    mobileSheetSnap.value = 'full'
   }
+
+  function setMobileSheetSnap(snap: MobileSheetSnap) {
+    mobileSheetSnap.value = snap
+  }
+
   // ===== RETURN =====
   return {
     // State
@@ -723,6 +741,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     contentKey,
     isPanelOpen,
     navigationItems,
+    mobileSheetSnap,
     // Persistence
     saveToLocalStorage,
     saveSubStepsToLocalStorage,
@@ -775,6 +794,7 @@ export const useWorkflowStore = defineStore('workflowStore', () => {
     panelOpen,
     setPanelOpen,
     togglePanel,
+    setMobileSheetSnap,
     // Header Config
     currentHeaderConfig,
     currentFooterConfig,

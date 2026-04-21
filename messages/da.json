@@ -87,6 +87,8 @@
   "theme_light": "Lys",
   "theme_dark": "Mørk",
   "ui_close": "Luk",
+  "app_initializing": "Initialiserer app…",
+  "app_initializing_retry": "Prøv igen",
   "breadcrumb_more": "Mere",
   "auth_sign_in": "Log ind",
   "auth_signing_in": "Logger ind...",

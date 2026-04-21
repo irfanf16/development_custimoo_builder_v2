@@ -8,6 +8,11 @@ import {
 import { API } from '../../services'
 import { useTryCatchApi } from '@/composables/useTryCatchApi'
 import type { APIResponse } from '@/services/types'
+import type { CompanyBrandingSnapshot } from '@/lib/companyBrandingStorage'
+import { writeCompanyBrandingSnapshot } from '@/lib/companyBrandingStorage'
+import { useLocalStorage } from '@/composables/useLocalStorage'
+import { resolveWidgetBrandingRoot } from '@/lib/widgetUtils'
+import { applyCompanyUiBrandingTheme } from '@/lib/companyUiBrandingTheme'
 
 // ---------------- Language configuration types ----------------
 export interface LanguageConfig {
@@ -198,6 +203,23 @@ export const useCompanyStore = defineStore('companyStore', () => {
     }
   }
 
+  /** Push `ui_branding` to the widget root (incl. Tailwind radius scale when base radius is 0). */
+  function applyWidgetThemeFromSettings(settingsData: OutputSettings | null | undefined) {
+    const ui = settingsData?.ui_branding
+    const root = typeof document !== 'undefined' ? resolveWidgetBrandingRoot() : null
+    if (ui && root) {
+      applyCompanyUiBrandingTheme(root, ui)
+    }
+  }
+
+  /** Restore settings + localization from last persisted snapshot (before API returns). */
+  function hydrateBrandingSnapshot(payload: CompanyBrandingSnapshot) {
+    setSettings(payload.settings)
+    localization.value = { ...payload.localization }
+    applyCurrencyFromSettings(payload.settings)
+    applyWidgetThemeFromSettings(payload.settings)
+  }
+
   function setLoading(loading: boolean) {
     isLoading.value = loading
   }
@@ -250,6 +272,17 @@ export const useCompanyStore = defineStore('companyStore', () => {
         }
       }
       applyCurrencyFromSettings(output.content.result)
+      applyWidgetThemeFromSettings(output.content.result)
+      try {
+        const storage = useLocalStorage()
+        writeCompanyBrandingSnapshot(storage, {
+          companyId: company.value?.id ?? null,
+          settings: output.content.result,
+          localization: { ...localization.value }
+        })
+      } catch {
+        // optional UX cache
+      }
     } else {
       setError('Error getting settings')
       // If settings fetch fails, set default languages
@@ -282,6 +315,7 @@ export const useCompanyStore = defineStore('companyStore', () => {
     setError,
     reset,
     fetchCompany,
-    fetchSettings
+    fetchSettings,
+    hydrateBrandingSnapshot
   }
 })

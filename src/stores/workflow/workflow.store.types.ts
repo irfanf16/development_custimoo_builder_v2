@@ -35,3 +35,6 @@ export type NavigationItem = {
   action?: () => void
   isActive?: boolean
 }
+
+/** Mobile workflow bottom sheet vertical snap. */
+export type MobileSheetSnap = 'full' | 'peek'

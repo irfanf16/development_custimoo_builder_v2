@@ -19,7 +19,7 @@
 /* Using tailwindcss-animate via plugin */
 
 /* Custom widget styles */
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.custimoo-theme-dark *));
 
 /* ===== A) TAILWIND V4 THEME TOKENS (utilities read these) ===== */
 @theme inline {
@@ -45,12 +45,16 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  /* When --radius is 0, offsets must not add phantom rounding (--radius-xl was still 4px). */
-  --radius-sm: max(0px, calc(var(--radius) - 4px * var(--radius-active)));
-  --radius-md: max(0px, calc(var(--radius) - 2px * var(--radius-active)));
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px * var(--radius-active));
-  --radius-2xl: calc(var(--radius) + 8px * var(--radius-active));
+  /*
+   * Tailwind emits utilities like rounded-2xl as calc(var(--radius) + 8px). When company
+   * branding sets --radius to 0, those calcs still add px; multiply by (1 - --radius-zero-mode)
+   * so JS can set --radius-zero-mode: 1 on the widget root for true square corners.
+   */
+  --radius-sm: calc(max(0px, var(--radius) - 4px) * (1 - var(--radius-zero-mode, 0)));
+  --radius-md: calc(max(0px, var(--radius) - 2px) * (1 - var(--radius-zero-mode, 0)));
+  --radius-lg: calc(var(--radius) * (1 - var(--radius-zero-mode, 0)));
+  --radius-xl: calc((var(--radius) + 4px) * (1 - var(--radius-zero-mode, 0)));
+  --radius-2xl: calc((var(--radius) + 8px) * (1 - var(--radius-zero-mode, 0)));
 
   /* Custom screen sizes */
   --breakpoint-3xl: 1920px;
@@ -148,6 +152,20 @@
   --container-min-height-desktop: 800px;
   --container-padding-desktop: 1.5rem;
 
+  /* Stacking inside Shadow DOM: keep workflow below chrome; dialogs use --z-dialog; host elevation handles vendor site */
+  --z-workflow: 10;
+  /* Expanded workflow panel / layout must paint above CustomizerTopbar (--z-chrome) when overlapping the canvas column */
+  --z-workflow-expanded: 38;
+  --z-workflow-ornament: 12;
+  --z-chrome: 35;
+  --z-workflow-overlay: 40;
+  /* Match host storefront headers (often 1e3–1e6) when widget is embedded */
+  --z-widget-tooltip: 2147483645;
+  --z-dialog: 2147483646;
+  --z-toast: 2147483646;
+  /* Portaled select (and similar) inside dialogs must stack above dialog chrome (reka SelectContent used z-50). */
+  --z-select-popover: 2147483647;
+
   /* Light theme CSS variables (default values) */
   /* Hosts can override these via runtime (see hostThemes.ts) */
   --background: #ffffff;
@@ -162,8 +180,8 @@
   --secondary-foreground: #171717;
   /* Base radius used to derive Tailwind radius scale tokens */
   --radius: 0.5rem;
-  /* Unitless 0–1: collapses sm/md/xl/2xl offsets when --radius is 0 (see @theme radius-*). */
-  --radius-active: min(1, max(0, calc(var(--radius) / 1px)));
+  /* 1 = square corners: scale tokens in @theme multiply by 0 (set from company ui_branding). */
+  --radius-zero-mode: 0;
   /* @see hostThemes.ts */
   --muted: #f5f5f5;
   --muted-foreground: #737373;
@@ -178,10 +196,10 @@
   /* Optional extras removed: chart-* and sidebar-* tokens (unused) */
 
   /* ===== DARK THEME VARIABLES =====
-   * Activated by adding `dark` to :host or a top-level container inside Shadow DOM.
+   * Activated by `custimoo-theme-dark` on :host or a top-level container inside Shadow DOM.
    */
-  :host.dark,
-  .dark {
+  :host.custimoo-theme-dark,
+  .custimoo-theme-dark {
     --background: #0a0a0a;
     --foreground: #fafafa;
     --card: #171717;
@@ -327,6 +345,51 @@
 
 /* ===== UTILITIES ===== */
 @layer utilities {
+  .z-widget-workflow {
+    position: relative;
+    z-index: var(--z-workflow);
+  }
+
+  .z-widget-workflow-expanded {
+    position: relative;
+    z-index: var(--z-workflow-expanded);
+  }
+
+  /** Desktop: whole workflow column above topbar while expanded (stacking context for 75vw panel). */
+  .z-widget-workflow-layout-expanded {
+    position: relative;
+    z-index: var(--z-workflow-expanded);
+  }
+
+  .z-widget-workflow-ornament {
+    z-index: var(--z-workflow-ornament);
+  }
+
+  .z-widget-chrome {
+    position: relative;
+    z-index: var(--z-chrome);
+  }
+
+  .z-widget-workflow-overlay {
+    z-index: var(--z-workflow-overlay);
+  }
+
+  .z-widget-dialog {
+    z-index: var(--z-dialog);
+  }
+
+  .z-widget-tooltip-layer {
+    z-index: var(--z-widget-tooltip);
+  }
+
+  .z-widget-toast {
+    z-index: var(--z-toast);
+  }
+
+  [data-slot='select-content'] {
+    z-index: var(--z-select-popover);
+  }
+
   .icon-secondary-from-primary-50 {
     --icon-secondary: rgb(from currentColor r g b / 0.5);
   }
@@ -454,12 +517,28 @@
 /* ===== WIDGET SPECIFIC STYLES ===== */
 v-customizer {
   display: block;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  max-width: 100%;
   font-family: var(--font-sans);
   line-height: 1.5;
+  font-size: 16px;
   color: var(--foreground);
   background: var(--background);
+  -webkit-font-smoothing: antialiased;
   /* Prevent pinch-to-zoom and double-tap zoom within the widget */
   touch-action: manipulation;
+}
+
+:host {
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  font-size: 16px;
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
 }
 
 .canvas-container {
@@ -468,10 +547,24 @@ v-customizer {
   height: auto !important;
 }
 
+/*
+ * Host pages sometimes reuse `.canvas-container` on the same node as our Fabric canvas.
+ * That rule's `width: 100% !important` stretches the preview to fill the flex row and blows
+ * past v-customizer. TwoDScene sizes via inline max-width/max-height — keep width/height auto.
+ */
+v-customizer canvas.custimoo-two-canvas {
+  width: auto !important;
+  height: auto !important;
+}
+
 /* Ensure widget components are properly styled */
 v-customizer * {
   box-sizing: border-box;
   font-family: var(--font-sans);
+}
+v-customizer.custimoo-theme-light,
+v-customizer.custimoo-theme-dark {
+  opacity: 1 !important;
 }
 
 /* ===== CONTAINER HEIGHT MANAGEMENT (unified approach) ===== */
@@ -483,12 +576,16 @@ v-customizer * {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  /*
+   * When the host page uses a small `html { font-size }`, `rem` inside shadow still follows that
+   * root. `hostRootFontCompensation.ts` sets `zoom` on this node only (shadow-safe; no document.head).
+   */
 }
 #v-customizer-container:has(#collection-view-container) {
   height: 100%;
 }
-/* Desktop sizing (768px+ matches Tailwind md: breakpoint) */
-@media (min-width: 768px) {
+/* Desktop sizing: align with widget mobile breakpoint (1024 and below = mobile layout). */
+@media (min-width: 1025px) {
   #v-customizer-container {
     min-height: var(--container-min-height-desktop);
     height: var(--container-height-desktop);
@@ -501,6 +598,9 @@ v-customizer * {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  line-height: 1.5;
+  color: var(--foreground);
 }
 
 /* Removed explicit text/heading font blocks to allow Tailwind classes to override */

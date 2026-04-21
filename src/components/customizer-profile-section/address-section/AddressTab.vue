@@ -3,6 +3,7 @@
   import Spinner from '@/components/ui/spinner/Spinner.vue'
   import { Button } from '@/components/ui/button'
   import { computed, onMounted, ref } from 'vue'
+  import { useScrollAreaFill } from '@/composables/useScrollAreaFill'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import Card from '@/components/ui/card/Card.vue'
   import CardContent from '@/components/ui/card/CardContent.vue'
@@ -21,6 +22,11 @@
 
   const store = useProfileStore()
   const settingDefaultId = ref<number | null>(null)
+
+  const addressListShellRef = ref<HTMLElement | null>(null)
+  const { scrollAreaStyle: addressScrollAreaStyle } = useScrollAreaFill({
+    shellRef: addressListShellRef
+  })
 
   onMounted(() => {
     store.fetchAddresses()
@@ -51,9 +57,9 @@
   }))
 </script>
 <template>
-  <div class="flex flex-col h-full px-4">
+  <div class="flex min-h-0 h-full flex-col overflow-hidden px-4">
     <!-- Header -->
-    <div class="sticky top-0 z-10 pt-4 pb-3 w-max">
+    <div class="sticky top-0 z-10 w-max shrink-0 pt-4 pb-3">
       <div class="text-lg font-semibold">{{ t.addressBook }}</div>
     </div>
     <!-- Initial load spinner (no addresses yet) -->
@@ -92,8 +98,12 @@
     </div>
 
     <!-- Address List -->
-    <div class="flex-1 min-h-0">
-      <ScrollArea class="overflow-y-auto">
+    <div
+      v-else
+      ref="addressListShellRef"
+      class="min-h-0 flex-1 overflow-hidden"
+    >
+      <ScrollArea :style="addressScrollAreaStyle" class="min-h-0 w-full min-w-0">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-4 pb-4">
           <!-- Address Card -->
           <Card

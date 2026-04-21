@@ -19,6 +19,7 @@ import { useLoadCartProductIntoCustomizer } from './useLoadCartProductIntoCustom
 import { useQueryParamsStore } from '@/stores/queryParams/queryParams.store'
 import { toast } from 'vue-sonner'
 import { msg_product_unavailable } from '@/paraglide/messages'
+import { invalidateBrandingSnapshotIfCompanyMismatch } from '@/lib/companyBrandingStorage'
 
 // ============================================================================
 // Global State Management
@@ -299,6 +300,7 @@ export function useAppInitialization() {
       if (companyChanged) {
         context.hasPersistedCustomization = false
       }
+      invalidateBrandingSnapshotIfCompanyMismatch(storage, currentCompanyId)
     }
 
     // If share URL exists, fetch settings only (product will be loaded via loadShareProduct composable)

@@ -116,6 +116,32 @@
       : 'flex flex-wrap gap-2'
   )
   const previews = computed(() => productsStore.designPreviews || [])
+
+  /** Matches uiStore.desktopPreviewCompact (widget width–based, stable vs preview-slot measurement). */
+  const compactDesktopTwoCol = computed(
+    () => !uiStore.isMobile && uiStore.desktopPreviewCompact
+  )
+
+  /** Narrow rail: 2-col grid. Expanded (even on compact desktop) uses responsive multi-column grid. */
+  const compactDesktopTwoColOnly = computed(
+    () => compactDesktopTwoCol.value && !props.isExpanded
+  )
+
+  const designGridLayoutClass = computed(() => {
+    if (props.isExpanded) {
+      return 'grid min-w-0 gap-2 auto-rows-min [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))] md:[grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'
+    }
+    if (compactDesktopTwoCol.value) {
+      return 'grid min-w-0 grid-cols-2 gap-2 auto-rows-min'
+    }
+    return 'flex flex-wrap gap-2'
+  })
+
+  const designPreviewCanvasSize = computed(() => {
+    if (isMobile.value) return 130
+    if (compactDesktopTwoColOnly.value) return 120
+    return 176
+  })
   const designSelectionContainer = ref<HTMLElement | null>(null)
   const DESIGN_SKELETON_PLACEHOLDER_COUNT = 4
 
@@ -248,7 +274,7 @@
       </div>
     </div>
   </div>
-  <div v-else ref="designSelectionContainer" class="mb-4 md:mb-6 flex flex-col gap-6">
+  <div v-else ref="designSelectionContainer" class="mb-4 md:mb-6 flex flex-col gap-6" :class="designGridLayoutClass">
     <div v-if="myDesignsFilteredPreviews.length" class="flex flex-col gap-2">
       <div class="text-sm font-semibold text-muted-foreground">
         {{ design_section_my_designs({}, { locale: profileStore.currentLocale }) }}
@@ -348,8 +374,8 @@
               :id="item.id"
               :design="item.front_design"
               :svg-parts="item.svg_parts"
-              :canvas-width="isMobile ? 130 : 176"
-              :canvas-height="isMobile ? 130 : 176"
+              :canvas-width="designPreviewCanvasSize"
+              :canvas-height="designPreviewCanvasSize"
               :canvas-class="'rounded-xl'"
               :product-id="customizationStore.activeProductId ?? undefined"
               :preview-custom-texts="previewTextsByDesignId.get(item.id) ?? []"

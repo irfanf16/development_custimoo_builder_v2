@@ -17,6 +17,7 @@
   import LockerRoomHeader from './locker-room/LockerRoomHeader.vue'
   import CollectionList from './locker-room/CollectionList.vue'
   import CollectionDetail from './locker-room/CollectionDetail.vue'
+  import { useScrollAreaFill } from '@/composables/useScrollAreaFill'
   import { uploadPresignedFiles } from '@/lib/utils'
   import type { CustomLogo } from '@/services/logos/types'
   import { toast } from 'vue-sonner'
@@ -109,6 +110,14 @@
   // const collectionsListRef = ref<InstanceType<typeof CollectionList> | null>(null)
   const lockerDetailsRef = ref<InstanceType<typeof LockerDetail> | null>(null)
   const lockerRoomHeaderRef = ref<InstanceType<typeof LockerRoomHeader> | null>(null)
+  const lockerShellRef = ref<HTMLElement | null>(null)
+  const lockerHeaderMeasureRef = ref<HTMLElement | null>(null)
+  const lockerFooterMeasureRef = ref<HTMLElement | null>(null)
+  const { scrollAreaStyle: lockerScrollAreaStyle } = useScrollAreaFill({
+    shellRef: lockerShellRef,
+    headerRef: lockerHeaderMeasureRef,
+    footerRef: lockerFooterMeasureRef
+  })
   const collectionCreationStep = ref<number>(1)
   const isCreatingCollection = ref<boolean>(false)
   const editingCollectionName = ref<boolean>(false)
@@ -1046,10 +1055,12 @@
 
 <template>
   <Dialog :open="open" variant="large" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="flex flex-col w-full overflow-hidden">
-      <LockerRoomHeader
-        ref="lockerRoomHeaderRef"
-        v-model:search="search"
+    <DialogContent variant="large" class="flex min-h-0 flex-col w-full overflow-hidden">
+      <div ref="lockerShellRef" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div ref="lockerHeaderMeasureRef" class="shrink-0">
+          <LockerRoomHeader
+            ref="lockerRoomHeaderRef"
+            v-model:search="search"
         :current-collection="currentCollection"
         :current-mode="currentMode"
         :sort-option="sortOption"
@@ -1079,9 +1090,9 @@
         @create-collection="handleCreateCollectionClick"
         @start-edit-collection-name="editingCollectionName = true"
         @end-edit-collection-name="editingCollectionName = false"
-      />
-      <div class="flex-1 min-h-0">
-        <ScrollArea class="h-full">
+          />
+        </div>
+        <ScrollArea :style="lockerScrollAreaStyle" class="min-h-0 w-full min-w-0">
           <!-- NOTE: Avoid `absolute inset-0` panels here. Reka's ScrollArea measures content size
                via ResizeObserver; absolutely-positioned children don't resize the observed content
                box, causing the scrollbar thumb to get "stuck" at its initial size. -->
@@ -1158,14 +1169,17 @@
             </Transition>
           </div>
         </ScrollArea>
-      </div>
 
-      <LockerRoomFooter
-        v-if="
+        <div
+          v-if="
           (tab === 'collections' && lockerRoomHeaderRef!.creatingCollection) ||
           lockerTab === 'products' ||
           lockerRoomHeaderRef?.creatingCollection
         "
+          ref="lockerFooterMeasureRef"
+          class="shrink-0"
+        >
+          <LockerRoomFooter
         :current-collection="currentCollection"
         :locker-products-ref="lockerDetailsRef?.lockerProductsRef"
         :current-tab="tab"
@@ -1201,7 +1215,9 @@
         @unselect-all-detail="handleUnselectAllDetail"
         @clear-selection="handleUnselectAllList"
         @products-deleted="handleProductsDeleted"
-      />
+          />
+        </div>
+      </div>
     </DialogContent>
   </Dialog>
 </template>

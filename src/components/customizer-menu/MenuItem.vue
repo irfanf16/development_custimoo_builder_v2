@@ -11,12 +11,15 @@
 
   const isActive = computed(() => props.isActive || false)
 
-  const variant = computed(() => (isActive.value ? 'primary' : 'default'))
+  const variant = computed(() => {
+    if (isActive.value) return 'primary' as const
+    return 'default' as const
+  })
 
   const buttonClass = computed(() => {
     const baseClass =
       'w-[4.5rem] md:w-[3rem] lg:w-[4.5rem] h-[4.5rem] md:h-[3rem] lg:h-[4.5rem] p-4 rounded-2xl shadow-none '
-    return isActive.value ? `${baseClass} text-primary-foreground` : `${baseClass} `
+    return isActive.value ? `${baseClass} text-primary-foreground` : `${baseClass}`
   })
 </script>
 

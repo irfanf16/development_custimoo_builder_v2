@@ -455,7 +455,7 @@
                   </Button>
                 </DropdownMenuTrigger>
                 <!-- <DropdownMenuPortal to="body"> -->
-                <DropdownMenuContent class="w-40 z-[9999]">
+                <DropdownMenuContent class="w-40 z-widget-dialog">
                   <DropdownMenuItem
                     class="cursor-pointer text-destructive focus:text-destructive"
                     @click="handleDeleteCollection(collection, $event)"

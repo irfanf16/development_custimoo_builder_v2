@@ -92,6 +92,8 @@
   "theme_light": "Light",
   "theme_dark": "Dark",
   "ui_close": "Close",
+  "app_initializing": "Initializing app…",
+  "app_initializing_retry": "Try again",
   "breadcrumb_more": "More",
   "auth_sign_in": "Sign In",
   "auth_signing_in": "Signing in...",

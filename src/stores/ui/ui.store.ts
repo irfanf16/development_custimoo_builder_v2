@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { stripWidgetThemeClasses } from '@/lib/widgetUtils'
 import { useProfileStore } from '../profile/profile.store'
 
 export const useUIStore = defineStore('uiStore', () => {
@@ -35,8 +36,8 @@ export const useUIStore = defineStore('uiStore', () => {
   let resizeObserver: ResizeObserver | null = null
   let fullscreenRestore: (() => void) | null = null
   let lastViewportScroll = 0
-  // Configurable mobile breakpoint to determine layout behavior
-  const mobileBreakpoint = ref<number>(860)
+  /** Layout uses mobile UI when widget width is below this (mobile at 1024px and below). */
+  const mobileBreakpoint = ref<number>(1025)
 
   // State (add with the others)
   const showCartDialogTrigger = ref(0)
@@ -67,6 +68,21 @@ export const useUIStore = defineStore('uiStore', () => {
 
   // Derived state
   const isMobile = computed(() => containerWidth.value < mobileBreakpoint.value)
+
+  /**
+   * Below this widget width (desktop only): narrow workflow panel + 2-col product/design grids.
+   * At 1440px and above the workflow keeps full md/lg widths; previously 1580 caught 1500px views.
+   * Uses `containerWidth` from the widget root ResizeObserver (stable vs measuring the preview slot).
+   */
+  const DESKTOP_COMPACT_LAYOUT_THRESHOLD = 1440
+
+  const desktopPreviewCompact = computed(
+    () =>
+      !isMobile.value &&
+      containerWidth.value > 0 &&
+      containerWidth.value < DESKTOP_COMPACT_LAYOUT_THRESHOLD
+  )
+
   const minWidgetHeight = computed(() => (isMobile.value ? 700 : 800))
 
   // Actions
@@ -79,7 +95,7 @@ export const useUIStore = defineStore('uiStore', () => {
     const previousRoot = widgetRoot.value
 
     if (previousRoot && previousRoot !== root) {
-      previousRoot.classList.remove('light', 'dark')
+      stripWidgetThemeClasses(previousRoot)
     }
 
     widgetRoot.value = root
@@ -503,6 +519,7 @@ export const useUIStore = defineStore('uiStore', () => {
     containerWidth,
     containerHeight,
     isMobile,
+    desktopPreviewCompact,
     minWidgetHeight,
     currentTheme,
     openMobileMenu,

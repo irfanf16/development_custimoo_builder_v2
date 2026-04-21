@@ -157,6 +157,11 @@
     /** When true, Fabric zoom/pan and workflow toolbar zoom apply to this canvas. */
     enableZoom?: boolean
     /**
+     * When true, CSS display size is exactly canvasWidth×canvasHeight px (no max-only sizing).
+     * Use for small previews (e.g. desktop flip) so padding/w-full cannot inflate past props.
+     */
+    lockDisplayToCanvasPixels?: boolean
+    /**
      * When true, apply customization colors even when not main preview and "apply to all canvases" is off.
      * OR'd with global overrides and mainPreview in useColorCustomization.
      */
@@ -189,11 +194,34 @@
     placementSetting: undefined,
     textPlacement: undefined,
     enableZoom: false,
-    applyCustomizationColors: false,
-    previewCustomTexts: undefined
+    previewCustomTexts: undefined,
+    lockDisplayToCanvasPixels: false,
+    applyCustomizationColors: false
   })
 
   const isPlacementMode = computed(() => !!props.placementSetting || !!props.textPlacement)
+
+  /**
+   * Display size (CSS); internal bitmap stays canvasWidth×canvasHeight.
+   * Main preview uses only parent % — avoid dvh here (breaks flex min-h-0 chain and caused #main-content scroll).
+   */
+  const canvasDisplaySizeStyle = computed((): Record<string, string> => {
+    const w = props.canvasWidth
+    const h = props.canvasHeight
+    if (props.lockDisplayToCanvasPixels) {
+      return {
+        width: `${w}px`,
+        height: `${h}px`,
+        maxWidth: `${w}px`,
+        maxHeight: `${h}px`,
+        boxSizing: 'border-box'
+      }
+    }
+    return {
+      maxWidth: `min(100%, ${w}px)`,
+      maxHeight: `min(100%, ${h}px)`
+    }
+  })
 
   /** Matches useColorCustomization: apply default/group colors when global overrides, main preview, or this prop is on. */
   const shouldApplyCustomizationColors = computed(
@@ -2726,14 +2754,16 @@
 </script>
 
 <template>
-  <div class="relative">
+  <div
+    class="relative inline-flex h-auto w-auto min-w-0 max-h-full max-w-full items-center justify-center overflow-hidden"
+  >
     <canvas
       ref="canvasEl"
-      class="w-full! aspect-square! h-auto!"
+      class="custimoo-two-canvas aspect-square! h-auto! w-auto!"
       :class="canvasClass"
       :width="canvasWidth"
       :height="canvasHeight"
-      :style="{ maxHeight: `${canvasHeight}px !important` }"
+      :style="canvasDisplaySizeStyle"
     />
   </div>
 </template>

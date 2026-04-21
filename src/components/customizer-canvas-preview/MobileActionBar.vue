@@ -43,7 +43,7 @@
 <template>
   <!-- 5×60px + px-4 exceeded narrow viewports (e.g. 320px SE); grid + max-width keeps bar inside safe horizontal bounds -->
   <div
-    class="fixed bottom-[6.5rem] left-1/2 -translate-x-1/2 z-30 max-w-[calc(100vw-1rem)] bg-foreground text-background rounded-full px-2 sm:px-4 shadow-lg flex items-center overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+    class="fixed bottom-[6.5rem] left-1/2 -translate-x-1/2 z-widget-chrome max-w-[calc(100vw-1rem)] bg-foreground text-background rounded-full px-2 sm:px-4 shadow-lg flex items-center overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
   >
     <Button
       variant="ghost"

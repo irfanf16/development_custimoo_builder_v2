@@ -279,9 +279,11 @@
             </div>
 
             <!-- Mobile Content View -->
-            <div v-else key="content" class="flex flex-col h-full absolute inset-0 min-h-0">
+            <div v-else key="content" class="absolute inset-0 flex min-h-0 flex-col overflow-hidden">
               <!-- Mobile Header with Back Button -->
-              <div class="flex items-center justify-between p-4 border-b border-border shrink-0">
+              <div
+                class="flex shrink-0 items-center justify-between border-b border-border p-4"
+              >
                 <div class="flex items-center gap-3">
                   <Button variant="ghost" size="icon" class="size-9" @click="handleMobileBackClick">
                     <ArrowLeft class="size-4" />
@@ -291,29 +293,37 @@
                 </div>
               </div>
 
-              <!-- Content - Scrollable on Mobile -->
-              <Tabs v-model="tab" orientation="vertical" class="h-full overflow-hidden">
-                <TabsContent value="account" class="mt-0 h-full">
-                  <AccountTab
-                    title="Account"
-                    :counters="counters"
-                    @save="() => {}"
-                    @sign-out="handleSignOut"
-                  />
-                </TabsContent>
-                <TabsContent value="orders" class="mt-0 h-full">
-                  <OrdersTab title="Orders" @reorder-success="emit('update:open', false)" />
-                </TabsContent>
-                <TabsContent value="address" class="mt-0 h-full">
-                  <AddressTab
-                    :show-select-button="showSelectAddressButton"
-                    @select-address="handleAddressSelect"
-                  />
-                </TabsContent>
-                <TabsContent value="preferences" class="px-4 py-4 mt-0 h-full">
-                  <PreferencesTab />
-                </TabsContent>
-              </Tabs>
+              <div class="min-h-0 flex-1 overflow-hidden">
+                <Tabs
+                  v-model="tab"
+                  orientation="vertical"
+                  class="flex h-full min-h-0 flex-col overflow-hidden"
+                >
+                  <TabsContent value="account" class="mt-0 h-full min-h-0 overflow-hidden">
+                    <AccountTab
+                      title="Account"
+                      :counters="counters"
+                      @save="() => {}"
+                      @sign-out="handleSignOut"
+                    />
+                  </TabsContent>
+                  <TabsContent value="orders" class="mt-0 h-full min-h-0 overflow-hidden">
+                    <OrdersTab title="Orders" @reorder-success="emit('update:open', false)" />
+                  </TabsContent>
+                  <TabsContent value="address" class="mt-0 h-full min-h-0 overflow-hidden">
+                    <AddressTab
+                      :show-select-button="showSelectAddressButton"
+                      @select-address="handleAddressSelect"
+                    />
+                  </TabsContent>
+                  <TabsContent
+                    value="preferences"
+                    class="mt-0 h-full min-h-0 overflow-hidden px-4 py-4"
+                  >
+                    <PreferencesTab />
+                  </TabsContent>
+                </Tabs>
+              </div>
             </div>
           </Transition>
         </div>

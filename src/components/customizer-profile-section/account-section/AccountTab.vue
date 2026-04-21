@@ -8,6 +8,7 @@
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { m as messages } from '@/paraglide/messages'
   import { computed, ref, onMounted } from 'vue'
+  import { useScrollAreaFill } from '@/composables/useScrollAreaFill'
   import { useUIStore } from '@/stores/ui/ui.store'
   import { useSignIn } from '@/composables/useSignIn'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
@@ -66,6 +67,13 @@
     profileStore.showAddModal = true
   }
 
+  const accountShellRef = ref<HTMLElement | null>(null)
+  const accountHeaderMeasureRef = ref<HTMLElement | null>(null)
+  const { scrollAreaStyle: accountScrollAreaStyle } = useScrollAreaFill({
+    shellRef: accountShellRef,
+    headerRef: accountHeaderMeasureRef
+  })
+
   async function handleEditName() {
     if (isEditingName.value) {
       isUpdatingName.value = true
@@ -84,11 +92,15 @@
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden">
-    <div v-if="!uiStore.isMobile" class="sticky top-0 z-1 px-4 pt-4 pb-3 max-w-max">
+  <div ref="accountShellRef" class="flex min-h-0 h-full flex-col overflow-hidden">
+    <div
+      v-if="!uiStore.isMobile"
+      ref="accountHeaderMeasureRef"
+      class="sticky top-0 z-1 max-w-max px-4 pb-3 pt-4 shrink-0"
+    >
       <div class="text-lg font-semibold">{{ title || t.account }}</div>
     </div>
-    <ScrollArea class="flex-1 overflow-y-auto">
+    <ScrollArea :style="accountScrollAreaStyle" class="min-h-0 w-full min-w-0">
       <div class="px-4 pb-4 space-y-3">
         <!-- Profile header -->
         <div class="flex items-center justify-between py-4">

@@ -5,25 +5,29 @@ import { useVueSonner } from 'vue-sonner'
 const ELEVATION_Z_INDEX = 2147483647
 
 /**
- * Composable that elevates the Shadow DOM host element when dialogs or toasts are visible,
- * so overlays appear above the host site's header/footer (Shopify, WordPress, etc.).
- * No-ops when not in widget/Shadow DOM context.
+ * Elevates the widget so dialogs and toasts sit above the host storefront:
+ * - Shadow DOM: raises the shadow host element.
+ * - Light DOM embed: raises `widgetRoot` (same stacking effect for siblings like site headers).
  */
 export function useElevateWidgetForOverlays() {
   const uiStore = useUIStore()
   const { activeToasts } = useVueSonner()
 
   let mutationObserver: MutationObserver | undefined
-  let shadowHost: HTMLElement | undefined
+  let elevatedElement: HTMLElement | undefined
   let previousPosition: string | undefined
   let previousZIndex: string | undefined
 
+  let scrollLockActive = false
+  let savedHtmlOverflow = ''
+  let savedBodyOverflow = ''
+  let wheelHandler: ((e: WheelEvent) => void) | undefined
+  let touchMoveHandler: ((e: TouchEvent) => void) | undefined
+
   function hasOpenDialog(root: HTMLElement): boolean {
-    // Primary: Reka/Radix dialog content has role="dialog" and data-state
     if (root.querySelector('[role="dialog"][data-state="open"]')) {
       return true
     }
-    // Fallback: overlay or content may have data-state="open" (Reka varies by version)
     const openOverlay = root.querySelector('[data-state="open"]')
     if (openOverlay instanceof HTMLElement) {
       const style = window.getComputedStyle(openOverlay)
@@ -34,53 +38,95 @@ export function useElevateWidgetForOverlays() {
     return false
   }
 
+  function applyHostScrollLock() {
+    if (scrollLockActive) return
+    scrollLockActive = true
+    savedHtmlOverflow = document.documentElement.style.overflow
+    savedBodyOverflow = document.body.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden'
+
+    wheelHandler = (e: WheelEvent) => {
+      const r = uiStore.widgetRoot
+      if (!r?.isConnected || !hasOpenDialog(r)) return
+      const t = e.target
+      if (t instanceof Node && !r.contains(t)) {
+        e.preventDefault()
+      }
+    }
+    touchMoveHandler = (e: TouchEvent) => {
+      const r = uiStore.widgetRoot
+      if (!r?.isConnected || !hasOpenDialog(r)) return
+      const t = e.target
+      if (t instanceof Node && !r.contains(t)) {
+        e.preventDefault()
+      }
+    }
+    document.addEventListener('wheel', wheelHandler, { capture: true, passive: false })
+    document.addEventListener('touchmove', touchMoveHandler, { capture: true, passive: false })
+  }
+
+  function releaseHostScrollLock() {
+    if (!scrollLockActive) return
+    scrollLockActive = false
+    document.documentElement.style.overflow = savedHtmlOverflow
+    document.body.style.overflow = savedBodyOverflow
+    if (wheelHandler) {
+      document.removeEventListener('wheel', wheelHandler, { capture: true })
+      wheelHandler = undefined
+    }
+    if (touchMoveHandler) {
+      document.removeEventListener('touchmove', touchMoveHandler, { capture: true })
+      touchMoveHandler = undefined
+    }
+  }
+
   function hasVisibleToasts(): boolean {
     return activeToasts.value.length > 0
   }
 
-  function checkAndApplyElevation(root: HTMLElement) {
+  function getElevationTarget(root: HTMLElement): HTMLElement | undefined {
     const rootNode = root.getRootNode()
-    if (!(rootNode instanceof ShadowRoot)) {
+    if (rootNode instanceof ShadowRoot) {
+      const host = rootNode.host
+      return host instanceof HTMLElement ? host : undefined
+    }
+    return root
+  }
+
+  function checkAndApplyElevation(root: HTMLElement) {
+    const dialogOpen = hasOpenDialog(root)
+    if (dialogOpen) {
+      applyHostScrollLock()
+    } else {
+      releaseHostScrollLock()
+    }
+
+    const target = getElevationTarget(root)
+    if (!target) {
       return
     }
 
-    const host = rootNode.host
-    if (!(host instanceof HTMLElement)) {
-      return
-    }
-
-    const needsElevation = hasOpenDialog(root) || hasVisibleToasts()
+    const needsElevation = dialogOpen || hasVisibleToasts()
 
     if (needsElevation) {
-      if (!shadowHost) {
-        previousPosition = host.style.position
-        previousZIndex = host.style.zIndex
+      if (!elevatedElement) {
+        previousPosition = target.style.position
+        previousZIndex = target.style.zIndex
       }
-      shadowHost = host
-      host.style.position = 'relative'
-      host.style.zIndex = String(ELEVATION_Z_INDEX)
-    } else {
-      if (shadowHost === host) {
-        host.style.position = previousPosition ?? ''
-        host.style.zIndex = previousZIndex ?? ''
-        shadowHost = undefined
-        previousPosition = undefined
-        previousZIndex = undefined
-      }
+      elevatedElement = target
+      target.style.position = 'relative'
+      target.style.zIndex = String(ELEVATION_Z_INDEX)
+    } else if (elevatedElement === target) {
+      target.style.position = previousPosition ?? ''
+      target.style.zIndex = previousZIndex ?? ''
+      elevatedElement = undefined
+      previousPosition = undefined
+      previousZIndex = undefined
     }
   }
 
   function setupForRoot(root: HTMLElement) {
-    const rootNode = root.getRootNode()
-    if (!(rootNode instanceof ShadowRoot)) {
-      return
-    }
-
-    const host = rootNode.host
-    if (!(host instanceof HTMLElement)) {
-      return
-    }
-
     const runCheck = () => checkAndApplyElevation(root)
 
     mutationObserver = new MutationObserver(runCheck)
@@ -97,10 +143,11 @@ export function useElevateWidgetForOverlays() {
   function teardown() {
     mutationObserver?.disconnect()
     mutationObserver = undefined
-    if (shadowHost) {
-      shadowHost.style.position = previousPosition ?? ''
-      shadowHost.style.zIndex = previousZIndex ?? ''
-      shadowHost = undefined
+    releaseHostScrollLock()
+    if (elevatedElement) {
+      elevatedElement.style.position = previousPosition ?? ''
+      elevatedElement.style.zIndex = previousZIndex ?? ''
+      elevatedElement = undefined
       previousPosition = undefined
       previousZIndex = undefined
     }

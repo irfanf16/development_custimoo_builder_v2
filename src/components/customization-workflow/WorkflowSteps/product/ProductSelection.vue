@@ -25,12 +25,14 @@
   import ProductDetailsDialog from '@/components/customizer/ProductDetailsDialog.vue'
   import { SkeletonBox } from '@/components/skeleton'
   import axios from 'axios'
+  import Spinner from '@/components/ui/spinner/Spinner.vue'
+  import { productGridPreviewCanvasPixels } from '@/lib/productGridPreviewPixels'
 
   interface Emits {
     (e: 'scroll-to-element', elementId: string, behavior?: 'smooth' | 'auto'): void
   }
 
-  defineProps<{
+  const props = defineProps<{
     isExpanded?: boolean
   }>()
 
@@ -49,6 +51,25 @@
   const { productSearchModel, showCustomizerStockFilter, customizerStockFilterModel } =
     useProductConfig()
   const previews = computed(() => productsStore.productPreviews || [])
+
+  /** Desktop mid-width widget (see uiStore.desktopPreviewCompact): two columns so tiles fit the narrow panel. */
+  const compactDesktopTwoCol = computed(
+    () => !uiStore.isMobile && uiStore.desktopPreviewCompact
+  )
+
+  const productGridLayoutClass = computed(() => {
+    if (compactDesktopTwoCol.value) {
+      return 'grid min-w-0 grid-cols-2 gap-2 auto-rows-min'
+    }
+    if (props.isExpanded) {
+      return 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'
+    }
+    return 'flex flex-wrap gap-2'
+  })
+
+  const productPreviewCanvasSize = computed(() =>
+    productGridPreviewCanvasPixels(isMobile.value, compactDesktopTwoCol.value)
+  )
   /** Show spinner only when loading and we have no content (new category); keep showing grid when refetching same category. */
   const showProductsLoading = computed(
     () =>
@@ -313,20 +334,14 @@
       </div>
     </div>
   </div>
-  <div
-    v-else
-    :class="
-      isExpanded
-        ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]'
-        : 'flex flex-wrap gap-2'
-    "
-  >
+  <div v-else :class="productGridLayoutClass">
     <div
       v-for="item in filteredPreviews"
       :id="`product-${item.productPreview.id}`"
       :key="item.productPreview.id"
-      class="group relative flex flex-col items-center flex-1 gap-4 md:gap-6 p-2 md:p-2"
+      class="group relative flex flex-col items-center gap-4 md:gap-6 p-2 md:p-2"
       :class="[
+        compactDesktopTwoCol ? 'min-w-0 w-full' : 'flex-1',
         'relative rounded-sm transition-colors cursor-pointer',
         'hover:border-border hover:bg-primary/10 hover:outline-ring',
         selectedProductId === item.productPreview.id ? 'bg-primary/20' : ''
@@ -366,8 +381,8 @@
               :models="item.stylePreview.front_models"
               :design="item.designPreview.front_design"
               :svg-parts="item.designPreview.svg_parts"
-              :canvas-width="isMobile ? 130 : 176"
-              :canvas-height="isMobile ? 130 : 176"
+              :canvas-width="productPreviewCanvasSize"
+              :canvas-height="productPreviewCanvasSize"
               :canvas-class="'rounded-xl'"
               :product-id="item.productPreview.id"
               :preview-custom-texts="

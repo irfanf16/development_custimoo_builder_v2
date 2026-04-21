@@ -7,6 +7,7 @@ import { useUIStore } from '@/stores/ui/ui.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { useAppStore } from '@/stores/app/app.store'
 import { WIDGET_CONTAINER_ID } from './lib/widgetUtils'
+import { installHostRootFontCompensation } from './lib/hostRootFontCompensation'
 import { initQueryParams } from '@/composables/initQueryParams'
 
 // Import CSS styles
@@ -142,6 +143,9 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
 
   shadowRoot.appendChild(container)
 
+  // Correct rem-based layout when host sets a small `html` font-size, without touching `document`.
+  const removeHostRootFontCompensation = installHostRootFontCompensation(container)
+
   // Inject CSS into shadow DOM - CSS handles all sizing via custom properties
   const style = document.createElement('style')
   style.textContent = widgetStyles
@@ -171,5 +175,6 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   // Return cleanup function
   return () => {
     window.removeEventListener('resize', measureContainer)
+    removeHostRootFontCompensation()
   }
 }

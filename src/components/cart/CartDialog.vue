@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { ref, computed, watch, onMounted } from 'vue'
+  import { useScrollAreaFill } from '@/composables/useScrollAreaFill'
   import { Checkbox } from '@/components/ui/checkbox'
   import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
   import { ScrollArea } from '@/components/ui/scroll-area'
@@ -80,6 +81,15 @@
   const addressError = ref<string>('')
   const orderReferenceError = ref<string>('')
   const isPlacingOrder = ref(false)
+
+  const cartShellRef = ref<HTMLElement | null>(null)
+  const cartHeaderMeasureRef = ref<HTMLElement | null>(null)
+  const cartFooterMeasureRef = ref<HTMLElement | null>(null)
+  const { scrollAreaStyle: cartScrollAreaStyle } = useScrollAreaFill({
+    shellRef: cartShellRef,
+    headerRef: cartHeaderMeasureRef,
+    footerRef: cartFooterMeasureRef
+  })
 
   // Use the cart composable (needed before bulk-selection computeds)
   const cartStore = useCartStore()
@@ -515,11 +525,14 @@
 </script>
 <template>
   <Dialog v-model:open="open" variant="large">
-    <DialogContent variant="large" class="max-w-3xl max-h-[90vh] gap-0 flex flex-col">
-      <DialogHeader class="p-4 border-b sticky top-0 z-10 shrink-0">
-        <DialogTitle class="text-lg font-semibold">Cart</DialogTitle>
-      </DialogHeader>
-      <ScrollArea class="flex-1 overflow-y-auto">
+    <DialogContent variant="large" class="max-w-3xl max-h-[90vh] gap-0 flex min-h-0 flex-col overflow-hidden">
+      <div ref="cartShellRef" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div ref="cartHeaderMeasureRef" class="shrink-0">
+          <DialogHeader class="border-b p-4">
+            <DialogTitle class="text-lg font-semibold">Cart</DialogTitle>
+          </DialogHeader>
+        </div>
+        <ScrollArea :style="cartScrollAreaStyle" class="min-h-0 w-full min-w-0">
         <!-- Bulk selection -->
         <div
           v-if="products.length"
@@ -692,9 +705,10 @@
             </div>
           </div>
         </div>
+        </ScrollArea>
 
-        <!-- Footer Section -->
-        <div class="border-t p-4">
+        <div ref="cartFooterMeasureRef" class="shrink-0 border-t">
+          <div class="p-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Business Info -->
             <div>
@@ -797,8 +811,9 @@
               </button>
             </div>
           </div>
+          </div>
         </div>
-      </ScrollArea>
+      </div>
     </DialogContent>
 
     <!-- Profile Dialog for Address Selection -->
@@ -819,7 +834,7 @@
 
     <!-- Remove Product Confirm Dialog -->
     <Dialog :open="showRemoveConfirmDialog" @update:open="onRemoveConfirmDialogOpenChange">
-      <DialogContent class="sm:max-w-md z-[9999]">
+      <DialogContent class="sm:max-w-md z-widget-dialog">
         <DialogHeader>
           <DialogTitle>Remove Product</DialogTitle>
         </DialogHeader>

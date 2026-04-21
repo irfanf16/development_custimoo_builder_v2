@@ -1,43 +1,87 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, watch } from 'vue'
   import { useRoute } from 'vue-router'
+  import { storeToRefs } from 'pinia'
   import WidgetApp from '@/components/WidgetApp.vue'
   import { useAppInitialization } from '@/composables'
   import { Button } from '@/components/ui/button'
   import Spinner from '@/components/ui/spinner/Spinner.vue'
+  import { useAppStore } from '@/stores/app/app.store'
+  import { useLocalStorage } from '@/composables/useLocalStorage'
+  import { useCompanyStore } from '@/stores/company/company.store'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import {
+    applyBrandingSnapshotToWidgetRoot,
+    readCompanyBrandingSnapshot
+  } from '@/lib/companyBrandingStorage'
+  import { applyCompanyUiBrandingTheme } from '@/lib/companyUiBrandingTheme'
+  import { preloadUiBrandingFonts } from '@/lib/preloadUiBrandingFonts'
+  import { resolveWidgetBrandingRoot } from '@/lib/widgetUtils'
+  import { app_initializing, app_initializing_retry } from '@/paraglide/messages'
 
   const route = useRoute()
+  const profileStore = useProfileStore()
+  const { currentLocale } = storeToRefs(profileStore)
+  const companyStore = useCompanyStore()
 
-  // Check if we should skip main initialization (e.g., for third-party approval route)
   const initType = computed(() => route.meta?.intitializationType as string | undefined)
 
-  // Initialize app data (company and settings) - only if not skipping
+  if (initType.value !== 'third-party-approval') {
+    useAppStore().loadAppInfoFromGlobalVariable()
+    const storage = useLocalStorage()
+    const cached = readCompanyBrandingSnapshot(storage)
+    if (cached?.settings?.ui_branding) {
+      companyStore.hydrateBrandingSnapshot(cached)
+      applyBrandingSnapshotToWidgetRoot(storage, cached)
+    }
+  }
+
+  function applyBrandingToWidgetRootFromStore(): void {
+    const ui = companyStore.settings?.ui_branding
+    const root = resolveWidgetBrandingRoot()
+    if (ui && root) {
+      applyCompanyUiBrandingTheme(root, ui)
+      void preloadUiBrandingFonts(ui)
+    }
+  }
+
+  watch(
+    () => companyStore.settings?.ui_branding,
+    () => applyBrandingToWidgetRootFromStore(),
+    { deep: true, immediate: true }
+  )
+
   const appInit = initType.value === 'third-party-approval' ? null : useAppInitialization()
   const isLoading = computed(() => appInit?.isLoading.value ?? false)
   const error = computed(() => appInit?.error.value ?? null)
 
-  // Auth initialization now lives in useAppInitialization
+  const initializingLabel = computed(() =>
+    app_initializing({}, { locale: currentLocale.value || 'en' })
+  )
+  const retryLabel = computed(() =>
+    app_initializing_retry({}, { locale: currentLocale.value || 'en' })
+  )
 </script>
 
 <template>
-  <!-- Loading state while initializing -->
-  <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-center">
-      <Spinner class="size-8 text-primary mx-auto mb-4" />
-      <p class="text-muted-foreground">Initializing app...</p>
+  <div
+    v-if="isLoading"
+    class="flex min-h-screen items-center justify-center font-sans text-primary"
+  >
+    <div class="flex flex-col items-center gap-3 text-center">
+      <Spinner class="size-8 text-primary" />
+      <p class="text-sm font-medium">{{ initializingLabel }}</p>
     </div>
   </div>
 
-  <!-- Error state -->
-  <div v-else-if="error" class="flex items-center justify-center min-h-screen">
+  <div v-else-if="error" class="flex min-h-screen items-center justify-center">
     <div class="text-center">
-      <p class="text-destructive mb-4">{{ error }}</p>
+      <p class="mb-4 text-destructive">{{ error }}</p>
       <Button v-if="appInit" variant="default" class="px-4 py-2" @click="appInit.initializeApp()">
-        Retry
+        {{ retryLabel }}
       </Button>
     </div>
   </div>
 
-  <!-- Widget content -->
   <WidgetApp v-else v-bind="$attrs" />
 </template>

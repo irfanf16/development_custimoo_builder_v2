@@ -1172,6 +1172,19 @@
     animate()
   }
 
+  function syncRendererToContainerProps(): void {
+    if (!renderer.value || !camera.value) return
+    const w = props.containerWidth
+    const h = props.containerHeight
+    renderer.value.setSize(w, h)
+    renderer.value.setPixelRatio(window.devicePixelRatio)
+    if (camera.value instanceof THREE.PerspectiveCamera) {
+      camera.value.aspect = w / h
+      camera.value.updateProjectionMatrix()
+    }
+    composer.value?.setSize(w, h)
+  }
+
   function setupLights() {
     if (!scene.value) return
     const light_intensity = 1
@@ -2721,6 +2734,13 @@
   })
 
   // ===== WATCHERS =====
+  watch(
+    () => [props.containerWidth, props.containerHeight] as const,
+    () => {
+      syncRendererToContainerProps()
+    }
+  )
+
   // Watch for changes in effectiveDesign and reload design
   watch(
     effectiveDesign,
@@ -3045,13 +3065,20 @@
 </script>
 
 <template>
-  <div class="relative">
-    <!-- Three.js Renderer Container -->
+  <div
+    class="relative flex max-h-full max-w-full items-center justify-center overflow-hidden"
+  >
+    <!-- Three.js: explicit box so CSS does not stretch WebGL canvas beyond props (avoids bleed past v-customizer). -->
     <div
       id="three-container"
       ref="rendererEl"
-      class="w-full h-full"
-      :style="`max-width: ${containerWidth}px; max-height: ${containerHeight}px;`"
+      class="aspect-square shrink-0 overflow-hidden"
+      :style="{
+        width: `min(100%, ${containerWidth}px)`,
+        maxWidth: `${containerWidth}px`,
+        maxHeight: `min(100%, ${containerHeight}px)`,
+        boxSizing: 'border-box'
+      }"
     />
     <!-- Hidden Fabric.js Canvas -->
     <canvas ref="canvasEl" class="hidden" />

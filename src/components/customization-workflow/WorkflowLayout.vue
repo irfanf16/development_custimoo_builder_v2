@@ -1,5 +1,14 @@
 <script setup lang="ts">
-  import { computed, ref, onMounted, watch, isRef, type Ref as VueRef } from 'vue'
+  import {
+    computed,
+    ref,
+    onMounted,
+    onUnmounted,
+    watch,
+    nextTick,
+    isRef,
+    type Ref as VueRef
+  } from 'vue'
   import type { HeaderConfiguration, FooterConfiguration } from './types'
   import WorkflowHeader from './WorkflowHeader.vue'
   import { useWorkflow } from '@/composables/useWorkflow'
@@ -22,9 +31,14 @@
   import { useProductsStore } from '@/stores/products/products.store'
   import WorkflowFooterButtons from './WorkflowFooterButtons.vue'
   import WorkflowFooterPricing from './WorkflowFooterPricing.vue'
+  import { ui_close } from '@/paraglide/messages'
+  import { useProfileStore } from '@/stores/profile/profile.store'
+  import './workflow-compact-typography.css'
+
   const uiStore = useUIStore()
   const workflowStore = useWorkflowStore()
   const productsStore = useProductsStore()
+  const profileStore = useProfileStore()
   const { goTo, menuItems, pickStepOrNextAvailable } = useCustomizerMenu()
   const { initializeEffects } = useWorkflow()
   // When active step is not in visible tabs (e.g. product changed and logos tab hidden), redirect to a visible step.
@@ -71,14 +85,116 @@
   // Mobile: when the sheet is open it must stack above the topbar (z-40); otherwise topbar stays on top.
   const containerClasses = computed(() => {
     if (uiStore.isMobile) {
-      const zSheet = workflowStore.isPanelOpen ? 'z-50' : 'z-30'
-      return [
-        'fixed bottom-25 h-fit max-h-[65vh] w-[calc(100%-2rem)]',
-        'flex flex-col min-h-0 overflow-hidden',
-        zSheet
-      ].join(' ')
+      const base =
+        'absolute bottom-25 inset-x-4 z-widget-workflow w-auto max-w-full transition-[max-height] duration-200 ease-out'
+      if (workflowStore.mobileSheetSnap === 'peek') {
+        return `${base} h-[40dvh] max-h-[40dvh]`
+      }
+      return `${base} h-fit max-h-[88dvh]`
     }
-    return 'max-h-[100%]'
+    const base = 'flex h-full max-h-full min-h-0 min-w-0 w-full max-w-full flex-col'
+    if (isExpanded.value) {
+      return `${base} z-widget-workflow-layout-expanded`
+    }
+    return `${base} z-widget-workflow`
+  })
+
+  /** Drives workflow-compact-typography.css (type + color swatches) for narrow desktop panel. */
+  const workflowCompactTypography = computed(
+    () => !uiStore.isMobile && uiStore.desktopPreviewCompact
+  )
+
+  const sheetHandleRef = ref<HTMLElement | null>(null)
+  const sheetDragOffset = ref(0)
+  let sheetTouchStartY = 0
+
+  const closePanelAriaLabel = computed(() =>
+    ui_close({}, { locale: profileStore.currentLocale })
+  )
+
+  const mobileSheetInnerStyle = computed(() =>
+    sheetDragOffset.value > 0 ? { transform: `translateY(${sheetDragOffset.value}px)` } : {}
+  )
+
+  function closeMobilePanel() {
+    workflowStore.setPanelOpen(false)
+    sheetDragOffset.value = 0
+  }
+
+  const SNAP_DRAG_THRESHOLD = 72
+
+  function onMobileSheetHandleActivate() {
+    if (workflowStore.mobileSheetSnap === 'full') {
+      workflowStore.setMobileSheetSnap('peek')
+    } else {
+      closeMobilePanel()
+    }
+  }
+
+  let removeSheetTouchListeners: (() => void) | undefined
+
+  function attachSheetHandleTouch() {
+    removeSheetTouchListeners?.()
+    removeSheetTouchListeners = undefined
+    const el = sheetHandleRef.value
+    if (!el || !uiStore.isMobile) return
+
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0]
+      if (!t) return
+      sheetTouchStartY = t.clientY
+    }
+    const onMove = (e: TouchEvent) => {
+      const t = e.touches[0]
+      if (!t) return
+      const dy = t.clientY - sheetTouchStartY
+      if (dy > 0) {
+        sheetDragOffset.value = dy
+        e.preventDefault()
+      }
+    }
+    const onEnd = () => {
+      const dy = sheetDragOffset.value
+      if (workflowStore.mobileSheetSnap === 'full') {
+        if (dy >= SNAP_DRAG_THRESHOLD) {
+          workflowStore.setMobileSheetSnap('peek')
+        }
+      } else if (workflowStore.mobileSheetSnap === 'peek') {
+        if (dy >= SNAP_DRAG_THRESHOLD) {
+          workflowStore.setPanelOpen(false)
+        }
+      }
+      sheetDragOffset.value = 0
+    }
+
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    el.addEventListener('touchcancel', onEnd, { passive: true })
+
+    removeSheetTouchListeners = () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchcancel', onEnd)
+    }
+  }
+
+  watch(
+    () => [workflowStore.isPanelOpen, uiStore.isMobile] as const,
+    async ([open, mobile]) => {
+      removeSheetTouchListeners?.()
+      removeSheetTouchListeners = undefined
+      sheetDragOffset.value = 0
+      if (!open || !mobile) return
+      await nextTick()
+      attachSheetHandleTouch()
+    },
+    { flush: 'post', immediate: true }
+  )
+
+  onUnmounted(() => {
+    removeSheetTouchListeners?.()
   })
 
   // Initialize effects for mobile
@@ -170,87 +286,117 @@
 </script>
 
 <template>
-  <div id="workflow-panel-container" :class="containerClasses">
+  <div
+    id="workflow-panel-container"
+    :class="containerClasses"
+    :data-workflow-compact-typography="workflowCompactTypography ? '' : undefined"
+  >
     <!-- Mobile: Wrap WorkflowPanel in transition -->
     <div v-if="uiStore.isMobile" class="relative w-full h-fit">
       <transition
         enter-active-class="transition duration-200"
         enter-from-class="opacity-0 translate-y-4"
-        enter-to-class="opacity-100 translate-y-0"
+        enter-to-class="translate-y-0 opacity-100"
         leave-active-class="transition duration-150"
-        leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 translate-y-4"
+        leave-from-class="translate-y-0 opacity-100"
+        leave-to-class="translate-y-4 opacity-0"
       >
-        <WorkflowPanel
+        <div
           v-show="workflowStore.isPanelOpen"
-          ref="menuPanelRef"
-          :content-key="workflowStore.contentKey || ''"
-          :header-config="headerConfig"
-          :is-expanded="true"
-          :has-footer-buttons="footerConfig?.buttons?.length > 0"
+          class="w-full opacity-100"
         >
-          <template #header>
-            <WorkflowHeader
-              :config="headerConfig"
-              @update:apply-overrides-model-value="handleApplyOverridesChange"
-              @update:search-model-value="handleSearchChange"
-            />
-          </template>
-          <template #footer>
-            <div :class="['flex flex-col w-full', { 'justify-end': isExpanded }]">
-              <WorkflowFooterButtons
-                v-if="footerConfig?.buttons?.length > 0"
-                :config="footerConfig"
+          <div
+            class="overflow-hidden rounded-t-2xl border border-border bg-background opacity-100 shadow-lg"
+            :style="mobileSheetInnerStyle"
+          >
+            <div
+              ref="sheetHandleRef"
+              role="button"
+              tabindex="0"
+              class="flex min-h-11 shrink-0 cursor-pointer touch-none select-none flex-col items-center justify-center gap-2 px-4 py-2"
+              :aria-label="closePanelAriaLabel"
+              @click="onMobileSheetHandleActivate"
+              @keydown.enter.prevent="onMobileSheetHandleActivate"
+              @keydown.space.prevent="onMobileSheetHandleActivate"
+            >
+              <div
+                class="h-1 w-10 shrink-0 rounded-full bg-muted-foreground/35"
+                aria-hidden="true"
+              />
+            </div>
+            <WorkflowPanel
+              ref="menuPanelRef"
+              :content-key="workflowStore.contentKey || ''"
+              :header-config="headerConfig"
+              :is-expanded="true"
+            >
+              <template #header>
+                <WorkflowHeader
+                  :config="headerConfig"
+                  @update:apply-overrides-model-value="handleApplyOverridesChange"
+                  @update:search-model-value="handleSearchChange"
+                />
+              </template>
+              <template #footer>
+                <div :class="['flex flex-col w-full', { 'justify-end': isExpanded }]">
+                  <WorkflowFooterButtons
+                    v-if="footerConfig?.buttons?.length > 0"
+                    :config="footerConfig"
+                    :is-expanded="isExpanded"
+                  />
+                  <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
+                  <WorkflowFooterPricing :is-expanded="isExpanded" />
+                </div>
+              </template>
+
+              <ProductsEntry
+                v-if="workflowStore.currentStep === 'product'"
                 :is-expanded="isExpanded"
               />
-              <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
-              <WorkflowFooterPricing :is-expanded="isExpanded" />
-            </div>
-          </template>
-
-          <ProductsEntry v-if="workflowStore.currentStep === 'product'" :is-expanded="isExpanded" />
-          <DesignSelection
-            v-else-if="workflowStore.currentStep === 'designs'"
-            :is-expanded="isExpanded"
-            @scroll-to-element="handleScrollToElement"
-          />
-          <StyleSelection
-            v-else-if="workflowStore.currentStep === 'styles'"
-            :is-expanded="isExpanded"
-          />
-          <LogoSelection
-            v-else-if="workflowStore.currentStep === 'logos'"
-            :is-expanded="isExpanded"
-          />
-          <ColorSelection
-            v-else-if="workflowStore.currentStep === 'colors'"
-            :is-expanded="isExpanded"
-          />
-          <PatternSelection
-            v-else-if="workflowStore.currentStep === 'patterns'"
-            :is-expanded="isExpanded"
-          />
-          <TextsEntry v-else-if="workflowStore.currentStep === 'texts'" :is-expanded="isExpanded" />
-          <RosterEntry
-            v-else-if="workflowStore.currentStep === 'roster'"
-            :is-expanded="isExpanded"
-          />
-          <SummaryPanel
-            v-else-if="workflowStore.currentStep === 'summary'"
-            :is-expanded="isExpanded"
-          />
-        </WorkflowPanel>
+              <DesignSelection
+                v-else-if="workflowStore.currentStep === 'designs'"
+                :is-expanded="isExpanded"
+                @scroll-to-element="handleScrollToElement"
+              />
+              <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" />
+              <LogoSelection
+                v-else-if="workflowStore.currentStep === 'logos'"
+                :is-expanded="isExpanded"
+              />
+              <ColorSelection
+                v-else-if="workflowStore.currentStep === 'colors'"
+                :is-expanded="isExpanded"
+              />
+              <PatternSelection
+                v-else-if="workflowStore.currentStep === 'patterns'"
+                :is-expanded="isExpanded"
+              />
+              <TextsEntry
+                v-else-if="workflowStore.currentStep === 'texts'"
+                :is-expanded="isExpanded"
+              />
+              <RosterEntry
+                v-else-if="workflowStore.currentStep === 'roster'"
+                :is-expanded="isExpanded"
+              />
+              <SummaryPanel
+                v-else-if="workflowStore.currentStep === 'summary'"
+                :key="JSON.stringify(customization)"
+                :is-expanded="isExpanded"
+              />
+            </WorkflowPanel>
+          </div>
+        </div>
       </transition>
     </div>
 
-    <!-- Desktop: Direct WorkflowPanel with expand/collapse functionality -->
+    <!-- Desktop: in-flow panel beside the nav (pre–dock/overlay layout) -->
     <WorkflowPanel
       v-else
       ref="menuPanelRef"
       :content-key="workflowStore.contentKey || ''"
       :header-config="headerConfig"
       :is-expanded="isExpanded"
-      :has-footer="footerConfig?.buttons?.length > 0"
       @update:is-expanded="isExpanded = $event"
     >
       <template #header>
@@ -293,7 +439,6 @@
       />
       <TextsEntry
         v-else-if="workflowStore.currentStep === 'texts'"
-        ref="currentStepRef"
         :is-expanded="isExpanded"
       />
       <RosterEntry v-else-if="workflowStore.currentStep === 'roster'" :is-expanded="isExpanded" />
