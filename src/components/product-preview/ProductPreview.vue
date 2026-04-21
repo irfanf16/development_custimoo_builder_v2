@@ -21,9 +21,9 @@
   )
 
   /** 3D column tracks the same row sizing as 2D, capped for layout. */
-  const mainThreeDContainerSize = computed(() =>
-    Math.min(600, mainTwoDCanvasPx.value)
-  )
+  const mainThreeDContainerSize = computed(() => Math.min(600, mainTwoDCanvasPx.value))
+
+  const is3dProduct = computed(() => !!activeProductDetails.value?.is_3d_product)
 </script>
 
 <template>
@@ -32,11 +32,11 @@
     ref="previewContainer"
     :aria-busy="!productsStore.mainPreviewLoadComplete"
     :class="[
-      'relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden',
-      /* Mobile: center. Desktop: cap width to bitmap budget so flex row + toolbar + flip stay in viewport. */
+      'relative flex min-h-0 min-w-0 flex-col overflow-hidden',
+      /* Mobile: full width, vertically centred. Desktop: shrink to canvas bitmap so the loader matches it exactly. */
       isMobile
-        ? 'w-full items-center justify-center'
-        : 'w-fit max-w-full min-w-0 shrink-0 items-start justify-start'
+        ? 'h-full w-full items-center justify-center'
+        : 'h-fit w-fit max-w-full shrink-0 items-start justify-start'
     ]"
     :style="
       !isMobile
@@ -64,11 +64,11 @@
       lock-display-to-canvas-pixels
     />
 
-
     <Transition name="preview-scene-loading">
       <div
         v-if="!productsStore.mainPreviewLoadComplete"
         class="absolute inset-0 w-full h-full z-[1] flex items-center justify-center rounded-2xl bg-background/70 backdrop-blur-md ring-1 ring-border/50 cursor-wait"
+        :class="{ 'max-h-[700px]': is3dProduct }"
       >
         <Spinner class="size-7 text-primary" />
       </div>
