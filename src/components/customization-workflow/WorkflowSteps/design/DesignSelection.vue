@@ -25,8 +25,6 @@
   import { FileImage, X } from 'lucide-vue-next'
   import { confirmDialog } from '@/lib/confirm-dialog'
   import { toast } from 'vue-sonner'
-  import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
-  import Spinner from '@/components/ui/spinner/Spinner.vue'
   import { storeToRefs } from 'pinia'
   const uiStore = useUIStore()
   const customizationStore = useCustomizationStore()
@@ -237,15 +235,16 @@
       :key="`design-skeleton-${n}`"
       class="pointer-events-none relative flex flex-1 flex-col items-center gap-2 rounded-sm p-2 md:gap-3 md:p-2"
     >
-    <div class="flex w-full min-w-0 flex-col self-stretch items-center">
-      <SkeletonBox :width="isMobile ? 130 : 176" :height="16" radius="sm" />
-    </div>
-    <div class="flex flex-col items-center gap-3 px-2">
+      <div class="flex w-full min-w-0 flex-col self-stretch items-center">
+        <SkeletonBox :width="isMobile ? 130 : 176" :height="16" radius="sm" />
+      </div>
+      <div class="flex flex-col items-center gap-3 px-2">
         <SkeletonBox
           class="shrink-0"
           :width="isMobile ? 130 : 176"
           :height="isMobile ? 130 : 176"
-          radius="xl" />
+          radius="xl"
+        />
       </div>
     </div>
   </div>
@@ -346,14 +345,14 @@
           </div>
           <div>
             <LazyTwoDScene
-            :id="item.id"
-            :design="item.front_design"
-            :svg-parts="item.svg_parts"
-            :canvas-width="isMobile ? 130 : 176"
-            :canvas-height="isMobile ? 130 : 176"
-            :canvas-class="'rounded-xl'"
-            :product-id="customizationStore.activeProductId ?? undefined"
-            :preview-custom-texts="previewTextsByDesignId.get(item.id) ?? []"
+              :id="item.id"
+              :design="item.front_design"
+              :svg-parts="item.svg_parts"
+              :canvas-width="isMobile ? 130 : 176"
+              :canvas-height="isMobile ? 130 : 176"
+              :canvas-class="'rounded-xl'"
+              :product-id="customizationStore.activeProductId ?? undefined"
+              :preview-custom-texts="previewTextsByDesignId.get(item.id) ?? []"
             />
           </div>
           <Checkbox

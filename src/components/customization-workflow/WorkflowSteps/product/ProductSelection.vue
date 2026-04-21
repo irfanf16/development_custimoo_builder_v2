@@ -45,7 +45,6 @@
 
   const { isMobile } = storeToRefs(uiStore)
   const { activeProductId: selectedProductId } = storeToRefs(customizationStore)
-  const { pendingProductId } = storeToRefs(workflowStore)
   const appStore = useAppStore()
   const { productSearchModel, showCustomizerStockFilter, customizerStockFilterModel } =
     useProductConfig()
@@ -371,7 +370,9 @@
               :canvas-height="isMobile ? 130 : 176"
               :canvas-class="'rounded-xl'"
               :product-id="item.productPreview.id"
-              :preview-custom-texts="productsStore.getPreviewCustomTextsForDesign(item.designPreview)"
+              :preview-custom-texts="
+                productsStore.getPreviewCustomTextsForDesign(item.designPreview)
+              "
             />
           </div>
         </div>
