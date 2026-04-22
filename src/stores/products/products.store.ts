@@ -489,6 +489,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       const payload = resp.content
 
       setActiveStyleDetailsState(payload.styleDetails)
+      await fetchDesignPreviewsByStyleId(styleId)
       // Apply new style to customization only after design details are resolved. Updating
       // style_id before activeDesignDetails matches would let the auto-sync watch run with a
       // mismatched triple and overwrite the design (default for the new style).
