@@ -93,7 +93,7 @@
     if (applyingStyleId.value != null) return
     applyingStyleId.value = styleId
     try {
-      await productsStore.fetchActiveStyleDetails(styleId)
+      await productsStore.fetchActiveStyleDetails(styleId, { preserveCurrentDesign: false })
     } finally {
       if (applyingStyleId.value == styleId) {
         applyingStyleId.value = null

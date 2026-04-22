@@ -212,7 +212,6 @@ export const useProductsStore = defineStore('productsStore', () => {
     activeDesignDetails.value = payload
   }
 
-
   /**
    * `active_design_name` for GET product/style/:id — must match the selected row in the new style,
    * including customer uploads. Customization.design_name can lag (e.g. still "Basic") while
@@ -468,11 +467,17 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  async function fetchActiveStyleDetails(styleId: number) {
+  async function fetchActiveStyleDetails(
+    styleId: number,
+    options?: { preserveCurrentDesign?: boolean }
+  ) {
     setLoading(true)
     setError(null)
     designPreviews.value = []
-    const designIdToKeep = Number(customization.customization?.design_id) || 0
+    const preserveCurrentDesign = options?.preserveCurrentDesign ?? true
+    const designIdToKeep = preserveCurrentDesign
+      ? Number(customization.customization?.design_id) || 0
+      : 0
 
     const resp = await tryCatchApi<ActiveStyleDetails>(
       API.products.getActiveStyleDetails(
@@ -494,6 +499,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       // style_id before activeDesignDetails matches would let the auto-sync watch run with a
       // mismatched triple and overwrite the design (default for the new style).
       if (designIdToKeep > 0) {
+        console.log('fetchDesignDetailsById ccccccccc', designIdToKeep)
         const detailsResp = await fetchDesignDetailsById(designIdToKeep)
         if (detailsResp.success && activeDesignDetails.value) {
           customization.setStyle(styleId)
@@ -951,7 +957,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       }
       // Explicit style selection overrides design
       if (styleId && activeStyleDetails.value?.id !== styleId) {
-        await fetchActiveStyleDetails(styleId)
+        await fetchActiveStyleDetails(styleId, { preserveCurrentDesign: false })
       }
       // Explicit design selection overrides current
       if (designId && activeDesignDetails.value?.id !== designId) {
