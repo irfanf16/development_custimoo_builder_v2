@@ -471,6 +471,7 @@ export const useProductsStore = defineStore('productsStore', () => {
   async function fetchActiveStyleDetails(styleId: number) {
     setLoading(true)
     setError(null)
+    designPreviews.value = []
     const designIdToKeep = Number(customization.customization?.design_id) || 0
 
     const resp = await tryCatchApi<ActiveStyleDetails>(
@@ -484,6 +485,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       }
     )
     if (resp.success) {
+      await fetchDesignPreviewsByStyleId(styleId)
       const payload = resp.content
 
       setActiveStyleDetailsState(payload.styleDetails)
