@@ -490,7 +490,6 @@ export const useProductsStore = defineStore('productsStore', () => {
       }
     )
     if (resp.success) {
-      await fetchDesignPreviewsByStyleId(styleId)
       const payload = resp.content
 
       setActiveStyleDetailsState(payload.styleDetails)
