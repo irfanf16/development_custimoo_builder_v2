@@ -305,8 +305,8 @@ export const useProductsStore = defineStore('productsStore', () => {
     side: CanvasSide = 'front',
     setInitial = false
   ): void {
-    const targetGroups = side === 'front' ? svgGroupsFront : svgGroupsBack
-    const targetInitialGroups = side === 'front' ? initialSvgGroupsFront : initialSvgGroupsBack
+    const targetGroups = side === 'back' ? svgGroupsBack : svgGroupsFront
+    const targetInitialGroups = side === 'back' ? initialSvgGroupsBack : initialSvgGroupsFront
 
     if (!groups || !Array.isArray(groups)) {
       targetGroups.value = []

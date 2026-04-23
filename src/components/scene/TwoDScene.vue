@@ -1176,7 +1176,7 @@
   // Watch for side prop changes and update reference
   watch(
     () => props.side,
-    (newSide, oldSide) => {
+    async (newSide, oldSide) => {
       if (!props.mainPreview) return
       sceneStore.clearOtherSideLogos(oldSide as 'front' | 'back')
       sceneStore.clearOtherSideTexts(oldSide as 'front' | 'back')
@@ -1190,6 +1190,14 @@
       }
       otherSideLogoObjects.value = new Map()
       otherSideTextObjects.value = new Map()
+
+      safeZone.value = null
+      boundary.value = null
+      const design = effectiveDesign.value
+      if (design?.safe_zone_url || design?.boundary_url) {
+        await addBoundary(design.safe_zone_url, design.boundary_url)
+      }
+
       // Clear old reference if side changed
       if (oldSide && oldSide !== newSide) {
         sceneStore.setTwoDSceneRef(null, oldSide as 'front' | 'back')

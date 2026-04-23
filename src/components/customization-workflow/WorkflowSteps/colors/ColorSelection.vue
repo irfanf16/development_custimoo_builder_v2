@@ -21,7 +21,13 @@
   import { useColorClipboard } from '@/composables/useColorClipboard'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { useAuthStore } from '@/stores/auth/auth.store'
-  import { stripCsvExtension } from '@/lib/utils'
+  import {
+    stripCsvExtension,
+    rgbToHex,
+    getSelectedProductPantones,
+    getClosestColor,
+    getColorType
+  } from '@/lib/utils'
   import {
     color_shuffle_design_colors,
     color_shuffle_heading_1,
@@ -147,6 +153,29 @@
     }
     return []
   }
+
+  function getResolvedLogoColorName(
+    explicitName: string | undefined,
+    hexColor: string,
+    placementName: string,
+    fallbackLabel: string
+  ): string {
+    const name = explicitName?.trim()
+    if (name) return name
+
+    if (!hexColor) return fallbackLabel
+    const normalizedHex = hexColor.startsWith('#') ? hexColor : `#${hexColor}`
+    const currentProductId = effectiveProductId.value
+    const selectProductPantonesList = getSelectedProductPantones(currentProductId, placementName)
+    const nearest = getClosestColor(
+      normalizedHex,
+      selectProductPantonesList,
+      getColorType(placementName, currentProductId, 'logo_color_type')
+    )
+
+    return nearest.name || nearest.pantone || fallbackLabel
+  }
+
   // Small mapper to convert a raw svg-group entry into a Palette shape expected by PaletteColorSelector
   function getSvgGroupPalette(svg_group: string): Palette | false {
     const entry = getSvgGroupColors(svg_group)
@@ -185,19 +214,23 @@
     const palettes: Palette[] = Object.entries(logosByPlacement).map(([placementName, logos]) => {
       const colors: OutputColor[] = logos.flatMap(logo =>
         (logo.logo_colors ?? []).map((color: LogoColor, index: number) => {
+          const fallbackLabel = `Logo Color ${index + 1}`
+          let hexColor = ''
+          let explicitName: string | undefined
+
           if (Array.isArray(color)) {
             const r = color[0] ?? 0
             const g = color[1] ?? 0
             const b = color[2] ?? 0
-            return {
-              name: logo.name_of_placement || `Logo Color ${index + 1}`,
-              value: `rgb(${r}, ${g}, ${b})`,
-              position: index
-            } as OutputColor
+            hexColor = rgbToHex(r, g, b)
+          } else {
+            hexColor = color.hex ?? ''
+            explicitName = color.name ?? undefined
           }
+
           return {
-            name: color.name ?? logo.name_of_placement ?? `Logo Color ${index + 1}`,
-            value: color.hex ?? '',
+            name: getResolvedLogoColorName(explicitName, hexColor, placementName, fallbackLabel),
+            value: hexColor,
             position: index
           } as OutputColor
         })

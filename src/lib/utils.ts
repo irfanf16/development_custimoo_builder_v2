@@ -29,6 +29,27 @@ export function stripCsvExtension(name: string): string {
   return value.replace(/\.csv$/i, '')
 }
 
+export function rgbToHex(r: number, g: number, b: number): string {
+  const toHexChannel = (value: number) => {
+    const normalized = Math.max(0, Math.min(255, Math.round(value)))
+    return normalized.toString(16).padStart(2, '0')
+  }
+
+  return `#${toHexChannel(r)}${toHexChannel(g)}${toHexChannel(b)}`
+}
+
+export function rgbStringToHex(rgb: string | undefined): string {
+  if (!rgb) return '#000000'
+  const match = rgb.match(/\d+/g)
+  if (!match || match.length < 3) return rgb
+
+  const r = parseInt(match[0] || '0', 10)
+  const g = parseInt(match[1] || '0', 10)
+  const b = parseInt(match[2] || '0', 10)
+
+  return rgbToHex(r, g, b)
+}
+
 /**
  * Download a file from a URL. Opens in same tab and triggers download when possible.
  * @param url - Full URL of the file to download

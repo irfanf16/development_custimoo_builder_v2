@@ -1,36 +1,14 @@
 import { ref, computed, watch, type Ref } from 'vue'
 import { Group, type FabricObject } from 'fabric'
 import { useProductsStore } from '@/stores/products/products.store'
-import { getSelectedProductPantones, getClosestColor, getColorType } from '@/lib/utils'
+import {
+  getSelectedProductPantones,
+  getClosestColor,
+  getColorType,
+  rgbStringToHex
+} from '@/lib/utils'
 import type { OutputSvgGroupColor, GradientColor } from '@/services/products/types'
 import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
-
-/**
- * Convert RGB color string to hex
- * @param rgb - RGB color string (e.g., "rgb(255, 0, 0)" or "rgba(255, 0, 0, 0.5)")
- */
-function rgbToHex(rgb: string | undefined): string {
-  if (!rgb) return '#000000'
-  // Extract RGB values using regex
-  const match = rgb.match(/\d+/g)
-  if (!match || match.length < 3) return rgb
-
-  const r = parseInt(match[0] || '0', 10)
-  const g = parseInt(match[1] || '0', 10)
-  const b = parseInt(match[2] || '0', 10)
-
-  // Convert to hex
-  const hex =
-    '#' +
-    [r, g, b]
-      .map(x => {
-        const hex = x.toString(16)
-        return hex.length === 1 ? '0' + hex : hex
-      })
-      .join('')
-
-  return hex
-}
 
 /**
  * Composable for SVG groups extraction and management
@@ -176,7 +154,7 @@ export function useSvgGroups(
 
               // Convert RGB to hex if needed
               if (color.includes('rgb')) {
-                color = rgbToHex(color)
+                color = rgbStringToHex(color)
                 if (!color.startsWith('#')) {
                   color = '#' + color
                 }
@@ -220,7 +198,7 @@ export function useSvgGroups(
 
         // Convert RGB to hex if needed
         if (fillColor.includes('rgb')) {
-          fillColor = rgbToHex(fillColor)
+          fillColor = rgbStringToHex(fillColor)
           if (!fillColor.startsWith('#')) {
             fillColor = '#' + fillColor
           }

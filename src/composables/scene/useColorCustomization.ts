@@ -8,7 +8,8 @@ import {
   getClosestColor,
   getColorType,
   hexToRgbObject,
-  getPermutation
+  getPermutation,
+  rgbStringToHex
 } from '@/lib/utils'
 import type { OutputSvgGroupColor } from '@/services/products/types'
 import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
@@ -95,19 +96,30 @@ export function useColorCustomization(
       return { color: '', pantone: '', name: '' }
     }
 
+    const normalizeStoredColor = (color: string | undefined): string => {
+      if (!color) return ''
+      return color.includes('rgb') ? rgbStringToHex(color) : color
+    }
+
     let finalColor: { color: string; pantone: string; name: string }
 
     if (gradientColorIndex !== null && groupColor.gradient_colors) {
-      finalColor = groupColor.gradient_colors[gradientColorIndex] || {
-        color: '',
-        pantone: '',
-        name: ''
-      }
+      const gradientColor = groupColor.gradient_colors[gradientColorIndex]
+      finalColor = gradientColor
+        ? {
+            ...gradientColor,
+            color: normalizeStoredColor(gradientColor.color)
+          }
+        : {
+            color: '',
+            pantone: '',
+            name: ''
+          }
     } else {
       finalColor = {
-        color: groupColor.color || '',
+        color: normalizeStoredColor(groupColor.color!),
         pantone: '',
-        name: groupColor.name || ''
+        name: ''
       }
     }
 
@@ -332,8 +344,8 @@ export function useColorCustomization(
               svgGroup.name = finalColor.name
             }
 
-            // Update store if mainPreview is enabled (only for front/back, not 3d)
-            if (mainPreview && (side === 'front' || side === 'back')) {
+            // Update store if mainPreview is enabled
+            if (mainPreview) {
               productsStore.setSvgGroups(svgGroups.value, side, false)
             }
           }
@@ -457,22 +469,22 @@ export function useColorCustomization(
           svgGroup.name = finalColor.name
           svgGroup.pantone = finalColor.pantone
         }
-
-        // Update store if mainPreview is enabled (only for front/back, not 3d)
-        if (mainPreview && (side === 'front' || side === 'back')) {
-          productsStore.setSvgGroups(svgGroups.value, side, false)
-        }
       } else {
         // Reset to initial color if no group color is set
         const initialGroup = initialSvgGroups.value.find(g => g.id === svgGroup.id)
         if (initialGroup) {
           Object.assign(svgGroup, initialGroup)
-          if (mainPreview && (side === 'front' || side === 'back')) {
+          if (mainPreview) {
             productsStore.setSvgGroups(svgGroups.value, side, false)
           }
         }
       }
     })
+
+    // Update store if mainPreview is enabled (only for front/back, not 3d)
+    if (mainPreview) {
+      productsStore.setSvgGroups(svgGroups.value, side, false)
+    }
 
     // Update design objects on canvas
     design.forEach(item => {
@@ -659,8 +671,8 @@ export function useColorCustomization(
         // Simply assign all properties from initial group
         Object.assign(svgGroup, initialGroup)
 
-        // Update store if mainPreview is enabled (only for front/back, not 3d)
-        if (mainPreview && (side === 'front' || side === 'back')) {
+        // Update store if mainPreview is enabled
+        if (mainPreview) {
           productsStore.setSvgGroups(svgGroups.value, side, false)
         }
       }

@@ -33,52 +33,13 @@ export function useEffectiveSelectors() {
     return activeDesignDetails.value?.id ?? null
   })
 
+  /**
+   * SVG groups are already maintained in productsStore.svgGroups and updated
+   * by changeGroupColors (scene composable) whenever customization.group_colors changes.
+   * Just pass them through — no need to re-merge customization here.
+   */
   const effectiveSvgGroups = computed<OutputSvgGroupColor[] | undefined>(() => {
-    const base = svgGroups.value
-    if (!base) return undefined
-
-    const overrides = customizationStore.customization?.group_colors || {}
-    return base.map(svgGroup => {
-      const customized = overrides[svgGroup.id]
-      const isCustom = svgGroup.is_custom === true
-      if (customized) {
-        // If customized has gradient_colors, preserve them and merge with base percentage if missing
-        if (customized.gradient_colors) {
-          // Merge customized gradient_colors with base to preserve percentage
-          const baseGradientColors = svgGroup.gradient_colors || []
-          const mergedGradientColors = customized.gradient_colors.map((customGc, index) => {
-            const baseGc = baseGradientColors[index]
-            return {
-              ...customGc,
-              // Preserve percentage from base if not in customized
-              percentage: (customGc as { percentage?: number }).percentage ?? baseGc?.percentage
-            }
-          })
-
-          return {
-            id: svgGroup.id,
-            name: (customized.name && customized.name.trim()) || svgGroup.name || '',
-            color: customized.color ?? svgGroup.color,
-            pantone:
-              (customized as unknown as { pantone?: string }).pantone || svgGroup.pantone || '',
-            count: svgGroup.count ?? 0,
-            gradient_colors: mergedGradientColors,
-            ...(isCustom ? { is_custom: true } : {})
-          }
-        }
-        // Regular color override
-        return {
-          id: svgGroup.id,
-          name: (customized.name && customized.name.trim()) || svgGroup.name || '',
-          color: customized.color ?? svgGroup.color ?? '',
-          pantone:
-            (customized as unknown as { pantone?: string }).pantone || svgGroup.pantone || '',
-          count: svgGroup.count ?? 0,
-          ...(isCustom ? { is_custom: true } : {})
-        }
-      }
-      return svgGroup
-    })
+    return svgGroups.value
   })
 
   /** Interactive groups (exclude is_custom) for accordion and color picker */

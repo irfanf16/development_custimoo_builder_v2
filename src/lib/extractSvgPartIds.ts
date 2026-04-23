@@ -3,25 +3,8 @@
  * matching the rules in useSvgGroups.extractSvgGroups (ThreeDScene / TwoDScene).
  */
 import { loadSVGFromString, util, type FabricObject, Group } from 'fabric'
+import { rgbStringToHex } from '@/lib/utils'
 import type { GradientColor } from '@/services/products/types'
-
-function rgbToHex(rgb: string | undefined): string {
-  if (!rgb) return '#000000'
-  const match = rgb.match(/\d+/g)
-  if (!match || match.length < 3) return rgb
-  const r = parseInt(match[0] || '0', 10)
-  const g = parseInt(match[1] || '0', 10)
-  const b = parseInt(match[2] || '0', 10)
-  return (
-    '#' +
-    [r, g, b]
-      .map(x => {
-        const h = x.toString(16)
-        return h.length === 1 ? '0' + h : h
-      })
-      .join('')
-  )
-}
 
 type PartEntry = { id: string; count: number }
 
@@ -78,7 +61,7 @@ function collectPartEntriesFromDesignObject(designObject: FabricObject | Group):
           const percentage = offset * 100
           let color = color_stop.color
           if (color.includes('rgb')) {
-            color = rgbToHex(color)
+            color = rgbStringToHex(color)
             if (!color.startsWith('#')) color = '#' + color
           }
           gradient_colors.push({
