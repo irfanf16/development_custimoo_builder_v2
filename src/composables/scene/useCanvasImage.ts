@@ -5,8 +5,6 @@ import type { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js
 import type { CanvasSide } from '@/stores/workflow/workflow.store.types'
 
 export interface GetImageFromCanvasOptions {
-  original_width?: number
-  original_height?: number
   image_type?: string
   width?: number
   height?: number
@@ -16,7 +14,9 @@ export interface GetImageFromCanvasOptions {
 /**
  * Get image from 2D Fabric.js canvas.
  * Waits two animation frames so the canvas has painted, then captures.
- * Defaults: 600×600 logical → 1200×1200 export with zoom 2. Pass options to override.
+ * Export is always width×height (default 1200×1200); the zoom is derived from the
+ * canvas's current bitmap so the secondary/flip preview (small bitmap) exports at
+ * the same size as the main preview.
  */
 export function getImageFrom2DCanvas(
   canvas: Canvas | StaticCanvas | null,
@@ -31,12 +31,9 @@ export function getImageFrom2DCanvas(
         }
 
         const canvasOptions = {
-          original_width: 600,
-          original_height: 600,
           image_type: 'image/png',
           width: 1200,
           height: 1200,
-          zoom: 2,
           ...options
         }
 
@@ -49,11 +46,16 @@ export function getImageFrom2DCanvas(
         const originalWidth = canvas.getWidth()
         const originalHeight = canvas.getHeight()
 
+        // Derive zoom from the actual canvas bitmap so content fills the export
+        // regardless of current size (main preview ~600px vs flip preview ~156px).
+        const zoomX = options.zoom ?? canvasOptions.width / originalWidth
+        const zoomY = options.zoom ?? canvasOptions.height / originalHeight
+
         canvas.setDimensions({
           width: canvasOptions.width,
           height: canvasOptions.height
         })
-        canvas.viewportTransform = [canvasOptions.zoom, 0, 0, canvasOptions.zoom, 0, 0]
+        canvas.viewportTransform = [zoomX, 0, 0, zoomY, 0, 0]
         canvas.requestRenderAll()
 
         const base64Image = (canvas.toDataURL as (format?: string) => string)(
