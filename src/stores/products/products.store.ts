@@ -467,17 +467,11 @@ export const useProductsStore = defineStore('productsStore', () => {
     return resp
   }
 
-  async function fetchActiveStyleDetails(
-    styleId: number,
-    options?: { preserveCurrentDesign?: boolean }
-  ) {
+  async function fetchActiveStyleDetails(styleId: number) {
     setLoading(true)
     setError(null)
     designPreviews.value = []
-    const preserveCurrentDesign = options?.preserveCurrentDesign ?? true
-    const designIdToKeep = preserveCurrentDesign
-      ? Number(customization.customization?.design_id) || 0
-      : 0
+    const designIdToKeep = Number(customization.customization?.design_id)
 
     const resp = await tryCatchApi<ActiveStyleDetails>(
       API.products.getActiveStyleDetails(
@@ -493,44 +487,15 @@ export const useProductsStore = defineStore('productsStore', () => {
       const payload = resp.content
 
       setActiveStyleDetailsState(payload.styleDetails)
-      await fetchDesignPreviewsByStyleId(styleId)
-      // Apply new style to customization only after design details are resolved. Updating
-      // style_id before activeDesignDetails matches would let the auto-sync watch run with a
-      // mismatched triple and overwrite the design (default for the new style).
-      if (designIdToKeep > 0) {
-        console.log('fetchDesignDetailsById ccccccccc', designIdToKeep)
-        const detailsResp = await fetchDesignDetailsById(designIdToKeep)
-        if (detailsResp.success && activeDesignDetails.value) {
-          customization.setStyle(styleId)
-          if (
-            customization.customization &&
-            activeDesignDetails.value.id !== customization.customization.design_id
-          ) {
-            customization.setDesign(activeDesignDetails.value)
-          }
-        } else {
-          setActiveDesignDetailsState(payload.designDetails)
-          customization.setStyle(styleId)
-          customization.setDesign(payload.designDetails)
-          const pid = customization.activeProductId ?? payload.styleDetails.product_id ?? null
-          if (pid != null) {
-            customization.syncProductTextsWithDesign(
-              pid,
-              pickDesignCustomTextRaw(payload.designDetails)
-            )
-          }
-        }
-      } else {
-        setActiveDesignDetailsState(payload.designDetails)
-        customization.setStyle(styleId)
-        customization.setDesign(payload.designDetails)
-        const pid = customization.activeProductId ?? payload.styleDetails.product_id ?? null
-        if (pid != null) {
-          customization.syncProductTextsWithDesign(
-            pid,
-            pickDesignCustomTextRaw(payload.designDetails)
-          )
-        }
+      setActiveDesignDetailsState(payload.designDetails)
+      customization.setStyle(styleId)
+      customization.setDesign(payload.designDetails)
+      const pid = customization.activeProductId ?? payload.styleDetails.product_id ?? null
+      if (pid != null) {
+        customization.syncProductTextsWithDesign(
+          pid,
+          pickDesignCustomTextRaw(payload.designDetails)
+        )
       }
     } else {
       setError('Error getting active style details')
@@ -956,7 +921,7 @@ export const useProductsStore = defineStore('productsStore', () => {
       }
       // Explicit style selection overrides design
       if (styleId && activeStyleDetails.value?.id !== styleId) {
-        await fetchActiveStyleDetails(styleId, { preserveCurrentDesign: false })
+        await fetchActiveStyleDetails(styleId)
       }
       // Explicit design selection overrides current
       if (designId && activeDesignDetails.value?.id !== designId) {

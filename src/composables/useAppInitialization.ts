@@ -629,15 +629,17 @@ export function useAppInitialization() {
       // Fallback to first available product
       const fallbackProductId = productsStore.productPreviews?.[0]?.productPreview.id ?? null
       if (fallbackProductId) {
-        await productsStore.fetchStylePreviews(fallbackProductId)
         await productsStore.fetchActiveProductDetails(fallbackProductId)
+        await productsStore.fetchStylePreviews(fallbackProductId)
+
         customizationStore.setProduct(fallbackProductId)
         productId = fallbackProductId
       }
     } else {
       // Load data for saved product
-      await productsStore.fetchStylePreviews(productId)
       await productsStore.fetchActiveProductDetails(productId)
+      await productsStore.fetchStylePreviews(productId)
+
       customizationStore.setProduct(productId)
     }
 
@@ -775,8 +777,8 @@ export function useAppInitialization() {
 
     if (defaultProductId) {
       // Load product data
-      await productsStore.fetchStylePreviews(defaultProductId)
       await productsStore.fetchActiveProductDetails(defaultProductId)
+      await productsStore.fetchStylePreviews(defaultProductId)
 
       // Create default customization
       customizationStore.ensureCustomization({
