@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, type Component } from 'vue'
 import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
@@ -7,7 +7,6 @@ import { useUIStore } from '@/stores/ui/ui.store'
 import { useAuthStore } from '@/stores/auth/auth.store'
 import { useAppStore } from '@/stores/app/app.store'
 import { WIDGET_CONTAINER_ID } from './lib/widgetUtils'
-import { installHostRootFontCompensation } from './lib/hostRootFontCompensation'
 import { initQueryParams } from '@/composables/initQueryParams'
 
 // Import CSS styles
@@ -143,9 +142,6 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
 
   shadowRoot.appendChild(container)
 
-  // Correct rem-based layout when host sets a small `html` font-size, without touching `document`.
-  const removeHostRootFontCompensation = installHostRootFontCompensation(container)
-
   // Inject CSS into shadow DOM - CSS handles all sizing via custom properties
   const style = document.createElement('style')
   style.textContent = widgetStyles
@@ -161,7 +157,7 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   // Create a new Vue application instance
   // second argument is object of attributes that will be
   // converted to properties in App.vue
-  const app = createApp(App, attributes)
+  const app = createApp(App as Component, attributes)
 
   // Initialize Pinia for the widget
   app.use(pinia)
@@ -175,6 +171,5 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   // Return cleanup function
   return () => {
     window.removeEventListener('resize', measureContainer)
-    removeHostRootFontCompensation()
   }
 }

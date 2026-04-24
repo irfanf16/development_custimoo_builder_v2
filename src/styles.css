@@ -576,10 +576,6 @@ v-customizer.custimoo-theme-dark {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  /*
-   * When the host page uses a small `html { font-size }`, `rem` inside shadow still follows that
-   * root. `hostRootFontCompensation.ts` sets `zoom` on this node only (shadow-safe; no document.head).
-   */
 }
 #v-customizer-container:has(#collection-view-container) {
   height: 100%;
