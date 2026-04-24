@@ -349,7 +349,6 @@ export const useLockerRoomStore = defineStore('lockerRoomStore', () => {
       }
     })
     setSuccessMessage('Design saved successfully')
-    debugger
     await fetchLockerProducts(locker_id)
     await fetchLockerAssets(locker_id)
     // Sync thumbnails from product array so new product image is reflected in the list

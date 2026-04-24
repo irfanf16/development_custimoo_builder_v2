@@ -162,7 +162,8 @@
   /* Match host storefront headers (often 1e3–1e6) when widget is embedded */
   --z-widget-tooltip: 2147483645;
   --z-dialog: 2147483646;
-  --z-toast: 2147483646;
+  /* Toasts must stack above dialog overlays so notifications remain visible while a modal is open. */
+  --z-toast: 9999999999;
   /* Portaled select (and similar) inside dialogs must stack above dialog chrome (reka SelectContent used z-50). */
   --z-select-popover: 2147483647;
 
@@ -383,7 +384,7 @@
   }
 
   .z-widget-toast {
-    z-index: var(--z-toast);
+    z-index: var(--z-toast) !important;
   }
 
   [data-slot='select-content'] {
@@ -513,6 +514,16 @@
 }
 
 /* Removed .widget-theme blocks (unused) */
+
+/*
+ * vue-sonner ships unlayered CSS that pins [data-sonner-toaster] to z-index: 999999999,
+ * which sits below our Dialog overlay (--z-dialog = 2147483646). Utilities layer rules
+ * (like .z-widget-toast) lose to unlayered CSS regardless of specificity, so we override
+ * here, unlayered, after the vue-sonner import.
+ */
+[data-sonner-toaster] {
+  z-index: var(--z-toast) !important;
+}
 
 /* ===== WIDGET SPECIFIC STYLES ===== */
 v-customizer {

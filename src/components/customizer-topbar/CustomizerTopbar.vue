@@ -1382,7 +1382,7 @@
 </script>
 
 <template>
-  <div ref="topbarContainerRef" class="w-full min-w-0">
+  <div ref="topbarContainerRef" class="w-full min-w-0 pt-2 pr-2">
     <TooltipProvider>
       <div class="flex justify-end items-center">
         <div ref="topbarContentRef" class="inline-flex items-center gap-2 shrink-0">
