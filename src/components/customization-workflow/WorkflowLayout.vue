@@ -7,8 +7,10 @@
     watch,
     nextTick,
     isRef,
+    inject,
     type Ref as VueRef
   } from 'vue'
+  import { CUSTIMOO_BODY_MOBILE_DOCK } from '@/lib/custimooBodyDockInject'
   import type { HeaderConfiguration, FooterConfiguration } from './types'
   import WorkflowHeader from './WorkflowHeader.vue'
   import { useWorkflow } from '@/composables/useWorkflow'
@@ -43,6 +45,9 @@
   const { initializeEffects } = useWorkflow()
   const customizationStore = useCustomizationStore()
   const { customization } = storeToRefs(customizationStore)
+
+  /** Renders in `MobileBodyDockShell` (body overlay): flow layout, not nested `position: fixed`. */
+  const inBodyMobileDock = inject(CUSTIMOO_BODY_MOBILE_DOCK, false)
 
   // When active step is not in visible tabs (e.g. product changed and logos tab hidden), redirect to a visible step.
   // Only redirect once scene load is complete (extractSvgGroups has run) so we don't kick user off color tab on refresh.
@@ -85,15 +90,55 @@
     }
   }
 
-  // Mobile: when the sheet is open it must stack above the topbar (z-40); otherwise topbar stays on top.
+  // Mobile: sheet above bottom nav (≈5rem); ~70% height open, first drag to ~50%, second drag closes.
+  const mobileNavOffsetClass = 'left-0 right-0 bottom-20'
+  const MOBILE_SHEET_PCT_FULL = 70
+  const MOBILE_SHEET_PCT_PEEK = 50
+  /** Inline fallbacks: ancestors with overflow:hidden used to clip fixed children to height 0. */
+  const mobileContainerSizeStyle = computed(() => {
+    if (!uiStore.isMobile) return undefined as undefined
+    if (!workflowStore.isPanelOpen) {
+      return { height: '0', maxHeight: '0' } as const
+    }
+    const p =
+      workflowStore.mobileSheetSnap === 'peek' ? MOBILE_SHEET_PCT_PEEK : MOBILE_SHEET_PCT_FULL
+    if (inBodyMobileDock) {
+      return {
+        height: `${p}dvh`,
+        maxHeight: `${p}dvh`
+      } as const
+    }
+    return {
+      height: `${p}dvh`,
+      maxHeight: `${p}dvh`,
+      bottom: '5rem',
+      left: '0',
+      right: '0',
+      zIndex: '40'
+    } as const
+  })
   const containerClasses = computed(() => {
     if (uiStore.isMobile) {
-      const base =
-        'absolute bottom-25 inset-x-4 z-widget-workflow w-auto max-w-full transition-[max-height] duration-200 ease-out'
-      if (workflowStore.mobileSheetSnap === 'peek') {
-        return `${base} h-[40dvh] max-h-[40dvh]`
+      if (inBodyMobileDock) {
+        if (!workflowStore.isPanelOpen) {
+          return 'relative z-[1] w-full max-w-full overflow-hidden pointer-events-none min-h-0 min-w-0 h-0'
+        }
+        const base =
+          'relative z-[1] w-full min-w-0 max-w-full flex min-h-0 flex-col transition-[height] duration-300 ease-out'
+        if (workflowStore.mobileSheetSnap === 'peek') {
+          return `${base} h-[50dvh] max-h-[50dvh]`
+        }
+        return `${base} h-[70dvh] max-h-[70dvh]`
       }
-      return `${base} h-fit max-h-[88dvh]`
+      if (!workflowStore.isPanelOpen) {
+        return `fixed ${mobileNavOffsetClass} z-widget-workflow w-auto max-w-full overflow-hidden pointer-events-none min-h-0 min-w-0`
+      }
+      const zClass = 'z-widget-workflow-overlay'
+      const base = `fixed z-[40] ${zClass} w-full min-w-0 max-w-full flex min-h-0 flex-col transition-[height] duration-300 ease-out`
+      if (workflowStore.mobileSheetSnap === 'peek') {
+        return `${base} h-[50dvh] max-h-[50dvh]`
+      }
+      return `${base} h-[70dvh] max-h-[70dvh]`
     }
     const base = 'flex h-full max-h-full min-h-0 min-w-0 w-full max-w-full flex-col'
     if (isExpanded.value) {
@@ -292,10 +337,14 @@
   <div
     id="workflow-panel-container"
     :class="containerClasses"
+    :style="mobileContainerSizeStyle"
     :data-workflow-compact-typography="workflowCompactTypography ? '' : undefined"
   >
-    <!-- Mobile: Wrap WorkflowPanel in transition -->
-    <div v-if="uiStore.isMobile" class="relative w-full h-fit">
+    <!-- Mobile: sheet height set on #workflow-panel-container; fill + min-h-0 for ScrollArea -->
+    <div
+      v-if="uiStore.isMobile"
+      class="flex h-full min-h-0 w-full flex-1 flex-col"
+    >
       <transition
         enter-active-class="transition duration-200"
         enter-from-class="opacity-0 translate-y-4"
@@ -304,26 +353,30 @@
         leave-from-class="translate-y-0 opacity-100"
         leave-to-class="translate-y-4 opacity-0"
       >
-        <div v-show="workflowStore.isPanelOpen" class="w-full opacity-100">
+        <div
+          v-show="workflowStore.isPanelOpen"
+          class="flex h-full min-h-0 w-full flex-1 flex-col opacity-100"
+        >
           <div
-            class="overflow-hidden rounded-t-2xl border border-border bg-background opacity-100 shadow-lg"
+            class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-2xl border border-border bg-background opacity-100 shadow-lg"
             :style="mobileSheetInnerStyle"
           >
             <div
-              ref="sheetHandleRef"
-              role="button"
-              tabindex="0"
-              class="flex min-h-11 shrink-0 cursor-pointer touch-none select-none flex-col items-center justify-center gap-2 px-4 py-2"
-              :aria-label="closePanelAriaLabel"
-              @click="onMobileSheetHandleActivate"
-              @keydown.enter.prevent="onMobileSheetHandleActivate"
-              @keydown.space.prevent="onMobileSheetHandleActivate"
-            >
-              <div
-                class="h-1 w-10 shrink-0 rounded-full bg-muted-foreground/35"
-                aria-hidden="true"
-              />
-            </div>
+                ref="sheetHandleRef"
+                role="button"
+                tabindex="0"
+                class="flex min-h-11 shrink-0 cursor-pointer touch-none select-none flex-col items-center justify-center gap-2 px-4 py-2"
+                :aria-label="closePanelAriaLabel"
+                @click="onMobileSheetHandleActivate"
+                @keydown.enter.prevent="onMobileSheetHandleActivate"
+                @keydown.space.prevent="onMobileSheetHandleActivate"
+              >
+                <div
+                  class="h-1 w-10 shrink-0 rounded-full bg-muted-foreground/35"
+                  aria-hidden="true"
+                />
+              </div>
+            <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <WorkflowPanel
               ref="menuPanelRef"
               :content-key="workflowStore.contentKey || ''"
@@ -385,6 +438,7 @@
                 :is-expanded="isExpanded"
               />
             </WorkflowPanel>
+            </div>
           </div>
         </div>
       </transition>

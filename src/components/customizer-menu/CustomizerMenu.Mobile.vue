@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, inject } from 'vue'
+  import { CUSTIMOO_BODY_MOBILE_DOCK } from '@/lib/custimooBodyDockInject'
   import CustomizerMenuItem from './MenuItem.vue'
   import { useCustomizerMenu } from '@/composables/useCustomizerMenu'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
@@ -17,20 +18,22 @@
   const menuLabel = computed(() =>
     customizer_menu_label({}, { locale: profileStore.currentLocale })
   )
+  const inBodyMobileDock = inject(CUSTIMOO_BODY_MOBILE_DOCK, false)
+  const navLayoutClass = computed(() =>
+    inBodyMobileDock
+      ? 'relative w-full shrink-0 border-t border-border bg-background py-2 shadow-lg z-[2]'
+      : 'fixed bottom-0 left-0 right-0 bg-background z-widget-chrome py-2 shadow-lg'
+  )
 
   async function handleGoTo(step: string) {
     const s = step as CustomizerStep
-    // Tap active tab: step through sheet snap (full → peek → close) or open if closed
     if (isActive(s)) {
       if (!workflow.isPanelOpen) {
         workflow.setPanelOpen(true)
         return
       }
-      if (workflow.mobileSheetSnap === 'full') {
-        workflow.setMobileSheetSnap('peek')
-      } else {
-        workflow.setPanelOpen(false)
-      }
+      // One tap: fully close (sheet is stepped down with drag: 70% → 50% → close).
+      workflow.setPanelOpen(false)
       return
     }
 
@@ -42,8 +45,7 @@
 
 <template>
   <nav
-    class="fixed bottom-0 left-0 right-0 bg-background z-widget-chrome py-2 shadow-lg"
-    :class="{ hidden: !isMobile }"
+    :class="[navLayoutClass, { hidden: !isMobile }]"
     role="navigation"
     :aria-label="menuLabel"
   >

@@ -531,7 +531,9 @@ v-customizer {
   box-sizing: border-box;
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  /* Avoid overflow-y hidden/auto on the host: it clips `position: fixed` (sheet + bottom nav). */
+  overflow-x: hidden;
+  overflow-y: visible;
   max-width: 100%;
   font-family: var(--font-sans);
   line-height: 1.5;

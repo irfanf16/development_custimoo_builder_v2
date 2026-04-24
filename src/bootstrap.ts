@@ -13,6 +13,21 @@ import { initQueryParams } from '@/composables/initQueryParams'
 import widgetStyles from './styles.css?inline'
 import { initializeExternalApi } from './lib/externalApi'
 
+/** Mirrored in `document.head` so `Teleport to="body"` (mobile workflow dock) matches shadow styles. */
+const TELEPORT_STYLE_ID = 'custimoo-teleport-style-mirror'
+
+function syncDocumentTeleportStyles(css: string) {
+  if (typeof document === 'undefined') return
+  let el = document.getElementById(TELEPORT_STYLE_ID) as HTMLStyleElement | null
+  if (!el) {
+    el = document.createElement('style')
+    el.id = TELEPORT_STYLE_ID
+    el.setAttribute('data-custimoo-teleport', 'true')
+    document.head.appendChild(el)
+  }
+  el.textContent = css
+}
+
 // Persist references to style elements across HMR updates
 // so we can live-replace the CSS injected into Shadow DOMs.
 const styleElements: Set<HTMLStyleElement> =
@@ -41,6 +56,7 @@ if (
     for (const el of styleElements) {
       el.textContent = nextCss
     }
+    syncDocumentTeleportStyles(nextCss)
   })
 }
 
@@ -148,6 +164,8 @@ export function bootstrap(shadowRoot: ShadowRoot, attributes: Record<string, unk
   shadowRoot.appendChild(style)
   // Track for HMR live updates
   styleElements.add(style)
+  // Body teleports (e.g. mobile workflow dock) need the same rules outside the shadow tree.
+  syncDocumentTeleportStyles(widgetStyles)
 
   // Set up the widget root with ResizeObserver (handles initial measurement)
   ui.setWidgetRoot(container)

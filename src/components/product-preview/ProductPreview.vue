@@ -13,7 +13,7 @@
   const { activeProductDetails, activeDesignCustomTexts } = storeToRefs(productsStore)
   const workflowStore = useWorkflowStore()
   const uiStore = useUIStore()
-  const { isMobile } = storeToRefs(uiStore)
+  const { isTrueMobile } = storeToRefs(uiStore)
 
   const mainTwoDCanvasPx = inject(
     CUSTOMIZER_MAIN_CANVAS_PX,
@@ -24,7 +24,9 @@
   const MAIN_PREVIEW_BITMAP_PX = 600
 
   /** 3D column tracks the same row sizing as 2D, capped for layout. */
-  const mainThreeDContainerSize = computed(() => Math.min(MAIN_PREVIEW_BITMAP_PX, mainTwoDCanvasPx.value))
+  const mainThreeDContainerSize = computed(() =>
+    Math.min(MAIN_PREVIEW_BITMAP_PX, mainTwoDCanvasPx.value)
+  )
 
   const is3dProduct = computed(() => !!activeProductDetails.value?.is_3d_product)
 </script>
@@ -37,17 +39,21 @@
     :class="[
       'relative flex min-h-0 min-w-0 flex-col overflow-hidden',
       /* Mobile: full width, vertically centred. Desktop: shrink to canvas bitmap so the loader matches it exactly. */
-      isMobile
-        ? 'h-full w-full items-center justify-center'
+      isTrueMobile
+        ? 'h-full min-h-0 w-full max-w-full min-w-0 items-center justify-center'
         : 'h-fit w-fit max-w-full shrink-0 items-start justify-start'
     ]"
     :style="
-      !isMobile
+      !isTrueMobile
         ? {
             maxWidth: `${mainTwoDCanvasPx}px`,
             maxHeight: `${mainTwoDCanvasPx}px`
           }
-        : undefined
+        : {
+            /* Match inject so h-full + flex don’t assert a box taller than the fitted square. */
+            maxWidth: '100%',
+            maxHeight: `${mainTwoDCanvasPx}px`
+          }
     "
   >
     <ThreeDScene

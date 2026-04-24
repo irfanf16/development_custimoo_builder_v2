@@ -68,6 +68,8 @@ export const useUIStore = defineStore('uiStore', () => {
 
   // Derived state
   const isMobile = computed(() => containerWidth.value < mobileBreakpoint.value)
+  /** True mobile range (≤768px): stacked flip chip + MobileActionBar. 769–1024px uses a tablet-hybrid canvas row. */
+  const isTrueMobile = computed(() => containerWidth.value < 769)
 
   /**
    * Below this widget width (desktop only): narrow workflow panel + 2-col product/design grids.
@@ -519,6 +521,7 @@ export const useUIStore = defineStore('uiStore', () => {
     containerWidth,
     containerHeight,
     isMobile,
+    isTrueMobile,
     desktopPreviewCompact,
     minWidgetHeight,
     currentTheme,

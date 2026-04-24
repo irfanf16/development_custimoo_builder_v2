@@ -36,5 +36,5 @@ export type NavigationItem = {
   isActive?: boolean
 }
 
-/** Mobile workflow bottom sheet vertical snap. */
+/** Mobile workflow bottom sheet: `full` = ~70% view height, `peek` = ~50% (dismiss first step, then second). */
 export type MobileSheetSnap = 'full' | 'peek'
