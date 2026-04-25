@@ -24,7 +24,9 @@
     CUSTOMIZER_MAIN_CANVAS_MAX_PX
   } from '@/composables/useCustomizerCanvasPairSizes'
   import { CUSTOMIZER_MAIN_CANVAS_PX } from '@/lib/customizerCanvasInjectKeys'
+  import { useTeleportTo } from '@/composables/useTeleportTo'
 
+  const { teleportTo } = useTeleportTo()
   const uiStore = useUIStore()
   const { isMobile, isTrueMobile, containerWidth, containerHeight } = storeToRefs(uiStore)
 
@@ -198,7 +200,7 @@
           </div>
         </template>
 
-        <Teleport to="body">
+        <Teleport :to="teleportTo">
           <MobileBodyDockShell>
             <WorkflowLayout class="z-widget-workflow" />
             <CustomizerMenuMobile />

@@ -561,13 +561,15 @@ v-customizer {
 }
 
 /*
- * Host pages sometimes reuse `.canvas-container` on the same node as our Fabric canvas.
- * That rule's `width: 100% !important` stretches the preview to fill the flex row and blows
- * past v-customizer. TwoDScene sizes via inline max-width/max-height — keep width/height auto.
+ * Host pages sometimes reuse `.canvas-container` (width: 100% !important) on a wrapper. The
+ * canvas itself is sized by Fabric: `setDimensions(…, { backstoreOnly })` + `setDimensions(…, {
+ * cssOnly: true })` on both lower/upper nodes. Do not use width/height auto !important here: it
+ * overrode those inline display sizes and forced intrinsic bitmap dimensions (e.g. 600px) when
+ * `mainTwoDCanvasPx` or responsive CSS is smaller. Keep only a cap so the canvas does not
+ * overflow narrow hosts.
  */
 v-customizer canvas.custimoo-two-canvas {
-  width: auto !important;
-  height: auto !important;
+  max-width: 100%;
 }
 
 /* Ensure widget components are properly styled */

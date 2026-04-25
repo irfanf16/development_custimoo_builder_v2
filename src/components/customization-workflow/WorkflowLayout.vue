@@ -46,7 +46,7 @@
   const customizationStore = useCustomizationStore()
   const { customization } = storeToRefs(customizationStore)
 
-  /** Renders in `MobileBodyDockShell` (body overlay): flow layout, not nested `position: fixed`. */
+  /** Renders in `MobileBodyDockShell` (teleport to widget root / shadow): flow layout, not nested `position: fixed`. */
   const inBodyMobileDock = inject(CUSTIMOO_BODY_MOBILE_DOCK, false)
 
   // When active step is not in visible tabs (e.g. product changed and logos tab hidden), redirect to a visible step.

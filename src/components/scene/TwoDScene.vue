@@ -213,28 +213,6 @@
   const fabricCanvasWidth = computed(() => props.canvasBitmapWidth ?? props.canvasWidth)
   const fabricCanvasHeight = computed(() => props.canvasBitmapHeight ?? props.canvasHeight)
 
-  /**
-   * Display size (CSS). When `canvasBitmap*` is set, CSS still follows `canvasWidth`/`canvasHeight`.
-   * Main preview uses only parent % — avoid dvh here (breaks flex min-h-0 chain and caused #main-content scroll).
-   */
-  const canvasDisplaySizeStyle = computed((): Record<string, string> => {
-    const w = props.canvasWidth
-    const h = props.canvasHeight
-    if (props.lockDisplayToCanvasPixels) {
-      return {
-        width: `${w}px`,
-        height: `${h}px`,
-        maxWidth: `${w}px`,
-        maxHeight: `${h}px`,
-        boxSizing: 'border-box'
-      }
-    }
-    return {
-      maxWidth: `min(100%, ${w}px)`,
-      maxHeight: `min(100%, ${h}px)`
-    }
-  })
-
   /** Matches useColorCustomization: apply default/group colors when global overrides, main preview, or this prop is on. */
   const shouldApplyCustomizationColors = computed(
     () => applyCustomizationOverrides.value || props.mainPreview || props.applyCustomizationColors
@@ -258,6 +236,53 @@
     loadImageFromURL: loadImageFromURLCommon,
     disposeCanvas
   } = useSceneCommon(toRef(props, 'productId'), toRef(props, 'side'), toRef(props, 'design'))
+
+  /**
+   * Keep Fabric's backstore (bitmap) and on-screen (CSS) sizes in sync on **both** the main and
+   * upper (controls / hit-test) canvases. Binding :width, :height, or :style on the lower
+   * canvas in Vue only updated that node; the upper canvas and internal offset math
+   * stayed on the old geometry after responsive resizes.
+   * @see https://fabricjs.com — `setDimensions` with `backstoreOnly` + `cssOnly`
+   */
+  function syncFabricCanvasElementDimensions() {
+    const c = canvas.value
+    if (!c) return
+    const bw = fabricCanvasWidth.value
+    const bh = fabricCanvasHeight.value
+    c.setDimensions({ width: bw, height: bh }, { backstoreOnly: true })
+    if (props.lockDisplayToCanvasPixels) {
+      c.setDimensions(
+        { width: `${props.canvasWidth}px`, height: `${props.canvasHeight}px` },
+        { cssOnly: true }
+      )
+    } else {
+      c.setDimensions(
+        {
+          width: `min(100%, ${props.canvasWidth}px)`,
+          height: `min(100%, ${props.canvasHeight}px)`
+        },
+        { cssOnly: true }
+      )
+    }
+    c.requestRenderAll()
+  }
+
+  watch(
+    [
+      fabricCanvasWidth,
+      fabricCanvasHeight,
+      () => props.canvasWidth,
+      () => props.canvasHeight,
+      () => props.lockDisplayToCanvasPixels,
+      () => props.canvasBitmapWidth,
+      () => props.canvasBitmapHeight
+    ],
+    () => {
+      if (!canvas.value) return
+      syncFabricCanvasElementDimensions()
+    },
+    { flush: 'post' }
+  )
 
   // ===== SVG GROUPS COMPOSABLE =====
   const svgGroupsComposable = useSvgGroups(
@@ -508,6 +533,8 @@
       }
 
       initCanvas(canvasEl.value, fabricCanvasWidth.value, fabricCanvasHeight.value)
+      await nextTick()
+      syncFabricCanvasElementDimensions()
       ensureDimText()
 
       const c = canvas.value
@@ -2781,11 +2808,8 @@
   >
     <canvas
       ref="canvasEl"
-      class="custimoo-two-canvas aspect-square! h-auto! w-auto!"
+      class="custimoo-two-canvas box-border aspect-square max-w-full h-auto w-auto"
       :class="canvasClass"
-      :width="fabricCanvasWidth"
-      :height="fabricCanvasHeight"
-      :style="canvasDisplaySizeStyle"
     />
   </div>
 </template>

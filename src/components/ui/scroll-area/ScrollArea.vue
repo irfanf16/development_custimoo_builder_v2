@@ -50,10 +50,23 @@
     updateOverflow()
   }
 
-  /** Scroll the nearest ancestor that can scroll (or the window). Embedded layouts often use overflow on a div, not document. */
+  /**
+   * Scroll the nearest ancestor that can scroll (or the window). Embedded layouts often use
+   * overflow on a div, not document.
+   *
+   * When the ScrollArea lives inside a dialog (e.g. the Locker Browser's product list) and
+   * its own viewport has nothing to scroll — short locker, few products, etc. — this walker
+   * used to happily climb out of the dialog subtree and scroll a page-level container behind
+   * it, producing the "why does the background scroll?" bug. We now stop the walk at the
+   * first `[role="dialog"]` ancestor so the forward is confined to the dialog, and swallow
+   * the delta when nothing inside the dialog can consume it instead of chaining to window.
+   */
   function scrollClosestScrollableAncestor(startFrom: HTMLElement, deltaY: number, deltaX: number) {
     let node: HTMLElement | null = startFrom.parentElement
     while (node) {
+      if (node.getAttribute('role') === 'dialog') {
+        return
+      }
       const style = getComputedStyle(node)
       const oy = style.overflowY
       const ox = style.overflowX
