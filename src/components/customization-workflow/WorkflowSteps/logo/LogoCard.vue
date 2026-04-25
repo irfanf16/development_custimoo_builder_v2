@@ -155,7 +155,7 @@
       as="div"
       variant="ghost"
       size="icon"
-      class="absolute top-1 right-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity text-foreground"
+      class="absolute top-1 right-1 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-foreground"
       @click.stop="emit('delete', props.logo)"
     >
       <Trash class="size-4" />
