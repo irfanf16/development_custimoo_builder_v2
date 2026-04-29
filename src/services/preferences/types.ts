@@ -4,4 +4,15 @@ export interface UserPreferences {
   display: DisplayMode
   language: string
 }
-export type ParaglideLocale = 'en' | 'fr' | 'da' | 'es' | 'de' | 'it' | 'nl' | 'no' | 'pl' | 'sv'
+export type ParaglideLocale =
+  | 'en'
+  | 'fr'
+  | 'da'
+  | 'es'
+  | 'de'
+  | 'it'
+  | 'nl'
+  | 'no'
+  | 'pl'
+  | 'sv'
+  | 'pt'

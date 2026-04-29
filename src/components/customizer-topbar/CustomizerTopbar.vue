@@ -164,7 +164,8 @@
     dutch: messages.profile_language_dutch({}, { locale: profileStore.currentLocale }),
     norwegian: messages.profile_language_norwegian({}, { locale: profileStore.currentLocale }),
     polish: messages.profile_language_polish({}, { locale: profileStore.currentLocale }),
-    swedish: messages.profile_language_swedish({}, { locale: profileStore.currentLocale })
+    swedish: messages.profile_language_swedish({}, { locale: profileStore.currentLocale }),
+    portuguese: messages.profile_language_portuguese({}, { locale: profileStore.currentLocale })
   }))
 
   function languageDisplayName(locale: ParaglideLocale): string {
@@ -189,6 +190,8 @@
         return languageMenu.value.polish
       case 'sv':
         return languageMenu.value.swedish
+      case 'pt':
+        return languageMenu.value.portuguese
       default:
         return locale
     }
