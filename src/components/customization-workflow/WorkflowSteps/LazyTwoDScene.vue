@@ -35,19 +35,36 @@
   })
 
   const containerEl = ref<HTMLElement | null>(null)
-  /**
-   * Once the tile has intersected, keep `TwoDScene` mounted. Toggling `v-if` on brief IO false
-   * during compact↔main layout changes caused full remounts and empty previews.
-   */
   const keepSceneMounted = ref(false)
   let io: IntersectionObserver | null = null
+  // Debounce unmount to absorb brief IO-false flickers during compact↔main
+  // layout changes, which would otherwise blank previews mid-reflow.
+  const UNMOUNT_DEBOUNCE_MS = 400
+  let unmountTimer: ReturnType<typeof setTimeout> | null = null
+
+  function clearUnmountTimer() {
+    if (unmountTimer) {
+      clearTimeout(unmountTimer)
+      unmountTimer = null
+    }
+  }
 
   onMounted(() => {
     if (typeof window !== 'undefined' && 'IntersectionObserver' in window && containerEl.value) {
       io = new IntersectionObserver(
         entries => {
           const entry = entries[0]
-          if (entry?.isIntersecting) keepSceneMounted.value = true
+          if (!entry) return
+          if (entry.isIntersecting) {
+            clearUnmountTimer()
+            keepSceneMounted.value = true
+          } else {
+            clearUnmountTimer()
+            unmountTimer = setTimeout(() => {
+              keepSceneMounted.value = false
+              unmountTimer = null
+            }, UNMOUNT_DEBOUNCE_MS)
+          }
         },
         { root: null, rootMargin: '200px', threshold: 0.01 }
       )
@@ -58,6 +75,7 @@
   })
 
   onBeforeUnmount(() => {
+    clearUnmountTimer()
     if (io && containerEl.value) io.unobserve(containerEl.value)
     if (io) io.disconnect()
   })
