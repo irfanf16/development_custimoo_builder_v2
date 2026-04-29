@@ -247,10 +247,7 @@ export function useSvgGroups(
       } else if (Array.isArray(fromPropOrStore)) {
         ordered = [...fromPropOrStore]
       }
-      const ids = new Set(svgGroups.value.map(g => g.id))
-      const filtered = ordered.filter(id => ids.has(id))
-      const rest = svgGroups.value.map(g => g.id).filter(id => !filtered.includes(id))
-      parts.value = [...filtered, ...rest]
+      parts.value = ordered
     } else {
       parts.value = svgGroups.value.map(group => group.id)
     }
