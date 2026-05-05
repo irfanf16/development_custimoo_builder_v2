@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, nextTick, ref } from 'vue'
   import { Button } from '@/components/ui/button'
   import Accordion from '@/components/ui/accordion/Accordion.vue'
   import AccordionItem from '@/components/ui/accordion/AccordionItem.vue'
@@ -9,6 +9,11 @@
   import { useLogos } from './useLogos'
   import { useLogoUpload } from './useLogoUpload'
   import { useLogoAddAnotherUpload } from './useLogoAddAnotherUpload'
+  import { generateAILogo } from '@/services/ai/ai-logo-generation'
+  import { materializeAiLogoResult } from '@/services/ai/ai-logo-result'
+  import { useAILogoMeta } from './useAILogoMeta'
+  import { useAILogoLimit } from './useAILogoLimit'
+  import { useAiLogoGenerationEnabled } from './useAiLogoGenerationEnabled'
   import {
     logos_empty_drag_drop,
     logos_empty_click_to_upload,
@@ -23,25 +28,32 @@
     logos_recent_show_less,
     logos_recent_view_all,
     logos_recent_thumbnail_alt,
-    nav_logo
+    nav_logo,
+    ai_logos_pick_recent
   } from '@/paraglide/messages'
   import { colors_choose_from_locker, colors_separator_or } from '@/paraglide/messages'
   import { useProfileStore } from '@/stores/profile/profile.store'
   import { useAuthStore } from '@/stores/auth/auth.store'
   import { useLockerRoomStore } from '@/stores/locker-room/locker-room.store'
   import { useWorkflowStore } from '@/stores/workflow/workflow.store'
-  import { Trash } from 'lucide-vue-next'
+  import { useHistoryStore } from '@/stores/history/history.store'
+  import { useCustomizationStore } from '@/stores/customization/customization.store'
+  import { mergeLogoPreservePlacement } from './mergeLogoPreservePlacement'
+  import { Trash, Sparkles } from 'lucide-vue-next'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
   import LogoCard from './LogoCard.vue'
+  import AILogoGenerator from './AILogoGenerator.vue'
   const profileStore = useProfileStore()
   const logosStore = useLogosStore()
   const authStore = useAuthStore()
   const lockerRoomStore = useLockerRoomStore()
   const workflowStore = useWorkflowStore()
+  const historyStore = useHistoryStore()
+  const customizationStore = useCustomizationStore()
   const isLoggedIn = computed(() => authStore.isAuthenticated)
 
   // ===== COMPOSABLES =====
-  const { customLogos } = useLogos()
+  const { customLogos, productKey } = useLogos()
   const {
     applyLogoColors,
     shuffleExtractedColorsForActiveLogo,
@@ -68,6 +80,11 @@
         (logosStore?.recentLogos && logosStore.recentLogos.length > 0))
   )
   const baseStorageUrl = computed(() => import.meta.env.VITE_APP_STORAGE_URL || '')
+  const { registerAILogo, getAIPrompt, logoShowsAiUi } = useAILogoMeta()
+  const { syncQuotaAfterGeneration: syncAILogoQuota, hasReachedLimit: hasReachedAiLimit } =
+    useAILogoLimit()
+  const { isAiLogoGenerationEnabled } = useAiLogoGenerationEnabled()
+  const aiGenRef = ref<InstanceType<typeof AILogoGenerator> | null>(null)
 
   // ===== EMITS =====
   const emit = defineEmits<{
@@ -113,6 +130,16 @@
     handleLogoAfterUpload(logo)
   }
 
+  function handleUseRecentAsAIReference(logo: CustomLogo) {
+    if (hasReachedAiLimit.value) return
+    aiGenRef.value?.setReferenceFromRecentLogo?.({
+      customerLogoId: Number(logo.id),
+      url: baseStorageUrl.value + logo.url,
+      remoteUrl: logo.url
+    })
+    void nextTick(() => aiGenRef.value?.focusPromptInput?.())
+  }
+
   function handleLogoClick(index: number) {
     const logo = customLogos.value[index]
     if (!logo) return
@@ -121,6 +148,153 @@
 
   function openLogosColorFromList(logo: CustomLogo, logoIndex: number, swatchIndex: number) {
     workflowStore.openLogoEditorWithLogosColor(String(logo.id), logoIndex, swatchIndex)
+  }
+
+  function handleAILogoApplied(logo: CustomLogo) {
+    setActiveLogo(logo)
+    workflowStore.setLogoEditorLogoId(String(logo.id))
+    emit('go-to-placement')
+  }
+
+  async function handleAILogoRequestApply(payload: {
+    prompt: string
+    blob?: Blob
+    customerLogo?: CustomLogo
+  }) {
+    try {
+      let uploaded: CustomLogo | null = null
+      if (payload.customerLogo) {
+        logosStore.appendLogoFromAiGeneration(payload.customerLogo)
+        uploaded = payload.customerLogo
+      } else if (payload.blob) {
+        uploaded = await materializeAiLogoResult(payload.blob, doUpload)
+      }
+      if (uploaded) {
+        registerAILogo(uploaded.id, payload.prompt, uploaded.url)
+        handleAILogoApplied(uploaded)
+        void logosStore.fetchRecentLogos()
+      }
+    } finally {
+      aiGenRef.value?.resetApplyState?.()
+    }
+  }
+
+  const refiningLogoIds = ref(new Set<number>())
+  const regeneratingLogoIds = ref(new Set<number>())
+
+  function isRefining(id: number): boolean {
+    return refiningLogoIds.value.has(id)
+  }
+
+  function isRegenerating(id: number): boolean {
+    return regeneratingLogoIds.value.has(id)
+  }
+
+  function buildRefinedPrompt(parentLogo: CustomLogo, refinementPrompt: string): string {
+    const refinement = refinementPrompt.trim()
+    const base = getAIPrompt(parentLogo.id) ?? parentLogo.ai_user_prompt?.trim() ?? ''
+    if (!base) return refinement
+    return `${base}\n\nRefinement:\n${refinement}`
+  }
+
+  async function handleAIRefine(parentLogo: CustomLogo, userPrompt: string) {
+    if (hasReachedAiLimit.value) return
+    if (refiningLogoIds.value.has(parentLogo.id)) return
+
+    const refinedPrompt = buildRefinedPrompt(parentLogo, userPrompt)
+    // Optimistically update prompt text on current logo while refine is in progress.
+    registerAILogo(parentLogo.id, refinedPrompt, parentLogo.url)
+    refiningLogoIds.value = new Set(refiningLogoIds.value).add(parentLogo.id)
+    try {
+      const genResult = await generateAILogo({
+        prompt: userPrompt,
+        customerLogoId: parentLogo.id,
+        mode: 'refine'
+      })
+      syncAILogoQuota(genResult.remainingQuota)
+      const uploaded = await materializeAiLogoResult(genResult.logo, doUpload)
+      if (!uploaded) return
+
+      if (!(genResult.logo instanceof Blob)) logosStore.appendLogoFromAiGeneration(uploaded)
+      // Keep latest local refine chain immediately; backend prompt can lag until recents refresh.
+      const promptToPersist = refinedPrompt
+      registerAILogo(uploaded.id, promptToPersist, uploaded.url, parentLogo.id)
+
+      const key = productKey.value
+      const idx = key ? customLogos.value.findIndex(l => l.id === parentLogo.id) : -1
+      if (key && idx >= 0) {
+        const prev = { ...(customLogos.value[idx] as CustomLogo) } as CustomLogo
+        const merged = mergeLogoPreservePlacement(prev, uploaded)
+        await historyStore.execute('logo.ai-replace', {
+          key,
+          index: idx,
+          prevLogo: prev,
+          nextLogo: merged
+        })
+        customizationStore.pushHistoryState('Refine AI logo')
+        setActiveLogo(merged)
+        workflowStore.setActiveLogoId(String(merged.id))
+        workflowStore.setLogoEditorLogoId(String(merged.id))
+        workflowStore.setActiveLogoIndex(idx)
+      } else {
+        handleAILogoApplied(uploaded)
+      }
+      void logosStore.fetchRecentLogos()
+    } catch (err) {
+      console.error('[LogoCustomization] AI refine failed', err)
+    } finally {
+      const next = new Set(refiningLogoIds.value)
+      next.delete(parentLogo.id)
+      refiningLogoIds.value = next
+    }
+  }
+
+  async function handleAIRegenerateLogo(parentLogo: CustomLogo) {
+    if (hasReachedAiLimit.value) return
+    if (regeneratingLogoIds.value.has(parentLogo.id)) return
+
+    const prompt = getAIPrompt(parentLogo.id) ?? 'Regenerate this logo'
+    regeneratingLogoIds.value = new Set(regeneratingLogoIds.value).add(parentLogo.id)
+    try {
+      const genResult = await generateAILogo({
+        prompt,
+        customerLogoId: parentLogo.id,
+        mode: 'shuffle'
+      })
+      syncAILogoQuota(genResult.remainingQuota)
+      const uploaded = await materializeAiLogoResult(genResult.logo, doUpload)
+      if (!uploaded) return
+
+      if (!(genResult.logo instanceof Blob)) logosStore.appendLogoFromAiGeneration(uploaded)
+      registerAILogo(uploaded.id, prompt, uploaded.url)
+
+      const key = productKey.value
+      const idx = key ? customLogos.value.findIndex(l => l.id === parentLogo.id) : -1
+      if (key && idx >= 0) {
+        const prev = { ...(customLogos.value[idx] as CustomLogo) } as CustomLogo
+        const merged = mergeLogoPreservePlacement(prev, uploaded)
+        await historyStore.execute('logo.ai-replace', {
+          key,
+          index: idx,
+          prevLogo: prev,
+          nextLogo: merged
+        })
+        customizationStore.pushHistoryState('Regenerate AI logo')
+        setActiveLogo(merged)
+        workflowStore.setActiveLogoId(String(merged.id))
+        workflowStore.setLogoEditorLogoId(String(merged.id))
+        workflowStore.setActiveLogoIndex(idx)
+      } else {
+        handleAILogoApplied(uploaded)
+      }
+      void logosStore.fetchRecentLogos()
+    } catch (err) {
+      console.error('[LogoCustomization] AI shuffle logo failed', err)
+    } finally {
+      const next = new Set(regeneratingLogoIds.value)
+      next.delete(parentLogo.id)
+      regeneratingLogoIds.value = next
+    }
   }
 
   // Breadcrumbs only
@@ -189,6 +363,20 @@
                 {{ colors_choose_from_locker({}, { locale: profileStore.currentLocale }) }}
               </Button>
             </div>
+
+            <div
+              v-if="isAiLogoGenerationEnabled"
+              class="flex flex-col gap-3 w-full mt-4 pt-4 pb-4 border-t border-border"
+            >
+              <div class="flex items-center justify-center text-xs text-muted-foreground gap-2">
+                <div class="flex-1 h-px bg-border" />
+                <span class="px-3 text-foreground font-medium">{{
+                  colors_separator_or({}, { locale: profileStore.currentLocale })
+                }}</span>
+                <div class="flex-1 h-px bg-border" />
+              </div>
+              <AILogoGenerator ref="aiGenRef" @request-apply="handleAILogoRequestApply" />
+            </div>
           </div>
           <LogoUploadingSkeleton v-if="logosStore.isLoadingUploadLogo && !hasAnyLogo" />
 
@@ -200,12 +388,19 @@
               :logo="logo"
               :index="index"
               :interactive-logo-colors="(logo.logo_colors?.length ?? 0) > 0"
+              :is-ai="logoShowsAiUi(logo)"
+              :show-ai-actions="logoShowsAiUi(logo)"
+              :disable-ai-refine-regenerate="hasReachedAiLimit"
+              :is-refining="isRefining(logo.id)"
+              :is-regenerating="isRegenerating(logo.id)"
               @click="handleLogoClick"
               @apply-colors="applyLogoColors(logo, index)"
               @shuffle-colors="lg => shuffleExtractedColorsForActiveLogo(lg, index)"
               @use-original-and-proceed="useOriginalColorsAndProceed()"
               @delete="removeLogo(logo)"
               @logo-color-click="swatchIdx => openLogosColorFromList(logo, index, swatchIdx)"
+              @refine="handleAIRefine"
+              @regenerate-logo="handleAIRegenerateLogo"
             />
 
             <div v-if="!logosStore.isLoadingUploadLogo" class="flex flex-col gap-3">
@@ -235,6 +430,17 @@
                   {{ colors_choose_from_locker({}, { locale: profileStore.currentLocale }) }}
                 </Button>
               </template>
+
+              <div v-if="isAiLogoGenerationEnabled" class="flex flex-col gap-3 w-full pb-4">
+                <div class="flex items-center justify-center text-xs text-muted-foreground gap-2">
+                  <div class="flex-1 h-px bg-border" />
+                  <span class="px-3 text-foreground font-medium">{{
+                    colors_separator_or({}, { locale: profileStore.currentLocale })
+                  }}</span>
+                  <div class="flex-1 h-px bg-border" />
+                </div>
+                <AILogoGenerator ref="aiGenRef" @request-apply="handleAILogoRequestApply" />
+              </div>
             </div>
             <LogoUploadingSkeleton v-else />
           </div>
@@ -279,7 +485,9 @@
               <button
                 v-for="logo in displayedRecentLogos"
                 :key="logo.id"
-                class="relative group aspect-square rounded-lg border border-border overflow-hidden"
+                class="relative group aspect-square rounded-lg border overflow-hidden"
+                :class="logoShowsAiUi(logo) ? 'border-primary/40' : 'border-border'"
+                :title="logoShowsAiUi(logo) ? 'AI generated logo' : undefined"
                 @click="handleRecentLogoClick(logo)"
               >
                 <img
@@ -291,11 +499,22 @@
                   as="div"
                   variant="default"
                   size="icon"
-                  class="absolute top-1 right-1 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-foreground"
+                  class="absolute top-1 right-1 z-10 h-6 w-6 p-0 opacity-100 md:h-8 md:w-8 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-foreground"
                   @click.stop="logosStore.deleteRecentLogo(logo.id.toString())"
                 >
-                  <Trash class="size-4" />
+                  <Trash class="size-3 md:size-4" />
                 </Button>
+                <button
+                  v-if="isLoggedIn"
+                  type="button"
+                  class="absolute bottom-1 right-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-card/90 text-foreground backdrop-blur-sm shadow-sm opacity-100 md:h-7 md:w-7 md:opacity-0 md:group-hover:opacity-100 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
+                  :disabled="hasReachedAiLimit"
+                  :title="ai_logos_pick_recent({}, { locale: profileStore.currentLocale })"
+                  :aria-label="ai_logos_pick_recent({}, { locale: profileStore.currentLocale })"
+                  @click.stop="handleUseRecentAsAIReference(logo)"
+                >
+                  <Sparkles class="size-3.5 md:size-4" />
+                </button>
               </button>
             </div>
           </div>

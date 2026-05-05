@@ -8,6 +8,7 @@ import { rgbArrayToHex } from './useLogoUtils'
 import { useLogos } from './useLogos'
 import { getSelectedProductPantones, getClosestColor, getColorType } from '@/lib/utils'
 import { useWorkflowStore } from '@/stores/workflow/workflow.store'
+import type { LogoColor } from '@/services/types'
 
 export type BackgroundRemovalMode = 'simple' | 'smart'
 
@@ -181,8 +182,8 @@ export function useLogoActions() {
     customizationStore.shuffleDefaultColors('Shuffled colors')
   }
 
-  /** Shuffle design colors from extracted logo slots; refreshes from `logo` when that logo is active. */
-  function shuffleExtractedColorsForActiveLogo(logo: CustomLogo, listIndex?: number): void {
+  /** When design colors came from this logo, rebuild slots from the logo's current palette. */
+  function refreshAppliedDesignColorsIfLogoIsSource(logo: CustomLogo, listIndex?: number): void {
     const hasAppliedSlots = (customizationStore.customization?.default_colors || []).some(
       (c: { color?: string | null }) => c.color
     )
@@ -192,6 +193,11 @@ export function useLogoActions() {
     if (hasAppliedSlots && idMatches && indexMatches) {
       syncDefaultColorsFromLogoPalette(logo)
     }
+  }
+
+  /** Shuffle design colors from extracted logo slots; refreshes from `logo` when that logo is active. */
+  function shuffleExtractedColorsForActiveLogo(logo: CustomLogo, listIndex?: number): void {
+    refreshAppliedDesignColorsIfLogoIsSource(logo, listIndex)
     customizationStore.shuffleDefaultColors('Shuffle extracted colors')
   }
 
@@ -210,6 +216,16 @@ export function useLogoActions() {
       return
     }
 
+    const nextImage = response.content?.logo
+    if (!nextImage || typeof nextImage !== 'string') {
+      console.error('Recolor response missing logo path')
+      return
+    }
+
+    const rgbPalette = await logosStore.extractLogoColorsFromStoragePath(nextImage)
+    const prevLogoColors = JSON.parse(JSON.stringify(logo.logo_colors ?? [])) as LogoColor[]
+    const nextLogoColors: LogoColor[] = rgbPalette !== null ? rgbPalette : prevLogoColors
+
     const key = productKey.value
     const index = getActiveLogoIndex(logo.id)
     if (key && index !== -1) {
@@ -217,11 +233,22 @@ export function useLogoActions() {
         key,
         index,
         prevImage: logo.url,
-        nextImage: response.content.logo
+        nextImage,
+        prevLogoColors,
+        nextLogoColors
       })
+
+      const merged: CustomLogo = { ...logo, url: nextImage, logo_colors: nextLogoColors }
+      refreshAppliedDesignColorsIfLogoIsSource(merged, index)
+
+      const arr = customizationStore.customization?.custom_logos?.[key]
+      const updated = arr?.[index]
+      if (updated && logosStore.activeLogo?.id === logo.id) {
+        logosStore.setActiveLogo(updated)
+      }
     }
 
-    return response.content?.logo
+    return nextImage
   }
 
   function removeLogo(logo: CustomLogo) {

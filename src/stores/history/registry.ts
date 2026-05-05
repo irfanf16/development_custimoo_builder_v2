@@ -227,7 +227,7 @@ function withLogoPatch(base: CustomLogo, patch: Partial<CustomLogo>): CustomLogo
     placement: patch.placement ?? base.placement,
     name_of_placement: patch.name_of_placement ?? base.name_of_placement,
     url: patch.url ?? base.url,
-    logo_colors: base.logo_colors,
+    logo_colors: patch.logo_colors !== undefined ? patch.logo_colors : base.logo_colors,
     haveControls: base.haveControls,
     is_locked: base.is_locked,
     is_replace_success: base.is_replace_success,
@@ -894,6 +894,31 @@ export const registry: Registry = {
       return `Change logo background to ${mode}`
     }
   },
+  'logo.ai-replace': {
+    apply(ctx: HistoryContext, payload: LogoUpdateUrlPayload) {
+      const customizationStore = ctx.customizationStore
+      const map = customizationStore.customization?.custom_logos
+      if (!map) return
+      const arr = map[payload.key]
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      arr[payload.index] = { ...arr[payload.index], ...payload.nextLogo }
+      customizationStore.saveToLocalStorage()
+      customizationStore.replicateActiveProductLogosToMatchingPlacements()
+    },
+    revert(ctx: HistoryContext, payload: LogoUpdateUrlPayload) {
+      const customizationStore = ctx.customizationStore
+      const map = customizationStore.customization?.custom_logos
+      if (!map) return
+      const arr = map[payload.key]
+      if (!arr || payload.index < 0 || payload.index >= arr.length) return
+      arr[payload.index] = { ...arr[payload.index], ...payload.prevLogo }
+      customizationStore.saveToLocalStorage()
+      customizationStore.replicateActiveProductLogosToMatchingPlacements()
+    },
+    describe() {
+      return `Update AI logo`
+    }
+  },
   'logo.update-placement': {
     apply(ctx: HistoryContext, payload: LogoUpdatePlacementPayload) {
       const arr = getLogoArray(ctx, payload.key)
@@ -996,7 +1021,8 @@ export const registry: Registry = {
       const logoInIndex = arr[payload.index]
       if (!logoInIndex) return
       arr[payload.index] = withLogoPatch(logoInIndex, {
-        url: payload.nextImage
+        url: payload.nextImage,
+        logo_colors: payload.nextLogoColors
       })
       ctx.customizationStore.saveToLocalStorage()
     },
@@ -1006,7 +1032,8 @@ export const registry: Registry = {
       const logoInIndex = arr[payload.index]
       if (!logoInIndex) return
       arr[payload.index] = withLogoPatch(logoInIndex, {
-        url: payload.prevImage
+        url: payload.prevImage,
+        logo_colors: payload.prevLogoColors
       })
       ctx.customizationStore.saveToLocalStorage()
     },

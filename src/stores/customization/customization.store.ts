@@ -865,7 +865,9 @@ export const useCustomizationStore = defineStore('customizationStore', () => {
       actualHeight: _logo.actualHeight,
       scaleX: _logo.scaleX,
       scaleY: _logo.scaleY,
-      pinned: _logo.pinned ?? false
+      pinned: _logo.pinned ?? false,
+      is_ai_generated: _logo.is_ai_generated,
+      ai_user_prompt: _logo.ai_user_prompt
     } as CustomLogo
   }
 

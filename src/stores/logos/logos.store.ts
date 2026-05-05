@@ -10,8 +10,11 @@ import type {
   OutputUploadLogo,
   OutputUpdateAndPostNewLogo,
   UpdateLogoParams,
-  OutputUpdateLogo
+  OutputUpdateLogo,
+  OutputLogoColors
 } from '../../services/logos/types'
+import { withNormalizedAiFlags } from '@/services/logos/normalize-customer-logo-ai'
+import { useAILogoMeta } from '@/components/customization-workflow/WorkflowSteps/logo/useAILogoMeta'
 
 export const useLogosStore = defineStore('logosStore', () => {
   // ===== DEPENDENCIES =====
@@ -28,12 +31,16 @@ export const useLogosStore = defineStore('logosStore', () => {
 
   // Actions
   function setRecentLogos(data: CustomLogo[]) {
-    recentLogos.value = data
+    const normalized = data.map(withNormalizedAiFlags)
+    recentLogos.value = normalized
+    useAILogoMeta().syncMetaFromServerLogos(normalized)
   }
 
   function addRecentLogo(logo: CustomLogo) {
+    const n = withNormalizedAiFlags(logo)
     if (!recentLogos.value) recentLogos.value = []
-    recentLogos.value.unshift(logo)
+    recentLogos.value.unshift(n)
+    useAILogoMeta().syncMetaFromServerLogos([n])
   }
 
   function removeRecentLogo(logoId: number) {
@@ -73,6 +80,15 @@ export const useLogosStore = defineStore('logosStore', () => {
     return response
   }
 
+  /** Same side-effects as a successful `uploadLogo`, without uploading (AI API already persisted the asset). */
+  function appendLogoFromAiGeneration(logo: CustomLogo): void {
+    const n = withNormalizedAiFlags(logo)
+    if (!recentLogos.value) recentLogos.value = []
+    if (!logos.value) logos.value = []
+    recentLogos.value.push(n)
+    logos.value.push(n)
+  }
+
   async function uploadLogo(
     uploadLogoParams: UploadLogoParams
   ): Promise<APIResponse<OutputUploadLogo>> {
@@ -85,10 +101,12 @@ export const useLogosStore = defineStore('logosStore', () => {
       setLoadingUploadLogo(false)
       const created = response.content?.result?.customer_logo
       if (created) {
+        const n = withNormalizedAiFlags(created)
         if (!recentLogos.value) recentLogos.value = []
         if (!logos.value) logos.value = []
-        recentLogos.value.push(created)
-        logos.value.push(created)
+        recentLogos.value.push(n)
+        logos.value.push(n)
+        useAILogoMeta().syncMetaFromServerLogos([n])
       }
     } else {
       setLoadingUploadLogo(false)
@@ -161,10 +179,20 @@ export const useLogosStore = defineStore('logosStore', () => {
     const response = await tryCatchApi(API.logos.editLogo(editLogoParams), {
       operation: 'editLogo'
     })
-    if (response.success) {
+    if (!response.success) {
       setError('Error editing logo')
     }
     return response
+  }
+
+  /** Re-extract palette from an image already on storage (e.g. after floodfill recolor). */
+  async function extractLogoColorsFromStoragePath(storagePath: string): Promise<number[][] | null> {
+    const response = await tryCatchApi<OutputLogoColors>(API.logos.getLogoColors(storagePath), {
+      operation: 'extractLogoColorsFromStoragePath',
+      storagePath
+    })
+    const colors = response.success ? response.content?.result?.logo_colors : null
+    return Array.isArray(colors) ? colors : null
   }
   function resetLogosStore() {
     logos.value = null
@@ -191,10 +219,12 @@ export const useLogosStore = defineStore('logosStore', () => {
     removeRecentLogo,
     // API Functions
     fetchRecentLogos,
+    appendLogoFromAiGeneration,
     uploadLogo,
     deleteRecentLogo,
     updateAndPostNewLogo,
     editLogo,
+    extractLogoColorsFromStoragePath,
     resetLogosStore
   }
 })

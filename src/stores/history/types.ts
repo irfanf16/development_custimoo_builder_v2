@@ -7,6 +7,7 @@ import type { useCustomizationStore } from '@/stores/customization/customization
 import type { useProductsStore } from '@/stores/products/products.store'
 import type { useWorkflowStore } from '@/stores/workflow/workflow.store'
 import type { APCustomizationLogo } from '@/services/products/types'
+import type { LogoColor } from '@/services/types'
 
 export type HistoryActionType =
   | 'color.set-group'
@@ -28,6 +29,7 @@ export type HistoryActionType =
   | 'logo.remove'
   | 'logo.move'
   | 'logo.remove-background'
+  | 'logo.ai-replace'
   | 'logo.update-placement'
   | 'logo.update-size'
   | 'logo.update-rotation'
@@ -285,6 +287,8 @@ export type LogoRecolorPayload = {
   index: number
   prevImage: string
   nextImage: string
+  prevLogoColors: LogoColor[]
+  nextLogoColors: LogoColor[]
 }
 
 export type PatternSetGroupPayload = {

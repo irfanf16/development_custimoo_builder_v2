@@ -24,6 +24,18 @@ export type CustomLogo = LogoPlacementBase & {
   /** When true, logo cannot be moved on canvas (pin control). */
   pinned?: boolean
   is_locked?: boolean | number
+  /** Set when logo row was created by V2 AI pipeline (`customer_logos.is_ai_generated`). */
+  is_ai_generated?: boolean
+  /** Original user prompt from `ai_logo_metas` when recent-logos API includes it. */
+  ai_user_prompt?: string | null
+  /** Optional meta payload returned by AI logo APIs/recent logos. */
+  ai_logo_meta?: {
+    customer_logo_id?: number
+    type?: string | null
+    prompt?: string | null
+    mood?: string | null
+    reference_logo_id?: number | null
+  } | null
 }
 
 /**

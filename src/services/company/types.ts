@@ -112,6 +112,12 @@ export type OutputSettings = {
       state: string | null
       zip_code: string | null
     }
+    /** Prefer reading via `getCompanySettingValue()` - API keys may include HTML noise. */
+    ai_logo_generation_enabled?: boolean
+    ai_logo_generation_daily_quota?: number
+    ai_logo_generation_unlimited_access?: boolean
+    /** Server-provided remaining AI generations for the logged-in customer (first paint before any AI call). */
+    ai_logo_generation_remaining_quota?: number
   }
   ui_branding: UIBranding
 }

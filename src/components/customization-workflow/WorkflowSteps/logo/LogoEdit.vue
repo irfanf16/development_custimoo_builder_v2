@@ -44,6 +44,14 @@
   import { useLogoUpload } from './useLogoUpload'
   import { useLogoAddAnotherUpload } from './useLogoAddAnotherUpload'
   import LogoUploadingSkeleton from './LogoUploadingSkeleton.vue'
+  import AILogoGenerator from './AILogoGenerator.vue'
+  import { generateAILogo } from '@/services/ai/ai-logo-generation'
+  import { materializeAiLogoResult } from '@/services/ai/ai-logo-result'
+  import { useAILogoMeta } from './useAILogoMeta'
+  import { useAILogoLimit } from './useAILogoLimit'
+  import { useAiLogoGenerationEnabled } from './useAiLogoGenerationEnabled'
+  import { useHistoryStore } from '@/stores/history/history.store'
+  import { mergeLogoPreservePlacement } from './mergeLogoPreservePlacement'
   import {
     logos_logos_color,
     logos_add_logo,
@@ -85,6 +93,7 @@
 
   // ===== STORES =====
   const workflowStore = useWorkflowStore()
+  const historyStore = useHistoryStore()
   const logosStore = useLogosStore()
   const productsStore = useProductsStore()
   const profileStore = useProfileStore()
@@ -96,6 +105,7 @@
   const authStore = useAuthStore()
   const isLoggedIn = computed(() => authStore.isAuthenticated)
   const { fileInputRef, onClickUpload, doUpload } = useLogoUpload()
+  void fileInputRef
   // ===== COMPOSABLES =====
   const { productKey, customLogos, getLogoById, getActiveLogoIndex } = useLogos()
   const {
@@ -294,7 +304,7 @@
   )
 
   const accordionOpen = ref<string[]>([])
-  /** Once per `logoId`, expand default control sections (upload → placement → edit). */
+  /** Once per `logoId`, expand default control sections (upload ? placement ? edit). */
   const accordionDefaultsSeededForLogoId = ref<string | null>(null)
   const selectedLogoColorIndex = ref<number | null>(null)
 
@@ -764,6 +774,159 @@
   }
 
   const { handleFileChange } = useLogoAddAnotherUpload(doUpload, handleLogoAfterUpload)
+
+  const { registerAILogo, getAIPrompt, logoShowsAiUi } = useAILogoMeta()
+  const { syncQuotaAfterGeneration: syncAILogoQuota, hasReachedLimit: hasReachedAiLimit } =
+    useAILogoLimit()
+  const { isAiLogoGenerationEnabled } = useAiLogoGenerationEnabled()
+  const aiGenRef = ref<InstanceType<typeof AILogoGenerator> | null>(null)
+
+  function handleAILogoAppliedEditor(logo: CustomLogo) {
+    setActiveLogo(logo)
+    workflowStore.setLogoEditorLogoId(String(logo.id))
+    workflowStore.setLogosSubStep('placement')
+  }
+
+  async function handleAILogoRequestApply(payload: {
+    prompt: string
+    blob?: Blob
+    customerLogo?: CustomLogo
+  }) {
+    try {
+      let uploaded: CustomLogo | null = null
+      if (payload.customerLogo) {
+        logosStore.appendLogoFromAiGeneration(payload.customerLogo)
+        uploaded = payload.customerLogo
+      } else if (payload.blob) {
+        uploaded = await materializeAiLogoResult(payload.blob, doUpload)
+      }
+      if (uploaded) {
+        registerAILogo(uploaded.id, payload.prompt, uploaded.url)
+        handleAILogoAppliedEditor(uploaded)
+        void logosStore.fetchRecentLogos()
+      }
+    } finally {
+      aiGenRef.value?.resetApplyState?.()
+    }
+  }
+
+  const refiningLogoIdsEditor = ref(new Set<number>())
+  const regeneratingLogoIdsEditor = ref(new Set<number>())
+
+  function isRefiningLogo(id: number): boolean {
+    return refiningLogoIdsEditor.value.has(id)
+  }
+
+  function isRegeneratingLogo(id: number): boolean {
+    return regeneratingLogoIdsEditor.value.has(id)
+  }
+
+  function buildRefinedPrompt(parentLogo: CustomLogo, refinementPrompt: string): string {
+    const refinement = refinementPrompt.trim()
+    const base = getAIPrompt(parentLogo.id) ?? parentLogo.ai_user_prompt?.trim() ?? ''
+    if (!base) return refinement
+    return `${base}\n\nRefinement:\n${refinement}`
+  }
+
+  async function handleAIRefineEditor(parentLogo: CustomLogo, userPrompt: string) {
+    if (hasReachedAiLimit.value) return
+    if (refiningLogoIdsEditor.value.has(parentLogo.id)) return
+
+    const refinedPrompt = buildRefinedPrompt(parentLogo, userPrompt)
+    // Optimistically update prompt text on current logo while refine is in progress.
+    registerAILogo(parentLogo.id, refinedPrompt, parentLogo.url)
+    refiningLogoIdsEditor.value = new Set(refiningLogoIdsEditor.value).add(parentLogo.id)
+    try {
+      const genResult = await generateAILogo({
+        prompt: userPrompt,
+        customerLogoId: parentLogo.id,
+        mode: 'refine'
+      })
+      syncAILogoQuota(genResult.remainingQuota)
+      const uploaded = await materializeAiLogoResult(genResult.logo, doUpload)
+      if (!uploaded) return
+
+      if (!(genResult.logo instanceof Blob)) logosStore.appendLogoFromAiGeneration(uploaded)
+      // Keep latest local refine chain immediately; backend prompt can lag until recents refresh.
+      const promptToPersist = refinedPrompt
+      registerAILogo(uploaded.id, promptToPersist, uploaded.url, parentLogo.id)
+
+      const key = productKey.value
+      const idx = key ? getActiveLogoIndex(parentLogo.id) : -1
+      if (key && idx >= 0) {
+        const prev = { ...(customLogos.value[idx] as CustomLogo) } as CustomLogo
+        const merged = mergeLogoPreservePlacement(prev, uploaded)
+        await historyStore.execute('logo.ai-replace', {
+          key,
+          index: idx,
+          prevLogo: prev,
+          nextLogo: merged
+        })
+        customizationStore.pushHistoryState('Refine AI logo')
+        setActiveLogo(merged)
+        workflowStore.setActiveLogoId(String(merged.id))
+        workflowStore.setLogoEditorLogoId(String(merged.id))
+        workflowStore.setActiveLogoIndex(idx)
+      } else {
+        handleAILogoAppliedEditor(uploaded)
+      }
+      void logosStore.fetchRecentLogos()
+    } catch (err) {
+      console.error('[LogoEdit] AI refine failed', err)
+    } finally {
+      const next = new Set(refiningLogoIdsEditor.value)
+      next.delete(parentLogo.id)
+      refiningLogoIdsEditor.value = next
+    }
+  }
+
+  async function handleAIRegenerateLogoEditor(parentLogo: CustomLogo) {
+    if (hasReachedAiLimit.value) return
+    if (regeneratingLogoIdsEditor.value.has(parentLogo.id)) return
+
+    const prompt = getAIPrompt(parentLogo.id) ?? 'Regenerate this logo'
+    regeneratingLogoIdsEditor.value = new Set(regeneratingLogoIdsEditor.value).add(parentLogo.id)
+    try {
+      const genResult = await generateAILogo({
+        prompt,
+        customerLogoId: parentLogo.id,
+        mode: 'shuffle'
+      })
+      syncAILogoQuota(genResult.remainingQuota)
+      const uploaded = await materializeAiLogoResult(genResult.logo, doUpload)
+      if (!uploaded) return
+
+      if (!(genResult.logo instanceof Blob)) logosStore.appendLogoFromAiGeneration(uploaded)
+      registerAILogo(uploaded.id, prompt, uploaded.url)
+
+      const key = productKey.value
+      const idx = key ? getActiveLogoIndex(parentLogo.id) : -1
+      if (key && idx >= 0) {
+        const prev = { ...(customLogos.value[idx] as CustomLogo) } as CustomLogo
+        const merged = mergeLogoPreservePlacement(prev, uploaded)
+        await historyStore.execute('logo.ai-replace', {
+          key,
+          index: idx,
+          prevLogo: prev,
+          nextLogo: merged
+        })
+        customizationStore.pushHistoryState('Regenerate AI logo')
+        setActiveLogo(merged)
+        workflowStore.setActiveLogoId(String(merged.id))
+        workflowStore.setLogoEditorLogoId(String(merged.id))
+        workflowStore.setActiveLogoIndex(idx)
+      } else {
+        handleAILogoAppliedEditor(uploaded)
+      }
+      void logosStore.fetchRecentLogos()
+    } catch (err) {
+      console.error('[LogoEdit] AI regenerate failed', err)
+    } finally {
+      const next = new Set(regeneratingLogoIdsEditor.value)
+      next.delete(parentLogo.id)
+      regeneratingLogoIdsEditor.value = next
+    }
+  }
 </script>
 
 <template>
@@ -775,11 +938,18 @@
         :index="props.logoIndex ?? -1"
         :interactive-logo-colors="(customLogo.logo_colors?.length ?? 0) > 0"
         :highlighted-logo-color-index="selectedLogoColorIndex"
+        :is-ai="logoShowsAiUi(customLogo)"
+        :show-ai-actions="logoShowsAiUi(customLogo)"
+        :disable-ai-refine-regenerate="hasReachedAiLimit"
+        :is-refining="isRefiningLogo(customLogo.id)"
+        :is-regenerating="isRegeneratingLogo(customLogo.id)"
         @apply-colors="handleApplyColours"
         @delete="handleDeleteLogo"
         @logo-color-click="handleOpenLogosColorFromCard"
         @shuffle-colors="handleShuffleExtractedColors"
         @use-original-and-proceed="useOriginalColorsAndProceed"
+        @refine="handleAIRefineEditor"
+        @regenerate-logo="handleAIRegenerateLogoEditor"
       />
     </div>
 
@@ -934,7 +1104,7 @@
               </SelectContent>
             </Select>
           </div>
-          <!-- Side Selector — hidden for 3D products (no front/back sides) -->
+          <!-- Side Selector � hidden for 3D products (no front/back sides) -->
           <div
             v-if="!productsStore.activeProductDetails?.is_3d_product"
             class="space-y-1 text-left"
@@ -1189,6 +1359,16 @@
           {{ colors_choose_from_locker({}, { locale: profileStore.currentLocale }) }}
         </Button>
       </template>
+      <div v-if="isAiLogoGenerationEnabled" class="flex flex-col gap-3 w-full">
+        <div class="flex items-center justify-center text-xs text-muted-foreground gap-2">
+          <div class="flex-1 h-px bg-border" />
+          <span class="px-3 text-foreground font-medium">{{
+            colors_separator_or({}, { locale: profileStore.currentLocale })
+          }}</span>
+          <div class="flex-1 h-px bg-border" />
+        </div>
+        <AILogoGenerator ref="aiGenRef" @request-apply="handleAILogoRequestApply" />
+      </div>
     </div>
     <LogoUploadingSkeleton v-else class="mx-4 md:mx-6" />
   </div>
