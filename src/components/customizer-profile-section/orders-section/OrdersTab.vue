@@ -174,130 +174,130 @@
         v-if="!store.activeOrder"
         class="flex items-center justify-between gap-2 border-b px-4 pb-2"
       >
-      <div class="relative w-full">
-        <Input
-          v-model="store.ordersParams.search"
-          :placeholder="t.searchOrders"
-          class="h-8 w-full pl-8 pr-8 bg-muted"
-          data-orders-search-input="true"
-          @focus="onSearchFocus"
-          @blur="onSearchBlur"
-        />
-        <Search class="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-foreground" />
-        <button
-          v-show="store.ordersParams.search"
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-foreground"
-          @click="store.clearSearch()"
-        >
-          <X class="size-4" />
-        </button>
+        <div class="relative w-full">
+          <Input
+            v-model="store.ordersParams.search"
+            :placeholder="t.searchOrders"
+            class="h-8 w-full pl-8 pr-8 bg-muted"
+            data-orders-search-input="true"
+            @focus="onSearchFocus"
+            @blur="onSearchBlur"
+          />
+          <Search class="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-foreground" />
+          <button
+            v-show="store.ordersParams.search"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-foreground"
+            @click="store.clearSearch()"
+          >
+            <X class="size-4" />
+          </button>
         </div>
-      <div class="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
+        <div class="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                size="sm"
+                variant="outline"
+                class="px-2 h-8 shadow-none bg-muted hover:bg-muted/80"
+                :class="
+                  store.ordersParams.filter ? 'bg-primary text-foreground border-primary' : 'border'
+                "
+              >
+                <Filter class="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="end"
+              :position-strategy="'absolute'"
+              :collision-padding="32"
+              class="rounded-lg shadow-md border p-0 mt-1 h-auto max-h-80 overflow-auto"
+            >
+              <!-- Header -->
+              <div class="px-3 py-2.5 font-semibold text-sm">{{ t.filter }}</div>
+
+              <!-- Clear Filter -->
+              <DropdownMenuItem
+                class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
+                @click="store.clearFilter()"
+              >
+                <span class="w-4"></span>
+                {{ t.clearFilter }}
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator class="mx-0 my-0 bg-border" />
+
+              <!-- Status Filters -->
+              <DropdownMenuItem
+                v-for="status in orderStatuses"
+                :key="status.value"
+                class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
+                :class="
+                  status.value === store.ordersParams.filter
+                    ? 'bg-transparent text-foreground'
+                    : 'hover:bg-transparent'
+                "
+                @click="
+                  () => {
+                    store.ordersParams.filter = status.value
+                    store.filterOrders()
+                  }
+                "
+              >
+                <!-- Tick on left, space reserved -->
+                <Check
+                  v-if="status.value === store.ordersParams.filter"
+                  class="size-4 text-foreground"
+                />
+                <span v-else class="w-4"></span>
+                {{ status.text }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            v-if="store.ordersParams.filter"
+            size="sm"
+            variant="ghost"
+            class="h-8 px-2 text-primary"
+            @click="store.clearFilter()"
+          >
+            {{ t.clearFilterButton }}
+          </Button>
+          <!-- View Toggle -->
+          <div class="flex border rounded-[8px] overflow-hidden">
+            <!-- List Button -->
             <Button
               size="sm"
-              variant="outline"
-              class="px-2 h-8 shadow-none bg-muted hover:bg-muted/80"
-              :class="
-                store.ordersParams.filter ? 'bg-primary text-foreground border-primary' : 'border'
-              "
+              variant="ghost"
+              class="flex-1 rounded-none px-2 h-8"
+              :class="[
+                store.ordersView === 'list'
+                  ? 'bg-primary text-primary-foreground rounded-l-[8px]'
+                  : 'bg-muted text-foreground'
+              ]"
+              @click="store.setView('list')"
             >
-              <Filter class="size-4" />
+              <i-flex-line-list-view class="size-5" />
             </Button>
-          </DropdownMenuTrigger>
 
-          <DropdownMenuContent
-            align="end"
-            :position-strategy="'absolute'"
-            :collision-padding="32"
-            class="rounded-lg shadow-md border p-0 mt-1 h-auto max-h-80 overflow-auto"
-          >
-            <!-- Header -->
-            <div class="px-3 py-2.5 font-semibold text-sm">{{ t.filter }}</div>
-
-            <!-- Clear Filter -->
-            <DropdownMenuItem
-              class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
-              @click="store.clearFilter()"
+            <!-- Expanded Button -->
+            <Button
+              size="sm"
+              variant="ghost"
+              class="flex-1 rounded-none border-l px-2 h-8"
+              :class="[
+                store.ordersView === 'expanded-list'
+                  ? 'bg-primary text-primary-foreground rounded-r-[8px]'
+                  : 'bg-muted text-foreground'
+              ]"
+              @click="store.setView('expanded-list')"
             >
-              <span class="w-4"></span>
-              {{ t.clearFilter }}
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator class="mx-0 my-0 bg-border" />
-
-            <!-- Status Filters -->
-            <DropdownMenuItem
-              v-for="status in orderStatuses"
-              :key="status.value"
-              class="rounded-none px-3 py-2.5 text-sm justify-start gap-2"
-              :class="
-                status.value === store.ordersParams.filter
-                  ? 'bg-transparent text-foreground'
-                  : 'hover:bg-transparent'
-              "
-              @click="
-                () => {
-                  store.ordersParams.filter = status.value
-                  store.filterOrders()
-                }
-              "
-            >
-              <!-- Tick on left, space reserved -->
-              <Check
-                v-if="status.value === store.ordersParams.filter"
-                class="size-4 text-foreground"
-              />
-              <span v-else class="w-4"></span>
-              {{ status.text }}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button
-          v-if="store.ordersParams.filter"
-          size="sm"
-          variant="ghost"
-          class="h-8 px-2 text-primary"
-          @click="store.clearFilter()"
-        >
-          {{ t.clearFilterButton }}
-        </Button>
-        <!-- View Toggle -->
-        <div class="flex border rounded-[8px] overflow-hidden">
-          <!-- List Button -->
-          <Button
-            size="sm"
-            variant="ghost"
-            class="flex-1 rounded-none px-2 h-8"
-            :class="[
-              store.ordersView === 'list'
-                ? 'bg-primary text-primary-foreground rounded-l-[8px]'
-                : 'bg-muted text-foreground'
-            ]"
-            @click="store.setView('list')"
-          >
-            <i-flex-line-list-view class="size-5" />
-          </Button>
-
-          <!-- Expanded Button -->
-          <Button
-            size="sm"
-            variant="ghost"
-            class="flex-1 rounded-none border-l px-2 h-8"
-            :class="[
-              store.ordersView === 'expanded-list'
-                ? 'bg-primary text-primary-foreground rounded-r-[8px]'
-                : 'bg-muted text-foreground'
-            ]"
-            @click="store.setView('expanded-list')"
-          >
-            <i-flex-line-grid-view class="size-5" />
-          </Button>
+              <i-flex-line-grid-view class="size-5" />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
     </div>
     <!-- Orders List -->
     <ScrollArea
@@ -305,41 +305,37 @@
       :style="ordersScrollAreaStyle"
       class="min-h-0 w-full min-w-0"
     >
-        <InfiniteScroll :class="'w-full h-full relative'" @load-more="loadMore">
-          <div v-if="store.orders.length" class="absolute inset-0">
-            <OrdersListItem
-              v-for="order in store.orders"
-              :key="order.id"
-              :order="order"
-              :expanded="store.ordersView === 'expanded-list'"
-              @cancel="store.cancelOrder"
-              @pdf="() => {}"
-              @details="() => showOrderDetails(order)"
-              @reorder-success="emit('reorder-success')"
-            />
-          </div>
-          <div v-else-if="!store.isLoadingOrders" class="flex justify-center py-10 text-foreground">
-            {{ t.noOrdersFound }}
-          </div>
+      <InfiniteScroll :class="'w-full relative'" @load-more="loadMore">
+        <div v-if="store.orders.length">
+          <OrdersListItem
+            v-for="order in store.orders"
+            :key="order.id"
+            :order="order"
+            :expanded="store.ordersView === 'expanded-list'"
+            @cancel="store.cancelOrder"
+            @pdf="() => {}"
+            @details="() => showOrderDetails(order)"
+            @reorder-success="emit('reorder-success')"
+          />
+        </div>
+        <div v-else-if="!store.isLoadingOrders" class="flex justify-center py-10 text-foreground">
+          {{ t.noOrdersFound }}
+        </div>
 
-          <div v-if="store.isLoadingOrders" class="flex justify-center py-6">
-            <Spinner class="text-primary size-6" />
-          </div>
-          <!-- Smooth bottom loader when fetching more -->
-          <div
-            v-if="store.isLoadingMore && store.orders.length"
-            class="flex justify-center py-4 text-forground transition-all duration-300"
-          >
-            <Spinner class="text-primary size-4" />
-            <span class="ml-2 text-sm">{{ t.loadingMoreOrders }}</span>
-          </div>
-        </InfiniteScroll>
+        <div v-if="store.isLoadingOrders" class="flex justify-center py-6">
+          <Spinner class="text-primary size-6" />
+        </div>
+        <!-- Smooth bottom loader when fetching more -->
+        <div
+          v-if="store.isLoadingMore && store.orders.length"
+          class="flex justify-center py-4 text-forground transition-all duration-300"
+        >
+          <Spinner class="text-primary size-4" />
+          <span class="ml-2 text-sm">{{ t.loadingMoreOrders }}</span>
+        </div>
+      </InfiniteScroll>
     </ScrollArea>
-    <ScrollArea
-      v-else
-      :style="ordersScrollAreaStyle"
-      class="min-h-0 w-full min-w-0"
-    >
+    <ScrollArea v-else :style="ordersScrollAreaStyle" class="min-h-0 w-full min-w-0">
       <OrderDetailsView
         v-if="store.activeOrderView === 'details'"
         :order="store.activeOrder"
