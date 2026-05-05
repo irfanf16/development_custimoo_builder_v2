@@ -1104,7 +1104,7 @@
               </SelectContent>
             </Select>
           </div>
-          <!-- Side Selector — hidden for 3D products (no front/back sides) -->
+          <!-- Side Selector ? hidden for 3D products (no front/back sides) -->
           <div
             v-if="!productsStore.activeProductDetails?.is_3d_product"
             class="space-y-1 text-left"

@@ -202,7 +202,7 @@
     :class="props.isAi ? 'border-primary/40' : ''"
     @click="emit('click', props.index)"
   >
-    <!-- Top: Team Logo (+ AI + shuffle) left, delete right — same as reference card -->
+    <!-- Top: Team Logo (+ AI + shuffle) left, delete right ? same as reference card -->
     <div class="flex w-full min-w-0 items-start justify-between gap-2">
       <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
         <Badge
