@@ -281,7 +281,7 @@
   "texts_side_back": "Rückseite",
   "texts_color_custom": "Benutzerdefiniert",
   "texts_placement_generic_label": "Platzierung {index}",
-  "texts_fixed_text_label": "Fester Text",
+  "texts_fixed_text_label": "Zusätzlicher Text",
   "toolbar_rotate_ccw": "Gegen den Uhrzeigersinn drehen",
   "toolbar_rotate_cw": "Im Uhrzeigersinn drehen",
   "toolbar_zoom_in": "Vergrößern",

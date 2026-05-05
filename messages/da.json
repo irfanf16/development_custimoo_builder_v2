@@ -305,7 +305,7 @@
   "texts_side_back": "Bagside",
   "texts_color_custom": "Tilpasset",
   "texts_placement_generic_label": "Placering {index}",
-  "texts_fixed_text_label": "Fast tekst",
+  "texts_fixed_text_label": "Yderligere tekst",
   "texts_pin_text_button": "Fastgør tekst",
   "texts_unpin_text_button": "Løs tekst",
   "toolbar_rotate_ccw": "Rotér mod uret",

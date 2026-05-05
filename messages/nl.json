@@ -281,7 +281,7 @@
   "texts_side_back": "Achterkant",
   "texts_color_custom": "Aangepast",
   "texts_placement_generic_label": "Plaatsing {index}",
-  "texts_fixed_text_label": "Vaste tekst",
+  "texts_fixed_text_label": "Aanvullende tekst",
   "toolbar_rotate_ccw": "Linksom draaien",
   "toolbar_rotate_cw": "Rechtsom draaien",
   "toolbar_zoom_in": "Inzoomen",

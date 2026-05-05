@@ -308,6 +308,8 @@
   "texts_placement_generic_label": "Emplacement {index}",
   "texts_fixed_text_label": "Texte fixe",
   "toolbar_rotate_ccw": "Rotation anti-horaire",
+  "texts_pin_text_button": "Épingler le texte",
+  "texts_unpin_text_button": "Désépingler le texte",
   "toolbar_rotate_cw": "Rotation horaire",
   "toolbar_zoom_in": "Zoom avant",
   "toolbar_zoom_out": "Zoom arrière",
