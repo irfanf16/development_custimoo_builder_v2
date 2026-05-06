@@ -1794,17 +1794,18 @@
         ) as 'front' | 'back'
         const logoIndex = (target as unknown as { logo_index?: number }).logo_index ?? 0
         const sourceLogo = customLogos.value.get(logoIndex)
+        const { widthRatio, heightRatio } = calculateScaleRatios2D()
         sceneStore.addOtherSideLogo({
           logo_index: (target as unknown as { logo_index?: number }).logo_index ?? 0,
           url: sourceLogo?.url ? sourceLogo?.url + '?nocache=11' : '',
           side: destSide,
-          left: addLeft,
-          top: addTop,
+          left: addLeft / widthRatio,
+          top: addTop / heightRatio,
           flipX: isActualTop,
           flipY: isActualTop,
           rotation: -(target.angle ?? 0),
-          scaleX: target.scaleX ?? 1,
-          scaleY: target.scaleY ?? 1
+          scaleX: (target.scaleX ?? 1) / widthRatio,
+          scaleY: (target.scaleY ?? 1) / heightRatio
         })
       } else {
         // remove mirrored logo if it falls outside valid region
@@ -1954,15 +1955,16 @@
           addLeft = modelSpaceRight + outside
           addTop = target.top ?? 0
         }
+        const { widthRatio, heightRatio } = calculateScaleRatios2D()
         sceneStore.addOtherSideText({
           customTextIndex,
           itemIndex,
           side: destSide,
-          left: addLeft,
-          top: addTop,
+          left: addLeft / widthRatio,
+          top: addTop / heightRatio,
           rotation: -(target.angle ?? 0),
-          scaleX: target.scaleX ?? 1,
-          scaleY: target.scaleY ?? 1
+          scaleX: (target.scaleX ?? 1) / widthRatio,
+          scaleY: (target.scaleY ?? 1) / heightRatio
         })
       } else {
         sceneStore.removeOtherSideText(destSide, customTextIndex, itemIndex)
@@ -2438,21 +2440,28 @@
     const entries = sceneStore.getOtherSideLogos(props.side as 'front' | 'back')
     const seen = new Set<number>()
 
+    const { widthRatio, heightRatio } = calculateScaleRatios2D()
+
     for (const entry of entries) {
       const logoIndex = entry.logo_index ?? 0
       seen.add(logoIndex)
+      const left = entry.left * widthRatio
+      const top = entry.top * heightRatio
+      const scaleX = (entry.scaleX ?? 1) * widthRatio
+      const scaleY = (entry.scaleY ?? 1) * heightRatio
       const existing = otherSideLogoObjects.value.get(logoIndex)
       if (existing) {
         existing.set({
-          left: entry.left,
-          top: entry.top,
+          left,
+          top,
           angle: entry.rotation ?? 0,
           flipX: entry.flipX ?? false,
           flipY: entry.flipY ?? false,
-          scaleX: entry.scaleX ?? existing.scaleX,
-          scaleY: entry.scaleY ?? existing.scaleY
+          scaleX,
+          scaleY
         })
         existing.setCoords()
+        applyClipPath(existing as FabricImage)
         continue
       }
 
@@ -2462,13 +2471,13 @@
         crossOrigin: 'Anonymous'
       })) as FabricImage
       img.set({
-        left: entry.left,
-        top: entry.top,
+        left,
+        top,
         angle: entry.rotation ?? 0,
         flipX: entry.flipX ?? false,
         flipY: entry.flipY ?? false,
-        scaleX: entry.scaleX ?? img.scaleX,
-        scaleY: entry.scaleY ?? img.scaleY,
+        scaleX,
+        scaleY,
         globalCompositeOperation: 'source-atop',
         originX: 'center',
         originY: 'center',
@@ -2504,6 +2513,7 @@
     const allTexts: OutputProductText[] = Array.isArray(raw) ? raw : []
     const seen = new Set<string>()
     const heightScale = heightScaleForText.value
+    const { widthRatio, heightRatio } = calculateScaleRatios2D()
 
     for (const stored of entries) {
       const key = getTextObjectKey(stored.customTextIndex, stored.itemIndex)
@@ -2520,13 +2530,16 @@
           rawFamily,
           productsFontsStore.productsFonts as Record<string, unknown>
         ) ?? rawFamily
-      console.log('fontFamily', fontFamily)
+      const left = stored.left * widthRatio
+      const top = stored.top * heightRatio
+      const scaleX = stored.scaleX ?? 1
+      const scaleY = stored.scaleY ?? 1
       const textObj = new FabricText(entry.value, {
-        left: stored.left,
-        top: stored.top,
+        left,
+        top,
         angle: stored.rotation ?? 0,
-        scaleX: stored.scaleX ?? 1,
-        scaleY: stored.scaleY ?? 1,
+        scaleX,
+        scaleY,
         originX: 'center',
         originY: 'center',
         fontFamily,
@@ -2549,13 +2562,14 @@
           fill: item.color || '#000000',
           stroke: item.outline_enabled ? item.outline_color : undefined,
           strokeWidth: item.outline_enabled ? (item.outline_width ?? 0) : 0,
-          left: stored.left,
-          top: stored.top,
+          left,
+          top,
           angle: stored.rotation ?? 0,
-          scaleX: stored.scaleX ?? existing.scaleX,
-          scaleY: stored.scaleY ?? existing.scaleY
+          scaleX,
+          scaleY
         })
         existing.setCoords()
+        applyClipPath(existing as FabricObject)
         continue
       }
 
