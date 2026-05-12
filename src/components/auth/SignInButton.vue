@@ -43,10 +43,11 @@
 </script>
 
 <template>
-  <div class="flex items-center">
+  <div data-testid="auth-sign-in-button-root" class="flex items-center">
     <!-- Sign In Button (when not authenticated) -->
     <template v-if="!isLoggedIn">
       <Button
+        data-testid="auth-button-sign-in"
         :variant="props.variant"
         :size="props.compact ? 'icon' : props.size"
         :class="props.class"
@@ -60,6 +61,7 @@
     <!-- User Menu (when authenticated) -->
     <div v-else class="relative">
       <Button
+        data-testid="auth-button-profile"
         :variant="props.variant"
         :size="props.compact ? 'icon' : props.size"
         :class="['flex items-center space-x-2 px-3 py-2', props.class]"

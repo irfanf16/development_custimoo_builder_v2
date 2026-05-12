@@ -148,6 +148,7 @@
 <template>
   <TooltipProvider>
     <div
+      data-testid="canvas-toolbar-right"
       class="flex w-12 shrink-0 flex-col gap-1 rounded-full bg-background/20 p-1 outline outline-border backdrop-blur-sm"
     >
       <template v-for="t in tools" :key="t.id">
@@ -159,6 +160,7 @@
             <Button
               variant="default"
               size="icon"
+              :data-testid="`canvas-button-${t.id}`"
               class="rounded-full size-10 border-0 bg-card p-0 shadow-none outline outline-border"
               :aria-label="t.label"
               :disabled="

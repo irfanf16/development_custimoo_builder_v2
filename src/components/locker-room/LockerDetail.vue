@@ -46,7 +46,7 @@
   <!-- Keep tab panels in normal flow so parent ScrollArea can measure content height and
        adjust scrollbar thumb size correctly. -->
   <Transition name="slide-horizontal" mode="out-in">
-    <div v-if="activeTab === 'products'" key="products" class="w-full">
+    <div v-if="activeTab === 'products'" data-testid="locker-room-locker-detail-products" key="products" class="w-full">
       <LockerProductsListing
         ref="lockerProductsRef"
         :products="locker.product"

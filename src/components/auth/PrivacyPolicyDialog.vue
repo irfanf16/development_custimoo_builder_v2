@@ -82,7 +82,11 @@
 
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent variant="large" class="flex flex-col overflow-hidden">
+    <DialogContent
+      data-testid="auth-dialog-privacy-policy"
+      variant="large"
+      class="flex flex-col overflow-hidden"
+    >
       <DialogHeader class="shrink-0">
         <DialogTitle class="text-xl font-bold font-brand text-primary">
           {{ privacy_policy_page_title({}, { locale }) }}
@@ -99,7 +103,12 @@
             v-html="privacy_policy_intro({}, { locale })"
           />
 
-          <div v-for="(section, index) in sections" :key="index" class="space-y-2">
+          <div
+            v-for="(section, index) in sections"
+            :key="index"
+            :data-testid="`auth-privacy-section-${index}`"
+            class="space-y-2"
+          >
             <h2 class="text-base font-semibold font-brand text-primary">
               {{ section.title }}
             </h2>

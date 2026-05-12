@@ -83,7 +83,7 @@
 </script>
 
 <template>
-  <div ref="widgetRootContainer" :class="['widget-theme w-full min-h-full']">
+  <div data-testid="customizer-widget-root" ref="widgetRootContainer" :class="['widget-theme w-full min-h-full']">
     <!-- Widget content -->
     <LayoutWrapper class="bg-accent text-foreground flex-1 flex flex-col">
       <router-view class="flex-1 flex flex-col" />

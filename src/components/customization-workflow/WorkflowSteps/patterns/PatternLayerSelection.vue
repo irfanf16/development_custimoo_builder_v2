@@ -42,7 +42,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
+  <div data-testid="workflow-patterns-layer-selection" class="flex flex-col gap-6">
     <!-- Header Section -->
     <div class="px-4 md:px-6">
       <p class="text-base text-muted-foreground">Apply and customise patterns.</p>
@@ -53,6 +53,7 @@
       <button
         v-for="svgGroup in effectiveSvgGroups"
         :key="svgGroup.id"
+        :data-testid="`workflow-patterns-layer-item-${svgGroup.id}`"
         class="h-14 px-4 md:px-6 rounded-md justify-between flex items-center hover:bg-muted/50 transition-colors"
         @click="() => handleSelectLayer(svgGroup.id)"
       >

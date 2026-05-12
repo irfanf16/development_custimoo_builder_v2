@@ -2818,10 +2818,12 @@
 
 <template>
   <div
+    data-testid="scene-2d-root"
     class="relative inline-flex h-auto w-auto min-w-0 max-h-full max-w-full items-center justify-center overflow-hidden"
   >
     <canvas
       ref="canvasEl"
+      data-testid="scene-2d-canvas"
       class="custimoo-two-canvas box-border aspect-square max-w-full h-auto w-auto"
       :class="canvasClass"
     />

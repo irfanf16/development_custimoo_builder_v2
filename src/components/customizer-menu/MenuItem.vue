@@ -5,6 +5,7 @@
   const props = defineProps<{
     isActive?: boolean
     text?: string
+    step?: string
   }>()
 
   const emit = defineEmits<{ (e: 'click'): void }>()
@@ -24,7 +25,12 @@
 </script>
 
 <template>
-  <Button :variant="variant" :class="buttonClass" @click="emit('click')">
+  <Button
+    :data-testid="`menu-item-button-${step}`"
+    :variant="variant"
+    :class="buttonClass"
+    @click="emit('click')"
+  >
     <div class="flex flex-col items-center gap-1">
       <slot name="icon" />
       <p class="text-xs md:text-[10px] lg:text-xs">{{ text }}</p>

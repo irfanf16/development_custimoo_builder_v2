@@ -42,11 +42,12 @@
 </script>
 
 <template>
-  <Breadcrumb v-if="breadcrumbs && breadcrumbs.length > 0" class="min-w-0 overflow-hidden">
+  <Breadcrumb v-if="breadcrumbs && breadcrumbs.length > 0" data-testid="workflow-breadcrumbs" class="min-w-0 overflow-hidden">
     <BreadcrumbList class="flex-nowrap!">
       <template v-for="(item, index) in breadcrumbs" :key="index">
         <Transition name="breadcrumb-item" appear>
           <BreadcrumbItem
+            :data-testid="`workflow-breadcrumb-item-${index}`"
             :class="{
               'cursor-pointer': index < currentBreadcrumbIndex
             }"

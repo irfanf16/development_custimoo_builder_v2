@@ -479,7 +479,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div data-testid="workflow-texts-number-font" class="flex flex-col gap-4">
     <!-- Header Section -->
     <div class="px-6 space-y-5">
       <!-- Number Input -->
@@ -487,6 +487,7 @@
         <div class="h-14">
           <Input
             v-model="form.number"
+            data-testid="workflow-texts-input-number"
             :placeholder="texts_number_input_placeholder({}, { locale })"
             class="h-full text-lg"
             inputmode="numeric"

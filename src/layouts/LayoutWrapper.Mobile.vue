@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col min-h-full">
+  <div data-testid="layout-mobile" class="flex flex-col min-h-full">
     <slot />
   </div>
 </template>

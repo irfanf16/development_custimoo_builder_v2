@@ -194,10 +194,11 @@
   <div v-else-if="!lockersToShow.length" class="py-8 text-center text-muted-foreground">
     {{ locker_no_items({}, { locale }) }}
   </div>
-  <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
+  <div v-else data-testid="locker-room-lockers-list" class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(locker, lockerIndex) in lockersToShow"
       :key="locker.id"
+      :data-testid="`locker-room-locker-item-${lockerIndex}`"
       class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative !gap-0 h-fit duration-150 border-0"
       @click="
         () => {

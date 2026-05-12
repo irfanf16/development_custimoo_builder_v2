@@ -305,7 +305,7 @@
 </script>
 
 <template>
-  <div class="pb-6">
+  <div data-testid="workflow-logo-customization" class="pb-6">
     <Transition name="logos-slide" mode="out-in" appear>
       <div :key="`logos-${subPanel}`">
         <div v-if="subPanel === 'list'" class="flex flex-col gap-4">
@@ -356,6 +356,7 @@
                 <div class="flex-1 h-px bg-border" />
               </div>
               <Button
+                data-testid="workflow-logo-button-choose-from-locker"
                 class="w-full bg-card"
                 variant="default"
                 @click="lockerRoomStore.setOpenLockerWithIntent('assets')"
@@ -404,7 +405,12 @@
             />
 
             <div v-if="!logosStore.isLoadingUploadLogo" class="flex flex-col gap-3">
-              <Button variant="default" class="rounded-lg w-full" @click="onClickUpload">
+              <Button
+                data-testid="workflow-logo-button-add-logo"
+                variant="default"
+                class="rounded-lg w-full"
+                @click="onClickUpload"
+              >
                 {{ logos_add_logo({}, { locale: profileStore.currentLocale }) }}
               </Button>
               <input

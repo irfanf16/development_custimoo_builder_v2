@@ -14,11 +14,10 @@
 <template>
   <!-- Full-viewport layer: `pointer-events: none` except the dock so the widget stays tappable. -->
   <div
+    data-testid="mobile-dock-shell-root"
     class="pointer-events-none fixed inset-0 z-[100] flex max-h-dvh w-full max-w-full flex-col justify-end"
   >
-    <div
-      class="pointer-events-auto flex w-full max-w-full min-h-0 max-h-full flex-col justify-end"
-    >
+    <div class="pointer-events-auto flex w-full max-w-full min-h-0 max-h-full flex-col justify-end">
       <slot />
     </div>
   </div>

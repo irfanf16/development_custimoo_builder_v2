@@ -198,6 +198,7 @@
 </script>
 <template>
   <section
+    data-testid="workflow-logo-card"
     class="relative group rounded-xl border border-border p-3 flex flex-col gap-3 bg-background cursor-pointer hover:bg-muted/50 transition-colors w-full"
     :class="props.isAi ? 'border-primary/40' : ''"
     @click="emit('click', props.index)"
@@ -362,6 +363,7 @@
         </Badge>
       </div>
       <Button
+        data-testid="workflow-logo-button-delete"
         as="div"
         variant="ghost"
         size="icon"

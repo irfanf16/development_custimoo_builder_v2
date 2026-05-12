@@ -540,6 +540,7 @@
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent
+      data-testid="customizer-save-design-dialog"
       variant="large"
       class="w-full flex flex-col gap-0 p-0 pb-3 overflow-hidden h-fit max-md:max-h-[90dvh] max-md:min-h-0 max-md:flex max-md:flex-col"
     >

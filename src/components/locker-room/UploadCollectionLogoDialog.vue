@@ -73,7 +73,7 @@
 
 <template>
   <Dialog :open="open" @update:open="emit('close')">
-    <DialogContent variant="default" class="p-6">
+    <DialogContent data-testid="locker-room-upload-logo-dialog" variant="default" class="p-6">
       <!-- Header -->
       <DialogHeader class="mb-2 md:mb-4 flex flex-row items-center justify-between">
         <DialogTitle class="text-lg font-semibold"> Upload logo </DialogTitle>

@@ -50,6 +50,7 @@
         <slot />
       </TooltipTrigger>
       <TooltipContent
+        data-testid="shared-share-url-tooltip"
         v-if="shareUrl"
         side="bottom"
         class="w-auto max-w-md p-4 bg-popover text-popover-foreground border shadow-lg"
@@ -68,7 +69,7 @@
               @click.stop
               @mousedown.stop
             />
-            <Button size="sm" variant="outline" @click.stop="copyShareUrl" @mousedown.stop>
+            <Button data-testid="shared-button-copy-url" size="sm" variant="outline" @click.stop="copyShareUrl" @mousedown.stop>
               <Copy class="size-3 mr-1" />
               <span class="text-xs">Copy</span>
             </Button>

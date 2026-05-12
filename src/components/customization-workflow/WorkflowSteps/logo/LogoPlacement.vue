@@ -111,11 +111,12 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div data-testid="workflow-logo-placement" class="flex flex-col gap-4">
     <div class="grid grid-cols-2">
       <div
         v-for="s in placements"
         :key="s.id"
+        :data-testid="`workflow-logo-placement-item-${s.id}`"
         class="flex flex-col gap-4 items-center cursor-pointer w-full p-4"
         @click.once="handlePlacementSelection(s)"
       >

@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="max-w-md">
+    <DialogContent class="max-w-md" data-testid="profile-third-party-approval-dialog">
       <DialogHeader>
         <DialogTitle class="text-lg font-semibold text-foreground"
           >Third Party Approval</DialogTitle
@@ -19,6 +19,7 @@
             placeholder="Enter email address"
             class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             :class="{ 'border-destructive': emailError }"
+            data-testid="profile-third-party-input-email"
           />
           <p v-if="emailError" class="text-xs text-destructive">{{ emailError }}</p>
         </div>
@@ -26,7 +27,7 @@
 
       <div class="flex justify-end gap-2 pt-4 border-t border-border">
         <Button variant="outline" @click="closeDialog">Cancel</Button>
-        <Button :disabled="isSubmitting" @click="sendForApproval">
+        <Button :disabled="isSubmitting" data-testid="profile-third-party-button-send" @click="sendForApproval">
           <span v-if="isSubmitting">Sending...</span>
           <span v-else>Send for Approval</span>
         </Button>

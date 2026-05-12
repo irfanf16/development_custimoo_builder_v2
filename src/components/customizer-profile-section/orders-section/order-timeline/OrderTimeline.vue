@@ -1,6 +1,6 @@
 <template>
   <!-- <div class="p-4 space-y-6"> -->
-  <div class="flex flex-col gap-4 sm:gap-6 w-full">
+  <div class="flex flex-col gap-4 sm:gap-6 w-full" data-testid="profile-timeline-root">
     <Tabs v-if="order.items && order.items.length > 0" v-model="activeTab">
       <ScrollArea class="w-full" direction="horizontal">
         <TabsList

@@ -283,12 +283,13 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 md:gap-6">
+  <div data-testid="workflow-texts-edit" class="flex flex-col gap-4 md:gap-6">
     <div class="space-y-0 flex flex-col gap-4">
       <!-- Text / Number input: only when not from multipleItems (from here we don't change font and text) -->
       <div v-if="!hasMultipleItems && !isNumberEntry" class="space-y-2 px-4 md:px-6 pt-1">
         <Input
           v-model="form.text"
+          data-testid="workflow-texts-input-text"
           rows="3"
           :placeholder="texts_text_input_placeholder({}, { locale })"
           class="text-lg h-[3.5rem]"
@@ -325,7 +326,11 @@
       <!-- Color and Sizing Accordion -->
       <Accordion type="multiple" :default-value="['sizing']">
         <!-- Fill Colour Accordion Item -->
-        <AccordionItem value="fill" class="px-4 md:px-6 max-w-full">
+        <AccordionItem
+          data-testid="workflow-texts-accordion-fill"
+          value="fill"
+          class="px-4 md:px-6 max-w-full"
+        >
           <AccordionTrigger
             class="w-full overflow-hidden items-center no-underline hover:no-underline"
           >
@@ -451,7 +456,7 @@
         </AccordionItem>
 
         <!-- Sizing Accordion Item -->
-        <AccordionItem value="sizing">
+        <AccordionItem data-testid="workflow-texts-accordion-sizing" value="sizing">
           <AccordionTrigger class="px-4 md:px-6 py-4 hover:no-underline">
             <div class="flex items-center gap-3 w-full">
               <div class="flex-1 flex items-center gap-2 text-left">
@@ -545,7 +550,12 @@
             </div> -->
 
             <div class="grid grid-cols-1 gap-3">
-              <Button variant="outline" class="h-9" @click="pinText">
+              <Button
+                data-testid="workflow-texts-button-pin"
+                variant="outline"
+                class="h-9"
+                @click="pinText"
+              >
                 <Pin class="size-4" />
                 {{
                   currentItem?.pinned

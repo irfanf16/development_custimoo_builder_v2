@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full items-start justify-between">
+  <div class="flex flex-col w-full items-start justify-between" data-testid="profile-orders-summary-header">
     <div class="flex items-center justify-between w-full">
       <div>
         <div class="font-semibold text-foreground">#{{ order.order_no || t.orderNoNa }}</div>
@@ -55,6 +55,7 @@
           size="sm"
           variant="outline"
           class="bg-muted hover:bg-muted/80"
+          data-testid="profile-orders-button-timeline"
           @click.stop="openTimeline()"
         >
           {{ t.orderTimeline }}

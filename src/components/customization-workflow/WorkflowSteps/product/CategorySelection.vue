@@ -33,7 +33,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <div data-testid="workflow-product-category-selection" class="flex flex-col">
     <template v-for="item in categories" :key="item.id">
       <Accordion
         v-if="

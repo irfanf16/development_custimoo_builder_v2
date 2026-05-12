@@ -110,11 +110,11 @@
   }>()
   const emit = defineEmits<Emits>()
 
-//  const designGridClass = computed(() =>
-//    props.isExpanded
-//      ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))] gap-4'
-//      : 'flex flex-wrap gap-2'
-//  )
+  //  const designGridClass = computed(() =>
+  //    props.isExpanded
+  //      ? 'grid [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))] gap-4'
+  //      : 'flex flex-wrap gap-2'
+  //  )
   const previews = computed(() => productsStore.designPreviews || [])
 
   /** Matches uiStore.desktopPreviewCompact (widget width-based, stable vs preview-slot measurement). */
@@ -272,9 +272,14 @@
   <div
     v-else
     ref="designSelectionContainer"
+    data-testid="workflow-design-selection"
     class="mb-4 md:mb-6 flex flex-col gap-4"
   >
-    <div v-if="myDesignsFilteredPreviews.length" class="flex flex-col gap-2">
+    <div
+      v-if="myDesignsFilteredPreviews.length"
+      data-testid="workflow-design-my-designs"
+      class="flex flex-col gap-2"
+    >
       <div class="text-sm font-semibold text-muted-foreground">
         {{ design_section_my_designs({}, { locale: profileStore.currentLocale }) }}
       </div>
@@ -283,6 +288,7 @@
           v-for="item in myDesignsFilteredPreviews"
           :id="`design-${item.id}`"
           :key="'my-' + item.id"
+          :data-testid="`workflow-design-item-${item.id}`"
           class="group relative flex flex-col items-center gap-4 md:gap-6 p-2"
           :class="[
             'relative rounded-sm transition-colors cursor-pointer',
@@ -345,7 +351,11 @@
       </div>
     </div>
 
-    <div v-if="catalogFilteredPreviews.length" class="flex flex-col gap-2">
+    <div
+      v-if="catalogFilteredPreviews.length"
+      data-testid="workflow-design-catalog"
+      class="flex flex-col gap-2"
+    >
       <div
         v-if="myDesignsFilteredPreviews.length"
         class="text-sm font-semibold text-muted-foreground"
@@ -357,6 +367,7 @@
           v-for="item in catalogFilteredPreviews"
           :id="`design-${item.id}`"
           :key="item.id"
+          :data-testid="`workflow-design-item-${item.id}`"
           class="group relative flex flex-col items-center gap-4 md:gap-6 p-2"
           :class="[
             'relative rounded-sm transition-colors cursor-pointer',

@@ -48,7 +48,11 @@
 <template>
   <DropdownMenu v-if="uiStore.isMobile">
     <DropdownMenuTrigger as-child>
-      <Button size="sm" :variant="isActive === 'all' ? 'outline' : 'primary'">
+      <Button
+        data-testid="workflow-product-filter-trigger"
+        size="sm"
+        :variant="isActive === 'all' ? 'outline' : 'primary'"
+      >
         <Funnel class="size-4" />
       </Button>
     </DropdownMenuTrigger>
@@ -106,8 +110,9 @@
     </DropdownMenuContent>
   </DropdownMenu>
   <div v-else>
-    <div class="flex gap-2">
+    <div data-testid="workflow-product-filter-desktop" class="flex gap-2">
       <Button
+        data-testid="workflow-product-filter-all"
         size="sm"
         :variant="isActive === 'all' ? 'primary' : 'outline'"
         @click="handleFilterChange('all')"

@@ -22,7 +22,7 @@
 
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="sm:max-w-md">
+    <DialogContent data-testid="global-confirm-dialog" class="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>{{ options.title }}</DialogTitle>
       </DialogHeader>
@@ -32,10 +32,10 @@
       </p>
 
       <DialogFooter class="mt-6 flex gap-2 justify-end">
-        <Button variant="outline" @click="onCancel">
+        <Button data-testid="global-confirm-button-cancel" variant="outline" @click="onCancel">
           {{ options.cancelText }}
         </Button>
-        <Button variant="destructive" @click="onConfirm">
+        <Button data-testid="global-confirm-button-confirm" variant="destructive" @click="onConfirm">
           {{ options.confirmText }}
         </Button>
       </DialogFooter>

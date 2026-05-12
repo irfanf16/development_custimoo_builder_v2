@@ -1,5 +1,6 @@
 <template>
   <div
+    data-testid="workflow-logo-uploading-skeleton"
     class="relative group rounded-xl border border-border m-4 md:m-6 flex flex-col gap-3 animate-pulse bg-primary/70"
   >
     <div class="flex flex-col items-center gap-3">

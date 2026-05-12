@@ -34,6 +34,7 @@
 <template>
   <div
     id="3d-or-2d-preview"
+    data-testid="preview-host"
     ref="previewContainer"
     :aria-busy="!productsStore.mainPreviewLoadComplete"
     :class="[

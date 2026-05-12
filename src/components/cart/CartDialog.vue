@@ -525,7 +525,11 @@
 </script>
 <template>
   <Dialog v-model:open="open" variant="large">
-    <DialogContent variant="large" class="max-w-3xl max-h-[90vh] gap-0 flex min-h-0 flex-col overflow-hidden">
+    <DialogContent
+      data-testid="cart-dialog"
+      variant="large"
+      class="max-w-3xl max-h-[90vh] gap-0 flex min-h-0 flex-col overflow-hidden"
+    >
       <div ref="cartShellRef" class="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div ref="cartHeaderMeasureRef" class="shrink-0">
           <DialogHeader class="border-b p-4">
@@ -533,108 +537,115 @@
           </DialogHeader>
         </div>
         <ScrollArea :style="cartScrollAreaStyle" class="min-h-0 w-full min-w-0">
-        <!-- Bulk selection -->
-        <div
-          v-if="products.length"
-          class="flex flex-wrap items-center gap-3 px-4 py-2.5 border-b bg-muted/40"
-        >
-          <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
-            <Checkbox
-              :model-value="selectAllCheckboxState"
-              :disabled="selectableFactoryProductIds.length === 0"
-              @update:model-value="toggleSelectAll"
-            />
-            <span>{{ cart_select_all_products({}, { locale: locale }) }}</span>
-          </label>
-          <button
-            v-if="selectedFactoryProductIds.length > 0"
-            type="button"
-            class="flex items-center gap-1.5 px-3 py-1.5 border border-destructive/60 text-destructive rounded-md text-sm transition-colors hover:bg-destructive/10"
-            @click="handleBulkRemoveClick"
-          >
-            {{ cart_remove_selected({}, { locale: locale }) }}
-          </button>
-        </div>
-        <!-- Cart Items -->
-        <div class="divide-y">
+          <!-- Bulk selection -->
           <div
-            v-for="item in products"
-            :key="item.factory_product_id"
-            class="p-4"
-            :class="{
-              'border-l-4 border-red-500 bg-secondary': invalidQuantityIds.includes(
-                item.factory_product_id
-              )
-            }"
+            v-if="products.length"
+            class="flex flex-wrap items-center gap-3 px-4 py-2.5 border-b bg-muted/40"
           >
-            <div class="flex gap-4">
-              <div class="flex items-start pt-1 shrink-0">
-                <Checkbox
-                  :model-value="selectedFactoryProductIds.includes(item.factory_product_id)"
-                  :disabled="cartStore.editingFactoryProductId === item.factory_product_id"
-                  @update:model-value="v => toggleRowSelection(item.factory_product_id, v === true)"
-                  @click.stop
-                />
-              </div>
-              <!-- Product Image -->
-              <div class="w-20 h-20 md:w-24 md:h-24 rounded-lg shrink-0 overflow-hidden border">
-                <img
-                  :src="baseStorageUrl + item.front_image"
-                  :alt="item.product_name"
-                  class="w-full h-full object-contain"
-                />
-              </div>
-
-              <!-- Product Details -->
-              <div class="flex-1 min-w-0">
-                <div class="flex items-start justify-between gap-2">
-                  <h3 class="font-medium text-sm md:text-base truncate">
-                    {{ item.product_name }}
-                  </h3>
-                  <template v-if="cartStore.editingFactoryProductId != item.factory_product_id">
-                    <div class="flex items-center gap-2 shrink-0">
-                      <button
-                        class="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm transition-colors hover:bg-gray-50"
-                        @click="editProduct(item.factory_product_id)"
-                      >
-                        <Pencil class="w-3.5 h-3.5" />
-                        <span class="hidden sm:inline">Edit design</span>
-                      </button>
-                      <button
-                        class="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm transition-colors hover:bg-gray-50"
-                        @click="editRoster(item.factory_product_id)"
-                      >
-                        <Users class="w-3.5 h-3.5" />
-                        <span class="hidden sm:inline">Edit roster</span>
-                      </button>
-                      <button
-                        class="p-1.5 border rounded-md transition-colors hover:bg-gray-50"
-                        @click="handleRemoveClick(item.factory_product_id)"
-                      >
-                        <Trash2 class="w-4 h-4 text-gray-500" />
-                      </button>
-                    </div>
-                  </template>
-                  <template v-else>
-                    <span class="text-primary text-sm">Actions are disabled while editing</span>
-                  </template>
+            <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <Checkbox
+                :model-value="selectAllCheckboxState"
+                :disabled="selectableFactoryProductIds.length === 0"
+                @update:model-value="toggleSelectAll"
+              />
+              <span>{{ cart_select_all_products({}, { locale: locale }) }}</span>
+            </label>
+            <button
+              v-if="selectedFactoryProductIds.length > 0"
+              type="button"
+              data-testid="cart-button-bulk-remove"
+              class="flex items-center gap-1.5 px-3 py-1.5 border border-destructive/60 text-destructive rounded-md text-sm transition-colors hover:bg-destructive/10"
+              @click="handleBulkRemoveClick"
+            >
+              {{ cart_remove_selected({}, { locale: locale }) }}
+            </button>
+          </div>
+          <!-- Cart Items -->
+          <div data-testid="cart-items-list" class="divide-y">
+            <div
+              v-for="item in products"
+              :key="item.factory_product_id"
+              :data-testid="`cart-item-${item.factory_product_id}`"
+              class="p-4"
+              :class="{
+                'border-l-4 border-red-500 bg-secondary': invalidQuantityIds.includes(
+                  item.factory_product_id
+                )
+              }"
+            >
+              <div class="flex gap-4">
+                <div class="flex items-start pt-1 shrink-0">
+                  <Checkbox
+                    :model-value="selectedFactoryProductIds.includes(item.factory_product_id)"
+                    :disabled="cartStore.editingFactoryProductId === item.factory_product_id"
+                    @update:model-value="
+                      v => toggleRowSelection(item.factory_product_id, v === true)
+                    "
+                    @click.stop
+                  />
+                </div>
+                <!-- Product Image -->
+                <div class="w-20 h-20 md:w-24 md:h-24 rounded-lg shrink-0 overflow-hidden border">
+                  <img
+                    :src="baseStorageUrl + item.front_image"
+                    :alt="item.product_name"
+                    class="w-full h-full object-contain"
+                  />
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-x-4 gap-y-2 mt-3 text-sm">
-                  <div>
-                    <p class="text-gray-500 text-xs">Design ID</p>
-                    <p class="font-medium">#{{ item.design_id }}</p>
+                <!-- Product Details -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-start justify-between gap-2">
+                    <h3 class="font-medium text-sm md:text-base truncate">
+                      {{ item.product_name }}
+                    </h3>
+                    <template v-if="cartStore.editingFactoryProductId != item.factory_product_id">
+                      <div class="flex items-center gap-2 shrink-0">
+                        <button
+                          :data-testid="`cart-item-button-edit-design-${item.factory_product_id}`"
+                          class="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm transition-colors hover:bg-gray-50"
+                          @click="editProduct(item.factory_product_id)"
+                        >
+                          <Pencil class="w-3.5 h-3.5" />
+                          <span class="hidden sm:inline">Edit design</span>
+                        </button>
+                        <button
+                          :data-testid="`cart-item-button-edit-roster-${item.factory_product_id}`"
+                          class="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm transition-colors hover:bg-gray-50"
+                          @click="editRoster(item.factory_product_id)"
+                        >
+                          <Users class="w-3.5 h-3.5" />
+                          <span class="hidden sm:inline">Edit roster</span>
+                        </button>
+                        <button
+                          :data-testid="`cart-item-button-remove-${item.factory_product_id}`"
+                          class="p-1.5 border rounded-md transition-colors hover:bg-gray-50"
+                          @click="handleRemoveClick(item.factory_product_id)"
+                        >
+                          <Trash2 class="w-4 h-4 text-gray-500" />
+                        </button>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <span class="text-primary text-sm">Actions are disabled while editing</span>
+                    </template>
                   </div>
 
-                  <div>
-                    <p class="text-gray-500 text-xs">Style</p>
-                    <p class="font-medium">{{ item.style }}</p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500 text-xs">Roster</p>
-                    <p class="font-medium">{{ item.roster }}</p>
-                  </div>
-                  <!-- <div>
+                  <div class="grid grid-cols-2 sm:grid-cols-5 gap-x-4 gap-y-2 mt-3 text-sm">
+                    <div>
+                      <p class="text-gray-500 text-xs">Design ID</p>
+                      <p class="font-medium">#{{ item.design_id }}</p>
+                    </div>
+
+                    <div>
+                      <p class="text-gray-500 text-xs">Style</p>
+                      <p class="font-medium">{{ item.style }}</p>
+                    </div>
+                    <div>
+                      <p class="text-gray-500 text-xs">Roster</p>
+                      <p class="font-medium">{{ item.roster }}</p>
+                    </div>
+                    <!-- <div>
                     <p class="text-gray-500 text-xs">Quantity</p>
                     <p class="font-medium">{{ item.quantity }}</p>
                   </div>
@@ -642,175 +653,181 @@
                     <p class="text-gray-500 text-xs">Price</p>
                     <p class="font-medium">{{ formatPrice(item.price, item.currency_symbol) }}</p>
                   </div> -->
-                </div>
+                  </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm">
-                  <!-- <div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm">
+                    <!-- <div>
                     <p class="text-gray-500 text-xs">Style</p>
                     <p class="font-medium">{{ item.style }}</p>
                   </div> -->
-                  <!-- <div>
+                    <!-- <div>
                     <p class="text-gray-500 text-xs">Addons</p>
                     <p class="font-medium text-gray-700">
                       {{ formatAddons(item.addons) || 'None' }}
                     </p>
                   </div> -->
-                </div>
+                  </div>
 
-                <p
-                  v-if="invalidQuantityIds.includes(item.factory_product_id)"
-                  class="text-xs text-red-500 mt-2"
-                >
-                  Quantity must be greater than 0 to checkout.
-                </p>
+                  <p
+                    v-if="invalidQuantityIds.includes(item.factory_product_id)"
+                    class="text-xs text-red-500 mt-2"
+                  >
+                    Quantity must be greater than 0 to checkout.
+                  </p>
 
-                <!-- Per-item pricing breakdown (Task 1) -->
-                <div v-if="showPricing" class="mt-3 overflow-x-auto">
-                  <table class="w-full min-w-[280px] text-sm border-collapse">
-                    <thead>
-                      <tr class="text-left text-gray-500 border-b">
-                        <th class="py-1.5 pr-2 font-medium">Product / Addon / LogoTechnology</th>
-                        <th class="py-1.5 pr-2 font-medium text-right">Qty</th>
-                        <th class="py-1.5 pr-2 font-medium text-right">Unit Price</th>
-                        <th class="py-1.5 pr-2 font-medium text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr
-                        v-for="(row, idx) in getItemPricingRows(item)"
-                        :key="idx"
-                        :class="{
-                          'border-t font-semibold': row.type === 'subtotal'
-                        }"
-                      >
-                        <td class="py-1.5 pr-2">{{ row.label }}</td>
-                        <td class="py-1.5 pr-2 text-right">
-                          {{ row.type === 'subtotal' ? '—' : row.qty }}
-                        </td>
-                        <td class="py-1.5 pr-2 text-right">
-                          {{
-                            row.type === 'subtotal'
-                              ? '—'
-                              : formatPrice(row.unitPrice, item.currency_symbol)
-                          }}
-                        </td>
-                        <td class="py-1.5 pr-2 text-right">
-                          {{ formatPrice(row.total, item.currency_symbol) }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <!-- Per-item pricing breakdown (Task 1) -->
+                  <div v-if="showPricing" class="mt-3 overflow-x-auto">
+                    <table class="w-full min-w-[280px] text-sm border-collapse">
+                      <thead>
+                        <tr class="text-left text-gray-500 border-b">
+                          <th class="py-1.5 pr-2 font-medium">Product / Addon / LogoTechnology</th>
+                          <th class="py-1.5 pr-2 font-medium text-right">Qty</th>
+                          <th class="py-1.5 pr-2 font-medium text-right">Unit Price</th>
+                          <th class="py-1.5 pr-2 font-medium text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr
+                          v-for="(row, idx) in getItemPricingRows(item)"
+                          :key="idx"
+                          :class="{
+                            'border-t font-semibold': row.type === 'subtotal'
+                          }"
+                        >
+                          <td class="py-1.5 pr-2">{{ row.label }}</td>
+                          <td class="py-1.5 pr-2 text-right">
+                            {{ row.type === 'subtotal' ? '—' : row.qty }}
+                          </td>
+                          <td class="py-1.5 pr-2 text-right">
+                            {{
+                              row.type === 'subtotal'
+                                ? '—'
+                                : formatPrice(row.unitPrice, item.currency_symbol)
+                            }}
+                          </td>
+                          <td class="py-1.5 pr-2 text-right">
+                            {{ formatPrice(row.total, item.currency_symbol) }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
         </ScrollArea>
 
         <div ref="cartFooterMeasureRef" class="shrink-0 border-t">
           <div class="p-4">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Business Info -->
-            <div>
-              <p class="text-gray-500 text-xs mb-1">Business</p>
-              <p class="font-semibold">{{ companyName }}</p>
-              <p class="text-gray-500 text-xs mt-3 mb-1">Default address</p>
-              <div v-if="selectedAddress" class="text-sm space-y-0.5">
-                <p v-if="selectedAddress.address1">{{ selectedAddress.address1 }}</p>
-                <p v-if="selectedAddress.address2">{{ selectedAddress.address2 }}</p>
-                <p>
-                  <span v-if="selectedAddress.zip_code">{{ selectedAddress.zip_code }} </span>
-                  <span v-if="selectedAddress.city">{{ selectedAddress.city }}</span>
-                  <span v-if="selectedAddress.state">, {{ selectedAddress.state }}</span>
-                </p>
-                <p v-if="selectedAddress.country?.name">{{ selectedAddress.country.name }}</p>
-              </div>
-              <div v-else class="text-sm text-gray-500">No address selected</div>
-              <button
-                class="mt-3 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium transition-colors hover:bg-gray-50"
-                @click="openAddressDialog"
-              >
-                Choose different address
-              </button>
-              <p v-if="addressError" class="text-xs text-red-500 mt-1">{{ addressError }}</p>
-            </div>
-
-            <!-- Additional Information -->
-            <div>
-              <p class="text-gray-500 text-xs mb-1">Additional information</p>
-              <div class="space-y-3">
-                <div>
-                  <label class="text-sm font-medium"
-                    >Order reference <span class="text-red-500">*</span></label
-                  >
-                  <input
-                    v-model="orderReference"
-                    type="text"
-                    :class="[
-                      'mt-1 w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                      orderReferenceError ? 'border-red-500' : ''
-                    ]"
-                  />
-                  <p v-if="orderReferenceError" class="text-xs text-red-500 mt-1">
-                    {{ orderReferenceError }}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <!-- Business Info -->
+              <div>
+                <p class="text-gray-500 text-xs mb-1">Business</p>
+                <p class="font-semibold">{{ companyName }}</p>
+                <p class="text-gray-500 text-xs mt-3 mb-1">Default address</p>
+                <div v-if="selectedAddress" class="text-sm space-y-0.5">
+                  <p v-if="selectedAddress.address1">{{ selectedAddress.address1 }}</p>
+                  <p v-if="selectedAddress.address2">{{ selectedAddress.address2 }}</p>
+                  <p>
+                    <span v-if="selectedAddress.zip_code">{{ selectedAddress.zip_code }} </span>
+                    <span v-if="selectedAddress.city">{{ selectedAddress.city }}</span>
+                    <span v-if="selectedAddress.state">, {{ selectedAddress.state }}</span>
                   </p>
+                  <p v-if="selectedAddress.country?.name">{{ selectedAddress.country.name }}</p>
                 </div>
-                <div>
-                  <label class="text-sm font-medium">Comments</label>
-                  <textarea
-                    v-model="comments"
-                    rows="3"
-                    :placeholder="cart_note_placeholder({}, { locale })"
-                    class="mt-1 w-full px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
+                <div v-else class="text-sm text-gray-500">No address selected</div>
+                <button
+                  data-testid="cart-button-change-address"
+                  class="mt-3 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium transition-colors hover:bg-gray-50"
+                  @click="openAddressDialog"
+                >
+                  Choose different address
+                </button>
+                <p v-if="addressError" class="text-xs text-red-500 mt-1">{{ addressError }}</p>
               </div>
-            </div>
 
-            <!-- Order Summary -->
-            <div>
-              <p class="text-gray-500 text-xs mb-3">Order summary</p>
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-600">{{ totalItems }} items</span>
-                  <span v-if="showPricing">{{ formatPrice(totalPrice) }}</span>
-                </div>
-                <div v-if="showPricing" class="flex justify-between">
-                  <span class="text-gray-600">Sales tax</span>
-                  <span class="text-gray-500">Calculated later</span>
-                </div>
-                <div v-if="showPricing" class="flex justify-between">
-                  <span class="text-gray-600">Delivery fee</span>
-                  <span class="text-gray-500">Calculated later</span>
-                </div>
-                <div v-if="showPricing" class="flex justify-between font-semibold pt-2 border-t">
-                  <span>Total</span>
-                  <span>{{ formatPrice(totalPrice) }}</span>
-                </div>
-                <div v-if="!canSkipMoq">
-                  <span
-                    class="text-xs"
-                    :class="totalItems < minimumCartQuantity() ? 'text-red-500' : 'text-green-500'"
-                  >
-                    {{
-                      minimum_order_quantity({}, { locale: profileStore.currentLocale })
-                    }}:&nbsp;{{ minimumCartQuantity() }}
-                  </span>
+              <!-- Additional Information -->
+              <div>
+                <p class="text-gray-500 text-xs mb-1">Additional information</p>
+                <div class="space-y-3">
+                  <div>
+                    <label class="text-sm font-medium"
+                      >Order reference <span class="text-red-500">*</span></label
+                    >
+                    <input
+                      v-model="orderReference"
+                      type="text"
+                      data-testid="cart-input-order-reference"
+                      :class="[
+                        'mt-1 w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
+                        orderReferenceError ? 'border-red-500' : ''
+                      ]"
+                    />
+                    <p v-if="orderReferenceError" class="text-xs text-red-500 mt-1">
+                      {{ orderReferenceError }}
+                    </p>
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium">Comments</label>
+                    <textarea
+                      v-model="comments"
+                      rows="3"
+                      data-testid="cart-textarea-comments"
+                      :placeholder="cart_note_placeholder({}, { locale })"
+                      class="mt-1 w-full px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
-              <button
-                class="w-full mt-4 px-4 py-3 bg-primary text-white rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="
-                  !canConfirmOrder ||
-                  isPlacingOrder ||
-                  (!canSkipMoq && totalItems < minimumCartQuantity())
-                "
-                @click="handleConfirmOrder"
-              >
-                {{ isPlacingOrder ? 'Placing order...' : 'Confirm order' }}
-              </button>
+
+              <!-- Order Summary -->
+              <div>
+                <p class="text-gray-500 text-xs mb-3">Order summary</p>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">{{ totalItems }} items</span>
+                    <span v-if="showPricing">{{ formatPrice(totalPrice) }}</span>
+                  </div>
+                  <div v-if="showPricing" class="flex justify-between">
+                    <span class="text-gray-600">Sales tax</span>
+                    <span class="text-gray-500">Calculated later</span>
+                  </div>
+                  <div v-if="showPricing" class="flex justify-between">
+                    <span class="text-gray-600">Delivery fee</span>
+                    <span class="text-gray-500">Calculated later</span>
+                  </div>
+                  <div v-if="showPricing" class="flex justify-between font-semibold pt-2 border-t">
+                    <span>Total</span>
+                    <span>{{ formatPrice(totalPrice) }}</span>
+                  </div>
+                  <div v-if="!canSkipMoq">
+                    <span
+                      class="text-xs"
+                      :class="
+                        totalItems < minimumCartQuantity() ? 'text-red-500' : 'text-green-500'
+                      "
+                    >
+                      {{
+                        minimum_order_quantity({}, { locale: profileStore.currentLocale })
+                      }}:&nbsp;{{ minimumCartQuantity() }}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  data-testid="cart-button-confirm-order"
+                  class="w-full mt-4 px-4 py-3 bg-primary text-white rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="
+                    !canConfirmOrder ||
+                    isPlacingOrder ||
+                    (!canSkipMoq && totalItems < minimumCartQuantity())
+                  "
+                  @click="handleConfirmOrder"
+                >
+                  {{ isPlacingOrder ? 'Placing order...' : 'Confirm order' }}
+                </button>
+              </div>
             </div>
-          </div>
           </div>
         </div>
       </div>

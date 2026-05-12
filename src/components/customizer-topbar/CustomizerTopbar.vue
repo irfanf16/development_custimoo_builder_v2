@@ -1385,7 +1385,7 @@
 </script>
 
 <template>
-  <div ref="topbarContainerRef" class="w-full min-w-0 pt-2 pr-2">
+  <div data-testid="topbar-root" ref="topbarContainerRef" class="w-full min-w-0 pt-2 pr-2">
     <TooltipProvider>
       <div class="flex justify-end items-center">
         <div ref="topbarContentRef" class="inline-flex items-center gap-2 shrink-0">
@@ -1395,7 +1395,7 @@
               <template v-if="showCompactTopbar">
                 <Tooltip>
                   <TooltipTrigger as-child>
-                    <Button variant="outline" size="icon" @click="handleResetCustomization">
+                    <Button data-testid="topbar-button-reset" variant="outline" size="icon" @click="handleResetCustomization">
                       <RotateCcw class="size-4" />
                     </Button>
                   </TooltipTrigger>
@@ -1503,6 +1503,7 @@
                   <template v-if="showCompactTopbar">
                     <DropdownMenuTrigger as-child>
                       <Button
+                        data-testid="topbar-button-save"
                         variant="outline"
                         size="icon"
                         :title="topbar_save({}, { locale: profileStore.currentLocale })"
@@ -1513,7 +1514,7 @@
                     </DropdownMenuTrigger>
                   </template>
                   <DropdownMenuTrigger v-else as-child>
-                    <Button variant="outline" size="default">
+                    <Button data-testid="topbar-button-save" variant="outline" size="default">
                       <Save class="size-4" />
                       <span>{{ topbar_save({}, { locale: profileStore.currentLocale }) }}</span>
                     </Button>
@@ -1744,6 +1745,7 @@
               </template>
               <Button
                 v-else
+                data-testid="topbar-button-cart"
                 variant="outline"
                 size="default"
                 class="relative"

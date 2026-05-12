@@ -57,7 +57,7 @@
   }))
 </script>
 <template>
-  <div class="flex min-h-0 h-full flex-col overflow-hidden px-4">
+  <div class="flex min-h-0 h-full flex-col overflow-hidden px-4" data-testid="profile-address-root">
     <!-- Header -->
     <div class="sticky top-0 z-10 w-max shrink-0 pt-4 pb-3">
       <div class="text-lg font-semibold">{{ t.addressBook }}</div>
@@ -109,6 +109,7 @@
           <Card
             v-for="address in store.addresses"
             :key="address.id"
+            :data-testid="`profile-address-item-${address.id}`"
             class="flex flex-col justify-between hover:bg-muted/50 transition-colors"
           >
             <CardContent class="flex flex-col h-full justify-between">
@@ -164,6 +165,7 @@
                   v-if="!store.isDefault(address) && !props.showSelectButton"
                   class="w-full text-xs bg-muted hover:bg-muted/80 h-8 flex items-center gap-1.5"
                   variant="outline"
+                  data-testid="profile-address-button-set-default"
                   :disabled="settingDefaultId === address.id"
                   @click="handleSetDefault(address)"
                 >

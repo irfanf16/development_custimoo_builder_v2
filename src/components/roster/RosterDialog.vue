@@ -879,6 +879,7 @@
     "
   >
     <DialogContent
+      data-testid="roster-dialog"
       class="p-0 flex flex-col w-full overflow-hidden max-h-[85vh]"
       style="max-width: 680px"
       :class="isMobile ? 'h-full max-h-full' : ''"

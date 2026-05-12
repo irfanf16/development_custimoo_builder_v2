@@ -267,15 +267,16 @@
 
 <template>
   <Dialog :open="isOpen" @update:open="isOpen = $event">
-    <DialogContent class="sm:max-w-md h-full md:h-fit">
+    <DialogContent data-testid="auth-dialog-sign-up" class="sm:max-w-md h-full md:h-fit">
       <DialogHeader>
         <DialogTitle>{{ auth_create_account({}, { locale }) }}</DialogTitle>
         <DialogDescription> Enter your information to create a new account. </DialogDescription>
       </DialogHeader>
       <component :is="isMobile ? 'div' : ScrollArea" class="h-full max-h-[70vh] overflow-y-auto">
-        <form class="space-y-4" @submit.prevent="onSubmit">
+        <form data-testid="auth-form-sign-up" class="space-y-4" @submit.prevent="onSubmit">
           <FormTextField
             name="first_name"
+            data-testid="auth-field-first-name"
             :label="profile_first_name({}, { locale })"
             type="text"
             :placeholder="auth_placeholder_first_name({}, { locale })"
@@ -283,6 +284,7 @@
           />
           <FormTextField
             name="last_name"
+            data-testid="auth-field-last-name"
             :label="profile_last_name({}, { locale })"
             type="text"
             :placeholder="auth_placeholder_last_name({}, { locale })"
@@ -290,6 +292,7 @@
           />
           <FormTextField
             name="email"
+            data-testid="auth-field-email"
             :label="profile_email({}, { locale })"
             type="email"
             :placeholder="auth_placeholder_email({}, { locale })"
@@ -297,13 +300,14 @@
           />
           <FormTextField
             name="company_name"
+            data-testid="auth-field-company-name"
             :label="profile_company_name({}, { locale })"
             type="text"
             :placeholder="auth_placeholder_company_name({}, { locale })"
             autocomplete="organization"
           />
           <FormField v-slot="{ field }" name="countryId">
-            <FormItem>
+            <FormItem data-testid="auth-field-country">
               <FormLabel>{{ profile_country({}, { locale }) }}</FormLabel>
               <Select :model-value="field.value" @update:model-value="field.onChange">
                 <FormControl>
@@ -326,7 +330,7 @@
           </FormField>
           <div v-show="salesReps.length > 0 && hasCompanyPermission('show_admin_salerep')">
             <FormField v-slot="{ field }" name="salesRepId">
-              <FormItem>
+              <FormItem data-testid="auth-field-sales-rep">
                 <FormLabel>{{ sales_rep_label({}, { locale }) }}</FormLabel>
                 <Select :model-value="field.value" @update:model-value="field.onChange">
                   <FormControl>
@@ -348,6 +352,7 @@
           </div>
           <FormTextField
             name="password"
+            data-testid="auth-field-password"
             :label="auth_password_label({}, { locale })"
             type="password"
             :placeholder="auth_placeholder_create_password({}, { locale })"
@@ -355,20 +360,32 @@
           />
           <FormTextField
             name="confirmPassword"
+            data-testid="auth-field-confirm-password"
             :label="auth_confirm_password_label({}, { locale })"
             type="password"
             :placeholder="auth_placeholder_confirm_password({}, { locale })"
             autocomplete="new-password"
           />
-          <div v-if="authError" class="text-sm text-red-600">
+          <div v-if="authError" data-testid="auth-error" class="text-sm text-red-600">
             {{ authError }}
           </div>
           <DialogFooter>
             <div class="flex flex-row gap-4 md:flex-col md:w-full pb-4">
-              <Button class="w-full" type="button" variant="default" @click="handleCancel">
+              <Button
+                data-testid="auth-button-cancel"
+                class="w-full"
+                type="button"
+                variant="default"
+                @click="handleCancel"
+              >
                 {{ auth_cancel({}, { locale }) }}
               </Button>
-              <Button class="w-full" type="submit" :disabled="isLoading">
+              <Button
+                data-testid="auth-button-submit"
+                class="w-full"
+                type="submit"
+                :disabled="isLoading"
+              >
                 <span v-if="isLoading">{{ auth_creating_account({}, { locale }) }}</span>
                 <span v-else>{{ auth_create_account({}, { locale }) }}</span>
               </Button>
@@ -380,6 +397,7 @@
         {{ auth_agree_privacy_policy({}, { locale }) }}
         <button
           type="button"
+          data-testid="auth-button-privacy-policy"
           class="text-primary hover:underline font-medium"
           @click="isPrivacyPolicyOpen = true"
         >

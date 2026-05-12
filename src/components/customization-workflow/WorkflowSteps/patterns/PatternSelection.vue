@@ -34,20 +34,22 @@
 
 <template>
   <!-- Two-step workflow with transitions -->
-  <Transition name="panel-slide" mode="out-in" appear>
-    <PatternLayerSelection
-      v-if="currentSubStep === 'list'"
-      :key="'layers'"
-      @select-layer="handleSelectLayer"
-    />
+  <div data-testid="workflow-patterns-selection">
+    <Transition name="panel-slide" mode="out-in" appear>
+      <PatternLayerSelection
+        v-if="currentSubStep === 'list'"
+        :key="'layers'"
+        @select-layer="handleSelectLayer"
+      />
 
-    <PatternEdit
-      v-else-if="currentSubStep === 'edit' && selectedLayerId"
-      :key="`edit-${selectedLayerId}`"
-      :layer-id="selectedLayerId"
-      @back="handleBackToLayers"
-    />
-  </Transition>
+      <PatternEdit
+        v-else-if="currentSubStep === 'edit' && selectedLayerId"
+        :key="`edit-${selectedLayerId}`"
+        :layer-id="selectedLayerId"
+        @back="handleBackToLayers"
+      />
+    </Transition>
+  </div>
 </template>
 
 <style scoped></style>

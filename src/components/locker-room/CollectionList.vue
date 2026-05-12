@@ -279,7 +279,7 @@
 
 <template>
   <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
-  <div v-else class="grid grid-cols-1 gap-6 relative group">
+  <div v-else data-testid="locker-room-collection-list" class="grid grid-cols-1 gap-6 relative group">
     <!-- Filter buttons -->
     <div class="flex flex-wrap gap-2 mb-4">
       <Button

@@ -1,6 +1,7 @@
 <template>
   <div
     class="relative bg-muted border border-border rounded-lg p-4 space-y-4"
+    data-testid="profile-comments-form"
     @dragover.prevent="handleDragOver"
     @dragleave="handleDragLeave"
     @drop.prevent="handleDrop"
@@ -98,6 +99,7 @@
       <button
         :disabled="!canSubmit || loading || hasUploadingFiles"
         class="inline-flex items-center gap-1 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+        data-testid="profile-comments-button-submit"
         @click="handleSubmit"
       >
         <SendIcon class="w-4 h-4" />

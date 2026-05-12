@@ -184,7 +184,7 @@
 
 <template>
   <Dialog :open="props.open" variant="large" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="p-0 flex flex-col overflow-hidden">
+    <DialogContent data-testid="profile-dialog" variant="large" class="p-0 flex flex-col overflow-hidden">
       <DialogTitle class="sr-only">{{ myProfileLabel }}</DialogTitle>
       <DialogDescription class="sr-only">
         {{ messages.profile_my_profile({}, { locale: profileStore.currentLocale }) }}
@@ -205,6 +205,7 @@
             <template v-for="item in tabItems" :key="item.value">
               <TabsTrigger
                 :value="item.value"
+                :data-testid="`profile-tab-${item.value}`"
                 class="flex py-4 items-center justify-start gap-3 w-full rounded-[6px] transition-colors text-left"
                 :class="tab === item.value ? 'bg-primary/30!' : 'bg-transparent text-foreground'"
               >

@@ -1,5 +1,5 @@
 <template>
-  <div class="py-4 space-y-6">
+  <div class="py-4 space-y-6" data-testid="profile-orders-details">
     <!-- Order Info -->
     <div class="pb-3 px-4">
       <OrderSummaryHeader

@@ -3068,11 +3068,13 @@
 
 <template>
   <div
+    data-testid="scene-3d-root"
     class="relative flex max-h-full max-w-full items-center justify-center overflow-hidden"
   >
     <!-- Three.js: explicit box so CSS does not stretch WebGL canvas beyond props (avoids bleed past v-customizer). -->
     <div
       id="three-container"
+      data-testid="scene-3d-container"
       ref="rendererEl"
       class="aspect-square shrink-0 overflow-hidden"
       :style="{

@@ -6,6 +6,7 @@
 
 <template>
   <div
+    data-testid="layout-default"
     class="layout mx-auto h-full w-full min-h-0 overflow-x-hidden overflow-y-visible"
   >
     <slot />

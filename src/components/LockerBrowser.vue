@@ -1055,7 +1055,7 @@
 
 <template>
   <Dialog :open="open" variant="large" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="flex min-h-0 flex-col w-full overflow-hidden">
+    <DialogContent data-testid="locker-room-browser-dialog" variant="large" class="flex min-h-0 flex-col w-full overflow-hidden">
       <div ref="lockerShellRef" class="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div ref="lockerHeaderMeasureRef" class="shrink-0">
           <LockerRoomHeader

@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent variant="large" class="max-w-5xl max-h-[90vh] overflow-y-auto">
+    <DialogContent variant="large" class="max-w-5xl max-h-[90vh] overflow-y-auto" data-testid="profile-order-item-detail-dialog">
       <DialogHeader>
         <DialogTitle class="text-xl font-bold text-foreground">Order Details</DialogTitle>
       </DialogHeader>

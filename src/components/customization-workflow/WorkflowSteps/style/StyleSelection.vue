@@ -284,7 +284,11 @@
       </div>
     </div>
   </div>
-  <div v-else class="flex flex-col md:gap-2 lg:gap-4 px-4 md:mx-3">
+  <div
+    v-else
+    data-testid="workflow-style-selection"
+    class="flex flex-col md:gap-2 lg:gap-4 px-4 md:mx-3"
+  >
     <div class="flex flex-col gap-2">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div class="text-muted-foreground text-base leading-relaxed" v-html="headerDescription"></div>
@@ -294,7 +298,12 @@
         {{ styles_title({}, { locale: profileStore.currentLocale }) }}
       </div>
       <div class="grid grid-cols-2 gap-x-8 md:gap-x-16 gap-y-6 md:gap-y-8 px-0 md:px-6">
-        <div v-for="s in filteredPreviews" :key="s.id" class="flex flex-col gap-3 items-start">
+        <div
+          v-for="s in filteredPreviews"
+          :key="s.id"
+          :data-testid="`workflow-style-item-${s.id}`"
+          class="flex flex-col gap-3 items-start"
+        >
           <div class="text-base font-semibold" :class="isStyleSelected(s) ? 'text-primary' : ''">
             {{ s.name }}
           </div>

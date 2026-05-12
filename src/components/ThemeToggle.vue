@@ -37,7 +37,12 @@
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <Button :variant="props.variant" :size="props.size" :class="props.class">
+      <Button
+        data-testid="theme-toggle-button"
+        :variant="props.variant"
+        :size="props.size"
+        :class="props.class"
+      >
         <Icon
           icon="radix-icons:moon"
           class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
@@ -52,10 +57,10 @@
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem @select="setTheme('light')">{{
+      <DropdownMenuItem data-testid="theme-toggle-item-light" @select="setTheme('light')">{{
         theme_light({}, { locale: profileStore.currentLocale })
       }}</DropdownMenuItem>
-      <DropdownMenuItem @select="setTheme('dark')">{{
+      <DropdownMenuItem data-testid="theme-toggle-item-dark" @select="setTheme('dark')">{{
         theme_dark({}, { locale: profileStore.currentLocale })
       }}</DropdownMenuItem>
     </DropdownMenuContent>

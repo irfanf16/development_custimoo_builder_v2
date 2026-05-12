@@ -45,6 +45,7 @@
 
 <template>
   <nav
+    data-testid="menu-mobile-root"
     :class="[navLayoutClass, { hidden: !isMobile }]"
     role="navigation"
     :aria-label="menuLabel"
@@ -55,6 +56,7 @@
       <CustomizerMenuItem
         v-for="item in menuItems"
         :key="item.step"
+        :data-testid="`menu-mobile-item-${item.step}`"
         :is-active="isActive(item.step)"
         :text="getNavText(item.step)"
         class="flex-shrink-0 min-w-[72px]"

@@ -102,9 +102,11 @@
   <template v-if="designCategories.length > 0">
     <div
       v-if="!uiStore.isMobile"
+      data-testid="workflow-design-category-tabs"
       class="inline-flex items-center justify-start w-full h-auto gap-2"
     >
       <Button
+        data-testid="workflow-design-category-all"
         class="rounded-lg transition-colors"
         :class="
           isActive === null
@@ -119,6 +121,7 @@
       <Button
         v-for="category in visibleCategories"
         :key="category.id"
+        :data-testid="`workflow-design-category-item-${category.id}`"
         class="rounded-lg transition-colors"
         :class="
           isActive === category.id
@@ -135,6 +138,7 @@
       <DropdownMenu v-if="dropdownCategories.length > 0">
         <DropdownMenuTrigger as-child>
           <Button
+            data-testid="workflow-design-category-more-trigger"
             size="sm"
             class="rounded-lg transition-colors"
             :class="

@@ -382,9 +382,9 @@
   }
 </script>
 <template>
-  <DialogFooter class="w-full">
+  <DialogFooter data-testid="locker-room-footer" class="w-full">
     <div v-if="props.readOnly" class="flex justify-end gap-2 pt-4 border-t w-full">
-      <Button variant="ghost" @click="emit('close')">{{ locker_cancel({}, { locale }) }}</Button>
+      <Button data-testid="locker-room-button-cancel" variant="ghost" @click="emit('close')">{{ locker_cancel({}, { locale }) }}</Button>
     </div>
     <div
       v-else-if="props.currentMode === 'list' && !isCreatingCollection"

@@ -217,7 +217,7 @@
   })
 </script>
 <template>
-  <DialogHeader>
+  <DialogHeader data-testid="locker-room-header">
     <!-- ========================================================= -->
     <!-- DETAIL MODE HEADER -->
     <!-- ========================================================= -->

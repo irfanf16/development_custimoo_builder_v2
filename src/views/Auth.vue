@@ -30,7 +30,7 @@
 </script>
 
 <template>
-  <div class="max-w-md mx-auto">
+  <div data-testid="auth-root" class="max-w-md mx-auto">
     <Card>
       <CardHeader class="text-center">
         <CardTitle class="text-2xl">Welcome to Customizer</CardTitle>
@@ -40,13 +40,14 @@
       </CardHeader>
       <CardContent class="space-y-4">
         <!-- Login Form -->
-        <div class="space-y-4">
+        <div data-testid="auth-form-login" class="space-y-4">
           <div>
             <label for="auth-email" class="block text-sm font-medium mb-2">Email</label>
             <input
               id="auth-email"
               v-model="loginForm.email"
               type="email"
+              data-testid="auth-field-email"
               class="w-full rounded-md border px-3 py-2"
               placeholder="Enter your email"
             />
@@ -57,11 +58,12 @@
               id="auth-password"
               v-model="loginForm.password"
               type="password"
+              data-testid="auth-field-password"
               class="w-full rounded-md border px-3 py-2"
               placeholder="Enter your password"
             />
           </div>
-          <Button class="w-full" :disabled="authStore.isLoading" @click="handleLogin">
+          <Button data-testid="auth-button-login" class="w-full" :disabled="authStore.isLoading" @click="handleLogin">
             {{ authStore.isLoading ? 'Signing In...' : 'Sign In' }}
           </Button>
         </div>
@@ -76,13 +78,14 @@
         </div>
 
         <!-- Register Form -->
-        <div class="space-y-4">
+        <div data-testid="auth-form-register" class="space-y-4">
           <div>
             <label for="auth-name" class="block text-sm font-medium mb-2">Full Name</label>
             <input
               id="auth-name"
               v-model="registerForm.name"
               type="text"
+              data-testid="auth-field-name"
               class="w-full rounded-md border px-3 py-2"
               placeholder="Enter your full name"
             />
@@ -93,6 +96,7 @@
               id="auth-reg-email"
               v-model="registerForm.email"
               type="email"
+              data-testid="auth-field-reg-email"
               class="w-full rounded-md border px-3 py-2"
               placeholder="Enter your email"
             />
@@ -103,6 +107,7 @@
               id="auth-reg-password"
               v-model="registerForm.password"
               type="password"
+              data-testid="auth-field-reg-password"
               class="w-full rounded-md border px-3 py-2"
               placeholder="Create a password"
             />
@@ -115,17 +120,18 @@
               id="auth-confirm-password"
               v-model="registerForm.confirmPassword"
               type="password"
+              data-testid="auth-field-confirm-password"
               class="w-full rounded-md border px-3 py-2"
               placeholder="Confirm your password"
             />
           </div>
-          <Button variant="default" class="w-full" :disabled="authStore.isLoading">
+          <Button data-testid="auth-button-register" variant="default" class="w-full" :disabled="authStore.isLoading">
             {{ authStore.isLoading ? 'Creating Account...' : 'Create Account' }}
           </Button>
         </div>
 
         <!-- Error Display -->
-        <div v-if="authStore.error" class="text-red-600 text-sm text-center">
+        <div v-if="authStore.error" data-testid="auth-error" class="text-red-600 text-sm text-center">
           {{ authStore.error }}
         </div>
 

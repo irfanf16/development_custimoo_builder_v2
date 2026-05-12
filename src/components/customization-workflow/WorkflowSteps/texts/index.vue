@@ -11,8 +11,10 @@
 </script>
 
 <template>
-  <TextsSelection v-if="textsSubStep === 'list'" />
-  <TextPlacement v-else-if="textsSubStep === 'placement'" />
-  <TextEdit v-else-if="textsSubStep === 'single'" />
-  <TextNumberFontSelection v-else-if="textsSubStep === 'multipleitems'" />
+  <div data-testid="workflow-texts-entry">
+    <TextsSelection v-if="textsSubStep === 'list'" />
+    <TextPlacement v-else-if="textsSubStep === 'placement'" />
+    <TextEdit v-else-if="textsSubStep === 'single'" />
+    <TextNumberFontSelection v-else-if="textsSubStep === 'multipleitems'" />
+  </div>
 </template>

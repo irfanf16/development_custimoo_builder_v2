@@ -1,8 +1,8 @@
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4" data-testid="profile-comments-list">
     <!-- Add comment button -->
     <div v-if="!showAddForm && isaIdx == 0">
-      <Button @click="showAddForm = true">
+      <Button data-testid="profile-comments-button-add" @click="showAddForm = true">
         <MessageCircleIcon class="w-4 h-4" />
         Add Comment
       </Button>

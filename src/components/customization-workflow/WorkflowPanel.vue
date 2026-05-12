@@ -214,12 +214,9 @@
 </script>
 
 <template>
-  <div :class="containerClasses">
-    <Card :class="cardClasses">
-      <div
-        ref="panelShellRef"
-        class="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden"
-      >
+  <div data-testid="workflow-panel-root" :class="containerClasses">
+    <Card data-testid="workflow-panel-card" :class="cardClasses">
+      <div ref="panelShellRef" class="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
         <template v-if="$slots.header">
           <div ref="panelHeaderMeasureRef" class="shrink-0">
             <CardHeader
@@ -231,7 +228,11 @@
         </template>
 
         <div class="flex min-h-0 min-w-0 flex-1 flex-col">
-          <ScrollArea :style="scrollAreaStyle" class="min-h-0 min-w-0 flex-1">
+          <ScrollArea
+            data-testid="workflow-panel-scroll"
+            :style="scrollAreaStyle"
+            class="min-h-0 min-w-0 flex-1"
+          >
             <Transition name="panel-slide" mode="out-in" appear>
               <div ref="cardContentRef" :key="props.contentKey" class="min-h-0 w-full">
                 <slot :is-expanded="isExpanded" />

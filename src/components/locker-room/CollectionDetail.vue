@@ -230,7 +230,7 @@
 <template>
   <Transition name="slide-horizontal" mode="out-in">
     <!-- Keep this in normal flow so outer ScrollArea can measure content height -->
-    <div v-if="activeTab === 'products'" key="products" class="w-full">
+    <div v-if="activeTab === 'products'" data-testid="locker-room-collection-detail-products" key="products" class="w-full">
       <CollectionProductListing
         ref="collectionProductListingRef"
         :products="preSelectedProducts"

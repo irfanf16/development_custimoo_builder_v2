@@ -163,7 +163,7 @@
 </script>
 
 <template>
-  <div ref="ordersShellRef" class="flex min-h-0 h-full flex-col overflow-hidden">
+  <div ref="ordersShellRef" class="flex min-h-0 h-full flex-col overflow-hidden" data-testid="profile-orders-root">
     <div ref="ordersChromeMeasureRef" class="shrink-0">
       <!-- Header -->
       <div class="sticky top-0 z-10 w-max px-4 pb-3 pt-4">
@@ -180,6 +180,7 @@
             :placeholder="t.searchOrders"
             class="h-8 w-full pl-8 pr-8 bg-muted"
             data-orders-search-input="true"
+            data-testid="profile-orders-input-search"
             @focus="onSearchFocus"
             @blur="onSearchBlur"
           />

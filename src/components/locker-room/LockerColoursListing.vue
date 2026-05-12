@@ -144,10 +144,11 @@
   <div v-if="!colour_groups.length" class="py-8 text-center text-muted-foreground">
     {{ locker_no_colours({}, { locale }) }}
   </div>
-  <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-6 relative group">
+  <div v-else data-testid="locker-room-colours-listing" class="grid grid-cols-2 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(color, group_index) in colour_groups"
       :key="group_index"
+      :data-testid="`locker-room-colour-item-${group_index}`"
       class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative !gap-0 h-fit duration-150 border-0"
     >
       <div

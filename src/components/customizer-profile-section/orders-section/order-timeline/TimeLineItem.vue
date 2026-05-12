@@ -4,6 +4,7 @@
     :class="{
       'flex-row-reverse': alternating && index % 2 === 1
     }"
+    :data-testid="`profile-timeline-item-${index}`"
   >
     <div
       class="absolute top-0 w-0.5 h-full z-[1] transition-colors"

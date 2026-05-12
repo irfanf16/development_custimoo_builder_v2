@@ -47,6 +47,7 @@
 <template>
   <div
     class="flex flex-col gap-2 py-3 px-4 border-b transition-colors hover:bg-muted/50 cursor-pointer"
+    :data-testid="`profile-orders-item-${order.id}`"
     @click="showOrderDetails(order)"
   >
     <!-- Top Row -->

@@ -197,7 +197,7 @@
 </script>
 
 <template>
-  <div class="container mx-auto px-4 py-8">
+  <div data-testid="third-party-root" class="container mx-auto px-4 py-8">
     <div class="max-w-6xl mx-auto">
       <!-- Header -->
       <div class="mb-6">

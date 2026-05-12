@@ -298,7 +298,7 @@
 </script>
 
 <template>
-  <div id="collection-view-container" class="min-h-screen flex flex-col bg-background">
+  <div id="collection-view-container" data-testid="collection-root" class="min-h-screen flex flex-col bg-background">
     <!-- Header -->
     <header
       class="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"

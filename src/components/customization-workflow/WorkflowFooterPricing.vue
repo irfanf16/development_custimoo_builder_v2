@@ -231,7 +231,11 @@
 </script>
 
 <template>
-  <div class="space-y-2 md:space-y-4" :class="{ 'w-auto': isExpanded, 'w-full': !isExpanded }">
+  <div
+    data-testid="workflow-footer-pricing"
+    class="space-y-2 md:space-y-4"
+    :class="{ 'w-auto': isExpanded, 'w-full': !isExpanded }"
+  >
     <div class="space-y-1">
       <p
         v-if="showPricing && !uiStore.isMobile"
@@ -248,7 +252,10 @@
         <p v-if="uiStore.isMobile" class="text-xs text-muted-foreground uppercase tracking-wide">
           {{ summary_mrsp({}, { locale: profileStore.currentLocale }) }}
         </p>
-        <p class="text-lg md:text-2xl font-bold text-foreground">
+        <p
+          data-testid="workflow-footer-pricing-price"
+          class="text-lg md:text-2xl font-bold text-foreground"
+        >
           {{ activeProductPrice }}
         </p>
         <p class="text-sm text-muted-foreground">
@@ -276,6 +283,7 @@
     </div>
     <Button
       v-if="isLoggedIn && shouldShowAddToCartButton"
+      data-testid="workflow-footer-pricing-button-add-to-cart"
       variant="primary"
       class="w-full"
       :size="uiStore.isMobile ? 'sm' : 'lg'"

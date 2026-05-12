@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent variant="large" class="max-w-5xl max-h-[90vh] overflow-y-auto">
+    <DialogContent variant="large" class="max-w-5xl max-h-[90vh] overflow-y-auto" data-testid="profile-artwork-approval-dialog">
       <DialogHeader>
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-3">
@@ -96,8 +96,8 @@
               </span>
             </template>
             <template v-else>
-              <Button variant="primary" @click="handleApproveReject('reject')">Reject</Button>
-              <Button variant="primary" @click="handleApproveReject('accept')">Accept</Button>
+              <Button variant="primary" data-testid="profile-artwork-button-reject" @click="handleApproveReject('reject')">Reject</Button>
+              <Button variant="primary" data-testid="profile-artwork-button-accept" @click="handleApproveReject('accept')">Accept</Button>
             </template>
           </div>
         </div>

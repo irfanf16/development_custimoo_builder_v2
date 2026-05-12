@@ -9,9 +9,9 @@
 </script>
 
 <template>
-  <div class="layout w-full mx-auto overflow-hidden min-h-screen">
+  <div data-testid="layout-third-party" class="layout w-full mx-auto overflow-hidden min-h-screen">
     <!-- Loading State -->
-    <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
+    <div v-if="isLoading" data-testid="layout-third-party-loading" class="flex items-center justify-center min-h-screen">
       <div class="text-center">
         <Spinner class="size-8 text-primary mx-auto mb-4" />
         <p class="text-muted-foreground">Loading samples...</p>
@@ -68,7 +68,7 @@
         <p class="text-muted-foreground mb-4">
           {{ error }}
         </p>
-        <Button @click="initializeApp()">Retry</Button>
+        <Button data-testid="layout-third-party-button-retry" @click="initializeApp()">Retry</Button>
       </div>
     </div>
 

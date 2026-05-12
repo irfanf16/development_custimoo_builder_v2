@@ -269,12 +269,13 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4" data-testid="workflow-texts-selection">
     <div class="flex flex-col gap-2">
       <PanelNavigationItem
         v-for="(customText, index) in customAndPresetTexts"
         :id="`texts-selection-preset-${customText.id}`"
         :key="customText.id"
+        :data-testid="`workflow-texts-item-${customText.id}`"
         :class="['h-[60px]']"
         @click="() => goToEdit(customText, index)"
       >
@@ -342,7 +343,7 @@
       </PanelNavigationItem>
     </div>
     <div v-if="allowExtraText" class="w-full px-4 md:px-6">
-      <Button variant="default" class="w-full" @click="goToPlacement">
+      <Button variant="default" class="w-full" data-testid="workflow-texts-button-add" @click="goToPlacement">
         <Plus class="size-4" />
         <span class="text-sm font-medium">{{ texts_additional_text_button({}, { locale }) }}</span>
       </Button>

@@ -72,7 +72,7 @@
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="min-w-xl">
+    <DialogContent data-testid="locker-room-copy-products-dialog" class="min-w-xl">
       <DialogHeader>
         <DialogTitle>{{ locker_copy_products_title({}, { locale }) }}</DialogTitle>
       </DialogHeader>

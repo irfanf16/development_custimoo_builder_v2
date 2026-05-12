@@ -41,7 +41,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 px-4 pb-4 md:px-6 md:pb-6">
+  <div data-testid="workflow-roster-edit" class="flex flex-col gap-4 px-4 pb-4 md:px-6 md:pb-6">
     <transition name="fade">
       <Alert
         v-if="showInlineMessage"

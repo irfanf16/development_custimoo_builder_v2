@@ -528,7 +528,7 @@
 
 <template>
   <!-- Content -->
-  <div class="flex flex-col gap-4 md:gap-6">
+  <div data-testid="workflow-colors-root" class="flex flex-col gap-4 md:gap-6">
     <!-- Lucky / Locker actions (first) -->
     <div class="flex flex-col gap-3">
       <div class="rounded-xl border border-border bg-primary/10 p-4 mx-6">
@@ -544,9 +544,14 @@
           </div>
         </div>
         <div class="mt-4">
-          <Button class="w-full" variant="default" :disabled="!hasSvgParts" @click="shuffleAll">{{
-            color_shuffle_design_colors({}, { locale: profileStore.currentLocale })
-          }}</Button>
+          <Button
+            data-testid="workflow-colors-button-shuffle"
+            class="w-full"
+            variant="default"
+            :disabled="!hasSvgParts"
+            @click="shuffleAll"
+            >{{ color_shuffle_design_colors({}, { locale: profileStore.currentLocale }) }}</Button
+          >
         </div>
       </div>
       <div class="flex flex-col gap-3 px-4 md:px-6">
@@ -559,6 +564,7 @@
         </div>
         <div>
           <Button
+            data-testid="workflow-colors-button-locker"
             class="w-full bg-card"
             variant="default"
             :disabled="!isAuthenticated"
@@ -571,7 +577,11 @@
     </div>
 
     <!-- Applied logo colors – only when logo colors have been applied; after Lucky/Locker -->
-    <div v-if="showAppliedExtractedColorsBlock" class="px-4 md:px-6 flex flex-col gap-2">
+    <div
+      v-if="showAppliedExtractedColorsBlock"
+      data-testid="workflow-colors-extracted"
+      class="px-4 md:px-6 flex flex-col gap-2"
+    >
       <p class="text-base font-semibold text-foreground">
         {{ extractedSectionLabel }}
       </p>
@@ -623,6 +633,7 @@
           class="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-2"
         >
           <Button
+            data-testid="workflow-colors-button-shuffle-extracted"
             variant="outline"
             size="sm"
             class="min-h-9 w-full justify-center sm:w-auto"
@@ -632,6 +643,7 @@
             {{ logos_shuffle_colors({}, { locale: profileStore.currentLocale }) }}
           </Button>
           <Button
+            data-testid="workflow-colors-button-use-original"
             variant="outline"
             size="sm"
             class="min-h-9 w-full justify-center sm:w-auto"
@@ -671,6 +683,7 @@
         v-for="(svgGroup, idx) in effectiveSvgGroupsInteractive"
         :key="svgGroup.id"
         :value="String(idx + 1)"
+        :data-testid="`workflow-colors-group-${svgGroup.id}`"
         class="px-4 md:px-6 max-w-full"
       >
         <AccordionTrigger

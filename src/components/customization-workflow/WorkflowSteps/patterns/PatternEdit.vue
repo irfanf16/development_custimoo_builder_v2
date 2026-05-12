@@ -178,7 +178,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
+  <div data-testid="workflow-patterns-edit" class="flex flex-col gap-6">
     <!-- Pattern Swatches Section -->
     <div class="space-y-4 px-4 md:px-6">
       <h3 class="text-lg font-semibold">Select Pattern</h3>
@@ -188,6 +188,7 @@
         <button
           v-for="pattern in displayedPatterns"
           :key="pattern.id"
+          :data-testid="`workflow-patterns-item-${pattern.id}`"
           :class="[
             'h-16 rounded-lg border-2 transition-all hover:scale-105 relative',
             selectedPattern === pattern.id

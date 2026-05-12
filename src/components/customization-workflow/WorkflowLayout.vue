@@ -336,15 +336,13 @@
 <template>
   <div
     id="workflow-panel-container"
+    data-testid="workflow-layout-root"
     :class="containerClasses"
     :style="mobileContainerSizeStyle"
     :data-workflow-compact-typography="workflowCompactTypography ? '' : undefined"
   >
     <!-- Mobile: sheet height set on #workflow-panel-container; fill + min-h-0 for ScrollArea -->
-    <div
-      v-if="uiStore.isMobile"
-      class="flex h-full min-h-0 w-full flex-1 flex-col"
-    >
+    <div v-if="uiStore.isMobile" class="flex h-full min-h-0 w-full flex-1 flex-col">
       <transition
         enter-active-class="transition duration-200"
         enter-from-class="opacity-0 translate-y-4"
@@ -358,86 +356,88 @@
           class="flex h-full min-h-0 w-full flex-1 flex-col opacity-100"
         >
           <div
+            data-testid="workflow-layout-mobile-sheet"
             class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-2xl border border-border bg-background opacity-100 shadow-lg"
             :style="mobileSheetInnerStyle"
           >
             <div
-                ref="sheetHandleRef"
-                role="button"
-                tabindex="0"
-                class="flex min-h-11 shrink-0 cursor-pointer touch-none select-none flex-col items-center justify-center gap-2 px-4 py-2"
-                :aria-label="closePanelAriaLabel"
-                @click="onMobileSheetHandleActivate"
-                @keydown.enter.prevent="onMobileSheetHandleActivate"
-                @keydown.space.prevent="onMobileSheetHandleActivate"
-              >
-                <div
-                  class="h-1 w-10 shrink-0 rounded-full bg-muted-foreground/35"
-                  aria-hidden="true"
-                />
-              </div>
-            <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            <WorkflowPanel
-              ref="menuPanelRef"
-              :content-key="workflowStore.contentKey || ''"
-              :header-config="headerConfig"
-              :is-expanded="true"
+              ref="sheetHandleRef"
+              data-testid="workflow-layout-mobile-handle"
+              role="button"
+              tabindex="0"
+              class="flex min-h-11 shrink-0 cursor-pointer touch-none select-none flex-col items-center justify-center gap-2 px-4 py-2"
+              :aria-label="closePanelAriaLabel"
+              @click="onMobileSheetHandleActivate"
+              @keydown.enter.prevent="onMobileSheetHandleActivate"
+              @keydown.space.prevent="onMobileSheetHandleActivate"
             >
-              <template #header>
-                <WorkflowHeader
-                  :config="headerConfig"
-                  @update:apply-overrides-model-value="handleApplyOverridesChange"
-                  @update:search-model-value="handleSearchChange"
-                />
-              </template>
-              <template #footer>
-                <div :class="['flex flex-col w-full', { 'justify-end': isExpanded }]">
-                  <WorkflowFooterButtons
-                    v-if="footerConfig?.buttons?.length > 0"
-                    :config="footerConfig"
-                    :is-expanded="isExpanded"
+              <div
+                class="h-1 w-10 shrink-0 rounded-full bg-muted-foreground/35"
+                aria-hidden="true"
+              />
+            </div>
+            <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+              <WorkflowPanel
+                ref="menuPanelRef"
+                :content-key="workflowStore.contentKey || ''"
+                :header-config="headerConfig"
+                :is-expanded="true"
+              >
+                <template #header>
+                  <WorkflowHeader
+                    :config="headerConfig"
+                    @update:apply-overrides-model-value="handleApplyOverridesChange"
+                    @update:search-model-value="handleSearchChange"
                   />
-                  <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
-                  <WorkflowFooterPricing :is-expanded="isExpanded" />
-                </div>
-              </template>
+                </template>
+                <template #footer>
+                  <div :class="['flex flex-col w-full', { 'justify-end': isExpanded }]">
+                    <WorkflowFooterButtons
+                      v-if="footerConfig?.buttons?.length > 0"
+                      :config="footerConfig"
+                      :is-expanded="isExpanded"
+                    />
+                    <Separator v-if="footerConfig?.buttons?.length > 0" class="my-2 md:my-4" />
+                    <WorkflowFooterPricing :is-expanded="isExpanded" />
+                  </div>
+                </template>
 
-              <ProductsEntry
-                v-if="workflowStore.currentStep === 'product'"
-                :is-expanded="isExpanded"
-              />
-              <DesignSelection
-                v-else-if="workflowStore.currentStep === 'designs'"
-                :is-expanded="isExpanded"
-                @scroll-to-element="handleScrollToElement"
-              />
-              <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" />
-              <LogoSelection
-                v-else-if="workflowStore.currentStep === 'logos'"
-                :is-expanded="isExpanded"
-              />
-              <ColorSelection
-                v-else-if="workflowStore.currentStep === 'colors'"
-                :is-expanded="isExpanded"
-              />
-              <PatternSelection
-                v-else-if="workflowStore.currentStep === 'patterns'"
-                :is-expanded="isExpanded"
-              />
-              <TextsEntry
-                v-else-if="workflowStore.currentStep === 'texts'"
-                :is-expanded="isExpanded"
-              />
-              <RosterEntry
-                v-else-if="workflowStore.currentStep === 'roster'"
-                :is-expanded="isExpanded"
-              />
-              <SummaryPanel
-                v-else-if="workflowStore.currentStep === 'summary'"
-                :key="JSON.stringify(customization)"
-                :is-expanded="isExpanded"
-              />
-            </WorkflowPanel>
+                <ProductsEntry
+                  v-if="workflowStore.currentStep === 'product'"
+                  :is-expanded="isExpanded"
+                />
+                <DesignSelection
+                  v-else-if="workflowStore.currentStep === 'designs'"
+                  :is-expanded="isExpanded"
+                  @scroll-to-element="handleScrollToElement"
+                />
+                <StyleSelection v-else-if="workflowStore.currentStep === 'styles'" />
+                <LogoSelection
+                  v-else-if="workflowStore.currentStep === 'logos'"
+                  :is-expanded="isExpanded"
+                />
+                <ColorSelection
+                  v-else-if="workflowStore.currentStep === 'colors'"
+                  :is-expanded="isExpanded"
+                />
+                <PatternSelection
+                  v-else-if="workflowStore.currentStep === 'patterns'"
+                  :is-expanded="isExpanded"
+                />
+                <TextsEntry
+                  v-else-if="workflowStore.currentStep === 'texts'"
+                  :is-expanded="isExpanded"
+                />
+                <RosterEntry
+                  v-else-if="workflowStore.currentStep === 'roster'"
+                  :is-expanded="isExpanded"
+                />
+                <SummaryPanel
+                  v-else-if="workflowStore.currentStep === 'summary'"
+                  :key="JSON.stringify(customization)"
+                  :is-expanded="isExpanded"
+                />
+              </WorkflowPanel>
             </div>
           </div>
         </div>

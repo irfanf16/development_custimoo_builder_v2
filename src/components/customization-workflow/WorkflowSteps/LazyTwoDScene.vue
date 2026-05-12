@@ -84,6 +84,7 @@
 <template>
   <div
     ref="containerEl"
+    data-testid="workflow-lazy-scene"
     :class="['relative', canvasClass]"
     :style="{ width: `${canvasWidth / 16}rem`, height: `${canvasHeight / 16}rem` }"
   >

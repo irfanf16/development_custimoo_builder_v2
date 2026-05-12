@@ -482,7 +482,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-3">
+  <div data-testid="workflow-logo-ai-generator" class="flex flex-col gap-3">
     <div class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 min-w-0">
         <Sparkles class="size-4 shrink-0 text-primary" />
@@ -706,6 +706,7 @@
             {{ ai_logos_regenerate({}, { locale: profileStore.currentLocale }) }}
           </Button>
           <Button
+            data-testid="workflow-logo-ai-button-apply"
             variant="default"
             size="sm"
             :disabled="isApplying || isGenerating || isShuffling"

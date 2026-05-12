@@ -12,6 +12,7 @@
 
 <template>
   <div
+    data-testid="shared-empty-state"
     class="flex flex-col items-center justify-center gap-3 py-12 px-4 text-center text-muted-foreground"
   >
     <slot name="icon">

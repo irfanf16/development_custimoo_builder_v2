@@ -75,7 +75,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col h-full px-4">
+  <div class="flex flex-col h-full px-4" data-testid="profile-preferences-root">
     <div class="sticky top-0 z-10 pt-4 pb-3">
       <div class="text-lg font-semibold">{{ t.preferences }}</div>
     </div>
@@ -96,6 +96,7 @@
         <Select
           :key="profileStore.currentLocale"
           v-model="profileStore.preferences.display"
+          data-testid="profile-preferences-select-display"
           @update:model-value="
             value => profileStore.setPreferences({ display: value as DisplayMode })
           "
@@ -115,6 +116,7 @@
         <Label for="language">{{ t.language }}</Label>
         <Select
           v-model="profileStore.preferences.language"
+          data-testid="profile-preferences-select-language"
           @update:model-value="
             value => profileStore.setPreferences({ language: value as ParaglideLocale })
           "

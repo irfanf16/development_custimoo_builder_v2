@@ -1,13 +1,13 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="max-w-md">
+    <DialogContent class="max-w-md" data-testid="profile-quote-modal">
       <DialogHeader>
         <DialogTitle class="text-xl font-bold text-foreground">Accept Quote</DialogTitle>
         <DialogDescription> Are you sure you want to accept this quote? </DialogDescription>
       </DialogHeader>
       <div class="flex justify-end gap-2 pt-4">
         <Button variant="outline" @click="closeDialog">Cancel</Button>
-        <Button variant="primary" @click="handleAccept">Accept Quote</Button>
+        <Button variant="primary" data-testid="profile-quote-button-accept" @click="handleAccept">Accept Quote</Button>
       </div>
     </DialogContent>
   </Dialog>

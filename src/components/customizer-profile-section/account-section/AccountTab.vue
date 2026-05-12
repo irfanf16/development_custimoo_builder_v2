@@ -92,7 +92,7 @@
 </script>
 
 <template>
-  <div ref="accountShellRef" class="flex min-h-0 h-full flex-col overflow-hidden">
+  <div ref="accountShellRef" class="flex min-h-0 h-full flex-col overflow-hidden" data-testid="profile-account-root">
     <div
       v-if="!uiStore.isMobile"
       ref="accountHeaderMeasureRef"
@@ -149,6 +149,7 @@
               size="sm"
               variant="outline"
               class="rounded-md bg-muted hover:bg-muted/80 flex items-center gap-1.5"
+              data-testid="profile-account-button-edit-name"
               :disabled="isUpdatingName"
               @click="handleEditName"
             >
@@ -159,6 +160,7 @@
               size="sm"
               variant="outline"
               class="rounded-md bg-muted hover:bg-muted/80"
+              data-testid="profile-account-button-sign-out"
               @click="handleSignOut"
             >
               {{ t.signOut }}

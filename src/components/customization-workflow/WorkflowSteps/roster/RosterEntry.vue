@@ -73,7 +73,11 @@
 </script>
 
 <template>
-  <div v-if="rosterSubStep === 'list'" class="flex flex-col gap-6 px-4 pb-4 md:px-6 md:pb-6">
+  <div
+    v-if="rosterSubStep === 'list'"
+    data-testid="workflow-roster-entry"
+    class="flex flex-col gap-6 px-4 pb-4 md:px-6 md:pb-6"
+  >
     <div class="space-y-4">
       <div
         class="rounded-2xl border border-dashed px-6 py-10 text-center transition-all bg-background m-0"
@@ -131,6 +135,7 @@
     </div>
     <div class="grid gap-3 sm:grid-cols-2">
       <Button
+        data-testid="workflow-roster-button-locker"
         variant="secondary"
         :disabled="!isAuthenticated"
         aria-disabled="!isAuthenticated"
@@ -138,7 +143,11 @@
       >
         {{ colors_choose_from_locker({}, { locale }) }}
       </Button>
-      <Button variant="default" @click="handleManualCreate">
+      <Button
+        data-testid="workflow-roster-button-manual-create"
+        variant="default"
+        @click="handleManualCreate"
+      >
         {{
           hasEntries
             ? roster_manual_continue_editing({}, { locale })

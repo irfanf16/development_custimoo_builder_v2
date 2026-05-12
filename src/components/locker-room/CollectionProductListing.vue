@@ -121,6 +121,7 @@
     v-model="localProducts"
     item-key="id"
     tag="div"
+    data-testid="locker-room-collection-product-listing"
     class="grid grid-cols-2 md:grid-cols-4 gap-6"
     animation="250"
     ghost-class="drag-ghost"

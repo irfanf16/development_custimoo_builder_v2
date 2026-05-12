@@ -119,7 +119,7 @@
   }
 </script>
 <template>
-  <div class="w-full">
+  <div data-testid="locker-room-rosters" class="w-full">
     <Spinner v-if="isLoading" class="size-8 text-primary m-auto mb-4" />
 
     <div v-else-if="!hasAnyRoster" class="py-8 text-center text-muted-foreground">

@@ -35,7 +35,11 @@ export default [
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        projectService: true,
+        project: [
+          './tsconfig.app.json',
+          './tsconfig.node.json',
+          './tsconfig.vitest.json'
+        ],
         tsconfigRootDir: __dirname
       }
     }
@@ -47,7 +51,11 @@ export default [
       parser: vueParser,
       parserOptions: {
         parser: tseslint.parser,
-        projectService: true,
+        project: [
+          './tsconfig.app.json',
+          './tsconfig.node.json',
+          './tsconfig.vitest.json'
+        ],
         tsconfigRootDir: __dirname,
         extraFileExtensions: ['.vue']
       }

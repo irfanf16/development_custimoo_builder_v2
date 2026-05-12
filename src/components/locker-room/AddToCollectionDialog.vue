@@ -41,7 +41,7 @@
 
 <template>
   <Dialog :open="open" @update:open="emit('close')">
-    <DialogContent variant="default" class="p-6">
+    <DialogContent data-testid="locker-room-add-to-collection-dialog" variant="default" class="p-6">
       <DialogHeader class="mb-4">
         <DialogTitle class="text-lg font-semibold">Add to Collection</DialogTitle>
       </DialogHeader>

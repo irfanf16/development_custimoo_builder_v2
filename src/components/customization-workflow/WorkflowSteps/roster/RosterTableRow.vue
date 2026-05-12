@@ -247,7 +247,10 @@
 </script>
 
 <template>
-  <div :class="['grid items-center gap-2 py-2', gridColumnWidthClass]">
+  <div
+    :data-testid="`workflow-roster-row-${props.index}`"
+    :class="['grid items-center gap-2 py-2', gridColumnWidthClass]"
+  >
     <RadioGroupItem
       :value="props.value"
       class="flex items-center justify-center"

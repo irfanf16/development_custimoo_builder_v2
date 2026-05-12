@@ -7,6 +7,7 @@
 <template>
   <svg
     v-if="props.type === 'simple'"
+    data-testid="workflow-logo-content-remove-icon-simple"
     width="96"
     height="96"
     viewBox="0 0 96 96"
@@ -56,6 +57,7 @@
   </svg>
   <svg
     v-if="props.type === 'smart'"
+    data-testid="workflow-logo-content-remove-icon-smart"
     width="96"
     height="96"
     viewBox="0 0 96 96"

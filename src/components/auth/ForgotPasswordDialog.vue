@@ -70,32 +70,33 @@
 
 <template>
   <Dialog :open="isForgotPasswordDialogOpen" @update:open="setForgotPasswordDialogOpen">
-    <DialogContent class="sm:max-w-md">
+    <DialogContent data-testid="auth-dialog-forgot-password" class="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>{{ forgot_password_dialog_title({}, { locale: currentLocale }) }}</DialogTitle>
         <DialogDescription>
           {{ forgot_password_dialog_description({}, { locale: currentLocale }) }}
         </DialogDescription>
       </DialogHeader>
-      <form class="space-y-4" @submit.prevent="handleForgotPasswordSubmit">
+      <form data-testid="auth-form-forgot-password" class="space-y-4" @submit.prevent="handleForgotPasswordSubmit">
         <div class="grid gap-2">
           <Input
             id="email"
             v-model="credentials.email"
             type="email"
             required
+            data-testid="auth-field-email"
             :placeholder="auth_placeholder_email({}, { locale: currentLocale })"
             autocomplete="email"
           />
         </div>
-        <div v-if="authError" class="text-sm text-red-600">
+        <div v-if="authError" data-testid="auth-error" class="text-sm text-red-600">
           {{ authError }}
         </div>
         <DialogFooter class="flex-col gap-2 sm:flex-row">
-          <Button type="button" variant="default" @click="handleOpenSignIn">
+          <Button data-testid="auth-button-cancel" type="button" variant="default" @click="handleOpenSignIn">
             {{ auth_cancel({}, { locale: currentLocale }) }}
           </Button>
-          <Button type="submit" :loading="isLoading" :disabled="isLoading">
+          <Button data-testid="auth-button-submit" type="submit" :loading="isLoading" :disabled="isLoading">
             <span>{{ auth_send_reset_link({}, { locale: currentLocale }) }}</span>
           </Button>
         </DialogFooter>

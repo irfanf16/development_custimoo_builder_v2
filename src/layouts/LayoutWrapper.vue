@@ -27,7 +27,7 @@
 </script>
 
 <template>
-  <component :is="LayoutComponent">
+  <component :is="LayoutComponent" data-testid="layout-root">
     <slot />
   </component>
 </template>

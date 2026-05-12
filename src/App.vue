@@ -66,6 +66,7 @@
 <template>
   <div
     v-if="isLoading"
+    data-testid="app-loading"
     class="flex min-h-screen items-center justify-center font-sans text-primary"
   >
     <div class="flex flex-col items-center gap-3 text-center">
@@ -74,14 +75,14 @@
     </div>
   </div>
 
-  <div v-else-if="error" class="flex min-h-screen items-center justify-center">
+  <div v-else-if="error" data-testid="app-error" class="flex min-h-screen items-center justify-center">
     <div class="text-center">
       <p class="mb-4 text-destructive">{{ error }}</p>
-      <Button v-if="appInit" variant="default" class="px-4 py-2" @click="appInit.initializeApp()">
+      <Button v-if="appInit" variant="default" class="px-4 py-2" data-testid="app-button-retry" @click="appInit.initializeApp()">
         {{ retryLabel }}
       </Button>
     </div>
   </div>
 
-  <WidgetApp v-else v-bind="$attrs" />
+  <WidgetApp v-else data-testid="app-root" v-bind="$attrs" />
 </template>

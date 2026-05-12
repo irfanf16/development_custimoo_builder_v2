@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-3">
+  <div class="space-y-3" :data-testid="`profile-comments-item-${comment.id}`">
     <!-- Main comment -->
     <div v-if="!commentState.edit_comment" class="flex gap-3 items-start">
       <div class="flex-1 min-w-0">

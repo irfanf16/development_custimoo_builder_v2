@@ -32,11 +32,12 @@
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <div data-testid="workflow-product-subcategory-selection" class="flex flex-col">
     <PanelNavigationItem
       v-for="item in subcategories"
       :id="item.id.toString()"
       :key="item.id"
+      :data-testid="`workflow-product-subcategory-item-${item.id}`"
       @click="() => handleSelectSubcategory(item.id)"
     >
       <template #content>

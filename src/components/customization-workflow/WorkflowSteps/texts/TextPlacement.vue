@@ -171,11 +171,12 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4" data-testid="workflow-texts-placement">
     <div v-if="availableTextPlacements.length" class="grid grid-cols-2">
       <div
         v-for="placement in availableTextPlacements"
         :key="placement.id"
+        :data-testid="`workflow-texts-placement-item-${placement.id}`"
         class="flex flex-col gap-4 items-center cursor-pointer w-full p-4"
         @click="handleSelectPlacement(placement)"
       >

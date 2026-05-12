@@ -46,7 +46,7 @@
 
 <template>
   <Dialog v-model:open="dialogOpen">
-    <DialogContent>
+    <DialogContent data-testid="customizer-reset-dialog">
       <DialogHeader>
         <DialogTitle>
           {{ actions_reset_customization({}, { locale: profileStore.currentLocale }) }}?

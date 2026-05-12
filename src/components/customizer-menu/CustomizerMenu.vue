@@ -13,10 +13,17 @@
 </script>
 
 <template>
-  <nav class="flex flex-col gap-1 p-1" role="navigation" :aria-label="menuLabel">
+  <nav
+    data-testid="menu-root"
+    class="flex flex-col gap-1 p-1"
+    role="navigation"
+    :aria-label="menuLabel"
+  >
     <CustomizerMenuItem
       v-for="item in menuItems"
       :key="item.step"
+      :data-testid="`menu-item-${item.step}`"
+      :step="item.step"
       :is-active="isActive(item.step)"
       :text="getNavText(item.step)"
       @click="goTo(item.step)"

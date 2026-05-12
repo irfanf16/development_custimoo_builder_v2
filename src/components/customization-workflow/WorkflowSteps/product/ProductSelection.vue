@@ -333,11 +333,12 @@
       </div>
     </div>
   </div>
-  <div v-else :class="productGridLayoutClass">
+  <div v-else data-testid="workflow-product-selection" :class="productGridLayoutClass">
     <div
       v-for="item in filteredPreviews"
       :id="`product-${item.productPreview.id}`"
       :key="item.productPreview.id"
+      :data-testid="`workflow-product-item-${item.productPreview.id}`"
       class="group relative flex flex-col items-center gap-4 md:gap-6 p-2 md:p-2"
       :class="[
         compactDesktopTwoCol ? 'min-w-0 w-full' : 'flex-1',

@@ -64,12 +64,12 @@
 
 <template>
   <Dialog :open="isSignInDialogOpen" @update:open="setSignInDialogOpen">
-    <DialogContent class="sm:max-w-md">
+    <DialogContent data-testid="auth-dialog-sign-in" class="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>{{ auth_dialog_title({}, { locale: currentLocale }) }}</DialogTitle>
         <DialogDescription> Enter your credentials to access your account. </DialogDescription>
       </DialogHeader>
-      <form class="space-y-4" @submit.prevent="handleSignInSubmit">
+      <form data-testid="auth-form-credentials" class="space-y-4" @submit.prevent="handleSignInSubmit">
         <div class="grid gap-2">
           <Label for="email">{{ profile_email({}, { locale: currentLocale }) }}</Label>
           <Input
@@ -77,6 +77,7 @@
             v-model="credentials.email"
             type="email"
             required
+            data-testid="auth-field-email"
             :placeholder="auth_placeholder_email({}, { locale: currentLocale })"
             autocomplete="email"
           />
@@ -88,11 +89,12 @@
             v-model="credentials.password"
             type="password"
             required
+            data-testid="auth-field-password"
             :placeholder="auth_placeholder_password({}, { locale: currentLocale })"
             autocomplete="current-password"
           />
         </div>
-        <div v-if="authError" class="text-sm text-red-600">
+        <div v-if="authError" data-testid="auth-error" class="text-sm text-red-600">
           {{ authError }}
         </div>
         <DialogFooter class="flex sm:justify-between w-full gap-2 test-class">
@@ -100,6 +102,7 @@
             <Button
               type="button"
               variant="link"
+              data-testid="auth-button-forgot-password"
               class="p-0 h-auto font-semibold text-primary underline-offset-4 hover:underline"
               @click="handleOpenForgotPassword"
             >
@@ -107,10 +110,10 @@
             </Button>
           </div>
           <div class="flex gap-1">
-            <Button type="button" variant="default" @click="handleCancel">
+            <Button data-testid="auth-button-cancel" type="button" variant="default" @click="handleCancel">
               {{ auth_cancel({}, { locale: currentLocale }) }}
             </Button>
-            <Button type="submit" :disabled="isLoading">
+            <Button data-testid="auth-button-submit" type="submit" :disabled="isLoading">
               <span v-if="isLoading">{{ auth_signing_in({}, { locale: currentLocale }) }}</span>
               <span v-else>{{ auth_sign_in({}, { locale: currentLocale }) }}</span>
             </Button>
@@ -121,6 +124,7 @@
           <Button
             type="button"
             variant="link"
+            data-testid="auth-button-register"
             class="p-0 h-auto font-semibold text-primary underline-offset-4 hover:underline"
             @click="handleOpenSignUp"
           >

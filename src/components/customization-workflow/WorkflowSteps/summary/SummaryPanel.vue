@@ -175,7 +175,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 pb-6">
+  <div data-testid="workflow-summary-root" class="flex flex-col gap-6 pb-6">
     <!-- Product Section -->
     <div class="flex gap-4 px-4 md:px-6">
       <div
@@ -211,7 +211,7 @@
     <!-- Accordion Sections -->
     <Accordion type="multiple" :default-value="['style']" class="space-y-4 border-b">
       <!-- Style Section -->
-      <AccordionItem value="style" class="mb-0">
+      <AccordionItem data-testid="workflow-summary-accordion-style" value="style" class="mb-0">
         <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
           <span class="text-base font-semibold">{{ nav_style({}, { locale }) }}</span>
         </AccordionTrigger>
@@ -263,7 +263,12 @@
       </AccordionItem>
 
       <!-- Logo Section -->
-      <AccordionItem v-if="logosCount > 0" value="logos" class="mb-0">
+      <AccordionItem
+        v-if="logosCount > 0"
+        data-testid="workflow-summary-accordion-logos"
+        value="logos"
+        class="mb-0"
+      >
         <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
           <div class="flex items-center justify-between w-full">
             <span class="text-base font-semibold">{{ nav_logo({}, { locale }) }}</span>
@@ -276,6 +281,7 @@
           <div class="space-y-0">
             <template v-for="(logo, index) in logos" :key="logo.id">
               <button
+                :data-testid="`workflow-summary-logo-${logo.id}`"
                 class="w-full flex items-center justify-between py-3 hover:bg-muted/50 transition-colors text-left group"
                 @click="handleLogoClick(logo.id.toString())"
               >
@@ -321,7 +327,7 @@
       </AccordionItem>
 
       <!-- Color Section -->
-      <AccordionItem value="colors" class="mb-0">
+      <AccordionItem data-testid="workflow-summary-accordion-colors" value="colors" class="mb-0">
         <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
           <span class="text-base font-semibold">{{ nav_color({}, { locale }) }}</span>
         </AccordionTrigger>
@@ -329,6 +335,7 @@
           <div class="space-y-0">
             <template v-for="(color, index) in colors" :key="color.id">
               <button
+                :data-testid="`workflow-summary-color-${color.id}`"
                 class="w-full flex items-center justify-between py-3 hover:bg-muted/50 transition-colors text-left group rounded-lg"
                 @click="handleColorClick(index)"
               >
@@ -369,7 +376,12 @@
       </AccordionItem>
 
       <!-- Text Section -->
-      <AccordionItem v-if="textsCount > 0" value="texts" class="mb-0">
+      <AccordionItem
+        v-if="textsCount > 0"
+        data-testid="workflow-summary-accordion-texts"
+        value="texts"
+        class="mb-0"
+      >
         <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
           <div class="flex items-center justify-between w-full">
             <span class="text-base font-semibold">{{ nav_text({}, { locale }) }}</span>
@@ -401,7 +413,12 @@
       </AccordionItem>
 
       <!-- Roster Section -->
-      <AccordionItem v-if="rosterCount > 0" value="roster" class="mb-0">
+      <AccordionItem
+        v-if="rosterCount > 0"
+        data-testid="workflow-summary-accordion-roster"
+        value="roster"
+        class="mb-0"
+      >
         <AccordionTrigger class="px-4 py-3 md:py-4 hover:no-underline">
           <div class="flex items-center justify-between w-full">
             <span class="text-base font-semibold">{{ nav_roster({}, { locale }) }}</span>
@@ -441,7 +458,12 @@
                 </tbody>
               </table>
             </div>
-            <Button variant="outline" class="w-full" @click="handleEditRoster">
+            <Button
+              data-testid="workflow-summary-button-edit-roster"
+              variant="outline"
+              class="w-full"
+              @click="handleEditRoster"
+            >
               {{ summary_edit_roster({}, { locale }) }}
             </Button>
           </div>

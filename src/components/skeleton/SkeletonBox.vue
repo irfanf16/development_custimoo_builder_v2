@@ -39,6 +39,7 @@
 
 <template>
   <div
+    data-testid="skeleton-box"
     :class="
       cn(
         'relative isolate bg-gray-200 animate-pulse motion-reduce:animate-none',

@@ -1,5 +1,5 @@
 <template>
-  <div class="relative w-full" :class="{ 'flex flex-col': direction === 'vertical' }">
+  <div class="relative w-full" :class="{ 'flex flex-col': direction === 'vertical' }" data-testid="profile-timeline-list">
     <div class="relative">
       <div
         v-if="isOrderStatus"

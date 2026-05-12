@@ -930,7 +930,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-5 w-full">
+  <div data-testid="workflow-logo-edit" class="flex flex-col gap-5 w-full">
     <div class="flex flex-col items-center mx-4 md:mx-6 gap-4">
       <LogoCard
         v-if="customLogo"
@@ -1333,7 +1333,12 @@
       v-if="!logosStore.isLoadingUploadLogo"
       class="flex flex-col gap-3 mx-4 md:mx-6 pt-4 border-t border-border"
     >
-      <Button variant="default" class="rounded-lg w-full mb-2" @click="onClickUpload">
+      <Button
+        data-testid="workflow-logo-button-add-logo"
+        variant="default"
+        class="rounded-lg w-full mb-2"
+        @click="onClickUpload"
+      >
         {{ logos_add_logo({}, { locale: profileStore.currentLocale }) }}
       </Button>
       <input

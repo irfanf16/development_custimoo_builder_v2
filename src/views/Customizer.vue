@@ -117,6 +117,7 @@
 
 <template>
   <div
+    data-testid="customizer-root"
     class="flex w-full h-full min-h-0 flex-none overflow-x-hidden px-4 py-4 md:px-6 md:py-6"
     :class="isTrueMobile ? 'max-h-full !overflow-y-hidden' : 'md:overflow-y-auto'"
   >

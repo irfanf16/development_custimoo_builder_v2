@@ -6,10 +6,11 @@
   const props = defineProps<{ config?: { buttons?: FooterButton[] }; isExpanded?: boolean }>()
 </script>
 <template>
-  <div class="flex gap-2" :class="{ 'w-auto': props.isExpanded, 'w-full': !props.isExpanded }">
+  <div data-testid="workflow-footer-buttons" class="flex gap-2" :class="{ 'w-auto': props.isExpanded, 'w-full': !props.isExpanded }">
     <Button
       v-for="button in props.config?.buttons ?? []"
       :key="button.label"
+      :data-testid="`workflow-button-${button.label?.toLowerCase().replace(/\s+/g, '-')}`"
       :variant="button.variant"
       :disabled="button.disabled ?? false"
       :size="uiStore.isMobile ? 'sm' : 'default'"

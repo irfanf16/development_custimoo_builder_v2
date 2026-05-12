@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div data-testid="profile-timeline-item-content">
     <!-- <pre>{{ activity_content }}</pre> -->
     <div class="h-max">
       <slot></slot>

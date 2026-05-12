@@ -279,10 +279,11 @@
   <div v-else-if="!filteredProducts.length" class="py-8 text-center text-muted-foreground">
     {{ locker_no_products({}, { locale }) }}
   </div>
-  <div v-else class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
+  <div v-else data-testid="locker-room-products-listing" class="grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
     <Card
       v-for="(prod, prodIndex) in filteredProducts"
       :key="prodIndex"
+      :data-testid="`locker-room-product-item-${prodIndex}`"
       class="group rounded-lg cursor-pointer md:py-0 p-0 bg-transparent relative !gap-0 h-fit duration-150 border-0"
     >
       <Checkbox

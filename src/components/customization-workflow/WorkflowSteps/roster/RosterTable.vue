@@ -111,7 +111,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col gap-1">
+  <div data-testid="workflow-roster-table" class="flex flex-col gap-1">
     <div
       :class="[
         'grid items-center gap-2 text-xs font-medium text-muted-foreground',

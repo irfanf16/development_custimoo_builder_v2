@@ -43,12 +43,14 @@
 <template>
   <!-- Outer: size from padding; inner: horizontal scroll so overflow-x does not compress bar height. -->
   <div
+    data-testid="canvas-mobile-action-bar"
     class="!fixed bottom-[6.5rem] left-1/2 z-widget-chrome max-w-[calc(100vw-1rem)] w-max min-w-0 -translate-x-1/2 rounded-full bg-foreground py-2 pl-2 pr-2 text-background shadow-lg sm:px-4"
   >
     <div
       class="flex min-h-14 max-w-full flex-nowrap items-stretch justify-start gap-0 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
     >
       <Button
+        data-testid="canvas-button-reset"
         variant="ghost"
         class="flex flex-col items-center justify-center h-14 w-[60px] shrink-0 gap-0.5 p-0 hover:bg-transparent hover:text-background"
         @click="handleResetCustomization"
@@ -57,6 +59,7 @@
         <span class="truncate text-[10px] font-normal leading-tight sm:text-xs">Reset</span>
       </Button>
       <Button
+        data-testid="canvas-button-shuffle"
         variant="ghost"
         class="flex flex-col items-center justify-center h-14 w-[60px] shrink-0 gap-0.5 p-0 hover:bg-transparent hover:text-background"
         @click="shuffleColors()"
@@ -66,6 +69,7 @@
       </Button>
       <Button
         v-if="customizationStore.hasAnyLogosOrTexts"
+        data-testid="canvas-button-pin-all"
         variant="ghost"
         class="flex h-14 min-w-[60px] max-w-[72px] shrink-0 flex-col items-center justify-center gap-0.5 px-0.5 p-0 hover:bg-transparent hover:text-background"
         :aria-label="pinAllLabel"
@@ -81,6 +85,7 @@
         }}</span>
       </Button>
       <Button
+        data-testid="canvas-button-undo"
         variant="ghost"
         class="flex flex-col items-center justify-center h-14 w-[60px] shrink-0 gap-0.5 p-0 hover:bg-transparent hover:text-background"
         :disabled="!canUndo"
@@ -90,6 +95,7 @@
         <span class="truncate text-[10px] font-normal leading-tight sm:text-xs">Undo</span>
       </Button>
       <Button
+        data-testid="canvas-button-redo"
         variant="ghost"
         class="flex flex-col items-center justify-center h-14 w-[60px] shrink-0 gap-0.5 p-0 hover:bg-transparent hover:text-background"
         :disabled="!canRedo"
@@ -99,6 +105,7 @@
         <span class="truncate text-[10px] font-normal leading-tight sm:text-xs">Redo</span>
       </Button>
       <Button
+        data-testid="canvas-button-center"
         variant="ghost"
         class="flex flex-col items-center justify-center h-14 w-[60px] shrink-0 gap-0.5 p-0 hover:bg-transparent hover:text-background"
         @click="centerCanvas()"

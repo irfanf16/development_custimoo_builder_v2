@@ -38,25 +38,27 @@
 
 <template>
   <!-- Three-step workflow with transitions -->
-  <Transition name="panel-slide" mode="out-in" appear>
-    <LogoCustomization
-      v-if="currentSubStep === 'list'"
-      :key="'logos-list'"
-      @select-logo="handleSelectLogo"
-      @go-to-placement="handleGoToPlacement"
-    />
+  <div data-testid="workflow-logo-selection">
+    <Transition name="panel-slide" mode="out-in" appear>
+      <LogoCustomization
+        v-if="currentSubStep === 'list'"
+        :key="'logos-list'"
+        @select-logo="handleSelectLogo"
+        @go-to-placement="handleGoToPlacement"
+      />
 
-    <LogoPlacement
-      v-else-if="currentSubStep === 'placement'"
-      :key="'logos-placement'"
-      @back="handleBackFromPlacement"
-    />
-    <LogoEdit
-      v-else-if="currentSubStep === 'edit' && selectedLogoId"
-      :key="`logos-edit-${activeLogoIndex ?? selectedLogoId}`"
-      :logo-id="selectedLogoId"
-      :logo-index="activeLogoIndex"
-      @back="handleBackToLogos"
-    />
-  </Transition>
+      <LogoPlacement
+        v-else-if="currentSubStep === 'placement'"
+        :key="'logos-placement'"
+        @back="handleBackFromPlacement"
+      />
+      <LogoEdit
+        v-else-if="currentSubStep === 'edit' && selectedLogoId"
+        :key="`logos-edit-${activeLogoIndex ?? selectedLogoId}`"
+        :logo-id="selectedLogoId"
+        :logo-index="activeLogoIndex"
+        @back="handleBackToLogos"
+      />
+    </Transition>
+  </div>
 </template>

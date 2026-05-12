@@ -53,8 +53,7 @@
 
   /** Full label next to switch: mobile (no hover), wide desktop, or expanded compact panel. */
   const showApplyOverridesFullLabel = computed(
-    () =>
-      uiStore.isMobile || !uiStore.desktopPreviewCompact || isExpanded.value
+    () => uiStore.isMobile || !uiStore.desktopPreviewCompact || isExpanded.value
   )
 
   const isExpandable = computed(() => props.config?.isExpandable)
@@ -129,7 +128,7 @@
 </script>
 
 <template>
-  <div class="w-full flex flex-col gap-1">
+  <div data-testid="workflow-header" class="w-full flex flex-col gap-1">
     <h1 v-if="productName" class="font-medium md:text-sm text-foreground truncate">
       {{ productName }}
     </h1>
@@ -144,6 +143,7 @@
       <div v-if="headerApplyOverrides !== undefined" class="flex shrink-0 items-center gap-3">
         <template v-if="showApplyOverridesFullLabel">
           <Switch
+            data-testid="workflow-header-switch-apply-overrides"
             :model-value="applyOverridesModelValue"
             @update:model-value="val => handleApplyOverridesInput(!!val)"
           />
@@ -156,6 +156,7 @@
             <TooltipTrigger as-child>
               <span class="inline-flex">
                 <Switch
+                  data-testid="workflow-header-switch-apply-overrides"
                   :model-value="applyOverridesModelValue"
                   :aria-label="headerApplyOverrides.label"
                   @update:model-value="val => handleApplyOverridesInput(!!val)"
@@ -170,6 +171,7 @@
       </div>
       <Button
         v-if="showShuffleButton"
+        data-testid="workflow-header-button-shuffle"
         variant="outline"
         size="sm"
         class="flex items-center gap-2"
@@ -182,7 +184,12 @@
       <TooltipProvider v-if="headerActionButton">
         <Tooltip>
           <TooltipTrigger as-child>
-            <Button variant="default" size="sm" @click="headerActionButton.callback">
+            <Button
+              data-testid="workflow-header-button-action"
+              variant="default"
+              size="sm"
+              @click="headerActionButton.callback"
+            >
               <component :is="headerActionButton.icon" class="size-4" />
               {{ headerActionButton.label }}
             </Button>
@@ -195,6 +202,7 @@
 
       <Button
         v-if="props.showExpandButton && isExpandable"
+        data-testid="workflow-header-button-expand"
         variant="default"
         size="icon"
         class="rounded-lg"
@@ -211,6 +219,7 @@
       <div class="flex items-center flex-1">
         <div class="relative w-full">
           <InputSearchGroup
+            data-testid="workflow-header-search"
             :model-value="searchModelValue"
             :placeholder="
               props.config?.search?.placeholder || ui_search_placeholder({}, { locale: locale })
@@ -240,7 +249,11 @@
     </div>
 
     <!-- Improved: Help Text label with an optional tooltip; now more compact and accessible -->
-    <div v-if="props.config?.helpText?.label" class="flex items-center gap-2">
+    <div
+      v-if="props.config?.helpText?.label"
+      data-testid="workflow-header-help-text"
+      class="flex items-center gap-2"
+    >
       <span class="text-sm">{{ props.config?.helpText?.label }}</span>
       <TooltipProvider v-if="props.config?.helpText?.tooltip">
         <Tooltip>

@@ -373,7 +373,7 @@
 
 <template>
   <TooltipProvider>
-    <div class="grid h-full gap-6" :class="isMobile ? 'grid-cols-1' : 'grid-cols-12'">
+    <div data-testid="locker-room-collection-preview-body" class="grid h-full gap-6" :class="isMobile ? 'grid-cols-1' : 'grid-cols-12'">
       <!-- LEFT (desktop) / Logo section (mobile: Header above this) -->
       <div :class="isMobile ? '' : 'col-span-7 flex flex-col gap-2'">
         <!-- Mobile: Header with icon + text (no tooltip) -->

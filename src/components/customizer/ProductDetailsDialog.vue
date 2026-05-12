@@ -210,7 +210,7 @@
 
 <template>
   <Dialog :open="props.open" variant="large" @update:open="emit('update:open', $event)">
-    <DialogContent variant="large" class="md:max-h-[742px] flex flex-col">
+    <DialogContent data-testid="customizer-product-details-dialog" variant="large" class="md:max-h-[742px] flex flex-col">
       <DialogHeader>
         <DialogTitle>
           {{ products_product_details({}, { locale: profileStore.currentLocale }) }}

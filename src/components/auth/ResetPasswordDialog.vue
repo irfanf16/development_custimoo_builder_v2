@@ -81,14 +81,15 @@
 
 <template>
   <Dialog :open="isResetPasswordDialogOpen" @update:open="setResetPasswordDialogOpen">
-    <DialogContent class="sm:max-w-md">
+    <DialogContent data-testid="auth-dialog-reset-password" class="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Reset Password</DialogTitle>
         <DialogDescription>Enter your new password below to reset it.</DialogDescription>
       </DialogHeader>
-      <form class="space-y-4" @submit.prevent="onSubmit">
+      <form data-testid="auth-form-reset-password" class="space-y-4" @submit.prevent="onSubmit">
         <FormTextField
           name="email"
+          data-testid="auth-field-email"
           :label="profile_email({}, { locale: currentLocale })"
           type="email"
           :placeholder="profile_email({}, { locale: currentLocale })"
@@ -96,6 +97,7 @@
         />
         <FormTextField
           name="password"
+          data-testid="auth-field-password"
           :label="auth_password_label({}, { locale: currentLocale })"
           type="password"
           :placeholder="auth_placeholder_password({}, { locale: currentLocale })"
@@ -103,18 +105,24 @@
         />
         <FormTextField
           name="confirmPassword"
+          data-testid="auth-field-confirm-password"
           :label="auth_confirm_password_label({}, { locale: currentLocale })"
           type="password"
           :placeholder="auth_placeholder_confirm_password({}, { locale: currentLocale })"
           autocomplete="new-password"
         />
 
-        <div v-if="authError" class="text-sm text-red-600">
+        <div v-if="authError" data-testid="auth-error" class="text-sm text-red-600">
           {{ authError }}
         </div>
 
         <DialogFooter class="flex-col gap-2 sm:flex-row">
-          <Button type="submit" :loading="isLoading" :disabled="isLoading">
+          <Button
+            data-testid="auth-button-submit"
+            type="submit"
+            :loading="isLoading"
+            :disabled="isLoading"
+          >
             {{ reset_password({}, { locale: currentLocale }) }}
           </Button>
         </DialogFooter>

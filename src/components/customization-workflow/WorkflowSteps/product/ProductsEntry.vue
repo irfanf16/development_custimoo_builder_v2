@@ -71,24 +71,26 @@
 </script>
 
 <template>
-  <Transition name="panel-slide" mode="out-in" appear>
-    <CategorySelection
-      v-if="activePanel === 'category'"
-      key="products-category"
-      @select-category="handleCategorySelect"
-    />
+  <div data-testid="workflow-product-entry">
+    <Transition name="panel-slide" mode="out-in" appear>
+      <CategorySelection
+        v-if="activePanel === 'category'"
+        key="products-category"
+        @select-category="handleCategorySelect"
+      />
 
-    <SubcategorySelection
-      v-else-if="activePanel === 'subcategory'"
-      key="products-subcategory"
-      @select-subcategory="handleSubcategorySelect"
-    />
+      <SubcategorySelection
+        v-else-if="activePanel === 'subcategory'"
+        key="products-subcategory"
+        @select-subcategory="handleSubcategorySelect"
+      />
 
-    <ProductSelection
-      v-else
-      key="products-product"
-      :is-expanded="isExpanded"
-      @scroll-to-element="handleProductScroll"
-    />
-  </Transition>
+      <ProductSelection
+        v-else
+        key="products-product"
+        :is-expanded="isExpanded"
+        @scroll-to-element="handleProductScroll"
+      />
+    </Transition>
+  </div>
 </template>

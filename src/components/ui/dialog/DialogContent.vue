@@ -16,6 +16,8 @@
   import { dialogContentVariants } from '.'
   import type { DialogContentVariants } from '.'
 
+  defineOptions({ inheritAttrs: false })
+
   interface Props extends DialogContentProps {
     class?: HTMLAttributes['class']
     style?: HTMLAttributes['style']
@@ -266,7 +268,7 @@
       class="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-widget-dialog bg-black/40"
     />
     <DialogContent
-      v-bind="forwarded"
+      v-bind="{ ...forwarded, ...$attrs }"
       :style="styleProps"
       :class="contentClasses"
       @pointer-down-outside="handlePointerDownOutside"

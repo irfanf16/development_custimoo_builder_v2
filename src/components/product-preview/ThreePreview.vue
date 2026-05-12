@@ -252,7 +252,7 @@
 </script>
 
 <template>
-  <div ref="containerEl" class="relative w-full h-full grid place-items-end" />
+  <div data-testid="preview-three-root" ref="containerEl" class="relative w-full h-full grid place-items-end" />
 </template>
 
 <style scoped></style>

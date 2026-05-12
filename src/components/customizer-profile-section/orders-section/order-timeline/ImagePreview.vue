@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent variant="large" class="max-w-4xl">
+    <DialogContent variant="large" class="max-w-4xl" data-testid="profile-image-preview-dialog">
       <DialogHeader class="h-fit">
         <DialogTitle>Image Preview</DialogTitle>
         <DialogDescription> Hover over the images to zoom in and see details </DialogDescription>

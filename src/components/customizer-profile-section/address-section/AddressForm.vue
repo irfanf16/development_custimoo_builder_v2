@@ -214,7 +214,7 @@
 </script>
 
 <template>
-  <div :class="['flex flex-col gap-4', isMobile && 'flex-1 min-h-0']">
+  <div :class="['flex flex-col gap-4', isMobile && 'flex-1 min-h-0']" data-testid="profile-address-form">
     <Tabs v-model="profileStore.addressTabs" class="w-full flex-shrink-0">
       <TabsList class="flex w-full border-b border-border bg-muted rounded-lg overflow-hidden">
         <TabsTrigger
@@ -560,6 +560,7 @@
         <Button
           type="submit"
           class="bg-primary text-white hover:text-white flex items-center gap-2"
+          data-testid="profile-address-button-save"
           :disabled="isSavingAddress"
         >
           <Spinner v-if="isSavingAddress" class="text-white size-4" />

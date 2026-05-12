@@ -26,12 +26,17 @@
 </script>
 
 <template>
-  <Tabs :model-value="String(selectedIndex)" @update:model-value="handleTabChange">
+  <Tabs
+    data-testid="workflow-colors-gradient-tabs"
+    :model-value="String(selectedIndex)"
+    @update:model-value="handleTabChange"
+  >
     <TabsList class="gap-2 w-full">
       <TabsTrigger
         v-for="(gradientColor, index) in gradientColors"
         :key="index"
         :value="String(index)"
+        :data-testid="`workflow-colors-gradient-tab-${index}`"
         class="gap-2 w-full"
       >
         <ColorSelector :color="gradientColor.color" size="xs" class="shrink-0" :disabled="true" />
