@@ -54,26 +54,14 @@ The builder is used by **end customers** on any merchant's storefront. It is del
 
 ## Web Component Architecture
 
-```
-Host page (Shopify / WooCommerce / BigCommerce / self-hosted)
-    |
-    | <script src="cdn.custimoo.com/v2/widget.js">
-    v
-custimoo_self_build.js loader
-    -> GET api.custimoo.com/api/get_app_version
-    -> inject widget.js?build={version}  (cache-busted)
-    |
-    v
-<v-customizer> Custom Element
-    Shadow DOM (open mode)
-        CSS injected into shadow root (full isolation)
-        CSS also mirrored to document.head for Teleport portals
-        |
-        v
-    Vue 3 app (mounted inside Shadow DOM)
-        Router (Memory / Hash / Web History — adaptive)
-        Pinia stores
-        Axios HTTP client -> api.custimoo.com/api/v2
+```mermaid
+flowchart TD
+    HOST["Host page<br/>Shopify · WooCommerce · BigCommerce · self-hosted"] --> LD["custimoo_self_build.js loader<br/>cdn.custimoo.com/v2/widget.js"]
+    LD --> VER["GET api.custimoo.com/api/get_app_version"]
+    VER --> INJ["inject widget.js?build=version<br/>cache-busted"]
+    INJ --> CE["v-customizer Custom Element<br/>Shadow DOM (open) — CSS isolated,<br/>mirrored to document.head for Teleport portals"]
+    CE --> APP["Vue 3 app inside Shadow DOM<br/>adaptive Router · 16 Pinia stores · Axios"]
+    APP --> API["api.custimoo.com/api/v2"]
 ```
 
 **Build mode:** Vite `lib` mode, `format: "es"`, `inlineDynamicImports: true` → single `dist/widget.js`.
